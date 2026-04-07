@@ -1,0 +1,56 @@
+:host {
+  display: block;
+}
+@media print {
+  @page {
+    margin: 0; /* Removes default browser header/footer space */
+    padding: 40px;
+  }
+
+  body {
+    margin: 0;
+    -webkit-print-color-adjust: exact; /* For accurate colors in Chrome */
+  }
+
+  // Show only the quotation container and its children
+  #quotation-print,
+  #quotation-print * {
+    visibility: visible;
+  }
+
+  // Position it at the top left of the physical page
+  #quotation-print {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    border: none !important;
+    box-shadow: none !important;
+  }
+
+  /* Force borders on PrimeNG table elements */
+  .print-container table,
+  .print-container th,
+  .print-container td {
+    border: 1px solid #e5e7eb !important; /* Light gray border */
+    border-collapse: collapse !important;
+  }
+
+  /* Ensure the header has the light gray background */
+  .print-container th {
+    background-color: #f9fafb !important;
+    font-weight: bold;
+  }
+
+  /* Fix for PrimeNG's internal table structure */
+  .p-datatable-table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+  }
+
+  // Force colors to show (for logos and blue headers)
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}

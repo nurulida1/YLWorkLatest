@@ -1,0 +1,59 @@
+:host {
+  display: block;
+
+  .p-overlay-mask {
+    overflow-y: auto !important;
+  }
+}
+
+@media print {
+  @page {
+    margin: 0; /* Removes default browser header/footer space */
+    padding: 40px;
+  }
+
+  body * {
+    visibility: hidden;
+  }
+
+  // Show only the quotation container and its children
+  #quotation-print,
+  #quotation-print * {
+    visibility: visible;
+  }
+
+  // Position it at the top left of the physical page
+  #quotation-print {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    border: none !important;
+    box-shadow: none !important;
+  }
+
+  #quotation-print table,
+  #quotation-print tr,
+  #quotation-print th,
+  #quotation-print td {
+    border: 1px solid #e5e7eb !important;
+    border-collapse: collapse !important;
+    visibility: visible !important;
+  }
+
+  /* Specifically target PrimeNG's internal classes which often force border-0 */
+  #quotation-print .p-datatable-tbody > tr > td {
+    border: 1px solid #e5e7eb !important;
+  }
+
+  #quotation-print .p-datatable-thead > tr > th {
+    background-color: #f9fafb !important;
+    border: 1px solid #e5e7eb !important;
+  }
+
+  // Force colors to show (for logos and blue headers)
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}

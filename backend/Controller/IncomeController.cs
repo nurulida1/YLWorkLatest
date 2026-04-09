@@ -49,7 +49,7 @@ namespace YLWorks.Controller
                     // 2. Dynamic Filtering (Expressions)
                     if (!string.IsNullOrEmpty(filter))
                     {
-                        var parameter = Expression.Parameter(typeof(Client), "u");
+                        var parameter = Expression.Parameter(typeof(Income), "u");
                         Expression? finalExpression = null;
 
                         foreach (var orPart in filter.Split('|'))
@@ -122,7 +122,6 @@ namespace YLWorks.Controller
                         {
                             u.Id,
                             u.IncomeNo,
-                            u.ReferenceNo,
                             u.Amount,
                             u.IncomeDate,
                             u.PaymentMode,
@@ -167,8 +166,7 @@ namespace YLWorks.Controller
                     var income = new Income
                     {
                         Id = Guid.NewGuid(),
-                        IncomeNo = request.IncomeNo,
-                        ReferenceNo = request.ReferenceNo,
+                        IncomeNo = await GenerateIncomeNoAsync(),
                         Amount = request.Amount,
                         IncomeDate = request.IncomeDate,
                         PaymentMode = request.PaymentMode,
@@ -187,7 +185,29 @@ namespace YLWorks.Controller
                 }
             }
 
+        private async Task<string> GenerateIncomeNoAsync()
+        {
+            var today = DateTime.Now.ToString("yyyyMMdd");
+
+            var lastIncome = await _context.Incomes
+                .Where(x => x.IncomeNo.StartsWith($"INC-"))
+                .OrderByDescending(x => x.IncomeNo)
+                .FirstOrDefaultAsync();
+
+            int nextNumber = 1;
+
+            if (lastIncome != null)
+            {
+                var lastNumber = lastIncome.IncomeNo.Split('-').Last();
+                nextNumber = int.Parse(lastNumber) + 1;
+            }
+
+            return $"INC-{nextNumber:D4}";
         }
+
+    }
+
+
 
         
     }

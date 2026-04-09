@@ -37,6 +37,7 @@ import {
   ValidateAllFormFields,
 } from '../../shared/helpers/helpers';
 import { IncomeDto } from '../../models/Income';
+import { Textarea, TextareaModule } from 'primeng/textarea';
 
 @Component({
   selector: 'app-income',
@@ -53,6 +54,7 @@ import { IncomeDto } from '../../models/Income';
     RouterLink,
     DatePickerModule,
     MenuModule,
+    TextareaModule,
   ],
   template: `<div class="w-full min-h-screen flex flex-col p-5">
       <div
@@ -122,9 +124,6 @@ import { IncomeDto } from '../../models/Income';
                 <th class="bg-gray-100! text-[15px]! text-center! w-[15%]!">
                   Date
                 </th>
-                <th class="bg-gray-100! text-[15px]! text-center! w-[15%]!">
-                  Reference No
-                </th>
                 <th class="bg-gray-100! text-[15px]! text-center! w-[25%]!">
                   Description
                 </th>
@@ -140,32 +139,31 @@ import { IncomeDto } from '../../models/Income';
               </tr>
             </ng-template>
             <ng-template #body let-data>
-              <td class="text-[14px]! text-center! font-semibold!">
-                {{ data.incomeNo }}
-              </td>
-              <td class="text-[14px]! text-center!">
-                {{ data.incomeDate | date }}
-              </td>
-              <td class="text-[14px]! text-center!">
-                {{ data.referenceNo }}
-              </td>
-              <td class="text-[14px]! text-center!">
-                {{ data.description }}
-              </td>
-              <td class="text-[14px]! text-center!">
-                {{ data.amount | currency: 'RM ' }}
-              </td>
-              <td class="text-[14px]! text-center!">
-                {{ data.paymentMode }}
-              </td>
-              <td class="text-center! text-[14px]!">
-                <div class="flex items-center justify-center">
-                  <i
-                    (click)="onEllipsisClick($event, data, menu)"
-                    class="pi pi-ellipsis-h cursor-pointer"
-                  ></i>
-                </div>
-              </td>
+              <tr>
+                <td class="text-[14px]! text-center! font-semibold!">
+                  {{ data.incomeNo }}
+                </td>
+                <td class="text-[14px]! text-center!">
+                  {{ data.incomeDate | date }}
+                </td>
+                <td class="text-[14px]! text-center!">
+                  {{ data.description }}
+                </td>
+                <td class="text-[14px]! text-center!">
+                  {{ data.amount | currency: 'RM ' }}
+                </td>
+                <td class="text-[14px]! text-center!">
+                  {{ data.paymentMode }}
+                </td>
+                <td class="text-center! text-[14px]!">
+                  <div class="flex items-center justify-center">
+                    <i
+                      (click)="onEllipsisClick($event, data, menu)"
+                      class="pi pi-ellipsis-h cursor-pointer"
+                    ></i>
+                  </div>
+                </td>
+              </tr>
             </ng-template>
             <ng-template #emptymessage>
               <tr>
@@ -202,25 +200,7 @@ import { IncomeDto } from '../../models/Income';
             [formGroup]="FG"
             class="mt-3 grid grid-cols-12 gap-3 text-[15px]"
           >
-            <div class="col-span-12 lg:col-span-6 flex flex-col gap-1">
-              <div>Income No <span class="text-red-500">*</span></div>
-              <input
-                type="text"
-                pInputText
-                class="w-full text-[15px]!"
-                formControlName="incomeNo"
-              />
-            </div>
-            <div class="col-span-12 lg:col-span-6 flex flex-col gap-1">
-              <div>Reference No</div>
-              <input
-                type="text"
-                pInputText
-                class="w-full text-[15px]!"
-                formControlName="referenceNo"
-              />
-            </div>
-            <div class="col-span-12 lg:col-span-6 flex flex-col gap-1">
+            <div class="col-span-12 flex flex-col gap-1">
               <div>Amount</div>
               <p-inputnumber
                 appendTo="body"
@@ -236,6 +216,63 @@ import { IncomeDto } from '../../models/Income';
               >
               </p-inputnumber>
             </div>
+            <div class="col-span-12 lg:col-span-6 flex flex-col gap-1">
+              <div>Date</div>
+              <p-datepicker
+                appendTo="body"
+                styleClass="w-full"
+                inputStyleClass="w-full !text-[15px]"
+                formControlName="incomeDate"
+                showIcon="true"
+                dateFormat="dd/mm/yy"
+              >
+              </p-datepicker>
+            </div>
+            <div class="col-span-12 lg:col-span-6 flex flex-col gap-1">
+              <div>Payment Mode</div>
+              <p-select
+                appendTo="body"
+                styleClass="w-full"
+                inputStyleClass="w-full !text-[15px]"
+                formControlName="paymentMode"
+                [options]="[
+                  { label: 'Cash', value: 'Cash' },
+                  { label: 'Card', value: 'Card' },
+                  { label: 'Bank Transfer', value: 'Bank Transfer' },
+                  { label: 'E-Wallet', value: 'E-Wallet' },
+                  { label: 'Cheque', value: 'Cheque' },
+                  { label: 'Other', value: 'Other' },
+                ]"
+              >
+              </p-select>
+            </div>
+            <div class="col-span-12 flex flex-col gap-1">
+              <div>Description</div>
+              <textarea
+                pTextarea
+                class="w-full !text-[15px]"
+                formControlName="description"
+                rows="4"
+                autoResize="true"
+              >
+              </textarea>
+            </div>
+          </div>
+          <div class="border-b border-gray-200 mt-3 mb-3"></div>
+          <div class="flex flex-row items-center justify-end gap-2">
+            <p-button
+              label="Cancel"
+              (onClick)="visible = false"
+              size="small"
+              severity="secondary"
+              class="py-2! whitespace-nowrap! border-gray-200!"
+            ></p-button>
+            <p-button
+              label="Submit"
+              size="small"
+              (onClick)="Submit()"
+              styleClass="bg-emerald-600! border-none!"
+            ></p-button>
           </div>
         </div>
       </ng-template>

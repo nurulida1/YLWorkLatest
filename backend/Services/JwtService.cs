@@ -98,7 +98,7 @@ namespace YLWorks.Services
             var securityToken = tokenHandler.CreateToken(tokenDescriptor);
             var accessToken = tokenHandler.WriteToken(securityToken);
 
-            // 8. Return response
+            // 8. Return response1
             return new LoginResponse
             {
                 Success = true,

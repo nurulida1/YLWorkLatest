@@ -49,7 +49,7 @@ export class AuthService {
   }
 
   isAuthenticated(): boolean {
-    const token =localStorage.getItem('jwtToken') ?? sessionStorage.getItem('jwtToken');
+    const token =localStorage.getItem('jwtToken')  ?? sessionStorage.getItem('jwtToken');
     console.log(token);
     return !!token;
   }

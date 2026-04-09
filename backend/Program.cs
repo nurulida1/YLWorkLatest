@@ -11,7 +11,7 @@ using Scalar.AspNetCore;
 using QuestPDF.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
-
+//1
 // --- JWT Configuration ---
 var jwtSettings = builder.Configuration.GetSection("Jwt");
 var key = jwtSettings["Key"];

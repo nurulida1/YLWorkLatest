@@ -39,16 +39,17 @@ export class AuthService {
   }
 
   initAuth() {
-    const token = localStorage.getItem('jwtToken');
-    const user = localStorage.getItem('currentUser');
+    const token = localStorage.getItem('jwtToken') ?? sessionStorage.getItem('jwtToken');
+    const user = localStorage.getItem('currentUser') ?? sessionStorage.getItem('currentUser');
 
     if (token && user) {
-      this.userService.setCurrentUser(JSON.parse(user));
+      const rememberMe = !!localStorage.getItem('jwtToken');
+      this.userService.setCurrentUser(JSON.parse(user), rememberMe);
     }
   }
 
   isAuthenticated(): boolean {
-    const token = localStorage.getItem('jwtToken');
+    const token =localStorage.getItem('jwtToken')  ?? sessionStorage.getItem('jwtToken');
     console.log(token);
     return !!token;
   }

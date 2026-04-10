@@ -8,6 +8,8 @@ namespace YLWorks.Model
         public string Name { get; set; }
         public string? ContactPerson { get; set; }
         public string? ContactNo { get; set; }
+        public string? FaxNo { get; set; }
+        public string? ACNo { get; set; }
         public Guid? BillingAddressId { get; set; }
         [ForeignKey("BillingAddressId")]
         public virtual Address? BillingAddress { get; set; }
@@ -26,8 +28,10 @@ namespace YLWorks.Model
         public string Name { get; set; }
         public string? ContactPerson { get; set; }
         public string? ContactNo { get; set; }
+        public string? FaxNo { get; set; }
         public string? Email { get; set; }
         public double? Balance { get; set; }
+        public string? ACNo { get; set;  }
 
 
         // Structured addresses
@@ -41,8 +45,10 @@ namespace YLWorks.Model
         public string? Name { get; set; }
         public string? ContactPerson { get; set; }
         public string? ContactNo { get; set; }
+        public string? FaxNo { get; set; }
         public string? Email { get; set; }
         public double? Balance { get; set; }
+        public string? ACNo { get; set; }
 
         // Optional updates for addresses
         public AddressRequest? BillingAddress { get; set; }

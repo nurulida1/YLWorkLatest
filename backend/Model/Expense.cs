@@ -3,6 +3,7 @@
     public class Expense: BaseEntity
     {
         public Guid Id { get; set; }
+        public Guid? PaymentId { get; set; }
         public string ExpenseNo { get; set; }
         public decimal? Amount { get; set; }
         public DateTime ExpenseDate { get; set; }
@@ -12,6 +13,7 @@
 
     public class CreateExpenseRequest
     {
+        public Guid? PaymentId { get; set; }
         public decimal? Amount { get; set; }
         public DateTime ExpenseDate { get; set; }
         public string PaymentMode { get; set; }

@@ -12,7 +12,7 @@
         public User CreatedBy { get; set; }
         public string? Description { get; set; } = string.Empty;
         public string? Priority { get; set; } = string.Empty; // High, Medium, Low
-        public ICollection<ProjectMember>? ProjectMembers { get; set; } = new List<ProjectMember>();
+        public ICollection<ProjectMember> ProjectMembers { get; set; } = new List<ProjectMember>();
         public ICollection<ProjectTask>? Tasks { get; set; }
         public ICollection<Quotation> Quotations { get; set; }
         public ICollection<PurchaseOrder> PurchaseOrders { get; set; }

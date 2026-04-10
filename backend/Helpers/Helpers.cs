@@ -28,8 +28,8 @@ namespace WebApplication1.Helpers
                 if (orderedQuery == null)
                 {
                     orderedQuery = descending
-                        ? query.OrderByDescending(x => EF.Property<object>(x, propInfo.Name))
-                        : query.OrderBy(x => EF.Property<object>(x, propInfo.Name));
+    ? query.OrderByDescending(x => EF.Property<object>(x!, propInfo.Name))
+    : query.OrderBy(x => EF.Property<object>(x!, propInfo.Name));
                 }
                 else
                 {

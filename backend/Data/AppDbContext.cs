@@ -98,7 +98,7 @@ namespace YLWorks.Data
             });
 
             modelBuilder.Entity<InvoiceItem>(entity => {
-                entity.Property(i => i.Amount).HasColumnType("decimal(18,2)");
+                entity.Property(i => i.TotalAmount).HasColumnType("decimal(18,2)");
             });
 
             modelBuilder.Entity<Payments>(entity => {
@@ -123,8 +123,9 @@ namespace YLWorks.Data
 
             modelBuilder.Entity<Quotation>(entity =>
             {
+                entity.Property(q => q.Gross).HasColumnType("decimal(18,2)");
                 entity.Property(q => q.TotalAmount).HasColumnType("decimal(18,2)");
-                entity.Property(q => q.DiscountRate).HasColumnType("decimal(18,2)");
+                entity.Property(q => q.Discount).HasColumnType("decimal(18,2)");
                 entity.HasMany(q => q.Items).WithOne(qi => qi.Quotation).HasForeignKey(qi => qi.QuotationId).OnDelete(DeleteBehavior.Cascade);
             });
 

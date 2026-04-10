@@ -102,7 +102,7 @@ import { RouterLink } from '@angular/router';
                   <i class="pi pi-building text-blue-500 text-sm!"></i>
                 </div>
                 <div class="col-span-10 text-left text-sm text-gray-600">
-                  {{ data.department?.name || 'N/A' }}
+                  {{ data.department.name || 'N/A' }}
                 </div>
                 <div class="col-span-2">
                   <i class="pi pi-envelope text-blue-500 text-sm!"></i>

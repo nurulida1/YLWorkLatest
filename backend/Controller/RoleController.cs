@@ -174,7 +174,7 @@ namespace YLWorks.Controller
                     TotalElements
                 });
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return StatusCode(500, new { Error = "An unexpected error occured." });
             }
@@ -237,7 +237,7 @@ namespace YLWorks.Controller
 
                 return Ok(new { Message = "Role deleted successfully." });
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return StatusCode(500, new { Error = "Failed to delete role." });
             }

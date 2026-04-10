@@ -124,6 +124,8 @@ namespace YLWorks.Controller
                        u.Name,
                        u.ContactPerson,
                        u.ContactNo,
+                       u.FaxNo,
+                       u.ACNo,
                        u.Email,
                        u.CreatedAt,
                        u.Status,
@@ -173,6 +175,8 @@ namespace YLWorks.Controller
                     Name = request.Name,
                     ContactPerson = request.ContactPerson,
                     ContactNo = request.ContactNo,
+                    FaxNo = request.FaxNo,
+                    ACNo = request.ACNo,
                     Email = request.Email,
                     Status = "Active",
 
@@ -234,6 +238,8 @@ namespace YLWorks.Controller
                 // 2. Update Client Properties
                 supplier.Name = request.Name ?? supplier.Name;
                 supplier.ContactNo = request.ContactNo ?? supplier.ContactNo;
+                supplier.FaxNo = request.FaxNo ?? supplier.FaxNo;
+                supplier.ACNo = request.ACNo ?? supplier.ACNo;
                 supplier.ContactPerson = request.ContactPerson ?? supplier.ContactPerson;
                 supplier.Email = request.Email ?? supplier.Email;
                 supplier.UpdatedAt = DateTime.UtcNow;

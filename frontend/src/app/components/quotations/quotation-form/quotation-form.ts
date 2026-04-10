@@ -35,6 +35,7 @@ import { ValidateAllFormFields } from '../../../shared/helpers/helpers';
 import { EditorModule } from 'primeng/editor';
 import { ClientDto } from '../../../models/Client';
 import { TextareaModule } from 'primeng/textarea';
+import { UserService } from '../../../services/userService.service';
 
 @Component({
   selector: 'app-quotation-form',
@@ -71,7 +72,7 @@ import { TextareaModule } from 'primeng/textarea';
           <i class="pi pi-chevron-right text-[10px]"></i>
           <span class="text-gray-900 font-bold">New Quotation</span>
         </nav>
-        <div class="flex gap-3">
+        <!-- <div class="flex gap-3">
           <p-button
             (onClick)="onPreview()"
             label="Preview"
@@ -87,473 +88,381 @@ import { TextareaModule } from 'primeng/textarea';
             severity="info"
             styleClass="!rounded-md !px-6 tracking-wide"
           ></p-button>
-        </div>
+        </div> -->
       </div>
 
       <div
-        class="mx-auto bg-white shadow-sm border border-gray-200 rounded-xl overflow-hidden"
+        class="p-2 bg-white shadow-sm border border-gray-200 mb-2 flex flex-row items-center justify-end gap-2"
       >
-        <div class="grid grid-cols-12 gap-8 p-8 border-b border-gray-100">
-          <div class="col-span-12 md:col-span-7 grid grid-cols-2 gap-6">
-            <div class="flex flex-col gap-1.5">
-              <label
-                class="text-xs font-semibold uppercase tracking-wider text-gray-400"
-                >Quotation No</label
-              >
-              <input
-                type="text"
-                pInputText
-                formControlName="quotationNo"
-                class="!bg-white !border-gray-200"
-                placeholder="QTN-2026-001"
-              />
-              <div
-                *ngIf="
-                  quotationForm.get('quotationNo')?.invalid &&
-                  quotationForm.get('quotationNo')?.touched
-                "
-                class="text-[13px] tracking-wide text-red-500"
-              >
-                <span
-                  *ngIf="quotationForm.get('quotationNo')?.errors?.['required']"
-                >
-                  Quotation number is required.
-                </span>
+        <p-button
+          (onClick)="onSave()"
+          label="Save Quotation"
+          styleClass="bg-blue-500!"
+          severity="info"
+          icon="pi pi-save"
+          size="small"
+        ></p-button>
+        <p-button
+          (onClick)="downloadPDF()"
+          label="Download Quotation"
+          severity="danger"
+          icon="pi pi-download"
+          size="small"
+        ></p-button>
+      </div>
+      <div
+        id="print-area"
+        class="border border-gray-200  shadow-sm bg-white w-full p-5 grid grid-cols-12"
+      >
+        <div class="col-span-8 flex flex-row gap-3">
+          <div class="flex items-center justify-center">
+            <img src="assets/yl-logo.png" alt="" class="w-[130px] h-[80px]" />
+          </div>
+          <div class="flex flex-col">
+            <div class="flex flex-row items-end gap-2">
+              <div class="font-semibold text-[20px]">YL SYSTEMS SDN BHD</div>
+              <div class="text-[10px] mb-1">(200001006138(508743-P))</div>
+            </div>
+            <div class="text-[13px]">
+              42, Jalan 21/19, 46300 Petaling Jaya, Selangor
+            </div>
+            <div class="flex flex-row items-center gap-3 text-[13px]">
+              <div>Phone: 03-7877 3929</div>
+              <div>Fax: 03-7877 8595</div>
+            </div>
+            <div class="text-[13px]">Website: www.ylsystems.com.my</div>
+            <div class="flex flex-row items-center gap-3 text-[11px]">
+              <div>TIN No: C10626737100</div>
+              <div>SST Reg No: W10-2510-3200030</div>
+            </div>
+          </div>
+        </div>
+        <div class="text-xs col-span-4 flex flex-col items-end gap-1">
+          <div>{{ today | date: 'dd/mm/yy hh:mm aa' }}</div>
+          <div class="uppercase text-[9px]">{{ name }}</div>
+        </div>
+        <div class="mt-8 col-span-7 lg:col-span-8 flex flex-col">
+          <div class="flex flex-col">
+            <p-select
+              [fluid]="true"
+              placeholder="Search Client Name"
+              styleClass="lg:w-[60%]"
+              panelStyleClass="text-[15px]"
+              [options]="clientSelections || []"
+              formControlName="clientId"
+              (onChange)="ClientOnChange($event)"
+              [filter]="true"
+            ></p-select>
+            <div
+              *ngIf="
+                quotationForm.get('clientId')?.invalid &&
+                quotationForm.get('clientId')?.touched
+              "
+              class="mt-1 text-[13px] tracking-wide text-red-500"
+            >
+              <span *ngIf="quotationForm.get('clientId')?.errors?.['required']">
+                Vendor is required.
+              </span>
+            </div>
+          </div>
+          <div class=" mt-2 flex flex-col text-[13px]" *ngIf="selectedClient">
+            <strong>{{ selectedClient.label || selectedClient.name }}</strong>
+            <div>{{ selectedClient.deliveryAddress?.addressLine1 }}</div>
+            <div *ngIf="selectedClient.deliveryAddress?.addressLine2">
+              {{ selectedClient.deliveryAddress?.addressLine2 }}<br />
+            </div>
+            <div class="flex flex-row items-center gap-1">
+              {{ selectedClient.deliveryAddress?.poscode }},{{
+                selectedClient.deliveryAddress?.city
+              }},
+              {{ selectedClient.state }}
+              {{ selectedClient.deliveryAddress?.country }}
+            </div>
+
+            <div class="mt-5 flex flex-col">
+              <div class="grid grid-cols-[70px_10px_1fr] text-[11px] gap-y-0.5">
+                <div>Attn</div>
+                <div>:</div>
+                <div>{{ selectedClient.contactName }}</div>
+
+                <div>TEL</div>
+                <div>:</div>
+                <div>{{ selectedClient.contactNo }}</div>
+
+                <div>FAX</div>
+                <div>:</div>
+                <div>{{ selectedClient.faxNo }}</div>
+
+                <div>A/C NO</div>
+                <div>:</div>
+                <div>{{ selectedClient.accountNo }}</div>
               </div>
             </div>
-            <div class="flex flex-col gap-1.5">
-              <label
-                class="text-xs font-semibold uppercase tracking-wider text-gray-400"
-                >Reference</label
-              >
-              <input
-                type="text"
-                pInputText
-                formControlName="referenceNo"
-                class="!bg-white !border-gray-200"
-              />
+          </div>
+        </div>
+        <div class="mt-8 col-span-5 lg:col-span-4 flex flex-col gap-2 pl-2">
+          <div class="border w-full h-full flex flex-col">
+            <div class="text-center font-bold text-xl py-2 border-b">
+              QUOTATION
             </div>
-            <div class="flex flex-col gap-1.5">
-              <label
-                class="text-xs font-semibold uppercase tracking-wider text-gray-400"
-                >Date</label
-              >
+            <div class="text-[12px] p-2">
+              Please quote this number on all correspondence
+            </div>
+            <div
+              class="grid grid-cols-[70px_10px_1fr] p-2 text-[13px] gap-y-0.5 items-center border-b"
+            >
+              <div>NO.</div>
+              <div>:</div>
+              <input type="text" pInputText class="flex-1" />
+            </div>
+            <div
+              class="grid grid-cols-[70px_10px_1fr] p-2 text-[13px] gap-y-0.5 items-center"
+            >
+              <div>DATE</div>
+              <div>:</div>
               <p-datepicker
-                showIcon="true"
-                styleClass="w-full"
+                [showIcon]="true"
+                styleClass="w-full!"
+                appendTo="body"
+                dateFormat="dd/mm/yy"
                 formControlName="quotationDate"
-                iconDisplay="input"
-                dateFormat="dd/mm/yy"
+                inputStyleClass="text-[13px]!"
               ></p-datepicker>
-              <div
-                *ngIf="
-                  quotationForm.get('quotationDate')?.invalid &&
-                  quotationForm.get('quotationDate')?.touched
-                "
-                class="text-[13px] tracking-wide text-red-500"
-              >
-                <span
-                  *ngIf="
-                    quotationForm.get('quotationDate')?.errors?.['required']
-                  "
-                >
-                  Quotation date is required.
-                </span>
-              </div>
-            </div>
-            <div class="flex flex-col gap-1.5">
-              <label
-                class="text-xs font-semibold uppercase tracking-wider text-gray-400"
-                >Expires On</label
-              >
-              <p-datepicker
-                showIcon="true"
-                formControlName="dueDate"
-                styleClass="w-full"
-                iconDisplay="input"
-                dateFormat="dd/mm/yy"
-              ></p-datepicker>
-            </div>
-          </div>
-
-          <div
-            class="col-span-12 md:col-span-5 flex flex-col items-end justify-center"
-          >
-            <div
-              class="flex items-center gap-4 p-4 bg-white rounded-xl border border-blue-50 shadow-sm"
-            >
-              <img
-                src="assets/yl-logo.png"
-                alt="Logo"
-                class="w-16 h-16 object-contain"
-              />
-              <div>
-                <h1
-                  class="text-2xl font-black tracking-wide text-blue-900 leading-none"
-                >
-                  YL Systems
-                </h1>
-                <p
-                  class="text-[12px] text-gray-400 uppercase tracking-wide mt-1"
-                >
-                  ELV Technology Solution Provider
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-10 p-8">
-          <div class="relative p-6 rounded-xl border border-blue-100">
-            <span
-              class="absolute -top-3 left-4 bg-white px-2 text-xs font-bold text-blue-600 uppercase"
-            >
-              Bill From
-            </span>
-            <div class="flex flex-col gap-1 text-sm text-gray-600">
-              <strong class="text-blue-900 text-base">YL Systems</strong>
-              <p>No. 42, Jln 21/19, Sea Park,</p>
-              <p>46300 Petaling Jaya, Selangor, Malaysia</p>
-              <p class="mt-2">
-                <i class="pi pi-phone text-[10px]!"></i> +60 3-7877 3929
-              </p>
-              <p>
-                <i class="pi pi-envelope text-[10px]!"></i>
-                {{ 'ylsystems@test.com.my' }}
-              </p>
-              <!-- <div
-                class="mt-2 py-1 px-2 bg-blue-50 text-blue-700 rounded text-[10px] font-bold inline-block w-fit"
-              >
-                TAX ID: MY-992039-X
-              </div> -->
-            </div>
-          </div>
-
-          <div
-            class="relative p-6 rounded-xl border border-blue-100 bg-blue-50/10"
-          >
-            <div
-              class="absolute -top-3 left-4 bg-white px-2 flex items-center gap-2"
-            >
-              <span class="text-xs font-bold text-blue-600 uppercase"
-                >Bill To</span
-              >
-              <button
-                (click)="AddClientClick()"
-                class="cursor-pointer text-[12px] text-blue-500 flex items-center gap-2 hover:underline transition-all"
-              >
-                <i class="pi pi-plus-circle text-[14px]!"></i> Add New Client
-              </button>
-            </div>
-            <div class="flex flex-col gap-4">
-              <div class="flex flex-col">
-                <p-select
-                  [fluid]="true"
-                  placeholder="Search Client Name"
-                  panelStyleClass="text-[15px]!"
-                  [options]="clientSelections || []"
-                  formControlName="clientId"
-                  (onChange)="ClientOnChange($event)"
-                  [filter]="true"
-                ></p-select>
-                <div
-                  *ngIf="
-                    quotationForm.get('clientId')?.invalid &&
-                    quotationForm.get('clientId')?.touched
-                  "
-                  class="mt-1 text-[13px] tracking-wide text-red-500"
-                >
-                  <span
-                    *ngIf="quotationForm.get('clientId')?.errors?.['required']"
-                  >
-                    Client is required.
-                  </span>
-                </div>
-              </div>
-              <div
-                class="min-h-[100px] text-sm text-gray-600 p-2 leading-6"
-                *ngIf="selectedClient"
-              >
-                <strong>{{
-                  selectedClient.label || selectedClient.name
-                }}</strong
-                ><br />
-                {{ selectedClient.deliveryAddress?.addressLine1 }}<br />
-                <span *ngIf="selectedClient.deliveryAddress?.addressLine2"
-                  >{{ selectedClient.deliveryAddress?.addressLine2 }}<br
-                /></span>
-                {{ selectedClient.deliveryAddress?.poscode }},
-                {{ selectedClient.deliveryAddress?.city }},
-                {{ selectedClient.state }}
-                {{ selectedClient.deliveryAddress?.country }}<br />
-                {{ selectedClient.contactNo }}
-                <br />{{ selectedClient.email }}
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="border-b border-gray-200 mb-4"></div>
-
-        <div class="p-8 pt-0">
-          <h3
-            class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2"
-          >
-            <i class="pi pi-list text-blue-500"></i> Line Items
-          </h3>
-          <p-table
-            [value]="items.controls"
-            formArrayName="items"
-            styleClass="p-datatable-sm custom-table"
-            [tableStyle]="{ 'min-width': '50rem' }"
-            showGridlines
-          >
-            <ng-template #header>
-              <tr class="!bg-gray-50">
-                <th
-                  class="!bg-transparent text-center! text-gray-500 font-semibold w-120"
-                >
-                  Item Description
-                </th>
-                <th
-                  class="!bg-transparent text-center! text-gray-500 font-semibold w-40"
-                >
-                  Qty
-                </th>
-                <th
-                  class="!bg-transparent text-center! text-gray-500 font-semibold w-32"
-                >
-                  Unit
-                </th>
-                <th
-                  class="!bg-transparent text-center! text-gray-500 font-semibold w-48"
-                >
-                  Rate (RM)
-                </th>
-                <th
-                  class="!bg-transparent text-center! text-gray-500 font-semibold w-48"
-                >
-                  Tax %
-                </th>
-                <th
-                  class="!bg-transparent text-center! text-gray-500 font-semibold w-64"
-                >
-                  Amount
-                </th>
-                <th class="!bg-transparent w-32"></th>
-              </tr>
-            </ng-template>
-            <ng-template #body let-item let-i="rowIndex">
-              <tr [formGroupName]="i">
-                <td>
-                  <textarea
-                    type="text"
-                    pTextarea
-                    formControlName="description"
-                    class="focus:!ring-1 w-full text-[15px]!"
-                    placeholder="Enter service or product..."
-                    [autoResize]="true"
-                  ></textarea>
-                </td>
-                <td>
-                  <p-inputnumber
-                    styleClass="text-center!"
-                    formControlName="quantity"
-                    inputStyleClass="!text-center w-full"
-                  ></p-inputnumber>
-                </td>
-                <td>
-                  <input
-                    type="text"
-                    pInputText
-                    formControlName="unit"
-                    class="focus:!ring-1 text-center! w-full"
-                  />
-                </td>
-                <td>
-                  <p-inputnumber
-                    styleClass="w-full"
-                    formControlName="rate"
-                    inputStyleClass="!text-center w-full"
-                    mode="decimal"
-                    [minFractionDigits]="2"
-                  ></p-inputnumber>
-                </td>
-                <td>
-                  <p-inputnumber
-                    styleClass="w-full"
-                    formControlName="taxRate"
-                    inputStyleClass="!text-center w-full"
-                    suffix="%"
-                  ></p-inputnumber>
-                </td>
-                <td class="text-center! font-bold text-gray-700 p-3">
-                  {{ item.get('amount').value | number: '1.2-2' }}
-                </td>
-                <td class="text-center">
-                  <div class="flex justify-center">
-                    <p-button
-                      (click)="removeItem(i)"
-                      severity="danger"
-                      [text]="true"
-                      styleClass="text-red-300 hover:text-red-500 "
-                    >
-                      <i class="pi pi-trash"></i>
-                    </p-button>
-                  </div>
-                </td>
-              </tr>
-            </ng-template>
-          </p-table>
-          <button
-            (click)="addItem()"
-            class="mt-4 flex items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-700"
-          >
-            <i class="pi pi-plus-circle"></i> Add Line Item
-          </button>
-        </div>
-        <div class="border-b border-gray-200"></div>
-        <div class="grid grid-cols-12 gap-8 py-5 px-8 bg-gray-50/50">
-          <div class="col-span-12 lg:col-span-7 pr-[5%]">
-            <div class="pb-2 font-semibold tracking-wide text-gray-700">
-              Extra Information
-            </div>
-            <div class="flex flex-wrap gap-3 mb-4">
-              <div
-                (click)="selectedTemplate = 'notes'"
-                [ngClass]="
-                  selectedTemplate === 'notes'
-                    ? 'bg-blue-600 text-white'
-                    : 'cursor-pointer hover:bg-blue-600 hover:text-white border-gray-200 text-gray-500'
-                "
-                class="border flex flex-row items-center rounded-sm text-[14px] gap-2 px-4 py-1"
-              >
-                <i class="pi pi-file text-[13px]!"></i>
-                <div>Add Notes</div>
-              </div>
-              <div
-                (click)="applyTemplate('terms')"
-                [ngClass]="
-                  selectedTemplate === 'terms'
-                    ? 'bg-blue-600 text-white border-blue-600'
-                    : 'cursor-pointer hover:bg-blue-600 hover:text-white border-gray-200 text-gray-500'
-                "
-                class="border flex flex-row items-center rounded-sm text-[14px] gap-2 px-4 py-1 transition-colors"
-              >
-                <i class="pi pi-list text-[13px]!"></i>
-                <div>Add Terms & Conditions</div>
-              </div>
-
-              <div
-                (click)="applyTemplate('bank')"
-                [ngClass]="
-                  selectedTemplate === 'bank'
-                    ? 'bg-blue-600 text-white border-blue-600'
-                    : 'cursor-pointer hover:bg-blue-600 hover:text-white border-gray-200 text-gray-500'
-                "
-                class="border flex flex-row items-center rounded-sm text-[14px] gap-2 px-4 py-1 transition-colors"
-              >
-                <i class="pi pi-building-columns text-[13px]!"></i>
-                <div>Bank Details</div>
-              </div>
-            </div>
-            <ng-container *ngIf="selectedTemplate === 'notes'">
-              <label
-                class="text-xs font-bold uppercase text-gray-400 block mb-2"
-                >Notes / Terms</label
-              >
-              <textarea
-                formControlName="description"
-                [cols]="30"
-                [rows]="3"
-                class="w-full text-sm!"
-                placeholder="Any additional notes..."
-                pTextarea
-                [autoResize]="true"
-              ></textarea>
-            </ng-container>
-            <ng-container *ngIf="selectedTemplate === 'terms'">
-              <label
-                class="text-xs font-bold uppercase text-gray-400 block mb-2"
-                >Terms & Conditions</label
-              >
-              <p-editor
-                formControlName="termsConditions"
-                [style]="{ height: '320px' }"
-              >
-              </p-editor>
-            </ng-container>
-            <ng-container *ngIf="selectedTemplate === 'bank'">
-              <label
-                class="text-xs font-bold uppercase text-gray-400 block mb-2"
-                >Account</label
-              >
-              <p-select appendTo="body" styleClass="w-full!"></p-select>
-            </ng-container>
-          </div>
-
-          <div class="col-span-12 lg:col-span-5 flex flex-col gap-3">
-            <div class="flex justify-between text-sm text-gray-500 px-2">
-              <span>Subtotal</span>
-              <span>RM {{ subTotal() | number: '1.2-2' }}</span>
-            </div>
-            <div
-              class="flex justify-between items-center text-sm text-gray-500 px-2"
-            >
-              <span class="flex items-center gap-1"
-                >Discount <i class="pi pi-info-circle text-[10px]"></i
-              ></span>
+              <div>TERMS</div>
+              <div>:</div>
               <p-inputnumber
-                formControlName="discount"
-                inputStyleClass="!w-20 !py-1 !text-right"
-                suffix="%"
+                styleClass="flex-1!"
+                appendTo="body"
+                inputStyleClass="text-[13px]!"
+              ></p-inputnumber>
+              <div>PROJECT</div>
+              <div>:</div>
+              <p-select
+                styleClass="flex-1!"
+                appendTo="body"
+                inputStyleClass="text-[13px]!"
+                panelStyleClass="text-[13px]!"
+                [filter]="true"
+              ></p-select>
+              <div>PAGE</div>
+              <div>:</div>
+              <input
+                class="flex-1! text-[13px]! cursor-pointer bg-gray-100!"
+                pInputText
+                type="text"
+                readonly
+              />
+            </div>
+          </div>
+        </div>
+        <div class="col-span-12 border-b mt-3 mb-3"></div>
+        <div class="col-span-12 flex flex-col gap-1">
+          <div class="text-[13px]">
+            Please supply and pack in the most suitable manner for shipment to:
+          </div>
+          <div class="text-[13px] flex flex-row items-center gap-2">
+            <div>PO NO:</div>
+          </div>
+          <div
+            class="text-[13px] flex flex-row items-center gap-2 border-b pb-2"
+          >
+            <div>SO NO:</div>
+          </div>
+          <div class="col-span-12">
+            <p-table [value]="items.controls" formArrayName="items">
+              <ng-template #header>
+                <tr>
+                  <th
+                    class="border-b! border-black! text-black! text-center! font-normal! text-[13px]! w-[20%]!"
+                  >
+                    ITEM
+                  </th>
+                  <th
+                    class="border-b! border-black! text-black! text-center! font-normal! text-[13px]! w-[30%]!"
+                  >
+                    DESCRIPTION
+                  </th>
+                  <th
+                    class="border-b! border-black! text-black! text-center! font-normal! text-[13px]! w-[5%]!"
+                  >
+                    QTY
+                  </th>
+                  <th
+                    class="border-b! border-black! text-black! text-center! font-normal! text-[13px]! w-[10%]!"
+                  >
+                    UNIT
+                  </th>
+                  <th
+                    class="border-b! border-black! text-black! text-center! font-normal! text-[13px]! w-[15%]!"
+                  >
+                    U.PRICE (RM)
+                  </th>
+                  <th
+                    class="border-b! border-black! text-black! text-center! font-normal! text-[13px]! w-[5%]!"
+                  >
+                    DISC
+                  </th>
+                  <th
+                    class="border-b! border-black! text-black! text-center! font-normal! text-[13px]! w-[15%]!"
+                  >
+                    T.AMOUNT (RM)
+                  </th>
+                </tr>
+              </ng-template>
+              <ng-template #body let-item let-i="rowIndex">
+                <tr [formGroupName]="i">
+                  <td class="px-1!">
+                    <input
+                      type="text"
+                      pInputText
+                      class="focus:!ring-1 text-[13px]! text-center! w-full"
+                    />
+                  </td>
+                  <td class="px-1!">
+                    <textarea
+                      type="text"
+                      pTextarea
+                      formControlName="description"
+                      rows="3"
+                      class="focus:!ring-1 w-full text-[13px]!"
+                      [autoResize]="true"
+                    ></textarea>
+                  </td>
+                  <td class="px-1!">
+                    <p-inputnumber
+                      styleClass="text-center!"
+                      formControlName="quantity"
+                      inputStyleClass="!text-center w-full text-[13px]!"
+                    ></p-inputnumber>
+                  </td>
+                  <td class="px-1!">
+                    <input
+                      type="text"
+                      pInputText
+                      class="focus:!ring-1 text-[13px]! text-center! w-full"
+                    />
+                  </td>
+                  <td class="px-1!">
+                    <p-inputnumber
+                      styleClass="text-center!"
+                      formControlName="quantity"
+                      inputStyleClass="!text-center w-full text-[13px]!"
+                      mode="decimal"
+                      [minFractionDigits]="2"
+                    ></p-inputnumber>
+                  </td>
+                  <td class="px-1!">
+                    <p-inputnumber
+                      styleClass="text-center!"
+                      formControlName="quantity"
+                      inputStyleClass="!text-center w-full text-[13px]!"
+                      mode="decimal"
+                      [minFractionDigits]="2"
+                    ></p-inputnumber>
+                  </td>
+                  <td class="px-1! text-center!">
+                    <p-inputnumber
+                      styleClass="text-center!"
+                      formControlName="quantity"
+                      inputStyleClass="!text-center w-full text-[13px]! cursor-pointer! border-none! shadow-none!"
+                      readonly
+                      mode="decimal"
+                      [minFractionDigits]="2"
+                    ></p-inputnumber>
+                  </td></tr
+              ></ng-template>
+            </p-table>
+            <p-button
+              label="Add Item"
+              icon="pi pi-plus-circle"
+              size="small"
+              severity="info"
+              [text]="true"
+              styleClass="text-blue-500!"
+              (onClick)="addItem()"
+            ></p-button>
+          </div>
+          <div class="col-span-12 mt-8 flex flex-col gap-2">
+            <b class="underline font-bold text-[15px]">REMARKS:</b>
+            <textarea
+              name=""
+              id=""
+              pTextarea
+              class="w-full"
+              rows="3"
+              autoResize="true text-[13px]"
+            ></textarea>
+          </div>
+          <div
+            class="col-span-12 border-b pb-3 mb-2 mt-8 flex flex-row items-center gap-2 font-bold text-[14px]"
+          >
+            <div>RINGGIT MALAYSIA :</div>
+            <div>
+              {{ amountToWords(quotationForm.get('totalAmount')?.value) }}
+            </div>
+          </div>
+          <div class="col-span-12 grid grid-cols-12 items-start gap-1">
+            <div
+              class="col-span-4 flex flex-row gap-2 items-center italic text-xs"
+            >
+              <div>Remarks:</div>
+              <input type="text" pInputText class="text-xs! italic flex-1!" />
+            </div>
+            <div
+              class="col-span-4 px-4 flex flex-row justify-between items-center gap-5 text-[13px]"
+            >
+              <div class="">TOTAL QUANTITY</div>
+              <p-inputnumber
+                styleClass="text-center! w-[30%]!"
+                inputStyleClass="!text-center text-[13px]! w-[30%]!"
               ></p-inputnumber>
             </div>
-            <div class="h-px bg-gray-200 my-2"></div>
-            <div class="flex justify-between items-center px-2">
-              <span class="text-lg font-bold text-gray-800">Total Amount</span>
-              <span class="text-2xl font-black text-blue-700"
-                >RM {{ grandTotal() | number: '1.2-2' }}</span
-              >
-            </div>
-
-            <div class="mt-6">
-              <label
-                class="text-xs font-bold uppercase text-gray-400 block mb-2 text-right"
-                >Authorized Signature</label
-              >
-              <input
-                type="file"
-                #fileInput
-                style="display: none"
-                accept="image/*"
-                (change)="onFileSelected($event)"
-              />
+            <div class="col-span-4 flex flex-col text-sm font-bold">
               <div
-                (click)="fileInput.click()"
-                class="border-2 border-dashed border-gray-200 rounded-xl p-6 bg-white flex flex-col items-center justify-center hover:bg-blue-50/30 hover:border-blue-200 cursor-pointer transition-all"
+                class="grid grid-cols-[140px_10px_1fr] gap-y-0.5 items-center"
               >
-                <ng-container *ngIf="!signaturePreview">
-                  <i
-                    class="pi pi-cloud-upload text-gray-300 text-3xl! mb-2"
-                  ></i>
-                  <span class="text-sm text-gray-400 tracking-wide"
-                    >Upload signature file</span
-                  >
-                </ng-container>
-
-                <img
-                  *ngIf="signaturePreview"
-                  [src]="signaturePreview"
-                  class="max-h-24 object-contain"
-                />
+                <div>Gross (RM)</div>
+                <div>:</div>
+                <p-inputnumber
+                  styleClass="text-center!"
+                  inputStyleClass="!text-center w-full text-[13px]!"
+                  mode="decimal"
+                  [minFractionDigits]="2"
+                ></p-inputnumber>
+                <div>-Discount</div>
+                <div>:</div>
+                <p-inputnumber
+                  styleClass="text-center!"
+                  inputStyleClass="!text-center w-full text-[13px]!"
+                  mode="decimal"
+                  [minFractionDigits]="2"
+                ></p-inputnumber>
+                <div>Total Payable (RM)</div>
+                <div>:</div>
+                <p-inputnumber
+                  styleClass="text-center!"
+                  inputStyleClass="!text-center w-full text-[13px]!"
+                  mode="decimal"
+                  [minFractionDigits]="2"
+                ></p-inputnumber>
               </div>
-              <input
-                formControlName="signatureName"
-                type="text"
-                pInputText
-                class="w-full mt-3 !text-center !text-sm"
-                placeholder="Signatory Name"
-              />
+            </div>
+          </div>
+
+          <div
+            class="text-[13px] cols-span-12 flex flex-row items-center justify-between mt-30"
+          >
+            <div class="font-bold border-t mt-2 w-[20%] text-center">
+              Issued by
+            </div>
+            <div class="font-bold border-t mt-2 w-[20%] text-center">
+              Checked by
+            </div>
+            <div class="font-bold border-t mt-2 w-[20%] text-center">
+              Approved by
+            </div>
+            <div class="font-bold border-t mt-2 w-[20%] text-center">
+              Authorised Signature
             </div>
           </div>
         </div>
@@ -1040,6 +949,7 @@ export class QuotationForm implements OnInit, OnDestroy {
   private readonly activatedRoute = inject(ActivatedRoute);
   private readonly clientService = inject(ClientService);
   private readonly loadingService = inject(LoadingService);
+  private readonly userService = inject(UserService);
   protected ngUnsubscribe: Subject<void> = new Subject<void>();
 
   private destroy$ = new Subject<void>();
@@ -1052,6 +962,10 @@ export class QuotationForm implements OnInit, OnDestroy {
   displayPreview: boolean = false;
   showClientDialog: boolean = false;
   previewData: any = null;
+
+  today: Date = new Date();
+
+  name = this.userService.currentUser?.firstName;
 
   clientSelections: any[] = [];
 
@@ -1567,6 +1481,8 @@ export class QuotationForm implements OnInit, OnDestroy {
         },
       });
   }
+
+  downloadPDF() {}
 
   ngOnDestroy() {
     this.destroy$.next();

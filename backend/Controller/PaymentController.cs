@@ -194,13 +194,21 @@ namespace YLWorks.Controller
         public async Task<ActionResult<object>> Create([FromBody] CreatePaymentRequest request)
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(userIdClaim)) return Unauthorized(new { Error = "Invalid token." });
+            if (string.IsNullOrEmpty(userIdClaim))
+                return Unauthorized(new { Error = "Invalid token." });
+
+            // ✅ VALIDATION (VERY IMPORTANT)
+            if (!request.ClientId.HasValue && !request.SupplierId.HasValue)
+                return BadRequest(new { Error = "Payment must have either ClientId or SupplierId." });
+
+            if (request.ClientId.HasValue && request.SupplierId.HasValue)
+                return BadRequest(new { Error = "Payment cannot be both Client and Supplier." });
 
             using var transaction = await _context.Database.BeginTransactionAsync();
 
             try
             {
-                // 1. Create the Payment record
+                // 1️⃣ CREATE PAYMENT
                 var payment = new Payments
                 {
                     Id = Guid.NewGuid(),
@@ -210,40 +218,84 @@ namespace YLWorks.Controller
                     SupplierId = request.SupplierId,
                     InvoiceId = request.InvoiceId,
                     PaymentDate = request.PaymentDate,
-                    PaymentMode = request.PaymentMode,
-                    Amount = request.Amount, // The amount being paid now
-                    PaidAmount = request.PaidAmount,
-                    DueAmount = request.DueAmount,
+                    PaymentMode = request.PaymentMode ?? "",
+                    Amount = request.Amount, // ✅ ONLY THIS
                     Notes = request.Notes,
                     Attachment = request.Attachment,
+                    Status = "Paid",
                     ProcessedById = Guid.Parse(userIdClaim),
                     CreatedAt = DateTime.UtcNow
                 };
 
                 _context.Payments.Add(payment);
 
-                // 2. Update the Invoice
-                var invoice = await _context.Invoices.FindAsync(request.InvoiceId);
-                if (invoice == null)
+                // 2️⃣ UPDATE INVOICE (ONLY IF EXISTS)
+                Invoice? invoice = null;
+
+                if (request.InvoiceId.HasValue)
                 {
-                    return NotFound(new { Error = "Associated invoice not found." });
+                    invoice = await _context.Invoices.FindAsync(request.InvoiceId);
+
+                    if (invoice == null)
+                        return NotFound(new { Error = "Associated invoice not found." });
+
+                    invoice.PaidAmount = (invoice.PaidAmount ?? 0) + request.Amount;
+
+                    // ✅ STATUS LOGIC
+                    if (invoice.PaidAmount == 0)
+                        invoice.Status = "Unpaid";
+                    else if (invoice.PaidAmount < invoice.TotalAmount)
+                        invoice.Status = "PartiallyPaid";
+                    else if (invoice.PaidAmount == invoice.TotalAmount)
+                        invoice.Status = "Paid";
+                    else
+                        invoice.Status = "Overpaid";
                 }
 
-                // Add current payment to existing total paid
-                invoice.PaidAmount = (invoice.PaidAmount ?? 0) + request.Amount;
-                invoice.Status = invoice.PaidAmount >= invoice.TotalAmount ? "Paid" : "PartiallyPaid";
+                // 3️⃣ CREATE INCOME (CLIENT PAYMENT)
+                if (request.ClientId.HasValue)
+                {
+                    var income = new Income
+                    {
+                        Id = Guid.NewGuid(),
+                        IncomeNo = await GenerateIncomeNoAsync(),
+                        PaymentId = payment.Id, // 🔥 LINK
+                        Amount = request.Amount,
+                        IncomeDate = request.PaymentDate,
+                        PaymentMode = request.PaymentMode ?? "",
+                        Description = invoice != null
+                            ? $"Payment received from client for Invoice #{invoice.InvoiceNo}"
+                            : "Payment received from client"
+                    };
 
+                    _context.Incomes.Add(income);
+                }
+
+                // 4️⃣ CREATE EXPENSE (SUPPLIER PAYMENT)
                 if (request.SupplierId.HasValue)
                 {
+                    var expense = new Expense
+                    {
+                        Id = Guid.NewGuid(),
+                        ExpenseNo = await GenerateExpenseNoAsync(),
+                        PaymentId = payment.Id,
+                        Amount = request.Amount,
+                        ExpenseDate = request.PaymentDate,
+                        PaymentMode = request.PaymentMode ?? "",
+                        Description = "Payment made to supplier"
+                    };
+
+                    _context.Expenses.Add(expense);
+
+                    // OPTIONAL: update supplier balance
                     var supplier = await _context.Suppliers.FindAsync(request.SupplierId.Value);
                     if (supplier != null)
                     {
-                        // Decrease the balance owed to supplier
                         supplier.Balance = (supplier.Balance ?? 0) - (double)request.Amount;
                     }
                 }
 
-                // Save both changes
+                // 5️⃣ SAVE ALL
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
@@ -255,8 +307,40 @@ namespace YLWorks.Controller
             catch (Exception ex)
             {
                 await transaction.RollbackAsync();
-                return StatusCode(500, new { Error = "Failed to create payment and update invoice.", Details = ex.Message });
+                return StatusCode(500, new
+                {
+                    Error = "Failed to create payment and financial records.",
+                    Details = ex.Message
+                });
             }
+        }
+
+        private async Task<string> GenerateIncomeNoAsync()
+        {
+            var today = DateTime.Now.ToString("yyMMdd"); // 260409
+
+            var last = await _context.Incomes
+                .Where(x => x.IncomeNo.StartsWith($"INC-{today}"))
+                .OrderByDescending(x => x.IncomeNo)
+                .FirstOrDefaultAsync();
+
+            int next = last == null ? 1 : int.Parse(last.IncomeNo.Split('-').Last()) + 1;
+
+            return $"INC-{today}-{next:D4}";
+        }
+
+        private async Task<string> GenerateExpenseNoAsync()
+        {
+            var today = DateTime.Now.ToString("yyMMdd"); // 260409
+
+            var last = await _context.Expenses
+                .Where(x => x.ExpenseNo.StartsWith($"EXP-{today}"))
+                .OrderByDescending(x => x.ExpenseNo)
+                .FirstOrDefaultAsync();
+
+            int next = last == null ? 1 : int.Parse(last.ExpenseNo.Split('-').Last()) + 1;
+
+            return $"EXP-{today}-{next:D4}";
         }
 
         [HttpGet("GetDropdown")]
@@ -336,8 +420,6 @@ namespace YLWorks.Controller
                 p.PaymentDate,
                 p.PaymentMode,
                 p.Amount,
-                p.PaidAmount,
-                p.DueAmount,
                 p.Notes,
                 p.Attachment,
                 p.Status,
@@ -349,6 +431,8 @@ namespace YLWorks.Controller
                     Balance = p.Supplier.Balance,
                     Email = p.Supplier.Email,
                     ContactNo = p.Supplier.ContactNo,
+                    FaxNo = p.Supplier.FaxNo,
+                    ACNo = p.Supplier.ACNo,
                 } : null,
                 p.ClientId,
                 Client = p.Client != null ? new Client

@@ -5,11 +5,13 @@ export interface SupplierDto extends BaseModel {
   name: string;
   contactPerson: string;
   contactNo: string;
+  faxNo: string;
   billingAddressId: string;
   billingAddress: AddressDto;
   deliveryAddressId: string;
   deliveryAddress: AddressDto;
   email: string;
+  acNo: string;
   status: string;
   balance: number;
 }

@@ -333,10 +333,10 @@ namespace YLWorks.Controller
                 return BadRequest(ModelState);
 
             var project = await _context.Projects
-    .Include(p => p.Client)
-    .Include(p => p.ProjectMembers)
-        .ThenInclude(pm => pm.User)
-    .FirstOrDefaultAsync(p => p.Id == request.Id);
+     .Include(p => p.Client)
+     .Include(p => p.ProjectMembers)
+         .ThenInclude(pm => pm.User)
+     .FirstOrDefaultAsync(p => p.Id == request.Id);
 
             if (project == null)
                 return NotFound(new { Error = "Project not found." });
@@ -394,17 +394,24 @@ namespace YLWorks.Controller
                         Id = project.Client.Id,
                         Name = project.Client.Name
                     } : null,
-                    ProjectMembers = project.ProjectMembers
-    .Select(pm => new ProjectMemberDto
+                    ProjectMembers = project.ProjectMembers?
+    .Select(pm =>
     {
-        UserId = pm.UserId,
-        User = pm.User != null ? new UserDto
+        var user = pm.User;
+
+        return new ProjectMemberDto
         {
-            FirstName = pm.User.FirstName,
-            LastName = pm.User.LastName
-        } : null
+            UserId = pm.UserId,
+            User = user == null
+                ? null
+                : new UserDto
+                {
+                    FirstName = user.FirstName ?? "",
+                    LastName = user.LastName ?? ""
+                }
+        };
     })
-    .ToList()
+    .ToList() ?? new List<ProjectMemberDto>()
                 };
 
                 // Send to SignalR clients

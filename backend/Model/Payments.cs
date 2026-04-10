@@ -14,8 +14,6 @@
         public DateTime PaymentDate { get; set; }
         public string PaymentMode { get; set; } = string.Empty; // Cash, Cheque, Bank Transfer, Paypal, Strip
         public decimal? Amount { get; set; }
-        public decimal PaidAmount { get; set; }
-        public decimal DueAmount { get; set; }
         public string? Notes { get; set; }
         public string? Attachment { get; set; }
         public string Status { get; set; } = "Pending"; // Paid, Refunded, Cancelled, Partially Paid, Overdue, Paid, Unpaid, Draft

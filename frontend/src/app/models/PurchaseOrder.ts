@@ -7,9 +7,9 @@ import { UserDto } from './User';
 
 export interface PurchaseOrderDto extends BaseModel {
   poNo: string;
-  referenceNo: string;
-  poDate: Date;
-  dueDate: Date;
+  type: string;
+  terms: string;
+  page: string;
   projectId: string;
   project: ProjectDto;
   quotationId?: string;
@@ -20,10 +20,13 @@ export interface PurchaseOrderDto extends BaseModel {
   client: ClientDto;
   poReceivedDate: Date;
   orderDate: Date;
-  discountRate: Number;
+  totalQuantity: number;
+  gross: number;
+  discount: number;
   totalAmount: number;
-  signatureName: string;
-  signatureImageUrl: string;
+  deliveryInstruction: string;
+  deliveryDate: Date;
+  remarks: string;
   createdById: string;
   createdBy: UserDto;
   status: string;
@@ -37,21 +40,23 @@ export interface PurchaseOrderDto extends BaseModel {
 export interface POItem extends BaseModel {
   purchaseOrderId: string;
   purchaseOrder: PurchaseOrderDto;
+  item: string;
   description: string;
   quantity: number;
   unit: string;
-  rate: number;
-  taxRate: number;
-  amount: number;
+  unitPrice: number;
+  discount: number;
+  totalAmount: number;
 }
 
 export interface POItemBase {
+  item: string;
   description: string;
   quantity: number;
   unit: string;
-  rate: number;
-  taxRate: number;
-  amount: number;
+  unitPrice: number;
+  discount: number;
+  totalAmount: number;
 }
 
 export interface POItemRequest extends POItemBase {}
@@ -62,24 +67,21 @@ export interface UpdatePOItemRequest extends POItemBase {
 
 export interface CreatePORequest {
   poNo: string;
-  referenceNo: string;
   quotationId: string;
+  projectId: string;
   supplierId: string;
   clientId: string;
-  poDate: Date;
-  dueDate: Date;
+  terms: string;
   poReceivedDate: Date;
-  subTotal: number;
-  tax: number;
+  page: string;
+  gross: number;
   discount: number;
   totalAmount: number;
-  isDraft: boolean;
-  description: string;
+  deliveryInstruction: string;
+  deliveryDate: Date;
   termsConditions: string;
   bankDetails: string;
-  paymentTerms: string;
-  signatureName: string;
-  signatureImageUrl: string;
+  remarks: string;
   poItems: POItemRequest[];
 }
 

@@ -195,7 +195,7 @@ namespace YLWorks.Controller
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userIdClaim)) return Unauthorized(new { Error = "Invalid token." });
 
-            if (!request.IsDraft && string.IsNullOrWhiteSpace(request.InvoiceNo))
+            if (string.IsNullOrWhiteSpace(request.InvoiceNo))
                 return BadRequest(new { Error = "Invoice Number is required for finalized records." });
 
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -205,7 +205,6 @@ namespace YLWorks.Controller
                 {
                     Id = Guid.NewGuid(),
                     InvoiceNo = request.InvoiceNo,
-                    ReferenceNo = request.ReferenceNo,
                     InvoiceDate = request.InvoiceDate, // Mapping IssueDate to QuotationDate
                     DueDate = request.DueDate,      // Mapping ValidUntil to DueDate
                     ClientId = request.ClientId,
@@ -213,11 +212,10 @@ namespace YLWorks.Controller
                     Description = request.Description,
                     TermsConditions = request.TermsConditions,
                     BankDetails = request.BankDetails,
-                    Status = request.IsDraft ? "Draft" : "Unpaid",
-                    DiscountRate = request.Discount,   // Matching your Quotation model name
+                    Status = "Draft",
+                    Gross = request.Gross,
+                    Discount = request.Discount,   // Matching your Quotation model name
                     TotalAmount = request.TotalAmount,
-                    SignatureName = request.SignatureName,
-                    SignatureImageUrl = request.SignatureImageUrl,
                     CreatedById = Guid.Parse(userIdClaim),
                     CreatedAt = DateTime.UtcNow
                 };
@@ -227,18 +225,19 @@ namespace YLWorks.Controller
                 {
                     Id = Guid.NewGuid(),
                     InvoiceId = invoice.Id,
+                    Item = i.Item,
                     Description = i.Description,
                     Quantity = i.Quantity,
-                    Rate = i.Rate,
-                    TaxRate = i.TaxRate,
-                    Amount = i.Amount,
+                    UnitPrice = i.UnitPrice,
+                    Discount = i.Discount,
+                    TotalAmount = i.TotalAmount,
                     Unit = i.Unit,
                     CreatedAt = DateTime.UtcNow
                 }).ToList();
 
                 _context.Invoices.Add(invoice);
 
-                if (!request.IsDraft && request.SupplierId.HasValue)
+                if (request.SupplierId.HasValue)
                 {
                     var supplier = await _context.Suppliers.FindAsync(request.SupplierId.Value);
                     if (supplier != null)
@@ -289,18 +288,17 @@ namespace YLWorks.Controller
                 invoice.Description = request.Description;
                 invoice.TermsConditions = request.TermsConditions;
                 invoice.BankDetails = request.BankDetails;
-                invoice.Status = request.IsDraft ? "Draft" : (invoice.PaidAmount > 0 ? "PartiallyPaid" : "Unpaid");
+                invoice.Status = invoice.Status ?? "Draft";
                 invoice.UpdatedAt = DateTime.UtcNow;
 
                 // ... [Your existing logic to sync InvoiceItems] ...
 
                 // Recalculate TotalAmount after items are synced
-                invoice.TotalAmount = invoice.InvoiceItems.Sum(x => x.Amount);
+                invoice.TotalAmount = invoice.InvoiceItems.Sum(x => x.TotalAmount);
 
                 // --- 2. CALCULATE NEW STATE ---
-                var newTotal = request.IsDraft ? 0m : invoice.TotalAmount;
                 var newSupplierId = invoice.SupplierId;
-
+                var newTotal = invoice.TotalAmount;
                 // --- 3. SYNC SUPPLIER BALANCES ---
                 // Scenario A: Same Supplier, Amount Changed
                 if (oldSupplierId == newSupplierId && newSupplierId.HasValue)
@@ -504,20 +502,19 @@ namespace YLWorks.Controller
             {
                 q.Id,
                 q.InvoiceNo,
-                q.ReferenceNo,
                 q.Description,
                 q.InvoiceDate,
                 q.DueDate,
                 q.Status,
                 q.ClientId,
                 q.SupplierId,
-                q.SignatureName,
-                q.SignatureImageUrl,
                 Supplier = q.Supplier != null ? new Supplier
                 {
                     Id = q.Supplier.Id,
                     Name = q.Supplier.Name,
                     ContactNo = q.Supplier.ContactNo,
+                    FaxNo = q.Supplier.FaxNo,
+                    ACNo = q.Supplier.ACNo,
                     Email = q.Supplier.Email,
                     ContactPerson = q.Supplier.ContactPerson, // Added for completeness
 
@@ -575,18 +572,20 @@ namespace YLWorks.Controller
                         Poscode = q.Client.DeliveryAddress.Poscode
                     } : null
                 } : null,
+                q.Gross,
                 q.TotalAmount,
                 q.PaidAmount,
-                q.DiscountRate,
+                q.Discount,
                 InvoiceItems = q.InvoiceItems.Select(i => new
                 {
                     i.Id,
+                    i.Item,
                     i.Description,
                     i.Quantity,
                     i.Unit,
-                    i.Rate,
-                    i.TaxRate,
-                    i.Amount
+                    i.UnitPrice,
+                    i.Discount,
+                    i.TotalAmount
                 }).ToList()
             };
         }
@@ -616,7 +615,6 @@ namespace YLWorks.Controller
                 {
                     Id = Guid.NewGuid(),
                     InvoiceNo = nextInvoiceNo, // Use the newly generated sequence
-                    ReferenceNo = sourceInvoice.ReferenceNo,
                     InvoiceDate = DateTime.UtcNow,
                     DueDate = DateTime.UtcNow.AddDays(14),
                     ClientId = sourceInvoice.ClientId,
@@ -625,10 +623,8 @@ namespace YLWorks.Controller
                     TermsConditions = sourceInvoice.TermsConditions,
                     BankDetails = sourceInvoice.BankDetails,
                     Status = "Draft",
-                    DiscountRate = sourceInvoice.DiscountRate,
+                    Discount = sourceInvoice.Discount,
                     TotalAmount = sourceInvoice.TotalAmount,
-                    SignatureName = null,
-                    SignatureImageUrl = null,
                     CreatedById = Guid.Parse(userIdClaim),
                     CreatedAt = DateTime.UtcNow
                 };
@@ -637,12 +633,13 @@ namespace YLWorks.Controller
                 {
                     Id = Guid.NewGuid(),
                     InvoiceId = newInvoice.Id,
+                    Item = i.Item,
                     Description = i.Description,
                     Quantity = i.Quantity,
                     Unit = i.Unit,
-                    Rate = i.Rate,
-                    TaxRate = i.TaxRate,
-                    Amount = i.Amount,
+                    UnitPrice = i.UnitPrice,
+                    Discount = i.Discount,
+                    TotalAmount = i.TotalAmount,
                     CreatedAt = DateTime.UtcNow
                 }).ToList();
 

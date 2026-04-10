@@ -192,7 +192,7 @@ namespace YLWorks.Controller
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userIdClaim)) return Unauthorized(new { Error = "Invalid token." });
 
-            if (!request.IsDraft && string.IsNullOrWhiteSpace(request.PONo))
+            if (string.IsNullOrWhiteSpace(request.PONo))
                 return BadRequest(new { Error = "PO Number is required for finalized records." });
 
             try
@@ -201,22 +201,22 @@ namespace YLWorks.Controller
                 {
                     Id = Guid.NewGuid(),
                     PONo = request.PONo,
-                    ReferenceNo = request.ReferenceNo,
                     QuotationId = request.QuotationId,
-                    PODate = request.PODate, // Mapping IssueDate to QuotationDate
-                    DueDate = request.DueDate,      // Mapping ValidUntil to DueDate
                     POReceivedDate = request.POReceivedDate,
+                    Terms = request.Terms,
+                    ProjectId = request.ProjectId,
                     SupplierId = request.SupplierId ?? null,
                     ClientId = request.ClientId ?? null,
-                    Description = request.Description,
+                    DeliveryInstruction = request.DeliveryInstruction,
+                    DeliveryDate = request.DeliveryDate,
                     TermsConditions = request.TermsConditions,
                     BankDetails = request.BankDetails,
-                    Status = request.ClientId.HasValue ? "Received" : "Open",
-                    DiscountRate = request.Discount,   // Matching your Quotation model name
+                    Status = request.ClientId.HasValue ? "Received" : "Draft",
+                    Gross = request.Gross,
+                    Discount = request.Discount,   // Matching your Quotation model name
                     TotalAmount = request.TotalAmount,
-                    SignatureName = request.SignatureName,
-                    SignatureImageUrl = request.SignatureImageUrl,
-                    PaymentTerms = request.PaymentTerms,
+                    TotalQuantity = request.TotalQuantity,
+                    Remarks = request.Remarks,
                     CreatedById = Guid.Parse(userIdClaim),
                     CreatedAt = DateTime.UtcNow
                 };
@@ -226,11 +226,12 @@ namespace YLWorks.Controller
                 {
                     Id = Guid.NewGuid(),
                     PurchaseOrderId = po.Id,
+                    Item = i.Item,
                     Description = i.Description,
                     Quantity = i.Quantity,
-                    Rate = i.Rate,
-                    TaxRate = i.TaxRate,
-                    Amount = i.Amount,
+                    UnitPrice = i.UnitPrice,
+                    Discount = i.Discount,
+                    TotalAmount = i.TotalAmount,
                     Unit = i.Unit,
                     CreatedAt = DateTime.UtcNow
                 }).ToList();
@@ -265,40 +266,50 @@ namespace YLWorks.Controller
 
             try
             {
-                // Update main quotation fields
+                // =========================
+                // UPDATE HEADER
+                // =========================
                 po.PONo = request.PONo ?? po.PONo;
                 po.SupplierId = request.SupplierId != Guid.Empty ? request.SupplierId : po.SupplierId;
-                po.PODate = request.PODate;
-                po.DueDate = request.DueDate;
-                po.Description = request.Description ?? po.Description;
+                po.POReceivedDate = request.POReceivedDate ?? po.POReceivedDate;
+                po.DeliveryInstruction = request.DeliveryInstruction ?? po.DeliveryInstruction;
+                po.DeliveryDate = request.DeliveryDate ?? po.DeliveryDate;
+                po.Terms = request.Terms ?? po.Terms;
+                po.Page = request.Page ?? po.Page;
+                po.Remarks = request.Remarks ?? po.Remarks;
                 po.TermsConditions = request.TermsConditions ?? po.TermsConditions;
                 po.BankDetails = request.BankDetails ?? po.BankDetails;
-                po.DiscountRate = request.Discount;
-                po.TotalAmount = request.TotalAmount;
-                po.SignatureName = request.SignatureName;
-                po.SignatureImageUrl = request.SignatureImageUrl;
+                po.Discount = request.Discount ?? po.Discount;
                 po.UpdatedAt = DateTime.UtcNow;
 
+                // =========================
+                // MAP REQUEST ITEMS SAFELY
+                // =========================
+                var requestItems = request.POItems?
+                    .Select(p => new UpdatePOItemRequest
+                    {
+                        Id = p.Id,
+                        Item = p.Item,
+                        Description = p.Description,
+                        Quantity = p.Quantity,
+                        UnitPrice = p.UnitPrice,
+                        Unit = p.Unit,
+                        Discount = (decimal)(p.Discount),
+                        TotalAmount = p.TotalAmount
+                    })
+                    .ToList() ?? new List<UpdatePOItemRequest>();
 
-                var requestItems = request.POItems?.Select(p => new UpdatePOItemRequest
-                {
-                    // Map properties here, e.g.,
-                    Description = p.Description,
-                    TaxRate = p.TaxRate,
-                    Rate = p.Rate,
-                    Amount = p.Amount,
-                    Unit = p.Unit,
-                    Quantity = p.Quantity
-                }).ToList() ?? new List<UpdatePOItemRequest>();
-
+                // =========================
+                // COLLECT VALID ITEM IDS
+                // =========================
                 var requestItemIds = requestItems
                     .Where(i => i.Id.HasValue && i.Id.Value != Guid.Empty)
-                    .Select(i => i.Id!.Value)
-                    .ToList();
+                    .Select(i => i.Id.Value)
+                    .ToHashSet();
 
-                // -------------------------
-                // REMOVE items not in request
-                // -------------------------
+                // =========================
+                // REMOVE ITEMS NOT IN REQUEST
+                // =========================
                 var itemsToRemove = po.POItems
                     .Where(dbItem => !requestItemIds.Contains(dbItem.Id))
                     .ToList();
@@ -308,39 +319,55 @@ namespace YLWorks.Controller
                     _context.POItems.Remove(item);
                 }
 
-                // -------------------------
-                // ADD or UPDATE items
-                // -------------------------
+                // =========================
+                // ADD / UPDATE ITEMS
+                // =========================
                 foreach (var itemReq in requestItems)
                 {
-                    // UPDATE EXISTING
+                    // UPDATE EXISTING ITEM
                     if (itemReq.Id.HasValue && itemReq.Id.Value != Guid.Empty)
                     {
                         var existing = po.POItems
                             .FirstOrDefault(i => i.Id == itemReq.Id.Value);
 
                         if (existing == null)
-                            continue; // skip if already deleted
+                            continue;
 
+                        existing.Item = itemReq.Item;
                         existing.Description = itemReq.Description;
                         existing.Quantity = itemReq.Quantity;
-                        existing.Rate = itemReq.Rate;
-                        existing.TaxRate = itemReq.TaxRate;
-                        existing.Amount = itemReq.Amount;
+                        existing.UnitPrice = itemReq.UnitPrice;
+                        existing.Unit = itemReq.Unit;
+                        existing.Discount = itemReq.Discount;
+
+                        // =========================
+                        // RECALCULATE TOTAL
+                        // =========================
+                        var subTotal = itemReq.Quantity * itemReq.UnitPrice;
+                        existing.TotalAmount =
+                            subTotal - (subTotal * (itemReq.Discount / 100));
+
                         existing.UpdatedAt = DateTime.UtcNow;
                     }
                     else
                     {
                         // ADD NEW ITEM
+                        var subTotal = itemReq.Quantity * itemReq.UnitPrice;
+
                         var newItem = new POItem
                         {
                             Id = Guid.NewGuid(),
                             PurchaseOrderId = po.Id,
+                            Item = itemReq.Item,
                             Description = itemReq.Description,
                             Quantity = itemReq.Quantity,
-                            Rate = itemReq.Rate,
-                            TaxRate = itemReq.TaxRate,
-                            Amount = itemReq.Amount,
+                            UnitPrice = itemReq.UnitPrice,
+                            Unit = itemReq.Unit,
+                            Discount = itemReq.Discount,
+
+                            TotalAmount =
+                                subTotal - (subTotal * (itemReq.Discount / 100)),
+
                             CreatedAt = DateTime.UtcNow
                         };
 
@@ -348,16 +375,23 @@ namespace YLWorks.Controller
                     }
                 }
 
+                // =========================
+                // FINAL TOTAL (SAFE)
+                // =========================
+                po.TotalAmount = po.POItems.Sum(x => x.TotalAmount);
+
                 await _context.SaveChangesAsync();
 
-                // Notify via SignalR
+                // =========================
+                // SIGNALR NOTIFY
+                // =========================
                 await _hub.Clients.All.SendAsync("PurchaseOrderUpdated", po);
 
                 return Ok(po);
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { Error = "Failed to update purchase order." });
+                return StatusCode(500, new { Error = "Failed to update purchase order.", Details = ex.Message });
             }
         }
 
@@ -415,13 +449,14 @@ namespace YLWorks.Controller
             return Ok(new
             {
                 PONo = request.PONo ?? "DRAFT",
-                PODate = request.PODate,
-                DueDate = request.DueDate,
-                Description = request.Description,
+                POReceivedDate = request.POReceivedDate,
+                Terms = request.Terms,
+                DeliveryInstruction = request.DeliveryInstruction,
+                DeliveryDate = request.DeliveryDate,
+                Remarks = request.Remarks,
                 TermsConditions = request.TermsConditions,
                 BankDetails = request.BankDetails,
-                SubTotal = request.SubTotal,
-                Tax = request.Tax,
+                Gross = request.Gross,
                 Discount = request.Discount,
                 TotalAmount = request.TotalAmount,
 
@@ -438,12 +473,13 @@ namespace YLWorks.Controller
                 } : null,
 
                 POItems = request.POItems.Select(i => new {
+                    i.Item,
                     i.Description,
                     i.Quantity,
-                    i.Rate,
+                    i.UnitPrice,
                     i.Unit,
-                    i.TaxRate,
-                    i.Amount
+                    i.Discount,
+                    i.TotalAmount
                 })
             });
         }
@@ -454,12 +490,16 @@ namespace YLWorks.Controller
             {
                 q.Id,
                 q.PONo,
-                q.ReferenceNo,
+                q.ProjectId,
+                q.Project,
                 q.Description,
                 q.TermsConditions,
                 q.BankDetails,
-                q.PODate,
-                q.DueDate,
+                q.Remarks,
+                q.DeliveryInstruction,
+                q.DeliveryDate,
+                q.POReceivedDate,
+                q.Terms,
                 q.Status,
                 q.SupplierId,
                 q.ClientId,
@@ -494,15 +534,14 @@ namespace YLWorks.Controller
                         Poscode = q.Client.DeliveryAddress.Poscode
                     } : null
                 } : null,
-
-                q.SignatureName,
-                q.SignatureImageUrl,
                 Supplier = q.Supplier != null ? new Supplier
                 {
                     Id = q.SupplierId ?? Guid.Empty,
                     Name = q.Supplier.Name,
                     ContactNo = q.Supplier.ContactNo,
+                    FaxNo = q.Supplier.FaxNo,
                     Email = q.Supplier.Email,
+                    ACNo = q.Supplier.ACNo,
                     ContactPerson = q.Supplier.ContactPerson, // Added for completeness
 
                     // Project the new structured addresses
@@ -528,19 +567,23 @@ namespace YLWorks.Controller
                         Poscode = q.Supplier.DeliveryAddress.Poscode
                     } : null
                 } : null,
+                q.Gross,
                 q.TotalAmount,
-                q.DiscountRate,
-                POItems = q.POItems.Select(i => new
-                {
-                    i.Id,
-                    i.Description,
-                    i.Quantity,
-                    i.Unit,
-                    i.Rate,
-                    i.TaxRate,
-                    i.Amount
-                }).ToList()
-            };
+                q.Discount,
+                POItems = q.POItems?
+    .Select(i => new
+    {
+        i.Id,
+        i.Item,
+        i.Description,
+        i.Quantity,
+        i.Unit,
+        i.UnitPrice,
+        i.Discount,
+        i.TotalAmount
+    })
+    .ToList()
+        };
         }
 
 

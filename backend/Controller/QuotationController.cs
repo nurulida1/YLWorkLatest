@@ -204,18 +204,16 @@ namespace YLWorks.Controller
                 {
                     Id = Guid.NewGuid(),
                     QuotationNo = request.QuotationNo,
-                    ReferenceNo = request.ReferenceNo,
                     QuotationDate = request.QuotationDate, // Mapping IssueDate to QuotationDate
                     DueDate = request.DueDate,      // Mapping ValidUntil to DueDate
                     ClientId = request.ClientId,
                     Description = request.Description,
                     TermsConditions = request.TermsConditions,
                     BankDetails = request.BankDetails,
-                    Status = request.IsDraft ? "Draft" : "Open",
-                    DiscountRate = request.Discount,   // Matching your Quotation model name
+                    Status = "Draft",
+                    Gross = request.Gross,
+                    Discount = request.Discount,   // Matching your Quotation model name
                     TotalAmount = request.TotalAmount,
-                    SignatureName = request.SignatureName,
-                    SignatureImageUrl = request.SignatureImageUrl,
                     CreatedById = Guid.Parse(userIdClaim),
                     CreatedAt = DateTime.UtcNow
                 };
@@ -225,11 +223,12 @@ namespace YLWorks.Controller
                 {
                     Id = Guid.NewGuid(),
                     QuotationId = quotation.Id,
+                    Item = i.Item,
                     Description = i.Description,
                     Quantity = i.Quantity,
-                    Rate = i.Rate,
-                    TaxRate = i.TaxRate,
-                    Amount = i.Amount,
+                    UnitPrice = i.UnitPrice,
+                    Discount = i.Discount,
+                    TotalAmount = i.TotalAmount,
                     Unit = i.Unit,
                     CreatedAt = DateTime.UtcNow
                 }).ToList();
@@ -273,11 +272,10 @@ namespace YLWorks.Controller
                 quotation.TermsConditions = request.TermsConditions;
                 quotation.BankDetails = request.BankDetails;
                 quotation.ClientId = request.ClientId;
-                quotation.DiscountRate = request.Discount;
+                quotation.Gross = request.Gross;
+                quotation.Discount = request.Discount;
                 quotation.TotalAmount = request.TotalAmount;
-                quotation.Status = request.IsDraft ? "Draft" : "Open";
-                quotation.SignatureName = request.SignatureName;
-                quotation.SignatureImageUrl = request.SignatureImageUrl;
+                quotation.Status = "Draft";
                 quotation.UpdatedAt = DateTime.UtcNow;
 
                 // =========================
@@ -317,11 +315,13 @@ namespace YLWorks.Controller
                         if (existing == null)
                             continue; // skip if already deleted
 
+                        existing.Item = itemReq.Item;
                         existing.Description = itemReq.Description;
                         existing.Quantity = itemReq.Quantity;
-                        existing.Rate = itemReq.Rate;
-                        existing.TaxRate = itemReq.TaxRate;
-                        existing.Amount = itemReq.Amount;
+                        existing.UnitPrice = itemReq.UnitPrice;
+                        existing.Unit = itemReq.Unit;
+                        existing.Discount = itemReq.Discount;
+                        existing.TotalAmount = itemReq.TotalAmount;
                         existing.UpdatedAt = DateTime.UtcNow;
                     }
                     else
@@ -331,11 +331,13 @@ namespace YLWorks.Controller
                         {
                             Id = Guid.NewGuid(),
                             QuotationId = quotation.Id,
+                            Item = itemReq.Item,
                             Description = itemReq.Description,
                             Quantity = itemReq.Quantity,
-                            Rate = itemReq.Rate,
-                            TaxRate = itemReq.TaxRate,
-                            Amount = itemReq.Amount,
+                            UnitPrice = itemReq.UnitPrice,
+                            Unit = itemReq.Unit,
+                            Discount = itemReq.Discount,
+                            TotalAmount = itemReq.TotalAmount,
                             CreatedAt = DateTime.UtcNow
                         };
 
@@ -388,8 +390,7 @@ namespace YLWorks.Controller
                 Description = request.Description,
                 TermsConditions = request.TermsConditions,
                 BankDetails = request.BankDetails,
-                SubTotal = request.SubTotal,
-                Tax = request.Tax,
+                Gross = request.Gross,
                 Discount = request.Discount,
                 TotalAmount = request.TotalAmount,
 
@@ -406,12 +407,13 @@ namespace YLWorks.Controller
                 } : null,
 
                 Items = request.Items.Select(i => new {
+                    i.Item,
                     i.Description,
                     i.Quantity,
-                    i.Rate,
                     i.Unit,
-                    i.TaxRate,
-                    i.Amount
+                    i.UnitPrice,
+                    i.Discount,
+                    i.TotalAmount
                 })
             });
         }
@@ -422,7 +424,6 @@ namespace YLWorks.Controller
             {
                 q.Id,
                 q.QuotationNo,
-                q.ReferenceNo,
                 q.Description,
                 q.TermsConditions,
                 q.BankDetails,
@@ -430,8 +431,6 @@ namespace YLWorks.Controller
                 q.DueDate,
                 q.Status,
                 q.ClientId,
-                q.SignatureName,
-                q.SignatureImageUrl,
                 Client = q.Client != null ? new Client
                 {
                     Id = q.ClientId,
@@ -463,17 +462,19 @@ namespace YLWorks.Controller
                         Poscode = q.Client.DeliveryAddress.Poscode
                     } : null
                 } : null,
+                q.Gross,
                 q.TotalAmount,
-                q.DiscountRate,
+                q.Discount,
                 Items = q.Items.Select(i => new
                 {
                     i.Id,
+                    i.Item,
                     i.Description,
                     i.Quantity,
                     i.Unit,
-                    i.Rate,
-                    i.TaxRate,
-                    i.Amount
+                    i.UnitPrice,
+                    i.Discount,
+                    i.TotalAmount
                 }).ToList()
             };
         }
@@ -489,7 +490,7 @@ namespace YLWorks.Controller
             if (quotation == null) return NotFound();
 
             string current = quotation.Status;
-            string next = request.Status;
+            string next = request.Status ?? "Draft";
 
             // 2. Define Allowed Transitions
             bool isValidTransition = (current, next) switch
@@ -523,22 +524,11 @@ namespace YLWorks.Controller
             // Inside UpdateStatus method
             try
             {
-                if (next == "Pending Signature")
-                {
-                    if (!request.AssignedUserId.HasValue)
-                        return BadRequest(new { Error = "A Director must be selected." });
-
-                    quotation.AssignedToId = request.AssignedUserId;
-                }
-                else if (next == "Draft")
-                {
-                    // Clear assignment if we go back to the drawing board
-                    quotation.AssignedToId = null;
-                }
+                
                 // Note: We leave the AssignedToId as-is for "Signed", "Sent", "Accepted" 
                 // so we know exactly who approved this version.
 
-                quotation.Status = next;
+                quotation.Status = next!;
                 quotation.UpdatedAt = DateTime.UtcNow;
 
                 await _context.SaveChangesAsync();
@@ -553,38 +543,6 @@ namespace YLWorks.Controller
             {
                 return StatusCode(500, new { Error = "Update failed", Details = ex.Message });
             }
-        }
-
-        [HttpPatch("SubmitSignature")]
-        public async Task<IActionResult> SubmitSignature([FromBody] SubmitSignatureRequest request)
-        {
-            var quotation = await _context.Quotations.FindAsync(request.QuotationId);
-            if (quotation == null) return NotFound();
-
-            var userName = User.Identity?.Name;
-
-            var firstName = User.FindFirst("FirstName")?.Value;
-            var lastName = User.FindFirst("LastName")?.Value;
-            var fullName = !string.IsNullOrEmpty(firstName) ? $"{firstName} {lastName}" : userName;
-
-            // 1. Update the signature data
-            quotation.SignatureImageUrl = request.SignatureImageUrl;
-            quotation.SignatureName = fullName ?? "Authorized Director"; // Fallback if claim is missing
-            quotation.SignedAt = DateTime.UtcNow;
-
-            // 2. AUTO-UPDATE STATUS
-            // If it was pending, it is now officially 'Signed'
-            if (quotation.Status == "Pending Signature")
-            {
-                quotation.Status = "Signed";
-            }
-
-            await _context.SaveChangesAsync();
-
-            // Broadcast update so the Admin's table refreshes automatically
-            await _hub.Clients.All.SendAsync("QuotationStatusChanged", MapToDto(quotation));
-
-            return Ok();
         }
 
         [HttpDelete("Delete")]
@@ -866,31 +824,21 @@ namespace YLWorks.Controller
                     .Select(q => q.QuotationNo)
                     .FirstOrDefaultAsync();
 
-                var lastRef = await _context.Quotations
-                    .OrderByDescending(q => q.CreatedAt)
-                    .Select(q => q.ReferenceNo)
-                    .FirstOrDefaultAsync();
-
                 string newQuotationNo = IncrementStringNumber(lastQuote ?? source.QuotationNo);
-                string newReferenceNo = IncrementStringNumber(lastRef ?? source.ReferenceNo);
 
                 // 3. Create New Quotation Object
                 var clonedQuotation = new Quotation
                 {
                     Id = Guid.NewGuid(),
                     QuotationNo = newQuotationNo,
-                    ReferenceNo = newReferenceNo,
                     QuotationDate = DateTime.UtcNow,
                     DueDate = DateTime.UtcNow.AddDays(14), // Default to 14 days or use source logic
                     ClientId = source.ClientId,
                     Description = source.Description,
                     Status = "Draft", // Always start clones as Draft
-                    DiscountRate = source.DiscountRate,
+                    Gross = source.Gross,
+                    Discount = source.Discount,
                     TotalAmount = source.TotalAmount,
-
-                    // Explicitly excluding signatures as requested
-                    SignatureName = null,
-                    SignatureImageUrl = null,
 
                     CreatedById = Guid.Parse(userIdClaim),
                     CreatedAt = DateTime.UtcNow
@@ -901,12 +849,13 @@ namespace YLWorks.Controller
                 {
                     Id = Guid.NewGuid(),
                     QuotationId = clonedQuotation.Id,
+                    Item = i.Item,
                     Description = i.Description,
                     Quantity = i.Quantity,
                     Unit = i.Unit,
-                    Rate = i.Rate,
-                    TaxRate = i.TaxRate,
-                    Amount = i.Amount,
+                    UnitPrice = i.UnitPrice,
+                    Discount = i.Discount,
+                    TotalAmount = i.TotalAmount,
                     CreatedAt = DateTime.UtcNow
                 }).ToList();
 
@@ -958,12 +907,11 @@ namespace YLWorks.Controller
             {
                 Id = Guid.NewGuid(),
                 InvoiceNo = newInvoiceNo,
-                ReferenceNo = source.QuotationNo,
                 ClientId = source.ClientId,
                 InvoiceDate = DateTime.UtcNow,
                 DueDate = DateTime.UtcNow.AddDays(30),
                 // Round the total amount
-                TotalAmount = Math.Round(source.TotalAmount, 2),
+                TotalAmount = Math.Round(source.TotalAmount ?? 0m, 2),
                 Status = "Unpaid",
                 CreatedById = currentUserId,
                 CreatedAt = DateTime.UtcNow
@@ -971,11 +919,14 @@ namespace YLWorks.Controller
 
             invoice.InvoiceItems = source.Items.Select(i => new InvoiceItem
             {
+                Item = i.Item,
                 Description = i.Description,
                 Quantity = i.Quantity,
                 // Round the rate and the line item amount
-                Rate = Math.Round(i.Rate, 2),
-                Amount = Math.Round(i.Amount, 2)
+                Unit = i.Unit,
+                UnitPrice = Math.Round(i.UnitPrice, 2),
+                Discount = Math.Round(i.Discount ?? 0m, 2),
+                TotalAmount = Math.Round(i.TotalAmount, 2)
             }).ToList();
 
             _context.Invoices.Add(invoice);
@@ -996,19 +947,21 @@ namespace YLWorks.Controller
             {
                 Id = Guid.NewGuid(),
                 PONo = newPoNo,
-                ReferenceNo = source.QuotationNo,
-                PODate = DateTime.UtcNow,
-                Status = "Pending",
+                POReceivedDate = DateTime.UtcNow,
+                Status = "ConvertedToPO",
                 TotalAmount = source.TotalAmount,
                 CreatedAt = DateTime.UtcNow
             };
 
             po.POItems = source.Items.Select(i => new POItem
             {
+                Item = i.Item,
                 Description = i.Description,
                 Quantity = i.Quantity,
-                Rate = i.Rate,
-                Amount = i.Amount
+                Unit = i.Unit,
+                UnitPrice = i.UnitPrice,
+                Discount = i.Discount,
+                TotalAmount = i.TotalAmount
             }).ToList();
 
             _context.PurchaseOrders.Add(po);

@@ -15,7 +15,7 @@
         public string? Purpose { get; set; }
         public DateTime? RequestDate { get; set; }
         public Guid RequestedById { get; set; }
-        public User RequestedBy {  get; set; }
+        public User RequestedBy { get; set; } = null!;
         public string Status { get; set; } = "Draft"; // Draft, PendingApproval, Approved, Rejected, Issued, Partial, Completed
         public string? Remarks { get; set; }
         public Guid? ApprovedById { get; set; }

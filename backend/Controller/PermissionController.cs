@@ -175,7 +175,7 @@ namespace YLWorks.Controller
                     TotalElements
                 });
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return StatusCode(500, new { Error = "An unexpected error occured." });
             }
@@ -205,7 +205,7 @@ namespace YLWorks.Controller
 
                 return Ok(permission);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return StatusCode(500, new { Error = "Failed to add permission." });
             }
@@ -232,7 +232,7 @@ namespace YLWorks.Controller
 
                 return Ok(existingPermission);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return StatusCode(500, new { Error = "Failed to update permission." });
             }

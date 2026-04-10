@@ -334,6 +334,9 @@ namespace YLWorks.Migrations
                         .IsRequired()
                         .HasColumnType("longtext");
 
+                    b.Property<Guid?>("PaymentId")
+                        .HasColumnType("char(36)");
+
                     b.Property<string>("PaymentMode")
                         .IsRequired()
                         .HasColumnType("longtext");
@@ -399,6 +402,9 @@ namespace YLWorks.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("varchar(50)");
 
+                    b.Property<Guid?>("PaymentId")
+                        .HasColumnType("char(36)");
+
                     b.Property<string>("PaymentMode")
                         .IsRequired()
                         .HasColumnType("longtext");
@@ -432,11 +438,14 @@ namespace YLWorks.Migrations
                     b.Property<string>("Description")
                         .HasColumnType("longtext");
 
-                    b.Property<decimal>("DiscountRate")
+                    b.Property<decimal?>("Discount")
                         .HasColumnType("decimal(65,30)");
 
                     b.Property<DateTime>("DueDate")
                         .HasColumnType("datetime(6)");
+
+                    b.Property<decimal>("Gross")
+                        .HasColumnType("decimal(65,30)");
 
                     b.Property<DateTime>("InvoiceDate")
                         .HasColumnType("datetime(6)");
@@ -461,16 +470,7 @@ namespace YLWorks.Migrations
                     b.Property<Guid?>("QuotationId")
                         .HasColumnType("char(36)");
 
-                    b.Property<string>("ReferenceNo")
-                        .HasColumnType("longtext");
-
                     b.Property<string>("Remarks")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("SignatureImageUrl")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("SignatureName")
                         .HasColumnType("longtext");
 
                     b.Property<string>("Status")
@@ -512,9 +512,6 @@ namespace YLWorks.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("char(36)");
 
-                    b.Property<decimal>("Amount")
-                        .HasColumnType("decimal(18,2)");
-
                     b.Property<DateTime?>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
@@ -522,21 +519,28 @@ namespace YLWorks.Migrations
                         .IsRequired()
                         .HasColumnType("longtext");
 
+                    b.Property<decimal>("Discount")
+                        .HasColumnType("decimal(65,30)");
+
                     b.Property<Guid>("InvoiceId")
                         .HasColumnType("char(36)");
+
+                    b.Property<string>("Item")
+                        .IsRequired()
+                        .HasColumnType("longtext");
 
                     b.Property<int>("Quantity")
                         .HasColumnType("int");
 
-                    b.Property<decimal>("Rate")
-                        .HasColumnType("decimal(65,30)");
-
-                    b.Property<decimal>("TaxRate")
-                        .HasColumnType("decimal(65,30)");
+                    b.Property<decimal>("TotalAmount")
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("Unit")
                         .IsRequired()
                         .HasColumnType("longtext");
+
+                    b.Property<decimal>("UnitPrice")
+                        .HasColumnType("decimal(65,30)");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime(6)");
@@ -851,13 +855,17 @@ namespace YLWorks.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("char(36)");
 
-                    b.Property<decimal>("Amount")
-                        .HasColumnType("decimal(65,30)");
-
                     b.Property<DateTime?>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
                     b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<decimal?>("Discount")
+                        .HasColumnType("decimal(65,30)");
+
+                    b.Property<string>("Item")
                         .IsRequired()
                         .HasColumnType("longtext");
 
@@ -867,15 +875,15 @@ namespace YLWorks.Migrations
                     b.Property<int>("Quantity")
                         .HasColumnType("int");
 
-                    b.Property<decimal>("Rate")
-                        .HasColumnType("decimal(65,30)");
-
-                    b.Property<decimal>("TaxRate")
+                    b.Property<decimal>("TotalAmount")
                         .HasColumnType("decimal(65,30)");
 
                     b.Property<string>("Unit")
                         .IsRequired()
                         .HasColumnType("longtext");
+
+                    b.Property<decimal>("UnitPrice")
+                        .HasColumnType("decimal(65,30)");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime(6)");
@@ -928,17 +936,11 @@ namespace YLWorks.Migrations
                     b.Property<DateTime?>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<decimal>("DueAmount")
-                        .HasColumnType("decimal(65,30)");
-
                     b.Property<Guid?>("InvoiceId")
                         .HasColumnType("char(36)");
 
                     b.Property<string>("Notes")
                         .HasColumnType("longtext");
-
-                    b.Property<decimal>("PaidAmount")
-                        .HasColumnType("decimal(65,30)");
 
                     b.Property<DateTime>("PaymentDate")
                         .HasColumnType("datetime(6)");
@@ -1170,19 +1172,22 @@ namespace YLWorks.Migrations
                     b.Property<Guid>("CreatedById")
                         .HasColumnType("char(36)");
 
+                    b.Property<DateTime?>("DeliveryDate")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("DeliveryInstruction")
+                        .HasColumnType("longtext");
+
                     b.Property<string>("Description")
                         .HasColumnType("longtext");
 
-                    b.Property<decimal?>("DiscountRate")
+                    b.Property<decimal?>("Discount")
                         .HasColumnType("decimal(65,30)");
 
-                    b.Property<DateTime?>("DueDate")
-                        .HasColumnType("datetime(6)");
+                    b.Property<decimal?>("Gross")
+                        .HasColumnType("decimal(65,30)");
 
                     b.Property<DateTime?>("OrderDate")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<DateTime>("PODate")
                         .HasColumnType("datetime(6)");
 
                     b.Property<string>("PONo")
@@ -1191,6 +1196,9 @@ namespace YLWorks.Migrations
 
                     b.Property<DateTime?>("POReceivedDate")
                         .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Page")
+                        .HasColumnType("longtext");
 
                     b.Property<string>("PaymentTerms")
                         .HasColumnType("longtext");
@@ -1201,13 +1209,7 @@ namespace YLWorks.Migrations
                     b.Property<Guid?>("QuotationId")
                         .HasColumnType("char(36)");
 
-                    b.Property<string>("ReferenceNo")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("SignatureImageUrl")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("SignatureName")
+                    b.Property<string>("Remarks")
                         .HasColumnType("longtext");
 
                     b.Property<string>("Status")
@@ -1217,11 +1219,17 @@ namespace YLWorks.Migrations
                     b.Property<Guid?>("SupplierId")
                         .HasColumnType("char(36)");
 
+                    b.Property<string>("Terms")
+                        .HasColumnType("longtext");
+
                     b.Property<string>("TermsConditions")
                         .HasColumnType("longtext");
 
-                    b.Property<decimal>("TotalAmount")
+                    b.Property<decimal?>("TotalAmount")
                         .HasColumnType("decimal(65,30)");
+
+                    b.Property<int?>("TotalQuantity")
+                        .HasColumnType("int");
 
                     b.Property<int>("Type")
                         .HasColumnType("int");
@@ -1250,9 +1258,6 @@ namespace YLWorks.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("char(36)");
 
-                    b.Property<Guid?>("AssignedToId")
-                        .HasColumnType("char(36)");
-
                     b.Property<string>("BankDetails")
                         .HasColumnType("longtext");
 
@@ -1268,11 +1273,14 @@ namespace YLWorks.Migrations
                     b.Property<string>("Description")
                         .HasColumnType("longtext");
 
-                    b.Property<decimal>("DiscountRate")
+                    b.Property<decimal?>("Discount")
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<DateTime>("DueDate")
                         .HasColumnType("datetime(6)");
+
+                    b.Property<decimal>("Gross")
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<Guid?>("ProjectId")
                         .HasColumnType("char(36)");
@@ -1284,18 +1292,6 @@ namespace YLWorks.Migrations
                         .IsRequired()
                         .HasColumnType("longtext");
 
-                    b.Property<string>("ReferenceNo")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("SignatureImageUrl")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("SignatureName")
-                        .HasColumnType("longtext");
-
-                    b.Property<DateTime?>("SignedAt")
-                        .HasColumnType("datetime(6)");
-
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasColumnType("longtext");
@@ -1303,15 +1299,13 @@ namespace YLWorks.Migrations
                     b.Property<string>("TermsConditions")
                         .HasColumnType("longtext");
 
-                    b.Property<decimal>("TotalAmount")
+                    b.Property<decimal?>("TotalAmount")
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime(6)");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("AssignedToId");
 
                     b.HasIndex("ClientId");
 
@@ -1328,13 +1322,17 @@ namespace YLWorks.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("char(36)");
 
-                    b.Property<decimal>("Amount")
-                        .HasColumnType("decimal(65,30)");
-
                     b.Property<DateTime?>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
                     b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<decimal?>("Discount")
+                        .HasColumnType("decimal(65,30)");
+
+                    b.Property<string>("Item")
                         .IsRequired()
                         .HasColumnType("longtext");
 
@@ -1344,15 +1342,15 @@ namespace YLWorks.Migrations
                     b.Property<Guid>("QuotationId")
                         .HasColumnType("char(36)");
 
-                    b.Property<decimal>("Rate")
-                        .HasColumnType("decimal(65,30)");
-
-                    b.Property<decimal>("TaxRate")
+                    b.Property<decimal>("TotalAmount")
                         .HasColumnType("decimal(65,30)");
 
                     b.Property<string>("Unit")
                         .IsRequired()
                         .HasColumnType("longtext");
+
+                    b.Property<decimal>("UnitPrice")
+                        .HasColumnType("decimal(65,30)");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime(6)");
@@ -1391,6 +1389,9 @@ namespace YLWorks.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("char(36)");
 
+                    b.Property<string>("ACNo")
+                        .HasColumnType("longtext");
+
                     b.Property<double?>("Balance")
                         .HasColumnType("double");
 
@@ -1410,6 +1411,9 @@ namespace YLWorks.Migrations
                         .HasColumnType("char(36)");
 
                     b.Property<string>("Email")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("FaxNo")
                         .HasColumnType("longtext");
 
                     b.Property<string>("Name")
@@ -1920,10 +1924,6 @@ namespace YLWorks.Migrations
 
             modelBuilder.Entity("YLWorks.Model.Quotation", b =>
                 {
-                    b.HasOne("YLWorks.Model.User", "AssignedTo")
-                        .WithMany()
-                        .HasForeignKey("AssignedToId");
-
                     b.HasOne("YLWorks.Model.Client", "Client")
                         .WithMany()
                         .HasForeignKey("ClientId")
@@ -1939,8 +1939,6 @@ namespace YLWorks.Migrations
                     b.HasOne("YLWorks.Model.Project", "Project")
                         .WithMany("Quotations")
                         .HasForeignKey("ProjectId");
-
-                    b.Navigation("AssignedTo");
 
                     b.Navigation("Client");
 

@@ -4,7 +4,6 @@
     {
         public Guid Id { get; set; }
         public string InvoiceNo { get; set; } = string.Empty;
-        public string? ReferenceNo { get; set; }
         public Guid? ProjectId { get; set; }
         public Project? Project { get; set; }
         public Guid? ClientId { get; set; }
@@ -20,12 +19,10 @@
         public string? Remarks { get; set; }
         public string Status { get; set; } = "Draft";  // Paid, Overdue, Upcoming, Cancelled, Partially Paid, Unpaid, Refunded, Draft
 
-        public decimal DiscountRate { get; set; }
+        public decimal? Discount { get; set; }
+        public decimal Gross { get; set; }
         public decimal TotalAmount { get; set; }
         public decimal? PaidAmount { get; set; }
-
-        public string? SignatureName { get; set; }
-        public string? SignatureImageUrl { get; set; }
 
         public string? Description { get; set; }
         public string? TermsConditions { get; set; }
@@ -47,22 +44,24 @@
         public Guid InvoiceId { get; set; }
         public Invoice Invoice { get; set; }
 
+        public string Item { get; set; }
         public string Description { get; set; } = string.Empty;
         public int Quantity { get; set; }
         public string Unit { get; set; } = "Unit";
-        public decimal Rate { get; set; }
-        public decimal TaxRate { get; set; } // Percentage
-        public decimal Amount { get; set; }
+        public decimal UnitPrice { get; set; }
+        public decimal Discount { get; set; } // Percentage
+        public decimal TotalAmount { get; set; }
     }
 
     public class InvoiceItemBase
     {
+        public string Item { get; set; }
         public string Description { get; set; } = string.Empty;
         public int Quantity { get; set; }
         public string Unit { get; set; } = "Unit";
-        public decimal Rate { get; set; }
-        public decimal TaxRate { get; set; }
-        public decimal Amount { get; set; }
+        public decimal UnitPrice { get; set; }
+        public decimal Discount { get; set; }
+        public decimal TotalAmount { get; set; }
     }
 
     // Used for Create: No ID needed as all items are new
@@ -77,26 +76,17 @@
     public class CreateInvoiceRequest
     {
         public string InvoiceNo { get; set; } = string.Empty;
-        public string ReferenceNo { get; set; }
         public Guid? ClientId { get; set; }
         public Guid? SupplierId { get; set; }
         public DateTime InvoiceDate { get; set; }
         public DateTime DueDate { get; set; }
-        public decimal SubTotal { get; set; }
-        public decimal Tax { get; set; }
-        public decimal Discount { get; set; }
+        public decimal Gross { get; set; }
+        public decimal? Discount { get; set; }
         public decimal TotalAmount { get; set; }
-
-        // UI Integration: Determine if we should save as 'Draft' or 'Open'
-        public bool IsDraft { get; set; }
 
         public string? Description { get; set; }
         public string? TermsConditions { get; set; }
         public string? BankDetails { get; set; }
-
-        // For your Signature UI
-        public string? SignatureName { get; set; }
-        public string? SignatureImageUrl { get; set; } // Base64 or Image URL
 
         public List<InvoiceItemRequest> InvoiceItems { get; set; } = new();
     }

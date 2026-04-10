@@ -421,16 +421,18 @@ string? includes = null)
                     RequestDate = material.RequestDate,
                     ProjectId = material.ProjectId,
                     Remarks = material.Remarks,
-                    MaterialItems = material.MaterialItems.Select(m => new MaterialItemDto
-                    {
-                        Id = m.Id,
-                        Description = m.Description,
-                        Quantity = m.Quantity,
-                        Unit = m.Unit,
-                        Brand = m.Brand,
-                        RequiredDate = m.RequiredDate,
-                        SupplierId = m.SupplierId
-                    }).ToList()
+                    MaterialItems = material.MaterialItems?
+    .Select(m => new MaterialItemDto
+    {
+        Id = m.Id,
+        Description = m.Description ?? "",
+        Quantity = m.Quantity,
+        Unit = m.Unit,
+        Brand = m.Brand ?? "",
+        RequiredDate = m.RequiredDate,
+        SupplierId = m.SupplierId
+    })
+    .ToList() ?? new List<MaterialItemDto>()
                 };
 
                 // Notify via SignalR

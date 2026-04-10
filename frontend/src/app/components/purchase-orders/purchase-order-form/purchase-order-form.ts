@@ -32,9 +32,11 @@ import { PurchaseOrderService } from '../../../services/purchaseOrderService.ser
 import { LoadingService } from '../../../services/loading.service';
 import { Subject, takeUntil } from 'rxjs';
 import { ValidateAllFormFields } from '../../../shared/helpers/helpers';
-import { CreatePORequest } from '../../../models/PurchaseOrder';
 import { SupplierDto } from '../../../models/SupplierDto';
 import { SupplierService } from '../../../services/supplierService';
+import { UserService } from '../../../services/userService.service';
+import { ProjectService } from '../../../services/ProjectService';
+import { ProjectDto } from '../../../models/Project';
 
 @Component({
   selector: 'app-purchase-order-form',
@@ -70,487 +72,446 @@ import { SupplierService } from '../../../services/supplierService';
           <i class="pi pi-chevron-right text-[10px]"></i>
           <span class="text-gray-900 font-bold">New Purchase Order</span>
         </nav>
-        <div class="flex gap-3">
-          <p-button
-            (onClick)="onPreview()"
-            label="Preview"
-            icon="pi pi-eye"
-            [outlined]="true"
-            severity="secondary"
-            styleClass="!rounded-md !px-4"
-          ></p-button>
-          <p-button
-            (onClick)="onSave(false)"
-            label="Generate PO"
-            icon="pi pi-file-pdf"
-            severity="info"
-            styleClass="!rounded-md !px-6 tracking-wide"
-          ></p-button>
-        </div>
       </div>
       <div
-        class="mx-auto bg-white shadow-sm border border-gray-200 rounded-xl overflow-hidden"
+        class="p-2 bg-white shadow-sm border border-gray-200 mb-2 flex flex-row items-center justify-end gap-2"
       >
-        <div class="grid grid-cols-12 gap-8 p-8 border-b border-gray-100">
-          <div class="col-span-12 font-semibold text-[17px]">
-            Purchase Order Details
+        <p-button
+          (onClick)="onSave()"
+          label="Save PO"
+          styleClass="bg-blue-500!"
+          severity="info"
+          icon="pi pi-save"
+          size="small"
+        ></p-button>
+        <p-button
+          (onClick)="downloadPDF()"
+          label="Download PO"
+          severity="danger"
+          icon="pi pi-download"
+          size="small"
+        ></p-button>
+      </div>
+      <div
+        id="print-area"
+        class="border border-gray-200  shadow-sm bg-white w-full p-5 grid grid-cols-12"
+      >
+        <div class="col-span-8 flex flex-row gap-3">
+          <div class="flex items-center justify-center">
+            <img src="assets/yl-logo.png" alt="" class="w-[130px] h-[80px]" />
           </div>
-
-          <div class="col-span-12 md:col-span-7 grid grid-cols-2 gap-6">
-            <div class="flex flex-col gap-1.5">
-              <label
-                class="text-xs font-semibold uppercase tracking-wider text-gray-400"
-                >Purchase Order No</label
-              >
-              <input
-                type="text"
-                pInputText
-                formControlName="poNo"
-                class="!bg-white !border-gray-200"
-                placeholder="PO-2026-001"
-              />
-              <div
-                *ngIf="
-                  poForm.get('poNo')?.invalid && poForm.get('poNo')?.touched
-                "
-                class="text-[13px] tracking-wide text-red-500"
-              >
-                <span *ngIf="poForm.get('poNo')?.errors?.['required']">
-                  Purchase Order number is required.
-                </span>
-              </div>
+          <div class="flex flex-col">
+            <div class="flex flex-row items-end gap-2">
+              <div class="font-semibold text-[20px]">YL SYSTEMS SDN BHD</div>
+              <div class="text-[10px] mb-1">(200001006138(508743-P))</div>
             </div>
-            <div class="flex flex-col gap-1.5">
-              <label
-                class="text-xs font-semibold uppercase tracking-wider text-gray-400"
-                >Reference</label
-              >
-              <input
-                type="text"
-                pInputText
-                formControlName="referenceNo"
-                class="!bg-white !border-gray-200"
-              />
+            <div class="text-[13px]">
+              42, Jalan 21/19, 46300 Petaling Jaya, Selangor
             </div>
-            <div class="flex flex-col gap-1.5">
-              <label
-                class="text-xs font-semibold uppercase tracking-wider text-gray-400"
-                >Date</label
-              >
-              <p-datepicker
-                showIcon="true"
-                styleClass="w-full"
-                formControlName="poDate"
-                iconDisplay="input"
-                dateFormat="dd/mm/yy"
-              ></p-datepicker>
-              <div
-                *ngIf="
-                  poForm.get('poDate')?.invalid && poForm.get('poDate')?.touched
-                "
-                class="text-[13px] tracking-wide text-red-500"
-              >
-                <span *ngIf="poForm.get('poDate')?.errors?.['required']">
-                  PO date is required.
-                </span>
-              </div>
+            <div class="flex flex-row items-center gap-3 text-[13px]">
+              <div>Phone: 03-7877 3929</div>
+              <div>Fax: 03-7877 8595</div>
             </div>
-            <div class="flex flex-col gap-1.5">
-              <label
-                class="text-xs font-semibold uppercase tracking-wider text-gray-400"
-                >Expires On</label
-              >
-              <p-datepicker
-                showIcon="true"
-                formControlName="dueDate"
-                styleClass="w-full"
-                iconDisplay="input"
-                dateFormat="dd/mm/yy"
-              ></p-datepicker>
-            </div>
-          </div>
-
-          <div
-            class="col-span-12 md:col-span-5 flex flex-col items-end justify-center"
-          >
-            <div
-              class="flex items-center gap-4 p-4 bg-white rounded-xl border border-blue-50 shadow-sm"
-            >
-              <img
-                src="assets/yl-logo.png"
-                alt="Logo"
-                class="w-16 h-16 object-contain"
-              />
-              <div>
-                <h1
-                  class="text-2xl font-black tracking-wide text-blue-900 leading-none"
-                >
-                  YL Systems
-                </h1>
-                <p
-                  class="text-[12px] text-gray-400 uppercase tracking-wide mt-1"
-                >
-                  ELV Technology Solution Provider
-                </p>
-              </div>
+            <div class="text-[13px]">Website: www.ylsystems.com.my</div>
+            <div class="flex flex-row items-center gap-3 text-[11px]">
+              <div>TIN No: C10626737100</div>
+              <div>SST Reg No: W10-2510-3200030</div>
             </div>
           </div>
         </div>
-
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-10 p-8">
-          <div class="relative p-6 rounded-xl border border-blue-100">
-            <span
-              class="absolute -top-3 left-4 bg-white px-2 text-xs font-bold text-blue-600 uppercase"
-            >
-              Bill From
-            </span>
-            <div class="flex flex-col gap-1 text-sm text-gray-600">
-              <strong class="text-blue-900 text-base">YL Systems</strong>
-              <p>No. 42, Jln 21/19, Sea Park,</p>
-              <p>46300 Petaling Jaya, Selangor, Malaysia</p>
-              <p class="mt-2">
-                <i class="pi pi-phone text-[10px]!"></i> +60 3-7877 3929
-              </p>
-              <p>
-                <i class="pi pi-envelope text-[10px]!"></i>
-                {{ 'ylsystems@test.com.my' }}
-              </p>
-              <!-- <div
-                class="mt-2 py-1 px-2 bg-blue-50 text-blue-700 rounded text-[10px] font-bold inline-block w-fit"
-              >
-                TAX ID: MY-992039-X
-              </div> -->
-            </div>
-          </div>
-
-          <div
-            class="relative p-6 rounded-xl border border-blue-100 bg-blue-50/10"
-          >
+        <div class="text-xs col-span-4 flex flex-col items-end gap-1">
+          <div>{{ today | date: 'dd/mm/yy hh:mm aa' }}</div>
+          <div class="uppercase text-[9px]">{{ name }} (login user name)</div>
+        </div>
+        <div class="mt-8 col-span-7 lg:col-span-8 flex flex-col">
+          <div class="flex flex-col">
+            <p-select
+              [fluid]="true"
+              placeholder="SupplierId"
+              styleClass="lg:w-[60%]"
+              panelStyleClass="text-[15px]"
+              [options]="supplierSelection || []"
+              formControlName="supplierId"
+              (onChange)="VendorOnChange($event)"
+              [filter]="true"
+            ></p-select>
             <div
-              class="absolute -top-3 left-4 bg-white px-2 flex items-center gap-2"
+              *ngIf="
+                poForm.get('supplierId')?.invalid &&
+                poForm.get('supplierId')?.touched
+              "
+              class="mt-1 text-[13px] tracking-wide text-red-500"
             >
-              <span class="text-xs font-bold text-blue-600 uppercase"
-                >Bill To</span
-              >
-              <button
-                (click)="AddVendorClick()"
-                class="cursor-pointer text-[12px] text-blue-500 flex items-center gap-2 hover:underline transition-all"
-              >
-                <i class="pi pi-plus-circle text-[14px]!"></i> Add New Vendor
-              </button>
+              <span *ngIf="poForm.get('supplierId')?.errors?.['required']">
+                Vendor is required.
+              </span>
             </div>
-            <div class="flex flex-col gap-4">
-              <div class="flex flex-col">
-                <p-select
-                  [fluid]="true"
-                  placeholder="Search Vendor Name"
-                  panelStyleClass="text-[15px]"
-                  [options]="supplierSelection || []"
-                  formControlName="supplierId"
-                  (onChange)="VendorOnChange($event)"
-                  [filter]="true"
-                ></p-select>
-                <div
-                  *ngIf="
-                    poForm.get('supplierId')?.invalid &&
-                    poForm.get('supplierId')?.touched
-                  "
-                  class="mt-1 text-[13px] tracking-wide text-red-500"
-                >
-                  <span *ngIf="poForm.get('supplierId')?.errors?.['required']">
-                    Vendor is required.
-                  </span>
+            <p-button
+              label="Add New Vendor"
+              [text]="true"
+              size="small"
+              severity="info"
+              icon="pi pi-plus-circle"
+              (onClick)="AddVendorClick()"
+            ></p-button>
+          </div>
+          <div class=" mt-2 flex flex-col text-[13px]" *ngIf="selectedVendor">
+            <strong
+              >{{
+                selectedVendor.label || selectedVendor.name
+              }}
+              (supplier.name)</strong
+            >
+            <div>
+              {{ selectedVendor.deliveryAddress?.addressLine1 }}
+              (supplier.addressLine1)
+            </div>
+            <div *ngIf="selectedVendor.deliveryAddress?.addressLine2">
+              {{ selectedVendor.deliveryAddress?.addressLine2 }}
+              (supplier.addressLine.2)<br />
+            </div>
+            <div class="flex flex-row items-center gap-1">
+              {{ selectedVendor.deliveryAddress?.poscode }}
+              (supplier.deliveryAddress.poscode),{{
+                selectedVendor.deliveryAddress?.city
+              }}(supplier.deliveryAddress.city),
+              {{ selectedVendor.state }}(supplier.deliveryAddress.state)
+              {{
+                selectedVendor.deliveryAddress?.country
+              }}(supplier.deliveryAddress.country)
+            </div>
+
+            <div class="mt-5 flex flex-col">
+              <div class="grid grid-cols-[70px_10px_1fr] text-[11px] gap-y-0.5">
+                <div>Attn</div>
+                <div>:</div>
+                <div>
+                  {{ selectedVendor.contactPerson }}(supplier.contactPerson)
                 </div>
-              </div>
-              <div
-                class="min-h-[100px] text-sm text-gray-600 p-2 leading-6"
-                *ngIf="selectedVendor"
-              >
-                <strong>{{
-                  selectedVendor.label || selectedVendor.name
-                }}</strong
-                ><br />
-                {{ selectedVendor.deliveryAddress?.addressLine1 }}<br />
-                <span *ngIf="selectedVendor.deliveryAddress?.addressLine2"
-                  >{{ selectedVendor.deliveryAddress?.addressLine2 }}<br
-                /></span>
-                {{ selectedVendor.deliveryAddress?.poscode }},
-                {{ selectedVendor.deliveryAddress?.city }},
-                {{ selectedVendor.state }}
-                {{ selectedVendor.deliveryAddress?.country }}<br />
-                {{ selectedVendor.contactNo }}
-                <br />{{ selectedVendor.email }}
+
+                <div>TEL</div>
+                <div>:</div>
+                <div>{{ selectedVendor.contactNo }}(supplier.contactNo)</div>
+
+                <div>FAX</div>
+                <div>:</div>
+                <div>{{ selectedVendor.faxNo }}(supplier.faxNo)</div>
+
+                <div>A/C NO</div>
+                <div>:</div>
+                <div>{{ selectedVendor.acNo }}(supplier.acNo)</div>
               </div>
             </div>
           </div>
         </div>
-        <div class="border-b border-gray-200 mb-4"></div>
-
-        <div class="p-8 pt-0">
-          <h3
-            class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2"
-          >
-            <i class="pi pi-list text-blue-500"></i> Line Items
-          </h3>
-          <p-table
-            [value]="items.controls"
-            formArrayName="poItems"
-            styleClass="p-datatable-sm custom-table"
-            [tableStyle]="{ 'min-width': '50rem' }"
-            showGridlines
-          >
-            <ng-template #header>
-              <tr class="!bg-gray-50">
-                <th
-                  class="!bg-transparent text-center! text-gray-500 font-semibold w-120"
-                >
-                  Item Description
-                </th>
-                <th
-                  class="!bg-transparent text-center! text-gray-500 font-semibold w-40"
-                >
-                  Qty
-                </th>
-                <th
-                  class="!bg-transparent text-center! text-gray-500 font-semibold w-32"
-                >
-                  Unit
-                </th>
-                <th
-                  class="!bg-transparent text-center! text-gray-500 font-semibold w-48"
-                >
-                  Rate (RM)
-                </th>
-                <th
-                  class="!bg-transparent text-center! text-gray-500 font-semibold w-48"
-                >
-                  Tax %
-                </th>
-                <th
-                  class="!bg-transparent text-center! text-gray-500 font-semibold w-64"
-                >
-                  Amount
-                </th>
-                <th class="!bg-transparent w-32"></th>
-              </tr>
-            </ng-template>
-            <ng-template #body let-item let-i="rowIndex">
-              <tr [formGroupName]="i">
-                <td>
-                  <textarea
-                    type="text"
-                    pTextarea
-                    formControlName="description"
-                    class="focus:!ring-1 w-full text-[15px]!"
-                    placeholder="Enter service or product..."
-                    [autoResize]="true"
-                  ></textarea>
-                </td>
-                <td>
-                  <p-inputnumber
-                    styleClass="text-center!"
-                    formControlName="quantity"
-                    inputStyleClass="!text-center w-full"
-                  ></p-inputnumber>
-                </td>
-                <td>
-                  <input
-                    type="text"
-                    pInputText
-                    formControlName="unit"
-                    class="focus:!ring-1 text-center! w-full"
-                  />
-                </td>
-                <td>
-                  <p-inputnumber
-                    styleClass="w-full"
-                    formControlName="rate"
-                    inputStyleClass="!text-center w-full"
-                    mode="decimal"
-                    [minFractionDigits]="2"
-                  ></p-inputnumber>
-                </td>
-                <td>
-                  <p-inputnumber
-                    styleClass="w-full"
-                    formControlName="taxRate"
-                    inputStyleClass="!text-center w-full"
-                    suffix="%"
-                  ></p-inputnumber>
-                </td>
-                <td class="text-center! font-bold text-gray-700 p-3">
-                  {{ item.get('amount').value | number: '1.2-2' }}
-                </td>
-                <td class="text-center">
-                  <div class="flex justify-center" *ngIf="i !== 0">
-                    <p-button
-                      (click)="removeItem(i)"
-                      severity="danger"
-                      [text]="true"
-                      styleClass="text-red-300 hover:text-red-500 "
-                    >
-                      <i class="pi pi-trash"></i>
-                    </p-button>
-                  </div>
-                </td>
-              </tr>
-            </ng-template>
-          </p-table>
-          <button
-            (click)="addItem()"
-            class="mt-4 flex items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-700"
-          >
-            <i class="pi pi-plus-circle"></i> Add Line Item
-          </button>
-        </div>
-        <div class="border-b border-gray-200"></div>
-        <div class="grid grid-cols-12 gap-8 py-5 px-8 bg-gray-50/50">
-          <div class="col-span-12 lg:col-span-7 pr-[5%]">
-            <div class="pb-2 font-semibold tracking-wide text-gray-700">
-              Extra Information
+        <div class="mt-8 col-span-5 lg:col-span-4 flex flex-col gap-2 pl-2">
+          <div class="border w-full h-full flex flex-col">
+            <div class="text-center font-bold text-xl py-2 border-b">
+              PURCHASE ORDER
             </div>
-            <div class="flex flex-wrap gap-3 mb-4">
-              <div
-                (click)="selectedTemplate = 'notes'"
-                [ngClass]="
-                  selectedTemplate === 'notes'
-                    ? 'bg-blue-600 text-white'
-                    : 'cursor-pointer hover:bg-blue-600 hover:text-white border-gray-200 text-gray-500'
-                "
-                class="border flex flex-row items-center rounded-sm text-[14px] gap-2 px-4 py-1"
-              >
-                <i class="pi pi-file text-[13px]!"></i>
-                <div>Add Notes</div>
-              </div>
-              <div
-                (click)="applyTemplate('terms')"
-                [ngClass]="
-                  selectedTemplate === 'terms'
-                    ? 'bg-blue-600 text-white border-blue-600'
-                    : 'cursor-pointer hover:bg-blue-600 hover:text-white border-gray-200 text-gray-500'
-                "
-                class="border flex flex-row items-center rounded-sm text-[14px] gap-2 px-4 py-1 transition-colors"
-              >
-                <i class="pi pi-list text-[13px]!"></i>
-                <div>Add Terms & Conditions</div>
-              </div>
-
-              <div
-                (click)="applyTemplate('bank')"
-                [ngClass]="
-                  selectedTemplate === 'bank'
-                    ? 'bg-blue-600 text-white border-blue-600'
-                    : 'cursor-pointer hover:bg-blue-600 hover:text-white border-gray-200 text-gray-500'
-                "
-                class="border flex flex-row items-center rounded-sm text-[14px] gap-2 px-4 py-1 transition-colors"
-              >
-                <i class="pi pi-building-columns text-[13px]!"></i>
-                <div>Bank Details</div>
-              </div>
-            </div>
-            <ng-container *ngIf="selectedTemplate === 'notes'">
-              <label
-                class="text-xs font-bold uppercase text-gray-400 block mb-2"
-                >Notes / Terms</label
-              >
-              <textarea
-                rows="4"
-                formControlName="description"
-                class="w-full p-3 border border-gray-200 rounded-lg bg-white text-sm"
-                placeholder="Any additional notes..."
-              ></textarea>
-            </ng-container>
-            <ng-container *ngIf="selectedTemplate === 'terms'">
-              <label
-                class="text-xs font-bold uppercase text-gray-400 block mb-2"
-                >Terms & Conditions</label
-              >
-              <p-editor
-                formControlName="termsConditions"
-                [style]="{ height: '320px' }"
-              >
-              </p-editor>
-            </ng-container>
-            <ng-container *ngIf="selectedTemplate === 'bank'">
-              <label
-                class="text-xs font-bold uppercase text-gray-400 block mb-2"
-                >Account</label
-              >
-              <p-select appendTo="body" styleClass="w-full!"></p-select>
-            </ng-container>
-          </div>
-
-          <div class="col-span-12 lg:col-span-5 flex flex-col gap-3">
-            <div class="flex justify-between text-sm text-gray-500 px-2">
-              <span>Subtotal</span>
-              <span class="font-semibold text-base"
-                >RM {{ subTotal() | number: '1.2-2' }}</span
-              >
+            <div class="text-[12px] p-2">
+              Please quote this number on all correspondence
             </div>
             <div
-              class="flex justify-between items-center text-sm text-gray-500 px-2"
+              class="grid grid-cols-[70px_10px_1fr] p-2 text-[13px] gap-y-0.5 items-center border-b"
             >
-              <span class="flex items-center gap-1"
-                >Discount <i class="pi pi-info-circle text-[10px]"></i
-              ></span>
+              <div>NO.</div>
+              <div>:</div>
+              <input
+                type="text"
+                pInputText
+                class="flex-1"
+                placeholder="poNo"
+                formControlName="poNo"
+              />
+            </div>
+            <div
+              class="grid grid-cols-[70px_10px_1fr] p-2 text-[13px] gap-y-0.5 items-center"
+            >
+              <div>DATE</div>
+              <div>:</div>
+              <p-datepicker
+                [showIcon]="true"
+                styleClass="w-full!"
+                appendTo="body"
+                dateFormat="dd/mm/yy"
+                placeholder="poReceivedDate"
+                formControlName="poReceivedDate"
+                inputStyleClass="text-[13px]!"
+              ></p-datepicker>
+              <div>TERMS</div>
+              <div>:</div>
+              <input
+                pInputText
+                type="text"
+                formControlName="terms"
+                placeholder="terms"
+                class="flex-1! text-[13px]!"
+              />
+              <div>PROJECT</div>
+              <div>:</div>
+              <p-select
+                styleClass="flex-1!"
+                appendTo="body"
+                placeholder="projectId"
+                [options]="projectSelection"
+                formControlName="projectId"
+                inputStyleClass="text-[13px]!"
+                panelStyleClass="text-[13px]!"
+                [filter]="true"
+              ></p-select>
+              <div>PAGE</div>
+              <div>:</div>
+              <input
+                class="flex-1! text-[13px]! cursor-pointer bg-gray-100!"
+                pInputText
+                type="text"
+                placeholder="Should auto count page"
+                formControlName="page"
+                readonly
+              />
+            </div>
+          </div>
+        </div>
+        <div class="col-span-12 border-b mt-3 mb-3"></div>
+        <div class="col-span-12 flex flex-col gap-1">
+          <div class="text-[13px]">
+            Please supply and pack in the most suitable manner for shipment to:
+          </div>
+          <div class="text-[13px] flex flex-row items-center gap-2">
+            <div>PO NO:</div>
+          </div>
+          <div
+            class="text-[13px] flex flex-row items-center gap-2 border-b pb-2"
+          >
+            <div>SO NO:</div>
+          </div>
+          <div class="col-span-12">
+            <p-table [value]="items.controls" formArrayName="poItems">
+              <ng-template #header>
+                <tr>
+                  <th
+                    class="border-b! border-black! text-black! text-center! font-normal! text-[13px]! w-[20%]!"
+                  >
+                    ITEM
+                  </th>
+                  <th
+                    class="border-b! border-black! text-black! text-center! font-normal! text-[13px]! w-[30%]!"
+                  >
+                    DESCRIPTION
+                  </th>
+                  <th
+                    class="border-b! border-black! text-black! text-center! font-normal! text-[13px]! w-[5%]!"
+                  >
+                    QTY
+                  </th>
+                  <th
+                    class="border-b! border-black! text-black! text-center! font-normal! text-[13px]! w-[10%]!"
+                  >
+                    UNIT
+                  </th>
+                  <th
+                    class="border-b! border-black! text-black! text-center! font-normal! text-[13px]! w-[15%]!"
+                  >
+                    U.PRICE (RM)
+                  </th>
+                  <th
+                    class="border-b! border-black! text-black! text-center! font-normal! text-[13px]! w-[5%]!"
+                  >
+                    DISC
+                  </th>
+                  <th
+                    class="border-b! border-black! text-black! text-center! font-normal! text-[13px]! w-[15%]!"
+                  >
+                    T.AMOUNT (RM)
+                  </th>
+                </tr>
+              </ng-template>
+              <ng-template #body let-item let-i="rowIndex">
+                <tr [formGroupName]="i">
+                  <td class="px-1!">
+                    <input
+                      type="text"
+                      pInputText
+                      placeholder="item"
+                      formControlName="item"
+                      class="focus:!ring-1 text-[13px]! text-center! w-full"
+                    />
+                  </td>
+                  <td class="px-1!">
+                    <textarea
+                      type="text"
+                      placeholder="description"
+                      pTextarea
+                      formControlName="description"
+                      rows="3"
+                      class="focus:!ring-1 w-full text-[13px]!"
+                      [autoResize]="true"
+                    ></textarea>
+                  </td>
+                  <td class="px-1!">
+                    <p-inputnumber
+                      placeholder="quantity"
+                      styleClass="text-center!"
+                      formControlName="quantity"
+                      inputStyleClass="!text-center w-full text-[13px]!"
+                    ></p-inputnumber>
+                  </td>
+                  <td class="px-1!">
+                    <input
+                      type="text"
+                      placeholder="unit"
+                      pInputText
+                      formControlName="unit"
+                      class="focus:!ring-1 text-[13px]! text-center! w-full"
+                    />
+                  </td>
+                  <td class="px-1!">
+                    <p-inputnumber
+                      styleClass="text-center!"
+                      formControlName="unitPrice"
+                      inputStyleClass="!text-center w-full text-[13px]!"
+                      mode="decimal"
+                      placeholder="unitPrice"
+                      [minFractionDigits]="2"
+                    ></p-inputnumber>
+                  </td>
+                  <td class="px-1!">
+                    <p-inputnumber
+                      placeholder="discount"
+                      styleClass="text-center!"
+                      formControlName="discount"
+                      inputStyleClass="!text-center w-full text-[13px]!"
+                      mode="decimal"
+                      [minFractionDigits]="2"
+                    ></p-inputnumber>
+                  </td>
+                  <td class="px-1! text-center!">
+                    <p-inputnumber
+                      styleClass="text-center!"
+                      placeholder="totalAmount"
+                      formControlName="totalAmount"
+                      inputStyleClass="!text-center w-full text-[13px]! cursor-pointer! border-none! shadow-none!"
+                      readonly
+                      mode="decimal"
+                      [minFractionDigits]="2"
+                    ></p-inputnumber>
+                  </td></tr
+              ></ng-template>
+            </p-table>
+            <p-button
+              label="Add Item"
+              icon="pi pi-plus-circle"
+              size="small"
+              severity="info"
+              [text]="true"
+              styleClass="text-blue-500!"
+              (onClick)="addItem()"
+            ></p-button>
+          </div>
+          <div class="col-span-12 mt-8 flex flex-col gap-2">
+            <b class="underline font-bold text-[15px]">REMARKS:</b>
+            <textarea
+              name=""
+              id=""
+              pTextarea
+              class="w-full"
+              formControlName="deliveryInstruction"
+              rows="3"
+              placeholder="deliveryInstruction"
+              autoResize="true text-[13px]"
+            ></textarea>
+          </div>
+          <div
+            class="col-span-12 border-b pb-3 mb-2 mt-8 flex flex-row items-center gap-2 font-bold text-[14px]"
+          >
+            <div>RINGGIT MALAYSIA :</div>
+            <div>{{ amountToWords(poForm.get('totalAmount')?.value) }}</div>
+          </div>
+          <div class="col-span-12 grid grid-cols-12 items-start gap-1">
+            <div
+              class="col-span-4 flex flex-row gap-2 items-center italic text-xs"
+            >
+              <div>Remarks:</div>
+              <input
+                type="text"
+                pInputText
+                placeholder="remarks"
+                class="text-xs! italic flex-1!"
+                formControlName="remarks"
+              />
+            </div>
+            <div
+              class="col-span-4 px-4 flex flex-row justify-between items-center gap-5 text-[13px]"
+            >
+              <div class="">TOTAL QUANTITY</div>
               <p-inputnumber
-                formControlName="discount"
-                inputStyleClass="!w-20 !py-1 !text-right"
-                suffix="%"
+                styleClass="text-center! w-[30%]!"
+                inputStyleClass="!text-center text-[13px]! w-[30%]!"
+                formControlName="totalQuantity"
+                placeholder="totalQuantity"
               ></p-inputnumber>
             </div>
-            <div class="h-px bg-gray-200 my-2"></div>
-            <div class="flex justify-between items-center px-2">
-              <span class="text-lg font-bold text-gray-800">Total Amount</span>
-              <span class="text-2xl font-black text-blue-700"
-                >RM {{ grandTotal() | number: '1.2-2' }}</span
-              >
-            </div>
-
-            <div class="mt-6">
-              <label
-                class="text-xs font-bold uppercase text-gray-400 block mb-2 text-right"
-                >Authorized Signature</label
-              >
-              <input
-                type="file"
-                #fileInput
-                style="display: none"
-                accept="image/*"
-                (change)="onFileSelected($event)"
-              />
+            <div class="col-span-4 flex flex-col text-sm font-bold">
               <div
-                (click)="fileInput.click()"
-                class="border-2 border-dashed border-gray-200 rounded-xl p-6 bg-white flex flex-col items-center justify-center hover:bg-blue-50/30 hover:border-blue-200 cursor-pointer transition-all"
+                class="grid grid-cols-[140px_10px_1fr] gap-y-0.5 items-center"
               >
-                <ng-container *ngIf="!signaturePreview">
-                  <i
-                    class="pi pi-cloud-upload text-gray-300 text-3xl! mb-2"
-                  ></i>
-                  <span class="text-sm text-gray-400 tracking-wide"
-                    >Upload signature file</span
-                  >
-                </ng-container>
-
-                <img
-                  *ngIf="signaturePreview"
-                  [src]="signaturePreview"
-                  class="max-h-24 object-contain"
-                />
+                <div>Gross (RM)</div>
+                <div>:</div>
+                <p-inputnumber
+                  styleClass="text-center!"
+                  formControlName="gross"
+                  inputStyleClass="!text-center w-full text-[13px]!"
+                  mode="decimal"
+                  placeholder="gross"
+                  [minFractionDigits]="2"
+                ></p-inputnumber>
+                <div>-Discount</div>
+                <div>:</div>
+                <p-inputnumber
+                  styleClass="text-center!"
+                  placeholder="discount"
+                  formControlName="discount"
+                  inputStyleClass="!text-center w-full text-[13px]!"
+                  mode="decimal"
+                  [minFractionDigits]="2"
+                ></p-inputnumber>
+                <div>Total Payable (RM)</div>
+                <div>:</div>
+                <p-inputnumber
+                  styleClass="text-center!"
+                  placeholder="totalAmount"
+                  formControlName="totalAmount"
+                  inputStyleClass="!text-center w-full text-[13px]!"
+                  mode="decimal"
+                  [minFractionDigits]="2"
+                ></p-inputnumber>
               </div>
-              <input
-                formControlName="signatureName"
-                type="text"
-                pInputText
-                class="w-full mt-3 !text-center !text-sm"
-                placeholder="Signatory Name"
-              />
+            </div>
+          </div>
+
+          <div
+            class="text-[13px] cols-span-12 flex flex-row items-center justify-between mt-30"
+          >
+            <div class="font-bold border-t mt-2 w-[20%] text-center">
+              Issued by
+            </div>
+            <div class="font-bold border-t mt-2 w-[20%] text-center">
+              Checked by
+            </div>
+            <div class="font-bold border-t mt-2 w-[20%] text-center">
+              Approved by
+            </div>
+            <div class="font-bold border-t mt-2 w-[20%] text-center">
+              Authorised Signature
             </div>
           </div>
         </div>
       </div>
     </div>
-    <p-dialog
+
+    <div id="print-area"></div>
+    <!-- <p-dialog
       [(visible)]="displayPreview"
       [modal]="true"
       [style]="{ width: '850px' }"
@@ -798,7 +759,7 @@ import { SupplierService } from '../../../services/supplierService';
           (onClick)="printPreview()"
         ></p-button>
       </ng-template>
-    </p-dialog>
+    </p-dialog> -->
 
     <p-dialog
       [(visible)]="showVendorDialog"
@@ -863,12 +824,30 @@ import { SupplierService } from '../../../services/supplierService';
               />
             </div>
             <div class="col-span-12 lg:col-span-6 flex flex-col gap-1.5">
+              <label class="font-medium text-gray-700">Fax No</label>
+              <input
+                type="text"
+                pInputText
+                class="w-full!"
+                formControlName="faxNo"
+              />
+            </div>
+            <div class="col-span-12 lg:col-span-6 flex flex-col gap-1.5">
               <label class="font-medium text-gray-700">Contact Person</label>
               <input
                 type="text"
                 pInputText
                 class="w-full!"
                 formControlName="contactPerson"
+              />
+            </div>
+            <div class="col-span-12 lg:col-span-6 flex flex-col gap-1.5">
+              <label class="font-medium text-gray-700">A/C No</label>
+              <input
+                type="text"
+                pInputText
+                class="w-full!"
+                formControlName="acNo"
               />
             </div>
 
@@ -1026,7 +1005,9 @@ export class PurchaseOrderForm implements OnInit, OnDestroy {
   private readonly purchaseOrderService = inject(PurchaseOrderService);
   private readonly activatedRoute = inject(ActivatedRoute);
   private readonly supplierService = inject(SupplierService);
+  private readonly projectService = inject(ProjectService);
   private readonly loadingService = inject(LoadingService);
+  private readonly userService = inject(UserService);
   protected ngUnsubscribe: Subject<void> = new Subject<void>();
 
   private destroy$ = new Subject<void>();
@@ -1034,26 +1015,31 @@ export class PurchaseOrderForm implements OnInit, OnDestroy {
   poForm!: FormGroup;
   vendorForm!: FormGroup;
   currentId: string = '';
-  signaturePreview: string | null = null;
+  name = this.userService.currentUser?.firstName;
 
   displayPreview: boolean = false;
   showVendorDialog: boolean = false;
   previewData: any = null;
+
+  today: Date = new Date();
 
   supplierSelection: any[] = [];
 
   selectedVendor: any;
   selectedTemplate: string = 'notes';
 
-  subTotal = signal(0);
-  taxTotal = signal(0);
-  grandTotal = signal(0);
+  grossTotal = signal(0);
+  discountTotal = signal(0);
+  totalAmount = signal(0);
+
+  projectSelection: any[] = [];
 
   ngOnInit(): void {
     this.initForm();
     this.currentId = this.activatedRoute.snapshot.queryParams['id'];
 
     this.getVendorSelection();
+    this.getProjectSelection();
 
     if (this.currentId) {
       this.loadPO();
@@ -1067,20 +1053,20 @@ export class PurchaseOrderForm implements OnInit, OnDestroy {
   initForm() {
     this.poForm = this.fb.group({
       poNo: ['', Validators.required],
-      referenceNo: [null],
-      poDate: [new Date(), Validators.required],
-      dueDate: [
-        new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
-        Validators.required,
-      ],
+      poReceivedDate: [null, Validators.required],
       supplierId: [null, Validators.required],
-      discount: [0],
-      description: [null],
+      projectId: [null, Validators.required],
+      terms: [null],
+      page: [null],
+      gross: null,
+      discount: null,
+      totalAmount: null,
+      deliveryInstruction: [null],
+      deliveryDate: [null],
       termsConditions: [null],
       bankDetails: [null],
-      signatureName: [null],
-      signatureImageUrl: [null],
-      totalAmount: null,
+      remarks: [null],
+      totalQuantity: [null],
       poItems: this.fb.array([this.createItem()]),
     });
   }
@@ -1092,12 +1078,13 @@ export class PurchaseOrderForm implements OnInit, OnDestroy {
   createItem(): FormGroup {
     return this.fb.group({
       id: null,
-      description: ['', Validators.required],
-      quantity: [1, [Validators.required, Validators.min(1)]],
-      unit: ['Unit'],
-      rate: [0, [Validators.required, Validators.min(0)]],
-      taxRate: [0],
-      amount: 0,
+      item: [null],
+      description: [null, Validators.required],
+      quantity: [null, [Validators.required, Validators.min(1)]],
+      unit: ['unit'],
+      unitPrice: [null, [Validators.required, Validators.min(0)]],
+      discount: [null],
+      totalAmount: null,
     });
   }
 
@@ -1108,12 +1095,13 @@ export class PurchaseOrderForm implements OnInit, OnDestroy {
     if (item) {
       newItemGroup.patchValue({
         id: item.id || null,
+        item: item.item,
         description: item.description,
         quantity: item.quantity,
         unit: item.unit,
-        rate: item.rate,
-        taxRate: item.taxRate || 0,
-        amount: item.amount,
+        unitPrice: item.unitPrice,
+        discount: item.discount || 0,
+        totalAmount: item.totalAmount,
       });
     }
 
@@ -1133,36 +1121,41 @@ export class PurchaseOrderForm implements OnInit, OnDestroy {
   }
 
   calculateTotals() {
-    let sub = 0;
-    let tax = 0;
+    let gross = 0;
+    let itemDiscountTotal = 0;
+    let subtotal = 0;
 
     this.items.controls.forEach((control) => {
       const qty = control.get('quantity')?.value || 0;
-      const rate = control.get('rate')?.value || 0;
-      const taxRate = control.get('taxRate')?.value || 0;
+      const unitPrice = control.get('unitPrice')?.value || 0;
+      const itemDiscountPercent = control.get('discount')?.value || 0;
 
-      const lineTotal = qty * rate;
-      const lineTax = lineTotal * (taxRate / 100);
-      const finalLineAmount = lineTotal + lineTax;
+      const lineTotal = qty * unitPrice;
 
-      control.get('amount')?.setValue(finalLineAmount, { emitEvent: false });
+      const itemDiscount = lineTotal * (itemDiscountPercent / 100);
+      const netLine = lineTotal - itemDiscount;
 
-      sub += lineTotal;
-      tax += lineTax;
+      control.get('totalAmount')?.setValue(netLine, { emitEvent: false });
+
+      gross += lineTotal;
+      itemDiscountTotal += itemDiscount;
+      subtotal += netLine;
     });
 
-    const discountPercent = this.poForm.get('discount')?.value || 0;
+    // HEADER DISCOUNT (BOTTOM INPUT)
+    const headerDiscountPercent = this.poForm.get('discount')?.value || 0;
+    const headerDiscountAmount = subtotal * (headerDiscountPercent / 100);
 
-    const discountAmount = sub * (discountPercent / 100);
+    const total = subtotal - headerDiscountAmount;
 
-    this.subTotal.set(sub);
-    this.taxTotal.set(tax);
-    this.grandTotal.set(sub + tax - discountAmount);
+    // UI values
+    this.grossTotal.set(gross);
+    this.discountTotal.set(itemDiscountTotal + headerDiscountAmount);
+    this.totalAmount.set(total);
 
-    // ✅ Keep form totalAmount in sync
-    this.poForm
-      .get('totalAmount')
-      ?.setValue(this.grandTotal(), { emitEvent: false });
+    // Sync form
+    this.poForm.get('gross')?.setValue(gross, { emitEvent: false });
+    this.poForm.get('totalAmount')?.setValue(total, { emitEvent: false });
   }
 
   getVendorSelection() {
@@ -1187,6 +1180,9 @@ export class PurchaseOrderForm implements OnInit, OnDestroy {
               value: x.id,
               email: x.email,
               contactNo: x.contactNo,
+              contactPerson: x.contactPerson,
+              faxNo: x.faxNo,
+              acNo: x.acNo,
               addressType: x.deliveryAddress ? 'Delivery' : 'Billing', // Optional: track which one is being shown
               deliveryAddress: {
                 addressLine1: activeAddress?.addressLine1,
@@ -1199,6 +1195,34 @@ export class PurchaseOrderForm implements OnInit, OnDestroy {
             };
           });
           this.loadingService.stop();
+        },
+        error: (err) => {
+          this.loadingService.stop();
+        },
+      });
+  }
+
+  getProjectSelection() {
+    this.loadingService.start();
+    this.projectService
+      .GetMany({
+        Page: 1,
+        PageSize: 1000000,
+        Select: null,
+        Includes: null,
+        Filter: null,
+        OrderBy: 'ProjectTitle',
+      })
+      .pipe(takeUntil(this.ngUnsubscribe))
+      .subscribe({
+        next: (res) => {
+          this.projectSelection = res.data.map((x: ProjectDto) => {
+            this.loadingService.stop();
+            return {
+              label: x.projectTitle,
+              value: x.id,
+            };
+          });
         },
         error: (err) => {
           this.loadingService.stop();
@@ -1230,9 +1254,6 @@ export class PurchaseOrderForm implements OnInit, OnDestroy {
         next: (res) => {
           this.loadingService.stop();
           if (res) {
-            if (res.signatureImageUrl) {
-              this.signaturePreview = res.signatureImageUrl;
-            }
             // 1. Clear existing items
             while (this.items.length !== 0) {
               this.items.removeAt(0);
@@ -1250,9 +1271,7 @@ export class PurchaseOrderForm implements OnInit, OnDestroy {
             // 3. Patch the rest of the form
             this.poForm.patchValue({
               ...res,
-              poDate: new Date(res.poDate),
-              dueDate: new Date(res.dueDate),
-              discount: res.discountRate,
+              poReceivedDate: new Date(res.poReceivedDate),
             });
           }
           this.cdr.markForCheck();
@@ -1309,27 +1328,6 @@ export class PurchaseOrderForm implements OnInit, OnDestroy {
     this.cdr.detectChanges();
   }
 
-  onFileSelected(event: any) {
-    const file = event.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-
-      reader.onload = (e: any) => {
-        const base64String = e.target.result;
-
-        this.signaturePreview = base64String;
-
-        this.poForm.patchValue({
-          signatureImageUrl: base64String,
-        });
-
-        this.cdr.markForCheck();
-      };
-
-      reader.readAsDataURL(file);
-    }
-  }
-
   onSave(isDraft: boolean = false) {
     ValidateAllFormFields(this.poForm);
     if (this.poForm.invalid) {
@@ -1343,20 +1341,12 @@ export class PurchaseOrderForm implements OnInit, OnDestroy {
 
     const formValue = this.poForm.getRawValue();
 
-    const request: CreatePORequest = {
-      ...formValue,
-      isDraft: isDraft,
-      subTotal: this.subTotal(),
-      tax: this.taxTotal(),
-      totalAmount: this.grandTotal(),
-    };
-
     const action$ = this.currentId
       ? this.purchaseOrderService.Update({
-          ...request,
+          ...formValue,
           id: this.currentId!,
         } as any)
-      : this.purchaseOrderService.Create(request);
+      : this.purchaseOrderService.Create(formValue);
 
     action$.subscribe((res) => {
       this.messageService.add({
@@ -1439,7 +1429,7 @@ export class PurchaseOrderForm implements OnInit, OnDestroy {
       scaleIndex++;
     }
 
-    let finalResult = words.trim() + ' RINGGIT';
+    let finalResult = words.trim() + '';
 
     if (decimalPart > 0) {
       finalResult += ' AND CENTS ' + convertSection(decimalPart);
@@ -1448,13 +1438,18 @@ export class PurchaseOrderForm implements OnInit, OnDestroy {
     return finalResult.trim() + ' ONLY';
   }
 
+  downloadPDF() {
+    window.print();
+  }
+
   AddVendorClick() {
     this.vendorForm = new FormGroup({
       name: new FormControl<string | null>(null, Validators.required),
       email: new FormControl<string | null>(null, [Validators.email]),
       contactNo: new FormControl<string | null>(null, Validators.required),
+      faxNo: new FormControl<string | null>(null),
       contactPerson: new FormControl<string | null>(null),
-
+      acNo: new FormControl<string | null>(null),
       sameAsBilling: new FormControl(false),
       // Create nested group for billing address
       billingAddress: new FormGroup({
@@ -1511,6 +1506,8 @@ export class PurchaseOrderForm implements OnInit, OnDestroy {
             value: res.id,
             email: res.email,
             contactNo: res.contactNo,
+            faxNo: res.faxNo,
+            acNo: res.acNo,
             addressType: res.deliveryAddress ? 'Delivery' : 'Billing', // Optional: track which one is being shown
             deliveryAddress: {
               addressLine1: activeAddress.addressLine1,

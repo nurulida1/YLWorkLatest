@@ -104,6 +104,21 @@ export const routes: Routes = [
     ],
   },
   {
+    path: 'expenses',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./shared/components/web-layout/web-layout').then(
+        (m) => m.WebLayout,
+      ),
+    children: [
+      {
+        path: '',
+        loadComponent: () =>
+          import('./components/expense/expense').then((m) => m.Expense),
+      },
+    ],
+  },
+  {
     path: 'supplier-payments',
     canActivate: [authGuard],
     loadComponent: () =>

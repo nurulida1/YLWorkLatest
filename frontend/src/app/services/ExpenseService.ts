@@ -1,5 +1,4 @@
 import { Injectable } from '@angular/core';
-import { CreateIncomeRequest, IncomeDto } from '../models/Income';
 import { environment } from '../../environments/environment';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { MessageService } from 'primeng/api';
@@ -9,19 +8,20 @@ import {
   PagingContent,
 } from '../shared/helpers/helpers';
 import { catchError, Observable, retry, throwError } from 'rxjs';
+import { CreateExpenseRequest, ExpenseDto } from '../models/Expense';
 
 @Injectable({
   providedIn: 'root',
 })
-export class IncomeService {
-  url = environment.ApiBaseUrl + '/Income';
+export class ExpenseService {
+  url = environment.ApiBaseUrl + '/Expense';
 
   constructor(
     private http: HttpClient,
     private messageService: MessageService,
   ) {}
 
-  GetMany(query: GridifyQueryExtend): Observable<PagingContent<IncomeDto>> {
+  GetMany(query: GridifyQueryExtend): Observable<PagingContent<ExpenseDto>> {
     let params = new HttpParams()
       .set('page', query.Page.toString())
       .set('pageSize', query.PageSize.toString());
@@ -40,15 +40,15 @@ export class IncomeService {
     }
 
     return this.http
-      .get<PagingContent<IncomeDto>>(this.url + '/GetMany', {
+      .get<PagingContent<ExpenseDto>>(this.url + '/GetMany', {
         params,
       })
       .pipe(retry(1), catchError(this.handleError('GetMany')));
   }
 
-  Create(request: CreateIncomeRequest): Observable<IncomeDto> {
+  Create(request: CreateExpenseRequest): Observable<ExpenseDto> {
     return this.http
-      .post<IncomeDto>(`${this.url}/Create`, request) // no { Data: ... }
+      .post<ExpenseDto>(`${this.url}/Create`, request) // no { Data: ... }
       .pipe(retry(1), catchError(this.handleError('Create')));
   }
 

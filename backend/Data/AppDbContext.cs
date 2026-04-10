@@ -37,6 +37,7 @@ namespace YLWorks.Data
         public DbSet<Delivery> Deliveries { get; set; }
         public DbSet<Attachment> Attachments { get; set; }
         public DbSet<Income> Incomes { get; set; }
+        public DbSet<Expense> Expenses { get; set; }
         public DbSet<Event> Events { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

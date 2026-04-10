@@ -25,8 +25,9 @@ import { InputTextModule } from 'primeng/inputtext';
 import { MenuModule } from 'primeng/menu';
 import { SelectModule } from 'primeng/select';
 import { Table, TableLazyLoadEvent, TableModule } from 'primeng/table';
+import { TextareaModule } from 'primeng/textarea';
 import { LoadingService } from '../../services/loading.service';
-import { IncomeService } from '../../services/IncomeService';
+import { ExpenseService } from '../../services/ExpenseService';
 import { MenuItem, MessageService } from 'primeng/api';
 import { Subject, takeUntil } from 'rxjs';
 import {
@@ -36,11 +37,10 @@ import {
   PagingContent,
   ValidateAllFormFields,
 } from '../../shared/helpers/helpers';
-import { IncomeDto } from '../../models/Income';
-import { TextareaModule } from 'primeng/textarea';
+import { ExpenseDto } from '../../models/Expense';
 
 @Component({
-  selector: 'app-income',
+  selector: 'app-expense',
   imports: [
     CommonModule,
     TableModule,
@@ -51,8 +51,8 @@ import { TextareaModule } from 'primeng/textarea';
     InputNumberModule,
     ButtonModule,
     DialogModule,
-    RouterLink,
     DatePickerModule,
+    RouterLink,
     MenuModule,
     TextareaModule,
   ],
@@ -67,16 +67,16 @@ import { TextareaModule } from 'primeng/textarea';
           Dashboard
         </div>
         /
-        <div class="text-gray-700 font-semibold">Incomes</div>
+        <div class="text-gray-700 font-semibold">Expenses</div>
       </div>
       <div
         class="mt-3 border border-gray-200 rounded-md tracking-wide bg-white p-5 flex flex-col"
       >
         <div class="flex flex-row items-center justify-between">
           <div class="flex flex-col">
-            <div class="text-[20px] text-gray-700 font-semibold">Incomes</div>
+            <div class="text-[20px] text-gray-700 font-semibold">Expenses</div>
             <div class="text-gray-500 text-[15px]">
-              Manage and oversee all project incomes
+              Manage and oversee all expenses here.
             </div>
           </div>
           <div class="flex flex-row items-center gap-2">
@@ -86,7 +86,7 @@ import { TextareaModule } from 'primeng/textarea';
                 pInputText
                 [(ngModel)]="search"
                 class="w-full! text-[15px]!"
-                placeholder="Search by income no"
+                placeholder="Search by expense no"
                 (keyup)="onKeyDown($event)"
               />
               <i
@@ -94,7 +94,7 @@ import { TextareaModule } from 'primeng/textarea';
               ></i>
             </div>
             <p-button
-              label="Add New Income"
+              label="Add New Expense"
               size="small"
               (onClick)="ActionClick(null, 'Create')"
               icon="pi pi-plus-circle"
@@ -119,7 +119,7 @@ import { TextareaModule } from 'primeng/textarea';
             <ng-template #header>
               <tr>
                 <th class="bg-gray-100! text-[15px]! text-center! w-[15%]!">
-                  Income No
+                  Expense No
                 </th>
                 <th class="bg-gray-100! text-[15px]! text-center! w-[15%]!">
                   Date
@@ -141,10 +141,10 @@ import { TextareaModule } from 'primeng/textarea';
             <ng-template #body let-data>
               <tr>
                 <td class="text-[14px]! text-center! font-semibold!">
-                  {{ data.incomeNo }}
+                  {{ data.expenseNo }}
                 </td>
                 <td class="text-[14px]! text-center!">
-                  {{ data.incomeDate | date }}
+                  {{ data.expenseDate | date }}
                 </td>
                 <td class="text-[14px]! text-center!">
                   {{ data.description }}
@@ -169,7 +169,7 @@ import { TextareaModule } from 'primeng/textarea';
               <tr>
                 <td colspan="100%" class="border-x!">
                   <div class="text-[15px] text-center text-gray-500">
-                    No income found in records.
+                    No expense found in records.
                   </div>
                 </td>
               </tr>
@@ -222,7 +222,7 @@ import { TextareaModule } from 'primeng/textarea';
                 appendTo="body"
                 styleClass="w-full"
                 inputStyleClass="w-full !text-[15px]"
-                formControlName="incomeDate"
+                formControlName="expenseDate"
                 showIcon="true"
                 dateFormat="dd/mm/yy"
               >
@@ -277,26 +277,26 @@ import { TextareaModule } from 'primeng/textarea';
         </div>
       </ng-template>
     </p-dialog>`,
-  styleUrl: './income.less',
+  styleUrl: './expense.less',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class Income implements OnInit, OnDestroy {
+export class Expense implements OnInit, OnDestroy {
   @ViewChild('fTable') fTable?: Table;
 
   private readonly loadingService = inject(LoadingService);
-  private readonly incomeService = inject(IncomeService);
+  private readonly expenseService = inject(ExpenseService);
   private readonly messageService = inject(MessageService);
   private readonly cdr = inject(ChangeDetectorRef);
   protected ngUnsubscribe: Subject<void> = new Subject<void>();
 
-  PagingSignal = signal<PagingContent<IncomeDto>>(
-    {} as PagingContent<IncomeDto>,
+  PagingSignal = signal<PagingContent<ExpenseDto>>(
+    {} as PagingContent<ExpenseDto>,
   );
   Query: GridifyQueryExtend = {} as GridifyQueryExtend;
 
   visible: boolean = false;
   search: string = '';
-  title: string = 'Add New Income';
+  title: string = 'Add Expense';
   FG!: FormGroup;
   menuItems: MenuItem[] = [];
 
@@ -313,17 +313,22 @@ export class Income implements OnInit, OnDestroy {
 
   GetData() {
     this.loadingService.start();
-    this.incomeService
+    this.expenseService
       .GetMany(this.Query)
       .pipe(takeUntil(this.ngUnsubscribe))
       .subscribe({
         next: (res) => {
-          this.loadingService.stop();
           this.PagingSignal.set(res);
+          this.loadingService.stop();
           this.cdr.markForCheck();
         },
         error: (err) => {
           this.loadingService.stop();
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: err.message || 'An error occurred while fetching data.',
+          });
         },
       });
   }
@@ -335,7 +340,7 @@ export class Income implements OnInit, OnDestroy {
     }
 
     const sortText = BuildSortText(event);
-    this.Query.OrderBy = sortText ? sortText : `CreatedAt desc`;
+    this.Query.OrderBy = sortText || 'CreatedAt desc';
 
     this.Query.Filter = BuildFilterText(event);
     this.GetData();
@@ -344,7 +349,6 @@ export class Income implements OnInit, OnDestroy {
   onKeyDown(event: KeyboardEvent) {
     const isEnter = event.key === 'Enter';
     const isBackspaceClear = event.key === 'Backspace' && this.search === '';
-
     if (isEnter) {
       this.Search(this.search);
     } else if (isBackspaceClear) {
@@ -354,7 +358,7 @@ export class Income implements OnInit, OnDestroy {
 
   Search(data: string) {
     const filter = {
-      IncomeNo: [
+      ExpenseNo: [
         {
           value: data,
           matchMode: '=',
@@ -362,7 +366,6 @@ export class Income implements OnInit, OnDestroy {
         },
       ],
     };
-
     if (this.fTable != null) {
       this.fTable.first = 0;
       this.fTable.filters = filter;
@@ -375,7 +378,6 @@ export class Income implements OnInit, OnDestroy {
       sortOrder: null,
       filters: filter,
     };
-
     this.NextPage(event);
   }
 
@@ -392,17 +394,17 @@ export class Income implements OnInit, OnDestroy {
     this.GetData();
   }
 
-  ActionClick(data: IncomeDto | null, action: string) {
+  ActionClick(data: ExpenseDto | null, action: string) {
     this.initForm();
 
     if (action === 'Create') {
-      this.title = 'Add New Income';
+      this.title = 'Add Expense';
       this.FG.reset();
       this.visible = true;
       this.cdr.detectChanges();
     } else if (action === 'Delete' && data) {
       this.loadingService.start();
-      this.incomeService
+      this.expenseService
         .Delete(data.id)
         .pipe(takeUntil(this.ngUnsubscribe))
         .subscribe({
@@ -412,23 +414,28 @@ export class Income implements OnInit, OnDestroy {
               (x) => x.id === data.id,
             );
             if (index !== -1) {
-              const updatedData = [...this.PagingSignal().data];
-              updatedData.splice(index, 1);
+              this.PagingSignal().data.splice(index, 1);
               this.PagingSignal.set({
                 ...this.PagingSignal(),
-                data: updatedData,
+                data: [...this.PagingSignal().data],
                 totalElements: this.PagingSignal().totalElements - 1,
               });
             }
             this.cdr.markForCheck();
             this.messageService.add({
               severity: 'success',
-              summary: 'Deleted',
-              detail: `Income ${data.incomeNo} deleted`,
+              summary: 'Success',
+              detail: 'Expense deleted successfully.',
             });
           },
           error: (err) => {
             this.loadingService.stop();
+            this.messageService.add({
+              severity: 'error',
+              summary: 'Error',
+              detail:
+                err.message || 'An error occurred while deleting expense.',
+            });
           },
         });
     }
@@ -438,7 +445,7 @@ export class Income implements OnInit, OnDestroy {
     this.FG = new FormGroup({
       id: new FormControl<string | null>({ value: null, disabled: true }),
       amount: new FormControl<number | null>(null, Validators.required),
-      incomeDate: new FormControl<Date | null>(new Date()),
+      expenseDate: new FormControl<Date | null>(new Date()),
       paymentMode: new FormControl<string | null>(null),
       description: new FormControl<string | null>(null),
     });
@@ -450,7 +457,7 @@ export class Income implements OnInit, OnDestroy {
     if (!this.FG.valid) return;
 
     this.loadingService.start();
-    this.incomeService
+    this.expenseService
       .Create(this.FG.value)
       .pipe(takeUntil(this.ngUnsubscribe))
       .subscribe({
@@ -461,23 +468,22 @@ export class Income implements OnInit, OnDestroy {
           this.cdr.markForCheck();
           this.messageService.add({
             severity: 'success',
-            summary: 'Successfully Created',
-            detail: `Income: ${res.incomeNo} created successfully.`,
+            summary: 'Success',
+            detail: 'Expense created successfully.',
           });
-          this.FG.reset();
         },
         error: (err) => {
           this.loadingService.stop();
           this.messageService.add({
             severity: 'error',
-            summary: 'Creation Failed',
-            detail: err?.error?.message || 'Something went wrong',
+            summary: 'Error',
+            detail: err.message || 'An error occurred while creating expense.',
           });
         },
       });
   }
 
-  onEllipsisClick(event: any, data: IncomeDto, menu: any) {
+  onEllipsisClick(event: any, data: ExpenseDto, menu: any) {
     this.menuItems = [
       {
         label: 'Delete',

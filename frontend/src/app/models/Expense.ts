@@ -1,17 +1,17 @@
 import { BaseModel } from './BaseModel';
 
-export interface IncomeDto extends BaseModel {
-  incomeNo: string;
+export interface ExpenseDto extends BaseModel {
+  expenseNo: string;
   amount: number;
-  incomeDate: Date;
+  expenseDate: Date;
   paymentMode: string;
   description: string;
 }
 
-export interface CreateIncomeRequest {
-  incomeNo: string;
+export interface CreateExpenseRequest {
+  expenseNo: string;
   amount: number;
-  incomeDate: Date;
+  expenseDate: Date;
   paymentMode: string;
   description: string;
 }

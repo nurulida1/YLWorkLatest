@@ -187,27 +187,45 @@ namespace YLWorks.Controller
 
         private async Task<string> GenerateIncomeNoAsync()
         {
-            var today = DateTime.Now.ToString("yyyyMMdd");
+            var today = DateTime.Now.ToString("yyMMdd"); // 260409
 
-            var lastIncome = await _context.Incomes
-                .Where(x => x.IncomeNo.StartsWith($"INC-"))
+            var last = await _context.Incomes
+                .Where(x => x.IncomeNo.StartsWith($"INC-{today}"))
                 .OrderByDescending(x => x.IncomeNo)
                 .FirstOrDefaultAsync();
 
-            int nextNumber = 1;
+            int next = last == null ? 1 : int.Parse(last.IncomeNo.Split('-').Last()) + 1;
 
-            if (lastIncome != null)
+            return $"INC-{today}-{next:D4}";
+        }
+
+        [HttpDelete("Delete")]
+        public async Task<ActionResult> Delete([FromQuery] Guid id)
+        {
+            var income = await _context.Incomes.FindAsync(id);
+            if (income == null)
+                return NotFound(new { Error = "Income not found." });
+
+            try
             {
-                var lastNumber = lastIncome.IncomeNo.Split('-').Last();
-                nextNumber = int.Parse(lastNumber) + 1;
-            }
+                _context.Incomes.Remove(income);
+                await _context.SaveChangesAsync();
 
-            return $"INC-{nextNumber:D4}";
+                // Optional: Notify via SignalR
+                await _hub.Clients.All.SendAsync("IncomeDeleted", id);
+
+                return Ok(new { Message = "Income deleted successfully." });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Error = "Failed to delete income." });
+            }
         }
 
     }
 
-
-
+    
         
+
+
     }

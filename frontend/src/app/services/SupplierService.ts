@@ -17,8 +17,8 @@ import {
 @Injectable({
   providedIn: 'root',
 })
-export class ClientService {
-  url = environment.ApiBaseUrl + '/Client';
+export class SupplierService {
+  url = environment.ApiBaseUrl + '/Supplier';
 
   constructor(
     private http: HttpClient,

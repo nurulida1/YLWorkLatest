@@ -9,27 +9,37 @@ import {
   signal,
   ViewChild,
 } from '@angular/core';
-import { FormGroup, FormsModule } from '@angular/forms';
+import {
+  FormControl,
+  FormGroup,
+  FormsModule,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
+import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
 import { MenuModule } from 'primeng/menu';
 import { Table, TableLazyLoadEvent, TableModule } from 'primeng/table';
-import { LoadingService } from '../../../services/loading.service';
+import { TextareaModule } from 'primeng/textarea';
 import { MenuItem, MessageService } from 'primeng/api';
-import { Observable, Subject, takeUntil } from 'rxjs';
-import {
-  BuildFilterText,
-  BuildSortText,
-  GridifyQueryExtend,
-  PagingContent,
-} from '../../../shared/helpers/helpers';
+import { Subject, takeUntil } from 'rxjs';
+import { LoadingService } from '../../../services/loading.service';
+import { SupplierService } from '../../../services/SupplierService';
+import { InputNumberModule } from 'primeng/inputnumber';
 import { CompanyDto } from '../../../models/Company';
+import {
+  PagingContent,
+  GridifyQueryExtend,
+  BuildFilterText,
+  ValidateAllFormFields,
+  BuildSortText,
+} from '../../../shared/helpers/helpers';
 import { ImageModule } from 'primeng/image';
-import { ClientService } from '../../../services/ClientService';
 
 @Component({
-  selector: 'app-client',
+  selector: 'app-supplier',
   imports: [
     CommonModule,
     RouterLink,
@@ -52,16 +62,16 @@ import { ClientService } from '../../../services/ClientService';
           Dashboard
         </div>
         /
-        <div class="text-gray-700 font-semibold">Client</div>
+        <div class="text-gray-700 font-semibold">Supplier</div>
       </div>
       <div
         class="mt-3 border border-gray-200 rounded-md tracking-wide bg-white p-5 flex flex-col"
       >
         <div class="flex flex-row items-center justify-between">
           <div class="flex flex-col">
-            <div class="text-[20px] text-gray-700 font-semibold">Client</div>
+            <div class="text-[20px] text-gray-700 font-semibold">Supplier</div>
             <div class="text-gray-500 text-[15px]">
-              Manage client profiles and information
+              Manage supplier profiles and information
             </div>
           </div>
           <div class="flex flex-row items-center gap-2">
@@ -79,7 +89,7 @@ import { ClientService } from '../../../services/ClientService';
               ></i>
             </div>
             <p-button
-              label="New Client"
+              label="New Supplier"
               (onClick)="ActionClick(null, 'add')"
               icon="pi pi-plus-circle"
               severity="info"
@@ -173,7 +183,7 @@ import { ClientService } from '../../../services/ClientService';
               <tr>
                 <td class="border-x!" colspan="100%">
                   <div class="text-[15px] text-center text-gray-500">
-                    No client found in record.
+                    No supplier found in record.
                   </div>
                 </td>
               </tr>
@@ -183,15 +193,15 @@ import { ClientService } from '../../../services/ClientService';
       </div>
     </div>
     <p-menu #menu [model]="menuItems" [popup]="true"></p-menu> `,
-  styleUrl: './client.less',
+  styleUrl: './supplier.less',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class Client implements OnInit, OnDestroy {
+export class Supplier implements OnInit, OnDestroy {
   @ViewChild('fTable') fTable?: Table;
 
   private readonly loadingService = inject(LoadingService);
   private readonly messageService = inject(MessageService);
-  private readonly clientService = inject(ClientService);
+  private readonly supplierService = inject(SupplierService);
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly router = inject(Router);
   protected ngUnsubscribe: Subject<void> = new Subject<void>();
@@ -205,7 +215,7 @@ export class Client implements OnInit, OnDestroy {
   isUpdate: boolean = false;
 
   search: string = '';
-  title: string = 'Add New Client';
+  title: string = 'Add New Supplier';
   FG!: FormGroup;
   menuItems: MenuItem[] = [];
 
@@ -222,7 +232,7 @@ export class Client implements OnInit, OnDestroy {
 
   GetData() {
     this.loadingService.start();
-    this.clientService
+    this.supplierService
       .GetMany(this.Query)
       .pipe(takeUntil(this.ngUnsubscribe))
       .subscribe({
@@ -303,7 +313,7 @@ export class Client implements OnInit, OnDestroy {
     if (action === 'Delete' && data) {
       this.loadingService.start();
 
-      this.clientService
+      this.supplierService
         .Delete(data?.id)
         .pipe(takeUntil(this.ngUnsubscribe))
         .subscribe({
@@ -313,7 +323,7 @@ export class Client implements OnInit, OnDestroy {
             this.messageService.add({
               severity: 'success',
               summary: 'Deleted',
-              detail: res?.message || 'Client deleted successfully',
+              detail: res?.message || 'Supplier deleted successfully',
             });
 
             this.PagingSignal.update((state) => ({
@@ -333,28 +343,28 @@ export class Client implements OnInit, OnDestroy {
               detail:
                 err.error?.error ||
                 err.error?.message ||
-                'Failed to delete client',
+                'Failed to delete supplier',
             });
           },
         });
     } else {
-      this.router.navigate(['/clients/form'], {
+      this.router.navigate(['/supplier/form'], {
         queryParams: { id: data?.id },
       });
     }
   }
 
-  onEllipsisClick(event: any, client: any, menu: any) {
+  onEllipsisClick(event: any, supplier: any, menu: any) {
     this.menuItems = [
       {
         label: 'Edit',
         icon: 'pi pi-pencil',
-        command: () => this.ActionClick(client, 'Update'),
+        command: () => this.ActionClick(supplier, 'Update'),
       },
       {
         label: 'Delete',
         icon: 'pi pi-trash',
-        command: () => this.ActionClick(client, 'Delete'),
+        command: () => this.ActionClick(supplier, 'Delete'),
       },
     ];
 

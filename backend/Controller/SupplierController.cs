@@ -11,12 +11,12 @@ namespace YLWorks.Controller
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class ClientController : ControllerBase
+    public class SupplierController : ControllerBase
     {
         private readonly AppDbContext _context;
         private readonly IHubContext<NotificationHub> _hub;
 
-        public ClientController(AppDbContext context, IHubContext<NotificationHub> hub)
+        public SupplierController(AppDbContext context, IHubContext<NotificationHub> hub)
         {
             _context = context;
             _hub = hub;
@@ -34,7 +34,7 @@ namespace YLWorks.Controller
             {
                 var query = _context.Companies
                     .Include(c => c.BillingAddress)
-                    .Include(c => c.DeliveryAddress).Where(x => x.Type == CompanyType.Client)
+                    .Include(c => c.DeliveryAddress).Where(x => x.Type == CompanyType.Supplier)
                     .AsQueryable();
 
                 if (!string.IsNullOrEmpty(includes))
@@ -286,7 +286,7 @@ namespace YLWorks.Controller
                     ACNo = request.ACNo,
                     Email = request.Email,
                     WebsiteUrl = request.WebsiteUrl,
-                    Type = CompanyType.Client,
+                    Type = CompanyType.Supplier,
                     LogoImage = request.LogoImage,
                     TINNo = request.TINNo,
                     SSTRegNo = request.SSTRegNo,
@@ -326,13 +326,13 @@ namespace YLWorks.Controller
                     }
                 };
 
-                await _hub.Clients.All.SendAsync("ClientAdded", result);
+                await _hub.Clients.All.SendAsync("SupplierAdded", result);
 
                 return Ok(result);
             }
             catch (Exception)
             {
-                return StatusCode(500, new { Error = "Failed to add client." });
+                return StatusCode(500, new { Error = "Failed to add supplier." });
             }
         }
 
@@ -347,10 +347,10 @@ namespace YLWorks.Controller
                 .Include(c => c.DeliveryAddress)
                 .FirstOrDefaultAsync(x =>
                     x.Id == request.Id &&
-                    x.Type == CompanyType.Client);
+                    x.Type == CompanyType.Supplier);
 
             if (comp == null)
-                return NotFound(new { Error = "Client not found." });
+                return NotFound(new { Error = "Supplier not found." });
 
             try
             {
@@ -362,7 +362,7 @@ namespace YLWorks.Controller
                 comp.ACNo = request.ACNo;
                 comp.Email = request.Email;
                 comp.WebsiteUrl = request.WebsiteUrl;
-                comp.Type = CompanyType.Client;
+                comp.Type = CompanyType.Supplier;
                 comp.LogoImage = request.LogoImage;
                 comp.TINNo = request.TINNo;
                 comp.SSTRegNo = request.SSTRegNo;
@@ -438,13 +438,13 @@ namespace YLWorks.Controller
                     IsActive = comp.IsActive
                 };
 
-                await _hub.Clients.All.SendAsync("ClientUpdated", result);
+                await _hub.Clients.All.SendAsync("SupplierUpdated", result);
 
                 return Ok(result);
             }
             catch (Exception)
             {
-                return StatusCode(500, new { Error = "Failed to update client." });
+                return StatusCode(500, new { Error = "Failed to update supplier." });
             }
         }
 
@@ -453,23 +453,23 @@ namespace YLWorks.Controller
         {
             var comp = await _context.Companies.FirstOrDefaultAsync(x =>
                     x.Id == id &&
-                    x.Type == CompanyType.Client);
+                    x.Type == CompanyType.Supplier);
 
             if (comp == null)
-                return NotFound(new { Error = "Client not found." });
+                return NotFound(new { Error = "Supplier not found." });
 
             try
             {
                 _context.Companies.Remove(comp);
                 await _context.SaveChangesAsync();
 
-                await _hub.Clients.All.SendAsync("ClientDeleted", id);
+                await _hub.Clients.All.SendAsync("SupplierDeleted", id);
 
-                return Ok(new { Message = "Client deleted successfully." });
+                return Ok(new { Message = "Supplier deleted successfully." });
             }
             catch (Exception)
             {
-                return StatusCode(500, new { Error = "Failed to delete client." });
+                return StatusCode(500, new { Error = "Failed to delete supplier." });
             }
         }
     }

@@ -167,7 +167,7 @@ export const routes: Routes = [
   },
 
   {
-    path: 'suppliers',
+    path: 'supplier',
     canActivate: [authGuard],
     loadComponent: () =>
       import('./shared/components/web-layout/web-layout').then(
@@ -176,8 +176,10 @@ export const routes: Routes = [
     children: [
       {
         path: '',
-        loadComponent: () =>
-          import('./components/supplier/supplier').then((m) => m.Supplier),
+        loadChildren: () =>
+          import('./components/suppliers/supplier-routing.module').then(
+            (m) => m.SupplierRoutingModule,
+          ),
       },
     ],
   },

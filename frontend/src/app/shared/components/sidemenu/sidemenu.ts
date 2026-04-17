@@ -243,7 +243,7 @@ export class Sidemenu {
         },
         {
           label: 'Suppliers',
-          route: '/suppliers',
+          route: '/supplier',
         },
         {
           label: 'Supplier Payments',

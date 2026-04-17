@@ -296,7 +296,8 @@ namespace YLWorks.Controller
                     Id = comp.Id,
                     Name = comp.Name,
                     IsActive = comp.IsActive,
-
+                    Type = comp.Type,
+                    SameAsBillingAddress = comp.SameAsBillingAddress,
                     BillingAddress = billingAddress == null ? null : new AddressDto
                     {
                         Id = billingAddress.Id,

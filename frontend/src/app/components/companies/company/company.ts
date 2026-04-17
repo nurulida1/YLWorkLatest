@@ -72,6 +72,7 @@ import { CompanyType } from '../../../shared/enum/enum';
                 pInputText
                 class="w-full! text-[15px]!"
                 placeholder="Search by name"
+                [(ngModel)]="search"
                 (keyup)="onKeyDown($event)"
               />
               <i

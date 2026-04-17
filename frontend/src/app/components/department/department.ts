@@ -74,6 +74,7 @@ import { DialogModule } from 'primeng/dialog';
               <input
                 type="text"
                 pInputText
+                [(ngModel)]="search"
                 class="w-full! text-[15px]!"
                 placeholder="Search by name"
                 (keyup)="onKeyDown($event)"

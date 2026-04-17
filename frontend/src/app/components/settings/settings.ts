@@ -149,7 +149,7 @@ export class Settings implements OnInit, OnDestroy {
 
   constructor() {
     this.role =
-      (this.userService.currentUser?.role as UserRole) ?? UserRole.Staff;
+      (this.userService.currentUser?.systemRole as UserRole) ?? UserRole.Staff;
   }
 
   ngOnInit(): void {

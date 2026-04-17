@@ -1,41 +1,50 @@
 ﻿namespace YLWorks.Model
 {
-    public class Attachment: BaseEntity
+    public class AttachmentDto : BaseEntity
     {
         public Guid Id { get; set; }
+
         public string FileName { get; set; } = null!;
         public string FileType { get; set; } = null!;
-        public byte[] FileData { get; set; } = null!;
+        public long FileSize { get; set; }
 
-        // Generic reference to what this attachment belongs to
-        public Guid? InvoiceId { get; set; }
-        public Guid? LeaveApplicationId { get; set; }
-        public Guid? MaterialRequestId { get; set; }
-        public Guid? PaymentId { get; set; }
-        public Guid? ProjectTaskId { get; set; }
+        // Store file as URL or path (NOT byte[])
+        public string FileUrl { get; set; } = null!;
 
-        // Navigation properties
-        public Invoice? Invoice { get; set; }
-        public LeaveApplication? LeaveApplication { get; set; }
-        public MaterialRequest? MaterialRequest { get; set; }
-        public Payments? Payment { get; set; }
-        public ProjectTask? ProjectTask { get; set; }
+        // Generic reference system (IMPORTANT FIX)
+        public string EntityType { get; set; } = null!; // Invoice, MR, Payment, etc.
+        public Guid EntityId { get; set; }
+
+        public DateTime UploadedAt { get; set; } = DateTime.UtcNow;
+
+        public Guid? UploadedById { get; set; }
+        public User? UploadedBy { get; set; }
     }
 
     public class CreateAttachmentRequest
     {
-        // For now: either a base64 string or URL
         public string FileName { get; set; } = string.Empty;
-        public string FileType { get; set; } = string.Empty; // e.g., "pdf", "jpg"
-        public string Base64Data { get; set; } = string.Empty;  // convert to byte[] in service
+        public string FileType { get; set; } = string.Empty;
+
+        public string Base64Data { get; set; } = string.Empty;
+
+        // required to link dynamically
+        public string EntityType { get; set; } = string.Empty;
+        public Guid EntityId { get; set; }
+
+        public Guid? UploadedById { get; set; }
     }
+
     public class AttachmentUpdateRequest
     {
-        public Guid? Id { get; set; } // null = new attachment, otherwise update existing
-        public string FileName { get; set; } = string.Empty; // required
-        public string FileType { get; set; } = string.Empty; // e.g., "jpg", "pdf"
-        public string Base64Data { get; set; } = string.Empty; // convert to byte[] in service
+        public Guid Id { get; set; }
+
+        public string FileName { get; set; } = string.Empty;
+        public string FileType { get; set; } = string.Empty;
+
+        public string? Base64Data { get; set; }
+
+        public string EntityType { get; set; } = string.Empty;
+        public Guid EntityId { get; set; }
     }
-
-
 }

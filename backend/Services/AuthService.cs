@@ -34,11 +34,10 @@ namespace YLWorks.Services
             {
                 Email = request.Email,
                 IsActive = true,
-                Role = request.Role,
-                FirstName = string.Empty,
-                LastName = string.Empty,
+                SystemRole = request.SystemRole,
+                FullName = request.FullName,
             };
-            user.PasswordHash = new PasswordHasher<User>().HashPassword(user, request.Password);
+            user.Password = new PasswordHasher<User>().HashPassword(user, request.Password);
 
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
@@ -76,7 +75,7 @@ namespace YLWorks.Services
                 return null;
 
             var passwordHasher = new PasswordHasher<User>();
-            var verifyResult = passwordHasher.VerifyHashedPassword(user, user.PasswordHash, request.Password);
+            var verifyResult = passwordHasher.VerifyHashedPassword(user, user.Password, request.Password);
 
             if (verifyResult == PasswordVerificationResult.Failed)
                 return null;
@@ -144,7 +143,7 @@ namespace YLWorks.Services
             {
                 new Claim(ClaimTypes.Email, user.Email),
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                new Claim(ClaimTypes.Role, user.Role)
+                new Claim(ClaimTypes.Role, user.SystemRole)
             };
 
             var keyString = _config["Jwt:Key"] ?? throw new Exception("JWT Key is missing!");

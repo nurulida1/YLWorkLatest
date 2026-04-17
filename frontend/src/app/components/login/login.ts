@@ -130,14 +130,14 @@ import { MessageService } from 'primeng/api';
             styleClass="!bg-[#4D46F7] !w-full !border-none !py-3 !tracking-wide"
           ></p-button>
         </div>
-        <div class="text-center pt-3 text-gray-500 text-sm">
+        <!-- <div class="text-center pt-3 text-gray-500 text-sm">
           Don't have an account?
           <b
             class="text-[#4D46F7] cursor-pointer hover:underline tracking-wide!"
             [routerLink]="'/register'"
             >Create account</b
           >
-        </div>
+        </div> -->
       </div>
       <div class="text-gray-500 text-sm w-full text-center">
         © 2025 YL Systems Sdn Bhd. All rights reserved.

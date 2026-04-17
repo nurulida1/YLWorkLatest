@@ -1,13 +1,15 @@
 import { BaseModel } from './BaseModel';
-import { ClientDto } from './Client';
-import { ProjectTaskDto } from './ProjectTask';
+import { CompanyDto } from './Company';
+import { PurchaseOrderDto } from './PurchaseOrder';
+import { QuotationDto } from './Quotation';
 import { UserDto } from './User';
+import { WorkOrderDto } from './WorkOrder';
 
 export interface ProjectDto extends BaseModel {
+  projectCode: string;
   projectTitle: string;
   clientId: string;
-  progress: number;
-  client: ClientDto;
+  client: CompanyDto;
   status: string;
   dueDate: Date;
   createdById: string;
@@ -15,17 +17,23 @@ export interface ProjectDto extends BaseModel {
   description: string;
   priority: string;
   projectMembers: ProjectMember[];
-  tasks: ProjectTaskDto[];
+  workOrders: WorkOrderDto[];
+  quotations: QuotationDto[];
+  purchaseOrders: PurchaseOrderDto[];
 }
 
 export interface ProjectMember extends BaseModel {
-  projectId: string;
+  projectCode: string;
   project: ProjectDto;
   userId: string;
   user: UserDto;
+  assignedAt: Date;
+  assignedById: string;
+  assignedBy: UserDto;
 }
 
 export interface CreateProjectRequest {
+  projectCode: string;
   projectTitle: string;
   clientId: string;
   dueDate: Date;
@@ -45,6 +53,24 @@ export interface ProjectMemberRequest {
 export interface UpdateProjectStatusRequest {
   projectId: string;
   status: string;
+}
+
+export interface ProjectDto {
+  id: string;
+  projectCode: string;
+  projectTitle: string;
+  description: string;
+  dueDate: Date;
+  priority: string;
+  clientId: string;
+  client: CompanyDto;
+  status: string;
+  projectMembers: ProjectMember[];
+}
+
+export interface ProjectMemberDto {
+  userId: string;
+  user: UserDto;
 }
 
 export interface ProjectDropdownDto {

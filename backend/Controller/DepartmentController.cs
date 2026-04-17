@@ -142,6 +142,11 @@ namespace YLWorks.Controller
       {
           u.Id,
           u.Name,
+          u.HodId,
+          Hod = u.Hod == null ? null : new HodDto
+          {
+              FullName = u.Hod.FullName
+          }
       })
       .ToList();
 
@@ -194,7 +199,7 @@ namespace YLWorks.Controller
                     Id = Guid.NewGuid(),
                     Name = request.Name,
                     HodId = request.HodId,
-                    Status = request.Status,
+                    IsActive = request.IsActive,
                 };
 
                 dept.CreatedAt = DateTime.Now;
@@ -202,10 +207,27 @@ namespace YLWorks.Controller
                 _context.Departments.Add(dept);
                 await _context.SaveChangesAsync();
 
+
+                var result = await _context.Departments
+                    .Where(d => d.Id == dept.Id)
+                    .Include(d => d.Hod)
+                    .Select(d => new DepartmentDto
+                    {
+                        Id = d.Id,
+                        Name = d.Name,
+                        IsActive = d.IsActive,
+                        HodId = d.HodId,
+                        Hod = d.Hod == null ? null : new HodDto
+                        {
+                            FullName = d.Hod.FullName
+                        }
+                    })
+                    .FirstAsync();
+
                 // Optional: Notify via SignalR
                 await _hub.Clients.All.SendAsync("DepartmentAdded", dept);
 
-                return Ok(dept);
+                return Ok(result);
             }
             catch (Exception)
             {
@@ -227,16 +249,31 @@ namespace YLWorks.Controller
             {
                 dept.Name = request.Name ?? dept.Name;
                 dept.HodId = request.HodId;
-                dept.Status = request.Status;
+                dept.IsActive = request.IsActive;
                 dept.UpdatedAt = DateTime.Now;
 
                 _context.Departments.Update(dept);
                 await _context.SaveChangesAsync();
 
                 // Optional: Notify via SignalR
+                var result = await _context.Departments
+           .Where(d => d.Id == dept.Id)
+           .Include(d => d.Hod)
+           .Select(d => new DepartmentDto
+           {
+               Id = d.Id,
+               Name = d.Name,
+               IsActive = d.IsActive,
+               HodId = d.HodId,
+               Hod = d.Hod == null ? null : new HodDto
+               {
+                   FullName = d.Hod.FullName
+               }
+           })
+           .FirstAsync();
                 await _hub.Clients.All.SendAsync("DepartmentUpdated", dept);
-
-                return Ok(dept);
+                
+                return Ok(result);
             }
             catch (Exception ex)
             {

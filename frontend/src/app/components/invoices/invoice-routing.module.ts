@@ -1,7 +1,7 @@
 import { NgModule } from '@angular/core';
 import { Routes, RouterModule } from '@angular/router';
 import { Invoice } from './invoice/invoice';
-import { InvoiceForm } from './invoice-form/invoice-form';
+// import { InvoiceForm } from './invoice-form/invoice-form';
 
 const routes: Routes = [
   {
@@ -10,7 +10,7 @@ const routes: Routes = [
   },
   {
     path: 'form',
-    component: InvoiceForm,
+    // component: InvoiceForm,
   },
   // {
   //   path: 'sign',

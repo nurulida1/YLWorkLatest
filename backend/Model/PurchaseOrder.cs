@@ -1,63 +1,71 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace YLWorks.Model
 {
-    public enum POType
-    {
-        Incoming,
-        Outgoing
-    }
     public class PurchaseOrder: BaseEntity
     {
         public Guid Id { get; set; }
-        public string PONo { get; set; } = string.Empty;
-        public POType Type { get; set; }
-        public string? Terms { get; set; }
-        public string? Page { get; set; }
+        public string PurchaseOrderNo { get; set; } = string.Empty;
+        public string? Type { get; set; } //Incoming / Outcoming
+        public DateTime? PODate { get; set; }
+        public DateTime? POReceivedDate { get; set; }
 
-        public Guid? ProjectId { get; set; }
-        [ForeignKey("ProjectId")] // Explicitly link to the navigation property
-        public virtual Project? Project { get; set; }
+        public Guid? ClientId { get; set; }
+        [ForeignKey("ClientId")] 
+        public Company? Client { get; set; } = null!;
+
+        public Guid? SupplierId { get; set; }
+        [ForeignKey("SupplierId")] 
+        public Company? Supplier { get; set; }
+
+        public string? Terms { get; set; }
+        public string? ProjectCode { get; set; }
+        public Project? Project { get; set; }
 
         public Guid? QuotationId { get; set; }
         public Quotation? Quotation { get; set; }
-
-        public Guid? SupplierId { get; set; }
-        [ForeignKey("SupplierId")] // This ensures EF uses 'SupplierId' and not 'Supplier_Id'
-        public Supplier? Supplier { get; set; }
-
-        public Guid? ClientId { get; set; }
-        [ForeignKey("ClientId")] // This ensures EF uses 'SupplierId' and not 'Supplier_Id'
-        public Client? Client { get; set; } = null!;
-
-        public DateTime? POReceivedDate { get; set; }
-        public DateTime? OrderDate { get; set; }
 
         public int? TotalQuantity { get; set; }
         public decimal? Gross { get; set; }
         public decimal? Discount { get; set; }
         public decimal? TotalAmount { get; set; }
 
-        public string? DeliveryInstruction { get; set; }
-        public DateTime? DeliveryDate { get; set; }
         public string? Remarks { get; set; }
+        public string? Notes { get; set; }
 
-        public Guid CreatedById { get; set; }
-        public User CreatedBy { get; set; }
+        public string? POClientNo { get; set; }
+        public string? SOClientNo { get; set; }
 
-        public string Status { get; set; } = "Draft"; // Draft, Open, Sent, Accepted, Received, Completed, Cancelled
-        public string? Description { get; set; } = string.Empty;
-        public string? TermsConditions { get; set; }
+        public string Status { get; set; } = "Draft"; // Draft, Sent, Accepted, Received, Completed, Cancelled
+        public string? TermsAndCondition { get; set; }
         public string? BankDetails { get; set; }
-        public string? PaymentTerms { get; set; }
-        public ICollection<POItem>? POItems { get; set; } = new List<POItem>();
+        public ICollection<PurchaseOrderStatusHistory> PurchaseOrderStatusHistories { get; set; } = new List<PurchaseOrderStatusHistory>();
+
+        public ICollection<PurchaseOrderItem>? PurchaseOrderItems { get; set; } = new List<PurchaseOrderItem>();
 
     }
 
-    public class POItem: BaseEntity
+    public class PurchaseOrderStatusHistory
     {
         public Guid Id { get; set; }
         public Guid PurchaseOrderId { get; set; }
+        [JsonIgnore]
+        public PurchaseOrder PurchaseOrder { get; set; } = null!;
+        public string Status { get; set; } = string.Empty;
+        public DateTime ActionAt { get; set; }
+        public Guid? ActionUserId { get; set; }
+        public User? ActionUser { get; set; }
+        public string? Remarks { get; set; }
+        public string? SignatureImage { get; set; } 
+    }
+
+    public class PurchaseOrderItem: BaseEntity
+    {
+        public Guid Id { get; set; }
+        public Guid PurchaseOrderId { get; set; }
+
+        [JsonIgnore]
         public PurchaseOrder PurchaseOrder { get; set; } = null!;
 
         public string Item { get; set; }
@@ -93,28 +101,28 @@ namespace YLWorks.Model
 
     public class CreatePORequest
     {
-        public string PONo { get; set; } = string.Empty;
-        public Guid? QuotationId { get; set; }
-        public Guid? ProjectId { get; set; }
-        public Guid? SupplierId { get; set; }
-        public Guid? ClientId { get; set; }
-        public string Terms { get; set; }
+        public string PurchaseOrderNo { get; set; } = string.Empty;
+        public string Type { get; set; } = string.Empty;
+        public DateTime? PODate { get; set; }
         public DateTime? POReceivedDate {  get; set; }
-        public string? Page { get; set; }
+        public Guid? ClientId { get; set; }
+        public Guid? SupplierId { get; set; }
+        public string Terms { get; set; }
+
+        public Guid? QuotationId { get; set; }
+        public string? ProjectCode { get; set; }
 
         public decimal? Gross { get; set; }
         public decimal? Discount { get; set; }
         public decimal TotalAmount { get; set; }
 
-        public string? DeliveryInstruction { get; set; }
-        public DateTime? DeliveryDate { get; set; }
-
-        public string? TermsConditions { get; set; }
-        public string? BankDetails { get; set; }
+        public string? Notes { get; set; }
         public string? Remarks { get; set; }
+        public string? TermsAndConditions { get; set; }
+        public string? BankDetails { get; set; }
         public int? TotalQuantity { get; set; }
 
-        public List<POItemRequest> POItems { get; set; } = new();
+        public List<POItemRequest> PurchaseOrderItems { get; set; } = new();
     }
 
     public class UpdatePORequest : CreatePORequest
@@ -128,6 +136,8 @@ namespace YLWorks.Model
     {
         public Guid Id { get; set; }          // Quotation ID
         public string? Status { get; set; }   // New status value
+        public string? Remarks { get; set; }  // Optional remarks for status change
+        public string? SignatureImage { get; set; } // Optional signature image for approval
     }
 
 }

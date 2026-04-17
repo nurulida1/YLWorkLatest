@@ -1,107 +1,81 @@
 import { BaseModel } from './BaseModel';
-import { ClientDto } from './Client';
+import { CompanyDto } from './Company';
+import { ProjectDto } from './Project';
 import { UserDto } from './User';
 
 export interface QuotationDto extends BaseModel {
   quotationNo: string;
   referenceNo: string;
   quotationDate: Date;
-  dueDate: Date;
-  status: string;
   clientId: string;
-  client: ClientDto;
+  client: CompanyDto;
+  projectCode: string;
+  project: ProjectDto;
+  subject: string;
   totalAmount: number;
-  discountRate: number;
-  signatureName: string;
-  description: string;
-  termsConditions?: string;
-  bankDetails?: string;
-  signatureImageUrl: string;
-  createdById: string;
-  createdBy: UserDto;
-  assignedToId?: string;
-  assignedTo?: UserDto;
-  items: QuotationItems[];
+  termsAndConditions: string;
+  status: string;
+  remarks: string;
+  quotationItems: QuotationItems[];
+  quotationStatusHistories: QuotationStatusHistory[];
+}
+
+export interface QuotationStatusHistory extends BaseModel {
+  quotationId: string;
+  quotation: QuotationDto;
+  status: string;
+  actionAt: Date;
+  actionUserId: string;
+  actionUser: UserDto;
+  remarks: string;
+  signatureImage: string;
 }
 
 export interface QuotationItems extends BaseModel {
   quotationId: string;
   quotation: QuotationDto;
+  title: string;
   description: string;
   quantity: number;
   unit: string;
-  rate: number;
-  taxRate: number;
-  amount: number;
+  unitPrice: number;
+  totalPrice: number;
+}
+
+export interface QuotationItemBase {
+  title: string;
+  description: string;
+  quantity: number;
+  unit: string;
+  untiPrice: number;
+  totalPrice: number;
+}
+
+export interface QuotationItemRequest extends QuotationItemBase {}
+
+export interface UpdateQuotationItemRequest extends QuotationItemBase {
+  id: string;
 }
 
 export interface CreateQuotationRequest {
   quotationNo: string;
   referenceNo: string;
-  clientId: string;
-  description: string;
   quotationDate: Date;
-  dueDate: Date;
-  subTotal: number;
-  tax: number;
-  discount: number;
-  termsConditions?: string;
-  bankDetails?: string;
+  clientId: string;
+  projectCode: string;
+  subject: string;
   totalAmount: number;
-  signatureName: string;
-  signatureImageUrl: string;
-  items: QuotationItemRequest[];
+  termsAndConditions: string;
+  quotationItems: QuotationItemRequest[];
 }
 
-export interface UpdateQuotationRequest {
+export interface UpdateQuotationRequest extends CreateQuotationRequest {
   id: string;
-  quotationNo: string;
-  referenceNo: string;
-  clientId: string;
-  description: string;
-  termsConditions?: string;
-  bankDetails?: string;
-  quotationDate: Date;
-  dueDate: Date;
-  discount: number;
-  subTotal: number;
-  tax: number;
-  totalAmount: number;
-  signatureName: string;
-  signatureImageUrl: string;
   items: UpdateQuotationItemRequest[];
-}
-
-export interface UpdateQuotationItemRequest {
-  id: string;
-  description: string;
-  quantity: number;
-  unit: string;
-  rate: number;
-  taxRate: number;
-  amount: number;
-}
-
-export interface QuotationItemRequest {
-  description: string;
-  quantity: number;
-  unit: string;
-  rate: number;
-  taxRate: number;
-  amount: number;
-}
-
-export interface QuotationItemUpdateRequest extends QuotationItemRequest {
-  id: string;
 }
 
 export interface UpdateQuotationStatusRequest {
   id: string;
   status: string;
-}
-
-export interface SubmitSignatureRequest {
-  quotationId: string; // The actual Quotation being signed
-  signatureImageUrl: string;
-  signedByUserId: string; // The ID of the user signing
+  signatureImage: string;
 }

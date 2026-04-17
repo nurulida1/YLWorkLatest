@@ -35,8 +35,8 @@ import {
   ValidateAllFormFields,
 } from '../../shared/helpers/helpers';
 import { PaymentDto } from '../../models/Payments';
-import { SupplierService } from '../../services/supplierService';
 import { InvoiceService } from '../../services/invoiceService.service';
+import { CompanyService } from '../../services/companyService';
 
 @Component({
   selector: 'app-supplier-payment',
@@ -445,7 +445,7 @@ export class SupplierPayment implements OnInit, OnDestroy {
 
   private readonly loadingService = inject(LoadingService);
   private readonly paymentService = inject(PaymentService);
-  private readonly supplierService = inject(SupplierService);
+  private readonly companyService = inject(CompanyService);
   private readonly invoiceService = inject(InvoiceService);
   private readonly messageService = inject(MessageService);
   private readonly cdr = inject(ChangeDetectorRef);
@@ -504,7 +504,7 @@ export class SupplierPayment implements OnInit, OnDestroy {
     this.loadingService.start();
 
     forkJoin({
-      suppliers: this.supplierService.GetMany({
+      suppliers: this.companyService.GetMany({
         Page: 1,
         PageSize: 10000,
         Filter: null,
@@ -525,7 +525,7 @@ export class SupplierPayment implements OnInit, OnDestroy {
         this.suppliers = (suppliers?.data || []).map((s) => ({
           label: s?.name ?? 'Unknown Supplier',
           value: s?.id,
-          balance: s?.balance ?? 0,
+          balance: s?.balancePayment ?? 0,
         }));
 
         this.invoices = (invoices?.data || []).map((i) => ({

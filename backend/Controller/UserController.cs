@@ -26,16 +26,13 @@ namespace WebApplication1.Controllers
         private readonly IHubContext<NotificationHub> _hub;
         private readonly IConfiguration _config;
 
-
         public UsersController(AppDbContext context, EmailService emailService, IHubContext<NotificationHub> hub, IConfiguration config)
         {
             _context = context;
             _emailService = emailService;
             _hub = hub;
             _config = config;
-
         }
-
 
         [HttpGet("GetMany")]
         public ActionResult<object> GetMany(
@@ -50,7 +47,6 @@ namespace WebApplication1.Controllers
             {
                 var query = _context.Users.AsQueryable();
 
-                // Includes (e.g., "Customer,Items")
                 if (!string.IsNullOrEmpty(includes))
                 {
                     foreach (var include in includes.Split(','))
@@ -155,17 +151,19 @@ namespace WebApplication1.Controllers
       .Select(u => new
       {
           u.Id,
-          u.EmployeeId,
-          u.FirstName,
-          u.LastName,
+          u.EmployeeNo,
+          u.FullName,
           u.Email,
-          u.Role,
+          u.SystemRole,
           u.JobTitle,
           u.IsActive,
           u.LastLoginAt,
           u.ContactNo,
+          u.Gender,
           u.CreatedAt,
-          Department = u.Department == null ? null : new { u.Department.Id, u.Department.Name }
+          u.JoinedDate,
+          u.HodId,
+          Departments = u.Departments.Select(d => new { d.Id, d.Name }),
       })
       .ToList();
 
@@ -357,7 +355,7 @@ namespace WebApplication1.Controllers
                 }
                 // Here you would normally verify the password hash
                 var hashedInput = HashPassword(request.Password);
-                if (user.PasswordHash != hashedInput) // Simplified for example
+                if (user.Password != hashedInput) // Simplified for example
                 {
                     return Ok(new { Success = false, Message = "Your password is incorrect" });
                 }
@@ -372,10 +370,18 @@ namespace WebApplication1.Controllers
                     User = new
                     {
                         user.Id,
-                        user.FirstName,
-                        user.LastName,
+                        user.FullName,
                         user.Email,
-                        user.Role,
+                        user.SystemRole,
+                        user.JobTitle,
+                        user.HodId,
+                        Hod = user.Hod == null ? null : new
+                        {
+                            user.Hod.Id,
+                            user.Hod.FullName,
+                            user.Hod.Email,
+                            user.Hod.JobTitle
+                        }
                     }
                 });
             }
@@ -390,7 +396,7 @@ namespace WebApplication1.Controllers
             {
         new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
         new Claim(ClaimTypes.Email, user.Email),
-        new Claim(ClaimTypes.Role, user.Role ?? "Staff")
+        new Claim(ClaimTypes.Role, user.SystemRole ?? "Staff")
     };
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]));
@@ -437,16 +443,20 @@ namespace WebApplication1.Controllers
                 var newUser = new User
                 {
                     Id = Guid.NewGuid(),
-                    EmployeeId = GenerateEmployeeId(),
-                    FirstName = request.FirstName,
-                    LastName = request.LastName,
+                    EmployeeNo = GenerateEmployeeNo(),
+                    FullName = request.FullName,
                     Email = request.Email,
-                    Role = string.IsNullOrEmpty(request.Role) ? "Staff" : request.Role,
+                    ContactNo = request.ContactNo,
+                    JobTitle = request.JobTitle,
+                    SystemRole = request.JobTitle,
+                    JoinedDate = request.JoinedDate,
+                    HodId = request.HodId,
+                    Gender = request.Gender,
                     IsActive = true,
                     CreatedAt = DateTime.UtcNow
                 };
                 var passwordHasher = new PasswordHasher<User>();
-                newUser.PasswordHash = passwordHasher.HashPassword(newUser, request.Password);
+                newUser.Password = passwordHasher.HashPassword(newUser, request.Password);
 
                 _context.Users.Add(newUser);
                 await _context.SaveChangesAsync();
@@ -455,7 +465,7 @@ namespace WebApplication1.Controllers
                 await _hub.Clients.All.SendAsync("ReceiveNotification", new
                 {
                     Title = "New User Registered",
-                    Message = $"{newUser.FirstName} {newUser.LastName} has joined as {newUser.Role}.",
+                    Message = $"{newUser.FullName} has joined as {newUser.JobTitle}.",
                     Type = "info",
                     Time = DateTime.UtcNow
                 });
@@ -473,7 +483,7 @@ namespace WebApplication1.Controllers
             }
         }
 
-        private string GenerateEmployeeId()
+        private string GenerateEmployeeNo()
         {
             // Get last EmployeeId numeric part
             var lastEmployee = _context.Users
@@ -481,9 +491,9 @@ namespace WebApplication1.Controllers
                 .FirstOrDefault();
 
             int nextNumber = 1;
-            if (lastEmployee != null && lastEmployee.EmployeeId.StartsWith("EMP-"))
+            if (lastEmployee != null && lastEmployee.EmployeeNo.StartsWith("EMP-"))
             {
-                var lastNumberStr = lastEmployee.EmployeeId.Substring(4); // skip "EMP-"
+                var lastNumberStr = lastEmployee.EmployeeNo.Substring(4); // skip "EMP-"
                 if (int.TryParse(lastNumberStr, out int lastNumber))
                     nextNumber = lastNumber + 1;
             }
@@ -507,7 +517,7 @@ namespace WebApplication1.Controllers
                 if (request.NewPassword != request.ConfirmPassword)
                     return Ok(new { Success = false, Message = "Passwords do not match." });
 
-                user.PasswordHash = HashPassword(request.NewPassword);
+                user.Password = HashPassword(request.NewPassword);
                 user.UpdatedAt = DateTime.UtcNow;
                 await _context.SaveChangesAsync();
 
@@ -515,7 +525,7 @@ namespace WebApplication1.Controllers
                 await _hub.Clients.All.SendAsync("ReceiveNotification", new
                 {
                     Title = "Password Changed",
-                    Message = $"Password for {user.FirstName} {user.LastName} has been updated.",
+                    Message = $"Password for {user.FullName} has been updated.",
                     Type = "info",
                     Time = DateTime.UtcNow
                 });
@@ -546,7 +556,7 @@ namespace WebApplication1.Controllers
                     return Ok(new { Success = false, Message = "Invalid or expired token." });
 
                 // Update password
-                resetToken.User.PasswordHash = HashPassword(request.NewPassword);
+                resetToken.User.Password = HashPassword(request.NewPassword);
                 resetToken.User.UpdatedAt = DateTime.UtcNow;
 
                 // Remove used token
@@ -636,7 +646,7 @@ namespace WebApplication1.Controllers
                 _context.PasswordResetTokens.Add(resetToken);
                 _context.SaveChanges();
 
-                var resetLink = $"http://192.168.1.75:4200/reset-password?token={Uri.EscapeDataString(token)}";
+                var resetLink = $"http://192.168.1.76:4200/reset-password?token={Uri.EscapeDataString(token)}";
                 _emailService.SendResetEmail(user.Email, resetLink);
 
                 Console.WriteLine($"Password reset link for {user.Email}: {resetLink}");
@@ -690,15 +700,14 @@ namespace WebApplication1.Controllers
                     return NotFound(new { Success = false, Message = "User not found." });
 
                 // Update fields only if they are provided in the request
-                if (!string.IsNullOrEmpty(request.FirstName)) user.FirstName = request.FirstName;
-                if (!string.IsNullOrEmpty(request.LastName)) user.LastName = request.LastName;
+                if (!string.IsNullOrEmpty(request.FullName)) user.FullName = request.FullName;
                 if (!string.IsNullOrEmpty(request.ContactNo)) user.ContactNo = request.ContactNo;
+                if (!string.IsNullOrEmpty(request.Email)) user.Email = request.Email;
                 if (!string.IsNullOrEmpty(request.JobTitle)) user.JobTitle = request.JobTitle;
-                if (!string.IsNullOrEmpty(request.Role)) user.Role = request.Role;
-
-                if (request.IsActive.HasValue)
-                    user.IsActive = request.IsActive.Value;
-
+                user.SystemRole = request.JobTitle;
+                if (request.JoinedDate.HasValue) user.JoinedDate = request.JoinedDate.Value; 
+                if (!string.IsNullOrEmpty(request.Gender)) user.Gender = request.Gender;
+                if (request.HodId.HasValue) user.HodId = request.HodId.Value;
                 user.UpdatedAt = DateTime.UtcNow;
 
                 _context.Users.Update(user);
@@ -708,25 +717,30 @@ namespace WebApplication1.Controllers
                 await _hub.Clients.All.SendAsync("ReceiveNotification", new
                 {
                     Title = "User Updated",
-                    Message = $"Profile for {user.FirstName} {user.LastName} has been updated.",
+                    Message = $"Profile for {user.FullName} has been updated.",
                     Type = "success",
                     Time = DateTime.UtcNow
                 });
 
-                return Ok(new
+                var result = new UserDto
                 {
-                    Success = true,
-                    Message = "User updated successfully.",
-                    User = new
-                    {
-                        user.Id,
-                        user.FirstName,
-                        user.LastName,
-                        user.Email,
-                        user.Role,
-                        user.UpdatedAt
-                    }
-                });
+                    Id = user.Id,
+                    FullName = user.FullName,
+                    ContactNo = user.ContactNo,
+                    EmployeeNo = user.EmployeeNo,
+                    JobTitle = user.JobTitle,
+                    Email = user.Email,
+                    SystemRole = user.SystemRole,
+                    JoinedDate = user.JoinedDate,
+                    Gender = user.Gender,
+                    HodId = user.HodId,
+                    UpdatedAt = user.UpdatedAt,
+                    CreatedAt = user.CreatedAt,
+                    LastLoginAt = user.LastLoginAt,
+                    IsActive = user.IsActive,
+                };
+
+                return Ok(result);
             }
             catch (Exception ex)
             {

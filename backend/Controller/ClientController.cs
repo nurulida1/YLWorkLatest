@@ -1,10 +1,8 @@
-﻿using Azure.Core;
+using Azure.Core;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
-using System.ComponentModel;
 using System.Linq.Expressions;
-using System.Reflection;
 using YLWorks.Data;
 using YLWorks.Hubs;
 using YLWorks.Model;
@@ -30,284 +28,447 @@ namespace YLWorks.Controller
             int pageSize = 10,
             string? filter = null,
             string? orderBy = null,
-            string? select = null,
             string? includes = null)
         {
             try
             {
-                var query = _context.Clients.AsQueryable();
+                var query = _context.Companies
+                    .Include(c => c.BillingAddress)
+                    .Include(c => c.DeliveryAddress).Where(x => x.Type == CompanyType.Client)
+                    .AsQueryable();
 
-                // 1. Dynamic Includes
                 if (!string.IsNullOrEmpty(includes))
                 {
-                    foreach (var include in includes.Split(',', StringSplitOptions.RemoveEmptyEntries))
+                    foreach (var include in includes.Split(','))
                     {
                         query = query.Include(include.Trim());
                     }
                 }
 
-                // 2. Dynamic Filtering (Expressions)
                 if (!string.IsNullOrEmpty(filter))
                 {
-                    var parameter = Expression.Parameter(typeof(Client), "u");
+                    var parameter = Expression.Parameter(typeof(Company), "u");
                     Expression? finalExpression = null;
 
-                    foreach (var orPart in filter.Split('|'))
+                    var orParts = filter.Split('|');
+                    foreach (var orPart in orParts)
                     {
                         Expression? orExpression = null;
-                        foreach (var andPart in orPart.Split(','))
+
+                        var andParts = orPart.Split(',');
+                        foreach (var andPart in andParts)
                         {
                             bool isNotEqual = andPart.Contains("!=");
-                            var kv = isNotEqual ? andPart.Split("!=") : andPart.Split('=');
+
+                            var kv = isNotEqual
+                                ? andPart.Split("!=")
+                                : andPart.Split('=');
+
                             if (kv.Length != 2) continue;
 
-                            var propertyName = kv[0].Trim();
+                            var property = kv[0].Trim();
                             var valueStr = kv[1].Trim();
 
-                            // Access property (handles nested properties if needed)
-                            var propertyAccess = Expression.PropertyOrField(parameter, propertyName);
+                            var propertyAccess = Expression.PropertyOrField(parameter, property);
+
                             Expression condition;
 
                             if (propertyAccess.Type == typeof(string))
                             {
-                                var method = typeof(string).GetMethod("Contains", new[] { typeof(string) });
-                                var containsExpr = Expression.Call(propertyAccess, method!, Expression.Constant(valueStr));
-                                condition = isNotEqual ? Expression.Not(containsExpr) : containsExpr;
-                            }
-                            else if (Nullable.GetUnderlyingType(propertyAccess.Type) != null || propertyAccess.Type == typeof(Guid))
-                            {
-                                var converter = TypeDescriptor.GetConverter(propertyAccess.Type);
-                                var convertedValue = converter.ConvertFromInvariantString(valueStr);
+                                var method = typeof(string).GetMethod("Equals", new[] { typeof(string) });
+                                var equalsExpr = Expression.Call(
+                                    propertyAccess,
+                                    method!,
+                                    Expression.Constant(valueStr)
+                                );
+
                                 condition = isNotEqual
-                                    ? Expression.NotEqual(propertyAccess, Expression.Constant(convertedValue, propertyAccess.Type))
-                                    : Expression.Equal(propertyAccess, Expression.Constant(convertedValue, propertyAccess.Type));
+                                    ? Expression.Not(equalsExpr)
+                                    : equalsExpr;
+                            }
+                            else if (propertyAccess.Type == typeof(Guid) || propertyAccess.Type == typeof(Guid?))
+                            {
+                                condition = Expression.Equal(
+                                    propertyAccess,
+                                    Expression.Constant(Guid.Parse(valueStr), propertyAccess.Type)
+                                );
+                            }
+                            else if (propertyAccess.Type.IsEnum)
+                            {
+                                var enumValue = Enum.Parse(propertyAccess.Type, valueStr);
+                                var equalsExpr = Expression.Equal(
+                                    propertyAccess,
+                                    Expression.Constant(enumValue)
+                                );
+
+                                condition = isNotEqual
+                                    ? Expression.Not(equalsExpr)
+                                    : equalsExpr;
                             }
                             else
                             {
                                 var convertedValue = Convert.ChangeType(valueStr, propertyAccess.Type);
-                                condition = isNotEqual
-                                    ? Expression.NotEqual(propertyAccess, Expression.Constant(convertedValue))
-                                    : Expression.Equal(propertyAccess, Expression.Constant(convertedValue));
+                                condition = Expression.Equal(
+                                    propertyAccess,
+                                    Expression.Constant(convertedValue)
+                                );
                             }
 
-                            orExpression = orExpression == null ? condition : Expression.AndAlso(orExpression, condition);
+                            orExpression = orExpression == null
+                                ? condition
+                                : Expression.AndAlso(orExpression, condition);
                         }
-                        finalExpression = finalExpression == null ? orExpression : Expression.OrElse(finalExpression, orExpression);
+
+                        finalExpression = finalExpression == null
+                            ? orExpression
+                            : Expression.OrElse(finalExpression, orExpression);
                     }
 
                     if (finalExpression != null)
                     {
-                        var lambda = Expression.Lambda<Func<Client, bool>>(finalExpression, parameter);
+                        var lambda = Expression.Lambda<Func<Company, bool>>(finalExpression, parameter);
                         query = query.Where(lambda);
                     }
                 }
 
-                // 3. Sorting
                 if (!string.IsNullOrEmpty(orderBy))
                 {
-                    string prop = orderBy.Replace(" desc", "", StringComparison.OrdinalIgnoreCase).Trim();
-                    query = orderBy.Contains("desc", StringComparison.OrdinalIgnoreCase)
-                        ? query.OrderByDescending(x => EF.Property<object>(x, prop))
-                        : query.OrderBy(x => EF.Property<object>(x, prop));
+                    if (orderBy.ToLower().Contains("desc"))
+                        query = query.OrderByDescending(q =>
+                            EF.Property<object>(q, orderBy.Replace(" desc", "").Trim()));
+                    else
+                        query = query.OrderBy(q =>
+                            EF.Property<object>(q, orderBy.Trim()));
                 }
 
-                var totalElements = await query.CountAsync();
+                var total = await query.CountAsync();
 
-                // 4. Execution & Paging
-                // Note: We include the structured addresses in the projection
-                var items = await query
+                var data = await query
+                    .OrderBy(x => x.Name)
                     .Skip((page - 1) * pageSize)
                     .Take(pageSize)
-                    .Select(u => new
+                    .Select(x => new CompanyDto
                     {
-                        u.Id,
-                        u.Name,
-                        u.ContactPerson,
-                        u.ContactNo,
-                        u.Email,
-                        u.Status,
-                        u.BillingAddress, // Structured Object
-                        u.DeliveryAddress // Structured Object
+                        Id = x.Id,
+                        Name = x.Name,
+                        Email = x.Email,
+                        ContactNo = x.ContactNo,
+                        ContactPerson1 = x.ContactPerson1,
+                        ContactPerson2 = x.ContactPerson2,
+                        IsActive = x.IsActive,
+                        Type = x.Type,
+                        LogoImage = x.LogoImage,
+
+                        BillingAddress = x.BillingAddress == null ? null : new AddressDto
+                        {
+                            Id = x.BillingAddress.Id,
+                            AddressLine1 = x.BillingAddress.AddressLine1,
+                            City = x.BillingAddress.City,
+                            Country = x.BillingAddress.Country
+                        },
+
+                        DeliveryAddress = x.DeliveryAddress == null ? null : new AddressDto
+                        {
+                            Id = x.DeliveryAddress.Id,
+                            AddressLine1 = x.DeliveryAddress.AddressLine1,
+                            City = x.DeliveryAddress.City,
+                            Country = x.DeliveryAddress.Country
+                        }
                     })
                     .ToListAsync();
 
-                // 5. Dynamic Selection (Optional)
-                if (!string.IsNullOrEmpty(select))
+                return Ok(new
                 {
-                    var selectedFields = select.Split(',').Select(f => f.Trim()).ToList();
-                    var projected = items.Select(item =>
-                    {
-                        var dict = new Dictionary<string, object?>();
-                        foreach (var field in selectedFields)
-                        {
-                            var prop = item.GetType().GetProperty(field, BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
-                            dict[field] = prop?.GetValue(item);
-                        }
-                        return dict;
-                    });
-
-                    return Ok(new { Data = projected, TotalElements = totalElements });
-                }
-
-                return Ok(new { Data = items, TotalElements = totalElements });
+                    Data = data,
+                    TotalElements = total
+                });
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return StatusCode(500, new { Error = "Search failed.", Details = ex.Message });
+                return StatusCode(500, new { Error = "An unexpected error occurred." });
             }
         }
-        [HttpPost("Create")]
-        public async Task<IActionResult> Create([FromBody] CreateClientRequest request)
-        {
-            if (request == null) return BadRequest("Request data is missing.");
 
-            // Start a transaction if you want to be extra safe, 
-            // though SaveChangesAsync handles this simple case fine.
+        [HttpGet("GetOne")]
+        public async Task<IActionResult> GetOne(string? filter = null, string? includes = null)
+        {
+            IQueryable<Company> query = _context.Companies.AsQueryable();
+
+            // Dynamically include related data
+            if (!string.IsNullOrWhiteSpace(includes))
+            {
+                foreach (var include in includes.Split(',', StringSplitOptions.RemoveEmptyEntries))
+                {
+                    query = query.Include(include.Trim());
+                }
+            }
+
+            // Filter by ID
+            if (!string.IsNullOrEmpty(filter))
+            {
+                var filterValue = filter.Contains('=') ? filter.Split('=')[1].Trim() : filter.Trim();
+                if (Guid.TryParse(filterValue, out Guid guidId))
+                {
+                    query = query.Where(d => d.Id == guidId);
+                }
+            }
+
+            var data = await query.FirstOrDefaultAsync();
+
+            if (data == null) return NotFound();
+
+            return Ok(data);
+        }
+
+
+
+        [HttpPost("Create")]
+        public async Task<ActionResult> AddCompany([FromBody] CreateCompanyRequest request)
+        {
+            if (string.IsNullOrWhiteSpace(request.Name))
+                return BadRequest(new { Error = "Name is required." });
+
             try
             {
-                var client = new Client
-                {
-                    Id = Guid.NewGuid(),
-                    Name = request.Name,
-                    ContactPerson = request.ContactPerson,
-                    ContactNo = request.ContactNo,
-                    Email = request.Email,
-                    Status = "Active",
+                // =========================
+                // CREATE ADDRESSES
+                // =========================
+                Address? billingAddress = null;
+                Address? deliveryAddress = null;
 
-                    // EF will detect these new objects and insert them into the Address table
-                    BillingAddress = new Address
+                if (request.BillingAddress != null)
+                {
+                    billingAddress = new Address
                     {
                         Id = Guid.NewGuid(),
-                        Name = request.BillingAddress.Name ?? "Billing",
                         AddressLine1 = request.BillingAddress.AddressLine1,
                         AddressLine2 = request.BillingAddress.AddressLine2,
                         City = request.BillingAddress.City,
                         State = request.BillingAddress.State,
                         Country = request.BillingAddress.Country,
-                        Poscode = request.BillingAddress.Poscode
-                    },
+                        Poscode = request.BillingAddress.Poscode,
+                        CreatedAt = DateTime.Now
+                    };
 
-                    DeliveryAddress = new Address
+                    _context.Addresses.Add(billingAddress);
+                }
+
+                if (request.DeliveryAddress != null)
+                {
+                    deliveryAddress = new Address
                     {
                         Id = Guid.NewGuid(),
-                        Name = request.DeliveryAddress.Name ?? "Delivery",
                         AddressLine1 = request.DeliveryAddress.AddressLine1,
                         AddressLine2 = request.DeliveryAddress.AddressLine2,
                         City = request.DeliveryAddress.City,
                         State = request.DeliveryAddress.State,
                         Country = request.DeliveryAddress.Country,
-                        Poscode = request.DeliveryAddress.Poscode
+                        Poscode = request.DeliveryAddress.Poscode,
+                        CreatedAt = DateTime.Now
+                    };
+
+                    _context.Addresses.Add(deliveryAddress);
+                }
+
+                // =========================
+                // CREATE COMPANY
+                // =========================
+                var comp = new Company
+                {
+                    Id = Guid.NewGuid(),
+                    Name = request.Name,
+                    BillingAddressId = billingAddress?.Id,
+                    DeliveryAddressId = deliveryAddress?.Id,
+                    ContactNo = request.ContactNo,
+                    ContactPerson1 = request.ContactPerson1,
+                    ContactPerson2 = request.ContactPerson2,
+                    FaxNo = request.FaxNo,
+                    ACNo = request.ACNo,
+                    Email = request.Email,
+                    WebsiteUrl = request.WebsiteUrl,
+                    Type = CompanyType.Client,
+                    LogoImage = request.LogoImage,
+                    TINNo = request.TINNo,
+                    SSTRegNo = request.SSTRegNo,
+                    IsActive = true,
+                    SameAsBillingAddress = request.SameAsBillingAddress,
+                    CreatedAt = DateTime.Now
+                };
+
+                _context.Companies.Add(comp);
+                await _context.SaveChangesAsync();
+
+                // =========================
+                // RESPONSE DTO
+                // =========================
+                var result = new CompanyDto
+                {
+                    Id = comp.Id,
+                    Name = comp.Name,
+                    IsActive = comp.IsActive,
+
+                    BillingAddress = billingAddress == null ? null : new AddressDto
+                    {
+                        Id = billingAddress.Id,
+                        AddressLine1 = billingAddress.AddressLine1,
+                        City = billingAddress.City,
+                        Country = billingAddress.Country
+                    },
+
+                    DeliveryAddress = deliveryAddress == null ? null : new AddressDto
+                    {
+                        Id = deliveryAddress.Id,
+                        AddressLine1 = deliveryAddress.AddressLine1,
+                        City = deliveryAddress.City,
+                        Country = deliveryAddress.Country
                     }
                 };
 
-                _context.Clients.Add(client);
-                await _context.SaveChangesAsync();
+                await _hub.Clients.All.SendAsync("CompanyAdded", result);
 
-                // Return the created client (or a DTO)
-                return Ok(client);
+                return Ok(result);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return StatusCode(500, new { Error = "Database failure", Details = ex.Message });
+                return StatusCode(500, new { Error = "Failed to add company." });
             }
         }
 
         [HttpPut("Update")]
-        public async Task<ActionResult<Client>> UpdateClient([FromBody] UpdateClientRequest request)
+        public async Task<ActionResult> UpdateCompany([FromBody] UpdateCompanyRequest request)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            // 1. Fetch the client WITH their addresses included
-            var client = await _context.Clients
+            var comp = await _context.Companies
                 .Include(c => c.BillingAddress)
                 .Include(c => c.DeliveryAddress)
-                .FirstOrDefaultAsync(c => c.Id == request.Id);
+                .FirstOrDefaultAsync(x =>
+                    x.Id == request.Id &&
+                    x.Type == CompanyType.Client);
 
-            if (client == null)
-                return NotFound(new { Error = "Client not found." });
+            if (comp == null)
+                return NotFound(new { Error = "Company not found." });
 
             try
             {
-                // 2. Update Client Properties
-                client.Name = request.Name ?? client.Name;
-                client.ContactNo = request.ContactNo ?? client.ContactNo;
-                client.ContactPerson = request.ContactPerson ?? client.ContactPerson;
-                client.Email = request.Email ?? client.Email;
-                client.UpdatedAt = DateTime.UtcNow;
+                comp.Name = request.Name ?? comp.Name;
+                comp.ContactNo = request.ContactNo;
+                comp.ContactPerson1 = request.ContactPerson1;
+                comp.ContactPerson2 = request.ContactPerson2;
+                comp.FaxNo = request.FaxNo;
+                comp.ACNo = request.ACNo;
+                comp.Email = request.Email;
+                comp.WebsiteUrl = request.WebsiteUrl;
+                comp.Type = CompanyType.Client;
+                comp.LogoImage = request.LogoImage;
+                comp.TINNo = request.TINNo;
+                comp.SSTRegNo = request.SSTRegNo;
+                comp.SameAsBillingAddress = request.SameAsBillingAddress;
+                comp.UpdatedAt = DateTime.Now;
 
-                // 3. Update Billing Address
+                // =========================
+                // UPDATE / CREATE BILLING
+                // =========================
                 if (request.BillingAddress != null)
                 {
-                    // If the client somehow doesn't have a record yet, create one
-                    if (client.BillingAddress == null) client.BillingAddress = new Address { Id = Guid.NewGuid() };
+                    if (comp.BillingAddress != null)
+                    {
+                        comp.BillingAddress.AddressLine1 = request.BillingAddress.AddressLine1;
+                        comp.BillingAddress.City = request.BillingAddress.City;
+                        comp.BillingAddress.State = request.BillingAddress.State;
+                        comp.BillingAddress.Country = request.BillingAddress.Country;
+                        comp.BillingAddress.Poscode = request.BillingAddress.Poscode;
+                    }
+                    else
+                    {
+                        var billing = new Address
+                        {
+                            Id = Guid.NewGuid(),
+                            AddressLine1 = request.BillingAddress.AddressLine1,
+                            City = request.BillingAddress.City,
+                            State = request.BillingAddress.State,
+                            Country = request.BillingAddress.Country,
+                            Poscode = request.BillingAddress.Poscode
+                        };
 
-                    UpdateAddressProperties(client.BillingAddress, request.BillingAddress, "Billing");
+                        _context.Addresses.Add(billing);
+                        comp.BillingAddressId = billing.Id;
+                    }
                 }
 
-                // 4. Update Delivery Address
+                // =========================
+                // UPDATE / CREATE DELIVERY
+                // =========================
                 if (request.DeliveryAddress != null)
                 {
-                    if (client.DeliveryAddress == null) client.DeliveryAddress = new Address { Id = Guid.NewGuid() };
+                    if (comp.DeliveryAddress != null)
+                    {
+                        comp.DeliveryAddress.AddressLine1 = request.DeliveryAddress.AddressLine1;
+                        comp.DeliveryAddress.City = request.DeliveryAddress.City;
+                        comp.DeliveryAddress.State = request.DeliveryAddress.State;
+                        comp.DeliveryAddress.Country = request.DeliveryAddress.Country;
+                        comp.DeliveryAddress.Poscode = request.DeliveryAddress.Poscode;
+                    }
+                    else
+                    {
+                        var delivery = new Address
+                        {
+                            Id = Guid.NewGuid(),
+                            AddressLine1 = request.DeliveryAddress.AddressLine1,
+                            City = request.DeliveryAddress.City,
+                            State = request.DeliveryAddress.State,
+                            Country = request.DeliveryAddress.Country,
+                            Poscode = request.DeliveryAddress.Poscode
+                        };
 
-                    UpdateAddressProperties(client.DeliveryAddress, request.DeliveryAddress, "Delivery");
+                        _context.Addresses.Add(delivery);
+                        comp.DeliveryAddressId = delivery.Id;
+                    }
                 }
 
-                // 5. Save Changes
-                // EF tracks the changes to the 'client' and the 'addresses' automatically
                 await _context.SaveChangesAsync();
 
-                // 6. Broadcast & Return
-                await _hub.Clients.All.SendAsync("ClientUpdated", client);
+                var result = new CompanyDto
+                {
+                    Id = comp.Id,
+                    Name = comp.Name,
+                    IsActive = comp.IsActive
+                };
 
-                return Ok(client);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { Error = "Failed to update client.", Details = ex.Message });
-            }
-        }
+                await _hub.Clients.All.SendAsync("CompanyUpdated", result);
 
-        // Helper to update address fields without repeating code
-        private void UpdateAddressProperties(Address existing, AddressRequest updated, string defaultName)
-        {
-            existing.Name = updated.Name ?? defaultName;
-            existing.AddressLine1 = updated.AddressLine1 ?? existing.AddressLine1;
-            existing.AddressLine2 = updated.AddressLine2 ?? existing.AddressLine2;
-            existing.City = updated.City ?? existing.City;
-            existing.State = updated.State ?? existing.State;
-            existing.Country = updated.Country ?? existing.Country;
-            existing.Poscode = updated.Poscode != 0 ? updated.Poscode : existing.Poscode;
-        }
-        
-        [HttpPut("ToggleStatus")]
-        public async Task<ActionResult> ToggleClientStatus([FromQuery] Guid id)
-        {
-            var client = await _context.Clients.FindAsync(id);
-            if (client == null)
-                return NotFound(new { Error = "Client not found." });
-
-            try
-            {
-                // Toggle status
-                client.Status = client.Status == "Active" ? "Inactive" : "Active";
-                client.UpdatedAt = DateTime.UtcNow;
-
-                _context.Clients.Update(client);
-                await _context.SaveChangesAsync();
-
-                // Notify via SignalR
-                await _hub.Clients.All.SendAsync("ClientStatusChanged", new { client.Id, client.Status });
-
-                return Ok(new { client.Id, client.Status });
+                return Ok(result);
             }
             catch (Exception)
             {
-                return StatusCode(500, new { Error = "Failed to update client status." });
+                return StatusCode(500, new { Error = "Failed to update company." });
             }
         }
 
+        [HttpDelete("Delete")]
+        public async Task<ActionResult> DeleteCompany([FromQuery] Guid id)
+        {
+            var comp = await _context.Companies.FirstOrDefaultAsync(x =>
+                    x.Id == id &&
+                    x.Type == CompanyType.Client);
 
+            if (comp == null)
+                return NotFound(new { Error = "Company not found." });
 
+            try
+            {
+                _context.Companies.Remove(comp);
+                await _context.SaveChangesAsync();
+
+                await _hub.Clients.All.SendAsync("CompanyDeleted", id);
+
+                return Ok(new { Message = "Company deleted successfully." });
+            }
+            catch (Exception)
+            {
+                return StatusCode(500, new { Error = "Failed to delete company." });
+            }
+        }
     }
 }

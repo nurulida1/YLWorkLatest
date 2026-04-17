@@ -1,18 +1,18 @@
-import { Injectable } from '@angular/core';
-import { environment } from '../../environments/environment.development';
 import { HttpClient, HttpParams } from '@angular/common/http';
+import { Injectable } from '@angular/core';
 import { MessageService } from 'primeng/api';
+import { Observable, retry, catchError, of, throwError } from 'rxjs';
+import { environment } from '../../environments/environment.development';
 import {
-  ClientDto,
-  CreateClientRequest,
-  UpdateClientRequest,
-} from '../models/Client';
+  CompanyDto,
+  CreateCompanyRequest,
+  UpdateCompanyRequest,
+} from '../models/Company';
 import {
-  BaseResponse,
   GridifyQueryExtend,
   PagingContent,
+  BaseResponse,
 } from '../shared/helpers/helpers';
-import { catchError, Observable, retry, throwError } from 'rxjs';
 
 @Injectable({
   providedIn: 'root',
@@ -25,7 +25,7 @@ export class ClientService {
     private messageService: MessageService,
   ) {}
 
-  GetMany(query: GridifyQueryExtend): Observable<PagingContent<ClientDto>> {
+  GetMany(query: GridifyQueryExtend): Observable<PagingContent<CompanyDto>> {
     let params = new HttpParams()
       .set('page', query.Page.toString())
       .set('pageSize', query.PageSize.toString());
@@ -44,21 +44,47 @@ export class ClientService {
     }
 
     return this.http
-      .get<PagingContent<ClientDto>>(this.url + '/GetMany', {
+      .get<PagingContent<CompanyDto>>(this.url + '/GetMany', {
         params,
       })
       .pipe(retry(1), catchError(this.handleError('GetMany')));
   }
 
-  Create(request: CreateClientRequest): Observable<ClientDto> {
+  GetOne(query: GridifyQueryExtend): Observable<CompanyDto | null> {
+    let params = new HttpParams()
+      .set('page', query.Page.toString())
+      .set('pageSize', query.PageSize.toString());
+
+    if (query.Select) {
+      params = params.set('select', query.Select);
+    }
+    if (query.OrderBy) {
+      params = params.set('orderBy', query.OrderBy);
+    }
+    if (query.Filter) {
+      params = params.set('filter', query.Filter);
+    }
+    if (query.Includes) {
+      params = params.set('includes', query.Includes);
+    }
+    return this.http.get<CompanyDto>(`${this.url}/GetOne`, { params }).pipe(
+      retry(1),
+      catchError((error) => {
+        if (error.status === 404) return of(null);
+        return this.handleError('GetOne')(error);
+      }),
+    );
+  }
+
+  Create(request: CreateCompanyRequest): Observable<CompanyDto> {
     return this.http
-      .post<ClientDto>(`${this.url}/Create`, request) // no { Data: ... }
+      .post<CompanyDto>(`${this.url}/Create`, request) // no { Data: ... }
       .pipe(retry(1), catchError(this.handleError('Create')));
   }
 
-  Update(request: UpdateClientRequest): Observable<ClientDto> {
+  Update(request: UpdateCompanyRequest): Observable<CompanyDto> {
     return this.http
-      .put<ClientDto>(`${this.url}/Update`, request)
+      .put<CompanyDto>(`${this.url}/Update`, request)
       .pipe(retry(1), catchError(this.handleError('Update')));
   }
 

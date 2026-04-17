@@ -5,21 +5,22 @@ namespace YLWorks.Model
     public class User : BaseEntity
     {
         public Guid Id { get; set; }
-        public Guid? DepartmentId { get; set; }      // FK
-        public Department? Department { get; set; } = null!;
-        public string EmployeeId { get; set; } = string.Empty;
-
-        public string FirstName { get; set; } = string.Empty;
-        public string LastName { get; set; } = string.Empty;
+        public string FullName { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
         public string? ContactNo { get; set; } = string.Empty;
-        public string PasswordHash { get; set; } = string.Empty;
-       
+        public string Password { get; set; } = string.Empty;
+        public Guid? DepartmentId { get; set; }
+        public ICollection<Department> Departments { get; set; }
+        public DateTime? JoinedDate { get; set; }
+        public string? AccessPermission { get; set; }
+        public string EmployeeNo { get; set; } = string.Empty;
         public string? JobTitle { get; set; }
-        public DateTime? JoinDate { get; set; }
-        public string Role { get; set; } = "Staff";
+        public string SystemRole { get; set; } = "Staff";
+        public string? Gender { get; set; }
         public DateTime? LastLoginAt { get; set; }
         public bool IsActive { get; set; } = true;
+        public Guid? HodId { get; set; }
+        public User? Hod { get; set; }
 
         // Refresh token support
         public string? RefreshToken { get; set; }
@@ -38,10 +39,8 @@ namespace YLWorks.Model
     public class RegisterRequest
     {
         [Required]
-        public string FirstName { get; set; } = string.Empty;
-        [Required]
-        public string LastName { get; set; } = string.Empty;
-
+        public string FullName { get; set; } = string.Empty;
+        
         [Required]
         [EmailAddress]
         public string Email { get; set; } = string.Empty;
@@ -54,7 +53,13 @@ namespace YLWorks.Model
         [Compare("Password")]
         public string ConfirmPassword { get; set; } = string.Empty;
 
-        public string Role { get; set; } = "Staff";
+        public string? ContactNo { get; set; }
+        public string JobTitle {  get; set; } = string.Empty;
+        public string? Gender { get; set; } = string.Empty;
+        public DateTime? JoinedDate { get; set; }
+        public Guid? HodId { get; set; }
+        
+
     }
 
     public class PasswordResetToken
@@ -105,12 +110,22 @@ namespace YLWorks.Model
   
     public class UserDto
     {
+        public Guid Id { get; set; }
         public string Email { get; set; } = string.Empty;
+        public string ContactNo { get; set; } = string.Empty;
         public string Password { get; set; } = string.Empty;
-        public string FirstName {  get; set; } = string.Empty;
-        public string LastName { get; set; } = string.Empty;
+        public string FullName {  get; set; } = string.Empty;
+        public string EmployeeNo { get; set; } = string.Empty;
+        public string JobTitle { get; set; } = string.Empty;
+        public string? Gender { get; set; } = string.Empty;
+        public DateTime? JoinedDate { get; set; }
+        public Guid? HodId { get; set; }
+        public string? SystemRole { get; set; }
+        public DateTime? UpdatedAt { get; set; }    
+        public DateTime? CreatedAt { get; set; }
+        public DateTime? LastLoginAt { get; set; }
+        public bool IsActive { get; set; } = true;
 
-        public string? Role { get; set; }
     }
 
     public class LoginResponse
@@ -118,26 +133,30 @@ namespace YLWorks.Model
         public bool Success { get; set; }
         public string Message { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
-        public string FirstName { get; set; } = string.Empty;
-        public string LastName { get; set; } = string.Empty;
-        public string EmployeeId { get; set; } = string.Empty;
+        public string FullName { get; set; } = string.Empty;
+        public string EmployeeNo { get; set; } = string.Empty;
         public string AccessToken { get; set; } = string.Empty;
         public string RefreshToken { get; set; } = string.Empty;
         public DateTime? ExpiresAt { get; set; }
         public string UserId { get; set; } = string.Empty;
-        public string Role { get; set; } = string.Empty;
-        public string JobTitle {  get; set; } = string.Empty;
-        public string? Department { get; set; }
+        public string SystemRole { get; set; } = string.Empty;
+        public string JobTitle { get; set; } = string.Empty;
+        public string Gender { get; set; }
+        public Guid? HodId { get; set; }
+        public User? Hod { get; set; }
+        public List<string> Departments { get; set; } = new();
     }
 
     public class UpdateUserRequest
     {
-        public string? FirstName { get; set; }
-        public string? LastName { get; set; }
+        public string? FullName { get; set; }
         public string? ContactNo { get; set; }
+        public string? Email { get; set; }
         public string? JobTitle { get; set; }
-        public string? Role { get; set; }
-        public bool? IsActive { get; set; }
+        public DateTime? JoinedDate { get; set; }
+        public Guid? HodId { get; set; }
+        public string? SystemRole { get; set; }
+        public string? Gender { get; set; }
     }
 
 }

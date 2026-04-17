@@ -1,11 +1,10 @@
 import { AttachmentDto } from './AttachmentDto';
 import { BaseModel } from './BaseModel';
-import { ClientDto } from './Client';
+import { CompanyDto } from './Company';
 import { PaymentDto } from './Payments';
 import { ProjectDto } from './Project';
 import { PurchaseOrderDto } from './PurchaseOrder';
 import { QuotationDto } from './Quotation';
-import { SupplierDto } from './SupplierDto';
 import { UserDto } from './User';
 
 // Invoice model
@@ -15,9 +14,9 @@ export interface InvoiceDto extends BaseModel {
   projectId: string;
   project: ProjectDto;
   clientId: string;
-  client: ClientDto;
+  client: CompanyDto;
   supplierId: string;
-  supplier: SupplierDto;
+  supplier: CompanyDto;
   invoiceDate: Date;
   dueDate: Date;
   poId: string;

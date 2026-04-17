@@ -12,7 +12,7 @@ import {
 import { NavigationEnd, Router, RouterLink } from '@angular/router';
 import { AvatarModule } from 'primeng/avatar';
 import { ButtonModule } from 'primeng/button';
-import { Subject, Subscription, filter, finalize, takeUntil } from 'rxjs';
+import { Subject, Subscription, filter, takeUntil } from 'rxjs';
 import { PopoverModule } from 'primeng/popover';
 import { DialogModule } from 'primeng/dialog';
 import { AppConfigService } from '../../../services/appConfig.service';
@@ -22,7 +22,6 @@ import { UserService } from '../../../services/userService.service';
 import { NotificationDto } from '../../../models/Notifications';
 import { FormsModule } from '@angular/forms';
 import { InputTextModule } from 'primeng/inputtext';
-import { RoleService } from '../../../services/roleService';
 import { MenuItem, MessageService } from 'primeng/api';
 import { MenuModule } from 'primeng/menu';
 import { DrawerModule } from 'primeng/drawer';
@@ -148,7 +147,7 @@ import { DrawerModule } from 'primeng/drawer';
         <div class="flex flex-col gap-2 w-full">
           <ng-container *ngFor="let item of mainMenu">
             <div
-              *ngIf="item.roles.includes(currentUser?.role)"
+              *ngIf="item.roles.includes(currentUser?.systemRole)"
               class="flex flex-row py-2 px-5 items-center justify-start gap-3"
               [routerLink]="item.route"
               [ngClass]="{
@@ -168,7 +167,7 @@ import { DrawerModule } from 'primeng/drawer';
         <ng-container *ngFor="let item of management">
           <div
             class="flex flex-col gap-2 w-full"
-            *ngIf="item.roles.includes(currentUser?.role)"
+            *ngIf="item.roles.includes(currentUser?.systemRole)"
           >
             <div
               class="flex flex-row items-center justify-between gap-3 py-2 rounded-lg px-2"
@@ -274,7 +273,6 @@ export class NavbarComponent implements OnDestroy, OnInit {
   private readonly loadingService = inject(LoadingService);
   private readonly messageService = inject(MessageService);
   private readonly userService = inject(UserService);
-  private readonly roleService = inject(RoleService);
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly router = inject(Router);
 

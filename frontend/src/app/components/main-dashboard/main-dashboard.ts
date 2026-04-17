@@ -893,14 +893,11 @@ export class MainDashboard implements OnInit, OnDestroy {
   quotationChartData: any;
   quotationChartOptions: any;
 
-  name: string =
-    (this.userService.currentUser?.firstName ?? '') +
-    ' ' +
-    (this.userService.currentUser?.lastName ?? '');
+  name: string = this.userService.currentUser?.fullName ?? '';
 
   constructor() {
     this.role =
-      (this.userService.currentUser?.role as UserRole) ?? UserRole.Staff;
+      (this.userService.currentUser?.systemRole as UserRole) ?? UserRole.Staff;
   }
 
   ngOnInit(): void {

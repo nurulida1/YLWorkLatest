@@ -3,22 +3,24 @@ import { BaseModel } from './BaseModel';
 import { DepartmentDto } from './Department';
 
 export interface UserDto extends BaseModel {
-  departmentId: string;
-  department: DepartmentDto;
-  employeeId: string;
-  firstName: string;
-  lastName: string;
-  username: string;
+  fullName: string;
   email: string;
   contactNo: string;
-  passwordHash: string;
+  password: string;
+  departmentId: string;
+  departments: DepartmentDto[];
+  joinedDate: Date;
+  accessPermission: string;
+  employeeNo: string;
   jobTitle: string;
-  joinDate: Date;
-  role: string;
+  systemRole: string;
   lastLoginAt: Date;
   isActive: boolean;
+  hodId: string;
+  hod: UserDto;
   refreshToken: string;
   refreshTokenExpiryTime: Date;
+  gender: string;
 }
 
 // Login & Auth Requests
@@ -28,25 +30,28 @@ export interface LoginRequest {
 }
 
 export interface RegisterRequest {
-  firstName: string;
-  lastName: string;
-  username: string;
+  fullName: string;
   email: string;
   password: string;
   confirmPassword: string;
-  contactNo?: string;
-  role?: UserRole | string;
-  jobTitle?: string;
-  isActive: boolean;
+  contactNo: string;
+  jobTitle: string;
+  gender: string;
+  joinedDate: Date;
+  hodId: string;
 }
 
 export interface UpdateUserRequest {
   id: string; // The Guid of the user
-  firstName?: string;
-  lastName?: string;
+  fullName?: string;
   contactNo?: string;
   jobTitle?: string;
-  role?: string;
+  gender?: string;
+  employeeNo?: string;
+  systemRole?: string;
+  departmentId?: string;
+  joinedDate?: Date;
+  hodId?: string;
   isActive?: boolean;
 }
 
@@ -71,37 +76,26 @@ export interface LoginResponse {
   success: boolean;
   message: string;
   email: string;
-  firstName: string;
-  lastName: string;
-  employeeId: string;
+  fullName: string;
+  employeeNo: string;
   accessToken: string;
   refreshToken: string;
   expiresAt?: Date;
   userId: string;
-  role: UserRole | string;
+  systemRole: UserRole | string;
   jobTitle?: string;
   department: string;
 }
 
-// Optional: Credential model
-export interface UserCredential {
-  username: string;
-  password: string;
-}
-
 // Update User Request
 export interface UpdateUserRequest {
-  userId: string; // <--- Added userId
+  id: string;
   fullName?: string;
   email?: string;
-  role?: UserRole | string;
-  supervisorId: string;
-  position?: string;
-  totalAL?: number;
-  balanceAL?: number;
-  usedAL?: number;
-  totalMC?: number;
-  balanceMC?: number;
-  usedMC?: number;
-  usedOther?: number;
+  contactNo?: string;
+  jobTitle?: string;
+  systemRole?: string;
+  joinedDate?: Date;
+  hodId?: string;
+  gender?: string;
 }

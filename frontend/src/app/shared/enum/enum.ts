@@ -70,3 +70,9 @@ export enum PaymentStatus {
   Cancelled = 2,
   Failed = 3,
 }
+
+export enum CompanyType {
+  Own = 1,
+  Client = 2,
+  Supplier = 3,
+}

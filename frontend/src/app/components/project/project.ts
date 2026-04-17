@@ -189,9 +189,9 @@ import interactionPlugin from '@fullcalendar/interaction/index.js';
                   <th class="bg-gray-100! text-[15px]! text-center! w-[10%]">
                     Status
                   </th>
-                  <th class="bg-gray-100! text-[15px]! text-center! w-[15%]">
-                    Progress
-                  </th>
+                  <th
+                    class="bg-gray-100! text-[15px]! text-center! w-[15%]"
+                  ></th>
                   <th class="bg-gray-100! text-[15px]! text-center! w-[15%]">
                     Deadline
                   </th>
@@ -231,9 +231,7 @@ import interactionPlugin from '@fullcalendar/interaction/index.js';
                       </div>
                     </div>
                   </td>
-                  <td class="text-center! text-[14px]!">
-                    <p-progressbar [value]="data.progress" />
-                  </td>
+                  <td class="text-center! text-[14px]!"></td>
                   <td class="text-center! text-[14px]!">
                     {{ data.dueDate | date: 'dd MMMM, yyyy' }}
                   </td>
@@ -343,12 +341,7 @@ import interactionPlugin from '@fullcalendar/interaction/index.js';
               <div class="text-gray-500 text-[14px] mt-1">
                 {{ data.description }}
               </div>
-              <div class="flex flex-col gap-1 mt-3 mb-4">
-                <div class="text-gray-500 text-[13px]">
-                  Progress: {{ data.progress }}%
-                </div>
-                <p-progressBar [value]="data.progress"></p-progressBar>
-              </div>
+
               <div class="border-b border-gray-200 mt-2 mb-2"></div>
               <div class="flex flex-row items-start justify-between">
                 <div class="flex flex-col gap-1">
@@ -389,13 +382,11 @@ import interactionPlugin from '@fullcalendar/interaction/index.js';
                 <div class="flex -space-x-3 justify-center items-center">
                   <ng-container *ngFor="let member of data.projectMembers">
                     <div
-                      [pTooltip]="
-                        member.user.firstName + ' ' + member.user.lastName
-                      "
+                      [pTooltip]="member.user.fullName"
                       tooltipPosition="top"
                       class="w-10 h-10 rounded-full border-4 border-gray-200 bg-gray-300 flex items-center justify-center text-black text-[16px] font-semibold relative hover:z-10"
                     >
-                      {{ getInitials(member.user.firstName) }}
+                      {{ getInitials(member.user.fullName) }}
                     </div>
                   </ng-container>
                 </div>

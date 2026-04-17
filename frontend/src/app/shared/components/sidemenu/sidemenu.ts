@@ -44,7 +44,7 @@ import { ButtonModule } from 'primeng/button';
         <div class="flex flex-col gap-2 w-full">
           <ng-container *ngFor="let item of mainMenu">
             <div
-              *ngIf="item.roles.includes(currentUser?.role)"
+              *ngIf="item.roles.includes(currentUser?.systemRole)"
               class="flex flex-row lg:pl-2 xl:pl-4 py-2 items-center justify-center lg:justify-start gap-3 px-2"
               [routerLink]="item.route"
               [ngClass]="{
@@ -72,7 +72,7 @@ import { ButtonModule } from 'primeng/button';
           <ng-container *ngFor="let item of management">
             <div
               class="flex flex-col gap-2 w-full"
-              *ngIf="item.roles.includes(currentUser?.role)"
+              *ngIf="item.roles.includes(currentUser?.systemRole)"
             >
               <div
                 class="flex flex-row lg:pl-4 items-center justify-between gap-3 py-2 rounded-lg px-2"
@@ -154,7 +154,6 @@ export class Sidemenu {
   mainMenu: any[] = [
     {
       label: 'Dashboard',
-      icon: 'pi pi-home',
       route: '/dashboard',
       roles: ['SuperAdmin', 'Admin', 'Staff', 'HR', 'Manager', 'Director'],
     },
@@ -285,6 +284,18 @@ export class Sidemenu {
         {
           label: 'Manage Users',
           route: '/user-management',
+        },
+        {
+          label: 'Department',
+          route: '/department',
+        },
+        {
+          label: 'Access Permission',
+          route: '/access-permission',
+        },
+        {
+          label: 'Company',
+          route: '/company',
         },
       ],
     },

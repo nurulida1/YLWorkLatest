@@ -12,7 +12,6 @@ import {
   CreateMaterialRequest,
   MaterialRequestDto,
   UpdateMaterialRequest,
-  UpdateMaterialRequestStatusDto,
 } from '../models/MaterialRequest';
 
 @Injectable({
@@ -111,13 +110,13 @@ export class MaterialRequestService {
       .pipe(retry(1), catchError(this.handleError('Delete')));
   }
 
-  UpdateStatus(
-    request: UpdateMaterialRequestStatusDto,
-  ): Observable<MaterialRequestDto> {
-    return this.http
-      .put<MaterialRequestDto>(`${this.url}/UpdateStatus`, request)
-      .pipe(retry(1), catchError(this.handleError('UpdateStatus')));
-  }
+  // UpdateStatus(
+  //   request: UpdateMaterialRequestStatusDto,
+  // ): Observable<MaterialRequestDto> {
+  //   return this.http
+  //     .put<MaterialRequestDto>(`${this.url}/UpdateStatus`, request)
+  //     .pipe(retry(1), catchError(this.handleError('UpdateStatus')));
+  // }
 
   private handleError = (context: string) => (error: any) => {
     this.messageService.add({

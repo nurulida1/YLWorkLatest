@@ -611,7 +611,7 @@ export class Register implements OnDestroy {
         .pipe(takeUntil(this.ngUnsubscribe))
         .subscribe({
           next: (res) => {
-            if (res.success) {
+            if (res) {
               setTimeout(() => {
                 this.loadingService.stop();
                 this.successPopup = true;
@@ -623,7 +623,7 @@ export class Register implements OnDestroy {
               return this.messageService.add({
                 severity: 'error',
                 summary: 'Error',
-                detail: res.message,
+                detail: res,
               });
             }
           },

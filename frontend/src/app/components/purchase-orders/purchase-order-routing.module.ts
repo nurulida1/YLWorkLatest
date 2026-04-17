@@ -1,16 +1,14 @@
 import { NgModule } from '@angular/core';
 import { Routes, RouterModule } from '@angular/router';
-import { PurchaseOrder } from './purchase-order/purchase-order';
-import { PurchaseOrderForm } from './purchase-order-form/purchase-order-form';
 
 const routes: Routes = [
   {
     path: '',
-    component: PurchaseOrder,
+    // component: PurchaseOrder,
   },
   {
     path: 'form',
-    component: PurchaseOrderForm,
+    // component: PurchaseOrderForm,
   },
   // {
   //   path: 'sign',

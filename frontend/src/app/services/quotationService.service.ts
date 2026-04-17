@@ -6,7 +6,6 @@ import { environment } from '../../environments/environment.development';
 import {
   CreateQuotationRequest,
   QuotationDto,
-  SubmitSignatureRequest,
   UpdateQuotationRequest,
 } from '../models/Quotation';
 import {
@@ -149,12 +148,6 @@ export class QuotationService {
     const url = `${environment.ApiBaseUrl}/Quotation/DownloadPdf/${id}`;
     // We specify responseType: 'blob' so Angular knows this is a file
     return this.http.get(url, { responseType: 'blob' });
-  }
-
-  SubmitSignature(request: SubmitSignatureRequest): Observable<any> {
-    return this.http
-      .patch<any>(`${this.url}/SubmitSignature`, request)
-      .pipe(retry(1), catchError(this.handleError('SubmitSignature')));
   }
 
   private handleError = (context: string) => (error: any) => {

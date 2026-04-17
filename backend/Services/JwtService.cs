@@ -34,7 +34,7 @@ namespace YLWorks.Services
 
             // 2. Find user
             var userAccount = await _context.Users
-                .Include(u => u.Department)
+                .Include(u => u.Departments)
                 .FirstOrDefaultAsync(x => x.Email == request.Email);
 
             if (userAccount == null || !userAccount.IsActive)
@@ -48,7 +48,7 @@ namespace YLWorks.Services
 
             // 3. Verify password
             var passwordHasher = new PasswordHasher<User>();
-            var verifyResult = passwordHasher.VerifyHashedPassword(userAccount, userAccount.PasswordHash, request.Password);
+            var verifyResult = passwordHasher.VerifyHashedPassword(userAccount, userAccount.Password, request.Password);
 
             if (verifyResult == PasswordVerificationResult.Failed)
             {
@@ -78,7 +78,7 @@ namespace YLWorks.Services
     {
         new Claim(ClaimTypes.Email, userAccount.Email),
         new Claim(ClaimTypes.NameIdentifier, userAccount.Id.ToString()),
-        new Claim(ClaimTypes.Role, userAccount.Role)
+        new Claim(ClaimTypes.Role, userAccount.SystemRole)
     };
 
             // 7. Generate JWT token
@@ -104,16 +104,15 @@ namespace YLWorks.Services
                 Success = true,
                 Message = "Login successful.",
                 Email = userAccount.Email,
-                FirstName = userAccount.FirstName,
-                LastName = userAccount.LastName,
-                EmployeeId = userAccount.EmployeeId,
+                FullName = userAccount.FullName,
+                EmployeeNo = userAccount.EmployeeNo,
                 UserId = userAccount.Id.ToString(),
-                Role = userAccount.Role,
+                SystemRole = userAccount.SystemRole,
                 JobTitle = userAccount.JobTitle,
                 AccessToken = accessToken,
                 RefreshToken = userAccount.RefreshToken ?? string.Empty,
                 ExpiresAt = tokenExpiryTimeStamp,
-                Department = userAccount.Department?.Name ?? string.Empty,
+                Departments = userAccount.Departments?.Select(d => d.Name).ToList() ?? new List<string>()
             };
         }
     }

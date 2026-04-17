@@ -1,15 +1,14 @@
 import { BaseModel } from './BaseModel';
-import { ClientDto } from './Client';
+import { CompanyDto } from './Company';
 import { InvoiceDto } from './Invoice';
-import { SupplierDto } from './SupplierDto';
 import { UserDto } from './User';
 
 export interface PaymentDto extends BaseModel {
   paymentNo: string;
   clientId: string;
-  client: ClientDto;
+  client: CompanyDto;
   supplierId: string;
-  supplier: SupplierDto;
+  supplier: CompanyDto;
   invoiceId: string;
   invoice: InvoiceDto;
   referenceNo: string;

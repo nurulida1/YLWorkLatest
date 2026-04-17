@@ -4,18 +4,22 @@
     {
         public Guid Id { get; set; }
         public string InvoiceNo { get; set; } = string.Empty;
-        public Guid? ProjectId { get; set; }
-        public Project? Project { get; set; }
+        public Guid? DeliveryOrderId { get; set; }
+        public DeliveryOrder DeliveryOrder { get; set; }
         public Guid? ClientId { get; set; }
-        public Client? Client { get; set; }
+        public Company? Client { get; set; }
         public Guid? SupplierId { get; set; }
-        public Supplier? Supplier { get; set; }
-        public DateTime InvoiceDate {  get; set; }
-        public DateTime DueDate { get; set; }
-        public Guid? POId { get; set; }
+        public Company? Supplier { get; set; }
+        public string? ProjectCode { get; set; }
+        public Project? Project { get; set; }
+        public Guid? PurchaseOrderId { get; set; }
         public PurchaseOrder? PurchaseOrder { get; set; }
         public Guid? QuotationId { get; set; }
         public Quotation? Quotation { get; set; }
+
+        public DateTime InvoiceDate {  get; set; }
+        public DateTime DueDate { get; set; }
+       
         public string? Remarks { get; set; }
         public string Status { get; set; } = "Draft";  // Paid, Overdue, Upcoming, Cancelled, Partially Paid, Unpaid, Refunded, Draft
 
@@ -24,15 +28,16 @@
         public decimal TotalAmount { get; set; }
         public decimal? PaidAmount { get; set; }
 
+        public string? Notes { get; set; }
         public string? Description { get; set; }
-        public string? TermsConditions { get; set; }
+        public string? TermsAndConditions { get; set; }
         public string? BankDetails { get; set; }
 
         public Guid CreatedById { get; set; }
         public User CreatedBy { get; set; }
 
         public ICollection<InvoiceItem> InvoiceItems { get; set; } = new List<InvoiceItem>();
-        public ICollection<Attachment> Attachments { get; set; } = new List<Attachment>();
+        public ICollection<AttachmentDto> Attachments { get; set; } = new List<AttachmentDto>();
         public ICollection<Payments> Payments { get; set; } = new List<Payments>();
 
 
@@ -76,8 +81,12 @@
     public class CreateInvoiceRequest
     {
         public string InvoiceNo { get; set; } = string.Empty;
+        public Guid? DeliveryOrderId { get; set; }
         public Guid? ClientId { get; set; }
         public Guid? SupplierId { get; set; }
+        public string? ProjectCode { get; set; }
+        public Guid? PurchaseOrderId { get; set; }
+        public Guid? QuotationId { get; set; }
         public DateTime InvoiceDate { get; set; }
         public DateTime DueDate { get; set; }
         public decimal Gross { get; set; }
@@ -87,6 +96,8 @@
         public string? Description { get; set; }
         public string? TermsConditions { get; set; }
         public string? BankDetails { get; set; }
+        public string? Remarks { get; set; }
+        public string? Notes { get; set; }
 
         public List<InvoiceItemRequest> InvoiceItems { get; set; } = new();
     }

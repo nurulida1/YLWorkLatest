@@ -422,7 +422,7 @@ export class Quotation implements OnInit, OnDestroy {
 
     // 1. Get current user info (this depends on how your UserService is structured)
     const currentUser = this.userService.currentUser; // or this.userService.getUser()
-    this.isAdmin = currentUser?.role === 'Admin';
+    this.isAdmin = currentUser?.systemRole === 'Admin';
     const userId = currentUser?.userId;
 
     // 2. Build the role-based filter

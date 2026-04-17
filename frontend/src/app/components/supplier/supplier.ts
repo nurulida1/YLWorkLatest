@@ -24,7 +24,6 @@ import { Table, TableLazyLoadEvent, TableModule } from 'primeng/table';
 import { TextareaModule } from 'primeng/textarea';
 import { LoadingService } from '../../services/loading.service';
 import { MenuItem, MessageService } from 'primeng/api';
-import { SupplierService } from '../../services/supplierService';
 import { Subject, takeUntil } from 'rxjs';
 import {
   BuildFilterText,
@@ -32,8 +31,9 @@ import {
   PagingContent,
   ValidateAllFormFields,
 } from '../../shared/helpers/helpers';
-import { SupplierDto } from '../../models/SupplierDto';
 import { InputNumberModule } from 'primeng/inputnumber';
+import { CompanyService } from '../../services/companyService';
+import { CompanyDto } from '../../models/Company';
 
 @Component({
   selector: 'app-supplier',
@@ -297,12 +297,12 @@ export class Supplier implements OnDestroy {
 
   private readonly loadingService = inject(LoadingService);
   private readonly messageService = inject(MessageService);
-  private readonly supplierService = inject(SupplierService);
+  private readonly companyService = inject(CompanyService);
   private readonly cdr = inject(ChangeDetectorRef);
   protected ngUnsubscribe: Subject<void> = new Subject<void>();
 
-  PagingSignal = signal<PagingContent<SupplierDto>>(
-    {} as PagingContent<SupplierDto>,
+  PagingSignal = signal<PagingContent<CompanyDto>>(
+    {} as PagingContent<CompanyDto>,
   );
   Query: GridifyQueryExtend = {} as GridifyQueryExtend;
 
@@ -325,7 +325,7 @@ export class Supplier implements OnDestroy {
 
   GetData() {
     this.loadingService.start();
-    this.supplierService
+    this.companyService
       .GetMany(this.Query)
       .pipe(takeUntil(this.ngUnsubscribe))
       .subscribe({
@@ -408,7 +408,7 @@ export class Supplier implements OnDestroy {
     this.GetData();
   }
 
-  ActionClick(data: SupplierDto | null, action: string) {
+  ActionClick(data: CompanyDto | null, action: string) {
     this.FG = new FormGroup({
       id: new FormControl<string | null>({ value: null, disabled: true }),
       name: new FormControl<string | null>(null, Validators.required),
@@ -437,8 +437,8 @@ export class Supplier implements OnDestroy {
 
     this.loadingService.start();
     const request$ = this.isUpdate
-      ? this.supplierService.Update(this.FG.value)
-      : this.supplierService.Create(this.FG.value);
+      ? this.companyService.Update(this.FG.value)
+      : this.companyService.Create(this.FG.value);
 
     request$.pipe(takeUntil(this.ngUnsubscribe)).subscribe({
       next: (res) => {

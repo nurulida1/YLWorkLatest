@@ -5,9 +5,9 @@
         public Guid Id { get; set; }
         public string? PaymentNo { get; set; }
         public Guid? ClientId { get; set; }
-        public Client? Client { get; set; }
+        public Company? Client { get; set; }
         public Guid? SupplierId { get; set; }
-        public Supplier? Supplier { get; set; }
+        public Company? Supplier { get; set; }
         public Guid? InvoiceId { get; set; }
         public Invoice? Invoice { get; set; } = null!;
         public string? ReferenceNo { get; set; }

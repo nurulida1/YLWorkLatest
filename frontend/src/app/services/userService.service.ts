@@ -17,6 +17,7 @@ import {
   of,
   throwError,
   BehaviorSubject,
+  map,
 } from 'rxjs';
 import { environment } from '../../environments/environment.development';
 import {
@@ -104,16 +105,12 @@ export class UserService {
       .pipe(retry(1), catchError(this.handleError('Login')));
   }
 
-  Register(
-    request: RegisterRequest,
-  ): Observable<{ success: boolean; user: UserDto; message?: string }> {
-    return this.http
-      .post<{
-        success: boolean;
-        user: UserDto;
-        message?: string;
-      }>(`${this.url}/Register`, request)
-      .pipe(retry(1), catchError(this.handleError('Register')));
+  Register(request: RegisterRequest): Observable<UserDto> {
+    return this.http.post<any>(`${this.url}/Register`, request).pipe(
+      map((res) => res.user),
+      retry(1),
+      catchError(this.handleError('Register')),
+    );
   }
 
   UpdateUser(

@@ -1,43 +1,50 @@
 import { BaseModel } from './BaseModel';
-import { ClientDto } from './Client';
+import { CompanyDto } from './Company';
 import { ProjectDto } from './Project';
 import { QuotationDto } from './Quotation';
-import { SupplierDto } from './SupplierDto';
 import { UserDto } from './User';
 
 export interface PurchaseOrderDto extends BaseModel {
-  poNo: string;
+  purchaseOrderNo: string;
   type: string;
+  poDate: Date;
+  poReceivedDate: Date;
+  clientId: string;
+  client: CompanyDto;
+  supplierId: string;
+  supplier: CompanyDto;
   terms: string;
-  page: string;
-  projectId: string;
+  projectCode: string;
   project: ProjectDto;
   quotationId?: string;
   quotation?: QuotationDto;
-  supplierId: string;
-  supplier: SupplierDto;
-  clientId: string;
-  client: ClientDto;
-  poReceivedDate: Date;
-  orderDate: Date;
   totalQuantity: number;
   gross: number;
   discount: number;
   totalAmount: number;
-  deliveryInstruction: string;
-  deliveryDate: Date;
   remarks: string;
-  createdById: string;
-  createdBy: UserDto;
+  notes: string;
+  poClientNo: string;
+  soClientNo: string;
   status: string;
-  description: string;
-  termsConditions: string;
+  termsAndConditions: string;
   bankDetails: string;
-  paymentTerms: string;
-  poItems: POItem[];
+  purchaseOrderStatusHistories: PurchaseOrderStatusHistory[];
+  purchaseOrderItems: PurchaseOrderItem[];
 }
 
-export interface POItem extends BaseModel {
+export interface PurchaseOrderStatusHistory extends BaseModel {
+  purchaseOrderId: string;
+  purchaseOrder: PurchaseOrderDto;
+  status: string;
+  actionAt: Date;
+  actionUserId: string;
+  actionUser: UserDto;
+  remarks: string;
+  signatureImage: string;
+}
+
+export interface PurchaseOrderItem extends BaseModel {
   purchaseOrderId: string;
   purchaseOrder: PurchaseOrderDto;
   item: string;
@@ -66,31 +73,34 @@ export interface UpdatePOItemRequest extends POItemBase {
 }
 
 export interface CreatePORequest {
-  poNo: string;
-  quotationId: string;
-  projectId: string;
-  supplierId: string;
-  clientId: string;
-  terms: string;
+  purchaseOrderNo: string;
+  type: string;
+  poDate: Date;
   poReceivedDate: Date;
-  page: string;
+  clientId: string;
+  supplierId: string;
+  terms: string;
+  quotationId: string;
+  projectCode: string;
   gross: number;
   discount: number;
   totalAmount: number;
-  deliveryInstruction: string;
-  deliveryDate: Date;
-  termsConditions: string;
-  bankDetails: string;
+  notes: string;
   remarks: string;
-  poItems: POItemRequest[];
+  termsAndConditions: string;
+  bankDetails: string;
+  totalQuantity: number;
+  purchaseOrderItems: POItemBase[];
 }
 
 export interface UpdatePORequest extends CreatePORequest {
   id: string;
-  poItems: UpdatePOItemRequest[];
+  purchaseOrderItems: UpdatePOItemRequest[];
 }
 
-export interface UpdatePurchaseOrderStatusRequest {
+export interface UpdatePOStatusRequest {
   id: string;
   status: string;
+  remarks: string;
+  signatureImage: string;
 }

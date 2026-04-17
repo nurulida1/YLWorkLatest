@@ -7,151 +7,254 @@ namespace YLWorks.Data
     {
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
-        // DB Sets
-        public DbSet<Department> Departments { get; set; }
-        public DbSet<Client> Clients { get; set; }
-        public DbSet<Supplier> Suppliers { get; set; }
-        public DbSet<Address> Addresses { get; set; } // Added this so you can query addresses directly
-        public DbSet<Holiday> Holidays { get; set; }
-        public DbSet<Project> Projects { get; set; }
-        public DbSet<ProjectMember> ProjectMembers { get; set; }
-        public DbSet<Invoice> Invoices { get; set; }
-        public DbSet<InvoiceItem> InvoiceItems { get; set; }
-        public DbSet<LeaveApplication> LeaveApplications { get; set; }
-        public DbSet<LeaveEntitlement> LeaveEntitlements { get; set; }
-        public DbSet<LeaveType> LeaveTypes { get; set; }
-        public DbSet<MaterialRequest> MaterialRequests { get; set; }
-        public DbSet<MaterialItem> MaterialItems { get; set; }
-        public DbSet<Payments> Payments { get; set; }
-        public DbSet<Permission> Permissions { get; set; }
-        public DbSet<PermissionRole> PermissionRoles { get; set; }
-        public DbSet<PurchaseOrder> PurchaseOrders { get; set; }
-        public DbSet<POItem> POItems { get; set; }
-        public DbSet<Quotation> Quotations { get; set; }
-        public DbSet<QuotationItems> QuotationItems { get; set; }
-        public DbSet<Role> Roles { get; set; }
-        public DbSet<ProjectTask> ProjectTasks { get; set; }
+        // =======================
+        // SECURITY / ACCESS
+        // =======================
         public DbSet<User> Users { get; set; }
         public DbSet<PasswordResetToken> PasswordResetTokens { get; set; }
         public DbSet<Notification> Notifications { get; set; }
-        public DbSet<Delivery> Deliveries { get; set; }
-        public DbSet<Attachment> Attachments { get; set; }
+        public DbSet<RolePermission> RolePermissions { get; set; }
+        public DbSet<AccessPermission> AccessPermissions { get; set; }
+
+        // =======================
+        // ORGANIZATION
+        // =======================
+        public DbSet<Department> Departments { get; set; }
+        public DbSet<Project> Projects { get; set; }
+        public DbSet<ProjectMember> ProjectMembers { get; set; }
+
+        public DbSet<WorkOrder> WorkOrders { get; set; }
+        public DbSet<WorkOrderTask> WorkOrderTasks { get; set; }
+        public DbSet<WorkOrderAssignment> WorkOrderAssignments { get; set; }
+
+        public DbSet<DeliveryOrder> DeliveryOrders { get; set; }
+        public DbSet<DeliveryOrderItem> DeliveryOrderItems { get; set; }
+        public DbSet<DeliveryOrderRMA> DeliveryOrderRMAs { get; set; }
+        public DbSet<RMAStatusHistory> RMAStatusHistories { get; set; }
+        public DbSet<RMAItem> RMAItems { get; set; }
+
+        // =======================
+        // MASTER DATA
+        // =======================
+        public DbSet<Company> Companies { get; set; }
+        public DbSet<Address> Addresses { get; set; }
+
+        // =======================
+        // SALES / PROCUREMENT
+        // =======================
+        public DbSet<Quotation> Quotations { get; set; }
+        public DbSet<QuotationItems> QuotationItems { get; set; }
+
+        public DbSet<PurchaseOrder> PurchaseOrders { get; set; }
+        public DbSet<PurchaseOrderItem> PurchaseOrderItems { get; set; }
+
+        // =======================
+        // INVENTORY / MATERIAL
+        // =======================
+        public DbSet<MaterialRequest> MaterialRequests { get; set; }
+        public DbSet<MaterialItem> MaterialItems { get; set; }
+        public DbSet<MaterialRequestStatusHistory> MaterialRequestStatusHistories { get; set; }
+        public DbSet<Inventory> Inventories { get; set; }
+
+        public DbSet<AttachmentDto> Attachments { get; set; }
+
+        // =======================
+        // FINANCE
+        // =======================
+        public DbSet<Invoice> Invoices { get; set; }
+        public DbSet<InvoiceItem> InvoiceItems { get; set; }
+        public DbSet<Payments> Payments { get; set; }
         public DbSet<Income> Incomes { get; set; }
         public DbSet<Expense> Expenses { get; set; }
-        public DbSet<Event> Events { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            // 1. Client & Address
-            modelBuilder.Entity<Client>(entity =>
+            base.OnModelCreating(modelBuilder);
+
+            // =======================
+            // SECURITY
+            // =======================
+
+            modelBuilder.Entity<RolePermission>(entity =>
+            {
+                entity.HasKey(ra => new { ra.Id });
+
+            });
+
+            modelBuilder.Entity<AccessPermission>(entity =>
+            {
+                entity.HasKey(ra => new { ra.Id });
+
+            });
+
+            // =======================
+            // COMPANY
+            // =======================
+            modelBuilder.Entity<Company>(entity =>
             {
                 entity.HasKey(e => e.Id);
+
                 entity.Property(e => e.Name).IsRequired().HasMaxLength(200);
-                entity.Property(e => e.Status).IsRequired().HasMaxLength(50);
-
-                entity.HasOne(e => e.BillingAddress).WithMany().HasForeignKey(e => e.BillingAddressId).OnDelete(DeleteBehavior.SetNull);
-                entity.HasOne(e => e.DeliveryAddress).WithMany().HasForeignKey(e => e.DeliveryAddressId).OnDelete(DeleteBehavior.SetNull);
             });
 
-            modelBuilder.Entity<Supplier>(entity =>
+           
+            // =======================
+            // DEPARTMENT
+            // =======================
+            modelBuilder.Entity<Department>(entity =>
             {
                 entity.HasKey(e => e.Id);
+
                 entity.Property(e => e.Name).IsRequired().HasMaxLength(200);
+                entity.HasOne(d => d.Hod)
+        .WithMany() // no collection in User
+        .HasForeignKey(d => d.HodId)
+        .OnDelete(DeleteBehavior.SetNull);
             });
 
-            modelBuilder.Entity<Event>(entity =>
+            // =======================
+            // PROJECT
+            // =======================
+            modelBuilder.Entity<ProjectMember>(entity =>
             {
-                entity.HasKey(e => e.Id);
-                entity.Property(e => e.Title).IsRequired();
+                entity.HasKey(pm => new { pm.ProjectCode, pm.UserId });
             });
 
-            modelBuilder.Entity<Address>(entity =>
+            // =======================
+            // WORK ORDER
+            // =======================
+            modelBuilder.Entity<WorkOrder>(entity =>
             {
                 entity.HasKey(e => e.Id);
-                entity.Property(e => e.AddressLine1).IsRequired().HasMaxLength(255);
+
+                entity.Property(e => e.WorkOrderNo).IsRequired().HasMaxLength(50);
+            });
+
+            modelBuilder.Entity<WorkOrderTask>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+            });
+
+            modelBuilder.Entity<WorkOrderAssignment>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+            });
+
+            // =======================
+            // MATERIAL REQUEST
+            // =======================
+            modelBuilder.Entity<MaterialRequest>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.RequestNo).HasMaxLength(50);
+
+                entity.Property(e => e.Status)
+                    .HasMaxLength(30)
+                    .HasDefaultValue("Draft");
+            });
+
+            modelBuilder.Entity<MaterialRequestStatusHistory>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+            });
+
+            modelBuilder.Entity<MaterialItem>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.Quantity).HasColumnType("decimal(18,2)");
+
+            });
+
+            // =======================
+            // DELIVERY ORDER
+            // =======================
+            modelBuilder.Entity<DeliveryOrder>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.DeliveryOrderNo).IsRequired().HasMaxLength(50);
+                entity.Property(e => e.Status).HasMaxLength(20).HasDefaultValue("Draft");
+            });
+
+            modelBuilder.Entity<DeliveryOrderItem>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.QuantityOrdered).HasColumnType("decimal(18,2)");
+                entity.Property(e => e.QuantityDelivered).HasColumnType("decimal(18,2)");
+            });
+
+
+            // =======================
+            // RMA
+            // =======================
+            modelBuilder.Entity<DeliveryOrderRMA>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.RMANo).IsRequired().HasMaxLength(50);
+                entity.Property(e => e.Status).HasMaxLength(30).HasDefaultValue("Draft");
+            });
+
+            modelBuilder.Entity<RMAStatusHistory>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+            });
+
+            modelBuilder.Entity<RMAItem>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.Quantity).HasColumnType("decimal(18,2)");
+            });
+
+            // =======================
+            // FINANCE
+            // =======================
+            modelBuilder.Entity<Invoice>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.InvoiceNo).IsRequired().HasMaxLength(50);
+            });
+
+            modelBuilder.Entity<InvoiceItem>(entity =>
+            {
+                entity.Property(i => i.TotalAmount).HasColumnType("decimal(18,2)");
+            });
+
+            modelBuilder.Entity<Payments>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.Amount).HasColumnType("decimal(18,2)");
+            });
+
+            modelBuilder.Entity<Expense>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.ExpenseNo).IsRequired().HasMaxLength(50);
+                entity.Property(e => e.Amount).HasColumnType("decimal(18,2)");
             });
 
             modelBuilder.Entity<Income>(entity =>
             {
                 entity.HasKey(e => e.Id);
+
                 entity.Property(e => e.IncomeNo).IsRequired().HasMaxLength(50);
-            });
-
-            // 2. Department (Consolidated)
-            modelBuilder.Entity<Department>(entity =>
-            {
-                entity.HasKey(e => e.Id);
-                entity.Property(e => e.Name).IsRequired().HasMaxLength(200);
-                entity.Property(e => e.Status).HasDefaultValue("Active");
-
-                entity.HasOne(d => d.Hod).WithMany().HasForeignKey(d => d.HodId).OnDelete(DeleteBehavior.Restrict);
-            });
-
-            // 3. Finance (Invoices, Quotations, Payments)
-            modelBuilder.Entity<Invoice>(entity =>
-            {
-                entity.HasKey(e => e.Id);
-                entity.Property(e => e.InvoiceNo).IsRequired().HasMaxLength(50);
-
-                entity.HasMany(i => i.InvoiceItems).WithOne(ii => ii.Invoice).HasForeignKey(ii => ii.InvoiceId).OnDelete(DeleteBehavior.Cascade);
-                entity.HasMany(e => e.Payments).WithOne(p => p.Invoice).HasForeignKey(p => p.InvoiceId).OnDelete(DeleteBehavior.Restrict);
-            });
-
-            modelBuilder.Entity<InvoiceItem>(entity => {
-                entity.Property(i => i.TotalAmount).HasColumnType("decimal(18,2)");
-            });
-
-            modelBuilder.Entity<Payments>(entity => {
-                entity.HasKey(e => e.Id);
-
-                // Explicitly link the navigation property 'Client' 
-                // to the existing property 'ClientId'
-                entity.HasOne(e => e.Client)
-                      .WithMany()
-                      .HasForeignKey(e => e.ClientId) // This stops the creation of ClientId1
-                      .OnDelete(DeleteBehavior.Restrict);
-
-                // Link Invoice
-                entity.HasOne(e => e.Invoice)
-                      .WithMany(i => i.Payments)
-                      .HasForeignKey(e => e.InvoiceId)
-                      .OnDelete(DeleteBehavior.Restrict);
-
                 entity.Property(e => e.Amount).HasColumnType("decimal(18,2)");
-                entity.Property(e => e.Status).IsRequired().HasMaxLength(20);
             });
 
-            modelBuilder.Entity<Quotation>(entity =>
+            // =======================
+            // ATTACHMENT
+            // =======================
+            modelBuilder.Entity<AttachmentDto>(entity =>
             {
-                entity.Property(q => q.Gross).HasColumnType("decimal(18,2)");
-                entity.Property(q => q.TotalAmount).HasColumnType("decimal(18,2)");
-                entity.Property(q => q.Discount).HasColumnType("decimal(18,2)");
-                entity.HasMany(q => q.Items).WithOne(qi => qi.Quotation).HasForeignKey(qi => qi.QuotationId).OnDelete(DeleteBehavior.Cascade);
+                entity.HasKey(e => e.Id);
             });
-
-            // 4. Project Management
-            modelBuilder.Entity<ProjectMember>(entity =>
-            {
-                entity.HasKey(pm => new { pm.ProjectId, pm.UserId });
-            });
-
-            modelBuilder.Entity<PermissionRole>(entity =>
-            {
-                entity.HasKey(pr => new { pr.PermissionId, pr.RoleId });
-            });
-
-            // 5. Attachments (Generic Cascade Logic)
-            modelBuilder.Entity<Attachment>(entity =>
-            {
-                entity.HasKey(a => a.Id);
-                entity.Property(a => a.FileData).IsRequired();
-
-                // Ensure all relationships are defined here or in the parent entity
-                entity.HasOne(a => a.Invoice).WithMany(i => i.Attachments).HasForeignKey(a => a.InvoiceId).OnDelete(DeleteBehavior.Cascade);
-                entity.HasOne(a => a.LeaveApplication).WithMany(l => l.Attachments).HasForeignKey(a => a.LeaveApplicationId).OnDelete(DeleteBehavior.Cascade);
-            });
-
-            base.OnModelCreating(modelBuilder);
         }
     }
 }

@@ -39,6 +39,8 @@ import { MenuModule } from 'primeng/menu';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { KeyFilterModule } from 'primeng/keyfilter';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
+import { DatePickerModule } from 'primeng/datepicker';
+import { PasswordModule } from 'primeng/password';
 
 @Component({
   selector: 'app-user-management',
@@ -56,6 +58,8 @@ import { ToggleSwitchModule } from 'primeng/toggleswitch';
     InputNumberModule,
     KeyFilterModule,
     ToggleSwitchModule,
+    DatePickerModule,
+    PasswordModule,
   ],
   template: `<div class="w-full min-h-[92.9vh] flex flex-col p-5">
       <div
@@ -127,7 +131,7 @@ import { ToggleSwitchModule } from 'primeng/toggleswitch';
                   User
                 </th>
                 <th class="bg-gray-100! text-[15px]! text-center! w-[15%]">
-                  Role
+                  Job Title
                 </th>
                 <th class="bg-gray-100! text-[15px]! text-center! w-[15%]">
                   Last Activity
@@ -147,13 +151,19 @@ import { ToggleSwitchModule } from 'primeng/toggleswitch';
             <ng-template #body let-data>
               <tr>
                 <td class="text-[14px]! text-center! font-semibold">
-                  {{ data.firstName }} {{ data.lastName }}
+                  {{ data.fullName }}
                 </td>
                 <td class="text-center! text-[14px]!">
-                  {{ data.role }}
+                  {{ data.jobTitle }}
                 </td>
                 <td class="text-center! text-[14px]! text-gray-500!">
-                  {{ getLastSeen(data.lastLoginAt) }}
+                  <div class="flex flex-row items-center gap-2 justify-center">
+                    <div
+                      class="pi pi-circle-fill !text-[5px] text-green-500!"
+                      *ngIf="getLastSeen(data.lastLoginAt) === 'Online'"
+                    ></div>
+                    <div>{{ getLastSeen(data.lastLoginAt) }}</div>
+                  </div>
                 </td>
 
                 <td class="text-center! text-[14px]!">
@@ -209,26 +219,25 @@ import { ToggleSwitchModule } from 'primeng/toggleswitch';
             class="text-[15px] tracking-wide mt-7 grid grid-cols-12 gap-4"
             [formGroup]="FG"
           >
-            <div class="col-span-12 md:col-span-6 flex flex-col gap-1">
-              <div>First Name</div>
+            <div class="col-span-12 flex flex-col gap-1">
+              <div>Full Name <span class="text-red-500">*</span></div>
               <input
                 type="text"
                 pInputText
                 class="w-full py-1.5!"
-                formControlName="firstName"
-              />
+                formControlName="fullName"
+              /><small
+                class="text-red-500"
+                *ngIf="
+                  FG.get('fullName')?.errors?.['required'] &&
+                  FG.get('fullName')?.touched
+                "
+                >Full Name is required.</small
+              >
             </div>
+
             <div class="col-span-12 md:col-span-6 flex flex-col gap-1">
-              <div>Last Name</div>
-              <input
-                type="text"
-                pInputText
-                class="w-full py-1.5!"
-                formControlName="lastName"
-              />
-            </div>
-            <div class="col-span-12 md:col-span-6 flex flex-col gap-1">
-              <div>Email</div>
+              <div>Email <span class="text-red-500">*</span></div>
               <input
                 type="text"
                 pInputText
@@ -239,44 +248,103 @@ import { ToggleSwitchModule } from 'primeng/toggleswitch';
                 *ngIf="FG.get('email')?.errors?.['email']"
                 >Invalid email format.</small
               >
+              <small
+                class="text-red-500"
+                *ngIf="
+                  FG.get('email')?.errors?.['required'] &&
+                  FG.get('email')?.touched
+                "
+                >Email is required.</small
+              >
             </div>
             <div class="col-span-12 md:col-span-6 flex flex-col gap-1">
-              <div>Role</div>
+              <div>Contact No</div>
+              <input
+                type="text"
+                pInputText
+                class="w-full py-1.5!"
+                formControlName="contactNo"
+              /><small
+                class="text-red-500"
+                *ngIf="
+                  FG.get('contactNo')?.errors?.['required'] &&
+                  FG.get('contactNo')?.touched
+                "
+                >Contact No is required</small
+              >
+            </div>
+            <div class="col-span-12 md:col-span-6 flex flex-col gap-1">
+              <div>Job Title</div>
+              <input
+                type="text"
+                pInputText
+                class="w-full"
+                formControlName="jobTitle"
+              />
+            </div>
+            <div class="col-span-12 md:col-span-6 flex flex-col gap-1">
+              <div>HOD</div>
               <p-select
-                [options]="[
-                  { label: 'Staff', value: 'Staff' },
-                  { label: 'Admin', value: 'Admin' },
-                  { label: 'HR', value: 'HR' },
-                  { label: 'Director', value: 'Director' },
-                  { label: 'Manager', value: 'Manager' },
-                ]"
                 appendTo="body"
-                formControlName="role"
+                class="w-full"
+                formControlName="hodId"
+                [options]="hodSelection || []"
+                [filter]="true"
+                [showClear]="FG.get('hodId')?.value"
+              ></p-select>
+            </div>
+            <div class="col-span-12 md:col-span-6 flex flex-col gap-1">
+              <div>Joined Date</div>
+              <p-datepicker
+                class="w-full"
+                showIcon="true"
+                appendTo="body"
+                styleClass="w-full!"
+                dateFormat="dd/mm/yy"
+                formControlName="joinedDate"
+              ></p-datepicker>
+            </div>
+            <div class="col-span-12 md:col-span-6 flex flex-col gap-1">
+              <div>Gender</div>
+              <p-select
+                class="w-full"
+                appendTo="body"
+                styleClass="w-full!"
+                [options]="[
+                  { label: 'Male', value: 'Male' },
+                  { label: 'Female', value: 'Female' },
+                ]"
+                formControlName="gender"
               ></p-select>
             </div>
             <div
               class="col-span-12 md:col-span-6 flex flex-col gap-1"
               *ngIf="!isUpdate"
             >
-              <div>Password</div>
-              <input
-                type="text"
-                pInputText
-                class="w-full py-1.5!"
+              <div>Password <span class="text-red-500">*</span></div>
+              <p-password
                 formControlName="password"
+                [feedback]="false"
+                autocomplete="off"
+                styleClass="w-full!"
+                inputStyleClass="w-full!"
+                [toggleMask]="true"
               />
             </div>
             <div
               class="col-span-12 md:col-span-6 flex flex-col gap-1"
               *ngIf="!isUpdate"
             >
-              <div>Confirm Password</div>
-              <input
-                type="text"
-                pInputText
-                class="w-full py-1.5!"
+              <div>Confirm Password <span class="text-red-500">*</span></div>
+              <p-password
                 formControlName="confirmPassword"
-              /><small
+                [feedback]="false"
+                autocomplete="off"
+                styleClass="w-full!"
+                inputStyleClass="w-full!"
+                [toggleMask]="true"
+              />
+              <small
                 class="text-red-500"
                 *ngIf="
                   FG.errors?.['passwordMismatch'] &&
@@ -301,7 +369,6 @@ import { ToggleSwitchModule } from 'primeng/toggleswitch';
               [label]="isUpdate ? 'Save Changes' : 'Create'"
               severity="info"
               styleClass="py-1.5! px-4!"
-              [disabled]="FG.invalid"
             ></p-button>
           </div></div></ng-template
     ></p-dialog> `,
@@ -328,16 +395,14 @@ export class UserManagement implements OnInit, OnDestroy {
   title: string = 'Add New User';
   FG!: FormGroup;
   menuItems: MenuItem[] = [];
-  selectedTeamMembers: any[] = [];
 
-  clients: { label: string; value: string }[] = [];
-  users: { label: string; value: string }[] = [];
+  hodSelection: { label: string; value: string }[] = [];
 
   constructor() {
     this.Query.Page = 1;
     this.Query.PageSize = 10;
     this.Query.Filter = null;
-    this.Query.OrderBy = `FirstName`;
+    this.Query.OrderBy = `FullName`;
     this.Query.Select = null;
     this.Query.Includes = null;
   }
@@ -368,7 +433,7 @@ export class UserManagement implements OnInit, OnDestroy {
     }
 
     const sortText = BuildSortText(event);
-    this.Query.OrderBy = sortText ? sortText : 'FirstName';
+    this.Query.OrderBy = sortText ? sortText : 'FullName';
 
     this.Query.Filter = BuildFilterText(event);
     this.GetData();
@@ -387,14 +452,7 @@ export class UserManagement implements OnInit, OnDestroy {
 
   Search(data: string) {
     const filter = {
-      FirstName: [
-        {
-          value: data,
-          matchMode: '=',
-          operator: 'and',
-        },
-      ],
-      LastName: [
+      FullName: [
         {
           value: data,
           matchMode: '=',
@@ -436,24 +494,23 @@ export class UserManagement implements OnInit, OnDestroy {
     this.isUpdate = action === 'Update';
     this.title = this.isUpdate ? 'Edit User' : 'Add New User';
 
+    this.GetHodSelection();
+
     this.FG = new FormGroup(
       {
         id: new FormControl<string | null>({
           value: data?.id || null,
           disabled: true,
         }),
-        firstName: new FormControl<string | null>(
-          data?.firstName || null,
-          Validators.required,
-        ),
-        lastName: new FormControl<string | null>(
-          data?.lastName || null,
+        fullName: new FormControl<string | null>(
+          data?.fullName || null,
           Validators.required,
         ),
         email: new FormControl<string | null>(data?.email || null, [
           Validators.required,
           Validators.email,
         ]),
+        contactNo: new FormControl<string | null>(null),
         password: new FormControl<string | null>(
           null,
           this.isUpdate ? [] : [Validators.required, Validators.minLength(6)],
@@ -462,16 +519,25 @@ export class UserManagement implements OnInit, OnDestroy {
           null,
           this.isUpdate ? [] : [Validators.required],
         ),
-        role: new FormControl<string | null>(
-          data?.role || 'Staff',
+
+        jobTitle: new FormControl<string | null>(
+          data?.jobTitle ?? null,
           Validators.required,
         ),
+        joinedDate: new FormControl<Date | null>(
+          data?.joinedDate ? new Date(data.joinedDate) : null,
+        ),
+        hodId: new FormControl<string | null>(data?.hodId || null),
+        gender: new FormControl<string | null>(data?.gender || 'Male'),
       },
       { validators: passwordMatchValidator },
     ); // Add cross-field validator here
 
     if (this.isUpdate && data) {
-      this.FG.patchValue(data);
+      this.FG.patchValue({
+        ...data,
+        joinedDate: data.joinedDate ? new Date(data.joinedDate) : null,
+      });
     }
 
     this.visible = true;
@@ -488,6 +554,25 @@ export class UserManagement implements OnInit, OnDestroy {
     ];
 
     menu.toggle(event); // toggle the popup menu
+  }
+
+  GetHodSelection() {
+    this.userService
+      .GetMany({
+        Page: 1,
+        PageSize: 1000000,
+        OrderBy: 'FullName',
+        Filter: `SystemRole!=SuperAdmin`,
+        Select: null,
+        Includes: null,
+      })
+      .pipe(takeUntil(this.ngUnsubscribe))
+      .subscribe((res) => {
+        this.hodSelection = res.data.map((user: any) => ({
+          label: user.fullName,
+          value: user.id,
+        }));
+      });
   }
 
   getLastSeen(lastLoginAt: string | Date): string {
@@ -549,32 +634,23 @@ export class UserManagement implements OnInit, OnDestroy {
   }
 
   SaveUser() {
-    // 1. Mark all fields as touched
     ValidateAllFormFields(this.FG);
 
     if (this.FG.invalid) return;
 
     this.loadingService.start();
 
-    // 2. Prepare the payload
-    // Using getRawValue() is good practice to include disabled fields like 'id'
     const payload = this.FG.getRawValue();
 
-    // 3. Explicitly type the Observable to avoid the "This expression is not callable" error
-    // We use 'any' here as a bridge, or better yet, a shared interface if you have one
     const request$: Observable<any> = this.isUpdate
       ? this.userService.UpdateUser(payload)
       : this.userService.Register(payload);
 
     request$.pipe(takeUntil(this.ngUnsubscribe)).subscribe({
-      // 4. Explicitly type 'res' and 'err' as 'any' or their specific DTOs
-      // to satisfy the TS7006 "implicit any" error
       next: (res: any) => {
         this.loadingService.stop();
 
-        // Check if the backend actually returned a success flag
-        // (Your .NET controller returns { Success = true })
-        if (res.success || res.Success) {
+        if (res) {
           this.messageService.add({
             severity: 'success',
             summary: 'Success',
@@ -582,9 +658,19 @@ export class UserManagement implements OnInit, OnDestroy {
           });
 
           this.visible = false;
-          this.GetData(); // Refresh the table list
+          if (this.isUpdate) {
+            this.PagingSignal.update((state) => ({
+              ...state,
+              data: state.data.map((u: any) => (u.id === res.id ? res : u)),
+            }));
+          } else {
+            this.PagingSignal.update((state) => ({
+              ...state,
+              data: [res, ...state.data],
+            }));
+          }
+          this.cdr.markForCheck();
         } else {
-          // Handle cases where the API returns 200 OK but Success is false
           this.messageService.add({
             severity: 'warn',
             summary: 'Warning',

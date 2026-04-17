@@ -122,7 +122,7 @@ export class FooterComponent {
 
   constructor() {
     this.role =
-      (this.userService.currentUser?.role as UserRole) ?? UserRole.Staff;
+      (this.userService.currentUser?.systemRole as UserRole) ?? UserRole.Staff;
   }
 
   toggleOverflow() {

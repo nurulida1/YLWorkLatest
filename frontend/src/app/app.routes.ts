@@ -83,8 +83,10 @@ export const routes: Routes = [
     children: [
       {
         path: '',
-        loadComponent: () =>
-          import('./components/client/client').then((m) => m.Client),
+        loadChildren: () =>
+          import('./components/clients/client-routing.module').then(
+            (m) => m.ClientRoutingModule,
+          ),
       },
     ],
   },
@@ -212,51 +214,6 @@ export const routes: Routes = [
     ],
   },
   {
-    path: 'employee',
-    canActivate: [authGuard],
-    loadComponent: () =>
-      import('./shared/components/web-layout/web-layout').then(
-        (m) => m.WebLayout,
-      ),
-    children: [
-      {
-        path: '',
-        loadComponent: () =>
-          import('./components/employee/employee').then((m) => m.Employee),
-      },
-    ],
-  },
-  {
-    path: 'to-do',
-    canActivate: [authGuard],
-    loadComponent: () =>
-      import('./shared/components/web-layout/web-layout').then(
-        (m) => m.WebLayout,
-      ),
-    children: [
-      {
-        path: '',
-        loadComponent: () =>
-          import('./components/to-do/to-do').then((m) => m.ToDo),
-      },
-    ],
-  },
-  {
-    path: 'tasks',
-    canActivate: [authGuard],
-    loadComponent: () =>
-      import('./shared/components/web-layout/web-layout').then(
-        (m) => m.WebLayout,
-      ),
-    children: [
-      {
-        path: '',
-        loadComponent: () =>
-          import('./components/tasks/tasks').then((m) => m.Tasks),
-      },
-    ],
-  },
-  {
     path: 'quotations',
     component: WebLayout,
     children: [
@@ -269,7 +226,7 @@ export const routes: Routes = [
       },
     ],
   },
-  //t
+
   {
     path: 'purchase-orders',
     component: WebLayout,
@@ -293,6 +250,45 @@ export const routes: Routes = [
         loadChildren: () =>
           import('./components/invoices/invoice-routing.module').then(
             (m) => m.InvoiceRoutingModule,
+          ),
+      },
+    ],
+  },
+  {
+    path: 'department',
+    component: WebLayout,
+    children: [
+      {
+        path: '',
+        loadComponent: () =>
+          import('./components/department/department').then(
+            (m) => m.Department,
+          ),
+      },
+    ],
+  },
+  {
+    path: 'access-permission',
+    component: WebLayout,
+    children: [
+      {
+        path: '',
+        loadComponent: () =>
+          import('./components/accessPermission/accessPermission').then(
+            (m) => m.AccessPermission,
+          ),
+      },
+    ],
+  },
+  {
+    path: 'company',
+    component: WebLayout,
+    children: [
+      {
+        path: '',
+        loadChildren: () =>
+          import('./components/companies/company-routing.module').then(
+            (m) => m.CompanyRoutingModule,
           ),
       },
     ],

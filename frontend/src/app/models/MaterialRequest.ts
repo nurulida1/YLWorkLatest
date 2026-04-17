@@ -1,36 +1,32 @@
 import { BaseModel } from './BaseModel';
+import { CompanyDto } from './Company';
 import { ProjectDto } from './Project';
-import { ProjectTaskDto } from './ProjectTask';
 import { PurchaseOrderDto } from './PurchaseOrder';
-import { SupplierDto } from './SupplierDto';
 import { UserDto } from './User';
+import { WorkOrderDto } from './WorkOrder';
 
 export interface MaterialRequestDto extends BaseModel {
+  documentNo: string;
+  revNo: string;
+  effDate: Date;
   requestNo: string;
-  projectId: string;
+  projectCode: string;
   project: ProjectDto;
-  taskId: string;
-  task: ProjectTaskDto;
-  poId: string;
-  clientId: string;
-  purchaseOrder: PurchaseOrderDto;
-  purpose: string;
   requestDate: Date;
-  requestedById: string;
-  requestedBy: UserDto;
+  deliveryDate: Date;
+  deliveryPlace: string;
+  workOrderId: string;
+  workOrder: WorkOrderDto;
+  clientId: string;
+  client: CompanyDto;
+  supplierId: string;
+  supplier: CompanyDto;
+  purchaseOrderId: string;
+  purchaseOrder: PurchaseOrderDto;
   status: string;
-  remarks?: string;
-  approvedById: string;
-  approvedBy: UserDto;
-  approvalRequestedAt: Date;
-  approvedAt: Date;
-  rejectedAt: Date;
-  issuedAt: Date;
-  issuedById: string;
-  completedAt: Date;
-  rejectionReason: string;
+  remarks: string;
+  materialRequestStatusHistories: MaterialRequestStatusHistory[];
   materialItems: MaterialItem[];
-  attachments: string[];
 }
 
 export interface MaterialItem extends BaseModel {
@@ -39,47 +35,43 @@ export interface MaterialItem extends BaseModel {
   description: string;
   brand: string;
   unit: string;
+  typeNo: string;
   quantity: number;
-  requiredDate: Date;
+  requiredAt: Date;
   supplierId: string;
-  supplier: SupplierDto;
+  supplier: CompanyDto;
+  remarks: string;
 }
 
 export interface CreateMaterialRequest {
+  documentNo: string;
+  revNo: string;
+  effDate: Date;
   requestNo: string;
-  projectId: string;
-  taskId?: string;
-  clientId: string;
-  poId: string;
-  purpose: string;
+  projectCode: string;
   requestDate: Date;
+  deliveryDate: Date;
+  deliveryPlace: string;
+  workOrderId: string;
+  supplierId: string;
   requestedById: string;
-  remarks?: string;
+  purchaseOrderId: string;
+  remarks: string;
   materialItems: MaterialItemRequest[];
-  attachments: string[];
 }
 
-export interface UpdateMaterialRequest {
+export interface UpdateMaterialRequest extends CreateMaterialRequest {
   id: string;
-  requestNo: string;
-  projectId?: string;
-  taskId?: string;
-  clientId: string;
-  poId?: string;
-  purpose?: string;
-  requestDate?: Date;
-  requestedById?: string;
-  remarks?: string;
-  materialItems: MaterialItemUpdateRequest[];
-  attachments: string[];
 }
 
 export interface MaterialItemRequest {
   description: string;
   brand: string;
   unit: string;
-  quantity?: number;
-  requiredDate?: Date;
+  typeNo: string;
+  quantity: number;
+  requiredAt: Date;
+  remarks: string;
   supplierId: string;
 }
 
@@ -87,9 +79,75 @@ export interface MaterialItemUpdateRequest extends MaterialItemRequest {
   id: string;
 }
 
-export interface UpdateMaterialRequestStatusDto {
+export interface MaterialRequestDto {
   id: string;
+  documentNo: string;
+  revNo: string;
+  effDate: Date;
+  requestNo: string;
+  projectCode: string;
+  project: ProjectDto;
+  requestDate: Date;
+  deliveryDate: Date;
+  deliveryPlace: string;
+  workOrderId: string;
+  workOrder: WorkOrderDto;
+  supplierId: string;
+  supplier: CompanyDto;
+  requestedById: string;
+  requestedBy: UserDto;
+  purchaseOrderId: string;
+  purchaseOrder: PurchaseOrderDto;
+  remarks: string;
+  materialItems: MaterialItem[];
+}
+
+export interface MaterialItemDto {
+  id: string;
+  description: string;
+  quantity: number;
+  brand: string;
+  typeNo: string;
+  supplierId: string;
+  unit: string;
+  requiredAt: Date;
+  remarks: string;
+}
+
+export interface MaterialRequestStatusHistory extends BaseModel {
+  materialRequestId: string;
+  materialRequest: MaterialRequestDto;
   status: string;
-  approvedById?: string;
-  rejectionReason?: string;
+  actionAt: Date;
+  actionUserId: string;
+  actionUserName: string;
+  remarks: string;
+  signatureImage: string;
+  proofImageUrls: string[];
+}
+
+export interface MaterialRequestStatusUpdate {
+  status: string;
+  actionUserId: string;
+  actionUserName: string;
+  remarks: string;
+  signatureImage: string;
+  proofImageUrls: string[];
+}
+
+export interface MaterialRequestStatusUpdateRequest {
+  materialRequestId: string;
+  statusUpdate: MaterialItemUpdateRequest;
+}
+
+export interface MaterialRequestStatusUpdateDto {
+  id: string;
+  materialRequestId: string;
+  status: string;
+  actionAt: Date;
+  actionUserId: string;
+  actionUserName: string;
+  remarks: string;
+  signatureImage: string;
+  proofImageUrls: string[];
 }

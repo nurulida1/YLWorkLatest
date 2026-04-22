@@ -173,23 +173,53 @@ import { ImageModule } from 'primeng/image';
                 <th
                   class="bg-gray-100! text-[15px]! text-center! w-[10%]!"
                 ></th>
-                <th class="bg-gray-100! text-[15px]! text-center! w-[20%]!">
-                  Item
+                <th
+                  pSortableColumn="ItemName"
+                  class="bg-gray-100! text-[15px]! text-center! w-[20%]!"
+                >
+                  <div class="flex flex-row items-center justify-center gap-2">
+                    <div>Item</div>
+                    <p-sortIcon field="ItemName" />
+                  </div>
                 </th>
-                <th class="bg-gray-100! text-[15px]! text-center! w-[15%]!">
-                  Brand
+                <th
+                  class="bg-gray-100! text-[15px]! text-center! w-[15%]!"
+                  pSortableColumn="Brand"
+                >
+                  <div class="flex flex-row items-center justify-center gap-2">
+                    <div>Brand</div>
+                    <p-sortIcon field="Brand" />
+                  </div>
                 </th>
-                <th class="bg-gray-100! text-[15px]! text-center! w-[10%]!">
-                  Model
+                <th
+                  class="bg-gray-100! text-[15px]! text-center! w-[10%]!"
+                  pSortableColumn="Model"
+                >
+                  <div class="flex flex-row items-center justify-center gap-2">
+                    <div>Model</div>
+                    <p-sortIcon field="Model" />
+                  </div>
                 </th>
-                <th class="bg-gray-100! text-[15px]! text-center! w-[10%]!">
-                  Section
+                <th
+                  class="bg-gray-100! text-[15px]! text-center! w-[10%]!"
+                  pSortableColumn="Section"
+                >
+                  <div class="flex flex-row items-center justify-center gap-2">
+                    <div>Section</div>
+                    <p-sortIcon field="Section" />
+                  </div>
                 </th>
                 <th class="bg-gray-100! text-[15px]! text-center! w-[10%]!">
                   Balance
                 </th>
-                <th class="bg-gray-100! text-[15px]! text-center! w-[10%]!">
-                  Par
+                <th
+                  class="bg-gray-100! text-[15px]! text-center! w-[10%]!"
+                  pSortableColumn="ParLevel"
+                >
+                  <div class="flex flex-row items-center justify-center gap-2">
+                    <div>Par</div>
+                    <p-sortIcon field="ParLevel" />
+                  </div>
                 </th>
                 <th class="bg-gray-100! text-[15px]! text-center! w-[10%]!">
                   Status
@@ -227,7 +257,9 @@ import { ImageModule } from 'primeng/image';
                   {{ data.model }}
                 </td>
                 <td class="text-center! text-[15px]!">
-                  {{ data.section.name }}
+                  <div class="bg-gray-100 px-2 py-1">
+                    {{ data.section.name }}
+                  </div>
                 </td>
                 <td class="text-center! text-[15px]!">
                   <div
@@ -603,7 +635,7 @@ export class Inventory implements OnInit, OnDestroy {
     }
 
     if (event.key === 'Backspace' && this.search === '') {
-      this.applyFilters(); // rebuild ALL filters, not just search
+      this.applyFilters();
     }
   }
 

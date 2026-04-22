@@ -75,5 +75,5 @@ export interface ProjectMemberDto {
 
 export interface ProjectDropdownDto {
   clients: { id: string; name: string }[];
-  users: { id: string; firstName: string; lastName: string }[];
+  users: { id: string; fullName: string }[];
 }

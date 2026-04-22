@@ -111,7 +111,7 @@ import { MessageService } from 'primeng/api';
                   [binary]="true"
                   formControlName="rememberMe"
                 ></p-checkbox>
-                <div class="text-sm text-gray-400">Remember me</div>
+                <div class="text-sm text-gray-400 mt-1.5">Remember me</div>
               </div>
 
               <div

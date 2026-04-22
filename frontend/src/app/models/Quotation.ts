@@ -7,6 +7,8 @@ export interface QuotationDto extends BaseModel {
   quotationNo: string;
   referenceNo: string;
   quotationDate: Date;
+  fromCompanyId: string;
+  fromCompany: CompanyDto;
   clientId: string;
   client: CompanyDto;
   projectCode: string;
@@ -26,29 +28,59 @@ export interface QuotationStatusHistory extends BaseModel {
   status: string;
   actionAt: Date;
   actionUserId: string;
-  actionUser: UserDto;
+  reviewedByUserId: string;
   remarks: string;
+  actionUser?: {
+    id: string;
+    fullName: string;
+  };
+
+  reviewedByUser?: {
+    id: string;
+    fullName: string;
+  };
   signatureImage: string;
 }
 
 export interface QuotationItems extends BaseModel {
   quotationId: string;
   quotation: QuotationDto;
-  title: string;
+  parentId: string;
+  parent: QuotationItems;
+  sortOrder: number;
+  type: string;
+  description: string;
+  isGroup: boolean;
+  quantity: number;
+  unit: string;
+  unitPrice: number;
+  totalPrice: number;
+  children: QuotationItems[];
+}
+
+export interface QuotationItemDto {
+  id: string;
+  sortOrder: number;
+  type: string;
+  isGroup: boolean;
+  description: string;
+  unit: string;
+  quantity: number;
+  unitPrice: number;
+  totalPrice: number;
+  children: QuotationItemDto[];
+}
+
+export interface QuotationItemBase {
+  sortOrder: number;
+  type: string;
+  isGroup: boolean;
   description: string;
   quantity: number;
   unit: string;
   unitPrice: number;
   totalPrice: number;
-}
-
-export interface QuotationItemBase {
-  title: string;
-  description: string;
-  quantity: number;
-  unit: string;
-  untiPrice: number;
-  totalPrice: number;
+  children: QuotationItemRequest[];
 }
 
 export interface QuotationItemRequest extends QuotationItemBase {}
@@ -61,6 +93,7 @@ export interface CreateQuotationRequest {
   quotationNo: string;
   referenceNo: string;
   quotationDate: Date;
+  fromCompanyId: string;
   clientId: string;
   projectCode: string;
   subject: string;

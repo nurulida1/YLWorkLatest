@@ -16,7 +16,13 @@ import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
 import { MenuModule } from 'primeng/menu';
 import { SelectModule } from 'primeng/select';
-import { Table, TableLazyLoadEvent, TableModule } from 'primeng/table';
+import {
+  Table,
+  TableLazyLoadEvent,
+  TableModule,
+  TableRowCollapseEvent,
+  TableRowExpandEvent,
+} from 'primeng/table';
 import { LoadingService } from '../../../services/loading.service';
 import { MenuItem, MessageService } from 'primeng/api';
 import { QuotationService } from '../../../services/quotationService.service';
@@ -29,6 +35,7 @@ import {
 } from '../../../shared/helpers/helpers';
 import { QuotationDto } from '../../../models/Quotation';
 import { UserService } from '../../../services/userService.service';
+import { TimelineModule } from 'primeng/timeline';
 
 @Component({
   selector: 'app-quotation',
@@ -42,6 +49,7 @@ import { UserService } from '../../../services/userService.service';
     DialogModule,
     MenuModule,
     SelectModule,
+    TimelineModule,
   ],
   template: `<div class="w-full min-h-[92.9vh] flex flex-col p-5">
       <div
@@ -82,8 +90,7 @@ import { UserService } from '../../../services/userService.service';
               ></i>
             </div>
             <p-button
-              *ngIf="isAdmin"
-              label="New Quotations"
+              label="New Quotation"
               [routerLink]="'/quotations/form'"
               icon="pi pi-plus"
               severity="info"
@@ -95,20 +102,22 @@ import { UserService } from '../../../services/userService.service';
         <div class="mt-3">
           <p-table
             #fTable
+            dataKey="id"
             [value]="PagingSignal().data"
             [paginator]="true"
             [rows]="Query.PageSize"
             [totalRecords]="PagingSignal().totalElements"
             [tableStyle]="{ 'min-width': '60rem' }"
-            showGridlines
             [rowsPerPageOptions]="[10, 20, 30, 50]"
             stripedRows="false"
             [lazy]="true"
             (onLazyLoad)="NextPage($event)"
             showGridlines
+            [expandedRowKeys]="expandedRows"
           >
             <ng-template #header>
               <tr>
+                <th class="w-[5%]! bg-gray-100!"></th>
                 <th
                   pSortableColumn="QuotationNo"
                   class="bg-gray-100! text-[15px]! text-center! w-[20%]!"
@@ -144,8 +153,25 @@ import { UserService } from '../../../services/userService.service';
                 </th>
               </tr>
             </ng-template>
-            <ng-template #body let-data>
+            <ng-template
+              #body
+              let-data
+              let-rowIndex="rowIndex"
+              let-expanded="expanded"
+            >
               <tr>
+                <td>
+                  <div
+                    class="flex items-center justify-center cursor-pointer"
+                    (click)="fTable.toggleRow(data)"
+                  >
+                    <i
+                      [class]="
+                        expanded ? 'pi pi-chevron-down' : 'pi pi-chevron-right'
+                      "
+                    ></i>
+                  </div>
+                </td>
                 <td class="text-center! text-[14px]! font-semibold!">
                   {{ data.quotationNo }}
                 </td>
@@ -161,16 +187,14 @@ import { UserService } from '../../../services/userService.service';
                       class="rounded-full px-4 text-[13px] py-0.5 font-medium w-fit whitespace-nowrap"
                       [ngClass]="{
                         'bg-blue-100 text-blue-600':
-                          data.status === 'Open' ||
+                          data.status === 'Revised' ||
                           data.status === 'Sent' ||
-                          data.status === 'Signed',
+                          data.status === 'Approved',
                         'bg-orange-100 text-orange-600':
-                          data.status === 'Pending Signature',
+                          data.status === 'Draft',
                         'bg-green-100 text-green-600':
                           data.status === 'Accepted',
-                        'bg-red-100 text-red-600':
-                          data.status === 'Declined' ||
-                          data.status === 'Expired',
+                        'bg-red-100 text-red-600': data.status === 'Rejected',
                       }"
                     >
                       {{ data.status }}
@@ -188,6 +212,59 @@ import { UserService } from '../../../services/userService.service';
                 </td>
               </tr>
             </ng-template>
+            <ng-template #expandedrow let-item>
+              <tr>
+                <td colspan="100%">
+                  <div class="px-5">
+                    <p-timeline
+                      [value]="events"
+                      align="top"
+                      layout="horizontal"
+                      class="customized-timeline w-full"
+                    >
+                      <ng-template #marker let-event>
+                        <div
+                          class="w-5 h-5 flex items-center justify-center rounded-full shadow-sm text-white"
+                          [ngClass]="
+                            event.actionAt ? event.color : 'bg-gray-300'
+                          "
+                        >
+                          <i
+                            class="pi text-xs"
+                            [ngClass]="
+                              event.verified ? 'pi-check' : 'pi-circle-fill'
+                            "
+                          ></i>
+                        </div>
+                      </ng-template>
+
+                      <ng-template #content let-event>
+                        <div class="flex flex-col min-h-[70px]">
+                          <div class="font-semibold text-sm">
+                            {{ event.status }}
+                          </div>
+
+                          <small
+                            class="text-gray-500 text-xs"
+                            *ngIf="event.actionUser"
+                          >
+                            {{ event.actionUser }}
+                          </small>
+
+                          <small
+                            class="text-gray-400 text-xs"
+                            *ngIf="event.actionAt"
+                          >
+                            {{ event.actionAt | date: 'dd MMM, yyyy HH:mm aa' }}
+                          </small>
+                        </div>
+                      </ng-template>
+                    </p-timeline>
+                  </div>
+                </td>
+              </tr>
+            </ng-template>
+
             <ng-template #emptymessage>
               <tr>
                 <td colspan="100%" class="border-x!">
@@ -201,6 +278,7 @@ import { UserService } from '../../../services/userService.service';
         </div>
       </div>
     </div>
+    {{ menuItems | json }}
     <p-menu
       #menu
       [model]="menuItems"
@@ -208,148 +286,21 @@ import { UserService } from '../../../services/userService.service';
       [style]="{ transform: 'translate(20px, 8px)' }"
     ></p-menu>
 
-    <div
-      class="mb-20 p-10 bg-white hidden"
-      id="quotation-print"
-      *ngIf="previewData"
-    >
-      <div class="bg-white p-4">
-        <div class="flex justify-between items-start mb-10">
-          <div>
-            <h2 class="text-2xl font-bold text-blue-900">YL Systems Sdn Bhd</h2>
-            <p class="text-xs text-gray-500 uppercase">
-              ELV Technology Solution Provider
-            </p>
-          </div>
-          <div class="text-right">
-            <h1 class="text-4xl font-light text-gray-300 mb-2">QUOTATION</h1>
-            <p class="font-bold text-lg">{{ previewData.quotationNo }}</p>
-            <p class="text-sm text-gray-600">
-              Date: {{ previewData.quotationDate | date: 'dd MMM yyyy' }}
-            </p>
-          </div>
-        </div>
-
-        <div
-          class="flex justify-between mb-10 border-t border-b py-6 border-gray-100"
-        >
-          <div class="w-1/2">
-            <p class="text-xs font-bold text-blue-600 uppercase mb-2">From</p>
-            <p class="font-bold text-gray-900">YL Systems Sdn Bhd</p>
-            <p class="text-sm text-gray-700">42, Jln 21/19, Sea Park</p>
-            <p class="text-sm text-gray-700">46300 Petaling Jaya, Selangor</p>
-            <p class="text-sm text-gray-700">
-              <strong>Contact:</strong> 03-78773929
-            </p>
-          </div>
-
-          <div class="text-right w-[30%]">
-            <p class="text-xs font-bold text-blue-600 uppercase mb-2">
-              Bill To
-            </p>
-            <p class="font-bold text-gray-900">
-              {{ previewData.client?.companyName }}
-            </p>
-            <p class="text-sm text-gray-700 whitespace-pre-line">
-              {{ previewData.client?.address }}
-            </p>
-            <p class="text-sm text-gray-700">
-              <strong>Attn:</strong> {{ previewData.client?.contactPerson }}
-            </p>
-            <p class="text-sm text-gray-700">
-              <strong>Email:</strong> {{ previewData.client?.email }}
-            </p>
-          </div>
-        </div>
-
-        <p-table [value]="previewData?.items" class="w-full" [rowHover]="false">
-          <ng-template #header>
-            <tr>
-              <th class="p-3 uppercase">Description</th>
-              <th class="p-3 uppercase text-center w-16">Qty</th>
-              <th class="p-3 uppercase text-center w-16">Unit</th>
-              <th class="p-3 uppercase text-right w-32">Rate (RM)</th>
-              <th class="p-3 uppercase text-right w-32">Amount (RM)</th>
-            </tr>
-          </ng-template>
-          <ng-template #body let-item>
-            <tr>
-              <td class="p-3 text-sm">{{ item.description }}</td>
-              <td class="p-3 text-sm text-center">{{ item.quantity }}</td>
-              <td class="p-3 text-sm text-center">{{ item.unit }}</td>
-              <td class="p-3 text-sm text-right">
-                {{ item.rate | number: '1.2-2' }}
-              </td>
-              <td class="p-3 text-sm text-right font-semibold">
-                {{ item.amount | number: '1.2-2' }}
-              </td>
-            </tr>
-          </ng-template>
-        </p-table>
-
-        <div class="grid grid-cols-2 gap-4 mt-8">
-          <div class="text-sm text-gray-500 italic">
-            <p
-              class="font-bold text-gray-400 uppercase not-italic text-xs mb-1"
-            >
-              Notes
-            </p>
-            {{ previewData?.description || 'No additional notes provided.' }}
-          </div>
-          <div class="space-y-2">
-            <div class="flex justify-between text-sm">
-              <span>Subtotal</span>
-              <span>RM {{ this.subTotal() | number: '1.2-2' }}</span>
-            </div>
-            <div class="flex justify-between text-sm text-red-500">
-              <span>Discount ({{ previewData?.discount }}%)</span>
-              <span
-                >-RM
-                {{
-                  (this.subTotal() * previewData?.discount) / 100
-                    | number: '1.2-2'
-                }}</span
-              >
-            </div>
-            <div
-              class="flex justify-between text-xl font-bold border-t-2 pt-3 text-blue-900"
-            >
-              <span>Total Amount</span>
-              <span>RM {{ previewData?.totalAmount | number: '1.2-2' }}</span>
-            </div>
-
-            <div
-              class="mt-12 text-right flex flex-col items-end"
-              *ngIf="previewData?.signatureImageUrl"
-            >
-              <img
-                [src]="previewData?.signatureImageUrl"
-                class="max-w-[180px] border-b border-gray-200 mb-2"
-              />
-              <p class="text-sm font-bold">
-                {{ previewData?.signatureName }}
-              </p>
-              <p class="text-xs text-gray-400 uppercase tracking-tighter">
-                Authorized Signature
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
     <p-dialog
-      header="Select Director"
-      [(visible)]="displayDirectorDialog"
+      header="Select Reviewer"
+      [(visible)]="displayReviseByDialog"
       [modal]="true"
-      [style]="{ width: '30vw' }"
+      styleClass="w-[80%]! lg:w-[50%]!"
     >
       <div class="flex flex-col gap-4 mt-2">
-        <label class="font-medium">Who should sign this quotation?</label>
+        <label class="font-medium"
+          >Assign a reviewer for this quotation:
+          <b>{{ selectedQuotation?.quotationNo }}</b></label
+        >
         <p-select
-          [options]="(directors$ | async) || []"
-          [(ngModel)]="selectedDirectorId"
-          placeholder="Select a Director"
+          [options]="reviewerSelection || []"
+          [(ngModel)]="selectedReviewerId"
+          placeholder="Select a Reviewer"
           styleClass="w-full"
           appendTo="body"
           [filter]="true"
@@ -359,16 +310,16 @@ import { UserService } from '../../../services/userService.service';
       <ng-template pTemplate="footer">
         <p-button
           label="Cancel"
-          (click)="displayDirectorDialog = false"
+          (click)="displayReviseByDialog = false"
           severity="secondary"
           styleClass="border-gray-200!"
           [text]="true"
         ></p-button>
         <p-button
-          label="Submit Request"
+          label="Update"
           severity="info"
-          (click)="confirmSignatureRequest()"
-          [disabled]="!selectedDirectorId"
+          (click)="confirmReviewer()"
+          [disabled]="!selectedReviewerId"
         ></p-button>
       </ng-template>
     </p-dialog> `,
@@ -390,19 +341,19 @@ export class Quotation implements OnInit, OnDestroy {
     {} as PagingContent<QuotationDto>,
   );
   Query: GridifyQueryExtend = {} as GridifyQueryExtend;
+  expandedRows: { [key: string]: boolean } = {};
 
   search: string = '';
-  selectedDirectorId: string | null = null;
+  selectedReviewerId: string | null = null;
   menuItems: MenuItem[] = [];
-  previewData: any;
+  events: any[] = [];
 
-  subTotal = signal(0);
-  taxTotal = signal(0);
-  grandTotal = signal(0);
+  displayReviseByDialog: boolean = false;
+  selectedQuotation: any;
 
-  displayDirectorDialog: boolean = false;
-  activeQuotation: any = null;
-  directors$!: Observable<any[]>;
+  currentUser = this.userService.currentUser;
+
+  reviewerSelection: { label: string; value: string }[] = [];
 
   isAdmin: boolean = false;
 
@@ -412,34 +363,13 @@ export class Quotation implements OnInit, OnDestroy {
     this.Query.Filter = null;
     this.Query.OrderBy = 'CreatedAt desc';
     this.Query.Select = null;
-    this.Query.Includes = 'Client,Items';
+    this.Query.Includes = 'Client';
   }
 
   ngOnInit(): void {}
 
   GetData() {
     this.loadingService.start();
-
-    // 1. Get current user info (this depends on how your UserService is structured)
-    const currentUser = this.userService.currentUser; // or this.userService.getUser()
-    this.isAdmin = currentUser?.systemRole === 'Admin';
-    const userId = currentUser?.userId;
-
-    // 2. Build the role-based filter
-    let roleFilter = '';
-    if (!this.isAdmin) {
-      // If not Admin (e.g., Director), only show assigned ones
-      roleFilter = `AssignedToId=${userId}`;
-    }
-
-    // 3. Combine with existing filters (like search)
-    // Logic: (Existing Filter) AND (Role Filter)
-    const originalFilter = this.Query.Filter;
-    if (roleFilter) {
-      this.Query.Filter = originalFilter
-        ? `(${originalFilter}),${roleFilter}`
-        : roleFilter;
-    }
 
     this.quotationService
       .GetMany(this.Query)
@@ -448,12 +378,70 @@ export class Quotation implements OnInit, OnDestroy {
         next: (res) => {
           this.loadingService.stop();
           this.PagingSignal.set(res);
-          this.cdr.markForCheck();
 
-          // Restore original filter so search/pagination doesn't stack incorrectly
-          this.Query.Filter = originalFilter;
+          const statusOrder = [
+            'Draft',
+            'Revised',
+            'Approved',
+            'Sent',
+            'Accepted',
+            'Rejected',
+          ];
+
+          const allHistories = res.data.flatMap(
+            (x) => x.quotationStatusHistories || [],
+          );
+
+          const latestByStatus = new Map<string, any>();
+
+          for (const h of allHistories) {
+            const existing = latestByStatus.get(h.status);
+
+            if (
+              !existing ||
+              new Date(h.actionAt) > new Date(existing.actionAt)
+            ) {
+              latestByStatus.set(h.status, h);
+            }
+          }
+
+          const reachedIndex =
+            Math.max(
+              ...allHistories.map((h) => statusOrder.indexOf(h.status)),
+            ) ?? -1;
+
+          const colorMap: Record<string, string> = {
+            Draft: 'bg-orange-400',
+            Revised: 'bg-yellow-400',
+            Approved: 'bg-blue-400',
+            Sent: 'bg-blue-400',
+            Accepted: 'bg-green-400',
+            Rejected: 'bg-red-400',
+          };
+
+          this.events = statusOrder.map((status, index) => {
+            const item = latestByStatus.get(status);
+
+            let displayUser = '-';
+
+            if (status === 'Revised') {
+              displayUser = item?.reviewedByUser?.fullName ?? '-';
+            } else {
+              displayUser = item?.actionUser?.fullName ?? '-';
+            }
+
+            return {
+              status,
+              actionAt: item?.actionAt ?? null,
+              actionUser: displayUser,
+              color: colorMap[status],
+              verified: index <= reachedIndex,
+            };
+          });
+
+          this.cdr.markForCheck();
         },
-        error: (err) => {
+        error: () => {
           this.loadingService.stop();
         },
       });
@@ -524,259 +512,194 @@ export class Quotation implements OnInit, OnDestroy {
   }
 
   ActionClick(data: QuotationDto | null, action: string) {
+    if (action === 'Draft') {
+      this.updateQuotationStatus(data!.id, 'Draft'); // backend converts to Draft
+    }
+
+    if (action === 'Approved') {
+      this.updateQuotationStatus(data!.id, 'Approved');
+    }
+
     if (action === 'Update') {
       this.router.navigate(['/quotations/form'], {
         queryParams: { id: data?.id },
       });
-    } else if (action === 'Download' && data) {
-      this.quotationService.downloadPdf(data.id).subscribe({
-        next: (blob: Blob) => {
-          // Create a local URL for the binary data
-          const fileUrl = window.URL.createObjectURL(blob);
+    }
 
-          // Option A: Open in new tab
-          window.open(fileUrl, '_blank');
-
-          // Option B: Force immediate download with filename
-          const link = document.createElement('a');
-          link.href = fileUrl;
-          link.download = `Quotation_${data.quotationNo}.pdf`;
-          link.click();
-
-          // Clean up the memory after a short delay
-          setTimeout(() => window.URL.revokeObjectURL(fileUrl), 100);
-        },
-        error: (err) => console.error('Download failed', err),
-      });
-    } else if (action === 'Delete' && data) {
-      this.loadingService.start();
-      this.quotationService
-        .Delete(data.id)
-        .pipe(takeUntil(this.ngUnsubscribe))
-        .subscribe({
-          next: (res) => {
-            // Remove the deleted item from the current PagingSignal data
-            const currentPaging = this.PagingSignal();
-            const updatedData = currentPaging.data.filter(
-              (item) => item.id !== data.id,
-            );
-
-            this.PagingSignal.set({
-              ...currentPaging,
-              data: updatedData,
-              totalElements: currentPaging.totalElements - 1, // Update total count
-            });
-            this.cdr.markForCheck();
-            this.messageService.add({
-              severity: 'success',
-              summary: 'Deleted',
-              detail: `Quotation ${data.quotationNo} deleted`,
-            });
-          },
-          error: (err) => {
-            this.messageService.add({
-              severity: 'error',
-              summary: 'Delete Failed',
-              detail: err.error?.error || 'Something went wrong',
-            });
-          },
-          complete: () => {
-            this.loadingService.stop();
-          },
-        });
+    if (action === 'Revised') {
+      this.showReviewerSelectionDialog(data);
     }
   }
 
-  printPreview() {
-    const printContents = document.getElementById('quotation-print');
-    if (!printContents) return;
-
-    // 1. Add a class to body to trigger print styles
-    document.body.classList.add('is-printing');
-
-    // 2. Wait for images (like signature) to be ready, then print
-    setTimeout(() => {
-      window.print();
-      // 3. Remove class to restore UI
-      document.body.classList.remove('is-printing');
-    }, 100);
-  }
-
-  calculateTotals() {
-    let sub = 0;
-    let tax = 0;
-
-    this.previewData?.items.forEach((item: any) => {
-      const qty = item?.quantity || 0;
-      const rate = item?.rate || 0;
-      const taxRate = item?.taxRate || 0;
-
-      const lineTotal = qty * rate;
-      const lineTax = lineTotal * (taxRate / 100);
-      const finalLineAmount = lineTotal + lineTax;
-
-      item.amount = finalLineAmount;
-
-      sub += lineTotal;
-      tax += lineTax;
-    });
-
-    const discountPercent = this.previewData?.discount || 0;
-
-    const discountAmount = sub * (discountPercent / 100);
-
-    this.subTotal.set(sub);
-    this.taxTotal.set(tax);
-    this.grandTotal.set(sub + tax - discountAmount);
-
-    // ✅ Keep form totalAmount in sync
-    this.previewData.totalAmount = this.grandTotal();
-  }
-
   onEllipsisClick(event: any, quotation: QuotationDto, menu: any) {
-    this.menuItems = [
-      {
-        label: 'Edit',
-        icon: 'pi pi-pencil',
-        visible: this.isAdmin,
-        // Disable editing once it's finalized or sent to client
-        disabled: ['Sent', 'Accepted', 'Declined', 'Signed'].includes(
-          quotation.status,
-        ),
-        command: () => this.ActionClick(quotation, 'Update'),
-      },
-      {
-        label: 'Request Signature',
-        icon: 'pi pi-user-edit',
-        visible: quotation.status === 'Draft' || quotation.status === 'Open',
-        command: () => this.showDirectorSelectionDialog(quotation),
-      },
-      {
-        label: 'Sign Quotation',
-        icon: 'pi pi-check-square',
-        visible: !this.isAdmin && quotation.status === 'Pending Signature',
-        command: () =>
-          this.router.navigate(['/quotations/sign'], {
-            queryParams: { id: quotation.id },
-          }),
-      },
-      {
-        label: 'Mark as Sent to Client',
-        icon: 'pi pi-send',
-        // This only appears once the system detects the signature and flips the status
-        visible: this.isAdmin && quotation.status === 'Signed',
-        command: () => this.updateQuotationStatus(quotation.id, 'Sent'),
-      },
-      {
-        label: 'Accept',
-        icon: 'pi pi-check',
-        visible: quotation.status === 'Sent',
-        command: () => this.updateQuotationStatus(quotation.id, 'Accepted'),
-      },
-      {
-        label: 'Decline',
-        icon: 'pi pi-times',
-        visible: quotation.status === 'Sent',
-        command: () => this.updateQuotationStatus(quotation.id, 'Declined'),
-      },
-      {
-        label: 'Clone to Invoice',
-        icon: 'pi pi-receipt',
-        visible: quotation.status === 'Signed',
-        command: () => this.convert('Invoice', quotation),
-      },
-      { separator: true },
-      {
-        label: 'Download PDF',
-        icon: 'pi pi-file-pdf',
-        command: () => this.ActionClick(quotation, 'Download'),
-      },
-      {
-        label: 'Delete',
-        icon: 'pi pi-trash',
-        visible:
-          this.isAdmin &&
-          (quotation.status === 'Open' ||
-            quotation.status === 'Draft' ||
-            quotation.status === 'Pending Signature'),
-        styleClass: 'text-red-500',
-        command: () => this.ActionClick(quotation, 'Delete'),
-      },
-    ];
+    const jobTitle = this.currentUser?.systemRole;
+    const status = quotation.status;
+    console.log(status);
+    const isReviewer = quotation.quotationStatusHistories?.some(
+      (h: any) => h.reviewedByUser?.id === this.currentUser?.userId,
+    );
+
+    this.menuItems = [];
+
+    // =========================
+    // ADMIN / SALES EXECUTIVE
+    // =========================
+    if (jobTitle === 'Sales Executive' || jobTitle === 'Sales Director') {
+      this.menuItems = [
+        {
+          label: 'Edit',
+          icon: 'pi pi-pencil',
+          visible: status !== 'Accepted',
+          command: () => this.ActionClick(quotation, 'Update'),
+        },
+        {
+          label: 'Revised',
+          icon: 'pi pi-file-edit',
+          visible: status === 'Draft' || status === 'Revised',
+          command: () => this.ActionClick(quotation, 'Revised'),
+        },
+        {
+          label: 'Approved',
+          icon: 'pi pi-check-circle',
+          visible: status === 'Revised',
+          command: () => this.ActionClick(quotation, 'Approved'),
+        },
+      ];
+    }
+
+    // =========================
+    // REVIEWER ONLY
+    // =========================
+    if (isReviewer) {
+      this.menuItems = [
+        {
+          label: 'Approved',
+          icon: 'pi pi-check-circle',
+          visible: status === 'Revised',
+          command: () => this.ActionClick(quotation, 'Approved'),
+        },
+        {
+          label: 'Back to Draft',
+          icon: 'pi pi-times',
+          visible: status === 'Revised',
+          command: () => this.ActionClick(quotation, 'Draft'),
+        },
+      ];
+    }
 
     menu.toggle(event);
   }
 
-  showDirectorSelectionDialog(quotation: any) {
-    console.log(quotation);
-    this.activeQuotation = quotation;
-    this.selectedDirectorId = null; // Reset
-    this.displayDirectorDialog = true;
-    this.directors$ = this.userService
+  canAccessQuotationAction(action: string, quotation: QuotationDto): boolean {
+    const jobTitle = this.currentUser?.systemRole;
+    const status = quotation.status;
+
+    const isSuperAdmin = jobTitle === 'SuperAdmin';
+    const isSalesRole = [
+      'Sales Director',
+      'Sales Executive',
+      'Sales Support',
+    ].includes(jobTitle!);
+
+    if (isSuperAdmin) return true;
+
+    switch (action) {
+      case 'Edit':
+        return !['Accepted', 'Rejected', 'Sent'].includes(status);
+
+      case 'Revised':
+        return (
+          isSalesRole &&
+          !['Revised', 'Approved', 'Sent', 'Accepted', 'Rejected'].includes(
+            status,
+          )
+        );
+
+      case 'Approved':
+        return (
+          (jobTitle === 'Sales Director' || isSalesRole) &&
+          ['Draft', 'Revised'].includes(status)
+        );
+
+      default:
+        return false;
+    }
+  }
+
+  showReviewerSelectionDialog(quotation: any) {
+    this.selectedQuotation = quotation;
+    this.selectedReviewerId = null;
+    this.displayReviseByDialog = true;
+    this.userService
       .GetMany({
         Page: 1,
         PageSize: 100,
-        OrderBy: 'FirstName desc',
-        Select: 'Id,FirstName,LastName,Role',
+        OrderBy: 'FullName desc',
+        Select: 'Id,FullName,JobTitle,Email',
         Includes: null,
-        Filter: 'Role=Director',
+        Filter: `JobTitle=Sales Director|JobTitle=Sales Support|JobTitle=Sales Executive`,
       })
       .pipe(
-        map((res) =>
-          res.data.map((user: any) => ({
-            label: `${user.FirstName} ${user.LastName}`, // How it looks in the list
-            value: user.Id, // The GUID sent to the DB
-          })),
+        map(
+          (res) =>
+            (this.reviewerSelection = res.data.map((user: any) => ({
+              label: `${user.FullName} — ${user.JobTitle || 'Staff'}`,
+              value: user.Id,
+            }))),
         ),
-      );
+      )
+      .subscribe();
     this.cdr.detectChanges();
   }
 
-  confirmSignatureRequest() {
-    if (!this.activeQuotation) return;
+  confirmReviewer() {
+    if (!this.selectedQuotation) return;
 
     this.loadingService.start();
 
     this.quotationService
       .UpdateStatus(
-        this.activeQuotation.id,
-        'Pending Signature',
-        this.selectedDirectorId,
+        this.selectedQuotation.id,
+        'Revised',
+        this.selectedReviewerId,
       )
       .pipe(takeUntil(this.ngUnsubscribe))
       .subscribe({
         next: (res: any) => {
           this.loadingService.stop();
 
-          // 1. Update the Signal locally
           const currentPaging = this.PagingSignal();
+
           const updatedData = currentPaging.data.map((q) => {
-            if (q.id === this.activeQuotation.id) {
-              // Return a new object with updated status
-              return { ...q, status: 'Pending Signature' };
+            if (q.id === this.selectedQuotation.id) {
+              return {
+                ...q,
+                status: 'Revised',
+                // optional: keep UI consistent
+                revisedByUserId: this.selectedReviewerId,
+              };
             }
             return q;
           });
 
-          // 2. Set the signal with the new data array
           this.PagingSignal.set({
             ...currentPaging,
             data: updatedData,
           });
 
-          // 3. Clean up UI
-          this.displayDirectorDialog = false;
+          this.displayReviseByDialog = false;
+
           this.messageService.add({
             severity: 'success',
             summary: 'Status Updated',
-            detail: `Quotation is now Pending Signature`,
+            detail: `Quotation revised by ${res.actionUser?.fullName ?? '-'}`,
           });
 
-          // 4. Trigger Change Detection for OnPush strategy
           this.cdr.markForCheck();
         },
         error: (err) => {
           this.loadingService.stop();
+
           this.messageService.add({
             severity: 'error',
             summary: 'Update Failed',
@@ -789,26 +712,62 @@ export class Quotation implements OnInit, OnDestroy {
   updateQuotationStatus(id: string, newStatus: string) {
     this.loadingService.start();
 
-    // Note: Your backend expects { status: '...' }
     this.quotationService
       .UpdateStatus(id, newStatus)
       .pipe(takeUntil(this.ngUnsubscribe))
       .subscribe({
         next: (res: any) => {
           this.loadingService.stop();
-          this.PagingSignal.update((state) => ({
-            ...state,
-            data: state.data.map((item: any) =>
-              item.id === id ? { ...item, status: newStatus } : item,
-            ),
-          }));
-          this.cdr.markForCheck();
+
+          const currentPaging = this.PagingSignal();
+
+          const updatedData = currentPaging.data.map((q) => {
+            if (q.id === id) {
+              // ✅ SAFELY CAST to expected type
+              const newHistory = {
+                id: res.id,
+                status: res.status,
+                actionAt: res.actionAt,
+                remarks: res.remarks,
+                actionUser: res.actionUser,
+                reviewedByUser: res.reviewedByUser,
+
+                // 👉 add missing required fields (dummy safe values)
+                quotationId: id,
+                actionUserId: res.actionUser?.id,
+                reviewedByUserId: res.reviewedByUser?.id,
+                createdAt: res.actionAt,
+                signatureImage: null,
+              } as any; // 🔥 important: bypass strict typing
+
+              const updatedHistories = [
+                ...(q.quotationStatusHistories || []),
+                newHistory,
+              ];
+
+              return {
+                ...q,
+                status: newStatus,
+                quotationStatusHistories: updatedHistories,
+              };
+            }
+            return q;
+          });
+
+          this.PagingSignal.set({
+            ...currentPaging,
+            data: updatedData,
+          });
+
           this.messageService.add({
             severity: 'success',
             summary: 'Status Updated',
             detail: `Quotation is now ${newStatus}`,
           });
+
+          this.cdr.markForCheck();
         },
+
         error: (err) => {
           this.loadingService.stop();
           this.messageService.add({
@@ -818,6 +777,63 @@ export class Quotation implements OnInit, OnDestroy {
           });
         },
       });
+  }
+
+  buildTimeline(quotation: QuotationDto) {
+    const statusOrder = [
+      'Draft',
+      'Revised',
+      'Approved',
+      'Sent',
+      'Accepted',
+      'Rejected',
+    ];
+
+    const histories = quotation.quotationStatusHistories || [];
+
+    const latestByStatus = new Map<string, any>();
+
+    for (const h of histories) {
+      const existing = latestByStatus.get(h.status);
+
+      if (!existing || new Date(h.actionAt) > new Date(existing.actionAt)) {
+        latestByStatus.set(h.status, h);
+      }
+    }
+
+    const reachedIndex =
+      Math.max(...histories.map((h) => statusOrder.indexOf(h.status))) ?? -1;
+
+    const colorMap: Record<string, string> = {
+      Draft: 'bg-orange-400',
+      Revised: 'bg-yellow-400',
+      Approved: 'bg-blue-400',
+      Sent: 'bg-blue-400',
+      Accepted: 'bg-green-400',
+      Rejected: 'bg-red-400',
+    };
+
+    this.events = statusOrder.map((status, index) => {
+      const item = latestByStatus.get(status);
+
+      let displayUser = '-';
+
+      // 🔥 KEY FIX
+      if (status === 'Revised') {
+        displayUser =
+          item?.reviewedByUser?.fullName || item?.actionUser?.fullName || '-';
+      } else {
+        displayUser = item?.actionUser?.fullName || '-';
+      }
+
+      return {
+        status,
+        actionAt: item?.actionAt ?? null,
+        actionUser: displayUser,
+        color: colorMap[status],
+        verified: index <= reachedIndex,
+      };
+    });
   }
 
   convert(type: 'Invoice' | 'PO', data: any) {
@@ -836,9 +852,6 @@ export class Quotation implements OnInit, OnDestroy {
           summary: 'Converted Successfully',
           detail: `${type} generated: ${res.invoiceNo || res.poNo}`,
         });
-
-        // Optionally redirect to the new document
-        // if (type === 'Invoice') this.router.navigate(['/invoices/details', res.invoiceNo]);
       },
       error: () => this.loadingService.stop(),
     });

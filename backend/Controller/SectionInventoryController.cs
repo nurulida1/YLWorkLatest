@@ -11,12 +11,12 @@ namespace YLWorks.Controller
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class AccessPermissionController : ControllerBase
+    public class SectionInventoryController : ControllerBase
     {
         private readonly AppDbContext _context;
         private readonly IHubContext<NotificationHub> _hub;
 
-        public AccessPermissionController(AppDbContext context, IHubContext<NotificationHub> hub)
+        public SectionInventoryController(AppDbContext context, IHubContext<NotificationHub> hub)
         {
             _context = context;
             _hub = hub;
@@ -24,39 +24,27 @@ namespace YLWorks.Controller
         }
 
         [HttpGet("GetMany")]
-        public ActionResult<object> GetMany(
-  int page = 1,
-  int pageSize = 10,
-  string? filter = null,
-  string? orderBy = null,
-  string? select = null,
-  string? includes = null)
+        public async Task<ActionResult<object>> GetMany(
+      int page = 1,
+      int pageSize = 10,
+      string? filter = null,
+      string? orderBy = null,
+      string? includes = null)
         {
             try
             {
-                var query = _context.AccessPermissions.AsQueryable();
-
-                // Includes (e.g., "Customer,Items")
-                if (!string.IsNullOrEmpty(includes))
-                {
-                    foreach (var include in includes.Split(','))
-                    {
-                        query = query.Include(include.Trim());
-                    }
-                }
+                var query = _context.SectionInventories.AsQueryable();
 
                 if (!string.IsNullOrEmpty(filter))
                 {
-                    var parameter = Expression.Parameter(typeof(AccessPermission), "u");
+                    var parameter = Expression.Parameter(typeof(SectionInventory), "u");
                     Expression? finalExpression = null;
 
-                    // Split OR conditions first
                     var orParts = filter.Split('|');
                     foreach (var orPart in orParts)
                     {
                         Expression? orExpression = null;
 
-                        // Split AND conditions
                         var andParts = orPart.Split(',');
                         foreach (var andPart in andParts)
                         {
@@ -90,7 +78,7 @@ namespace YLWorks.Controller
                                     ? Expression.Not(containsExpr)
                                     : containsExpr;
                             }
-                            else if (propertyAccess.Type == typeof(Guid) || propertyAccess.Type == typeof(Guid?))
+                           else if (propertyAccess.Type == typeof(Guid) || propertyAccess.Type == typeof(Guid?))
                             {
                                 condition = Expression.Equal(
                                     propertyAccess,
@@ -100,7 +88,10 @@ namespace YLWorks.Controller
                             else if (propertyAccess.Type.IsEnum)
                             {
                                 var enumValue = Enum.Parse(propertyAccess.Type, valueStr);
-                                var equalsExpr = Expression.Equal(propertyAccess, Expression.Constant(enumValue));
+                                var equalsExpr = Expression.Equal(
+                                    propertyAccess,
+                                    Expression.Constant(enumValue)
+                                );
 
                                 condition = isNotEqual
                                     ? Expression.Not(equalsExpr)
@@ -109,107 +100,83 @@ namespace YLWorks.Controller
                             else
                             {
                                 var convertedValue = Convert.ChangeType(valueStr, propertyAccess.Type);
-                                condition = Expression.Equal(propertyAccess, Expression.Constant(convertedValue));
+                                condition = Expression.Equal(
+                                    propertyAccess,
+                                    Expression.Constant(convertedValue)
+                                );
                             }
 
                             orExpression = orExpression == null
                                 ? condition
-                                : Expression.AndAlso(orExpression, condition); // AND inside one OR part
+                                : Expression.AndAlso(orExpression, condition);
                         }
 
                         finalExpression = finalExpression == null
                             ? orExpression
-                            : Expression.OrElse(finalExpression, orExpression); // OR between parts
+                            : Expression.OrElse(finalExpression, orExpression);
                     }
 
                     if (finalExpression != null)
                     {
-                        var lambda = Expression.Lambda<Func<AccessPermission, bool>>(finalExpression, parameter);
+                        var lambda = Expression.Lambda<Func<SectionInventory, bool>>(finalExpression, parameter);
                         query = query.Where(lambda);
                     }
                 }
-
-
-                // OrderBy (e.g., "CreatedDate desc")
                 if (!string.IsNullOrEmpty(orderBy))
                 {
                     if (orderBy.ToLower().Contains("desc"))
-                        query = query.OrderByDescending(q => EF.Property<object>(q, orderBy.Replace(" desc", "").Trim()));
+                        query = query.OrderByDescending(q =>
+                            EF.Property<object>(q, orderBy.Replace(" desc", "").Trim()));
                     else
-                        query = query.OrderBy(q => EF.Property<object>(q, orderBy.Trim()));
+                        query = query.OrderBy(q =>
+                            EF.Property<object>(q, orderBy.Trim()));
                 }
+                var totalElements = await query.CountAsync();
 
-                var TotalElements = query.Count();
-
-                var items = query
-      .Skip((page - 1) * pageSize)
-      .Take(pageSize)
-      .Select(u => new
-      {
-          u.Id,
-          u.Name
-      })
-      .ToList();
-
-
-                // Select (e.g., "Id,Status")
-                if (!string.IsNullOrEmpty(select))
-                {
-                    var selectedFields = select.Split(',').Select(f => f.Trim()).ToList();
-                    var projected = items.Select(item =>
+                var items = await query
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .Select(p => new
                     {
-                        var dict = new Dictionary<string, object>();
-                        foreach (var field in selectedFields)
-                        {
-                            var value = item.GetType().GetProperty(field)?.GetValue(item);
-                            dict[field] = value ?? "null";
-                        }
-                        return dict;
-                    });
-
-                    return Ok(new
-                    {
-                        Data = projected,
-                        TotalElements
-                    });
-                }
+                        p.Id,
+                        p.Name
+                    })
+                    .ToListAsync();
 
                 return Ok(new
                 {
                     Data = items,
-                    TotalElements
+                    TotalElements = totalElements
                 });
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return StatusCode(500, new { Error = "An unexpected error occured." });
+                return StatusCode(500, new { Error = "An unexpected error occurred." });
             }
-
         }
-
         [HttpPost("Create")]
-        public async Task<ActionResult<AccessPermission>> AddAccessPermission([FromBody] CreateAccessPermissionRequest request)
+        public async Task<ActionResult<SectionInventory>> AddSectionInventory([FromBody] CreateSectionInventoryRequest request)
         {
             if (string.IsNullOrWhiteSpace(request.Name))
                 return BadRequest(new { Error = "Name is required." });
 
             try
             {
-                var access = new AccessPermission
+                var section = new SectionInventory
                 {
                     Id = Guid.NewGuid(),
-                    Name = request.Name
+                    Name = request.Name,
                 };
 
-                access.CreatedAt = DateTime.Now;
+                section.CreatedAt = DateTime.Now;
 
-                _context.AccessPermissions.Add(access);
+                _context.SectionInventories.Add(section);
                 await _context.SaveChangesAsync();
 
 
-                var result = await _context.AccessPermissions
-                    .Where(d => d.Id == access.Id)
-                    .Select(d => new AccessPermission
+                var result = await _context.SectionInventories
+                    .Where(d => d.Id == section.Id)
+                    .Select(d => new SectionInventory
                     {
                         Id = d.Id,
                         Name = d.Name
@@ -217,74 +184,75 @@ namespace YLWorks.Controller
                     .FirstAsync();
 
                 // Optional: Notify via SignalR
-                await _hub.Clients.All.SendAsync("AccessPermissionAdded", access);
+                await _hub.Clients.All.SendAsync("SectionInventoryAdded", section);
 
                 return Ok(result);
             }
             catch (Exception)
             {
-                return StatusCode(500, new { Error = "Failed to add access permission." });
+                return StatusCode(500, new { Error = "Failed to add section." });
             }
         }
 
         [HttpPut("Update")]
-        public async Task<ActionResult<AccessPermission>> UpdateAccessPermission([FromBody] UpdateAccessPermissionRequest request)
+        public async Task<ActionResult<SectionInventory>> UpdateSectionInventory([FromBody] UpdateSectionInventoryRequest request)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            var access = await _context.AccessPermissions.FindAsync(request.Id);
-            if (access == null)
-                return NotFound(new { Error = "Access Permission not found." });
+            var section = await _context.SectionInventories.FindAsync(request.Id);
+            if (section == null)
+                return NotFound(new { Error = "Section not found." });
 
             try
             {
-                access.Name = request.Name ?? access.Name;
-                access.UpdatedAt = DateTime.Now;
+                section.Name = request.Name;
+                section.UpdatedAt = DateTime.Now;
 
-                _context.AccessPermissions.Update(access);
+                _context.SectionInventories.Update(section);
                 await _context.SaveChangesAsync();
 
                 // Optional: Notify via SignalR
-                var result = await _context.AccessPermissions
-           .Where(d => d.Id == access.Id)
-           .Select(d => new AccessPermission
+                var result = await _context.SectionInventories
+           .Where(d => d.Id == section.Id)
+           .Select(d => new SectionInventory
            {
                Id = d.Id,
-               Name = d.Name
+               Name = d.Name,
            })
            .FirstAsync();
-                await _hub.Clients.All.SendAsync("AccessPermissionUpdated", access);
+                await _hub.Clients.All.SendAsync("SectionInventoryUpdated", section);
 
                 return Ok(result);
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { Error = "Failed to update access permission." });
+                return StatusCode(500, new { Error = "Failed to update section." });
             }
         }
 
         [HttpDelete("Delete")]
-        public async Task<ActionResult> DeleteAccessPermission([FromQuery] Guid id)
+        public async Task<ActionResult> DeleteSectionInventory([FromQuery] Guid id)
         {
-            var access = await _context.AccessPermissions.FindAsync(id);
-            if (access == null)
-                return NotFound(new { Error = "Access permission not found." });
+            var section = await _context.SectionInventories.FindAsync(id);
+            if (section == null)
+                return NotFound(new { Error = "Section not found." });
 
             try
             {
-                _context.AccessPermissions.Remove(access);
+                _context.SectionInventories.Remove(section);
                 await _context.SaveChangesAsync();
 
                 // Optional: Notify via SignalR
-                await _hub.Clients.All.SendAsync("AccessPermissionDeleted", id);
+                await _hub.Clients.All.SendAsync("SectionDeleted", id);
 
-                return Ok(new { Message = "Access Permission deleted successfully." });
+                return Ok(new { Message = "Section deleted successfully." });
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { Error = "Failed to delete access permission." });
+                return StatusCode(500, new { Error = "Failed to delete section." });
             }
         }
+
     }
 }

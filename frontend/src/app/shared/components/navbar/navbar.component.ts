@@ -95,9 +95,7 @@ import { DrawerModule } from 'primeng/drawer';
                 styleClass="p-2! border border-gray-200 bg-gray-100!"
               ></p-avatar>
               <span class="flex flex-col">
-                <span class="font-bold">{{
-                  currentUser.firstName + ' ' + currentUser.lastName
-                }}</span>
+                <span class="font-bold">{{ currentUser.fullName }}</span>
                 <span class="text-sm">{{ currentUser.email }}</span>
               </span>
             </div>

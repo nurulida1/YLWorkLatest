@@ -9,6 +9,6 @@
     public class DropdownDto
     {
         public Guid Id { get; set; }
-        public string Label { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
     }
 }

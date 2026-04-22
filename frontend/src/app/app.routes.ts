@@ -295,6 +295,58 @@ export const routes: Routes = [
       },
     ],
   },
+  {
+    path: 'inventory',
+    component: WebLayout,
+    children: [
+      {
+        path: '',
+        loadComponent: () =>
+          import('./components/inventory/inventory').then((m) => m.Inventory),
+      },
+    ],
+  },
+
+  //Logistic
+  {
+    path: 'locations',
+    component: WebLayout,
+    children: [
+      {
+        path: '',
+        loadComponent: () =>
+          import('./components/logistic/locationInventory/locationInventory').then(
+            (m) => m.LocationInventory,
+          ),
+      },
+    ],
+  },
+  {
+    path: 'category',
+    component: WebLayout,
+    children: [
+      {
+        path: '',
+        loadComponent: () =>
+          import('./components/logistic/categoryInventory/categoryInventory').then(
+            (m) => m.CategoryInventory,
+          ),
+      },
+    ],
+  },
+  {
+    path: 'sections',
+    component: WebLayout,
+    children: [
+      {
+        path: '',
+        loadComponent: () =>
+          import('./components/logistic/sectionInventory/sectionInventory').then(
+            (m) => m.SectionInventory,
+          ),
+      },
+    ],
+  },
 
   { path: 'unauthorized', component: Unauthorized },
 ];

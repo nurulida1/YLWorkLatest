@@ -40,11 +40,14 @@ import { ButtonModule } from 'primeng/button';
       <div
         class="py-5 flex flex-col gap-7 lg:gap-3 lg:pl-3 lg:pr-2 overflow-y-auto scrollbar scroll-smooth"
       >
-        <div class="hidden lg:block text-gray-500 text-sm">MAIN MENU</div>
+        <div class="hidden lg:block text-gray-500 text-xs">MAIN MENU</div>
         <div class="flex flex-col gap-2 w-full">
           <ng-container *ngFor="let item of mainMenu">
             <div
-              *ngIf="item.roles.includes(currentUser?.systemRole)"
+              *ngIf="
+                item.roles.includes(currentUser?.systemRole) &&
+                (!item.items || hasVisibleSubItems(item))
+              "
               class="flex flex-row lg:pl-2 xl:pl-4 py-2 items-center justify-center lg:justify-start gap-3 px-2"
               [routerLink]="item.route"
               [ngClass]="{
@@ -67,7 +70,7 @@ import { ButtonModule } from 'primeng/button';
           </ng-container>
         </div>
         <div class="border-b-2 border-dashed border-white/10"></div>
-        <div class="hidden lg:block text-gray-500 text-sm">MANAGEMENT</div>
+        <div class="hidden lg:block text-gray-500 text-xs">MANAGEMENT</div>
         <div class="flex flex-col items-center lg:items-start gap-3">
           <ng-container *ngFor="let item of management">
             <div
@@ -118,7 +121,7 @@ import { ButtonModule } from 'primeng/button';
                 class="ml-10 flex flex-col gap-1"
               >
                 <div
-                  *ngFor="let sub of item.items"
+                  *ngFor="let sub of getAllowedSubItems(item)"
                   class="py-3 px-3 rounded-md cursor-pointer text-[15px]"
                   [ngClass]="{
                     'bg-gray-200 font-semibold text-blue-500': isActive(
@@ -155,7 +158,17 @@ export class Sidemenu {
     {
       label: 'Dashboard',
       route: '/dashboard',
-      roles: ['SuperAdmin', 'Admin', 'Staff', 'HR', 'Manager', 'Director'],
+      roles: [
+        'SuperAdmin',
+        'Admin',
+        'Staff',
+        'HR',
+        'Manager',
+        'Sales Director',
+        'Sales Support',
+        'Sales Executive',
+        'Logistic Assistant',
+      ],
     },
     // {
     //   label: 'Apply Leave',
@@ -217,33 +230,64 @@ export class Sidemenu {
     },
     {
       label: 'Inventory & Sales',
-      roles: ['Manager', 'Director', 'Admin', 'SuperAdmin'],
+      roles: [
+        'Manager',
+        'Director',
+        'Admin',
+        'SuperAdmin',
+        'Sales Director',
+        'Sales Executive',
+        'Sales Support',
+      ],
       items: [
         {
           label: 'Quotations',
           route: '/quotations',
+          roles: ['Sales Director', 'Sales Executive', 'Sales Support'],
         },
         {
           label: 'Invoices',
           route: '/invoices',
+          roles: ['Manager', 'Director', 'Admin', 'SuperAdmin'],
         },
         {
           label: 'Clients',
           route: '/clients',
+          roles: ['Manager', 'Director', 'Admin', 'SuperAdmin'],
         },
       ],
     },
     {
       label: 'Purchases',
-      roles: ['Manager', 'Director', 'Admin', 'SuperAdmin'],
+      roles: [
+        'Manager',
+        'Director',
+        'Admin',
+        'SuperAdmin',
+        'Sales Director',
+        'Sales Executive',
+        'Sales Support',
+      ],
       items: [
         {
           label: 'Purchase Orders',
           route: '/purchase-orders',
+          roles: [
+            'Sales Director',
+            'Sales Executive',
+            'Sales Support',
+            'SuperAdmin',
+          ],
         },
         {
           label: 'Suppliers',
           route: '/supplier',
+          roles: [
+            'Sales Director',
+            'Sales Executive',
+            'Sales Support',
+            'SuperAdmin',
+          ],
         },
         {
           label: 'Supplier Payments',
@@ -252,6 +296,7 @@ export class Sidemenu {
         {
           label: 'Material Requests',
           route: '/material-requests',
+          roles: ['Purchasing Executive', 'Project Manager', 'SuperAdmin'],
         },
       ],
     },
@@ -282,22 +327,42 @@ export class Sidemenu {
       roles: ['Director', 'Admin', 'SuperAdmin'],
       items: [
         {
-          label: 'Manage Users',
-          route: '/user-management',
-        },
-        {
           label: 'Department',
           route: '/department',
-        },
-        {
-          label: 'Access Permission',
-          route: '/access-permission',
         },
         {
           label: 'Company',
           route: '/company',
         },
+        {
+          label: 'Manage Users',
+          route: '/user-management',
+        },
+        {
+          label: 'Access Permission',
+          route: '/access-permission',
+        },
       ],
+    },
+    {
+      label: 'Inventory',
+      roles: ['Logistic Assistant', 'SuperAdmin', 'Purchasing Executive'],
+      route: '/inventory',
+    },
+    {
+      label: 'Locations',
+      roles: ['Logistic Assistant', 'SuperAdmin'],
+      route: '/locations',
+    },
+    {
+      label: 'Category',
+      roles: ['Logistic Assistant', 'SuperAdmin'],
+      route: '/category',
+    },
+    {
+      label: 'Sections',
+      roles: ['Logistic Assistant', 'SuperAdmin'],
+      route: '/sections',
     },
     // {
     //   label: 'Administration',
@@ -376,6 +441,20 @@ export class Sidemenu {
         return;
       }
     }
+  }
+
+  getAllowedSubItems(item: any) {
+    if (!item.items) return [];
+
+    return item.items.filter((sub: any) => {
+      if (!sub.roles) return true; // if no roles defined → allow all
+      return sub.roles.includes(this.currentUser?.systemRole);
+    });
+  }
+
+  hasVisibleSubItems(item: any): boolean {
+    if (!item.items) return false;
+    return this.getAllowedSubItems(item).length > 0;
   }
 
   isActive(route?: string, item?: any): boolean {

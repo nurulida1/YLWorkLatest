@@ -32,6 +32,10 @@ namespace YLWorks.Data
         public DbSet<DeliveryOrderRMA> DeliveryOrderRMAs { get; set; }
         public DbSet<RMAStatusHistory> RMAStatusHistories { get; set; }
         public DbSet<RMAItem> RMAItems { get; set; }
+        public DbSet<SectionInventory> SectionInventories { get; set; }
+        public DbSet<CategoryInventory> CategoryInventories { get; set; }
+        public DbSet<LocationInventory> LocationInventories { get; set; }
+
 
         // =======================
         // MASTER DATA
@@ -44,6 +48,7 @@ namespace YLWorks.Data
         // =======================
         public DbSet<Quotation> Quotations { get; set; }
         public DbSet<QuotationItems> QuotationItems { get; set; }
+        public DbSet<QuotationStatusHistory> QuotationStatusHistories { get; set; }
 
         public DbSet<PurchaseOrder> PurchaseOrders { get; set; }
         public DbSet<PurchaseOrderItem> PurchaseOrderItems { get; set; }
@@ -246,6 +251,48 @@ namespace YLWorks.Data
 
                 entity.Property(e => e.IncomeNo).IsRequired().HasMaxLength(50);
                 entity.Property(e => e.Amount).HasColumnType("decimal(18,2)");
+            });
+
+            // =======================
+            // QUOTATION & ITEMS
+            // =======================
+            modelBuilder.Entity<Quotation>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.QuotationNo).IsRequired().HasMaxLength(50);
+
+                // Relationship to Items
+                entity.HasMany(q => q.QuotationItems)
+                      .WithOne(qi => qi.Quotation)
+                      .HasForeignKey(qi => qi.QuotationId)
+                      .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<QuotationItems>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+
+                // Fix: Configure Self-Referencing relationship for Categories
+                entity.HasOne(qi => qi.Parent)
+                      .WithMany(qi => qi.Children)
+                      .HasForeignKey(qi => qi.ParentId)
+                      .OnDelete(DeleteBehavior.Restrict); // Prevent accidental cascade loops
+
+                // Fix: Column precision for financial data
+                entity.Property(e => e.Quantity).HasColumnType("decimal(18,2)");
+                entity.Property(e => e.UnitPrice).HasColumnType("decimal(18,2)");
+                entity.Property(e => e.TotalPrice).HasColumnType("decimal(18,2)");
+
+                entity.Property(e => e.Type).HasMaxLength(20);
+            });
+
+            modelBuilder.Entity<QuotationStatusHistory>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+
+                entity.HasOne(sh => sh.Quotation)
+                      .WithMany(q => q.QuotationStatusHistories)
+                      .HasForeignKey(sh => sh.QuotationId);
             });
 
             // =======================

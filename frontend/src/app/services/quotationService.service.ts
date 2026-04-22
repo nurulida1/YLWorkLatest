@@ -77,28 +77,20 @@ export class QuotationService {
       .pipe(retry(1), catchError(this.handleError('Preview')));
   }
 
-  Delete(id: string): Observable<BaseResponse> {
-    // Build query params
-    const params = { id }; // simpler than buildParams if it's just the id
-
-    return this.http
-      .delete<BaseResponse>(`${this.url}/Delete`, { params })
-      .pipe(retry(1), catchError(this.handleError('Delete')));
-  }
-
   UpdateStatus(
     id: string,
     status: string,
-    assignedUserId?: string | null, // Accept null if clearing assignment
+    userId?: string | null,
   ): Observable<any> {
-    const request = {
-      Id: id,
-      Status: status,
-      AssignedUserId: assignedUserId || null, // Ensure undefined becomes null for the JSON body
+    const params: any = {
+      id,
+      status,
     };
-
+    if (userId) {
+      params.userId = userId;
+    }
     return this.http
-      .patch<any>(`${this.url}/UpdateStatus`, request)
+      .put<any>(`${this.url}/UpdateStatus`, null, { params })
       .pipe(retry(1), catchError(this.handleError('UpdateStatus')));
   }
 

@@ -87,12 +87,18 @@ namespace WebApplication1.Controllers
 
                             if (propertyAccess.Type == typeof(string))
                             {
-                                var method = typeof(string).GetMethod("Equals", new[] { typeof(string) });
-                                var equalsExpr = Expression.Call(propertyAccess, method!, Expression.Constant(valueStr));
+                                var toLowerMethod = typeof(string).GetMethod("ToLower", Type.EmptyTypes)!;
+
+                                var propertyToLower = Expression.Call(propertyAccess, toLowerMethod);
+                                var valueToLower = Expression.Constant(valueStr.ToLower());
+
+                                var containsMethod = typeof(string).GetMethod("Contains", new[] { typeof(string) })!;
+
+                                var containsExpr = Expression.Call(propertyToLower, containsMethod, valueToLower);
 
                                 condition = isNotEqual
-                                    ? Expression.Not(equalsExpr)
-                                    : equalsExpr;
+                                    ? Expression.Not(containsExpr)
+                                    : containsExpr;
                             }
                             else if (propertyAccess.Type == typeof(Guid) || propertyAccess.Type == typeof(Guid?))
                             {
@@ -646,7 +652,7 @@ namespace WebApplication1.Controllers
                 _context.PasswordResetTokens.Add(resetToken);
                 _context.SaveChanges();
 
-                var resetLink = $"http://192.168.1.82:4200/reset-password?token={Uri.EscapeDataString(token)}";
+                var resetLink = $"http://192.168.1.100:4200/reset-password?token={Uri.EscapeDataString(token)}";
                 _emailService.SendResetEmail(user.Email, resetLink);
 
                 Console.WriteLine($"Password reset link for {user.Email}: {resetLink}");

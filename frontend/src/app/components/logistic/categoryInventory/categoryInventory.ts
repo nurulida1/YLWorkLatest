@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
@@ -9,29 +8,28 @@ import {
   signal,
   ViewChild,
 } from '@angular/core';
-import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
-import { ButtonModule } from 'primeng/button';
-import { InputTextModule } from 'primeng/inputtext';
-import { MenuModule } from 'primeng/menu';
 import { Table, TableLazyLoadEvent, TableModule } from 'primeng/table';
-import { LoadingService } from '../../services/loading.service';
+import { LoadingService } from '../../../services/loading.service';
 import { MenuItem, MessageService } from 'primeng/api';
-import { DepartmentService } from '../../services/departmentService';
-import { UserService } from '../../services/userService.service';
-import { SelectModule } from 'primeng/select';
+import { CategoryInventoryService } from '../../../services/CategoryInventoryService';
 import { Observable, Subject, takeUntil } from 'rxjs';
 import {
   BuildFilterText,
   BuildSortText,
   GridifyQueryExtend,
   PagingContent,
-} from '../../shared/helpers/helpers';
-import { DepartmentDto } from '../../models/Department';
+} from '../../../shared/helpers/helpers';
+import { BaseOption } from '../../../models/BaseModel';
+import { CommonModule } from '@angular/common';
+import { ButtonModule } from 'primeng/button';
+import { InputTextModule } from 'primeng/inputtext';
+import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
+import { MenuModule } from 'primeng/menu';
 import { DialogModule } from 'primeng/dialog';
 
 @Component({
-  selector: 'app-department',
+  selector: 'app-category-inventory',
   imports: [
     CommonModule,
     ButtonModule,
@@ -39,7 +37,6 @@ import { DialogModule } from 'primeng/dialog';
     FormsModule,
     RouterLink,
     TableModule,
-    SelectModule,
     MenuModule,
     DialogModule,
   ],
@@ -48,25 +45,22 @@ import { DialogModule } from 'primeng/dialog';
         class="flex flex-row items-center gap-1 text-gray-500 text-[15px] tracking-wide"
       >
         <div
-          class="cursor-pointer hover:text-gray-600"
+          class="cursor-pointer hover:text-gray-500"
           [routerLink]="'/dashboard'"
         >
           Dashboard
         </div>
         /
-        <div class="text-gray-700 font-semibold">Department</div>
+        <div class="text-gray-700 font-semibold">Category</div>
       </div>
-
       <div
         class="mt-3 border border-gray-200 rounded-md tracking-wide bg-white p-5 flex flex-col"
       >
         <div class="flex flex-row items-center justify-between">
           <div class="flex flex-col">
-            <div class="text-[20px] text-gray-700 font-semibold">
-              Department
-            </div>
+            <div class="text-[20px] text-gray-700 font-semibold">Category</div>
             <div class="text-gray-500 text-[15px]">
-              Create, edit, and manage department
+              List of available inventory category.
             </div>
           </div>
           <div class="flex flex-row items-center gap-2">
@@ -74,9 +68,9 @@ import { DialogModule } from 'primeng/dialog';
               <input
                 type="text"
                 pInputText
-                [(ngModel)]="search"
-                class="w-full! text-[15px]!"
+                class="w-full text-[15px]!"
                 placeholder="Search by name"
+                [(ngModel)]="search"
                 (keyup)="onKeyDown($event)"
               />
               <i
@@ -84,9 +78,9 @@ import { DialogModule } from 'primeng/dialog';
               ></i>
             </div>
             <p-button
-              label="New Department"
-              (onClick)="ActionClick(null, 'add')"
+              label="Add Category"
               icon="pi pi-plus-circle"
+              (onClick)="ActionClick(null, 'add')"
               severity="info"
               size="small"
               styleClass="py-2! whitespace-nowrap!"
@@ -109,11 +103,8 @@ import { DialogModule } from 'primeng/dialog';
           >
             <ng-template #header>
               <tr>
-                <th class="bg-gray-100! text-[15px]! text-center! w-[40%]!">
+                <th class="bg-gray-100! text-[15px]! text-center! w-[80%]!">
                   Name
-                </th>
-                <th class="bg-gray-100! text-[15px]! text-center! w-[40%]!">
-                  HOD
                 </th>
                 <th class="bg-gray-100! text-[15px]! text-center! w-[20%]!">
                   Action
@@ -122,11 +113,8 @@ import { DialogModule } from 'primeng/dialog';
             </ng-template>
             <ng-template #body let-data>
               <tr>
-                <td class="text-[14px] text-center! font-semibold!">
+                <td class="text-[14px]! text-center! font-semibold!">
                   {{ data.name }}
-                </td>
-                <td class="text-[14px] text-center!">
-                  {{ data.hod?.fullName }}
                 </td>
                 <td class="text-center! text-[14px]!">
                   <div class="flex items-center justify-center">
@@ -142,7 +130,7 @@ import { DialogModule } from 'primeng/dialog';
               <tr>
                 <td class="border-x!" colspan="100%">
                   <div class="text-[15px] text-center text-gray-500">
-                    No department found in record.
+                    No category found in record.
                   </div>
                 </td>
               </tr>
@@ -160,7 +148,7 @@ import { DialogModule } from 'primeng/dialog';
       [draggable]="false"
       [closable]="true"
       (onHide)="visible = false"
-      styleClass="relative! border-0! bg-white! overflow-y-auto! w-[80%]! md:w-[50%]!"
+      styleClass="relative! border-0! bg-white! overflow-y-auto! w-[80%]! lg:w-[50%]!"
     >
       <ng-template #headless>
         <div class="p-5 flex flex-col">
@@ -168,25 +156,15 @@ import { DialogModule } from 'primeng/dialog';
           <div class="font-normal tracking-wide text-gray-500 text-[15px]">
             Fill in all required field.
           </div>
-          <div class="text-[15px] tracking-wide mt-7 grid grid-cols-12 gap-4">
+          <div class="grid grid-cols-12 gap-4 text-[15px] tracking-wide mt-7">
             <div class="col-span-12 flex flex-col gap-1">
               <div>Name <span class="text-red-500">*</span></div>
               <input
                 type="text"
                 pInputText
                 class="w-full py-1.5!"
-                [(ngModel)]="departmentName"
+                [(ngModel)]="name"
               />
-            </div>
-            <div class="col-span-12 flex flex-col gap-1">
-              <div>HOD</div>
-              <p-select
-                [options]="hodSelection || []"
-                appendTo="body"
-                [filter]="true"
-                [showClear]="hodId"
-                [(ngModel)]="hodId"
-              ></p-select>
             </div>
           </div>
           <div class="border-b border-gray-200 mt-3 mb-3"></div>
@@ -198,8 +176,8 @@ import { DialogModule } from 'primeng/dialog';
               styleClass="border-gray-200! py-1.5! px-4!"
             ></p-button>
             <p-button
-              (onClick)="SaveDepartment()"
-              [label]="isUpdate ? 'Save Changes' : 'Create'"
+              (onClick)="SaveCategory()"
+              [label]="isUpdate ? 'Save Changes' : 'Add'"
               severity="info"
               styleClass="py-1.5! px-4!"
             ></p-button>
@@ -207,21 +185,21 @@ import { DialogModule } from 'primeng/dialog';
         </div>
       </ng-template>
     </p-dialog>`,
-  styleUrl: './department.less',
+  styleUrl: './categoryInventory.less',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class Department implements OnInit, OnDestroy {
+export class CategoryInventory implements OnInit, OnDestroy {
   @ViewChild('fTable') fTable?: Table;
 
+  private readonly cdr = inject(ChangeDetectorRef);
   private readonly loadingService = inject(LoadingService);
   private readonly messageService = inject(MessageService);
-  private readonly departmentService = inject(DepartmentService);
-  private readonly userService = inject(UserService);
-  private readonly cdr = inject(ChangeDetectorRef);
+  private readonly categoryInventoryService = inject(CategoryInventoryService);
+
   protected ngUnsubscribe: Subject<void> = new Subject<void>();
 
-  PagingSignal = signal<PagingContent<DepartmentDto>>(
-    {} as PagingContent<DepartmentDto>,
+  PagingSignal = signal<PagingContent<BaseOption>>(
+    {} as PagingContent<BaseOption>,
   );
   Query: GridifyQueryExtend = {} as GridifyQueryExtend;
 
@@ -229,28 +207,25 @@ export class Department implements OnInit, OnDestroy {
   isUpdate: boolean = false;
 
   search: string = '';
-  title: string = 'Add New Department';
-  departmentName: string | null = null;
-  hodId: string | null = null;
-  departmentId: string | null = null;
+  title: string = 'Add New Category';
+  name: string | null = null;
+  id: string | null = null;
   menuItems: MenuItem[] = [];
-
-  hodSelection: { label: string; value: string }[] = [];
 
   constructor() {
     this.Query.Page = 1;
     this.Query.PageSize = 10;
     this.Query.Filter = null;
     this.Query.OrderBy = 'Name';
-    this.Query.Select = null;
     this.Query.Includes = null;
+    this.Query.Select = null;
   }
 
   ngOnInit(): void {}
 
   GetData() {
     this.loadingService.start();
-    this.departmentService
+    this.categoryInventoryService
       .GetMany(this.Query)
       .pipe(takeUntil(this.ngUnsubscribe))
       .subscribe({
@@ -264,7 +239,6 @@ export class Department implements OnInit, OnDestroy {
         },
       });
   }
-
   NextPage(event: TableLazyLoadEvent) {
     if ((event?.first || event?.first === 0) && event?.rows) {
       this.Query.Page = event.first / event.rows + 1 || 1;
@@ -329,11 +303,11 @@ export class Department implements OnInit, OnDestroy {
     this.GetData();
   }
 
-  ActionClick(data: DepartmentDto | null, action: string) {
+  ActionClick(data: BaseOption | null, action: string) {
     if (action === 'Delete' && data) {
       this.loadingService.start();
 
-      this.departmentService
+      this.categoryInventoryService
         .Delete(data?.id)
         .pipe(takeUntil(this.ngUnsubscribe))
         .subscribe({
@@ -343,7 +317,7 @@ export class Department implements OnInit, OnDestroy {
             this.messageService.add({
               severity: 'success',
               summary: 'Deleted',
-              detail: res?.message || 'Department deleted successfully',
+              detail: res?.message || 'Category deleted successfully',
             });
 
             this.PagingSignal.update((state) => ({
@@ -363,23 +337,20 @@ export class Department implements OnInit, OnDestroy {
               detail:
                 err.error?.error ||
                 err.error?.message ||
-                'Failed to delete department',
+                'Failed to delete category',
             });
           },
         });
     } else {
       this.isUpdate = action === 'Update';
-      this.title = this.isUpdate ? 'Edit Department' : 'Add New Department';
-
-      this.GetHodSelection();
+      this.title = this.isUpdate ? 'Edit Category' : 'Add New Category';
 
       if (this.isUpdate) {
-        this.hodId = data?.hodId || null;
-        this.departmentName = data?.name || null;
-        this.departmentId = data?.id || null;
+        this.id = data?.id || null;
+        this.name = data?.name || null;
       } else {
-        this.hodId = null;
-        this.departmentName = null;
+        this.id = null;
+        this.name = null;
       }
       this.visible = true;
       this.cdr.detectChanges();
@@ -403,49 +374,22 @@ export class Department implements OnInit, OnDestroy {
     menu.toggle(event);
   }
 
-  GetHodSelection() {
-    this.userService
-      .GetMany({
-        Page: 1,
-        PageSize: 1000000,
-        OrderBy: 'FullName',
-        Filter: `SystemRole!=SuperAdmin`,
-        Select: null,
-        Includes: null,
-      })
-      .pipe(takeUntil(this.ngUnsubscribe))
-      .subscribe((res) => {
-        this.hodSelection = res.data.map((user: any) => ({
-          label: user.fullName,
-          value: user.id,
-        }));
-      });
-  }
-
-  SaveDepartment() {
-    if (!this.departmentName) {
+  SaveCategory() {
+    if (!this.name) {
       return this.messageService.add({
         severity: 'error',
-        summary: 'Department Name is required',
+        summary: 'Name is required',
         detail: '',
       });
     }
 
     const request$: Observable<any> = this.isUpdate
-      ? this.departmentService.Update({
-          id: this.departmentId!,
-          name: this.departmentName,
-          hodId: this.hodId!,
-          description: '',
-          code: '',
-          isActive: true,
+      ? this.categoryInventoryService.Update({
+          id: this.id!,
+          name: this.name,
         })
-      : this.departmentService.Create({
-          name: this.departmentName,
-          hodId: this.hodId!,
-          description: '',
-          code: '',
-          isActive: true,
+      : this.categoryInventoryService.Create({
+          name: this.name,
         });
 
     request$.pipe(takeUntil(this.ngUnsubscribe)).subscribe({
@@ -456,7 +400,7 @@ export class Department implements OnInit, OnDestroy {
           this.messageService.add({
             severity: 'success',
             summary: 'Success',
-            detail: `Department: ${this.departmentName} has been ${this.isUpdate ? 'updated' : 'created'} successfully`,
+            detail: `Category: ${this.name} has been ${this.isUpdate ? 'updated' : 'created'} successfully`,
           });
 
           this.visible = false;

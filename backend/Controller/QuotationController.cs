@@ -28,727 +28,647 @@ namespace YLWorks.Controller
 
         [HttpGet("GetMany")]
         public ActionResult<object> GetMany(
-    int page = 1,
-    int pageSize = 10,
-    string? filter = null,
-    string? orderBy = null,
-    string? select = null,
-    string? includes = null)
+      int page = 1,
+      int pageSize = 10,
+      string? filter = null,
+      string? orderBy = null,
+      string? select = null,
+      string? includes = null)
         {
             try
             {
-                // 1. Initialize Query
-                var query = _context.Quotations.AsQueryable();
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                var jobTitle = User.FindFirst("SystemRole")?.Value;
 
-                // Dynamically include related data
-                if (!string.IsNullOrWhiteSpace(includes))
-                {
-                    foreach (var include in includes.Split(',', StringSplitOptions.RemoveEmptyEntries))
-                    {
-                        query = query.Include(include.Trim());
-                    }
-                }
+                if (string.IsNullOrEmpty(userIdClaim))
+                    return Unauthorized();
 
-                // 3. Dynamic Filtering (Expression Tree)
-                if (!string.IsNullOrEmpty(filter))
-                {
-                    var parameter = Expression.Parameter(typeof(Quotation), "q");
-                    Expression? finalExpression = null;
+                var userId = Guid.Parse(userIdClaim);
 
-                    var orParts = filter.Split('|');
-                    foreach (var orPart in orParts)
-                    {
-                        Expression? orExpression = null;
-                        var andParts = orPart.Split(',');
+                // ======================================================
+                // BASE QUERY
+                // ======================================================
+                var query = _context.Quotations
+                    .AsNoTracking()
+                    .Include(q => q.Client)
+                    .Include(q => q.QuotationStatusHistories)
+                        .ThenInclude(h => h.ActionUser)
+                    .Include(q => q.QuotationStatusHistories)
+                        .ThenInclude(h => h.ReviewedByUser)
+                    .AsQueryable();
 
-                        foreach (var andPart in andParts)
-                        {
-                            bool isNotEqual = andPart.Contains("!=");
-                            var kv = isNotEqual ? andPart.Split("!=") : andPart.Split('=');
-                            if (kv.Length != 2) continue;
+                // ======================================================
+                // ROLE FLAGS
+                // ======================================================
+                var isAdmin =
+                    jobTitle == "Admin" ||
+                    jobTitle == "SuperAdmin" ||
+                    jobTitle == "Sales Director";
 
-                            var propertyName = kv[0].Trim();
-                            var valueStr = kv[1].Trim();
-                            var propertyAccess = Expression.PropertyOrField(parameter, propertyName);
+                // ======================================================
+                // ACCESS CONTROL (FIXED)
+                // ======================================================
+                query = query.Where(q =>
+                    isAdmin ||
+                    q.CreatedById == userId ||
 
-                            Expression condition;
-                            // String handling
-                            if (propertyAccess.Type == typeof(string))
-                            {
-                                var method = typeof(string).GetMethod("Contains", new[] { typeof(string) });
-                                var containsExpr = Expression.Call(propertyAccess, method!, Expression.Constant(valueStr));
-                                condition = isNotEqual ? Expression.Not(containsExpr) : containsExpr;
-                            }
-                            // Guid handling
-                            else if (propertyAccess.Type == typeof(Guid) || propertyAccess.Type == typeof(Guid?))
-                            {
-                                var guidValue = Guid.Parse(valueStr);
-                                condition = Expression.Equal(propertyAccess, Expression.Constant(guidValue, propertyAccess.Type));
-                            }
-                            // Enum handling (Status)
-                            else if (propertyAccess.Type.IsEnum)
-                            {
-                                var enumValue = Enum.Parse(propertyAccess.Type, valueStr);
-                                condition = Expression.Equal(propertyAccess, Expression.Constant(enumValue));
-                            }
-                            // General handling (Numbers/Dates)
-                            else
-                            {
-                                var convertedValue = Convert.ChangeType(valueStr, Nullable.GetUnderlyingType(propertyAccess.Type) ?? propertyAccess.Type);
-                                condition = Expression.Equal(propertyAccess, Expression.Constant(convertedValue, propertyAccess.Type));
-                            }
+                    // 👇 IMPORTANT: reviewer can ALWAYS see
+                    q.QuotationStatusHistories.Any(h => h.ReviewedByUserId == userId)
+                );
 
-                            orExpression = orExpression == null ? condition : Expression.AndAlso(orExpression, condition);
-                        }
-                        finalExpression = finalExpression == null ? orExpression : Expression.OrElse(finalExpression, orExpression);
-                    }
-
-                    if (finalExpression != null)
-                    {
-                        var lambda = Expression.Lambda<Func<Quotation, bool>>(finalExpression, parameter);
-                        query = query.Where(lambda);
-                    }
-                }
-
-                // 4. Sorting
+                // ======================================================
+                // ORDER BY
+                // ======================================================
                 if (!string.IsNullOrEmpty(orderBy))
                 {
-                    bool descending = orderBy.EndsWith(" desc", StringComparison.OrdinalIgnoreCase);
+                    bool desc = orderBy.EndsWith(" desc", StringComparison.OrdinalIgnoreCase);
                     var propertyName = orderBy.Replace(" desc", "", StringComparison.OrdinalIgnoreCase).Trim();
-                    query = descending ? query.OrderByDescending(x => EF.Property<object>(x, propertyName))
-                                       : query.OrderBy(x => EF.Property<object>(x, propertyName));
+
+                    query = desc
+                        ? query.OrderByDescending(x => EF.Property<object>(x, propertyName))
+                        : query.OrderBy(x => EF.Property<object>(x, propertyName));
+                }
+                else
+                {
+                    query = query.OrderByDescending(x => x.CreatedAt);
                 }
 
+                // ======================================================
+                // PAGING
+                // ======================================================
                 var totalElements = query.Count();
 
-                // 5. Pagination and Execution
-                var items = query.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+                var items = query
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToList();
 
-                // 6. Selective Projection
-                if (!string.IsNullOrEmpty(select))
+                // ======================================================
+                // PROJECTION (DTO)
+                // ======================================================
+                var result = items.Select(q => new
                 {
-                    var selectedFields = select.Split(',').Select(f => f.Trim()).ToList();
-                    var projected = items.Select(item =>
+                    q.Id,
+                    q.QuotationNo,
+                    q.ReferenceNo,
+                    q.QuotationDate,
+                    q.Status,
+                    q.Subject,
+                    q.TotalAmount,
+
+                    Client = q.Client == null ? null : new
                     {
-                        var dict = new Dictionary<string, object?>();
-                        foreach (var field in selectedFields)
+                        q.Client.Id,
+                        q.Client.Name
+                    },
+
+                    QuotationStatusHistories = q.QuotationStatusHistories
+                        .OrderBy(h => h.ActionAt)
+                        .Select(h => new
                         {
-                            // Note: GetProperty is case-sensitive. 
-                            // Ensure Angular sends "QuotationNo" not "quotationNo"
-                            var prop = item.GetType().GetProperty(field);
-                            dict[field] = prop?.GetValue(item);
-                        }
-                        return dict;
-                    });
+                            h.Id,
+                            h.Status,
+                            h.ActionAt,
 
-                    return Ok(new { Data = projected, TotalElements = totalElements });
-                }
+                            ActionUser = h.ActionUser == null ? null : new
+                            {
+                                h.ActionUser.Id,
+                                h.ActionUser.FullName
+                            },
 
-                // === SET IT HERE ===
-                // If no specific fields are selected, map the whole list to DTOs 
-                // to prevent circular reference crashes.
-                var dtoItems = items.Select(item => item).ToList();
+                            ReviewedByUser = h.ReviewedByUser == null ? null : new
+                            {
+                                h.ReviewedByUser.Id,
+                                h.ReviewedByUser.FullName
+                            },
 
-                return Ok(new { Data = dtoItems, TotalElements = totalElements });
+                            h.Remarks
+                        })
+                });
+
+                return Ok(new
+                {
+                    Data = result,
+                    TotalElements = totalElements
+                });
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { Error = "Search failed.", Details = ex.Message });
+                return StatusCode(500, new
+                {
+                    Error = "Search failed.",
+                    Details = ex.Message
+                });
             }
         }
 
         [HttpGet("GetOne")]
-        public async Task<IActionResult> GetOne(string? filter = null, string? includes = null)
+        public async Task<IActionResult> GetOne(string? filter = null)
         {
-            IQueryable<Quotation> query = _context.Quotations.AsQueryable();
+            var query = _context.Quotations
+                .Include(x => x.QuotationItems)
+                .AsQueryable();
 
-            // Dynamically include related data
-            if (!string.IsNullOrWhiteSpace(includes))
-            {
-                foreach (var include in includes.Split(',', StringSplitOptions.RemoveEmptyEntries))
-                {
-                    query = query.Include(include.Trim());
-                }
-            }
+            var filterValue = filter?.Split('=')[1];
 
-            // Filter by ID
-            if (!string.IsNullOrEmpty(filter))
-            {
-                var filterValue = filter.Contains('=') ? filter.Split('=')[1].Trim() : filter.Trim();
-                if (Guid.TryParse(filterValue, out Guid guidId))
-                {
-                    query = query.Where(d => d.Id == guidId);
-                }
-            }
+            if (!Guid.TryParse(filterValue, out Guid id))
+                return BadRequest("Invalid Id");
 
-            var data = await query.FirstOrDefaultAsync();
+            var data = await query
+    .Where(x => x.Id == id)
+    .Select(x => new
+    {
+        x.Id,
+        x.QuotationNo,
+        x.QuotationDate,
+        x.FromCompanyId,
+        x.ClientId,
+        x.TotalAmount,
+        x.TermsAndConditions,
+        x.Subject,
+        x.QuotationItems
+    })
+    .FirstOrDefaultAsync();
 
             if (data == null) return NotFound();
 
-            // USE YOUR MAPPER HERE TO PREVENT CYCLES
-            //return Ok(MapToDto(data));
             return Ok(data);
         }
 
-        //[HttpPost("Create")]
-        //public async Task<ActionResult<object>> Create([FromBody] CreatePORequest request)
-        //{
-        //    var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        //    if (string.IsNullOrEmpty(userIdClaim)) return Unauthorized(new { Error = "Invalid token." });
-
-        //    if (string.IsNullOrWhiteSpace(request.PONo))
-        //        return BadRequest(new { Error = "PO Number is required for finalized records." });
-
-        //    try
-        //    {
-        //        var po = new PurchaseOrder
-        //        {
-        //            Id = Guid.NewGuid(),
-        //            PONo = request.PONo,
-        //            QuotationId = request.QuotationId,
-        //            POReceivedDate = request.POReceivedDate,
-        //            Terms = request.Terms,
-        //            ProjectId = request.ProjectId,
-        //            SupplierId = request.SupplierId ?? null,
-        //            ClientId = request.ClientId ?? null,
-        //            DeliveryInstruction = request.DeliveryInstruction,
-        //            DeliveryDate = request.DeliveryDate,
-        //            TermsConditions = request.TermsConditions,
-        //            BankDetails = request.BankDetails,
-        //            Status = request.ClientId.HasValue ? "Received" : "Draft",
-        //            Gross = request.Gross,
-        //            Discount = request.Discount,   // Matching your Quotation model name
-        //            TotalAmount = request.TotalAmount,
-        //            TotalQuantity = request.TotalQuantity,
-        //            Remarks = request.Remarks,
-        //            CreatedById = Guid.Parse(userIdClaim),
-        //            CreatedAt = DateTime.UtcNow
-        //        };
-
-        //        // Use the null-coalescing operator ?? to handle empty/null item lists
-        //        po.POItems = (request.POItems ?? new List<POItemRequest>()).Select(i => new POItem
-        //        {
-        //            Id = Guid.NewGuid(),
-        //            PurchaseOrderId = po.Id,
-        //            Item = i.Item,
-        //            Description = i.Description,
-        //            Quantity = i.Quantity,
-        //            UnitPrice = i.UnitPrice,
-        //            Discount = i.Discount,
-        //            TotalAmount = i.TotalAmount,
-        //            Unit = i.Unit,
-        //            CreatedAt = DateTime.UtcNow
-        //        }).ToList();
-
-        //        _context.PurchaseOrders.Add(po);
-        //        await _context.SaveChangesAsync();
-
-        //        var result = MapToDto(po);
-        //        await _hub.Clients.All.SendAsync("PurchaseOrderAdded", result);
-
-        //        return Ok(result);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        return StatusCode(500, new { Error = "Failed to create.", Details = ex.Message });
-        //    }
-        //}
-
-
-        //[HttpPut("Update")]
-        //public async Task<ActionResult<PurchaseOrder>> Update([FromBody] UpdatePORequest request)
-        //{
-        //    if (request == null || request.Id == Guid.Empty)
-        //        return BadRequest("Invalid request.");
-
-        //    var po = await _context.PurchaseOrders
-        //        .Include(q => q.POItems)
-        //        .FirstOrDefaultAsync(q => q.Id == request.Id);
-
-        //    if (po == null)
-        //        return NotFound(new { Error = "Purchase order not found." });
-
-        //    try
-        //    {
-        //        // =========================
-        //        // UPDATE HEADER
-        //        // =========================
-        //        po.PONo = request.PONo ?? po.PONo;
-        //        po.SupplierId = request.SupplierId != Guid.Empty ? request.SupplierId : po.SupplierId;
-        //        po.POReceivedDate = request.POReceivedDate ?? po.POReceivedDate;
-        //        po.DeliveryInstruction = request.DeliveryInstruction ?? po.DeliveryInstruction;
-        //        po.DeliveryDate = request.DeliveryDate ?? po.DeliveryDate;
-        //        po.Terms = request.Terms ?? po.Terms;
-        //        po.Page = request.Page ?? po.Page;
-        //        po.Remarks = request.Remarks ?? po.Remarks;
-        //        po.TermsConditions = request.TermsConditions ?? po.TermsConditions;
-        //        po.BankDetails = request.BankDetails ?? po.BankDetails;
-        //        po.Discount = request.Discount ?? po.Discount;
-        //        po.TotalQuantity = request.TotalQuantity ?? po.TotalQuantity;
-        //        po.UpdatedAt = DateTime.UtcNow;
-
-        //        // =========================
-        //        // MAP REQUEST ITEMS SAFELY
-        //        // =========================
-        //        var requestItems = request.POItems?
-        //            .Select(p => new UpdatePOItemRequest
-        //            {
-        //                Id = p.Id,
-        //                Item = p.Item,
-        //                Description = p.Description,
-        //                Quantity = p.Quantity,
-        //                UnitPrice = p.UnitPrice,
-        //                Unit = p.Unit,
-        //                Discount = (decimal)(p.Discount),
-        //                TotalAmount = p.TotalAmount
-        //            })
-        //            .ToList() ?? new List<UpdatePOItemRequest>();
-
-        //        // =========================
-        //        // COLLECT VALID ITEM IDS
-        //        // =========================
-        //        var requestItemIds = requestItems
-        //            .Where(i => i.Id.HasValue && i.Id.Value != Guid.Empty)
-        //            .Select(i => i.Id.Value)
-        //            .ToHashSet();
-
-        //        // =========================
-        //        // REMOVE ITEMS NOT IN REQUEST
-        //        // =========================
-        //        var itemsToRemove = po.POItems
-        //            .Where(dbItem => !requestItemIds.Contains(dbItem.Id))
-        //            .ToList();
-
-        //        foreach (var item in itemsToRemove)
-        //        {
-        //            _context.POItems.Remove(item);
-        //        }
-
-        //        // =========================
-        //        // ADD / UPDATE ITEMS
-        //        // =========================
-        //        foreach (var itemReq in requestItems)
-        //        {
-        //            // UPDATE EXISTING ITEM
-        //            if (itemReq.Id.HasValue && itemReq.Id.Value != Guid.Empty)
-        //            {
-        //                var existing = po.POItems
-        //                    .FirstOrDefault(i => i.Id == itemReq.Id.Value);
-
-        //                if (existing == null)
-        //                    continue;
-
-        //                existing.Item = itemReq.Item;
-        //                existing.Description = itemReq.Description;
-        //                existing.Quantity = itemReq.Quantity;
-        //                existing.UnitPrice = itemReq.UnitPrice;
-        //                existing.Unit = itemReq.Unit;
-        //                existing.Discount = itemReq.Discount;
-
-        //                // =========================
-        //                // RECALCULATE TOTAL
-        //                // =========================
-        //                var subTotal = itemReq.Quantity * itemReq.UnitPrice;
-        //                existing.TotalAmount =
-        //                    subTotal - (subTotal * (itemReq.Discount / 100));
-
-        //                existing.UpdatedAt = DateTime.UtcNow;
-        //            }
-        //            else
-        //            {
-        //                // ADD NEW ITEM
-        //                var subTotal = itemReq.Quantity * itemReq.UnitPrice;
-
-        //                var newItem = new POItem
-        //                {
-        //                    Id = Guid.NewGuid(),
-        //                    PurchaseOrderId = po.Id,
-        //                    Item = itemReq.Item,
-        //                    Description = itemReq.Description,
-        //                    Quantity = itemReq.Quantity,
-        //                    UnitPrice = itemReq.UnitPrice,
-        //                    Unit = itemReq.Unit,
-        //                    Discount = itemReq.Discount,
-
-        //                    TotalAmount =
-        //                        subTotal - (subTotal * (itemReq.Discount / 100)),
-
-        //                    CreatedAt = DateTime.UtcNow
-        //                };
-
-        //                quote.Items.Add(newItem);
-        //            }
-        //        }
-
-        //        // =========================
-        //        // FINAL TOTAL (SAFE)
-        //        // =========================
-        //        quote.TotalAmount = quote.Items.Sum(x => x.TotalAmount);
-
-        //        await _context.SaveChangesAsync();
-
-        //        // =========================
-        //        // SIGNALR NOTIFY
-        //        // =========================
-        //        await _hub.Clients.All.SendAsync("QuotationUpdated", quote);
-
-        //        return Ok(quote);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        return StatusCode(500, new { Error = "Failed to update quotation.", Details = ex.Message });
-        //    }
-        //}
-
-        //[HttpPost("Preview")]
-        //public async Task<IActionResult> Preview([FromBody] CreateQuotationRequest request)
-        //{
-        //    var client = await _context.Clients
-        //.Include(c => c.BillingAddress)
-        //.Include(c => c.DeliveryAddress)
-        //.FirstOrDefaultAsync(c => c.Id == request.ClientId);
-        //    // Transient projection for frontend preview
-        //    return Ok(new
-        //    {
-        //        QuotationNo = request.QuotationNo ?? "DRAFT",
-        //        QuotationDate = request.QuotationDate,
-        //        DueDate = request.DueDate,
-        //        Description = request.Description,
-        //        TermsConditions = request.TermsConditions,
-        //        BankDetails = request.BankDetails,
-        //        Gross = request.Gross,
-        //        Discount = request.Discount,
-        //        TotalAmount = request.TotalAmount,
-
-        //        // Map the client found in the DB
-        //        Client = client != null ? new
-        //        {
-        //            client.Id,
-        //            client.Name,
-        //            client.ContactNo,
-        //            client.Email,
-        //            client.ContactPerson,
-        //            BillingAddress = client.BillingAddress,
-        //            DeliveryAddress = client.DeliveryAddress
-        //        } : null,
-
-        //        Items = request.Items.Select(i => new {
-        //            i.Item,
-        //            i.Description,
-        //            i.Quantity,
-        //            i.Unit,
-        //            i.UnitPrice,
-        //            i.Discount,
-        //            i.TotalAmount
-        //        })
-        //    });
-        //}
-
-        //private object MapToDto(Quotation q)
-        //{
-        //    return new
-        //    {
-        //        q.Id,
-        //        q.QuotationNo,
-        //        q.Description,
-        //        q.TermsConditions,
-        //        q.BankDetails,
-        //        q.QuotationDate,
-        //        q.DueDate,
-        //        q.Status,
-        //        q.ClientId,
-        //        Client = q.Client != null ? new Client
-        //        {
-        //            Id = q.ClientId,
-        //            Name = q.Client.Name,
-        //            ContactNo = q.Client.ContactNo,
-        //            Email = q.Client.Email,
-        //            ContactPerson = q.Client.ContactPerson, // Added for completeness
-
-        //            // Project the new structured addresses
-        //            BillingAddress = q.Client.BillingAddress != null ? new Address
-        //            {
-        //                Id = q.Client.BillingAddress.Id,
-        //                AddressLine1 = q.Client.BillingAddress.AddressLine1,
-        //                AddressLine2 = q.Client.BillingAddress.AddressLine2,
-        //                City = q.Client.BillingAddress.City,
-        //                State = q.Client.BillingAddress.State,
-        //                Country = q.Client.BillingAddress.Country,
-        //                Poscode = q.Client.BillingAddress.Poscode
-        //            } : null,
-
-        //            DeliveryAddress = q.Client.DeliveryAddress != null ? new Address
-        //            {
-        //                Id = q.Client.DeliveryAddress.Id,
-        //                AddressLine1 = q.Client.DeliveryAddress.AddressLine1,
-        //                AddressLine2 = q.Client.DeliveryAddress.AddressLine2,
-        //                City = q.Client.DeliveryAddress.City,
-        //                State = q.Client.DeliveryAddress.State,
-        //                Country = q.Client.DeliveryAddress.Country,
-        //                Poscode = q.Client.DeliveryAddress.Poscode
-        //            } : null
-        //        } : null,
-        //        q.Gross,
-        //        q.TotalAmount,
-        //        q.Discount,
-        //        Items = q.Items.Select(i => new
-        //        {
-        //            i.Id,
-        //            i.Item,
-        //            i.Description,
-        //            i.Quantity,
-        //            i.Unit,
-        //            i.UnitPrice,
-        //            i.Discount,
-        //            i.TotalAmount
-        //        }).ToList()
-        //    };
-        //}
-
-
-        //[HttpPatch("UpdateStatus")]
-        //public async Task<IActionResult> UpdateStatus([FromBody] UpdateQuotationStatusRequest request)
-        //{
-        //    // 1. Fetch the quotation
-        //    var quotation = await _context.Quotations
-        //        .FirstOrDefaultAsync(q => q.Id == request.Id);
-
-        //    if (quotation == null) return NotFound();
-
-        //    string current = quotation.Status;
-        //    string next = request.Status ?? "Draft";
-
-        //    // 2. Define Allowed Transitions
-        //    bool isValidTransition = (current, next) switch
-        //    {
-        //        ("Draft", "Open") => true,
-        //        ("Draft", "Pending Signature") => true,
-        //        ("Open", "Pending Signature") => true,
-
-        //        // Status 'Signed' is usually set automatically by the system, 
-        //        // but we allow the transition here for consistency.
-        //        ("Pending Signature", "Signed") => true,
-
-        //        // Admin Action:
-        //        ("Signed", "Sent") => true,
-
-        //        ("Sent", "Accepted") => true,
-        //        ("Sent", "Declined") => true,
-        //        _ => false
-        //    };
-
-        //    if (!isValidTransition)
-        //    {
-        //        return BadRequest(new
-        //        {
-        //            Error = "Invalid Status Transition",
-        //            Details = $"Cannot change from {current} to {next}."
-        //        });
-        //    }
-
-        //    // 3. Handle Business Logic for Assignment
-        //    // Inside UpdateStatus method
-        //    try
-        //    {
-                
-        //        // Note: We leave the AssignedToId as-is for "Signed", "Sent", "Accepted" 
-        //        // so we know exactly who approved this version.
-
-        //        quotation.Status = next!;
-        //        quotation.UpdatedAt = DateTime.UtcNow;
-
-        //        await _context.SaveChangesAsync();
-
-        //        // Broadcast via SignalR
-        //        var result = MapToDto(quotation);
-        //        await _hub.Clients.All.SendAsync("QuotationStatusChanged", result);
-
-        //        return Ok(result);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        return StatusCode(500, new { Error = "Update failed", Details = ex.Message });
-        //    }
-        //}
-
-        [HttpDelete("Delete")]
-        public async Task<IActionResult> Delete(Guid id)
+        private QuotationItemDto MapToItemDto(QuotationItems item, IEnumerable<QuotationItems> allItems)
         {
-            var quotes = await _context.Quotations.FindAsync(id);
-            if (quotes == null)
-                return NotFound(new { Error = "Quotation not found." });
-
-
-            _context.Quotations.Remove(quotes);
-            await _context.SaveChangesAsync();
-            return Ok(new { Success = true });
+            return new QuotationItemDto
+            {
+                Id = item.Id,
+                Type = item.Type,
+                IsGroup = item.IsGroup,
+                Description = item.Description,
+                Quantity = item.Quantity,
+                Unit = item.Unit,
+                UnitPrice = item.UnitPrice,
+                TotalPrice = item.TotalPrice,
+                SortOrder = item.SortOrder,
+                Children = allItems
+                    .Where(child => child.ParentId == item.Id)
+                    .OrderBy(child => child.SortOrder)
+                    .Select(child => MapToItemDto(child, allItems))
+                    .ToList()
+            };
         }
 
-    //    [HttpPost("Clone/{id}")]
-    //    public async Task<IActionResult> Clone(Guid id)
-    //    {
-    //        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-    //        if (string.IsNullOrEmpty(userIdClaim)) return Unauthorized();
+        [HttpPost("Create")]
+        public async Task<ActionResult<object>> Create([FromBody] CreateQuotationRequest request)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim)) return Unauthorized(new { Error = "Invalid token." });
 
-    //        // 1. Fetch the source quotation with its items
-    //        var source = await _context.Quotations
-    //            .Include(q => q.Items)
-    //            .FirstOrDefaultAsync(q => q.Id == id);
+            try
+            {
+                var quotation = new Quotation
+                {
+                    Id = Guid.NewGuid(),
+                    QuotationNo = request.QuotationNo ?? await GenerateQuotationNo(),
+                    ReferenceNo = request.ReferenceNo,
+                    QuotationDate = request.QuotationDate,
+                    FromCompanyId = request.FromCompanyId,
+                    ClientId = request.ClientId,
+                    ProjectCode = request.ProjectCode,
+                    Subject = request.Subject,
+                    TotalAmount = request.TotalAmount,
+                    TermsAndConditions = request.TermsAndConditions,
+                    Status = "Draft",
+                    CreatedById = Guid.Parse(userIdClaim),
+                    CreatedAt = DateTime.UtcNow
+                };
 
-    //        if (source == null) return NotFound("Source quotation not found.");
+                // Recursive Item Creation
+                quotation.QuotationItems = ProcessRequestItems(request.QuotationItems, quotation.Id, null);
 
-    //        try
-    //        {
-    //            // 2. Generate New Numbers (Incremental Logic)
-    //            // Fetches the most recent QuotationNo from the DB to ensure uniqueness
-    //            var lastQuote = await _context.Quotations
-    //                .OrderByDescending(q => q.CreatedAt)
-    //                .Select(q => q.QuotationNo)
-    //                .FirstOrDefaultAsync();
+                var statusHistory = new QuotationStatusHistory
+                {
+                    Id = Guid.NewGuid(),
+                    QuotationId = quotation.Id,
+                    Status = "Draft",
+                    ActionAt = DateTime.UtcNow,
+                    ActionUserId = Guid.Parse(userIdClaim),
+                    Remarks = "Quotation created",
+                };
 
-    //            string newQuotationNo = IncrementStringNumber(lastQuote ?? source.QuotationNo);
+                _context.Quotations.Add(quotation);
+                _context.QuotationStatusHistories.Add(statusHistory);
 
-    //            // 3. Create New Quotation Object
-    //            var clonedQuotation = new Quotation
-    //            {
-    //                Id = Guid.NewGuid(),
-    //                QuotationNo = newQuotationNo,
-    //                QuotationDate = DateTime.UtcNow,
-    //                DueDate = DateTime.UtcNow.AddDays(14), // Default to 14 days or use source logic
-    //                ClientId = source.ClientId,
-    //                Description = source.Description,
-    //                Status = "Draft", // Always start clones as Draft
-    //                Gross = source.Gross,
-    //                Discount = source.Discount,
-    //                TotalAmount = source.TotalAmount,
+                await _context.SaveChangesAsync();
 
-    //                CreatedById = Guid.Parse(userIdClaim),
-    //                CreatedAt = DateTime.UtcNow
-    //            };
+                var result = MapToDto(quotation); // Use the recursive MapToDto we discussed
+                await _hub.Clients.All.SendAsync("QuotationAdded", result);
 
-    //            // 4. Clone Items
-    //            clonedQuotation.Items = source.Items.Select(i => new QuotationItems
-    //            {
-    //                Id = Guid.NewGuid(),
-    //                QuotationId = clonedQuotation.Id,
-    //                Item = i.Item,
-    //                Description = i.Description,
-    //                Quantity = i.Quantity,
-    //                Unit = i.Unit,
-    //                UnitPrice = i.UnitPrice,
-    //                Discount = i.Discount,
-    //                TotalAmount = i.TotalAmount,
-    //                CreatedAt = DateTime.UtcNow
-    //            }).ToList();
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Error = "Failed to create.", Details = ex.Message });
+            }
+        }
 
-    //            _context.Quotations.Add(clonedQuotation);
-    //            await _context.SaveChangesAsync();
+        // Helper to handle nested items/categories
+        private List<QuotationItems> ProcessRequestItems(List<QuotationItemRequest> requests, Guid quotationId, Guid? parentId)
+        {
+            var items = new List<QuotationItems>();
+            foreach (var req in requests ?? new())
+            {
+                var itemId = Guid.NewGuid();
+                var newItem = new QuotationItems
+                {
+                    Id = itemId,
+                    QuotationId = quotationId,
+                    ParentId = parentId,
+                    IsGroup = req.IsGroup,
+                    Type = req.Type, // "CATEGORY" or "ITEM"
+                    Description = req.Description,
+                    Quantity = req.Quantity,
+                    Unit = req.Unit ?? "Nos",
+                    UnitPrice = req.UnitPrice,
+                    TotalPrice = req.TotalPrice,
+                    SortOrder = req.SortOrder,
+                    CreatedAt = DateTime.UtcNow
+                };
 
-    //            // 5. Notify Hub and Return
-    //            var result = MapToDto(clonedQuotation);
-    //            await _hub.Clients.All.SendAsync("QuotationAdded", result);
+                // If this item has children (e.g. a Category containing products), process them
+                if (req.Children?.Any() == true)
+                {
+                    // Note: In EF Core, if you add children to the context, 
+                    // ensure the ParentId is set or they are added to a collection.
+                    newItem.Children = ProcessRequestItems(req.Children, quotationId, itemId);
+                }
 
-    //            return Ok(result);
-    //        }
-    //        catch (Exception ex)
-    //        {
-    //            return StatusCode(500, new { Error = "Cloning failed", Details = ex.Message });
-    //        }
-    //    }
+                items.Add(newItem);
+            }
+            return items;
+        }
 
-    //    private string IncrementStringNumber(string? input)
-    //    {
-    //        if (string.IsNullOrEmpty(input)) return "1";
+        [HttpPut("Update")]
+        public async Task<ActionResult> Update([FromBody] UpdateQuotationRequest request)
+        {
+            var quotation = await _context.Quotations
+                .Include(q => q.QuotationItems)
+                .FirstOrDefaultAsync(q => q.Id == request.Id);
 
-    //        // Find the last group of digits in the string
-    //        var match = System.Text.RegularExpressions.Regex.Match(input, @"\d+$");
-    //        if (!match.Success) return input + "1";
+            if (quotation == null)
+                return NotFound();
 
-    //        string digits = match.Value;
-    //        // Increment the number and pad with leading zeros to maintain length (e.g., 001 -> 002)
-    //        string incremented = (long.Parse(digits) + 1).ToString().PadLeft(digits.Length, '0');
+            // =========================
+            // 1. Update main quotation
+            // =========================
+            quotation.QuotationNo = request.QuotationNo;
+            quotation.QuotationDate = request.QuotationDate;
+            quotation.Subject = request.Subject;
+            quotation.TotalAmount = request.TotalAmount;
+            quotation.ClientId = request.ClientId;
+            quotation.FromCompanyId = request.FromCompanyId;
+            quotation.UpdatedAt = DateTime.UtcNow;
 
-    //        return input.Substring(0, match.Index) + incremented;
-    //    }
+            // =========================
+            // 2. Remove existing items (IMPORTANT FIX)
+            // =========================
+            var existingItems = _context.QuotationItems
+                .Where(x => x.QuotationId == quotation.Id);
 
-    //    [HttpPost("ConvertToInvoice/{id}")]
-    //    public async Task<IActionResult> ConvertToInvoice(Guid id)
-    //    {
-    //        var source = await _context.Quotations.Include(q => q.Items).FirstOrDefaultAsync(q => q.Id == id);
-    //        if (source == null) return NotFound();
+            _context.QuotationItems.RemoveRange(existingItems);
 
-    //        var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-    //        if (string.IsNullOrEmpty(userIdClaim)) return Unauthorized("User ID not found in token.");
+            // Flush DELETE first to avoid concurrency conflict
+            await _context.SaveChangesAsync();
 
-    //        Guid currentUserId = Guid.Parse(userIdClaim);
+            // =========================
+            // 3. Rebuild new items
+            // =========================
+            var newItems = ProcessRequestItems(
+                request.QuotationItems?
+                    .Select(x => new QuotationItemRequest
+                    {
+                        Id = x.Id,
+                        IsGroup = x.IsGroup,
+                        Type = x.Type,
+                        Description = x.Description,
+                        Quantity = x.Quantity,
+                        Unit = x.Unit,
+                        UnitPrice = x.UnitPrice,
+                        TotalPrice = x.TotalPrice,
+                        SortOrder = x.SortOrder,
+                        ParentId = x.ParentId,
+                        Children = x.Children
+                    })
+                    .ToList() ?? new List<QuotationItemRequest>(),
+                quotation.Id,
+                null
+            );
 
-    //        var lastInv = await _context.Invoices.OrderByDescending(i => i.CreatedAt).Select(i => i.InvoiceNo).FirstOrDefaultAsync();
-    //        string newInvoiceNo = IncrementStringNumber(lastInv ?? "INV-000");
+            _context.QuotationItems.AddRange(newItems);
 
-    //        var invoice = new Invoice
-    //        {
-    //            Id = Guid.NewGuid(),
-    //            InvoiceNo = newInvoiceNo,
-    //            ClientId = source.ClientId,
-    //            InvoiceDate = DateTime.UtcNow,
-    //            DueDate = DateTime.UtcNow.AddDays(30),
-    //            // Round the total amount
-    //            TotalAmount = Math.Round(source.TotalAmount ?? 0m, 2),
-    //            Status = "Unpaid",
-    //            CreatedById = currentUserId,
-    //            CreatedAt = DateTime.UtcNow
-    //        };
+            // =========================
+            // 4. Save final state
+            // =========================
+            await _context.SaveChangesAsync();
 
-    //        invoice.InvoiceItems = source.Items.Select(i => new InvoiceItem
-    //        {
-    //            Item = i.Item,
-    //            Description = i.Description,
-    //            Quantity = i.Quantity,
-    //            // Round the rate and the line item amount
-    //            Unit = i.Unit,
-    //            UnitPrice = Math.Round(i.UnitPrice, 2),
-    //            Discount = Math.Round(i.Discount ?? 0m, 2),
-    //            TotalAmount = Math.Round(i.TotalAmount, 2)
-    //        }).ToList();
+            return Ok(MapToDto(quotation));
+        }
 
-    //        _context.Invoices.Add(invoice);
-    //        await _context.SaveChangesAsync();
-    //        return Ok(new { Message = "Invoice Created", InvoiceNo = newInvoiceNo });
-    //    }
+        private object MapToDto(Quotation q)
+        {
+            return new
+            {
+                q.Id,
+                q.QuotationNo,
+                q.ReferenceNo,
+                q.QuotationDate,
+                q.ClientId,
+                q.FromCompanyId,
+                FromCompany = MapCompany(q.FromCompany),
+                Client = MapCompany(q.Client),
+                q.ProjectCode,
+                q.Subject,
+                q.TotalAmount,
+                q.TermsAndConditions,
+                q.Status,
+                q.Remarks,
+                QuotationStatusHistories = q.QuotationStatusHistories.OrderByDescending(h => h.ActionAt).Select(i => new
+                {
+                    i.Id,
+                    i.Status,
+                    i.ActionAt,
+                    i.ActionUserId,
+                    i.Remarks,
+                    i.SignatureImage
+                }),
+                // Build the tree structure here
+                QuotationItems = q.QuotationItems
+                    .Where(i => i.ParentId == null || i.ParentId == Guid.Empty)
+                    .OrderBy(i => i.SortOrder)
+                    .Select(i => MapItemRecursive(i, q.QuotationItems))
+                    .ToList()
+            };
+        }
 
-    //    [HttpPost("ConvertToPO/{id}")]
-    //    public async Task<IActionResult> ConvertToPO(Guid id)
-    //    {
-    //        var source = await _context.Quotations.Include(q => q.Items).FirstOrDefaultAsync(q => q.Id == id);
-    //        if (source == null) return NotFound();
+        // Recursive helper for Items/Categories
+        private object MapItemRecursive(QuotationItems item, IEnumerable<QuotationItems> allItems)
+        {
+            return new
+            {
+                item.Id,
+                item.Type, // CATEGORY or ITEM
+                item.IsGroup,
+                item.Description,
+                item.Quantity,
+                item.Unit,
+                item.UnitPrice,
+                item.TotalPrice,
+                item.SortOrder,
+                // Find children where ParentId matches current Id
+                Children = allItems
+                    .Where(c => c.ParentId == item.Id)
+                    .OrderBy(c => c.SortOrder)
+                    .Select(c => MapItemRecursive(c, allItems))
+                    .ToList()
+            };
+        }
 
-    //        var lastPo = await _context.PurchaseOrders.OrderByDescending(p => p.CreatedAt).Select(p => p.PONo).FirstOrDefaultAsync();
-    //        string newPoNo = IncrementStringNumber(lastPo ?? "PO-000");
+        // Clean helper for Company mapping to reduce code duplication
+        private object? MapCompany(Company? c)
+        {
+            if (c == null) return null;
+            return new
+            {
+                c.Id,
+                c.Name,
+                c.ContactNo,
+                c.Email,
+                c.ContactPerson1,
+                c.FaxNo,
+                BillingAddress = MapAddress(c.BillingAddress),
+                DeliveryAddress = MapAddress(c.DeliveryAddress)
+            };
+        }
 
-    //        var po = new PurchaseOrder
-    //        {
-    //            Id = Guid.NewGuid(),
-    //            PONo = newPoNo,
-    //            POReceivedDate = DateTime.UtcNow,
-    //            Status = "ConvertedToPO",
-    //            TotalAmount = source.TotalAmount,
-    //            CreatedAt = DateTime.UtcNow
-    //        };
+        private object? MapAddress(Address? a)
+        {
+            if (a == null) return null;
+            return new { a.Id, a.AddressLine1, a.AddressLine2, a.City, a.State, a.Country, a.Poscode };
+        }
 
-    //        po.POItems = source.Items.Select(i => new POItem
-    //        {
-    //            Item = i.Item,
-    //            Description = i.Description,
-    //            Quantity = i.Quantity,
-    //            Unit = i.Unit,
-    //            UnitPrice = i.UnitPrice,
-    //            Discount = i.Discount,
-    //            TotalAmount = i.TotalAmount
-    //        }).ToList();
+        [HttpPost("Clone/{id}")]
+        public async Task<IActionResult> Clone(Guid id)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim)) return Unauthorized();
 
-    //        _context.PurchaseOrders.Add(po);
-    //        await _context.SaveChangesAsync();
-    //        return Ok(new { Message = "PO Created", PoNo = newPoNo });
-    //    }
+            var source = await _context.Quotations
+                .Include(q => q.QuotationItems)
+                .FirstOrDefaultAsync(q => q.Id == id);
+
+            if (source == null) return NotFound("Source quotation not found.");
+
+            try
+            {
+                string newQuotationNo = await GenerateQuotationNo();
+
+                var clonedQuotation = new Quotation
+                {
+                    Id = Guid.NewGuid(),
+                    QuotationNo = newQuotationNo,
+                    ReferenceNo = source.ReferenceNo, // Keep original ref or set to new quote no
+                    QuotationDate = DateTime.UtcNow,
+                    FromCompanyId = source.FromCompanyId,
+                    ClientId = source.ClientId,
+                    Subject = source.Subject,
+                    ProjectCode = source.ProjectCode,
+                    Status = "Draft",
+                    TotalAmount = source.TotalAmount,
+                    TermsAndConditions = source.TermsAndConditions,
+                    Remarks = $"Cloned from {source.QuotationNo}",
+                    CreatedAt = DateTime.UtcNow
+                };
+
+                // --- FIX: Handle Hierarchical Items ---
+                // 1. Create a map to link Old Item IDs to New Item IDs
+                var idMap = new Dictionary<Guid, Guid>();
+                var newItems = new List<QuotationItems>();
+
+                // 2. First pass: Create new IDs for every item
+                foreach (var oldItem in source.QuotationItems)
+                {
+                    idMap[oldItem.Id] = Guid.NewGuid();
+                }
+
+                // 3. Second pass: Build the new items list with corrected ParentIds
+                foreach (var oldItem in source.QuotationItems)
+                {
+                    var newItem = new QuotationItems
+                    {
+                        Id = idMap[oldItem.Id],
+                        QuotationId = clonedQuotation.Id,
+                        // If the old item had a parent, find that parent's new ID in our map
+                        ParentId = oldItem.ParentId.HasValue && idMap.ContainsKey(oldItem.ParentId.Value)
+                                   ? idMap[oldItem.ParentId.Value]
+                                   : null,
+                        Type = oldItem.Type,
+                        IsGroup = oldItem.IsGroup,
+                        Description = oldItem.Description,
+                        Quantity = oldItem.Quantity,
+                        Unit = oldItem.Unit,
+                        UnitPrice = oldItem.UnitPrice,
+                        TotalPrice = oldItem.TotalPrice,
+                        SortOrder = oldItem.SortOrder,
+                        CreatedAt = DateTime.UtcNow
+                    };
+                    newItems.Add(newItem);
+                }
+
+                clonedQuotation.QuotationItems = newItems;
+
+                // 4. Record Status History for the new clone
+                var statusHistory = new QuotationStatusHistory
+                {
+                    Id = Guid.NewGuid(),
+                    QuotationId = clonedQuotation.Id,
+                    Status = "Draft",
+                    ActionAt = DateTime.UtcNow,
+                    ActionUserId = Guid.Parse(userIdClaim),
+                    Remarks = "Quotation cloned",
+                };
+
+                _context.Quotations.Add(clonedQuotation);
+                _context.QuotationStatusHistories.Add(statusHistory);
+
+                await _context.SaveChangesAsync();
+
+                // Use the recursive MapToDto we built earlier
+                var result = MapToDto(clonedQuotation);
+                await _hub.Clients.All.SendAsync("QuotationAdded", result);
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Error = "Cloning failed", Details = ex.Message });
+            }
+        }
+        private async Task<string> GenerateQuotationNo()
+        {
+            var yearShort = DateTime.UtcNow.Year % 100; // 2026 -> 26
+
+            var lastQuote = await _context.Quotations
+                .Where(q => q.QuotationNo.Contains($"YL/Q/") && q.QuotationNo.EndsWith($"/{yearShort}"))
+                .OrderByDescending(q => q.CreatedAt)
+                .Select(q => q.QuotationNo)
+                .FirstOrDefaultAsync();
+
+            int nextNumber = 1;
+
+            if (!string.IsNullOrEmpty(lastQuote))
+            {
+                var parts = lastQuote.Split('/');
+                if (parts.Length >= 3 && int.TryParse(parts[2], out int lastNumber))
+                {
+                    nextNumber = lastNumber + 1;
+                }
+            }
+
+            return $"YL/Q/{nextNumber}/{yearShort}";
+        }
+
+        [HttpPut("UpdateStatus")]
+        public async Task<IActionResult> UpdateStatus(Guid id, string status, Guid? userId)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim))
+                return Unauthorized(new { Error = "Invalid token." });
+
+            var actionUserId = Guid.Parse(userIdClaim);
+
+            var userName = await _context.Users
+                .Where(x => x.Id == actionUserId)
+                .Select(x => x.FullName)
+                .FirstOrDefaultAsync();
+
+            string? reviewerName = null;
+
+            if (userId.HasValue)
+            {
+                reviewerName = await _context.Users
+                    .Where(x => x.Id == userId.Value)
+                    .Select(x => x.FullName)
+                    .FirstOrDefaultAsync();
+            }
+
+            var quotation = await _context.Quotations
+                .FirstOrDefaultAsync(x => x.Id == id);
+
+            if (quotation == null)
+                return NotFound();
+
+            // ======================================================
+            // 🔥 BUSINESS RULE: REJECTED → BACK TO DRAFT
+            // ======================================================
+            if (status == "Rejected")
+            {
+                quotation.Status = "Draft";
+            }
+            else
+            {
+                quotation.Status = status;
+            }
+
+            var history = new QuotationStatusHistory
+            {
+                QuotationId = id,
+
+                // store actual transition result
+                Status = quotation.Status,
+
+                ActionUserId = actionUserId,
+                ActionAt = DateTime.UtcNow,
+                ReviewedByUserId = userId,
+
+                Remarks = GenerateStatusRemark(
+                    quotation.Status,
+                    userName ?? "System",
+                    reviewerName
+                )
+            };
+
+            _context.QuotationStatusHistories.Add(history);
+
+            await _context.SaveChangesAsync();
+
+            var result = await _context.QuotationStatusHistories
+                .Where(x => x.Id == history.Id)
+                .Include(x => x.ActionUser)
+                .Select(x => new
+                {
+                    x.Id,
+                    x.Status,
+                    x.ActionAt,
+                    x.Remarks,
+                    ActionUser = x.ActionUser == null ? null : new
+                    {
+                        x.ActionUser.Id,
+                        x.ActionUser.FullName
+                    }
+                })
+                .FirstOrDefaultAsync();
+
+            return Ok(result);
+        }
+
+        private string GenerateStatusRemark(string status, string userName, string? reviewerName)
+        {
+            return status switch
+            {
+                "Revised" => $"Quotation revised by {userName} and sent for review",
+                "Approved" => $"Quotation approved by {userName}",
+                "Rejected" => $"Quotation rejected by {userName}",
+                "Sent" => $"Quotation sent by {userName} to {reviewerName ?? "client"}",
+                _ => $"Quotation updated to {status} by {userName}"
+            };
+        }
     }
 }

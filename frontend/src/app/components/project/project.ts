@@ -628,7 +628,7 @@ export class Project implements OnInit, OnDestroy {
           // Map users for p-select
           this.users = res.users
             .map((u) => ({
-              label: u.firstName + ' ' + u.lastName,
+              label: u.fullName,
               value: u.id,
             }))
             .sort((a, b) => a.label.localeCompare(b.label));

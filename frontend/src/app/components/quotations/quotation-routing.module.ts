@@ -1,6 +1,7 @@
 import { NgModule } from '@angular/core';
 import { Routes, RouterModule } from '@angular/router';
 import { Quotation } from './quotation/quotation';
+import { QuotationForm } from './quotation-form/quotation-form';
 
 const routes: Routes = [
   {
@@ -9,11 +10,7 @@ const routes: Routes = [
   },
   {
     path: 'form',
-    // component: QuotationForm,
-  },
-  {
-    path: 'sign',
-    // component: QuotesView,
+    component: QuotationForm,
   },
 ];
 

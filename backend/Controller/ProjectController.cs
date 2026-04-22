@@ -67,16 +67,18 @@ namespace YLWorks.Controller
 
                             if (propertyAccess.Type == typeof(string))
                             {
-                                var method = typeof(string).GetMethod("Equals", new[] { typeof(string) });
-                                var equalsExpr = Expression.Call(
-                                    propertyAccess,
-                                    method!,
-                                    Expression.Constant(valueStr)
-                                );
+                                var toLowerMethod = typeof(string).GetMethod("ToLower", Type.EmptyTypes)!;
+
+                                var propertyToLower = Expression.Call(propertyAccess, toLowerMethod);
+                                var valueToLower = Expression.Constant(valueStr.ToLower());
+
+                                var containsMethod = typeof(string).GetMethod("Contains", new[] { typeof(string) })!;
+
+                                var containsExpr = Expression.Call(propertyToLower, containsMethod, valueToLower);
 
                                 condition = isNotEqual
-                                    ? Expression.Not(equalsExpr)
-                                    : equalsExpr;
+                                    ? Expression.Not(containsExpr)
+                                    : containsExpr;
                             }
                             else if (propertyAccess.Type == typeof(Guid) || propertyAccess.Type == typeof(Guid?))
                             {
@@ -300,7 +302,7 @@ namespace YLWorks.Controller
                     .Select(c => new DropdownDto
                     {
                         Id = c.Id,
-                        Label = c.Name 
+                        Name = c.Name 
                     })
                     .ToListAsync();
 
@@ -308,7 +310,7 @@ namespace YLWorks.Controller
                     .Select(u => new DropdownDto
                     {
                         Id = u.Id,
-                        Label = u.FullName
+                        Name = u.FullName
                     })
                     .ToListAsync();
 

@@ -18,6 +18,7 @@
         public ICollection<WorkOrder>? WorkOrders { get; set; }
         public ICollection<Quotation> Quotations { get; set; }
         public ICollection<PurchaseOrder> PurchaseOrders { get; set; }
+        public ICollection<MaterialRequest> MaterialRequest { get; set; }
     }
 
     public class ProjectMember: BaseEntity

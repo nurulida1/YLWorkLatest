@@ -44,17 +44,17 @@ import { SelectModule } from 'primeng/select';
     RouterLink,
   ],
   template: `<div class="flex flex-col min-h-screen w-full p-5 gap-5">
-    <nav class="flex items-center gap-2 text-sm text-gray-500">
+    <nav class="flex items-center gap-2 text-gray-500">
       <a routerLink="/dashboard" class="hover:text-blue-600 transition-colors"
         >Dashboard</a
       >
-      <i class="pi pi-chevron-right text-[10px]"></i>
+      <i class="pi pi-chevron-right"></i>
       <a
         routerLink="/material-requests"
         class="hover:text-blue-600 transition-colors"
         >Material Requests</a
       >
-      <i class="pi pi-chevron-right text-[10px]"></i>
+      <i class="pi pi-chevron-right"></i>
       <span class="text-gray-900 font-bold">New Material Request</span>
     </nav>
 
@@ -66,7 +66,7 @@ import { SelectModule } from 'primeng/select';
       <form [formGroup]="materialForm">
         <div class="grid grid-cols-12 gap-4">
           <div class="col-span-12 lg:col-span-6">
-            <label class="block text-sm font-medium mb-1">Request No</label>
+            <label class="block font-medium mb-1">Request No</label>
             <input
               formControlName="requestNo"
               placeholder="Auto-generate if leave blanks"
@@ -75,7 +75,7 @@ import { SelectModule } from 'primeng/select';
             />
           </div>
           <div class="col-span-12 lg:col-span-6">
-            <label class="block text-sm font-medium mb-1">Project</label>
+            <label class="block font-medium mb-1">Project</label>
             <p-select
               styleClass="w-full!"
               appendTo="body"
@@ -86,7 +86,7 @@ import { SelectModule } from 'primeng/select';
           </div>
 
           <div class="col-span-12 lg:col-span-6">
-            <label class="block text-sm font-medium mb-1">Client</label>
+            <label class="block font-medium mb-1">Client</label>
             <p-select
               styleClass="w-full!"
               appendTo="body"
@@ -97,7 +97,7 @@ import { SelectModule } from 'primeng/select';
           </div>
 
           <div class="col-span-12 lg:col-span-6">
-            <label class="block text-sm font-medium mb-1">Task</label>
+            <label class="block font-medium mb-1">Task</label>
             <p-select
               styleClass="w-full!"
               appendTo="body"
@@ -108,7 +108,7 @@ import { SelectModule } from 'primeng/select';
           </div>
 
           <div class="col-span-12 lg:col-span-6">
-            <label class="block text-sm font-medium mb-1">Purchase Order</label>
+            <label class="block font-medium mb-1">Purchase Order</label>
             <p-select
               styleClass="w-full!"
               appendTo="body"
@@ -118,7 +118,7 @@ import { SelectModule } from 'primeng/select';
             ></p-select>
           </div>
           <div class="col-span-12 lg:col-span-6">
-            <label class="block text-sm font-medium mb-1">Request Date</label>
+            <label class="block font-medium mb-1">Request Date</label>
             <p-datepicker
               showIcon="true"
               dateFormat="dd/mm/yy"
@@ -129,7 +129,7 @@ import { SelectModule } from 'primeng/select';
             />
           </div>
           <div class="col-span-12 lg:col-span-6">
-            <label class="block text-sm font-medium mb-1">Requested By</label>
+            <label class="block font-medium mb-1">Requested By</label>
             <p-select
               styleClass="w-full!"
               appendTo="body"
@@ -139,7 +139,7 @@ import { SelectModule } from 'primeng/select';
             ></p-select>
           </div>
           <div class="col-span-12 lg:col-span-6">
-            <label class="block text-sm font-medium mb-1">Purpose</label>
+            <label class="block font-medium mb-1">Purpose</label>
             <input
               formControlName="purpose"
               class="w-full border border-gray-300 rounded-md p-2"
@@ -147,7 +147,7 @@ import { SelectModule } from 'primeng/select';
             />
           </div>
           <div class="col-span-12">
-            <label class="block text-sm font-medium mb-1"
+            <label class="block font-medium mb-1"
               >Additional Notes or Special Intructions</label
             >
             <textarea
@@ -280,7 +280,7 @@ import { SelectModule } from 'primeng/select';
           <p-button
             (onClick)="addMaterialItem()"
             [text]="true"
-            styleClass="mt-4! flex! items-center! gap-2! text-sm! font-semibold! text-blue-600! hover:text-blue-700!"
+            styleClass="mt-4! flex! items-center! gap-2!! font-semibold! text-blue-600! hover:text-blue-700!"
           >
             <i class="pi pi-plus-circle"></i> Add Line Item
           </p-button>
@@ -321,7 +321,7 @@ import { SelectModule } from 'primeng/select';
               </li>
             </ul>
             <div
-              class="flex flex-row items-center gap-1 text-gray-500 cursor-pointer text-[14px] tracking-wide"
+              class="flex flex-row items-center gap-1 text-gray-500 cursor-pointer tracking-wide"
             >
               <b class="underline">Click to Upload</b
               ><span>or drag and drop</span>

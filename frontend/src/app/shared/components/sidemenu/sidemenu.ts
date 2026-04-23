@@ -344,6 +344,11 @@ export class Sidemenu {
       roles: ['SuperAdmin', 'Project Manager', 'System & Intelligence Manager'],
       route: '/projects',
     },
+    {
+      label: 'Request Materials',
+      roles: ['SuperAdmin', 'Project Manager', 'System & Intelligence Manager'],
+      route: '/material-requests',
+    },
 
     //Inventory (Logistic)
     {

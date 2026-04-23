@@ -23,9 +23,9 @@ import { InputTextModule } from 'primeng/inputtext';
 import { MenuModule } from 'primeng/menu';
 import { Table, TableLazyLoadEvent, TableModule } from 'primeng/table';
 import { TextareaModule } from 'primeng/textarea';
-import { LoadingService } from '../../services/loading.service';
+import { LoadingService } from '../../../services/loading.service';
 import { MenuItem, MessageService } from 'primeng/api';
-import { ProjectService } from '../../services/ProjectService';
+import { ProjectService } from '../../../services/ProjectService';
 import { map, Subject, switchMap, takeUntil } from 'rxjs';
 import {
   BuildFilterText,
@@ -33,8 +33,8 @@ import {
   GridifyQueryExtend,
   PagingContent,
   ValidateAllFormFields,
-} from '../../shared/helpers/helpers';
-import { ProjectDto } from '../../models/Project';
+} from '../../../shared/helpers/helpers';
+import { ProjectDto } from '../../../models/Project';
 import { SelectModule } from 'primeng/select';
 import { DatePickerModule } from 'primeng/datepicker';
 import { MultiSelectModule } from 'primeng/multiselect';
@@ -47,8 +47,8 @@ import { CalendarOptions } from '@fullcalendar/core/index.js';
 import dayGridPlugin from '@fullcalendar/daygrid/index.js';
 import timeGridPlugin from '@fullcalendar/timegrid/index.js';
 import interactionPlugin from '@fullcalendar/interaction/index.js';
-import { ClientService } from '../../services/ClientService';
-import { CompanyType } from '../../shared/enum/enum';
+import { ClientService } from '../../../services/ClientService';
+import { CompanyType } from '../../../shared/enum/enum';
 import { TabsModule } from 'primeng/tabs';
 import { CheckboxModule } from 'primeng/checkbox';
 
@@ -163,15 +163,7 @@ import { CheckboxModule } from 'primeng/checkbox';
                     <p-sortIcon field="Priority"></p-sortIcon>
                   </div>
                 </th>
-                <th
-                  pSortableColumn="Client.Name"
-                  class="bg-gray-100! text-center! w-[25%]!"
-                >
-                  <div class="flex flex-row items-center justify-center gap-2">
-                    <div>Client</div>
-                    <p-sortIcon field="Client.Name"></p-sortIcon>
-                  </div>
-                </th>
+                <th class="bg-gray-100! text-center! w-[25%]!">Client</th>
                 <th
                   pSortableColumn="DueDate"
                   class="bg-gray-100! text-center! w-[15%]!"
@@ -196,8 +188,13 @@ import { CheckboxModule } from 'primeng/checkbox';
             </ng-template>
             <ng-template #body let-data>
               <tr>
-                <td class="text-center! bg-white!">
-                  {{ data.projectCode }}
+                <td class="text-center! bg-white! font-semibold!">
+                  <a
+                    class="hover:underline"
+                    [routerLink]="'/projects/details'"
+                    [queryParams]="{ id: data.id }"
+                    >{{ data.projectCode }}</a
+                  >
                 </td>
                 <td class="text-center! bg-white!">
                   {{ data.projectTitle }}
@@ -241,6 +238,7 @@ import { CheckboxModule } from 'primeng/checkbox';
                 </td>
                 <td class="text-center! bg-white!">
                   <i
+                    *ngIf="data.status != 'Completed'"
                     class="pi pi-ellipsis-h cursor-pointer!"
                     (click)="onEllipsisClick($event, data, menu)"
                   ></i>
@@ -874,6 +872,13 @@ export class Project implements OnInit, OnDestroy {
 
   Search(data: string) {
     const filter = {
+      ProjectCode: [
+        {
+          value: data,
+          matchMode: '=',
+          operator: 'and',
+        },
+      ],
       ProjectTitle: [
         {
           value: data,
@@ -1122,15 +1127,75 @@ export class Project implements OnInit, OnDestroy {
   }
 
   onEllipsisClick(event: any, project: any, menu: any) {
+    const statusFlow: Record<string, string[]> = {
+      Planning: ['Start Progress'],
+      InProgress: ['Put On Hold', 'Mark Completed'],
+      OnHold: ['Resume Progress', 'Mark Completed'],
+      Completed: [],
+    };
+
+    const actions = statusFlow[project.status] || [];
+
     this.menuItems = [
       {
         label: 'Edit',
         icon: 'pi pi-pencil',
-        command: () => this.ActionClick(project, 'Update'),
+        command: () => this.ActionClick(project, 'Edit'),
       },
+      ...actions.map((action) => ({
+        label: action,
+        icon: this.getStatusIcon(action),
+        command: () => this.handleStatusChange(project, action),
+      })),
     ];
 
-    menu.toggle(event); // toggle the popup menu
+    menu.toggle(event);
+  }
+
+  handleStatusChange(project: any, action: string) {
+    let newStatus = project.status;
+
+    switch (action) {
+      case 'Start Progress':
+        newStatus = 'InProgress';
+        break;
+      case 'Put On Hold':
+        newStatus = 'OnHold';
+        break;
+      case 'Resume Progress':
+        newStatus = 'InProgress';
+        break;
+      case 'Mark Completed':
+        newStatus = 'Completed';
+        break;
+    }
+
+    this.projectService
+      .UpdateStatus({
+        projectId: project.id,
+        status: newStatus,
+      })
+      .subscribe((res) => {
+        project.status = res.status;
+        this.cdr.markForCheck();
+      });
+  }
+
+  getStatusIcon(action: string) {
+    switch (action) {
+      case 'Start Progress':
+      case 'Resume Progress':
+        return 'pi pi-play';
+
+      case 'Put On Hold':
+        return 'pi pi-pause';
+
+      case 'Mark Completed':
+        return 'pi pi-check';
+
+      default:
+        return 'pi pi-cog';
+    }
   }
 
   getInitials(name: string | undefined | null) {

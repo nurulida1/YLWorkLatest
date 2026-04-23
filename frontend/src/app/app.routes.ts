@@ -147,8 +147,10 @@ export const routes: Routes = [
     children: [
       {
         path: '',
-        loadComponent: () =>
-          import('./components/project/project').then((m) => m.Project),
+        loadChildren: () =>
+          import('./components/projects/project-routing.module').then(
+            (m) => m.ProjectRoutingModule,
+          ),
       },
     ],
   },

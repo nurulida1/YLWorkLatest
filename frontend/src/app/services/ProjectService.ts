@@ -107,6 +107,15 @@ export class ProjectService {
       .pipe(retry(1), catchError(this.handleError('GetDropdown')));
   }
 
+  UpdateStatus(request: {
+    projectId: string;
+    status: string;
+  }): Observable<ProjectDto> {
+    return this.http
+      .put<ProjectDto>(`${this.url}/UpdateStatus`, request)
+      .pipe(retry(1), catchError(this.handleError('UpdateStatus')));
+  }
+
   private handleError = (context: string) => (error: any) => {
     this.messageService.add({
       severity: 'error',

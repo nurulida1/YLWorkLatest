@@ -4,10 +4,6 @@ import { MaterialRequestForm } from './material-request-form/material-request-fo
 
 const routes: Routes = [
   {
-    path: '',
-    // component: MaterialRequests,
-  },
-  {
     path: 'form',
     component: MaterialRequestForm,
   },

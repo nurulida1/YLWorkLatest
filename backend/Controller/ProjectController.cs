@@ -173,6 +173,54 @@ namespace YLWorks.Controller
                 return StatusCode(500, new { Error = "An unexpected error occurred." });
             }
         }
+
+        [HttpGet("GetOne")]
+        public async Task<IActionResult> GetOne(string? filter = null)
+        {
+            var query = _context.Projects
+                .Include(x => x.Client).Include(y => y.ProjectMembers).ThenInclude(u => u.User).Include(x => x.PurchaseOrders).Include(x => x.Quotations)
+                .AsQueryable();
+
+            var filterValue = filter?.Split('=')[1];
+
+            if (!Guid.TryParse(filterValue, out Guid id))
+                return BadRequest("Invalid Id");
+
+            var data = await query
+    .Where(x => x.Id == id)
+    .Select(x => new
+    {
+        x.Id,
+        x.ProjectCode,
+        x.ProjectTitle,
+        x.StartDate,
+        x.DueDate,
+        x.Description,
+        x.Priority,
+        x.Status,
+        x.ClientId,
+        Client = x.Client == null ? null : new
+        {
+            Name = x.Client.Name
+        },
+        ProjectMembers = x.ProjectMembers.Select(pm => new ProjectMemberDto
+        {
+            ProjectId = pm.Id,
+            UserId = pm.User.Id,
+            User = pm.User == null ? null : new UserDto
+            {
+                FullName = pm.User.FullName
+            }
+        })
+        })
+    .FirstOrDefaultAsync();
+
+            if (data == null) return NotFound();
+
+            return Ok(data);
+        }
+
+
         [HttpPost("Create")]
         public async Task<ActionResult<Project>> AddDepartment([FromBody] CreateProjectRequest request)
         {
@@ -398,6 +446,74 @@ namespace YLWorks.Controller
             catch (Exception)
             {
                 return StatusCode(500, new { Error = "Failed to load dropdown data." });
+            }
+        }
+
+        [HttpPut("UpdateStatus")]
+        public async Task<IActionResult> UpdateStatus([FromBody] UpdateProjectStatusRequest request)
+        {
+            if (request.ProjectId == Guid.Empty)
+                return BadRequest(new { Error = "ProjectId is required." });
+
+            if (string.IsNullOrWhiteSpace(request.Status))
+                return BadRequest(new { Error = "Status is required." });
+
+            var validStatuses = new[] { "Planning", "InProgress", "OnHold", "Completed" };
+
+            if (!validStatuses.Contains(request.Status))
+                return BadRequest(new { Error = "Invalid status value." });
+
+            try
+            {
+                var project = await _context.Projects
+                    .FirstOrDefaultAsync(x => x.Id == request.ProjectId);
+
+                if (project == null)
+                    return NotFound(new { Error = "Project not found." });
+
+                project.Status = request.Status;
+                project.UpdatedAt = DateTime.Now;
+
+                await _context.SaveChangesAsync();
+
+                var result = await _context.Projects
+                    .Include(x => x.Client)
+                    .Include(x => x.ProjectMembers)
+                        .ThenInclude(pm => pm.User)
+                    .Where(x => x.Id == project.Id)
+                    .Select(d => new ProjectDto
+                    {
+                        Id = d.Id,
+                        ProjectCode = d.ProjectCode,
+                        ProjectTitle = d.ProjectTitle,
+                        Description = d.Description,
+                        Priority = d.Priority,
+                        StartDate = d.StartDate,
+                        DueDate = d.DueDate,
+                        Status = d.Status,
+                        ClientId = d.ClientId,
+                        Client = d.Client == null ? null : new Company
+                        {
+                            Name = d.Client.Name
+                        },
+                        ProjectMembers = d.ProjectMembers.Select(pm => new ProjectMemberDto
+                        {
+                            UserId = pm.UserId,
+                            User = pm.User == null ? null : new UserDto
+                            {
+                                FullName = pm.User.FullName
+                            }
+                        }).ToList()
+                    })
+                    .FirstAsync();
+
+                await _hub.Clients.All.SendAsync("ProjectStatusUpdated", result);
+
+                return Ok(result);
+            }
+            catch (Exception)
+            {
+                return StatusCode(500, new { Error = "Failed to update status." });
             }
         }
     }

@@ -125,7 +125,7 @@ import { BaseChartDirective } from 'ng2-charts';
                 <div
                   class="flex flex-row items-center gap-1 text-[10px] text-gray-500"
                 >
-                  <div>{{ stock.section?.name }}</div>
+                  <div>{{ stock.section.name }}</div>
                   <i class="pi pi-circle-fill text-[2px]!"></i>
                   <div>{{ stock.brand }}</div>
                 </div>

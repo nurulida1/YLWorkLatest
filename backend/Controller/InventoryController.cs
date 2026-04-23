@@ -6,6 +6,7 @@ using System.Linq.Expressions;
 using YLWorks.Data;
 using YLWorks.Hubs;
 using YLWorks.Model;
+using System.Security.Claims;
 
 namespace YLWorks.Controller
 {
@@ -191,6 +192,10 @@ namespace YLWorks.Controller
             if (string.IsNullOrWhiteSpace(request.ItemName))
                 return BadRequest(new { Error = "Name is required." });
 
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim)) return Unauthorized(new { Error = "Invalid token." });
+
+
             try
             {
                 var inventory = new Inventory
@@ -213,7 +218,8 @@ namespace YLWorks.Controller
                     Status = request.Status,
                     Remarks = request.Remarks,
                     Costs = request.Costs,
-                    Attachment = request.Attachment
+                    Attachment = request.Attachment,
+                    CreatedById = Guid.Parse(userIdClaim),
                 };
 
                 inventory.CreatedAt = DateTime.Now;

@@ -11,7 +11,6 @@ import {
 import { Table, TableLazyLoadEvent, TableModule } from 'primeng/table';
 import { LoadingService } from '../../services/loading.service';
 import { MenuItem, MessageService } from 'primeng/api';
-import { UserService } from '../../services/userService.service';
 import { InventoryService } from '../../services/InventoryService';
 import { Observable, Subject, takeUntil } from 'rxjs';
 import {
@@ -166,7 +165,6 @@ import { ImageModule } from 'primeng/image';
             [rowsPerPageOptions]="[10, 20, 30, 50]"
             [showGridlines]="true"
             [lazy]="true"
-            size="small"
             (onLazyLoad)="NextPage($event)"
           >
             <ng-template #header>

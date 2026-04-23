@@ -8,6 +8,7 @@
         public Guid ClientId { get; set; }
         public Company Client { get; set; } = null!;
         public string Status { get; set; } = string.Empty; // Planning, InProgress, OnHold, Completed
+        public DateTime? StartDate { get; set; }
         public DateTime? DueDate { get; set; }
         public Guid CreatedById { get; set; }
         public User CreatedBy { get; set; }
@@ -22,6 +23,7 @@
     public class ProjectMember: BaseEntity
     {
         public Guid Id { get; set; }
+        public Guid ProjectId { get; set; }
         public string ProjectCode { get; set; }
         public Project Project { get; set; } = null!;
         public Guid UserId { get; set; }
@@ -36,6 +38,7 @@
         public string? ProjectCode { get; set; } = string.Empty;
         public string ProjectTitle { get; set; } = string.Empty;
         public Guid ClientId { get; set; }
+        public DateTime? StartDate { get; set; }
         public DateTime? DueDate { get; set; }
         public string? Description { get; set; } = string.Empty;
         public string? Priority { get; set; }
@@ -63,6 +66,7 @@
         public string ProjectCode { get; set; } = string.Empty;
         public string ProjectTitle { get; set; } = string.Empty;
         public string? Description { get; set; }
+        public DateTime? StartDate { get; set; }
         public DateTime? DueDate { get; set; }
         public string? Priority { get; set; }
         public Guid? ClientId { get; set; }
@@ -73,6 +77,7 @@
 
     public class ProjectMemberDto
     {
+        public Guid ProjectId { get; set; }
         public Guid UserId { get; set; }
         public UserDto User { get; set; }
     }

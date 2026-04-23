@@ -11,6 +11,7 @@ export interface ProjectDto extends BaseModel {
   clientId: string;
   client: CompanyDto;
   status: string;
+  startDate: Date;
   dueDate: Date;
   createdById: string;
   createdBy: UserDto;
@@ -36,6 +37,7 @@ export interface CreateProjectRequest {
   projectCode: string;
   projectTitle: string;
   clientId: string;
+  startDate: Date;
   dueDate: Date;
   description: string;
   priority: string;
@@ -60,6 +62,7 @@ export interface ProjectDto {
   projectCode: string;
   projectTitle: string;
   description: string;
+  startDate: Date;
   dueDate: Date;
   priority: string;
   clientId: string;

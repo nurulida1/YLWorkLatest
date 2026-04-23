@@ -41,7 +41,7 @@ import { ButtonModule } from 'primeng/button';
       <div
         class="py-5 flex flex-col gap-7 lg:gap-3 lg:pl-3 lg:pr-2 overflow-y-auto scrollbar scroll-smooth"
       >
-        <div class="hidden lg:block text-gray-400 text-xs">MAIN MENU</div>
+        <div class="hidden lg:block text-gray-400 text-sm">MAIN MENU</div>
         <div class="flex flex-col gap-2 w-full">
           <ng-container *ngFor="let item of mainMenu">
             <div
@@ -73,7 +73,7 @@ import { ButtonModule } from 'primeng/button';
           </ng-container>
         </div>
         <div class="border-b-2 border-dashed border-white/10"></div>
-        <div class="hidden lg:block text-gray-400 text-xs">MANAGEMENT</div>
+        <div class="hidden lg:block text-gray-400 text-sm">MANAGEMENT</div>
         <div
           class="flex flex-col items-center lg:items-start gap-3 text-[14px]"
         >
@@ -173,6 +173,8 @@ export class Sidemenu {
         'Sales Support',
         'Sales Executive',
         'Logistic Assistant',
+        'Project Manager',
+        'System & Intelligence Manager',
       ],
     },
     // {
@@ -219,20 +221,6 @@ export class Sidemenu {
       roles: ['HR'],
     },
 
-    {
-      label: 'Project',
-      roles: ['Manager', 'Director', 'Admin', 'SuperAdmin'],
-      items: [
-        {
-          label: 'Projects',
-          route: '/projects',
-        },
-        {
-          label: 'Tasks',
-          route: '/tasks',
-        },
-      ],
-    },
     {
       label: 'Inventory & Sales',
       roles: [
@@ -349,6 +337,15 @@ export class Sidemenu {
         },
       ],
     },
+
+    //Project Management
+    {
+      label: 'Projects',
+      roles: ['SuperAdmin', 'Project Manager', 'System & Intelligence Manager'],
+      route: '/projects',
+    },
+
+    //Inventory (Logistic)
     {
       label: 'Inventory',
       roles: ['Logistic Assistant', 'SuperAdmin', 'Purchasing Executive'],

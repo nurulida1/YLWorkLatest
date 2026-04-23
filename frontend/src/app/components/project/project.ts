@@ -26,7 +26,7 @@ import { TextareaModule } from 'primeng/textarea';
 import { LoadingService } from '../../services/loading.service';
 import { MenuItem, MessageService } from 'primeng/api';
 import { ProjectService } from '../../services/ProjectService';
-import { Subject, takeUntil } from 'rxjs';
+import { map, Subject, switchMap, takeUntil } from 'rxjs';
 import {
   BuildFilterText,
   BuildSortText,
@@ -47,6 +47,10 @@ import { CalendarOptions } from '@fullcalendar/core/index.js';
 import dayGridPlugin from '@fullcalendar/daygrid/index.js';
 import timeGridPlugin from '@fullcalendar/timegrid/index.js';
 import interactionPlugin from '@fullcalendar/interaction/index.js';
+import { ClientService } from '../../services/ClientService';
+import { CompanyType } from '../../shared/enum/enum';
+import { TabsModule } from 'primeng/tabs';
+import { CheckboxModule } from 'primeng/checkbox';
 
 @Component({
   selector: 'app-project',
@@ -69,11 +73,13 @@ import interactionPlugin from '@fullcalendar/interaction/index.js';
     AvatarModule,
     TooltipModule,
     FullCalendarModule,
+    TabsModule,
+    CheckboxModule,
   ],
   template: `<div class="w-full min-h-[92.9vh] flex flex-col p-5">
       <div class="flex flex-row items-center justify-between">
         <div
-          class="flex flex-row items-center gap-1 text-gray-500 text-[15px] tracking-wide"
+          class="flex flex-row items-center gap-1 text-gray-500 tracking-wide"
         >
           <div
             [routerLink]="'/dashboard'"
@@ -84,326 +90,176 @@ import interactionPlugin from '@fullcalendar/interaction/index.js';
           /
           <div class="text-gray-700 font-semibold">Projects</div>
         </div>
-
-        <div class="flex flex-row items-center gap-2">
-          <div
-            class="bg-white p-1 flex flex-row items-center gap-2 border border-gray-100"
-          >
-            <div
-              class="rounded-md pt-1 px-2"
-              [ngClass]="{
-                'bg-blue-500 text-white': viewMode === 'list',
-                'text-gray-500 cursor-pointer': viewMode !== 'list',
-              }"
-              (click)="viewMode = 'list'"
-            >
-              <i class="pi pi-list"></i>
-            </div>
-            <div
-              class="rounded-md pt-1 px-2"
-              [ngClass]="{
-                'bg-blue-500 text-white': viewMode === 'grid',
-                'text-gray-500 cursor-pointer': viewMode !== 'grid',
-              }"
-              (click)="viewMode = 'grid'"
-            >
-              <i class="pi pi-table"></i>
-            </div>
-            <div
-              class="rounded-md pt-1 px-2"
-              [ngClass]="{
-                'bg-blue-500 text-white': viewMode === 'calendar',
-                'text-gray-500 cursor-pointer': viewMode !== 'calendar',
-              }"
-              (click)="viewMode = 'calendar'"
-            >
-              <i class="pi pi-calendar"></i>
-            </div>
+      </div>
+      <div
+        class="mt-3 border border-gray-200 rounded-md tracking-wide bg-white p-5 flex flex-col"
+      >
+        <div class="flex flex-row items-center justify-between">
+          <div class="flex flex-col">
+            <div class="text-[20px] text-gray-700 font-semibold">Projects</div>
+            <div class="text-gray-500">Manage and track projects</div>
           </div>
-
           <p-button
-            label="Export"
-            icon="pi pi-file-export"
-            size="small"
-            styleClass="rounded-none! bg-blue-500! border-blue-500! text-white! px-3!"
+            label="New Project"
+            icon="pi pi-plus-circle"
+            severity="info"
+            styleClass="tracking-wide!"
+            (onClick)="ActionClick(null, 'add')"
           ></p-button>
         </div>
-      </div>
-
-      <ng-container *ngIf="viewMode === 'grid'">
-        <div
-          class="mt-3 border border-gray-200 rounded-md tracking-wide bg-white p-5 flex flex-col"
-        >
-          <div class="flex flex-row items-center justify-between">
-            <div class="flex flex-col">
-              <div class="text-[20px] text-gray-700 font-semibold">
-                Projects
-              </div>
-              <div class="text-gray-500 text-[15px]">
-                Manage and oversee all project activities
-              </div>
-            </div>
-            <div class="flex flex-row items-center gap-2">
-              <div class="min-w-[300px] relative">
-                <input
-                  type="text"
-                  pInputText
-                  [(ngModel)]="search"
-                  class="w-full! text-[15px]!"
-                  placeholder="Search by project title"
-                  (keyup)="onKeyDown($event)"
-                />
-                <i
-                  class="pi pi-search absolute! top-3! right-2! text-gray-500!"
-                ></i>
-              </div>
-              <p-button
-                label="Add New Project"
-                (onClick)="ActionClick(null, 'add')"
-                icon="pi pi-plus"
-                severity="info"
-                size="small"
-                styleClass="py-2! whitespace-nowrap!"
-              ></p-button>
-            </div>
-          </div>
-          <div class="mt-3">
-            <p-table
-              #fTable
-              [value]="PagingSignal().data"
-              [paginator]="true"
-              [rows]="Query.PageSize"
-              [totalRecords]="PagingSignal().totalElements"
-              [tableStyle]="{ 'min-width': '60rem' }"
-              [rowsPerPageOptions]="[10, 20, 30, 50]"
-              stripedRows="false"
-              [lazy]="true"
-              [showGridlines]="true"
-              (onLazyLoad)="NextPage($event)"
-            >
-              <ng-template #header>
-                <tr>
-                  <th class="bg-gray-100! text-[15px]! text-center! w-[30%]!">
-                    Project
-                  </th>
-                  <th class="bg-gray-100! text-[15px]! text-center! w-[10%]">
-                    Status
-                  </th>
-                  <th
-                    class="bg-gray-100! text-[15px]! text-center! w-[15%]"
-                  ></th>
-                  <th class="bg-gray-100! text-[15px]! text-center! w-[15%]">
-                    Deadline
-                  </th>
-                  <th class="bg-gray-100! text-[15px]! text-center! w-[15%]">
-                    Team
-                  </th>
-
-                  <th class="bg-gray-100! text-[15px]! text-center! w-[10%]">
-                    Action
-                  </th>
-                </tr>
-              </ng-template>
-              <ng-template #body let-data>
-                <tr>
-                  <td class="text-[14px]!">
-                    <div
-                      class="flex flex-row gap-3 border-l-5! py-3 pl-4 font-semibold"
-                      [ngClass]="{
-                        'border-l-blue-300!': data.priority === 'Low',
-                        'border-l-yellow-300!': data.priority === 'Medium',
-                        'border-l-red-300!': data.priority === 'High',
-                      }"
-                    >
-                      {{ data.projectTitle }}
-                    </div>
-                  </td>
-                  <td class="text-center! text-[14px]!">
-                    <div class="flex justify-center items-center">
-                      <div
-                        class="text-[13px] py-0.5 font-medium px-4 rounded-full w-fit"
-                        [ngClass]="{
-                          'bg-blue-100 text-blue-500':
-                            data.status === 'Planning',
-                        }"
-                      >
-                        {{ data.status }}
-                      </div>
-                    </div>
-                  </td>
-                  <td class="text-center! text-[14px]!"></td>
-                  <td class="text-center! text-[14px]!">
-                    {{ data.dueDate | date: 'dd MMMM, yyyy' }}
-                  </td>
-
-                  <td class="text-center! text-[14px]!">
-                    <div class="flex -space-x-3 justify-center items-center">
-                      <ng-container *ngFor="let member of data.projectMembers">
-                        <div
-                          [pTooltip]="
-                            member.user.firstName + ' ' + member.user.lastName
-                          "
-                          tooltipPosition="top"
-                          class="w-10 h-10 rounded-full border-4 border-gray-200 bg-gray-300 flex items-center justify-center text-black text-[16px] font-semibold relative hover:z-10"
-                        >
-                          {{ getInitials(member.user.firstName) }}
-                        </div>
-                      </ng-container>
-                    </div>
-                  </td>
-                  <td class="text-center! border-r! text-[14px]!">
-                    <div class="flex items-center justify-center">
-                      <i
-                        (click)="onEllipsisClick($event, data, menu)"
-                        class="pi pi-ellipsis-h cursor-pointer"
-                      ></i>
-                    </div>
-                  </td>
-                </tr>
-              </ng-template>
-              <ng-template #emptymessage>
-                <tr>
-                  <td colspan="100%" class="border-x!">
-                    <div class="text-[15px] text-center text-gray-500">
-                      No project found in records.
-                    </div>
-                  </td>
-                </tr>
-              </ng-template>
-            </p-table>
-          </div>
-        </div></ng-container
-      >
-      <ng-container *ngIf="viewMode === 'list'">
-        <div
-          class="flex flex-col gap-3 mt-3 border border-gray-200 rounded-md tracking-wide bg-white px-5 py-3"
-        >
-          <div class="flex flex-row items-center justify-between">
-            <div class="flex flex-col gap-1">
-              <div class="font-semibold text-[20px] text-gray-700">
-                Projects
-              </div>
-              <div class="text-gray-500 text-sm tracking-wider">
-                Manage and oversee all project activities
-              </div>
-            </div>
-            <div class="flex flex-row gap-2 items-center">
-              <p-select
-                [(ngModel)]="selectedStatus"
-                [options]="[
-                  { label: 'All Status', value: null },
-                  { label: 'Planning', value: 'Planning' },
-                  { label: 'In Progress', value: 'In Progress' },
-                  { label: 'Completed', value: 'Completed' },
-                  { label: 'On Hold', value: 'On Hold' },
-                ]"
-                panelStyleClass="text-[14px]!"
-                styleClass="text-[14px]!"
-                appendTo="body"
-                placeholder="Select status"
-              ></p-select>
-              <p-select
-                [(ngModel)]="sortBy"
-                [options]="[
-                  { label: 'Sort By', value: null },
-                  { label: 'Deadline - Earliest', value: 'dueDate asc' },
-                  { label: 'Deadline - Latest', value: 'dueDate desc' },
-                  { label: 'Progress - Low to High', value: 'progress asc' },
-                  { label: 'Progress - High to Low', value: 'progress desc' },
-                ]"
-                panelStyleClass="text-[14px]!"
-                styleClass="text-[14px]!"
-                appendTo="body"
-                placeholder="Select sort by"
-              ></p-select>
-            </div>
+        <div class="flex flex-row items-center gap-2 mt-3">
+          <div class="flex-1 flex flex-row relative">
+            <input
+              type="text"
+              pInputText
+              [(ngModel)]="search"
+              class="w-full!"
+              placeholder="Search by project code, or name ..."
+              (keyup)="onKeyDown($event)"
+            />
+            <i
+              class="pi pi-search absolute! top-3! right-2! text-gray-500!"
+            ></i>
           </div>
         </div>
-        <div class="grid grid-cols-12 gap-3 mt-7">
-          <ng-container *ngFor="let data of PagingSignal().data">
-            <div
-              class="col-span-12 lg:col-span-6 2xl:col-span-4 bg-white border border-gray-200 rounded-md border-l-7 p-3"
-              [ngClass]="{
-                'border-l-blue-500': data.priority === 'Low',
-                'border-l-yellow-500': data.priority === 'Medium',
-                'border-l-red-500': data.priority === 'High',
-              }"
-            >
-              <div class="flex flex-row justify-between items-center">
-                <div class="font-semibold text-[17px]">
-                  {{ data.projectTitle }}
-                </div>
-                <div
-                  (click)="onEllipsisClick($event, data, menu)"
-                  class="pi pi-ellipsis-v text-sm! text-gray-500 hover:text-black cursor-pointer"
-                ></div>
-              </div>
-              <div class="text-gray-500 text-[14px] mt-1">
-                {{ data.description }}
-              </div>
-
-              <div class="border-b border-gray-200 mt-2 mb-2"></div>
-              <div class="flex flex-row items-start justify-between">
-                <div class="flex flex-col gap-1">
-                  <div class="text-[14px] font-medium text-gray-700">
-                    Client
-                  </div>
-                  <div class="text-gray-500 text-[13px]">
-                    {{ data.client.name }}
-                  </div>
-                </div>
-                <div class="flex flex-col gap-1 items-end">
-                  <div class="text-[14px] font-medium text-gray-700">
-                    Deadline
-                  </div>
-                  <div class="text-[13px] text-gray-500">
-                    {{ data.dueDate | date }}
-                  </div>
-                </div>
-              </div>
-              <div class="border-b border-gray-200 mt-2 mb-2"></div>
-              <div class="flex flex-row justify-between items-center">
-                <div
-                  class="text-gray-500 text-[13px] tracking-wide flex flex-row items-center gap-1"
+        <div class="mt-3">
+          <p-table
+            #fTable
+            [value]="PagingSignal().data"
+            [paginator]="true"
+            [rows]="Query.PageSize"
+            [totalRecords]="PagingSignal().totalElements"
+            tableStyleClass="min-w-[70rem] 3xl:min-w-[80rem]"
+            [rowsPerPageOptions]="[10, 20, 30, 50]"
+            [showGridlines]="true"
+            [lazy]="true"
+            (onLazyLoad)="NextPage($event)"
+            ><ng-template #header>
+              <tr>
+                <th
+                  pSortableColumn="ProjectCode"
+                  class="bg-gray-100! text-center! w-[10%]!"
                 >
-                  <div>Current Status:</div>
+                  <div class="flex flex-row items-center justify-center gap-2">
+                    <div>Project Code</div>
+                    <p-sortIcon field="ProjectCode"></p-sortIcon>
+                  </div>
+                </th>
+                <th
+                  pSortableColumn="ProjectTitle"
+                  class="bg-gray-100! text-center! w-[30%]!"
+                >
+                  <div class="flex flex-row items-center justify-center gap-2">
+                    <div>Project Title</div>
+                    <p-sortIcon field="ProjectTitle"></p-sortIcon>
+                  </div>
+                </th>
+                <th
+                  pSortableColumn="Priority"
+                  class="bg-gray-100! text-center! w-[10%]!"
+                >
+                  <div class="flex flex-row items-center justify-center gap-2">
+                    <div>Priority</div>
+                    <p-sortIcon field="Priority"></p-sortIcon>
+                  </div>
+                </th>
+                <th
+                  pSortableColumn="Client.Name"
+                  class="bg-gray-100! text-center! w-[25%]!"
+                >
+                  <div class="flex flex-row items-center justify-center gap-2">
+                    <div>Client</div>
+                    <p-sortIcon field="Client.Name"></p-sortIcon>
+                  </div>
+                </th>
+                <th
+                  pSortableColumn="DueDate"
+                  class="bg-gray-100! text-center! w-[15%]!"
+                >
+                  <div class="flex flex-row items-center justify-center gap-2">
+                    <div>Due Date</div>
+                    <p-sortIcon field="DueDate"></p-sortIcon>
+                  </div>
+                </th>
+
+                <th
+                  pSortableColumn="Status"
+                  class="bg-gray-100! text-center! w-[10%]!"
+                >
+                  <div class="flex flex-row items-center justify-center gap-2">
+                    <div>Status</div>
+                    <p-sortIcon field="Status"></p-sortIcon>
+                  </div>
+                </th>
+                <th class="bg-gray-100! text-center! w-[10%]!">Action</th>
+              </tr>
+            </ng-template>
+            <ng-template #body let-data>
+              <tr>
+                <td class="text-center! bg-white!">
+                  {{ data.projectCode }}
+                </td>
+                <td class="text-center! bg-white!">
+                  {{ data.projectTitle }}
+                </td>
+                <td class="text-center! bg-white!">
                   <div
-                    class="font-semibold"
+                    class="px-2 py-1 rounded-full border"
                     [ngClass]="{
-                      'text-blue-500': data.status === 'In Progress',
-                      'text-green-500': data.status === 'Completed',
-                      'text-red-500': data.status === 'On Hold',
-                      'text-gray-500': data.status === 'Planning',
+                      'bg-yellow-100 text-yellow-600':
+                        data.priority === 'Medium',
+                      'bg-blue-100 text-blue-600': data.priority === 'Low',
+                      'bg-red-100 text-red-600': data.priority === 'High',
                     }"
                   >
+                    {{ data.priority }}
+                  </div>
+                </td>
+                <td class="text-center! bg-white!">
+                  {{ data.client.name }}
+                </td>
+                <td class="text-center! bg-white!">
+                  {{ data.dueDate | date: 'dd/MM/yyyy' }}
+                </td>
+
+                <td class="text-center! bg-white!">
+                  <div
+                    class="px-2 py-1 rounded-full border flex flex-row justify-center gap-3 items-center"
+                    [ngClass]="{
+                      'bg-yellow-100 text-yellow-600':
+                        data.status === 'Planning',
+                      'bg-blue-100 text-blue-600': data.status === 'InProgress',
+                      'bg-red-100 text-red-600 animate-pulse':
+                        data.status === 'OnHold',
+                      'bg-green-100 text-green-600':
+                        data.status === 'Completed',
+                    }"
+                  >
+                    <i class="pi pi-circle-fill text-[5px]!"></i>
                     {{ data.status }}
                   </div>
-                </div>
-                <div class="flex -space-x-3 justify-center items-center">
-                  <ng-container *ngFor="let member of data.projectMembers">
-                    <div
-                      [pTooltip]="member.user.fullName"
-                      tooltipPosition="top"
-                      class="w-10 h-10 rounded-full border-4 border-gray-200 bg-gray-300 flex items-center justify-center text-black text-[16px] font-semibold relative hover:z-10"
-                    >
-                      {{ getInitials(member.user.fullName) }}
-                    </div>
-                  </ng-container>
-                </div>
-              </div>
-            </div>
-          </ng-container>
+                </td>
+                <td class="text-center! bg-white!">
+                  <i
+                    class="pi pi-ellipsis-h cursor-pointer!"
+                    (click)="onEllipsisClick($event, data, menu)"
+                  ></i>
+                </td>
+              </tr>
+            </ng-template>
+
+            <ng-template #emptymessage>
+              <tr>
+                <td colspan="100%">
+                  <div class="flex items-center justify-center text-gray-500">
+                    <div>No project found.</div>
+                  </div>
+                </td>
+              </tr>
+            </ng-template>
+          </p-table>
         </div>
-      </ng-container>
-      <ng-container *ngIf="viewMode === 'calendar'">
-        <div
-          class="mt-3 bg-white p-5 rounded-md border border-gray-200 shadow-sm"
-        >
-          <full-calendar
-            #calendar
-            [options]="calendarOptions"
-          ></full-calendar></div
-      ></ng-container>
+      </div>
     </div>
     <p-menu #menu [model]="menuItems" [popup]="true"></p-menu>
 
@@ -418,38 +274,71 @@ import interactionPlugin from '@fullcalendar/interaction/index.js';
     >
       <ng-template #headless>
         <div class="flex flex-col p-5">
-          <div class="font-semibold text-[20px]">{{ title }}</div>
-          <div class="font-normal tracking-wide text-gray-500 text-[14px]">
+          <div class="font-semibold text-[18px]">{{ title }}</div>
+          <div class="font-normal tracking-wide text-gray-500 text-sm">
             Fill in all required field.
           </div>
-          <div
-            [formGroup]="FG"
-            class="mt-3 grid grid-cols-12 gap-3 text-[15px]"
-          >
+          <div [formGroup]="FG" class="mt-3 grid grid-cols-12 gap-3">
+            <div class="col-span-12 flex flex-col gap-1">
+              <div>Project Code</div>
+              <input
+                type="text"
+                pInputText
+                class="w-full!"
+                formControlName="projectCode"
+              />
+            </div>
             <div class="col-span-12 flex flex-col gap-1">
               <div>Project Title <span class="text-red-500">*</span></div>
               <input
                 type="text"
                 pInputText
-                class="w-full! text-[15px]!"
+                class="w-full!"
                 formControlName="projectTitle"
               />
             </div>
 
             <div class="col-span-12 flex flex-col gap-1">
-              <div>Client</div>
+              <div class="flex flex-row items-center justify-between">
+                <div>Client</div>
+                <p-button
+                  label="Add New Client"
+                  icon="pi pi-plus-circle"
+                  severity="info"
+                  [text]="true"
+                  size="small"
+                  (onClick)="NewClientClick()"
+                ></p-button>
+              </div>
               <p-select
                 [options]="clients || []"
                 appendTo="body"
-                styleClass="text-[15px]!"
-                inputStyleClass="text-[15px]!"
-                panelStyleClass="text-[15px]!"
                 formControlName="clientId"
                 [showClear]="FG.get('clientId')?.value"
                 [filter]="true"
               ></p-select>
             </div>
 
+            <div class="col-span-12 lg:col-span-6 flex flex-col gap-1">
+              <div>Start Date</div>
+              <p-datepicker
+                appendTo="body"
+                styleClass="w-full!"
+                formControlName="startDate"
+                dateFormat="dd/mm/yy"
+                [showIcon]="true"
+              ></p-datepicker>
+            </div>
+            <div class="col-span-12 lg:col-span-6 flex flex-col gap-1">
+              <div>Due Date</div>
+              <p-datepicker
+                appendTo="body"
+                styleClass="w-full!"
+                formControlName="dueDate"
+                dateFormat="dd/mm/yy"
+                [showIcon]="true"
+              ></p-datepicker>
+            </div>
             <div class="col-span-12 flex flex-col gap-1">
               <div>Priority</div>
               <div class="flex flex-row gap-5">
@@ -476,25 +365,12 @@ import interactionPlugin from '@fullcalendar/interaction/index.js';
                 </div>
               </div>
             </div>
-
-            <div class="col-span-12 flex flex-col gap-1">
-              <div>Due Date</div>
-              <p-datepicker
-                appendTo="body"
-                styleClass="text-[15px]! w-full!"
-                inputStyleClass="text-[15px]!"
-                formControlName="dueDate"
-                dateFormat="dd/mm/yy"
-                [showIcon]="true"
-              ></p-datepicker>
-            </div>
             <div class="col-span-12 flex flex-col gap-1">
               <div>Description</div>
               <textarea
                 pTextarea
                 rows="3"
                 cols="30"
-                styleClass="text-[15px]!"
                 formControlName="description"
               ></textarea>
             </div>
@@ -529,7 +405,7 @@ import interactionPlugin from '@fullcalendar/interaction/index.js';
                     class="flex flex-row px-3 py-1 bg-gray-100 cursor-pointer rounded-full gap-2 items-center"
                   >
                     <div
-                      class="pi pi-times-circle text-[12px]!"
+                      class="pi pi-times-circle"
                       (click)="RemoveSelectedMember(user)"
                     ></div>
                     <div class="">{{ user?.label }}</div>
@@ -544,21 +420,306 @@ import interactionPlugin from '@fullcalendar/interaction/index.js';
               (onClick)="visible = false"
               label="Cancel"
               severity="secondary"
-              styleClass="px-7! text-[14px]! tracking-wide! py-1.5! border-gray-200!"
+              styleClass="px-7! tracking-wide! py-1.5! border-gray-200!"
             >
             </p-button>
 
             <p-button
               (onClick)="Submit()"
-              [label]="isUpdate ? 'Save Changes' : 'Create Project'"
+              [label]="isUpdate ? 'Save Changes' : 'Create'"
               severity="info"
-              styleClass="px-7! text-[14px]! tracking-wide! py-1.5!"
+              styleClass="px-7! tracking-wide! py-1.5!"
             >
             </p-button>
           </div>
         </div>
       </ng-template>
-    </p-dialog> `,
+    </p-dialog>
+
+    <p-dialog
+      *ngIf="clientDialog"
+      [(visible)]="clientDialog"
+      [modal]="true"
+      [draggable]="false"
+      closable="true"
+      (onHide)="clientDialog = false"
+      styleClass="!relative !border-0 !bg-white overflow-y-auto! w-[90%] lg:w-[40%]"
+    >
+      <ng-template #headless>
+        <div class="flex flex-col p-5 gap-3">
+          <div class="font-semibold text-[18px]">Add New Client</div>
+          <div class="tracking-wide text-gray-500 text-sm">
+            Fill in all required field.
+          </div>
+          <p-tabs value="0">
+            <p-tablist>
+              <p-tab value="0">Details</p-tab>
+              <p-tab value="1">Delivery Address</p-tab>
+              <p-tab value="2">Billing Address</p-tab>
+            </p-tablist>
+            <p-tabpanels>
+              <p-tabpanel value="0">
+                <div
+                  class="mt-3 grid grid-cols-12 gap-3"
+                  [formGroup]="clientForm"
+                >
+                  <div class="col-span-12 flex flex-col gap-1">
+                    <div>Client Name <span class="text-red-500">*</span></div>
+                    <input
+                      type="text"
+                      pInputText
+                      class="w-full"
+                      formControlName="name"
+                    />
+                    <small
+                      *ngIf="
+                        FG.get('name')?.errors?.['required'] &&
+                        FG.get('name')?.touched
+                      "
+                      class="text-red-500"
+                      >Name is required.</small
+                    >
+                  </div>
+                  <div class="col-span-12 flex flex-col gap-1">
+                    <div>Email</div>
+                    <input
+                      type="text"
+                      pInputText
+                      class="w-full"
+                      formControlName="email"
+                    /><small
+                      *ngIf="
+                        FG.get('email')?.errors?.['email'] &&
+                        FG.get('email')?.touched
+                      "
+                      class="text-red-500"
+                      >Email is invalid.</small
+                    >
+                  </div>
+                  <div class="col-span-12 lg:col-span-6 flex flex-col gap-1">
+                    <div>Contact No</div>
+                    <input
+                      type="text"
+                      pInputText
+                      class="w-full"
+                      formControlName="contactNo"
+                    />
+                  </div>
+                  <div class="col-span-12 lg:col-span-6 flex flex-col gap-1">
+                    <div>Fax No</div>
+                    <input
+                      type="text"
+                      pInputText
+                      class="w-full"
+                      formControlName="faxNo"
+                    />
+                  </div>
+                  <div class="col-span-12 lg:col-span-6 flex flex-col gap-1">
+                    <div>Contact Person</div>
+                    <input
+                      type="text"
+                      pInputText
+                      class="w-full"
+                      formControlName="contactPerson1"
+                    />
+                  </div>
+                  <div class="col-span-12 lg:col-span-6 flex flex-col gap-1">
+                    <div>Contact Person 2</div>
+                    <input
+                      type="text"
+                      pInputText
+                      class="w-full"
+                      formControlName="contactPerson2"
+                    />
+                  </div>
+                  <div class="col-span-12 lg:col-span-6 flex flex-col gap-1">
+                    <div>A/C No</div>
+                    <input
+                      type="text"
+                      pInputText
+                      class="w-full"
+                      formControlName="acNo"
+                    />
+                  </div>
+                  <div class="col-span-12 lg:col-span-6 flex flex-col gap-1">
+                    <div>TIN No</div>
+                    <input
+                      type="text"
+                      pInputText
+                      class="w-full"
+                      formControlName="tinNo"
+                    />
+                  </div>
+                  <div class="col-span-12 flex flex-col gap-1">
+                    <div>SST Reg No</div>
+                    <input
+                      type="text"
+                      pInputText
+                      class="w-full"
+                      formControlName="sstRegNo"
+                    />
+                  </div>
+                </div> </p-tabpanel
+            ></p-tabpanels>
+            <p-tabpanel value="1">
+              <div class="flex flex-col gap-2" [formGroup]="clientForm">
+                <div
+                  class="grid grid-cols-12 gap-4 mt-4 items-center"
+                  formGroupName="billingAddress"
+                >
+                  <div class="col-span-4">Address Line 1</div>
+                  <div class="col-span-8">
+                    <input
+                      type="text"
+                      pInputText
+                      class="w-full"
+                      formControlName="addressLine1"
+                    />
+                  </div>
+                  <div class="col-span-4">Address Line 2</div>
+                  <div class="col-span-8">
+                    <input
+                      type="text"
+                      pInputText
+                      class="w-full"
+                      formControlName="addressLine2"
+                    />
+                  </div>
+                  <div class="col-span-4">City</div>
+                  <div class="col-span-8">
+                    <input
+                      type="text"
+                      pInputText
+                      class="w-full"
+                      formControlName="city"
+                    />
+                  </div>
+                  <div class="col-span-4">Poscode</div>
+                  <div class="col-span-8">
+                    <input
+                      type="text"
+                      pInputText
+                      class="w-full"
+                      formControlName="poscode"
+                    />
+                  </div>
+                  <div class="col-span-4">State</div>
+                  <div class="col-span-8">
+                    <input
+                      type="text"
+                      pInputText
+                      class="w-full"
+                      formControlName="state"
+                    />
+                  </div>
+                  <div class="col-span-4">Country</div>
+                  <div class="col-span-8">
+                    <input
+                      type="text"
+                      pInputText
+                      class="w-full"
+                      formControlName="country"
+                    />
+                  </div>
+                </div>
+              </div>
+            </p-tabpanel>
+            <p-tabpanel value="2">
+              <div class="flex flex-col gap-2" [formGroup]="clientForm">
+                <div class="flex flex-row items-center gap-2">
+                  <p-checkbox
+                    formControlName="sameAsBillingAddress"
+                    [binary]="true"
+                  ></p-checkbox>
+                  <label class="mt-1 text-sm text-gray-600" for=""
+                    >Same with Delivery Address</label
+                  >
+                </div>
+                <div class="border-b border-gray-200 mt-2"></div>
+                <div
+                  class="grid grid-cols-12 gap-4 mt-4 items-center"
+                  formGroupName="deliveryAddress"
+                >
+                  <div class="col-span-4">Address Line 1</div>
+                  <div class="col-span-8">
+                    <input
+                      type="text"
+                      pInputText
+                      class="w-full"
+                      formControlName="addressLine1"
+                    />
+                  </div>
+                  <div class="col-span-4">Address Line 2</div>
+                  <div class="col-span-8">
+                    <input
+                      type="text"
+                      pInputText
+                      class="w-full"
+                      formControlName="addressLine2"
+                    />
+                  </div>
+                  <div class="col-span-4">City</div>
+                  <div class="col-span-8">
+                    <input
+                      type="text"
+                      pInputText
+                      class="w-full"
+                      formControlName="city"
+                    />
+                  </div>
+                  <div class="col-span-4">Poscode</div>
+                  <div class="col-span-8">
+                    <input
+                      type="text"
+                      pInputText
+                      class="w-full"
+                      formControlName="poscode"
+                    />
+                  </div>
+                  <div class="col-span-4">State</div>
+                  <div class="col-span-8">
+                    <input
+                      type="text"
+                      pInputText
+                      class="w-full"
+                      formControlName="state"
+                    />
+                  </div>
+                  <div class="col-span-4">Country</div>
+                  <div class="col-span-8">
+                    <input
+                      type="text"
+                      pInputText
+                      class="w-full"
+                      formControlName="country"
+                    />
+                  </div>
+                </div>
+              </div>
+            </p-tabpanel>
+          </p-tabs>
+
+          <div class="border-b border-gray-200 mt-3 mb-3"></div>
+          <div class="flex flex-row items-center justify-end gap-2">
+            <p-button
+              (onClick)="clientDialog = false"
+              label="Cancel"
+              severity="secondary"
+              styleClass="px-7! tracking-wide! py-1.5! border-gray-200!"
+            >
+            </p-button>
+
+            <p-button
+              (onClick)="SaveClient()"
+              label="Create"
+              severity="info"
+              styleClass="px-7! tracking-wide! py-1.5!"
+            >
+            </p-button>
+          </div>
+        </div>
+      </ng-template>
+    </p-dialog>`,
   styleUrl: './project.less',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -568,6 +729,7 @@ export class Project implements OnInit, OnDestroy {
   private readonly loadingService = inject(LoadingService);
   private readonly messageService = inject(MessageService);
   private readonly projectService = inject(ProjectService);
+  private readonly clientService = inject(ClientService);
   private readonly cdr = inject(ChangeDetectorRef);
   protected ngUnsubscribe: Subject<void> = new Subject<void>();
 
@@ -577,6 +739,7 @@ export class Project implements OnInit, OnDestroy {
   Query: GridifyQueryExtend = {} as GridifyQueryExtend;
 
   visible: boolean = false;
+  clientDialog: boolean = false;
   isUpdate: boolean = false;
 
   search: string = '';
@@ -585,6 +748,7 @@ export class Project implements OnInit, OnDestroy {
   selectedStatus: string | null = null;
   sortBy: string | null = null;
   FG!: FormGroup;
+  clientForm!: FormGroup;
   menuItems: MenuItem[] = [];
 
   calendarOptions: CalendarOptions = {
@@ -620,6 +784,7 @@ export class Project implements OnInit, OnDestroy {
       .pipe(takeUntil(this.ngUnsubscribe))
       .subscribe({
         next: (res) => {
+          console.log(res);
           // Map clients for p-select
           this.clients = res.clients
             .map((c) => ({ label: c.name, value: c.id }))
@@ -627,8 +792,8 @@ export class Project implements OnInit, OnDestroy {
 
           // Map users for p-select
           this.users = res.users
-            .map((u) => ({
-              label: u.fullName,
+            .map((u: any) => ({
+              label: u.name,
               value: u.id,
             }))
             .sort((a, b) => a.label.localeCompare(b.label));
@@ -750,8 +915,10 @@ export class Project implements OnInit, OnDestroy {
   ActionClick(data: ProjectDto | null, action: string) {
     this.FG = new FormGroup({
       id: new FormControl<string | null>({ value: null, disabled: true }),
+      projectCode: new FormControl<string | null>(null),
       projectTitle: new FormControl<string | null>(null, [Validators.required]),
       clientId: new FormControl<string | null>(null, Validators.required),
+      startDate: new FormControl<Date | null>(null),
       dueDate: new FormControl<Date | null>(null),
       description: new FormControl<string | null>(null),
       priority: new FormControl<string | null>(null),
@@ -765,10 +932,12 @@ export class Project implements OnInit, OnDestroy {
       if (data) {
         this.FG.patchValue({
           ...data,
+          startDate: data.startDate ? new Date(data.startDate) : null,
           dueDate: data.dueDate ? new Date(data.dueDate) : null,
           projectMembers: data.projectMembers?.map((m: any) => m.userId) || [],
         });
       }
+      console.log(this.FG.value);
     } else {
       this.title = 'Create New Project';
       this.isUpdate = false;
@@ -792,6 +961,116 @@ export class Project implements OnInit, OnDestroy {
     const updated = selectedIds.filter((id: string) => id !== user.value);
 
     this.FG.get('projectMembers')?.setValue(updated);
+  }
+
+  NewClientClick() {
+    this.initClientForm();
+    this.clientDialog = true;
+    this.cdr.detectChanges();
+  }
+
+  initClientForm() {
+    this.clientForm = new FormGroup({
+      name: new FormControl<string | null>(null, Validators.required),
+      logoImage: new FormControl<string | null>(null),
+      contactNo: new FormControl<string | null>(null),
+      contactPerson1: new FormControl<string | null>(null),
+      contactPerson2: new FormControl<string | null>(null),
+      faxNo: new FormControl<string | null>(null),
+      acNo: new FormControl<string | null>(null),
+      email: new FormControl<string | null>(null, Validators.email),
+      websiteUrl: new FormControl<string | null>(null),
+      type: new FormControl<CompanyType | null>(CompanyType.Client),
+      tinNo: new FormControl<string | null>(null),
+      sstRegNo: new FormControl<string | null>(null),
+      sameAsBillingAddress: new FormControl<string | null>(null),
+      billingAddress: this.createAddressGroup(),
+      deliveryAddress: this.createAddressGroup(),
+    });
+    this.SameAddressOnChanges();
+  }
+
+  createAddressGroup(): FormGroup {
+    return new FormGroup({
+      addressLine1: new FormControl(null),
+      addressLine2: new FormControl(null),
+      city: new FormControl(null),
+      state: new FormControl(null),
+      country: new FormControl(null),
+      poscode: new FormControl(null),
+    });
+  }
+
+  SameAddressOnChanges() {
+    this.clientForm
+      .get('sameAsBillingAddress')
+      ?.valueChanges.pipe(takeUntil(this.ngUnsubscribe))
+      .subscribe((checked: boolean) => {
+        if (checked) {
+          const billing = this.clientForm.get('billingAddress')?.value;
+
+          this.clientForm.get('deliveryAddress')?.patchValue(billing);
+          this.clientForm.get('deliveryAddress')?.disable(); // optional UX
+        } else {
+          this.clientForm.get('deliveryAddress')?.enable();
+        }
+      });
+  }
+
+  SaveClient() {
+    if (!this.clientForm.valid) {
+      ValidateAllFormFields(this.clientForm);
+      return;
+    }
+
+    const payload = this.clientForm.getRawValue();
+
+    this.loadingService.start();
+
+    this.clientService
+      .Create(payload)
+      .pipe(
+        switchMap((res) => {
+          const newClientId = res?.id;
+
+          this.messageService.add({
+            severity: 'success',
+            summary: 'Success',
+            detail: 'Client created successfully',
+          });
+
+          this.clientDialog = false;
+
+          return this.clientService
+            .GetMany({
+              Page: 1,
+              PageSize: 1000000,
+              OrderBy: 'Name',
+              Select: null,
+              Filter: null,
+              Includes: null,
+            })
+            .pipe(map((clientRes) => ({ clientRes, newClientId })));
+        }),
+        takeUntil(this.ngUnsubscribe),
+      )
+      .subscribe({
+        next: ({ clientRes, newClientId }) => {
+          this.loadingService.stop();
+
+          this.clients = clientRes.data
+            .filter((x) => x.type === CompanyType.Client)
+            .map((x) => ({ label: x.name, value: x.id }));
+
+          // auto select new client
+          this.FG.get('clientId')?.setValue(newClientId);
+
+          this.cdr.markForCheck();
+        },
+        error: () => {
+          this.loadingService.stop();
+        },
+      });
   }
 
   Submit() {
@@ -826,8 +1105,8 @@ export class Project implements OnInit, OnDestroy {
           severity: 'success',
           summary: this.isUpdate ? 'Updated' : 'Created',
           detail: this.isUpdate
-            ? `Project: ${res.projectTitle} updated successfully.`
-            : `Project: ${res.projectTitle} created successfully.`,
+            ? `Project: ${res.projectCode} updated successfully.`
+            : `Project: ${res.projectCode} created successfully.`,
         });
         if (!this.isUpdate) this.FG.reset();
       },

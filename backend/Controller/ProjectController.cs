@@ -6,6 +6,7 @@ using System.Linq.Expressions;
 using YLWorks.Data;
 using YLWorks.Hubs;
 using YLWorks.Model;
+using System.Security.Claims;
 
 namespace YLWorks.Controller
 {
@@ -34,7 +35,8 @@ namespace YLWorks.Controller
             try
             {
                 var query = _context.Projects
-                    .Include(p => p.Client)
+                    .Include(p => p.Client).Include(p => p.ProjectMembers)
+        .ThenInclude(pm => pm.User)
                     .AsQueryable();
 
                 if (!string.IsNullOrEmpty(filter))
@@ -144,12 +146,19 @@ namespace YLWorks.Controller
                         p.ProjectCode,
                         p.ProjectTitle,
                         p.Priority,
+                        p.StartDate,
                         p.DueDate,
-
+                        p.Status,
+                        p.ClientId,
                         Client = p.Client == null ? null : new
                         {
                           Name = p.Client.Name
-                        }
+                        },
+                        ProjectMembers = p.ProjectMembers.Select(pm => new
+                        {
+                            UserId = pm.UserId,
+                            Name = pm.User.FullName
+                        }).ToList()
                     })
                     .ToListAsync();
 
@@ -170,6 +179,9 @@ namespace YLWorks.Controller
             if (string.IsNullOrWhiteSpace(request.ProjectCode))
                 return BadRequest(new { Error = "Project Code is required." });
 
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim)) return Unauthorized(new { Error = "Invalid token." });
+
             try
             {
                 var project = new Project
@@ -179,17 +191,35 @@ namespace YLWorks.Controller
                     ProjectTitle = request.ProjectTitle,
                     ClientId = request.ClientId,
                     Description = request.Description,
+                    StartDate = request.StartDate,
                     DueDate = request.DueDate,
-                    Priority = request.Priority,                
-                };
+                    Priority = request.Priority,
+                    CreatedById = Guid.Parse(userIdClaim),
 
+                };
+                project.Status = "Planning";
                 project.CreatedAt = DateTime.Now;
 
                 _context.Projects.Add(project);
                 await _context.SaveChangesAsync();
 
+                if (request.ProjectMembers != null && request.ProjectMembers.Any())
+                {
+                    var members = request.ProjectMembers.Select(id => new ProjectMember
+                    {
+                        ProjectId = project.Id,
+                        ProjectCode = project.ProjectCode,
+                        UserId = Guid.Parse(id),
+                        AssignedAt = DateTime.Now,
+                        AssignedById = Guid.Parse(userIdClaim)
+                    });
 
-                var result = await _context.Projects
+                    _context.ProjectMembers.AddRange(members);
+                    await _context.SaveChangesAsync();
+                }
+
+                var result = await _context.Projects.Include(x => x.ProjectMembers)
+.ThenInclude(pm => pm.User)
                     .Where(d => d.Id == project.Id)
                     .Select(d => new ProjectDto
                     {
@@ -198,12 +228,23 @@ namespace YLWorks.Controller
                         ProjectTitle = d.ProjectTitle,
                         Description = d.Description,
                         Priority = d.Priority,
+                        StartDate = d.StartDate,
                         DueDate = d.DueDate,
+                        Status = d.Status,
                         ClientId = d.ClientId,
                         Client = d.Client == null ? null : new Company
                         {
                            Name = d.Client.Name
-                        }
+                        },
+                        ProjectMembers = d.ProjectMembers.Select(pm => new ProjectMemberDto
+                        {
+                            ProjectId = pm.Id,
+                            UserId = pm.User.Id,
+                            User = pm.User == null ? null : new UserDto
+                            {
+                                FullName = pm.User.FullName
+                            }
+                        }).ToList()
                     })
                     .FirstAsync();
 
@@ -224,6 +265,9 @@ namespace YLWorks.Controller
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim)) return Unauthorized(new { Error = "Invalid token." });
+
             var project = await _context.Projects.FindAsync(request.Id);
             if (project == null)
                 return NotFound(new { Error = "Project not found." });
@@ -234,15 +278,35 @@ namespace YLWorks.Controller
                 project.ProjectTitle = request.ProjectTitle;
                 project.Description = request.Description;
                 project.Priority = request.Priority;
+                project.StartDate = request.StartDate;
                 project.DueDate = request.DueDate;
                 project.ClientId = request.ClientId;
                 project.UpdatedAt = DateTime.Now;
+
+                var existingMembers = _context.ProjectMembers.Where(x => x.ProjectCode == project.ProjectCode);
+                _context.ProjectMembers.RemoveRange(existingMembers);
+
+                // add new
+                if (request.ProjectMembers != null)
+                {
+                    var newMembers = request.ProjectMembers.Select(id => new ProjectMember
+                    {
+                        ProjectId = project.Id,
+                        ProjectCode = project.ProjectCode,
+                        UserId = Guid.Parse(id),
+                        AssignedAt = DateTime.Now,
+                        AssignedById = Guid.Parse(userIdClaim)
+                    });
+
+                    _context.ProjectMembers.AddRange(newMembers);
+                }
 
                 _context.Projects.Update(project);
                 await _context.SaveChangesAsync();
 
                 // Optional: Notify via SignalR
-                var result = await _context.Projects
+                var result = await _context.Projects.Include(x => x.ProjectMembers)
+.ThenInclude(pm => pm.User)
            .Where(d => d.Id == project.Id)
            .Select(d => new ProjectDto
            {
@@ -251,13 +315,24 @@ namespace YLWorks.Controller
                ProjectTitle = d.ProjectTitle,
                Description = d.Description,
                Priority = d.Priority,
+               StartDate = d.StartDate,
                DueDate = d.DueDate,
+               Status = d.Status,
                ClientId = d.ClientId,
                Client = d.Client == null ? null : new Company
                {
                    Name = d.Client.Name
 
-               }
+               },
+               ProjectMembers = d.ProjectMembers.Select(pm => new ProjectMemberDto
+               {
+                   ProjectId = pm.Id,
+                   UserId = pm.User.Id,
+                   User = pm.User == null ? null : new UserDto
+                   {
+                       FullName = pm.User.FullName
+                   }
+               }).ToList()
            })
            .FirstAsync();
                 await _hub.Clients.All.SendAsync("ProjectUpdated", project);
@@ -298,7 +373,7 @@ namespace YLWorks.Controller
         {
             try
             {
-                var clients = await _context.Companies
+                var clients = await _context.Companies.Where(u => u.Type == CompanyType.Client)
                     .Select(c => new DropdownDto
                     {
                         Id = c.Id,

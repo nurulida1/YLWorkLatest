@@ -9,6 +9,7 @@ import MyPreset from '../themes/mypreset';
 import { AuthInterceptorFn } from './common/interceptor/auth.interceptor';
 import { CsrfInterceptorFn } from './common/interceptor/csrf.interceptor';
 import { ErrorInterceptorFn } from './common/interceptor/error.interceptor';
+import { provideCharts, withDefaultRegisterables } from 'ng2-charts';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -22,6 +23,7 @@ export const appConfig: ApplicationConfig = {
         ErrorInterceptorFn,
       ]),
     ),
+    provideCharts(withDefaultRegisterables()),
     ConfirmationService,
     MessageService,
     providePrimeNG({

@@ -79,4 +79,40 @@ namespace YLWorks.Model
         public List<DropdownDto> Categories { get; set; } = new();
         public List<DropdownDto> Locations { get; set; } = new();
     }
+
+    public class InventoryDashboardResponseDto
+    {
+        // Cards
+        public int TotalItems { get; set; }
+        public int LowStockItems { get; set; }
+        public int FaultyItems { get; set; }
+        public int PendingRequests { get; set; }
+
+        // Restock list (USE DTO, not entity)
+        public List<InventoryRestockDto> RestockAlerts { get; set; } = new();
+
+        // Chart (USE DTO, not CategoryInventory)
+        public List<InventoryCategoryChartDto> CategoryChart { get; set; } = new();
+    }
+
+    public class InventoryCategoryChartDto
+    {
+        public string CategoryName { get; set; } = string.Empty;
+        public int Total { get; set; }
+    }
+
+    public class InventoryRestockDto
+    {
+        public Guid Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public int Quantity { get; set; }
+        public int ParLevel { get; set; }
+        public SectionDto Section { get; set; }
+        public string Brand { get; set; }
+    }
+
+    public class SectionDto
+    {
+        public string Name { get; set; } = string.Empty;
+    }
 }

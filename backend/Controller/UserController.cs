@@ -652,7 +652,7 @@ namespace WebApplication1.Controllers
                 _context.PasswordResetTokens.Add(resetToken);
                 _context.SaveChanges();
 
-                var resetLink = $"http://192.168.1.100:4200/reset-password?token={Uri.EscapeDataString(token)}";
+                var resetLink = $"http://192.168.1.77:4200/reset-password?token={Uri.EscapeDataString(token)}";
                 _emailService.SendResetEmail(user.Email, resetLink);
 
                 Console.WriteLine($"Password reset link for {user.Email}: {resetLink}");

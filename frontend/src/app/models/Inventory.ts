@@ -1,3 +1,4 @@
+import { SectionInventory } from '../components/logistic/sectionInventory/sectionInventory';
 import { BaseModel, BaseOption, DropdownDto } from './BaseModel';
 import { UserDto } from './User';
 
@@ -56,4 +57,27 @@ export interface InventoryDropdownResponse {
   sections: DropdownDto[];
   categories: DropdownDto[];
   locations: DropdownDto[];
+}
+
+export interface InventoryDashboardResponseDto {
+  totalItems: number;
+  lowStockItems: number;
+  faultyItems: number;
+  pendingRequests: number;
+  restockAlerts: InventoryRestockDto[];
+  categoryChart: InventoryCategoryChartDto[];
+}
+
+export interface InventoryCategoryChartDto {
+  categoryName: string;
+  total: number;
+}
+
+export interface InventoryRestockDto {
+  id: string;
+  name: string;
+  quantity: number;
+  parLevel: number;
+  brand: string;
+  section: SectionInventory;
 }

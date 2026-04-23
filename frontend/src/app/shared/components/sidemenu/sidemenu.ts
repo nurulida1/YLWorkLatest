@@ -16,14 +16,14 @@ import { ButtonModule } from 'primeng/button';
   selector: 'app-sidemenu',
   imports: [CommonModule, RouterLink, Tooltip, DialogModule, ButtonModule],
   template: `<div
-    class="h-full flex flex-col justify-between pt-7 pb-5 border-r border-gray-200"
+    class="h-full flex flex-col justify-between pt-7 pb-5 border-r border-gray-200 bg-gray-800 text-white"
   >
     <div class="flex flex-col">
       <div
-        class="flex flex-row items-center justify-center lg:justify-start gap-2 lg:px-6 border-b border-white/10 pb-5"
+        class="flex flex-row items-center justify-center lg:justify-start gap-4 lg:px-6 border-b border-white/10 pb-5"
       >
         <div
-          class="bg-blue-500 rounded-md w-7 h-7 xl:w-[33px] xl:h-[33px] p-1.5"
+          class="bg-blue-500 rounded-md w-7 h-7 xl:w-[38px] xl:h-[38px] p-1.5"
         >
           <img
             src="assets/logo.png"
@@ -31,16 +31,17 @@ import { ButtonModule } from 'primeng/button';
             class="w-full h-full object-cover"
           />
         </div>
-        <div
-          class="hidden lg:block tracking-wide text-xl xl:text-2xl font-bold text-gray-800"
-        >
-          YL Works
+        <div class="hidden lg:flex tracking-wide flex-col">
+          <div class="text-lg 3xl:text-xl font-bold">YL Works</div>
+          <div class="text-gray-400 text-[10px] 3xl:text-[12px]">
+            MANAGEMENT SYSTEM
+          </div>
         </div>
       </div>
       <div
         class="py-5 flex flex-col gap-7 lg:gap-3 lg:pl-3 lg:pr-2 overflow-y-auto scrollbar scroll-smooth"
       >
-        <div class="hidden lg:block text-gray-500 text-xs">MAIN MENU</div>
+        <div class="hidden lg:block text-gray-400 text-xs">MAIN MENU</div>
         <div class="flex flex-col gap-2 w-full">
           <ng-container *ngFor="let item of mainMenu">
             <div
@@ -48,11 +49,13 @@ import { ButtonModule } from 'primeng/button';
                 item.roles.includes(currentUser?.systemRole) &&
                 (!item.items || hasVisibleSubItems(item))
               "
-              class="flex flex-row lg:pl-2 xl:pl-4 py-2 items-center justify-center lg:justify-start gap-3 px-2"
+              class="flex flex-row lg:pl-2 xl:pl-4 py-2 items-center justify-center lg:justify-start gap-3 px-2 text-[14px]"
               [routerLink]="item.route"
               [ngClass]="{
                 'rounded-lg bg-blue-500 text-white': isActive(item.route),
-                'cursor-pointer hover:text-gray-500': !isActive(item.route),
+                'cursor-pointer hover:text-gray-400 text-gray-300': !isActive(
+                  item.route
+                ),
               }"
             >
               <i
@@ -63,15 +66,17 @@ import { ButtonModule } from 'primeng/button';
                 }"
                 [pTooltip]="item.label"
               ></i>
-              <div class="lg:tracking-wider hidden lg:block text-[15px]">
+              <div class="lg:tracking-wider hidden lg:block">
                 {{ item.label }}
               </div>
             </div>
           </ng-container>
         </div>
         <div class="border-b-2 border-dashed border-white/10"></div>
-        <div class="hidden lg:block text-gray-500 text-xs">MANAGEMENT</div>
-        <div class="flex flex-col items-center lg:items-start gap-3">
+        <div class="hidden lg:block text-gray-400 text-xs">MANAGEMENT</div>
+        <div
+          class="flex flex-col items-center lg:items-start gap-3 text-[14px]"
+        >
           <ng-container *ngFor="let item of management">
             <div
               class="flex flex-col gap-2 w-full"
@@ -81,7 +86,7 @@ import { ButtonModule } from 'primeng/button';
                 class="flex flex-row lg:pl-4 items-center justify-between gap-3 py-2 rounded-lg px-2"
                 [ngClass]="{
                   'bg-blue-500 text-white': isActive(item.route, item),
-                  'hover:text-gray-500 cursor-pointer': !isActive(
+                  'hover:text-gray-400 cursor-pointer text-gray-300': !isActive(
                     item.route,
                     item
                   ),
@@ -95,11 +100,11 @@ import { ButtonModule } from 'primeng/button';
                     class="{{ item.icon }} text-sm! xl:text-base!"
                     [ngClass]="{
                       'text-white': isActive(item.route, item),
-                      'text-gray-600': !isActive(item.route, item),
+                      'text-gray-400': !isActive(item.route, item),
                     }"
                   ></i>
 
-                  <span class="hidden lg:block text-[15px]">
+                  <span class="hidden lg:block">
                     {{ item.label }}
                   </span>
                 </div>
@@ -122,7 +127,7 @@ import { ButtonModule } from 'primeng/button';
               >
                 <div
                   *ngFor="let sub of getAllowedSubItems(item)"
-                  class="py-3 px-3 rounded-md cursor-pointer text-[15px]"
+                  class="py-3 px-3 rounded-md cursor-pointer"
                   [ngClass]="{
                     'bg-gray-200 font-semibold text-blue-500': isActive(
                       sub.route

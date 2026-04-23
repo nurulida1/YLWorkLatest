@@ -41,9 +41,7 @@ import { BaseOption } from '../../../models/BaseModel';
     DialogModule,
   ],
   template: `<div class="w-full flex flex-col p-5">
-      <div
-        class="flex flex-row items-center gap-1 text-gray-500 text-[15px] tracking-wide"
-      >
+      <div class="flex flex-row items-center gap-1 text-gray-500 tracking-wide">
         <div
           class="cursor-pointer hover:text-gray-500"
           [routerLink]="'/dashboard'"
@@ -59,7 +57,7 @@ import { BaseOption } from '../../../models/BaseModel';
         <div class="flex flex-row items-center justify-between">
           <div class="flex flex-col">
             <div class="text-[20px] text-gray-700 font-semibold">Section</div>
-            <div class="text-gray-500 text-[15px]">
+            <div class="text-gray-500">
               List of available inventory section.
             </div>
           </div>
@@ -68,7 +66,7 @@ import { BaseOption } from '../../../models/BaseModel';
               <input
                 type="text"
                 pInputText
-                class="w-full text-[15px]!"
+                class="w-full!"
                 placeholder="Search by name"
                 [(ngModel)]="search"
                 (keyup)="onKeyDown($event)"
@@ -82,7 +80,6 @@ import { BaseOption } from '../../../models/BaseModel';
               icon="pi pi-plus-circle"
               (onClick)="ActionClick(null, 'add')"
               severity="info"
-              size="small"
               styleClass="py-2! whitespace-nowrap!"
             ></p-button>
           </div>
@@ -103,20 +100,16 @@ import { BaseOption } from '../../../models/BaseModel';
           >
             <ng-template #header>
               <tr>
-                <th class="bg-gray-100! text-[15px]! text-center! w-[80%]!">
-                  Name
-                </th>
-                <th class="bg-gray-100! text-[15px]! text-center! w-[20%]!">
-                  Action
-                </th>
+                <th class="bg-gray-100! ! text-center! w-[80%]!">Name</th>
+                <th class="bg-gray-100! ! text-center! w-[20%]!">Action</th>
               </tr>
             </ng-template>
             <ng-template #body let-data>
               <tr>
-                <td class="text-[14px]! text-center! font-semibold!">
+                <td class="text-center! font-semibold!">
                   {{ data.name }}
                 </td>
-                <td class="text-center! text-[14px]!">
+                <td class="text-center!">
                   <div class="flex items-center justify-center">
                     <i
                       class="pi pi-ellipsis-h cursor-pointer"
@@ -129,7 +122,7 @@ import { BaseOption } from '../../../models/BaseModel';
             <ng-template #emptymessage>
               <tr>
                 <td class="border-x!" colspan="100%">
-                  <div class="text-[15px] text-center text-gray-500">
+                  <div class=" text-center text-gray-500">
                     No section found in record.
                   </div>
                 </td>
@@ -152,11 +145,11 @@ import { BaseOption } from '../../../models/BaseModel';
     >
       <ng-template #headless>
         <div class="p-5 flex flex-col">
-          <div class="font-semibold text-[20px]">{{ title }}</div>
-          <div class="font-normal tracking-wide text-gray-500 text-[15px]">
+          <div class="font-semibold text-[18px]">{{ title }}</div>
+          <div class="font-normal tracking-wide text-gray-500 text-sm">
             Fill in all required field.
           </div>
-          <div class="grid grid-cols-12 gap-4 text-[15px] tracking-wide mt-7">
+          <div class="grid grid-cols-12 gap-4 tracking-wide mt-7">
             <div class="col-span-12 flex flex-col gap-1">
               <div>Name <span class="text-red-500">*</span></div>
               <input
@@ -168,7 +161,7 @@ import { BaseOption } from '../../../models/BaseModel';
             </div>
           </div>
           <div class="border-b border-gray-200 mt-3 mb-3"></div>
-          <div class="flex flex-row items-center gap-3 justify-between">
+          <div class="flex flex-row items-center gap-3 justify-end">
             <p-button
               label="Cancel"
               severity="secondary"

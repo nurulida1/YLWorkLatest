@@ -15,4 +15,5 @@ namespace YLWorks.Model
     {
         public Guid Id { get; set; }
     }
+
 }

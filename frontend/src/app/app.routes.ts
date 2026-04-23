@@ -16,8 +16,8 @@ export const routes: Routes = [
       {
         path: '',
         loadComponent: () =>
-          import('./components/main-dashboard/main-dashboard').then(
-            (m) => m.MainDashboard,
+          import('./components/main-dashboard/dashboard/dashboard').then(
+            (m) => m.Dashboard,
           ),
       },
     ],

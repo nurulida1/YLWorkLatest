@@ -59,9 +59,7 @@ import { ImageModule } from 'primeng/image';
     ImageModule,
   ],
   template: `<div class="w-full flex flex-col p-5">
-      <div
-        class="flex flex-row items-center gap-1 text-gray-500 text-[15px] tracking-wide"
-      >
+      <div class="flex flex-row items-center gap-1 text-gray-500 tracking-wide">
         <div
           class="cursor-pointer hover:text-gray-600"
           [routerLink]="'/dashboard'"
@@ -77,15 +75,13 @@ import { ImageModule } from 'primeng/image';
         <div class="flex flex-row items-center justify-between">
           <div class="flex flex-col">
             <div class="text-[20px] text-gray-700 font-semibold">Inventory</div>
-            <div class="text-gray-500 text-[15px]">
-              Manage and track stock items
-            </div>
+            <div class="text-gray-500">Manage and track stock items</div>
           </div>
           <p-button
             label="New Inventory"
             severity="info"
-            size="small"
             icon="pi pi-plus-circle"
+            styleClass="tracking-wider!"
             (onClick)="ActionClick(null, 'add')"
           ></p-button>
         </div>
@@ -95,7 +91,7 @@ import { ImageModule } from 'primeng/image';
               type="text"
               pInputText
               [(ngModel)]="search"
-              class="w-full! text-[15px]!"
+              class="w-full!"
               placeholder="Search by name, model, or brand ... "
               (keyup)="onKeyDown($event)"
             />
@@ -104,14 +100,12 @@ import { ImageModule } from 'primeng/image';
             ></i>
           </div>
           <p-select
-            styleClass="text-[15px]!"
             [options]="sectionFilter || []"
             [(ngModel)]="selectedSectionId"
             appendTo="body"
             (onChange)="applyFilters()"
           ></p-select>
           <p-select
-            styleClass="text-[15px]!"
             [options]="[
               {
                 label: 'All Status',
@@ -122,6 +116,10 @@ import { ImageModule } from 'primeng/image';
                 value: 'In Stock',
               },
               {
+                label: 'Low Stock',
+                value: 'Low Stock',
+              },
+              {
                 label: 'Restock',
                 value: 'Restock',
               },
@@ -130,8 +128,12 @@ import { ImageModule } from 'primeng/image';
                 value: 'FOC',
               },
               {
-                label: 'Faulty/Repair',
-                value: 'Faulty/Repair',
+                label: 'Faulty',
+                value: 'Faulty',
+              },
+              {
+                label: 'Under Repair',
+                value: 'Under Repair',
               },
             ]"
             appendTo="body"
@@ -139,7 +141,6 @@ import { ImageModule } from 'primeng/image';
             (onChange)="applyFilters()"
           ></p-select>
           <p-select
-            styleClass="text-[15px]!"
             [options]="categoryFilter || []"
             [(ngModel)]="selectedCategoryId"
             appendTo="body"
@@ -148,7 +149,7 @@ import { ImageModule } from 'primeng/image';
           <p-button
             label="Reset all"
             severity="secondary"
-            styleClass="border-gray-200! text-[15px]!"
+            styleClass="border-gray-200!"
             [disabled]="Query.Filter == null"
             (onClick)="ResetTable()"
           ></p-button>
@@ -161,7 +162,7 @@ import { ImageModule } from 'primeng/image';
             [paginator]="true"
             [rows]="Query.PageSize"
             [totalRecords]="PagingSignal().totalElements"
-            [tableStyle]="{ 'min-width': '80rem' }"
+            tableStyleClass="min-w-[70rem] 3xl:min-w-[80rem]"
             [rowsPerPageOptions]="[10, 20, 30, 50]"
             [showGridlines]="true"
             [lazy]="true"
@@ -170,12 +171,10 @@ import { ImageModule } from 'primeng/image';
           >
             <ng-template #header>
               <tr>
-                <th
-                  class="bg-gray-100! text-[15px]! text-center! w-[10%]!"
-                ></th>
+                <th class="bg-gray-100! text-center! w-[10%]!"></th>
                 <th
                   pSortableColumn="ItemName"
-                  class="bg-gray-100! text-[15px]! text-center! w-[20%]!"
+                  class="bg-gray-100! text-center! w-[20%]!"
                 >
                   <div class="flex flex-row items-center justify-center gap-2">
                     <div>Item</div>
@@ -183,7 +182,7 @@ import { ImageModule } from 'primeng/image';
                   </div>
                 </th>
                 <th
-                  class="bg-gray-100! text-[15px]! text-center! w-[15%]!"
+                  class="bg-gray-100! text-center! w-[15%]!"
                   pSortableColumn="Brand"
                 >
                   <div class="flex flex-row items-center justify-center gap-2">
@@ -192,7 +191,7 @@ import { ImageModule } from 'primeng/image';
                   </div>
                 </th>
                 <th
-                  class="bg-gray-100! text-[15px]! text-center! w-[10%]!"
+                  class="bg-gray-100! text-center! w-[10%]!"
                   pSortableColumn="Model"
                 >
                   <div class="flex flex-row items-center justify-center gap-2">
@@ -201,7 +200,7 @@ import { ImageModule } from 'primeng/image';
                   </div>
                 </th>
                 <th
-                  class="bg-gray-100! text-[15px]! text-center! w-[10%]!"
+                  class="bg-gray-100! text-center! w-[10%]!"
                   pSortableColumn="Section"
                 >
                   <div class="flex flex-row items-center justify-center gap-2">
@@ -209,11 +208,9 @@ import { ImageModule } from 'primeng/image';
                     <p-sortIcon field="Section" />
                   </div>
                 </th>
-                <th class="bg-gray-100! text-[15px]! text-center! w-[10%]!">
-                  Balance
-                </th>
+                <th class="bg-gray-100! text-center! w-[10%]!">Balance</th>
                 <th
-                  class="bg-gray-100! text-[15px]! text-center! w-[10%]!"
+                  class="bg-gray-100! text-center! w-[10%]!"
                   pSortableColumn="ParLevel"
                 >
                   <div class="flex flex-row items-center justify-center gap-2">
@@ -221,12 +218,8 @@ import { ImageModule } from 'primeng/image';
                     <p-sortIcon field="ParLevel" />
                   </div>
                 </th>
-                <th class="bg-gray-100! text-[15px]! text-center! w-[10%]!">
-                  Status
-                </th>
-                <th class="bg-gray-100! text-[15px]! text-center! w-[10%]!">
-                  Action
-                </th>
+                <th class="bg-gray-100! text-center! w-[10%]!">Status</th>
+                <th class="bg-gray-100! text-center! w-[10%]!">Action</th>
               </tr>
             </ng-template>
             <ng-template #body let-data>
@@ -247,21 +240,21 @@ import { ImageModule } from 'primeng/image';
                     ></p-image>
                   </div>
                 </td>
-                <td class="text-center! text-[15px]!">
+                <td class="text-center!">
                   {{ data.itemName }}
                 </td>
-                <td class="text-center! text-[15px]!">
+                <td class="text-center!">
                   {{ data.brand }}
                 </td>
-                <td class="text-center! text-[15px]!">
+                <td class="text-center!">
                   {{ data.model }}
                 </td>
-                <td class="text-center! text-[15px]!">
+                <td class="text-center!">
                   <div class="bg-gray-100 px-2 py-1">
                     {{ data.section.name }}
                   </div>
                 </td>
-                <td class="text-center! text-[15px]!">
+                <td class="text-center!">
                   <div
                     [ngClass]="{
                       'text-red-500 font-semibold': data.quantity === 1,
@@ -270,13 +263,13 @@ import { ImageModule } from 'primeng/image';
                     {{ data.quantity }}
                   </div>
                 </td>
-                <td class="text-center! text-[15px]!">
+                <td class="text-center!">
                   {{ data.parLevel }}
                 </td>
-                <td class="text-center! text-[15px]!">
+                <td class="text-center!">
                   <div
                     *ngIf="data.status"
-                    class="rounded-full py-0 px-3 text-[14px] border-[0.5px]"
+                    class="rounded-full py-0 px-3 text-[12px] border-[0.5px]"
                     [ngClass]="{
                       'bg-green-200 text-green-700': data.status === 'In Stock',
                       'bg-purple-200 text-purple-700': data.status === 'FOC',
@@ -289,7 +282,7 @@ import { ImageModule } from 'primeng/image';
                     {{ data.status }}
                   </div>
                 </td>
-                <td class="text-center! text-[15px]!">
+                <td class="text-center!">
                   <i
                     class="pi pi-ellipsis-h cursor-pointer!"
                     (click)="onEllipsisClick($event, data, menu)"
@@ -322,12 +315,12 @@ import { ImageModule } from 'primeng/image';
       [draggable]="false"
       [closable]="true"
       (onHide)="visible = false"
-      styleClass="text-[15px]! relative! border-0! bg-white! overflow-y-auto! w-[80%]! lg:w-[50%]!"
+      styleClass="relative! border-0! bg-white! overflow-y-auto! w-[80%]! lg:w-[50%]!"
     >
       <ng-template #headless>
         <div class="p-5 flex flex-col">
-          <div class="font-semibold text-[20px]">{{ title }}</div>
-          <div class="font-normal tracking-wide text-gray-500 text-[15px]">
+          <div class="font-semibold text-[18px]">{{ title }}</div>
+          <div class="font-normal text-sm tracking-wide text-gray-500">
             Fill in all required field.
           </div>
           <div
@@ -417,10 +410,34 @@ import { ImageModule } from 'primeng/image';
                 formControlName="status"
                 appendTo="body"
                 [options]="[
-                  { label: 'In Stock', value: 'In Stock' },
-                  { label: 'FOC', value: 'FOC' },
-                  { label: 'Restock', value: 'Restock' },
-                  { label: 'Faulty/Repair', value: 'Faulty/Repair' },
+                  {
+                    label: 'All Status',
+                    value: 'All',
+                  },
+                  {
+                    label: 'In Stock',
+                    value: 'In Stock',
+                  },
+                  {
+                    label: 'Low Stock',
+                    value: 'Low Stock',
+                  },
+                  {
+                    label: 'Restock',
+                    value: 'Restock',
+                  },
+                  {
+                    label: 'FOC',
+                    value: 'FOC',
+                  },
+                  {
+                    label: 'Faulty',
+                    value: 'Faulty',
+                  },
+                  {
+                    label: 'Under Repair',
+                    value: 'Under Repair',
+                  },
                 ]"
               ></p-select>
             </div>
@@ -498,14 +515,12 @@ import { ImageModule } from 'primeng/image';
             <p-button
               label="Discard"
               severity="secondary"
-              size="small"
               [outlined]="true"
               (onClick)="visible = false"
             ></p-button>
             <p-button
               [label]="isUpdate ? 'Save Changes' : 'Save'"
               severity="info"
-              size="small"
               (onClick)="SaveInventory()"
             ></p-button>
           </div>

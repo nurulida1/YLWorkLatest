@@ -4,6 +4,7 @@ import { MessageService } from 'primeng/api';
 import { environment } from '../../environments/environment.development';
 import { DashboardCount, DashboardSummary } from '../models/AppModels';
 import { Observable, retry, catchError, throwError } from 'rxjs';
+import { InventoryDashboardResponseDto } from '../models/Inventory';
 export type DataType = 'PO' | 'Quotation' | 'Invoice' | null;
 
 @Injectable({
@@ -20,10 +21,10 @@ export class AppService {
   ) {}
 
   // New: Fetch dashboard summary (role-based)
-  GetDashboardSummary(): Observable<DashboardSummary> {
+  GetLogisticDashboard(): Observable<InventoryDashboardResponseDto> {
     return this.http
-      .get<DashboardSummary>(`${this.url}/dashboardSummary`)
-      .pipe(retry(1), catchError(this.handleError('GetDashboardSummary')));
+      .get<InventoryDashboardResponseDto>(`${this.url}/GetLogisticDashboard`)
+      .pipe(retry(1), catchError(this.handleError('GetLogisticDashboard')));
   }
 
   setData(data: any, type: DataType) {

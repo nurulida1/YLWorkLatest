@@ -154,17 +154,7 @@ import { EditorModule } from 'primeng/editor';
             formControlName="receiverCompanyId"
           ></p-select>
         </div>
-        <div class="col-span-12 lg:col-span-6 flex flex-col gap-1">
-          <div>Project Code</div>
-          <p-select
-            appendTo="body"
-            styleClass="w-full!"
-            formControlName="projectId"
-            [options]="projectSelection"
-            appendTo="body"
-            [filter]="true"
-          ></p-select>
-        </div>
+
         <div class="col-span-12 lg:col-span-6 flex flex-col gap-1">
           <div>PO No</div>
           <p-select
@@ -172,6 +162,17 @@ import { EditorModule } from 'primeng/editor';
             styleClass="w-full!"
             formControlName="purchaseOrderId"
             [options]="purchaseOrderSelection"
+            appendTo="body"
+            [filter]="true"
+          ></p-select>
+        </div>
+        <div class="col-span-12 lg:col-span-6 flex flex-col gap-1">
+          <div>Project Code</div>
+          <p-select
+            appendTo="body"
+            styleClass="w-full!"
+            formControlName="projectId"
+            [options]="projectSelection"
             appendTo="body"
             [filter]="true"
           ></p-select>

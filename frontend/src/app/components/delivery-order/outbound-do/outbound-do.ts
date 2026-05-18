@@ -246,7 +246,9 @@ import { SelectModule } from 'primeng/select';
                       </ng-template>
 
                       <ng-template #content let-event>
-                        <div class="flex flex-col min-h-[70px]">
+                        <div
+                          class="flex flex-col min-h-[70px] whitespace-nowrap"
+                        >
                           <div class="font-semibold text-sm">
                             {{ event.status }}
                           </div>
@@ -602,6 +604,11 @@ export class OutboundDo implements OnInit, OnDestroy {
           icon: 'pi pi-send',
           command: () => this.showReviewerSelectionDialog(doData),
         },
+        {
+          label: 'Mark as Cancel',
+          icon: 'pi pi-times',
+          command: () => this.updateStatus(id, 'Cancelled'),
+        },
       ],
 
       UnderReview: isReviewer
@@ -625,6 +632,11 @@ export class OutboundDo implements OnInit, OnDestroy {
           icon: 'pi pi-box',
           command: () => this.updateStatus(id, 'Prepared'),
         },
+        {
+          label: 'Mark as Cancel',
+          icon: 'pi pi-times',
+          command: () => this.updateStatus(id, 'Cancelled'),
+        },
       ],
 
       Prepared: [
@@ -632,6 +644,11 @@ export class OutboundDo implements OnInit, OnDestroy {
           label: 'Dispatch / Out for Delivery',
           icon: 'pi pi-truck',
           command: () => this.updateStatus(id, 'OutForDelivery'),
+        },
+        {
+          label: 'Mark as Cancel',
+          icon: 'pi pi-times',
+          command: () => this.updateStatus(id, 'Cancelled'),
         },
       ],
 

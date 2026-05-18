@@ -90,16 +90,18 @@ namespace YLWorks.Controller
                 var totalElements = await query.CountAsync();
 
                 var data = await query
-                    .Include(x => x.Project)
-                    .Include(x => x.PurchaseOrder)
-                    .Include(x => x.SenderCompany)
-                    .Include(x => x.ReceiverCompany)
-                    .Include(x => x.DeliveryOrderItems)
-                    .Include(x => x.DeliveryOrderStatusHistories)
-                        .ThenInclude(x => x.ActionUser)
-                    .Skip((page - 1) * pageSize)
-                    .Take(pageSize)
-                    .ToListAsync();
+     .Include(x => x.Project)
+     .Include(x => x.PurchaseOrder)
+     .Include(x => x.SenderCompany)
+     .Include(x => x.ReceiverCompany)
+     .Include(x => x.DeliveryOrderItems)
+     .Include(x => x.DeliveryOrderStatusHistories)
+         .ThenInclude(h => h.ActionUser)
+     .Include(x => x.DeliveryOrderStatusHistories)
+         .ThenInclude(h => h.ReviewByUser)
+     .Skip((page - 1) * pageSize)
+     .Take(pageSize)
+     .ToListAsync();
 
                 return Ok(new
                 {
@@ -518,7 +520,7 @@ namespace YLWorks.Controller
                 ActionUserId = actionUserId,
                 Remarks = request.Remarks ?? $"DO updated to {request.Status} by {userName}",
 
-                ReviewByUserId = isReviewAction ? actionUserId : null,
+                ReviewByUserId = request.ReviewerUserId,
                 ApprovedByUserId = isApproveAction ? actionUserId : null,
             };
 

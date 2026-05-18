@@ -9,20 +9,16 @@ import {
   signal,
   ViewChild,
 } from '@angular/core';
-import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
-import { DatePickerModule } from 'primeng/datepicker';
-import { DialogModule } from 'primeng/dialog';
-import { InputNumberModule } from 'primeng/inputnumber';
 import { InputTextModule } from 'primeng/inputtext';
 import { MenuModule } from 'primeng/menu';
-import { SelectModule } from 'primeng/select';
 import { Table, TableLazyLoadEvent, TableModule } from 'primeng/table';
 import { DeliveryOrderService } from '../../../services/deliveryOrderService';
 import { LoadingService } from '../../../services/loading.service';
 import { MenuItem, MessageService } from 'primeng/api';
-import { Subject, takeUntil } from 'rxjs';
+import { map, Subject, takeUntil } from 'rxjs';
 import { DeliveryOrderDto } from '../../../models/DeliveryOrder';
 import {
   BuildFilterText,
@@ -32,6 +28,8 @@ import {
 } from '../../../shared/helpers/helpers';
 import { UserService } from '../../../services/userService.service';
 import { TimelineModule } from 'primeng/timeline';
+import { DialogModule } from 'primeng/dialog';
+import { SelectModule } from 'primeng/select';
 
 @Component({
   selector: 'app-outbound-do',
@@ -44,6 +42,8 @@ import { TimelineModule } from 'primeng/timeline';
     RouterLink,
     TimelineModule,
     MenuModule,
+    DialogModule,
+    SelectModule,
   ],
   template: `<div class="w-full min-h-[92.9vh] flex flex-col p-5">
       <div class="flex flex-row items-center gap-1 text-gray-500 tracking-wide">
@@ -72,7 +72,7 @@ import { TimelineModule } from 'primeng/timeline';
             </div>
           </div>
           <div class="flex flex-row items-center gap-2">
-            <div class="w-full xl:min-w-[100px] relative">
+            <div class="w-full xl:min-w-[300px] relative">
               <input
                 type="text"
                 pInputText
@@ -179,21 +179,23 @@ import { TimelineModule } from 'primeng/timeline';
                       [ngClass]="{
                         'bg-teal-100 text-teal-600':
                           data.status === 'PartiallyReceived',
+                        'bg-yellow-100 text-yellow-600':
+                          data.status === 'UnderReview',
                         'bg-indigo-100 text-indigo-600':
-                          data.status === 'Issued',
+                          data.status === 'Issued' ||
+                          data.status === 'Prepared',
                         'bg-blue-100 text-blue-600':
-                          data.status === 'Revised' ||
-                          data.status === 'Approved' ||
-                          data.status === 'InProgress',
+                          data.status === 'OutForDelivery' ||
+                          data.status === 'Approved',
                         'bg-orange-100 text-orange-600':
                           data.status === 'Pending Signature' ||
                           data.status === 'Draft',
                         'bg-green-100 text-green-600':
-                          data.status === 'Accepted' ||
-                          data.status === 'Received' ||
-                          data.status === 'Sent',
+                          data.status === 'PartiallyDelivered' ||
+                          data.status === 'Delivered' ||
+                          data.status === 'Completed',
                         'bg-red-100 text-red-600':
-                          data.status === 'Declined' ||
+                          data.status === 'Cancelled' ||
                           data.status === 'Expired',
                       }"
                     >
@@ -203,7 +205,12 @@ import { TimelineModule } from 'primeng/timeline';
                 </td>
 
                 <td class="text-center!">
-                  <div class="flex items-center justify-center">
+                  <div
+                    class="flex items-center justify-center"
+                    *ngIf="
+                      data.status !== 'Completed' && data.status !== 'Cancelled'
+                    "
+                  >
                     <i
                       (click)="onEllipsisClick($event, data, menu)"
                       class="pi pi-ellipsis-h cursor-pointer"
@@ -277,7 +284,46 @@ import { TimelineModule } from 'primeng/timeline';
         </div>
       </div>
     </div>
-    <p-menu #menu [model]="menuItems" [popup]="true"></p-menu> `,
+    <p-menu #menu [model]="menuItems" [popup]="true"></p-menu>
+
+    <p-dialog
+      header="Select Reviewer"
+      [(visible)]="displayReviseByDialog"
+      [modal]="true"
+      [draggable]="false"
+      [resizable]="false"
+      styleClass="w-[80%]! lg:w-[50%]!"
+    >
+      <div class="flex flex-col gap-4 mt-2">
+        <label class="font-medium"
+          >Assign a reviewer for this do:
+          <b>{{ selectedDO?.deliveryOrderNo }}</b></label
+        >
+        <p-select
+          [options]="reviewerSelection || []"
+          [(ngModel)]="selectedReviewerId"
+          placeholder="Select a Reviewer"
+          styleClass="w-full"
+          appendTo="body"
+          [filter]="true"
+        >
+        </p-select>
+      </div>
+      <ng-template pTemplate="footer">
+        <p-button
+          label="Cancel"
+          (click)="displayReviseByDialog = false"
+          severity="secondary"
+          styleClass="border-gray-200!"
+          [text]="true"
+        ></p-button>
+        <p-button
+          label="Update"
+          severity="info"
+          (click)="confirmReviewer()"
+          [disabled]="!selectedReviewerId"
+        ></p-button> </ng-template
+    ></p-dialog>`,
   styleUrl: './outbound-do.less',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -299,9 +345,13 @@ export class OutboundDo implements OnInit, OnDestroy {
   Query: GridifyQueryExtend = {} as GridifyQueryExtend;
 
   search: string = '';
+  selectedReviewerId: string | null = null;
+
+  displayReviseByDialog: boolean = false;
 
   menuItems: MenuItem[] = [];
   currentUser = this.userService.currentUser;
+  reviewerSelection: { label: string; value: string }[] = [];
 
   selectedDO: any;
 
@@ -325,6 +375,7 @@ export class OutboundDo implements OnInit, OnDestroy {
 
         const statusOrder = [
           'Draft',
+          'UnderReview',
           'Approved',
           'Prepared',
           'OutForDelivery',
@@ -336,6 +387,7 @@ export class OutboundDo implements OnInit, OnDestroy {
 
         const colorMap: Record<string, string> = {
           Draft: 'bg-orange-400',
+          UnderReview: 'bg-yellow-400',
           Approved: 'bg-blue-400',
           Prepared: 'bg-green-400',
           OutForDelivery: 'bg-yellow-400',
@@ -521,25 +573,270 @@ export class OutboundDo implements OnInit, OnDestroy {
   }
 
   onEllipsisClick(event: any, doData: DeliveryOrderDto, menu: any) {
-    this.menuItems = this.buildMenuItems(doData);
+    const isReviewer = doData.deliveryOrderStatusHistories?.some(
+      (h: any) => String(h.reviewByUserId) === String(this.currentUser?.userId),
+    );
+
+    this.menuItems = this.buildMenuItems(doData, isReviewer);
     menu.toggle(event);
   }
 
-  private buildMenuItems(doData: DeliveryOrderDto): MenuItem[] {
-    const items: MenuItem[] = [];
+  private buildMenuItems(
+    doData: DeliveryOrderDto,
+    isReviewer: boolean,
+  ): MenuItem[] {
+    const id = doData.id;
 
-    if (doData.status === 'Draft') {
-      items.push({
-        label: 'Update',
-        icon: 'pi pi-pencil',
-        command: () =>
-          this.router.navigate(['/delivery-orders/outbound/form'], {
-            queryParams: { id: doData.id },
-          }),
+    const actions: Record<string, MenuItem[]> = {
+      Draft: [
+        {
+          label: 'Edit Delivery Order',
+          icon: 'pi pi-pencil',
+          command: () =>
+            this.router.navigate(['/delivery-orders/outbound/form'], {
+              queryParams: { id },
+            }),
+        },
+        {
+          label: 'Submit for Review',
+          icon: 'pi pi-send',
+          command: () => this.showReviewerSelectionDialog(doData),
+        },
+      ],
+
+      UnderReview: isReviewer
+        ? [
+            {
+              label: 'Approve',
+              icon: 'pi pi-check-circle',
+              command: () => this.updateStatus(id, 'Approved'),
+            },
+            {
+              label: 'Reject',
+              icon: 'pi pi-times-circle',
+              command: () => this.updateStatus(id, 'Draft'),
+            },
+          ]
+        : [],
+
+      Approved: [
+        {
+          label: 'Mark as Prepared',
+          icon: 'pi pi-box',
+          command: () => this.updateStatus(id, 'Prepared'),
+        },
+      ],
+
+      Prepared: [
+        {
+          label: 'Dispatch / Out for Delivery',
+          icon: 'pi pi-truck',
+          command: () => this.updateStatus(id, 'OutForDelivery'),
+        },
+      ],
+
+      OutForDelivery: [
+        {
+          label: 'Mark as Partially Delivered',
+          icon: 'pi pi-clipboard',
+          command: () => this.updateStatus(id, 'PartiallyDelivered'),
+        },
+        {
+          label: 'Mark as Delivered',
+          icon: 'pi pi-check-circle',
+          command: () => this.updateStatus(id, 'Delivered'),
+        },
+      ],
+
+      PartiallyDelivered: [
+        {
+          label: 'Complete Delivery',
+          icon: 'pi pi-check-circle',
+          command: () => this.updateStatus(id, 'Delivered'),
+        },
+      ],
+
+      Delivered: [
+        {
+          label: 'Mark as Completed',
+          icon: 'pi pi-verified',
+          command: () => this.updateStatus(id, 'Completed'),
+        },
+      ],
+    };
+
+    return actions[doData.status] ?? [];
+  }
+
+  updateStatus(id: string, newStatus: string, userId?: string) {
+    this.loadingService.start();
+
+    this.deliveryOrderService
+      .UpdateStatus(id, newStatus)
+      .pipe(takeUntil(this.ngUnsubscribe))
+      .subscribe({
+        next: (res) => {
+          this.loadingService.stop();
+
+          const currentPaging = this.PagingSignal();
+
+          const updatedData = currentPaging.data.map((q) => {
+            if (q.id === id) {
+              const newHistory = {
+                id: res.id,
+                status: res.status,
+                actionAt: res.actionAt,
+                remarks: res.remarks,
+                actionUser: res.actionUser,
+                purchaseOrderId: q.id,
+                actionUserId: res.actionUser?.id,
+                createdAt: res.actionAt,
+                signatureImage: null,
+              } as any;
+
+              const updatedHistories = [
+                ...(q.deliveryOrderStatusHistories || []),
+                newHistory,
+              ];
+
+              return {
+                ...q,
+                status: newStatus,
+                deliveryOrderStatusHistories: updatedHistories,
+              };
+            }
+
+            return q;
+          });
+
+          this.PagingSignal.set({
+            ...currentPaging,
+            data: updatedData,
+          });
+
+          this.messageService.add({
+            severity: 'success',
+            summary: 'Status Updated',
+            detail: res.remarks,
+          });
+
+          this.cdr.markForCheck();
+        },
+        error: (err) => {
+          this.loadingService.stop();
+
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Update Failed',
+            detail: err.error?.error || 'Invalid status transition.',
+          });
+        },
       });
-    }
+  }
 
-    return items;
+  showReviewerSelectionDialog(doData: any) {
+    this.selectedDO = doData;
+    this.selectedReviewerId = null;
+    this.displayReviseByDialog = true;
+
+    this.userService
+      .GetMany({
+        Page: 1,
+        PageSize: 100,
+        OrderBy: 'FullName desc',
+        Select: 'Id,FullName,JobTitle,Email',
+        Includes: null,
+        Filter: null,
+      })
+      .pipe(
+        map(
+          (res) =>
+            (this.reviewerSelection = res.data.map((user: any) => ({
+              label: `${user.FullName} — ${user.JobTitle || 'Staff'}`,
+              value: user.Id,
+            }))),
+        ),
+      )
+      .subscribe();
+    this.cdr.detectChanges();
+  }
+
+  confirmReviewer() {
+    if (!this.selectedDO) return;
+
+    this.loadingService.start();
+
+    this.deliveryOrderService
+      .UpdateStatus(this.selectedDO.id, 'UnderReview', this.selectedReviewerId)
+      .pipe(takeUntil(this.ngUnsubscribe))
+      .subscribe({
+        next: (res) => {
+          this.loadingService.stop();
+
+          const currentPaging = this.PagingSignal();
+
+          const reviewer = this.reviewerSelection.find(
+            (x) => x.value === this.selectedReviewerId,
+          );
+          const reviewerName = reviewer?.label.split(' — ')[0] || '-';
+
+          const updatedData = currentPaging.data.map((q) => {
+            if (q.id === this.selectedDO.id) {
+              const newHistory = {
+                id: res.id,
+                status: res.status,
+                actionAt: res.ActionAt,
+                remarks: res.remarks,
+                actionUser: res.actionUser,
+                reviewedByUser: {
+                  id: this.selectedReviewerId,
+                  fullName: reviewerName,
+                },
+                deliveryOrderId: q.id,
+                actionUserId: res.actionUser?.id,
+                reviewedByUserId: this.selectedReviewerId,
+                createdAt: res.ActionAt,
+              } as any;
+
+              const updatedHistories = [
+                ...(q.deliveryOrderStatusHistories || []),
+                newHistory,
+              ];
+
+              return {
+                ...q,
+                status: 'UnderReview',
+                deliveryOrderStatusHistories: updatedHistories,
+              };
+            }
+            return q;
+          });
+
+          this.PagingSignal.set({
+            ...currentPaging,
+            data: updatedData,
+          });
+
+          this.displayReviseByDialog = false;
+
+          this.messageService.add({
+            severity: 'success',
+            summary: 'Status Updated',
+            detail: res.remarks,
+          });
+
+          this.cdr.markForCheck();
+        },
+        error: (err) => {
+          this.loadingService.stop();
+
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Update Failed',
+            detail: err.error?.error || 'Invalid status transition.',
+          });
+        },
+      });
   }
 
   ngOnDestroy(): void {

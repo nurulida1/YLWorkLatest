@@ -104,11 +104,25 @@ export class DeliveryOrderService {
       .pipe(retry(1), catchError(this.handleError('Delete')));
   }
 
-  UpdateStatus(id: string, status: string, proofImages: File[] = []) {
+  UpdateStatus(
+    id: string,
+    status: string,
+    reviewerUserId: string | null = null,
+    proofImages: File[] = [],
+    remarks: string | null = null,
+  ) {
     const formData = new FormData();
 
     formData.append('id', id);
     formData.append('status', status);
+
+    if (reviewerUserId) {
+      formData.append('reviewerUserId', reviewerUserId);
+    }
+
+    if (remarks) {
+      formData.append('remarks', remarks);
+    }
 
     proofImages.forEach((file) => {
       formData.append('proofImages', file);

@@ -46,6 +46,9 @@ export interface DeliveryOrderStatusHistory extends BaseModel {
   actionUserId?: string;
   actionUser?: UserDto;
 
+  reviewByUserId?: string;
+  reviewByUser?: UserDto;
+
   remarks?: string;
 
   signatureImage?: string;

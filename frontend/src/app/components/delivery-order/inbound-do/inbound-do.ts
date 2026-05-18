@@ -1134,7 +1134,7 @@ export class InboundDo implements OnInit, OnDestroy {
     this.loadingService.start();
 
     this.deliveryOrderService
-      .UpdateStatus(id, newStatus, proofImages)
+      .UpdateStatus(id, newStatus, null, proofImages)
       .pipe(takeUntil(this.ngUnsubscribe))
       .subscribe({
         next: (res) => {
@@ -1161,7 +1161,6 @@ export class InboundDo implements OnInit, OnDestroy {
           const updatedData = currentPaging.data.map((order) => {
             if (order.id !== id) return order;
 
-            // merge new history
             const histories = [
               ...(order.deliveryOrderStatusHistories || []),
               {
@@ -1171,7 +1170,6 @@ export class InboundDo implements OnInit, OnDestroy {
               },
             ];
 
-            // rebuild latest per status (ONLY THIS ORDER)
             const latestByStatus = new Map<string, any>();
 
             for (const h of histories) {

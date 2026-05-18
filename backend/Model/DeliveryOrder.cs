@@ -225,6 +225,7 @@ namespace YLWorks.Model
     {
         public Guid Id { get; set; }
         public string Status { get; set; } = string.Empty;
+        public Guid? ReviewerUserId { get; set; }
         public List<IFormFile>? ProofImages { get; set; }
         public string? Remarks { get; set; }
     }

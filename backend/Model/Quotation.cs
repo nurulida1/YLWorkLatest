@@ -128,4 +128,12 @@ namespace YLWorks.Model
         public string? Remarks { get; set; }  
         public string? SignatureImage { get; set; }
     }
+
+    public class QuotationDropdownDto
+    {
+        public Guid Id { get; set; }
+        public string QuotationNo { get; set; } = string.Empty;
+        public decimal? TotalAmount { get; set; }
+        public Guid? ClientId { get; set; }
+    }
 }

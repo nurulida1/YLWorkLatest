@@ -6,6 +6,7 @@ using System.Security.Claims;
 using YLWorks.Data;
 using YLWorks.Hubs;
 using YLWorks.Model;
+using System.Text.Json;
 
 namespace YLWorks.Controller
 {
@@ -157,436 +158,625 @@ namespace YLWorks.Controller
         [HttpGet("GetOne")]
         public async Task<IActionResult> GetOne(string? filter = null, string? includes = null)
         {
-            IQueryable<PurchaseOrder> query = _context.PurchaseOrders.AsQueryable();
-
-            // Dynamically include related data
-            if (!string.IsNullOrWhiteSpace(includes))
+            try
             {
-                foreach (var include in includes.Split(',', StringSplitOptions.RemoveEmptyEntries))
-                {
-                    query = query.Include(include.Trim());
-                }
-            }
+                IQueryable<PurchaseOrder> query = _context.PurchaseOrders.AsQueryable();
 
-            // Filter by ID
-            if (!string.IsNullOrEmpty(filter))
+                // 1. Dynamic Includes
+                if (!string.IsNullOrWhiteSpace(includes))
+                {
+                    foreach (var include in includes.Split(',', StringSplitOptions.RemoveEmptyEntries))
+                    {
+                        query = query.Include(include.Trim());
+                    }
+                }
+
+                // 2. Filter by ID
+                if (!string.IsNullOrEmpty(filter))
+                {
+                    var filterValue = filter.Contains('=')
+                        ? filter.Split('=')[1].Trim()
+                        : filter.Trim();
+
+                    if (Guid.TryParse(filterValue, out Guid guidId))
+                    {
+                        query = query.Where(x => x.Id == guidId);
+                    }
+                }
+
+                // 3. Execute
+                var data = await query.FirstOrDefaultAsync();
+
+                if (data == null)
+                    return NotFound();
+
+                // 4. IMPORTANT: prevent circular reference crash
+                // (same idea as your GetMany DTO safety)
+                var safeResult = new
+                {
+                    data.Id,
+                    data.PurchaseOrderNo,
+                    data.Type,
+                    data.PODate,
+                    data.Status,
+                    data.TotalAmount,
+                    data.SupplierId,
+                    data.ClientId,
+                    data.FromCompanyId,
+                    data.QuotationId,
+                    data.Terms,
+                    data.Remarks,
+                    data.ProjectId,
+
+                    PurchaseOrderItems = data.PurchaseOrderItems?.Select(i => new
+                    {
+                        i.Id,
+                        i.PurchaseOrderId,
+                        i.Item,
+                        i.Description,
+                        i.Quantity,
+                        i.UnitPrice,
+                        i.Unit,
+                        i.TotalPrice,
+                        i.Discount
+                    })
+                };
+
+                return Ok(safeResult);
+            }
+            catch (Exception ex)
             {
-                var filterValue = filter.Contains('=') ? filter.Split('=')[1].Trim() : filter.Trim();
-                if (Guid.TryParse(filterValue, out Guid guidId))
+                return StatusCode(500, new
                 {
-                    query = query.Where(d => d.Id == guidId);
-                }
+                    Error = "GetOne failed.",
+                    Details = ex.Message
+                });
             }
-
-            var data = await query.FirstOrDefaultAsync();
-
-            if (data == null) return NotFound();
-
-            // USE YOUR MAPPER HERE TO PREVENT CYCLES
-            return Ok(data);
         }
 
-    //    [HttpPost("Create")]
-    //    public async Task<ActionResult<object>> Create([FromBody] CreatePORequest request)
-    //    {
-    //        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-    //        if (string.IsNullOrEmpty(userIdClaim)) return Unauthorized(new { Error = "Invalid token." });
+        [HttpPost("Create")]
+        public async Task<ActionResult<object>> Create([FromForm] CreatePORequest request)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim)) return Unauthorized(new { Error = "Invalid token." });
 
-    //        if (string.IsNullOrWhiteSpace(request.PONo))
-    //            return BadRequest(new { Error = "PO Number is required for finalized records." });
+            if (string.IsNullOrWhiteSpace(request.PurchaseOrderNo))
+                return BadRequest(new { Error = "Purchase Order No is required for finalized records." });
 
-    //        try
-    //        {
-    //            var po = new PurchaseOrder
-    //            {
-    //                Id = Guid.NewGuid(),
-    //                PONo = request.PONo,
-    //                QuotationId = request.QuotationId,
-    //                POReceivedDate = request.POReceivedDate,
-    //                Terms = request.Terms,
-    //                ProjectId = request.ProjectId,
-    //                SupplierId = request.SupplierId ?? null,
-    //                ClientId = request.ClientId ?? null,
-    //                DeliveryInstruction = request.DeliveryInstruction,
-    //                DeliveryDate = request.DeliveryDate,
-    //                TermsConditions = request.TermsConditions,
-    //                BankDetails = request.BankDetails,
-    //                Status = request.ClientId.HasValue ? "Received" : "Draft",
-    //                Gross = request.Gross,
-    //                Discount = request.Discount,   // Matching your Quotation model name
-    //                TotalAmount = request.TotalAmount,
-    //                TotalQuantity = request.TotalQuantity,
-    //                Remarks = request.Remarks,
-    //                CreatedById = Guid.Parse(userIdClaim),
-    //                CreatedAt = DateTime.UtcNow
-    //            };
+            if (!string.IsNullOrEmpty(Request.Form["purchaseOrderItems"]))
+            {
+                request.PurchaseOrderItems =
+                    JsonSerializer.Deserialize<List<POItemRequest>>(
+                        Request.Form["purchaseOrderItems"],
+                        new JsonSerializerOptions
+                        {
+                            PropertyNameCaseInsensitive = true
+                        }
+                    );
+            }
 
-    //            // Use the null-coalescing operator ?? to handle empty/null item lists
-    //            po.POItems = (request.POItems ?? new List<POItemRequest>()).Select(i => new POItem
-    //            {
-    //                Id = Guid.NewGuid(),
-    //                PurchaseOrderId = po.Id,
-    //                Item = i.Item,
-    //                Description = i.Description,
-    //                Quantity = i.Quantity,
-    //                UnitPrice = i.UnitPrice,
-    //                Discount = i.Discount,
-    //                TotalAmount = i.TotalAmount,
-    //                Unit = i.Unit,
-    //                CreatedAt = DateTime.UtcNow
-    //            }).ToList();
+            var exists = await _context.PurchaseOrders
+    .AnyAsync(x => x.PurchaseOrderNo == request.PurchaseOrderNo);
 
-    //            _context.PurchaseOrders.Add(po);
-    //            await _context.SaveChangesAsync();
+            if (exists)
+            {
+                return Ok(new
+                {
+                    success = false,
+                    message = "Purchase Order No already exists."
+                });
+            }
 
-    //            var result = MapToDto(po);
-    //            await _hub.Clients.All.SendAsync("PurchaseOrderAdded", result);
+            try
+            {
+                string? filePath = null;
 
-    //            return Ok(result);
-    //        }
-    //        catch (Exception ex)
-    //        {
-    //            return StatusCode(500, new { Error = "Failed to create.", Details = ex.Message });
-    //        }
-    //    }
+                if (request.Attachment != null)
+                {
+                    var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "Uploads", "PO");
+
+                    if (!Directory.Exists(uploadsFolder))
+                        Directory.CreateDirectory(uploadsFolder);
+
+                    var fileName = $"{Guid.NewGuid()}{Path.GetExtension(request.Attachment.FileName)}";
+                    var fullPath = Path.Combine(uploadsFolder, fileName);
+
+                    using (var stream = new FileStream(fullPath, FileMode.Create))
+                    {
+                        await request.Attachment.CopyToAsync(stream);
+                    }
+
+                    filePath = $"Uploads/PO/{fileName}";
+                }
+
+                var po = new PurchaseOrder
+                {
+                    Id = Guid.NewGuid(),
+                    PurchaseOrderNo = request.PurchaseOrderNo,
+                    FromCompanyId = request.FromCompanyId,
+                    Type = request.Type,
+                    PODate = request.PODate,
+                    POReceivedDate = request.POReceivedDate,
+                    ClientId = request.ClientId,
+                    SupplierId = request.SupplierId,
+                    Terms = request.Terms,
+                    QuotationId = request.QuotationId,
+                    ProjectId = request.ProjectId,
+                    Gross = request.Gross,
+                    Discount = request.Discount,
+                    TotalAmount = request.TotalAmount,
+                    Notes = request.Notes,
+                    Remarks = request.Remarks,
+                    TermsAndCondition = request.TermsAndConditions,
+                    BankDetails = request.BankDetails,
+                    TotalQuantity = request.TotalQuantity,
+                    Attachment = filePath,
+                    Status = request.ClientId.HasValue ? "Received" : "Draft",
+                    CreatedById = Guid.Parse(userIdClaim),
+                    CreatedAt = DateTime.UtcNow
+                };
+
+                po.PurchaseOrderItems = request.PurchaseOrderItems?.Select(x => new PurchaseOrderItem
+                {
+                    Id = Guid.NewGuid(),
+                    PurchaseOrderId = po.Id,
+                    Item = x.Item,
+                    Description = x.Description,
+                    Quantity = x.Quantity,
+                    Unit = x.Unit,
+                    UnitPrice = x.UnitPrice,
+                    Discount = x.Discount,
+                    TotalPrice = x.TotalPrice
+                }).ToList() ?? new List<PurchaseOrderItem>();
+
+                var statusHistory = new PurchaseOrderStatusHistory
+                {
+                    Id = Guid.NewGuid(),
+                    PurchaseOrderId = po.Id,
+                    Status = request.Type == "Incoming" ? "Received" : "Draft",
+                    ActionAt = DateTime.UtcNow,
+                    ActionUserId = Guid.Parse(userIdClaim),
+                    Remarks = "PO created",
+                };
+
+                _context.PurchaseOrders.Add(po);
+                _context.PurchaseOrderStatusHistories.Add(statusHistory);
+
+                await _context.SaveChangesAsync();
+
+                var poWithRelations = await _context.PurchaseOrders
+                    .Include(x => x.Client)
+                        .ThenInclude(c => c.BillingAddress)
+                    .Include(x => x.Client)
+                        .ThenInclude(c => c.DeliveryAddress)
+                    .Include(x => x.Supplier)
+                        .ThenInclude(s => s.BillingAddress)
+                    .Include(x => x.Supplier)
+                        .ThenInclude(s => s.DeliveryAddress)
+                    .Include(x => x.Project)
+                    .Include(x => x.Quotation)
+                    .Include(x => x.PurchaseOrderItems)
+                    .FirstOrDefaultAsync(x => x.Id == po.Id);
+
+                var result = MapToDto(poWithRelations);
+                await _hub.Clients.All.SendAsync("PurchaseOrderAdded", result);
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Error = "Failed to create.", Details = ex.Message });
+            }
+        }
+
+        [HttpPut("Update")]
+        public async Task<ActionResult<object>> Update(
+    [FromForm] UpdatePORequest request)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var po = await _context.PurchaseOrders
+                .Include(x => x.PurchaseOrderItems)
+                .FirstOrDefaultAsync(x => x.Id == request.Id);
+
+            if (po == null)
+                return NotFound(new { Error = "Purchase Order not found." });
+
+            try
+            {
+                // Deserialize items
+                if (!string.IsNullOrEmpty(Request.Form["purchaseOrderItems"]))
+                {
+                    request.PurchaseOrderItems =
+                        JsonSerializer.Deserialize<List<POItemRequest>>(
+                            Request.Form["purchaseOrderItems"],
+                            new JsonSerializerOptions
+                            {
+                                PropertyNameCaseInsensitive = true
+                            }
+                        );
+                }
+
+                // Attachment upload
+                if (request.Attachment != null)
+                {
+                    var uploadsFolder = Path.Combine(
+                        Directory.GetCurrentDirectory(),
+                        "Uploads",
+                        "PO");
+
+                    if (!Directory.Exists(uploadsFolder))
+                        Directory.CreateDirectory(uploadsFolder);
+
+                    var fileName =
+                        $"{Guid.NewGuid()}{Path.GetExtension(request.Attachment.FileName)}";
+
+                    var fullPath = Path.Combine(uploadsFolder, fileName);
+
+                    using (var stream = new FileStream(fullPath, FileMode.Create))
+                    {
+                        await request.Attachment.CopyToAsync(stream);
+                    }
+
+                    po.Attachment = $"Uploads/PO/{fileName}";
+                }
+
+                // Update fields
+                po.PurchaseOrderNo = request.PurchaseOrderNo;
+                po.FromCompanyId = request.FromCompanyId;
+                po.Type = request.Type;
+                po.PODate = request.PODate;
+                po.POReceivedDate = request.POReceivedDate;
+                po.ClientId = request.ClientId;
+                po.SupplierId = request.SupplierId;
+                po.Terms = request.Terms;
+                po.QuotationId = request.QuotationId;
+                po.ProjectId = request.ProjectId;
+                po.Gross = request.Gross;
+                po.Discount = request.Discount;
+                po.TotalAmount = request.TotalAmount;
+                po.Notes = request.Notes;
+                po.Remarks = request.Remarks;
+                po.TermsAndCondition = request.TermsAndConditions;
+                po.BankDetails = request.BankDetails;
+                po.TotalQuantity = request.TotalQuantity;
+                po.UpdatedAt = DateTime.Now;
+
+                // Remove existing items from DB first
+                var existingItems = await _context.PurchaseOrderItems
+                    .Where(x => x.PurchaseOrderId == po.Id)
+                    .ToListAsync();
+
+                _context.PurchaseOrderItems.RemoveRange(existingItems);
+
+                await _context.SaveChangesAsync();
+
+                // Add new items
+                var newItems = request.PurchaseOrderItems?
+                    .Select(x => new PurchaseOrderItem
+                    {
+                        Id = x.Id ?? Guid.NewGuid(),
+                        PurchaseOrderId = po.Id,
+                        Item = x.Item,
+                        Description = x.Description,
+                        Quantity = x.Quantity,
+                        Unit = x.Unit,
+                        UnitPrice = x.UnitPrice,
+                        Discount = x.Discount,
+                        TotalPrice = x.TotalPrice
+                    })
+                    .ToList()
+                    ?? new List<PurchaseOrderItem>();
+
+                await _context.PurchaseOrderItems.AddRangeAsync(newItems);
+
+                _context.PurchaseOrders.Update(po);
+
+                await _context.SaveChangesAsync();
+
+                var result = MapToDto(po);
+
+                await _hub.Clients.All.SendAsync(
+                    "PurchaseOrderUpdated",
+                    result);
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    Error = "Failed to update purchase order.",
+                    Details = ex.Message
+                });
+            }
+        }
+
+        [HttpDelete("Delete")]
+        public async Task<ActionResult> DeletePurchaseOrder([FromQuery] Guid id)
+        {
+            var po = await _context.PurchaseOrders.FindAsync(id);
+            if (po == null)
+                return NotFound(new { Error = "Purchase Order not found." });
+
+            try
+            {
+                _context.PurchaseOrders.Remove(po);
+                await _context.SaveChangesAsync();
+
+                // Optional: Notify via SignalR
+                await _hub.Clients.All.SendAsync("PurchaseOrderDeleted", id);
+
+                return Ok(new { Message = "Purchase order deleted successfully." });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Error = "Failed to delete purchase order." });
+            }
+        }
 
 
-    //    [HttpPut("Update")]
-    //    public async Task<ActionResult<PurchaseOrder>> Update([FromBody] UpdatePORequest request)
-    //    {
-    //        if (request == null || request.Id == Guid.Empty)
-    //            return BadRequest("Invalid request.");
 
-    //        var po = await _context.PurchaseOrders
-    //            .Include(q => q.POItems)
-    //            .FirstOrDefaultAsync(q => q.Id == request.Id);
+        private object MapToDto(PurchaseOrder q)
+        {
+            var items = q.PurchaseOrderItems ?? new List<PurchaseOrderItem>();
 
-    //        if (po == null)
-    //            return NotFound(new { Error = "Purchase order not found." });
+            return new
+            {
+                q.Id,
+                q.PurchaseOrderNo,
+                q.Type,
+                q.PODate,
+                q.POReceivedDate,
+                q.Terms,
+                q.ProjectId,
+                Project = q.Project == null ? null : new
+                {
+                    q.Project.ProjectCode
+                },
+                q.QuotationId,
 
-    //        try
-    //        {
-    //            // =========================
-    //            // UPDATE HEADER
-    //            // =========================
-    //            po.PONo = request.PONo ?? po.PONo;
-    //            po.SupplierId = request.SupplierId != Guid.Empty ? request.SupplierId : po.SupplierId;
-    //            po.POReceivedDate = request.POReceivedDate ?? po.POReceivedDate;
-    //            po.DeliveryInstruction = request.DeliveryInstruction ?? po.DeliveryInstruction;
-    //            po.DeliveryDate = request.DeliveryDate ?? po.DeliveryDate;
-    //            po.Terms = request.Terms ?? po.Terms;
-    //            po.Page = request.Page ?? po.Page;
-    //            po.Remarks = request.Remarks ?? po.Remarks;
-    //            po.TermsConditions = request.TermsConditions ?? po.TermsConditions;
-    //            po.BankDetails = request.BankDetails ?? po.BankDetails;
-    //            po.Discount = request.Discount ?? po.Discount;
-    //            po.TotalQuantity = request.TotalQuantity ?? po.TotalQuantity;
-    //            po.UpdatedAt = DateTime.UtcNow;
+                Quotation = q.Quotation == null ? null : new
+                {
+                    q.Quotation.QuotationNo
+                },
 
-    //            // =========================
-    //            // MAP REQUEST ITEMS SAFELY
-    //            // =========================
-    //            var requestItems = request.POItems?
-    //                .Select(p => new UpdatePOItemRequest
-    //                {
-    //                    Id = p.Id,
-    //                    Item = p.Item,
-    //                    Description = p.Description,
-    //                    Quantity = p.Quantity,
-    //                    UnitPrice = p.UnitPrice,
-    //                    Unit = p.Unit,
-    //                    Discount = (decimal)(p.Discount),
-    //                    TotalAmount = p.TotalAmount
-    //                })
-    //                .ToList() ?? new List<UpdatePOItemRequest>();
+                q.TotalQuantity,
+                q.Gross,
+                q.Discount,
+                q.TotalAmount,
+                q.Remarks,
+                q.Notes,
+                q.POClientNo,
+                q.SOClientNo,
+                q.Status,
+                q.TermsAndCondition,
+                q.BankDetails,
+                q.Attachment,
+                q.SupplierId,
+                q.ClientId,
 
-    //            // =========================
-    //            // COLLECT VALID ITEM IDS
-    //            // =========================
-    //            var requestItemIds = requestItems
-    //                .Where(i => i.Id.HasValue && i.Id.Value != Guid.Empty)
-    //                .Select(i => i.Id.Value)
-    //                .ToHashSet();
+                Client = q.Client == null ? null : new
+                {
+                    Id = q.Client.Id,
+                    q.Client.Name,
+                    q.Client.ContactNo,
+                    q.Client.Email,
+                    q.Client.ContactPerson1,
 
-    //            // =========================
-    //            // REMOVE ITEMS NOT IN REQUEST
-    //            // =========================
-    //            var itemsToRemove = po.POItems
-    //                .Where(dbItem => !requestItemIds.Contains(dbItem.Id))
-    //                .ToList();
+                    BillingAddress = q.Client.BillingAddress == null ? null : new Address
+                    {
+                        Id = q.Client.BillingAddress.Id,
+                        AddressLine1 = q.Client.BillingAddress.AddressLine1,
+                        AddressLine2 = q.Client.BillingAddress.AddressLine2,
+                        City = q.Client.BillingAddress.City,
+                        State = q.Client.BillingAddress.State,
+                        Country = q.Client.BillingAddress.Country,
+                        Poscode = q.Client.BillingAddress.Poscode
+                    },
 
-    //            foreach (var item in itemsToRemove)
-    //            {
-    //                _context.POItems.Remove(item);
-    //            }
+                    DeliveryAddress = q.Client.DeliveryAddress == null ? null : new Address
+                    {
+                        Id = q.Client.DeliveryAddress.Id,
+                        AddressLine1 = q.Client.DeliveryAddress.AddressLine1,
+                        AddressLine2 = q.Client.DeliveryAddress.AddressLine2,
+                        City = q.Client.DeliveryAddress.City,
+                        State = q.Client.DeliveryAddress.State,
+                        Country = q.Client.DeliveryAddress.Country,
+                        Poscode = q.Client.DeliveryAddress.Poscode
+                    }
+                },
 
-    //            // =========================
-    //            // ADD / UPDATE ITEMS
-    //            // =========================
-    //            foreach (var itemReq in requestItems)
-    //            {
-    //                // UPDATE EXISTING ITEM
-    //                if (itemReq.Id.HasValue && itemReq.Id.Value != Guid.Empty)
-    //                {
-    //                    var existing = po.POItems
-    //                        .FirstOrDefault(i => i.Id == itemReq.Id.Value);
+                Supplier = q.Supplier == null ? null : new
+                {
+                    Id = q.Supplier.Id,
+                    q.Supplier.Name,
+                    q.Supplier.ContactNo,
+                    q.Supplier.FaxNo,
+                    q.Supplier.Email,
+                    q.Supplier.ACNo,
+                    q.Supplier.ContactPerson1,
 
-    //                    if (existing == null)
-    //                        continue;
+                    BillingAddress = q.Supplier.BillingAddress == null ? null : new Address
+                    {
+                        Id = q.Supplier.BillingAddress.Id,
+                        AddressLine1 = q.Supplier.BillingAddress.AddressLine1,
+                        AddressLine2 = q.Supplier.BillingAddress.AddressLine2,
+                        City = q.Supplier.BillingAddress.City,
+                        State = q.Supplier.BillingAddress.State,
+                        Country = q.Supplier.BillingAddress.Country,
+                        Poscode = q.Supplier.BillingAddress.Poscode
+                    },
 
-    //                    existing.Item = itemReq.Item;
-    //                    existing.Description = itemReq.Description;
-    //                    existing.Quantity = itemReq.Quantity;
-    //                    existing.UnitPrice = itemReq.UnitPrice;
-    //                    existing.Unit = itemReq.Unit;
-    //                    existing.Discount = itemReq.Discount;
+                    DeliveryAddress = q.Supplier.DeliveryAddress == null ? null : new Address
+                    {
+                        Id = q.Supplier.DeliveryAddress.Id,
+                        AddressLine1 = q.Supplier.DeliveryAddress.AddressLine1,
+                        AddressLine2 = q.Supplier.DeliveryAddress.AddressLine2,
+                        City = q.Supplier.DeliveryAddress.City,
+                        State = q.Supplier.DeliveryAddress.State,
+                        Country = q.Supplier.DeliveryAddress.Country,
+                        Poscode = q.Supplier.DeliveryAddress.Poscode
+                    }
+                },
 
-    //                    // =========================
-    //                    // RECALCULATE TOTAL
-    //                    // =========================
-    //                    var subTotal = itemReq.Quantity * itemReq.UnitPrice;
-    //                    existing.TotalAmount =
-    //                        subTotal - (subTotal * (itemReq.Discount / 100));
+                PurchaseOrderItems = items.ToList()
+            };
+        }
 
-    //                    existing.UpdatedAt = DateTime.UtcNow;
-    //                }
-    //                else
-    //                {
-    //                    // ADD NEW ITEM
-    //                    var subTotal = itemReq.Quantity * itemReq.UnitPrice;
+        private PurchaseOrderItem MapToEntity(POItemRequest req, Guid poId)
+        {
+            var entity = new PurchaseOrderItem
+            {
+                Id = Guid.NewGuid(),
+                PurchaseOrderId = poId,
+                Item = req.Item,
+                Description = req.Description,
+                Quantity = req.Quantity,
+                Unit = req.Unit,
+                UnitPrice = req.UnitPrice,
+                Discount = req.Discount,
+                TotalPrice = req.TotalPrice,
+            };
 
-    //                    var newItem = new POItem
-    //                    {
-    //                        Id = Guid.NewGuid(),
-    //                        PurchaseOrderId = po.Id,
-    //                        Item = itemReq.Item,
-    //                        Description = itemReq.Description,
-    //                        Quantity = itemReq.Quantity,
-    //                        UnitPrice = itemReq.UnitPrice,
-    //                        Unit = itemReq.Unit,
-    //                        Discount = itemReq.Discount,
+            return entity;
+        }
 
-    //                        TotalAmount =
-    //                            subTotal - (subTotal * (itemReq.Discount / 100)),
+        [HttpGet("GetDropdown")]
+        public async Task<IActionResult> GetDropdown()
+        {
+            var clients = await _context.Companies
+                .Where(x => x.Type == CompanyType.Client)
+                .Select(x => new Company
+                {
+                    Id = x.Id,
+                    Name = x.Name
+                })
+                .ToListAsync();
 
-    //                        CreatedAt = DateTime.UtcNow
-    //                    };
+            var suppliers = await _context.Companies
+                .Where(x => x.Type == CompanyType.Supplier)
+                .Select(x => new Company
+                {
+                    Id = x.Id,
+                    Name = x.Name
+                })
+                .ToListAsync();
 
-    //                    po.POItems.Add(newItem);
-    //                }
-    //            }
+            var quotations = await _context.Quotations
+                .Select(x => new QuotationDropdownDto
+                {
+                    Id = x.Id,
+                    QuotationNo = x.QuotationNo,
+                    TotalAmount = x.TotalAmount,
+                    ClientId = x.ClientId
+                })
+                .ToListAsync();
 
-    //            // =========================
-    //            // FINAL TOTAL (SAFE)
-    //            // =========================
-    //            po.TotalAmount = po.POItems.Sum(x => x.TotalAmount);
+            return Ok(new DropdownResponseDto
+            {
+                Clients = clients,
+                Suppliers = suppliers,
+                Quotations = quotations
+            });
+        }
 
-    //            await _context.SaveChangesAsync();
+        [HttpPut("UpdateStatus")]
+        public async Task<IActionResult> UpdateStatus(Guid id, string status, Guid? userId)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim))
+                return Unauthorized(new { Error = "Invalid token." });
 
-    //            // =========================
-    //            // SIGNALR NOTIFY
-    //            // =========================
-    //            await _hub.Clients.All.SendAsync("PurchaseOrderUpdated", po);
+            var actionUserId = Guid.Parse(userIdClaim);
 
-    //            return Ok(po);
-    //        }
-    //        catch (Exception ex)
-    //        {
-    //            return StatusCode(500, new { Error = "Failed to update purchase order.", Details = ex.Message });
-    //        }
-    //    }
+            var userName = await _context.Users
+                .Where(x => x.Id == actionUserId)
+                .Select(x => x.FullName)
+                .FirstOrDefaultAsync();
 
-    //    [HttpPut("UpdateStatus")]
-    //    public async Task<ActionResult> UpdateStatus([FromBody] UpdatePOStatusRequest request)
-    //    {
-    //        if (!ModelState.IsValid)
-    //            return BadRequest(ModelState);
+            string? reviewerName = null;
 
-    //        var po = await _context.PurchaseOrders.FindAsync(request.Id);
-    //        if (po == null)
-    //            return NotFound(new { Error = "Purchase Order not found." });
+            if (userId.HasValue)
+            {
+                reviewerName = await _context.Users
+                    .Where(x => x.Id == userId.Value)
+                    .Select(x => x.FullName)
+                    .FirstOrDefaultAsync();
+            }
 
-    //        try
-    //        {
-    //            po.Status = request.Status ?? po.Status;
-    //            po.UpdatedAt = DateTime.UtcNow;
+            var po = await _context.PurchaseOrders
+                .FirstOrDefaultAsync(x => x.Id == id);
 
-    //            await _context.SaveChangesAsync();
+            if (po == null)
+                return NotFound();
 
-    //            // Notify via SignalR
-    //            await _hub.Clients.All.SendAsync("PurchaseOrderStatusUpdated", new { po.Id, po.Status });
+            if (status == "Rejected")
+            {
+                po.Status = "Draft";
+            }
+            else
+            {
+                po.Status = status;
+            }
 
-    //            return Ok(new { po.Id, po.Status , po.PONo});
-    //        }
-    //        catch (Exception)
-    //        {
-    //            return StatusCode(500, new { Error = "Failed to update purchase order status." });
-    //        }
-    //    }
+            var history = new PurchaseOrderStatusHistory
+            {
+                PurchaseOrderId = id,
+                Status = po.Status,
 
+                ActionUserId = actionUserId,
+                ActionAt = DateTime.UtcNow,
+                ReviewedByUserId = userId,
 
-    //    [HttpDelete("Delete")]
-    //    public async Task<IActionResult> Delete(Guid id)
-    //    {
-    //        var po = await _context.PurchaseOrders.FindAsync(id);
-    //        if (po == null)
-    //            return NotFound(new { Error = "Purchase Order not found." });
+                Remarks = GenerateStatusRemark(
+                    po.Status,
+                    userName ?? "System",
+                    reviewerName
+                )
+            };
 
+            _context.PurchaseOrderStatusHistories.Add(history);
 
-    //        _context.PurchaseOrders.Remove(po);
-    //        await _context.SaveChangesAsync();
-    //        return Ok(new { Success = true });
-    //    }
+            await _context.SaveChangesAsync();
 
+            var result = await _context.PurchaseOrderStatusHistories
+                .Where(x => x.Id == history.Id)
+                .Include(x => x.ActionUser).Include(x => x.ReviewedByUser)
+                .Select(x => new
+                {
+                    x.Id,
+                    x.Status,
+                    x.ActionAt,
+                    x.Remarks,
+                    ReviewedByUser = x.ReviewedByUser == null ? null : new
+                    {
+                        x.ReviewedByUser.Id,
+                        x.ReviewedByUser.FullName
+                    },
+                    ActionUser = x.ActionUser == null ? null : new
+                    {
+                        x.ActionUser.Id,
+                        x.ActionUser.FullName
+                    }
+                })
+                .FirstOrDefaultAsync();
 
-    //    [HttpPost("Preview")]
-    //    public async Task<IActionResult> Preview([FromBody] CreatePORequest request)
-    //    {
-    //        var vendor = await _context.Clients
-    //    .Include(c => c.BillingAddress)
-    //    .Include(c => c.DeliveryAddress)
-    //    .FirstOrDefaultAsync(c => c.Id == request.SupplierId);
-    //        // Transient projection for frontend preview
-    //        return Ok(new
-    //        {
-    //            PONo = request.PONo ?? "DRAFT",
-    //            POReceivedDate = request.POReceivedDate,
-    //            Terms = request.Terms,
-    //            DeliveryInstruction = request.DeliveryInstruction,
-    //            DeliveryDate = request.DeliveryDate,
-    //            Remarks = request.Remarks,
-    //            TermsConditions = request.TermsConditions,
-    //            BankDetails = request.BankDetails,
-    //            Gross = request.Gross,
-    //            Discount = request.Discount,
-    //            TotalAmount = request.TotalAmount,
+            return Ok(result);
+        }
 
-    //            // Map the client found in the DB
-    //            Vendor = vendor != null ? new
-    //            {
-    //                vendor.Id,
-    //                vendor.Name,
-    //                vendor.ContactNo,
-    //                vendor.Email,
-    //                vendor.ContactPerson,
-    //                BillingAddress = vendor.BillingAddress,
-    //                DeliveryAddress = vendor.DeliveryAddress
-    //            } : null,
-
-    //            POItems = request.POItems.Select(i => new {
-    //                i.Item,
-    //                i.Description,
-    //                i.Quantity,
-    //                i.UnitPrice,
-    //                i.Unit,
-    //                i.Discount,
-    //                i.TotalAmount
-    //            })
-    //        });
-    //    }
-
-    //    private object MapToDto(PurchaseOrder q)
-    //    {
-    //        return new
-    //        {
-    //            q.Id,
-    //            q.PONo,
-    //            q.ProjectId,
-    //            q.Project,
-    //            q.Description,
-    //            q.TermsConditions,
-    //            q.BankDetails,
-    //            q.Remarks,
-    //            q.DeliveryInstruction,
-    //            q.DeliveryDate,
-    //            q.POReceivedDate,
-    //            q.Terms,
-    //            q.Status,
-    //            q.SupplierId,
-    //            q.ClientId,
-    //            Client = q.Client != null ? new Client
-    //            {
-    //                Id = q.ClientId ?? Guid.Empty,
-    //                Name = q.Client.Name,
-    //                ContactNo = q.Client.ContactNo,
-    //                Email = q.Client.Email,
-    //                ContactPerson = q.Client.ContactPerson, // Added for completeness
-
-    //                // Project the new structured addresses
-    //                BillingAddress = q.Client.BillingAddress != null ? new Address
-    //                {
-    //                    Id = q.Client.BillingAddress.Id,
-    //                    AddressLine1 = q.Client.BillingAddress.AddressLine1,
-    //                    AddressLine2 = q.Client.BillingAddress.AddressLine2,
-    //                    City = q.Client.BillingAddress.City,
-    //                    State = q.Client.BillingAddress.State,
-    //                    Country = q.Client.BillingAddress.Country,
-    //                    Poscode = q.Client.BillingAddress.Poscode
-    //                } : null,
-
-    //                DeliveryAddress = q.Client.DeliveryAddress != null ? new Address
-    //                {
-    //                    Id = q.Client.DeliveryAddress.Id,
-    //                    AddressLine1 = q.Client.DeliveryAddress.AddressLine1,
-    //                    AddressLine2 = q.Client.DeliveryAddress.AddressLine2,
-    //                    City = q.Client.DeliveryAddress.City,
-    //                    State = q.Client.DeliveryAddress.State,
-    //                    Country = q.Client.DeliveryAddress.Country,
-    //                    Poscode = q.Client.DeliveryAddress.Poscode
-    //                } : null
-    //            } : null,
-    //            Supplier = q.Supplier != null ? new Supplier
-    //            {
-    //                Id = q.SupplierId ?? Guid.Empty,
-    //                Name = q.Supplier.Name,
-    //                ContactNo = q.Supplier.ContactNo,
-    //                FaxNo = q.Supplier.FaxNo,
-    //                Email = q.Supplier.Email,
-    //                ACNo = q.Supplier.ACNo,
-    //                ContactPerson = q.Supplier.ContactPerson, // Added for completeness
-
-    //                // Project the new structured addresses
-    //                BillingAddress = q.Supplier.BillingAddress != null ? new Address
-    //                {
-    //                    Id = q.Supplier.BillingAddress.Id,
-    //                    AddressLine1 = q.Supplier.BillingAddress.AddressLine1,
-    //                    AddressLine2 = q.Supplier.BillingAddress.AddressLine2,
-    //                    City = q.Supplier.BillingAddress.City,
-    //                    State = q.Supplier.BillingAddress.State,
-    //                    Country = q.Supplier.BillingAddress.Country,
-    //                    Poscode = q.Supplier.BillingAddress.Poscode
-    //                } : null,
-
-    //                DeliveryAddress = q.Supplier.DeliveryAddress != null ? new Address
-    //                {
-    //                    Id = q.Supplier.DeliveryAddress.Id,
-    //                    AddressLine1 = q.Supplier.DeliveryAddress.AddressLine1,
-    //                    AddressLine2 = q.Supplier.DeliveryAddress.AddressLine2,
-    //                    City = q.Supplier.DeliveryAddress.City,
-    //                    State = q.Supplier.DeliveryAddress.State,
-    //                    Country = q.Supplier.DeliveryAddress.Country,
-    //                    Poscode = q.Supplier.DeliveryAddress.Poscode
-    //                } : null
-    //            } : null,
-    //            q.Gross,
-    //            q.TotalAmount,
-    //            q.Discount,
-    //            POItems = q.POItems?
-    //.Select(i => new
-    //{
-    //    i.Id,
-    //    i.Item,
-    //    i.Description,
-    //    i.Quantity,
-    //    i.Unit,
-    //    i.UnitPrice,
-    //    i.Discount,
-    //    i.TotalAmount
-    //})
-    //.ToList()
-    //    };
-    //    }
-
+        private string GenerateStatusRemark(string status, string userName, string? reviewerName)
+        {
+            return status switch
+            {
+                "Revised" => $"PO updated by {userName} and sent for review to {reviewerName ?? "reviewer"}",
+                "Approved" => $"PO approved by {userName}",
+                "Rejected" => $"PO rejected by {userName}",
+                "Sent" => $"PO sent by {userName} to {reviewerName ?? "supplier"}",
+                _ => $"PO updated to {status} by {userName}"
+            };
+        }
 
 
     }

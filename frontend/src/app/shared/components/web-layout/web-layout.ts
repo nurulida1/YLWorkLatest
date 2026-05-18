@@ -10,13 +10,13 @@ import { NavbarComponent } from '../navbar/navbar.component';
   template: `<div class="h-screen w-full flex flex-row">
     <!-- SIDEMENU -->
 
-    <div class="lg:w-[20%] 2xl:w-[15%] overflow-y-auto">
+    <div class="lg:w-[20%] 2xl:w-[18%] overflow-y-auto bg-gray-800">
       <app-sidemenu class="h-full w-0 lg:w-full"></app-sidemenu>
     </div>
 
     <!-- MAIN CONTENT -->
     <div
-      class="flex flex-col w-full lg:w-[80%] 2xl:w-[85%] bg-[#F9FAFB] overflow-y-auto"
+      class="flex flex-col w-full lg:w-[80%] 2xl:w-[82%] bg-gray-50 overflow-y-auto"
     >
       <app-navbar></app-navbar>
 

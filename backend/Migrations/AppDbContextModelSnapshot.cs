@@ -46,12 +46,18 @@ namespace YLWorks.Migrations
                     b.Property<DateTime?>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("char(36)");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("longtext");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("char(36)");
 
                     b.HasKey("Id");
 
@@ -82,6 +88,9 @@ namespace YLWorks.Migrations
                     b.Property<DateTime?>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("char(36)");
+
                     b.Property<int>("Poscode")
                         .HasColumnType("int");
 
@@ -91,6 +100,9 @@ namespace YLWorks.Migrations
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("char(36)");
 
                     b.HasKey("Id");
 
@@ -105,6 +117,9 @@ namespace YLWorks.Migrations
 
                     b.Property<DateTime?>("CreatedAt")
                         .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("char(36)");
 
                     b.Property<Guid>("EntityId")
                         .HasColumnType("char(36)");
@@ -140,6 +155,9 @@ namespace YLWorks.Migrations
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("char(36)");
+
                     b.Property<DateTime>("UploadedAt")
                         .HasColumnType("datetime(6)");
 
@@ -173,12 +191,18 @@ namespace YLWorks.Migrations
                     b.Property<DateTime?>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("char(36)");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("longtext");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("char(36)");
 
                     b.HasKey("Id");
 
@@ -211,6 +235,9 @@ namespace YLWorks.Migrations
 
                     b.Property<DateTime?>("CreatedAt")
                         .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("char(36)");
 
                     b.Property<Guid?>("DeliveryAddressId")
                         .HasColumnType("char(36)");
@@ -247,6 +274,9 @@ namespace YLWorks.Migrations
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("char(36)");
+
                     b.Property<string>("WebsiteUrl")
                         .HasColumnType("longtext");
 
@@ -265,8 +295,14 @@ namespace YLWorks.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("char(36)");
 
+                    b.Property<string>("Attachment")
+                        .HasColumnType("longtext");
+
                     b.Property<DateTime?>("CreatedAt")
                         .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("char(36)");
 
                     b.Property<string>("DeliveryMethod")
                         .HasColumnType("longtext");
@@ -277,9 +313,6 @@ namespace YLWorks.Migrations
                         .HasColumnType("varchar(50)");
 
                     b.Property<string>("Notes")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("ProjectCode")
                         .HasColumnType("longtext");
 
                     b.Property<Guid?>("ProjectId")
@@ -301,13 +334,21 @@ namespace YLWorks.Migrations
                         .HasColumnType("char(36)");
 
                     b.Property<string>("Status")
+                        .IsRequired()
                         .ValueGeneratedOnAdd()
                         .HasMaxLength(20)
                         .HasColumnType("varchar(20)")
                         .HasDefaultValue("Draft");
 
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("char(36)");
 
                     b.HasKey("Id");
 
@@ -331,6 +372,9 @@ namespace YLWorks.Migrations
                     b.Property<DateTime?>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("char(36)");
+
                     b.Property<Guid>("DeliveryOrderId")
                         .HasColumnType("char(36)");
 
@@ -352,11 +396,52 @@ namespace YLWorks.Migrations
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("char(36)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("DeliveryOrderId");
 
                     b.ToTable("DeliveryOrderItems");
+                });
+
+            modelBuilder.Entity("YLWorks.Model.DeliveryOrderProofImage", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("char(36)");
+
+                    b.Property<Guid>("DeliveryOrderStatusHistoryId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("ImageUrl")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Remarks")
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime>("UploadedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DeliveryOrderStatusHistoryId");
+
+                    b.ToTable("DeliveryOrderProofImages");
                 });
 
             modelBuilder.Entity("YLWorks.Model.DeliveryOrderRMA", b =>
@@ -367,6 +452,9 @@ namespace YLWorks.Migrations
 
                     b.Property<DateTime?>("CreatedAt")
                         .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("char(36)");
 
                     b.Property<DateTime?>("Date")
                         .HasColumnType("datetime(6)");
@@ -413,6 +501,9 @@ namespace YLWorks.Migrations
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("char(36)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("ReceiverCompanyId");
@@ -434,17 +525,23 @@ namespace YLWorks.Migrations
                     b.Property<Guid?>("ActionUserId")
                         .HasColumnType("char(36)");
 
+                    b.Property<Guid?>("ApprovedByUserId")
+                        .HasColumnType("char(36)");
+
                     b.Property<DateTime?>("CreatedAt")
                         .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("char(36)");
 
                     b.Property<Guid>("DeliveryOrderId")
                         .HasColumnType("char(36)");
 
-                    b.PrimitiveCollection<string>("ProofImageUrls")
-                        .HasColumnType("longtext");
-
                     b.Property<string>("Remarks")
                         .HasColumnType("longtext");
+
+                    b.Property<Guid?>("ReviewByUserId")
+                        .HasColumnType("char(36)");
 
                     b.Property<string>("SignatureImage")
                         .HasColumnType("longtext");
@@ -459,11 +556,20 @@ namespace YLWorks.Migrations
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("char(36)");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("ActionUserId");
+
+                    b.HasIndex("ApprovedByUserId");
 
                     b.HasIndex("DeliveryOrderId");
 
-                    b.ToTable("DeliveryOrderStatusHistory");
+                    b.HasIndex("ReviewByUserId");
+
+                    b.ToTable("DeliveryOrderStatusHistories");
                 });
 
             modelBuilder.Entity("YLWorks.Model.Department", b =>
@@ -478,6 +584,9 @@ namespace YLWorks.Migrations
 
                     b.Property<DateTime?>("CreatedAt")
                         .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("char(36)");
 
                     b.Property<string>("Description")
                         .HasColumnType("longtext");
@@ -495,6 +604,9 @@ namespace YLWorks.Migrations
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("char(36)");
 
                     b.HasKey("Id");
 
@@ -514,6 +626,9 @@ namespace YLWorks.Migrations
 
                     b.Property<DateTime?>("CreatedAt")
                         .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("char(36)");
 
                     b.Property<string>("Description")
                         .HasColumnType("longtext");
@@ -538,6 +653,9 @@ namespace YLWorks.Migrations
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("char(36)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("ProcessedById");
@@ -556,6 +674,9 @@ namespace YLWorks.Migrations
 
                     b.Property<DateTime?>("CreatedAt")
                         .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("char(36)");
 
                     b.Property<string>("Description")
                         .HasColumnType("longtext");
@@ -579,6 +700,9 @@ namespace YLWorks.Migrations
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("char(36)");
 
                     b.HasKey("Id");
 
@@ -657,6 +781,9 @@ namespace YLWorks.Migrations
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("char(36)");
 
                     b.HasKey("Id");
 
@@ -749,6 +876,9 @@ namespace YLWorks.Migrations
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("char(36)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("ClientId");
@@ -776,6 +906,9 @@ namespace YLWorks.Migrations
 
                     b.Property<DateTime?>("CreatedAt")
                         .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("char(36)");
 
                     b.Property<string>("Description")
                         .IsRequired()
@@ -807,6 +940,9 @@ namespace YLWorks.Migrations
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("char(36)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("InvoiceId");
@@ -823,12 +959,18 @@ namespace YLWorks.Migrations
                     b.Property<DateTime?>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("char(36)");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("longtext");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("char(36)");
 
                     b.HasKey("Id");
 
@@ -847,6 +989,9 @@ namespace YLWorks.Migrations
                     b.Property<DateTime?>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("char(36)");
+
                     b.Property<string>("Description")
                         .HasColumnType("longtext");
 
@@ -862,7 +1007,7 @@ namespace YLWorks.Migrations
                     b.Property<DateTime?>("RequiredAt")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<Guid>("SupplierId")
+                    b.Property<Guid?>("SupplierId")
                         .HasColumnType("char(36)");
 
                     b.Property<string>("TypeNo")
@@ -874,6 +1019,9 @@ namespace YLWorks.Migrations
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("char(36)");
 
                     b.HasKey("Id");
 
@@ -896,6 +1044,9 @@ namespace YLWorks.Migrations
                     b.Property<DateTime?>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("char(36)");
+
                     b.Property<DateTime?>("DeliveryDate")
                         .HasColumnType("datetime(6)");
 
@@ -907,9 +1058,6 @@ namespace YLWorks.Migrations
 
                     b.Property<DateTime?>("EffDate")
                         .HasColumnType("datetime(6)");
-
-                    b.Property<string>("ProjectCode")
-                        .HasColumnType("longtext");
 
                     b.Property<Guid?>("ProjectId")
                         .HasColumnType("char(36)");
@@ -927,6 +1075,9 @@ namespace YLWorks.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("varchar(50)");
 
+                    b.Property<Guid?>("RequestedById")
+                        .HasColumnType("char(36)");
+
                     b.Property<string>("RevNo")
                         .HasColumnType("longtext");
 
@@ -937,11 +1088,11 @@ namespace YLWorks.Migrations
                         .HasColumnType("varchar(30)")
                         .HasDefaultValue("Draft");
 
-                    b.Property<Guid?>("SupplierId")
-                        .HasColumnType("char(36)");
-
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("char(36)");
 
                     b.Property<Guid?>("WorkOrderId")
                         .HasColumnType("char(36)");
@@ -954,7 +1105,7 @@ namespace YLWorks.Migrations
 
                     b.HasIndex("PurchaseOrderId");
 
-                    b.HasIndex("SupplierId");
+                    b.HasIndex("RequestedById");
 
                     b.HasIndex("WorkOrderId");
 
@@ -979,6 +1130,9 @@ namespace YLWorks.Migrations
                     b.Property<DateTime?>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("char(36)");
+
                     b.Property<Guid>("MaterialRequestId")
                         .HasColumnType("char(36)");
 
@@ -997,6 +1151,9 @@ namespace YLWorks.Migrations
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("char(36)");
 
                     b.HasKey("Id");
 
@@ -1017,6 +1174,9 @@ namespace YLWorks.Migrations
                     b.Property<Guid?>("CreatedBy")
                         .HasColumnType("char(36)");
 
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("char(36)");
+
                     b.Property<bool>("IsRead")
                         .HasColumnType("tinyint(1)");
 
@@ -1035,6 +1195,9 @@ namespace YLWorks.Migrations
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("char(36)");
 
                     b.Property<Guid?>("UserId")
                         .HasColumnType("char(36)");
@@ -1085,6 +1248,9 @@ namespace YLWorks.Migrations
                     b.Property<DateTime?>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("char(36)");
+
                     b.Property<Guid?>("InvoiceId")
                         .HasColumnType("char(36)");
 
@@ -1116,6 +1282,9 @@ namespace YLWorks.Migrations
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("char(36)");
 
                     b.HasKey("Id");
 
@@ -1172,6 +1341,9 @@ namespace YLWorks.Migrations
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("char(36)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("ClientId");
@@ -1198,6 +1370,9 @@ namespace YLWorks.Migrations
                     b.Property<DateTime?>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("char(36)");
+
                     b.Property<Guid>("Id")
                         .HasColumnType("char(36)");
 
@@ -1206,6 +1381,9 @@ namespace YLWorks.Migrations
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("char(36)");
 
                     b.HasKey("ProjectCode", "UserId");
 
@@ -1224,6 +1402,9 @@ namespace YLWorks.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("char(36)");
 
+                    b.Property<string>("Attachment")
+                        .HasColumnType("longtext");
+
                     b.Property<string>("BankDetails")
                         .HasColumnType("longtext");
 
@@ -1233,8 +1414,14 @@ namespace YLWorks.Migrations
                     b.Property<DateTime?>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("char(36)");
+
                     b.Property<decimal?>("Discount")
                         .HasColumnType("decimal(65,30)");
+
+                    b.Property<Guid?>("FromCompanyId")
+                        .HasColumnType("char(36)");
 
                     b.Property<decimal?>("Gross")
                         .HasColumnType("decimal(65,30)");
@@ -1250,9 +1437,6 @@ namespace YLWorks.Migrations
 
                     b.Property<DateTime?>("POReceivedDate")
                         .HasColumnType("datetime(6)");
-
-                    b.Property<string>("ProjectCode")
-                        .HasColumnType("longtext");
 
                     b.Property<Guid?>("ProjectId")
                         .HasColumnType("char(36)");
@@ -1295,9 +1479,14 @@ namespace YLWorks.Migrations
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("char(36)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("ClientId");
+
+                    b.HasIndex("FromCompanyId");
 
                     b.HasIndex("ProjectId");
 
@@ -1317,24 +1506,25 @@ namespace YLWorks.Migrations
                     b.Property<DateTime?>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("char(36)");
+
                     b.Property<string>("Description")
-                        .IsRequired()
                         .HasColumnType("longtext");
 
-                    b.Property<decimal?>("Discount")
+                    b.Property<decimal>("Discount")
                         .HasColumnType("decimal(65,30)");
 
                     b.Property<string>("Item")
-                        .IsRequired()
                         .HasColumnType("longtext");
 
                     b.Property<Guid>("PurchaseOrderId")
                         .HasColumnType("char(36)");
 
-                    b.Property<int>("Quantity")
-                        .HasColumnType("int");
+                    b.Property<decimal>("Quantity")
+                        .HasColumnType("decimal(65,30)");
 
-                    b.Property<decimal>("TotalAmount")
+                    b.Property<decimal>("TotalPrice")
                         .HasColumnType("decimal(65,30)");
 
                     b.Property<string>("Unit")
@@ -1346,6 +1536,9 @@ namespace YLWorks.Migrations
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("char(36)");
 
                     b.HasKey("Id");
 
@@ -1372,6 +1565,9 @@ namespace YLWorks.Migrations
                     b.Property<string>("Remarks")
                         .HasColumnType("longtext");
 
+                    b.Property<Guid?>("ReviewedByUserId")
+                        .HasColumnType("char(36)");
+
                     b.Property<string>("SignatureImage")
                         .HasColumnType("longtext");
 
@@ -1385,7 +1581,9 @@ namespace YLWorks.Migrations
 
                     b.HasIndex("PurchaseOrderId");
 
-                    b.ToTable("PurchaseOrderStatusHistory");
+                    b.HasIndex("ReviewedByUserId");
+
+                    b.ToTable("PurchaseOrderStatusHistories");
                 });
 
             modelBuilder.Entity("YLWorks.Model.Quotation", b =>
@@ -1442,6 +1640,9 @@ namespace YLWorks.Migrations
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("char(36)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("ClientId");
@@ -1463,6 +1664,9 @@ namespace YLWorks.Migrations
 
                     b.Property<DateTime?>("CreatedAt")
                         .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("char(36)");
 
                     b.Property<string>("Description")
                         .HasColumnType("longtext");
@@ -1499,6 +1703,9 @@ namespace YLWorks.Migrations
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("char(36)");
 
                     b.HasKey("Id");
 
@@ -1597,6 +1804,9 @@ namespace YLWorks.Migrations
                     b.Property<DateTime?>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("char(36)");
+
                     b.Property<Guid>("DeliveryOrderRMAId")
                         .HasColumnType("char(36)");
 
@@ -1615,6 +1825,9 @@ namespace YLWorks.Migrations
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("char(36)");
 
                     b.HasKey("Id");
 
@@ -1637,12 +1850,18 @@ namespace YLWorks.Migrations
                     b.Property<DateTime?>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("char(36)");
+
                     b.Property<string>("SystemRole")
                         .IsRequired()
                         .HasColumnType("longtext");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("char(36)");
 
                     b.HasKey("Id");
 
@@ -1658,12 +1877,18 @@ namespace YLWorks.Migrations
                     b.Property<DateTime?>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("char(36)");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("longtext");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("char(36)");
 
                     b.HasKey("Id");
 
@@ -1685,8 +1910,14 @@ namespace YLWorks.Migrations
                     b.Property<DateTime?>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("char(36)");
+
                     b.Property<Guid?>("DepartmentId")
                         .HasColumnType("char(36)");
+
+                    b.Property<string>("DisplayName")
+                        .HasColumnType("longtext");
 
                     b.Property<string>("Email")
                         .IsRequired()
@@ -1734,6 +1965,9 @@ namespace YLWorks.Migrations
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("char(36)");
 
                     b.HasKey("Id");
 
@@ -1787,6 +2021,9 @@ namespace YLWorks.Migrations
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("char(36)");
+
                     b.Property<DateTime?>("WorkOrderDate")
                         .HasColumnType("datetime(6)");
 
@@ -1816,11 +2053,17 @@ namespace YLWorks.Migrations
                     b.Property<DateTime?>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("char(36)");
+
                     b.Property<string>("Role")
                         .HasColumnType("longtext");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("char(36)");
 
                     b.Property<Guid>("UserId")
                         .HasColumnType("char(36)");
@@ -1849,6 +2092,9 @@ namespace YLWorks.Migrations
                     b.Property<DateTime?>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("char(36)");
+
                     b.Property<string>("Description")
                         .HasColumnType("longtext");
 
@@ -1874,6 +2120,9 @@ namespace YLWorks.Migrations
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("char(36)");
 
                     b.Property<Guid>("WorkOrderId")
                         .HasColumnType("char(36)");
@@ -1980,6 +2229,17 @@ namespace YLWorks.Migrations
                     b.Navigation("DeliveryOrder");
                 });
 
+            modelBuilder.Entity("YLWorks.Model.DeliveryOrderProofImage", b =>
+                {
+                    b.HasOne("YLWorks.Model.DeliveryOrderStatusHistory", "DeliveryOrderStatusHistory")
+                        .WithMany("ProofImages")
+                        .HasForeignKey("DeliveryOrderStatusHistoryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("DeliveryOrderStatusHistory");
+                });
+
             modelBuilder.Entity("YLWorks.Model.DeliveryOrderRMA", b =>
                 {
                     b.HasOne("YLWorks.Model.Company", "ReceiverCompany")
@@ -1997,13 +2257,31 @@ namespace YLWorks.Migrations
 
             modelBuilder.Entity("YLWorks.Model.DeliveryOrderStatusHistory", b =>
                 {
+                    b.HasOne("YLWorks.Model.User", "ActionUser")
+                        .WithMany()
+                        .HasForeignKey("ActionUserId");
+
+                    b.HasOne("YLWorks.Model.User", "ApprovedByUser")
+                        .WithMany()
+                        .HasForeignKey("ApprovedByUserId");
+
                     b.HasOne("YLWorks.Model.DeliveryOrder", "DeliveryOrder")
                         .WithMany("DeliveryOrderStatusHistories")
                         .HasForeignKey("DeliveryOrderId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("YLWorks.Model.User", "ReviewByUser")
+                        .WithMany()
+                        .HasForeignKey("ReviewByUserId");
+
+                    b.Navigation("ActionUser");
+
+                    b.Navigation("ApprovedByUser");
+
                     b.Navigation("DeliveryOrder");
+
+                    b.Navigation("ReviewByUser");
                 });
 
             modelBuilder.Entity("YLWorks.Model.Department", b =>
@@ -2129,9 +2407,7 @@ namespace YLWorks.Migrations
 
                     b.HasOne("YLWorks.Model.Company", "Supplier")
                         .WithMany()
-                        .HasForeignKey("SupplierId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("SupplierId");
 
                     b.Navigation("MaterialRequest");
 
@@ -2152,9 +2428,9 @@ namespace YLWorks.Migrations
                         .WithMany()
                         .HasForeignKey("PurchaseOrderId");
 
-                    b.HasOne("YLWorks.Model.Company", "Supplier")
+                    b.HasOne("YLWorks.Model.User", "RequestedBy")
                         .WithMany()
-                        .HasForeignKey("SupplierId");
+                        .HasForeignKey("RequestedById");
 
                     b.HasOne("YLWorks.Model.WorkOrder", "WorkOrder")
                         .WithMany()
@@ -2166,7 +2442,7 @@ namespace YLWorks.Migrations
 
                     b.Navigation("PurchaseOrder");
 
-                    b.Navigation("Supplier");
+                    b.Navigation("RequestedBy");
 
                     b.Navigation("WorkOrder");
                 });
@@ -2274,6 +2550,10 @@ namespace YLWorks.Migrations
                         .WithMany()
                         .HasForeignKey("ClientId");
 
+                    b.HasOne("YLWorks.Model.Company", "FromCompany")
+                        .WithMany()
+                        .HasForeignKey("FromCompanyId");
+
                     b.HasOne("YLWorks.Model.Project", "Project")
                         .WithMany("PurchaseOrders")
                         .HasForeignKey("ProjectId");
@@ -2287,6 +2567,8 @@ namespace YLWorks.Migrations
                         .HasForeignKey("SupplierId");
 
                     b.Navigation("Client");
+
+                    b.Navigation("FromCompany");
 
                     b.Navigation("Project");
 
@@ -2318,9 +2600,15 @@ namespace YLWorks.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("YLWorks.Model.User", "ReviewedByUser")
+                        .WithMany()
+                        .HasForeignKey("ReviewedByUserId");
+
                     b.Navigation("ActionUser");
 
                     b.Navigation("PurchaseOrder");
+
+                    b.Navigation("ReviewedByUser");
                 });
 
             modelBuilder.Entity("YLWorks.Model.Quotation", b =>
@@ -2493,6 +2781,11 @@ namespace YLWorks.Migrations
                     b.Navigation("RMAItems");
 
                     b.Navigation("RMAStatusHistory");
+                });
+
+            modelBuilder.Entity("YLWorks.Model.DeliveryOrderStatusHistory", b =>
+                {
+                    b.Navigation("ProofImages");
                 });
 
             modelBuilder.Entity("YLWorks.Model.Expense", b =>

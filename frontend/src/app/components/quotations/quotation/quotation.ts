@@ -16,13 +16,7 @@ import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
 import { MenuModule } from 'primeng/menu';
 import { SelectModule } from 'primeng/select';
-import {
-  Table,
-  TableLazyLoadEvent,
-  TableModule,
-  TableRowCollapseEvent,
-  TableRowExpandEvent,
-} from 'primeng/table';
+import { Table, TableLazyLoadEvent, TableModule } from 'primeng/table';
 import { LoadingService } from '../../../services/loading.service';
 import { MenuItem, MessageService } from 'primeng/api';
 import { QuotationService } from '../../../services/quotationService.service';
@@ -52,9 +46,7 @@ import { TimelineModule } from 'primeng/timeline';
     TimelineModule,
   ],
   template: `<div class="w-full min-h-[92.9vh] flex flex-col p-5">
-      <div
-        class="flex flex-row items-center gap-1 text-gray-500 text-[15px] tracking-wide"
-      >
+      <div class="flex flex-row items-center gap-1 text-gray-500 tracking-wide">
         <div
           [routerLink]="'/dashboard'"
           class="cursor-pointer hover:text-gray-600"
@@ -72,7 +64,7 @@ import { TimelineModule } from 'primeng/timeline';
             <div class="text-[20px] text-gray-700 font-semibold">
               Quotations
             </div>
-            <div class="text-gray-500 text-[15px]">
+            <div class="text-gray-500">
               View, create, and track all project quotations
             </div>
           </div>
@@ -82,7 +74,7 @@ import { TimelineModule } from 'primeng/timeline';
                 type="text"
                 pInputText
                 [(ngModel)]="search"
-                class="w-full! text-[15px]!"
+                class="w-full!"
                 placeholder="Search by quotation no"
               />
               <i
@@ -94,7 +86,6 @@ import { TimelineModule } from 'primeng/timeline';
               [routerLink]="'/quotations/form'"
               icon="pi pi-plus"
               severity="info"
-              size="small"
               styleClass="py-2! whitespace-nowrap!"
             ></p-button>
           </div>
@@ -120,37 +111,33 @@ import { TimelineModule } from 'primeng/timeline';
                 <th class="w-[5%]! bg-gray-100!"></th>
                 <th
                   pSortableColumn="QuotationNo"
-                  class="bg-gray-100! text-[15px]! text-center! w-[20%]!"
+                  class="bg-gray-100! text-center! w-[20%]!"
                 >
                   <div class="flex flex-row justify-center items-center gap-2">
                     <div>Quotation No</div>
                     <p-sortIcon field="QuotationNo" />
                   </div>
                 </th>
-                <th class="bg-gray-100! text-[15px]! text-center! w-[30%]">
-                  Client
-                </th>
+                <th class="bg-gray-100! text-center! w-[30%]">Client</th>
                 <th
                   pSortableColumn="QuotationDate"
-                  class="bg-gray-100! text-[15px]! text-center! w-[15%]!"
+                  class="bg-gray-100! text-center! w-[15%]!"
                 >
                   <div class="flex flex-row justify-center items-center gap-2">
-                    <div>Created On</div>
+                    <div>Created At</div>
                     <p-sortIcon field="QuotationDate" />
                   </div>
                 </th>
                 <th
                   pSortableColumn="Status"
-                  class="bg-gray-100! text-[15px]! text-center! w-[10%]!"
+                  class="bg-gray-100! text-center! w-[10%]!"
                 >
                   <div class="flex flex-row justify-center items-center gap-2">
                     <div>Status</div>
                     <p-sortIcon field="Status" />
                   </div>
                 </th>
-                <th class="bg-gray-100! text-[15px]! text-center! w-[10%]">
-                  Action
-                </th>
+                <th class="bg-gray-100! text-center! w-[10%]">Action</th>
               </tr>
             </ng-template>
             <ng-template
@@ -172,19 +159,19 @@ import { TimelineModule } from 'primeng/timeline';
                     ></i>
                   </div>
                 </td>
-                <td class="text-center! text-[14px]! font-semibold!">
+                <td class="text-center! font-semibold!">
                   {{ data.quotationNo }}
                 </td>
-                <td class="text-center! text-[14px]!">
+                <td class="text-center!">
                   {{ data.client?.name }}
                 </td>
-                <td class="text-center! text-[14px]!">
+                <td class="text-center!">
                   {{ data.quotationDate | date: 'dd MMMM, yyyy' }}
                 </td>
-                <td class="text-center! text-[14px]!">
+                <td class="text-center!">
                   <div class="flex justify-center">
                     <div
-                      class="rounded-full px-4 text-[13px] py-0.5 font-medium w-fit whitespace-nowrap"
+                      class="rounded-full px-4 text-sm py-0.5 font-medium w-fit whitespace-nowrap"
                       [ngClass]="{
                         'bg-blue-100 text-blue-600':
                           data.status === 'Revised' ||
@@ -202,8 +189,11 @@ import { TimelineModule } from 'primeng/timeline';
                   </div>
                 </td>
 
-                <td class="text-center! text-[14px]!">
-                  <div class="flex items-center justify-center">
+                <td class="text-center!">
+                  <div
+                    class="flex items-center justify-center"
+                    *ngIf="data.status !== 'Accepted'"
+                  >
                     <i
                       (click)="onEllipsisClick($event, data, menu)"
                       class="pi pi-ellipsis-h cursor-pointer"
@@ -224,7 +214,7 @@ import { TimelineModule } from 'primeng/timeline';
                     >
                       <ng-template #marker let-event>
                         <div
-                          class="w-5 h-5 flex items-center justify-center rounded-full shadow-sm text-white"
+                          class="w-6 h-6 p-2 flex items-center justify-center rounded-full shadow-sm text-white"
                           [ngClass]="
                             event.actionAt ? event.color : 'bg-gray-300'
                           "
@@ -268,7 +258,7 @@ import { TimelineModule } from 'primeng/timeline';
             <ng-template #emptymessage>
               <tr>
                 <td colspan="100%" class="border-x!">
-                  <div class="text-[15px] text-center text-gray-500">
+                  <div class="text-center text-gray-500">
                     No quotation found in records.
                   </div>
                 </td>
@@ -278,7 +268,6 @@ import { TimelineModule } from 'primeng/timeline';
         </div>
       </div>
     </div>
-    {{ menuItems | json }}
     <p-menu
       #menu
       [model]="menuItems"
@@ -363,7 +352,8 @@ export class Quotation implements OnInit, OnDestroy {
     this.Query.Filter = null;
     this.Query.OrderBy = 'CreatedAt desc';
     this.Query.Select = null;
-    this.Query.Includes = 'Client';
+    this.Query.Includes =
+      'Client,QuotationStatusHistories,QuotationStatusHistories.ActionUser,QuotationStatusHistories.ReviewedByUser';
   }
 
   ngOnInit(): void {}
@@ -512,50 +502,52 @@ export class Quotation implements OnInit, OnDestroy {
   }
 
   ActionClick(data: QuotationDto | null, action: string) {
-    if (action === 'Draft') {
-      this.updateQuotationStatus(data!.id, 'Draft'); // backend converts to Draft
-    }
+    if (!data) return;
 
-    if (action === 'Approved') {
-      this.updateQuotationStatus(data!.id, 'Approved');
-    }
+    const actionMap: Record<string, () => void> = {
+      Draft: () => this.updateQuotationStatus(data.id, 'Draft'),
+      Approved: () => this.updateQuotationStatus(data.id, 'Approved'),
+      Sent: () => this.updateQuotationStatus(data.id, 'Sent'),
+      Accepted: () => this.updateQuotationStatus(data.id, 'Accepted'),
+      Rejected: () => this.updateQuotationStatus(data.id, 'Rejected'),
 
-    if (action === 'Update') {
-      this.router.navigate(['/quotations/form'], {
-        queryParams: { id: data?.id },
-      });
-    }
+      Update: () =>
+        this.router.navigate(['/quotations/form'], {
+          queryParams: { id: data.id },
+        }),
 
-    if (action === 'Revised') {
-      this.showReviewerSelectionDialog(data);
-    }
+      Revised: () => this.showReviewerSelectionDialog(data),
+    };
+
+    actionMap[action]?.();
   }
 
   onEllipsisClick(event: any, quotation: QuotationDto, menu: any) {
     const jobTitle = this.currentUser?.systemRole;
     const status = quotation.status;
-    console.log(status);
+
     const isReviewer = quotation.quotationStatusHistories?.some(
       (h: any) => h.reviewedByUser?.id === this.currentUser?.userId,
     );
 
     this.menuItems = [];
 
-    // =========================
-    // ADMIN / SALES EXECUTIVE
-    // =========================
-    if (jobTitle === 'Sales Executive' || jobTitle === 'Sales Director') {
+    if (
+      jobTitle === 'Sales Executive' ||
+      jobTitle === 'Sales Support' ||
+      jobTitle === 'Sales Director'
+    ) {
       this.menuItems = [
         {
           label: 'Edit',
           icon: 'pi pi-pencil',
-          visible: status !== 'Accepted',
+          visible: status === 'Draft',
           command: () => this.ActionClick(quotation, 'Update'),
         },
         {
           label: 'Revised',
           icon: 'pi pi-file-edit',
-          visible: status === 'Draft' || status === 'Revised',
+          visible: status === 'Draft',
           command: () => this.ActionClick(quotation, 'Revised'),
         },
         {
@@ -564,12 +556,27 @@ export class Quotation implements OnInit, OnDestroy {
           visible: status === 'Revised',
           command: () => this.ActionClick(quotation, 'Approved'),
         },
+        {
+          label: 'Mark As Sent',
+          icon: 'pi pi-send',
+          visible: status === 'Approved',
+          command: () => this.ActionClick(quotation, 'Sent'),
+        },
+        {
+          label: 'Accepted',
+          icon: 'pi pi-check-circle',
+          visible: status === 'Sent',
+          command: () => this.ActionClick(quotation, 'Accepted'),
+        },
+        {
+          label: 'Rejected',
+          icon: 'pi pi-times',
+          visible: status === 'Sent',
+          command: () => this.ActionClick(quotation, 'Rejected'),
+        },
       ];
     }
 
-    // =========================
-    // REVIEWER ONLY
-    // =========================
     if (isReviewer) {
       this.menuItems = [
         {
@@ -579,7 +586,7 @@ export class Quotation implements OnInit, OnDestroy {
           command: () => this.ActionClick(quotation, 'Approved'),
         },
         {
-          label: 'Back to Draft',
+          label: 'Reject',
           icon: 'pi pi-times',
           visible: status === 'Revised',
           command: () => this.ActionClick(quotation, 'Draft'),
@@ -588,42 +595,6 @@ export class Quotation implements OnInit, OnDestroy {
     }
 
     menu.toggle(event);
-  }
-
-  canAccessQuotationAction(action: string, quotation: QuotationDto): boolean {
-    const jobTitle = this.currentUser?.systemRole;
-    const status = quotation.status;
-
-    const isSuperAdmin = jobTitle === 'SuperAdmin';
-    const isSalesRole = [
-      'Sales Director',
-      'Sales Executive',
-      'Sales Support',
-    ].includes(jobTitle!);
-
-    if (isSuperAdmin) return true;
-
-    switch (action) {
-      case 'Edit':
-        return !['Accepted', 'Rejected', 'Sent'].includes(status);
-
-      case 'Revised':
-        return (
-          isSalesRole &&
-          !['Revised', 'Approved', 'Sent', 'Accepted', 'Rejected'].includes(
-            status,
-          )
-        );
-
-      case 'Approved':
-        return (
-          (jobTitle === 'Sales Director' || isSalesRole) &&
-          ['Draft', 'Revised'].includes(status)
-        );
-
-      default:
-        return false;
-    }
   }
 
   showReviewerSelectionDialog(quotation: any) {
@@ -670,13 +641,41 @@ export class Quotation implements OnInit, OnDestroy {
 
           const currentPaging = this.PagingSignal();
 
+          const reviewer = this.reviewerSelection.find(
+            (x) => x.value === this.selectedReviewerId,
+          );
+
+          const reviewerName = reviewer?.label.split(' — ')[0] || '-';
+
           const updatedData = currentPaging.data.map((q) => {
             if (q.id === this.selectedQuotation.id) {
+              const newHistory = {
+                id: res.id,
+                status: res.status,
+                actionAt: res.actionAt,
+                remarks: res.remarks,
+                actionUser: res.actionUser,
+                reviewedByUser: {
+                  id: this.selectedReviewerId,
+                  fullName: reviewerName,
+                },
+
+                quotationId: q.id,
+                actionUserId: res.actionUser?.id,
+                reviewedByUserId: this.selectedReviewerId,
+                createdAt: res.actionAt,
+                signatureImage: null,
+              } as any;
+
+              const updatedHistories = [
+                ...(q.quotationStatusHistories || []),
+                newHistory,
+              ];
+
               return {
                 ...q,
                 status: 'Revised',
-                // optional: keep UI consistent
-                revisedByUserId: this.selectedReviewerId,
+                quotationStatusHistories: updatedHistories,
               };
             }
             return q;
@@ -687,12 +686,46 @@ export class Quotation implements OnInit, OnDestroy {
             data: updatedData,
           });
 
+          const newEvent = {
+            status: 'Revised',
+            actionAt: res.actionAt,
+            actionUser: reviewerName,
+            color: 'bg-yellow-400',
+            verified: true,
+          };
+
+          const statusOrder = [
+            'Draft',
+            'Revised',
+            'Approved',
+            'Sent',
+            'Accepted',
+            'Rejected',
+          ];
+
+          const revisedIndex = this.events.findIndex(
+            (e) => e.status === 'Revised',
+          );
+
+          if (revisedIndex !== -1) {
+            this.events[revisedIndex] = newEvent;
+          } else {
+            this.events.push(newEvent);
+          }
+
+          this.events.sort(
+            (a, b) =>
+              statusOrder.indexOf(a.status) - statusOrder.indexOf(b.status),
+          );
+
+          this.events = [...this.events];
+
           this.displayReviseByDialog = false;
 
           this.messageService.add({
             severity: 'success',
             summary: 'Status Updated',
-            detail: `Quotation revised by ${res.actionUser?.fullName ?? '-'}`,
+            detail: res.remarks,
           });
 
           this.cdr.markForCheck();
@@ -721,9 +754,11 @@ export class Quotation implements OnInit, OnDestroy {
 
           const currentPaging = this.PagingSignal();
 
+          // =========================
+          // 🔥 UPDATE TABLE DATA
+          // =========================
           const updatedData = currentPaging.data.map((q) => {
             if (q.id === id) {
-              // ✅ SAFELY CAST to expected type
               const newHistory = {
                 id: res.id,
                 status: res.status,
@@ -732,13 +767,12 @@ export class Quotation implements OnInit, OnDestroy {
                 actionUser: res.actionUser,
                 reviewedByUser: res.reviewedByUser,
 
-                // 👉 add missing required fields (dummy safe values)
                 quotationId: id,
                 actionUserId: res.actionUser?.id,
                 reviewedByUserId: res.reviewedByUser?.id,
                 createdAt: res.actionAt,
                 signatureImage: null,
-              } as any; // 🔥 important: bypass strict typing
+              } as any;
 
               const updatedHistories = [
                 ...(q.quotationStatusHistories || []),
@@ -759,6 +793,55 @@ export class Quotation implements OnInit, OnDestroy {
             data: updatedData,
           });
 
+          // =========================
+          // 🔥 UPDATE TIMELINE (EVENTS)
+          // =========================
+
+          const statusOrder = [
+            'Draft',
+            'Revised',
+            'Approved',
+            'Sent',
+            'Accepted',
+            'Rejected',
+          ];
+
+          const colorMap: Record<string, string> = {
+            Draft: 'bg-orange-400',
+            Revised: 'bg-yellow-400',
+            Approved: 'bg-blue-400',
+            Sent: 'bg-blue-400',
+            Accepted: 'bg-green-400',
+            Rejected: 'bg-red-400',
+          };
+
+          const actionUserName = res.actionUser?.fullName || '-';
+
+          const newEvent = {
+            status: newStatus,
+            actionAt: res.actionAt,
+            actionUser: actionUserName,
+            color: colorMap[newStatus],
+            verified: true,
+          };
+
+          const index = this.events.findIndex((e) => e.status === newStatus);
+
+          if (index !== -1) {
+            this.events[index] = newEvent;
+          } else {
+            this.events.push(newEvent);
+          }
+
+          this.events.sort(
+            (a, b) =>
+              statusOrder.indexOf(a.status) - statusOrder.indexOf(b.status),
+          );
+
+          this.events = [...this.events];
+
+          // =========================
+
           this.messageService.add({
             severity: 'success',
             summary: 'Status Updated',
@@ -770,6 +853,7 @@ export class Quotation implements OnInit, OnDestroy {
 
         error: (err) => {
           this.loadingService.stop();
+
           this.messageService.add({
             severity: 'error',
             summary: 'Update Failed',

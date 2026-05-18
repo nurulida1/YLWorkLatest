@@ -29,6 +29,9 @@ namespace YLWorks.Data
 
         public DbSet<DeliveryOrder> DeliveryOrders { get; set; }
         public DbSet<DeliveryOrderItem> DeliveryOrderItems { get; set; }
+        public DbSet<DeliveryOrderStatusHistory> DeliveryOrderStatusHistories { get; set; }
+        public DbSet<DeliveryOrderProofImage> DeliveryOrderProofImages { get; set; }
+
         public DbSet<DeliveryOrderRMA> DeliveryOrderRMAs { get; set; }
         public DbSet<RMAStatusHistory> RMAStatusHistories { get; set; }
         public DbSet<RMAItem> RMAItems { get; set; }
@@ -52,6 +55,7 @@ namespace YLWorks.Data
 
         public DbSet<PurchaseOrder> PurchaseOrders { get; set; }
         public DbSet<PurchaseOrderItem> PurchaseOrderItems { get; set; }
+        public DbSet<PurchaseOrderStatusHistory> PurchaseOrderStatusHistories { get; set; }
 
         // =======================
         // INVENTORY / MATERIAL

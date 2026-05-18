@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+import { CommonModule, Location } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
@@ -28,6 +28,8 @@ import { Subject, takeUntil } from 'rxjs';
 import { ValidateAllFormFields } from '../../../shared/helpers/helpers';
 import { DatePickerModule } from 'primeng/datepicker';
 import { SelectModule } from 'primeng/select';
+import { UserService } from '../../../services/userService.service';
+import { EditorModule } from 'primeng/editor';
 
 @Component({
   selector: 'app-material-request-form',
@@ -42,6 +44,7 @@ import { SelectModule } from 'primeng/select';
     SelectModule,
     TableModule,
     RouterLink,
+    EditorModule,
   ],
   template: `<div class="flex flex-col min-h-screen w-full p-5 gap-5">
     <nav class="flex items-center gap-2 text-gray-500">
@@ -55,296 +58,267 @@ import { SelectModule } from 'primeng/select';
         >Material Requests</a
       >
       <i class="pi pi-chevron-right"></i>
-      <span class="text-gray-900 font-bold">New Material Request</span>
+      <span class="text-gray-900 font-bold">Material Request Form</span>
     </nav>
 
     <div class="border bg-white border-gray-200 rounded-md p-5 flex flex-col">
-      <h2 class="text-lg font-semibold mb-5">
-        {{ currentId ? 'Edit Material Request' : 'New Material Request' }}
+      <h2 class="text-xl font-semibold">
+        {{ currentId ? 'Edit Material Request Form' : 'Material Request Form' }}
       </h2>
 
-      <form [formGroup]="materialForm">
-        <div class="grid grid-cols-12 gap-4">
-          <div class="col-span-12 lg:col-span-6">
-            <label class="block font-medium mb-1">Request No</label>
-            <input
-              formControlName="requestNo"
-              placeholder="Auto-generate if leave blanks"
-              class="w-full border border-gray-300 rounded-md p-2"
-              pInputText
-            />
-          </div>
-          <div class="col-span-12 lg:col-span-6">
-            <label class="block font-medium mb-1">Project</label>
-            <p-select
-              styleClass="w-full!"
-              appendTo="body"
-              formControlName="projectId"
-              [options]="projectSelections"
-              [filter]="true"
-            ></p-select>
-          </div>
-
-          <div class="col-span-12 lg:col-span-6">
-            <label class="block font-medium mb-1">Client</label>
-            <p-select
-              styleClass="w-full!"
-              appendTo="body"
-              formControlName="clientId"
-              [options]="clientSelections"
-              [filter]="true"
-            ></p-select>
-          </div>
-
-          <div class="col-span-12 lg:col-span-6">
-            <label class="block font-medium mb-1">Task</label>
-            <p-select
-              styleClass="w-full!"
-              appendTo="body"
-              formControlName="taskId"
-              [options]="taskSelections"
-              [filter]="true"
-            ></p-select>
-          </div>
-
-          <div class="col-span-12 lg:col-span-6">
-            <label class="block font-medium mb-1">Purchase Order</label>
-            <p-select
-              styleClass="w-full!"
-              appendTo="body"
-              formControlName="poId"
-              [options]="poSelections"
-              [filter]="true"
-            ></p-select>
-          </div>
-          <div class="col-span-12 lg:col-span-6">
-            <label class="block font-medium mb-1">Request Date</label>
-            <p-datepicker
-              showIcon="true"
-              dateFormat="dd/mm/yy"
-              appendTo="body"
-              formControlName="requestDate"
-              styleClass="w-full!"
-              inputStyleClass="w-full! border border-gray-300 rounded-md p-2"
-            />
-          </div>
-          <div class="col-span-12 lg:col-span-6">
-            <label class="block font-medium mb-1">Requested By</label>
-            <p-select
-              styleClass="w-full!"
-              appendTo="body"
-              formControlName="requestedById"
-              [options]="userSelections"
-              [filter]="true"
-            ></p-select>
-          </div>
-          <div class="col-span-12 lg:col-span-6">
-            <label class="block font-medium mb-1">Purpose</label>
-            <input
-              formControlName="purpose"
-              class="w-full border border-gray-300 rounded-md p-2"
-              pInputText
-            />
-          </div>
-          <div class="col-span-12">
-            <label class="block font-medium mb-1"
-              >Additional Notes or Special Intructions</label
-            >
-            <textarea
-              formControlName="remarks"
-              class="w-full border border-gray-300 rounded-md p-2"
-              rows="4"
-              pTextarea
-              [autoResize]="true"
-            ></textarea>
-          </div>
+      <div class="mt-1 text-gray-500 tracking-wide">
+        Fill in all required field.
+      </div>
+      <div
+        class="mt-5 grid grid-cols-12 gap-4 items-center"
+        [formGroup]="materialForm"
+      >
+        <!-- <div class="col-span-12 lg:col-span-6 flex flex-col gap-1">
+          <div>Document No <span class="text-red-500">*</span></div>
+          <input
+            type="text"
+            pInputText
+            class="w-full"
+            formControlName="documentNo"
+          />
+        </div> -->
+        <div class="col-span-12 flex flex-col gap-1">
+          <div>Project</div>
+          <p-select
+            [options]="projectSelections || []"
+            appendTo="body"
+            styleClass="w-full!"
+            formControlName="projectId"
+            [filter]="true"
+          ></p-select>
         </div>
-        <div class="border-b border-gray-200 mt-5"></div>
-        <div class="mt-5">
-          <h3 class="text-md font-semibold mb-3">Material Items</h3>
+        <!-- <div class="col-span-12 lg:col-span-6 flex flex-col gap-1">
+          <div>Rev No</div>
+          <input
+            type="text"
+            pInputText
+            class="w-full"
+            formControlName="revNo"
+          />
+        </div>
+        <div class="col-span-12 lg:col-span-6 flex flex-col gap-1">
+          <div>Eff Date</div>
+          <p-datepicker
+            appendTo="body"
+            [showIcon]="true"
+            formControlName="effDate"
+            dateFormat="dd/mm/yy"
+            styleClass="w-full!"
+          ></p-datepicker>
+        </div> -->
+        <!-- <div class="col-span-12 lg:col-span-6 flex flex-col gap-1">
+          <div>Request No</div>
+          <input
+            type="text"
+            pInputText
+            class="w-full"
+            formControlName="requestNo"
+          />
+        </div> -->
+
+        <div class="col-span-12 lg:col-span-6 flex flex-col gap-1">
+          <div>Request Date</div>
+          <p-datepicker
+            appendTo="body"
+            [showIcon]="true"
+            formControlName="requestDate"
+            dateFormat="dd/mm/yy"
+            styleClass="w-full!"
+          ></p-datepicker>
+        </div>
+        <div class="col-span-12 lg:col-span-6 flex flex-col gap-1">
+          <div>Request By</div>
+          <p-select
+            [options]="userSelections || []"
+            appendTo="body"
+            [filter]="true"
+            formControlName="requestedById"
+          ></p-select>
+        </div>
+        <div class="col-span-12 flex flex-col gap-1">
+          <div>Delivery Place</div>
+          <input
+            type="text"
+            pInputText
+            class="w-full"
+            formControlName="deliveryPlace"
+          />
+        </div>
+
+        <div class="col-span-12 flex flex-col gap-1">
+          <div>Remarks</div>
+          <textarea
+            name=""
+            id=""
+            pTextarea
+            [cols]="30"
+            [rows]="3"
+            formControlName="remarks"
+          ></textarea>
+        </div>
+      </div>
+      <div [formGroup]="materialForm">
+        <div formGroupName="materialItems" class="flex flex-col gap-2 mt-6">
+          <div class="font-semibold text-lg">Material Items</div>
           <p-table
-            [showGridlines]="true"
-            formArrayName="materialItems"
+            showGridlines="true"
+            [tableStyle]="{ 'min-width': '70rem', 'table-layout': 'fixed' }"
             [value]="materialItems.controls"
-            styleClass="p-datatable-sm custom-table"
-            [tableStyle]="{ 'min-width': '70rem' }"
-            [showGridlines]="true"
           >
             <ng-template #header>
               <tr>
-                <th
-                  class="!bg-gray-100 text-center! text-gray-500 font-semibold w-96"
-                >
+                <th class="text-center! text-sm! w-[30%]! bg-gray-100!">
                   Description
                 </th>
-                <th
-                  class="!bg-gray-100 text-center! text-gray-500 font-semibold w-64"
-                >
+                <th class="text-center! text-sm! w-[20%]! bg-gray-100!">
                   Brand
                 </th>
-                <th
-                  class="!bg-gray-100 text-center! text-gray-500 font-semibold w-40"
-                >
-                  Unit
+
+                <th class="text-center! text-sm! w-[10%]! bg-gray-100!">
+                  Type No
                 </th>
-                <th
-                  class="!bg-gray-100 text-center! text-gray-500 font-semibold w-40"
-                >
+                <th class="text-center! text-sm! w-[10%]! bg-gray-100!">
                   Quantity
                 </th>
-                <th
-                  class="!bg-gray-100 text-center! text-gray-500 font-semibold w-64"
-                >
-                  Required Date
+                <th class="text-center! text-sm! w-[10%]! bg-gray-100!">
+                  Unit
                 </th>
-                <th
-                  class="!bg-gray-100 text-center! text-gray-500 font-semibold w-64"
-                >
-                  Supplier
+                <th class="text-center! text-sm! w-[15%]! bg-gray-100!">
+                  Required At
                 </th>
-                <th
-                  class="!bg-gray-100 text-center! text-gray-500 font-semibold w-24"
-                >
+                <th class="text-center! text-sm! w-[15%]! bg-gray-100!">
+                  Remarks
+                </th>
+                <th class="text-center! text-sm! w-[5%]! bg-gray-100!">
                   Action
                 </th>
-              </tr>
-            </ng-template>
-            <ng-template #body let-item let-i="rowIndex">
-              <tr [formGroupName]="i">
-                <td class="border p-2">
+              </tr></ng-template
+            >
+            <ng-template #body let-row let-i="rowIndex">
+              <tr [formGroup]="row">
+                <td>
                   <textarea
+                    name=""
+                    id=""
                     pTextarea
+                    class="w-full!"
                     formControlName="description"
-                    rows="2"
-                    cols="30"
-                    class="w-full border border-gray-300 rounded-md p-1"
-                    [autoResize]="true"
+                    [cols]="30"
+                    [rows]="3"
                   ></textarea>
                 </td>
-                <td class="border p-2">
+
+                <td>
                   <input
-                    type="text"
+                    pInputText
                     formControlName="brand"
-                    pInputText
-                    class="w-full! border border-gray-300 text-center! rounded-md p-1"
+                    class="w-full text-center!"
                   />
                 </td>
-                <td class="border p-2">
+
+                <td>
                   <input
-                    type="text"
                     pInputText
-                    formControlName="unit"
-                    class="w-full! border border-gray-300 text-center! rounded-md p-1"
+                    formControlName="typeNo"
+                    class="w-full text-center!"
                   />
                 </td>
-                <td class="border p-2">
-                  <p-inputnumber
+
+                <td>
+                  <p-inputNumber
                     formControlName="quantity"
-                    inputStyleClass="text-center! w-full!"
-                    [useGrouping]="false"
-                  ></p-inputnumber>
-                </td>
-                <td class="border p-2">
-                  <p-datepicker
-                    showIcon="true"
-                    formControlName="requiredDate"
-                    styleClass="w-full"
-                    dateFormat="dd/mm/yy"
-                    appendTo="body"
-                  ></p-datepicker>
-                </td>
-                <td class="border p-2">
-                  <p-select
-                    formControlName="supplierId"
+                    class="w-full!"
+                    inputStyleClass="w-full! text-center!"
                     styleClass="w-full!"
-                    [options]="supplierSelections"
-                    [filter]="true"
-                    appendTo="body"
-                  ></p-select>
+                  />
                 </td>
                 <td>
-                  <div class="flex items-center justify-center">
-                    <p-button
-                      *ngIf="i !== 0"
-                      (onClick)="materialItems.removeAt(i)"
-                      icon="pi pi-times-circle"
-                      [text]="true"
-                      severity="danger"
-                    >
-                    </p-button>
+                  <p-select
+                    formControlName="unit"
+                    appendTo="body"
+                    [options]="[
+                      { label: 'Pcs', value: 'Pcs' },
+                      { label: 'Box', value: 'Box' },
+                      { label: 'Set', value: 'Set' },
+                      { label: 'Pair', value: 'Pair' },
+                      { label: 'Unit', value: 'Unit' },
+                      { label: 'Nos', value: 'Nos' },
+                      { label: 'Rolls', value: 'Rolls' },
+                    ]"
+                    styleClass="w-full!"
+                  ></p-select>
+                </td>
+
+                <td>
+                  <p-datepicker
+                    showIcon="true"
+                    appendTo="body"
+                    formControlName="requiredAt"
+                    styleClass="w-full!"
+                    dateFormat="dd/mm/yy"
+                  ></p-datepicker>
+                </td>
+
+                <td>
+                  <input
+                    pInputText
+                    formControlName="remarks"
+                    class="w-full text-center!"
+                  />
+                </td>
+
+                <td class="text-center!">
+                  <p-button
+                    icon="pi pi-trash"
+                    severity="danger"
+                    size="small"
+                    class="flex items-center justify-center"
+                    [text]="true"
+                    (onClick)="removeItem(i)"
+                  ></p-button>
+                </td>
+              </tr>
+            </ng-template>
+            <ng-template #emptymessage>
+              <tr>
+                <td colspan="100%">
+                  <div class="flex items-center justify-center text-gray-500">
+                    No items added.
                   </div>
                 </td>
               </tr>
             </ng-template>
           </p-table>
           <p-button
+            label="Add Item"
+            styleClass="rounded-full!"
+            icon="pi pi-plus-circle"
+            size="small"
+            severity="info"
             (onClick)="addMaterialItem()"
-            [text]="true"
-            styleClass="mt-4! flex! items-center! gap-2!! font-semibold! text-blue-600! hover:text-blue-700!"
-          >
-            <i class="pi pi-plus-circle"></i> Add Line Item
-          </p-button>
+          ></p-button>
         </div>
-
-        <div class="mt-5">
-          <h3 class="text-md font-semibold mb-3">Attachments</h3>
-          <input #file type="file" (change)="addAttachment($event)" hidden />
-          <div
-            class="mt-2 p-5 border-2 border-dashed border-gray-200 bg-gray-50 flex flex-col items-center justify-center gap-2 cursor-pointer"
-          >
-            <div
-              *ngIf="attachments.length === 0"
-              (click)="file.click()"
-              class="w-15 h-15 flex items-center justify-center border border-gray-200 bg-gray-100 rounded-full"
-            >
-              <div class="pi pi-cloud-upload text-gray-400 text-4xl!"></div>
-            </div>
-            <ul class="mt-2">
-              <li
-                *ngFor="let attachment of attachments.controls; let i = index"
-                class="flex items-center gap-2"
-              >
-                <a
-                  [href]="attachment.value"
-                  target="_blank"
-                  class="text-blue-600 hover:underline"
-                >
-                  {{ attachment.value | slice: 0 : 30 }}...
-                </a>
-                <button
-                  type="button"
-                  (click)="removeAttachment(i)"
-                  class="text-red-600 hover:underline"
-                >
-                  Remove
-                </button>
-              </li>
-            </ul>
-            <div
-              class="flex flex-row items-center gap-1 text-gray-500 cursor-pointer tracking-wide"
-            >
-              <b class="underline">Click to Upload</b
-              ><span>or drag and drop</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="mt-5 flex flex-row justify-end gap-3">
-          <p-button
-            [routerLink]="'/material-requests'"
-            label="Cancel"
-            severity="secondary"
-            styleClass="border-gray-200! px-4! tracking-wide! hover:bg-gray-100!"
-          >
-          </p-button>
-          <p-button
-            (onClick)="onSave()"
-            [label]="currentId ? 'Update' : 'Create'"
-            styleClass="bg-blue-600! text-white! border-none! tracking-wide! px-4!"
-          >
-          </p-button>
-        </div>
-      </form>
+      </div>
+      <div class="border-b border-gray-200 mt-4 mb-4"></div>
+      <div class="flex flex-row items-center justify-end gap-2">
+        <p-button
+          label="Discard"
+          severity="secondary"
+          styleClass="border-gray-200! px-4!"
+          (onClick)="CancelClick()"
+        ></p-button>
+        <p-button
+          label="Submit"
+          severity="info"
+          styleClass="px-4!"
+          (onClick)="onSave()"
+        ></p-button>
+      </div>
     </div>
   </div>`,
   styleUrl: './material-request-form.less',
@@ -352,33 +326,51 @@ import { SelectModule } from 'primeng/select';
 })
 export class MaterialRequestForm implements OnInit, OnDestroy {
   private readonly fb = inject(FormBuilder);
-  private readonly router = inject(Router);
   private readonly cdr = inject(ChangeDetectorRef);
+  private readonly userService = inject(UserService);
   private readonly messageService = inject(MessageService);
-  private readonly materialRequestService = inject(MaterialRequestService);
   private readonly activatedRoute = inject(ActivatedRoute);
   private readonly loadingService = inject(LoadingService);
-  protected ngUnsubscribe: Subject<void> = new Subject<void>();
+  private readonly location = inject(Location);
+  private readonly materialRequestService = inject(MaterialRequestService);
 
-  private destroy$ = new Subject<void>();
+  protected ngUnsubscribe: Subject<void> = new Subject<void>();
 
   materialForm!: FormGroup;
   currentId: string = '';
+  userRequestedId: string | null = null;
+  projectId: string | null = null;
 
   projectSelections: any[] = [];
-  taskSelections: any[] = [];
-  poSelections: any[] = [];
   userSelections: any[] = [];
   supplierSelections: any[] = [];
-  clientSelections: any[] = [];
 
   selectedClient: any = null;
 
   ngOnInit(): void {
-    this.initForm();
     this.currentId = this.activatedRoute.snapshot.queryParams['id'] || null;
+    this.projectId =
+      this.activatedRoute.snapshot.queryParams['projectId'] || null;
+    this.userRequestedId = this.userService.currentUser?.userId || null;
+
+    this.initForm();
 
     this.getDropdown();
+
+    this.materialForm
+      .get('projectId')
+      ?.valueChanges.pipe(takeUntil(this.ngUnsubscribe))
+      .subscribe((projectId: string) => {
+        const selectedProject = this.projectSelections.find(
+          (x) => x.value === projectId,
+        );
+
+        if (selectedProject) {
+          this.materialForm.patchValue({
+            clientId: selectedProject.clientId,
+          });
+        }
+      });
 
     if (this.currentId) {
       this.loadForm();
@@ -392,36 +384,28 @@ export class MaterialRequestForm implements OnInit, OnDestroy {
       .pipe(takeUntil(this.ngUnsubscribe))
       .subscribe({
         next: (res: any) => {
-          console.log(res);
           this.loadingService.stop();
 
-          this.clientSelections = res.clients.map((c: any) => ({
-            label: c.name,
-            value: c.id,
-          }));
-
           this.projectSelections = res.projects.map((p: any) => ({
-            label: p.projectTitle,
             value: p.id,
-            tasks: p.tasks,
+            label: p.projectTitle,
             clientId: p.clientId,
           }));
-          this.taskSelections = res.tasks.map((t: any) => ({
-            label: t.name,
-            value: t.id,
-          }));
-          this.poSelections = res.purchaseOrders.map((po: any) => ({
-            label: po.poNo,
-            value: po.id,
-          }));
-          this.userSelections = res.users.map((u: any) => ({
-            label: u.name,
-            value: u.id,
-          }));
+
           this.supplierSelections = res.suppliers.map((s: any) => ({
             label: s.name,
             value: s.id,
           }));
+
+          this.userSelections = res.users.map((u: any) => ({
+            label: u.name,
+            value: u.id,
+          }));
+
+          if (this.projectId) {
+            this.materialForm.get('projectId')?.patchValue(this.projectId);
+            this.materialForm.get('projectId')?.disable();
+          }
           this.cdr.markForCheck();
         },
         error: (err) => {
@@ -434,37 +418,24 @@ export class MaterialRequestForm implements OnInit, OnDestroy {
           });
         },
       });
-
-    this.materialForm
-      .get('projectId')
-      ?.valueChanges.pipe(takeUntil(this.ngUnsubscribe))
-      .subscribe((projectId) => {
-        this.projectSelections.forEach((project: any) => {
-          if (project.value === projectId) {
-            this.taskSelections = project.tasks.map((t: any) => ({
-              label: t.name,
-              value: t.id,
-            }));
-          }
-          this.materialForm.get('clientId')?.setValue(project.clientId);
-          this.cdr.markForCheck();
-        });
-      });
   }
 
-  private initForm() {
-    this.materialForm = this.fb.group({
-      requestNo: [null],
-      projectId: ['', Validators.required],
-      taskId: [null],
-      poId: [null],
-      clientId: [null],
-      purpose: [null],
-      requestDate: [new Date(), Validators.required],
-      requestedById: ['', Validators.required],
-      remarks: [null],
-      materialItems: this.fb.array([this.createMaterialItem()]),
-      attachments: this.fb.array([]),
+  initForm() {
+    this.materialForm = new FormGroup({
+      id: new FormControl<string | null>({ value: null, disabled: true }),
+      documentNo: new FormControl<string | null>(null),
+      revNo: new FormControl<string | null>(null),
+      effDate: new FormControl<Date | null>(null),
+      requestNo: new FormControl<string | null>(null),
+      projectId: new FormControl<string | null>(null),
+      clientId: new FormControl<string | null>(null),
+      requestDate: new FormControl<Date | null>(new Date()),
+      deliveryDate: new FormControl<Date | null>(null),
+      deliveryPlace: new FormControl<string | null>(null),
+      workOrderId: new FormControl<string | null>(null),
+      requestedById: new FormControl<string | null>(this.userRequestedId),
+      remarks: new FormControl<string | null>(null),
+      materialItems: new FormArray([this.createMaterialItem()]),
     });
   }
 
@@ -472,39 +443,17 @@ export class MaterialRequestForm implements OnInit, OnDestroy {
     return this.materialForm.get('materialItems') as FormArray;
   }
 
-  get attachments(): FormArray<FormControl<string>> {
-    return this.materialForm.get('attachments') as FormArray<
-      FormControl<string>
-    >;
-  }
-
-  addAttachment(event: any) {
-    const file = event.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = () => {
-        const fileUrl = reader.result as string;
-        this.attachments.push(new FormControl(fileUrl, { nonNullable: true }));
-        this.cdr.markForCheck();
-      };
-      reader.readAsDataURL(file);
-    }
-  }
-
-  // Remove attachment by index
-  removeAttachment(index: number) {
-    this.attachments.removeAt(index);
-  }
-
   createMaterialItem(): FormGroup {
     return this.fb.group({
       id: null,
-      description: ['', Validators.required],
-      brand: [''],
-      unit: [''],
-      quantity: [0, Validators.required],
-      requiredDate: [null, Validators.required],
-      supplierId: [''],
+      description: [null, Validators.required],
+      brand: [null],
+      unit: [null],
+      typeNo: [null],
+      quantity: [null, Validators.required],
+      requiredAt: [null],
+      remarks: [null],
+      supplierId: [null],
     });
   }
 
@@ -514,16 +463,22 @@ export class MaterialRequestForm implements OnInit, OnDestroy {
     if (item) {
       newItemGroup.patchValue({
         id: item.id || null,
-        description: item.description || '',
-        brand: item.brand || '',
-        unit: item.unit || '',
+        description: item.description || null,
+        brand: item.brand || null,
+        unit: item.unit || null,
+        typeNo: item.typeNo,
         quantity: item.quantity || 0,
-        requiredDate: item.requiredDate ? new Date(item.requiredDate) : null,
-        supplierId: item.supplierId || '',
+        requiredAt: item.requiredDate ? new Date(item.requiredDate) : null,
+        remarks: item.remarks || null,
+        supplierId: item.supplierId || null,
       });
     }
 
     this.materialItems.push(newItemGroup);
+  }
+
+  removeItem(index: number) {
+    this.materialItems.removeAt(index);
   }
 
   loadForm() {
@@ -574,20 +529,25 @@ export class MaterialRequestForm implements OnInit, OnDestroy {
       return;
     }
 
+    this.loadingService.start();
+    const payload = this.materialForm.getRawValue();
+
     const action$ = this.currentId
-      ? this.materialRequestService.Update(this.materialForm.value)
-      : this.materialRequestService.Create(this.materialForm.value);
+      ? this.materialRequestService.Update(payload)
+      : this.materialRequestService.Create(payload);
 
     action$.subscribe({
-      next: () => {
+      next: (res) => {
+        this.loadingService.stop();
         this.messageService.add({
           severity: 'success',
           summary: 'Success',
-          detail: `Material Request ${this.currentId ? 'updated' : 'created'} successfully`,
+          detail: `Material Request: ${res.requestNo ? 'updated' : 'created'} successfully`,
         });
-        this.router.navigate(['/material-requests']);
+        this.CancelClick();
       },
       error: (err) => {
+        this.loadingService.stop();
         this.messageService.add({
           severity: 'error',
           summary: 'Error',
@@ -597,6 +557,10 @@ export class MaterialRequestForm implements OnInit, OnDestroy {
         });
       },
     });
+  }
+
+  CancelClick() {
+    this.location.back();
   }
 
   ngOnDestroy(): void {

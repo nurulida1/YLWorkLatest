@@ -7,16 +7,22 @@ import {
 } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { UserService } from '../../../services/userService.service';
-import { Tooltip } from 'primeng/tooltip';
+import { TooltipModule } from 'primeng/tooltip';
 import { LoginResponse } from '../../../models/User';
 import { DialogModule } from 'primeng/dialog';
 import { ButtonModule } from 'primeng/button';
 
 @Component({
   selector: 'app-sidemenu',
-  imports: [CommonModule, RouterLink, Tooltip, DialogModule, ButtonModule],
+  imports: [
+    CommonModule,
+    RouterLink,
+    TooltipModule,
+    DialogModule,
+    ButtonModule,
+  ],
   template: `<div
-    class="h-full flex flex-col justify-between pt-7 pb-5 border-r border-gray-200 bg-gray-800 text-white"
+    class="h-full flex flex-col justify-between pt-7 pb-5 border-r border-gray-200 text-white"
   >
     <div class="flex flex-col">
       <div
@@ -41,7 +47,6 @@ import { ButtonModule } from 'primeng/button';
       <div
         class="py-5 flex flex-col gap-7 lg:gap-3 lg:pl-3 lg:pr-2 overflow-y-auto scrollbar scroll-smooth"
       >
-        <div class="hidden lg:block text-gray-400 text-sm">MAIN MENU</div>
         <div class="flex flex-col gap-2 w-full">
           <ng-container *ngFor="let item of mainMenu">
             <div
@@ -58,29 +63,31 @@ import { ButtonModule } from 'primeng/button';
                 ),
               }"
             >
-              <i
-                class="{{ item.icon }} text-sm! xl:text-base!"
-                [ngClass]="{
-                  'text-white': isActive(item.route),
-                  'text-gray-600': !isActive(item.route),
-                }"
-                [pTooltip]="item.label"
-              ></i>
-              <div class="lg:tracking-wider hidden lg:block">
-                {{ item.label }}
+              <div class="flex items-center gap-3">
+                <i
+                  class="pi {{ item.icon }} text-sm! xl:text-base!"
+                  [ngClass]="{
+                    'text-white': isActive(item.route, item),
+                    'text-gray-400': !isActive(item.route, item),
+                  }"
+                ></i>
+
+                <span class="hidden lg:block">
+                  {{ item.label }}
+                </span>
               </div>
             </div>
           </ng-container>
         </div>
-        <div class="border-b-2 border-dashed border-white/10"></div>
-        <div class="hidden lg:block text-gray-400 text-sm">MANAGEMENT</div>
         <div
           class="flex flex-col items-center lg:items-start gap-3 text-[14px]"
         >
           <ng-container *ngFor="let item of management">
             <div
               class="flex flex-col gap-2 w-full"
-              *ngIf="item.roles.includes(currentUser?.systemRole)"
+              *ngIf="
+                !item.roles || item.roles.includes(currentUser?.systemRole)
+              "
             >
               <div
                 class="flex flex-row lg:pl-4 items-center justify-between gap-3 py-2 rounded-lg px-2"
@@ -97,7 +104,7 @@ import { ButtonModule } from 'primeng/button';
                 <!-- LEFT: icon + label -->
                 <div class="flex items-center gap-3">
                   <i
-                    class="{{ item.icon }} text-sm! xl:text-base!"
+                    class="pi {{ item.icon }} text-sm! xl:text-base!"
                     [ngClass]="{
                       'text-white': isActive(item.route, item),
                       'text-gray-400': !isActive(item.route, item),
@@ -129,10 +136,12 @@ import { ButtonModule } from 'primeng/button';
                   *ngFor="let sub of getAllowedSubItems(item)"
                   class="py-3 px-3 rounded-md cursor-pointer"
                   [ngClass]="{
-                    'bg-gray-200 font-semibold text-blue-500': isActive(
+                    'bg-gray-700 font-semibold text-blue-500': isActive(
                       sub.route
                     ),
-                    'hover:bg-gray-100': !isActive(sub.route),
+                    'hover:bg-gray-700 hover:text-blue-500': !isActive(
+                      sub.route
+                    ),
                   }"
                   [routerLink]="sub.route"
                 >
@@ -163,6 +172,7 @@ export class Sidemenu {
     {
       label: 'Dashboard',
       route: '/dashboard',
+      icon: 'pi-home',
       roles: [
         'SuperAdmin',
         'Admin',
@@ -175,6 +185,8 @@ export class Sidemenu {
         'Logistic Assistant',
         'Project Manager',
         'System & Intelligence Manager',
+        'Account & Admin Manager',
+        'Purchasing Executive',
       ],
     },
     // {
@@ -199,228 +211,147 @@ export class Sidemenu {
 
   management: any[] = [
     {
-      label: 'Calendar & ToDo',
-      roles: ['HR'],
-      route: '/to-do',
+      label: 'Quotations',
+      route: '/quotations',
+      icon: 'pi-file',
+      // roles: ['Sales Director', 'Sales Executive', 'Sales Support'],
     },
     {
-      label: 'Employee',
-      roles: ['HR'],
-      route: '/employee',
+      label: 'Purchase Orders',
+      icon: 'pi-shopping-cart',
+      items: [
+        {
+          label: 'Supplier PO',
+          route: '/purchase-orders/supplier',
+          // roles: [
+          //   'Sales Director',
+          //   'Sales Executive',
+          //   'Sales Support',
+          //   'Account & Admin Manager',
+          //   'Purchasing Executive',
+          //   'SuperAdmin',
+          // ],
+        },
+        {
+          label: 'Client PO',
+          route: '/purchase-orders/client',
+          // roles: [
+          //   'Sales Director',
+          //   'Sales Executive',
+          //   'Sales Support',
+          //   'Account & Admin Manager',
+          //   'Purchasing Executive',
+          //   'SuperAdmin',
+          // ],
+        },
+      ],
     },
     {
-      label: 'Attendance',
-      roles: ['HR'],
-    },
-    {
-      label: 'Leave',
-      roles: ['HR'],
-    },
-    {
-      label: 'Recruitment',
-      roles: ['HR'],
+      label: 'Invoices',
+      route: '/invoices',
+      roles: ['Manager', 'Director', 'Admin', 'SuperAdmin'],
     },
 
     {
-      label: 'Inventory & Sales',
-      roles: [
-        'Manager',
-        'Director',
-        'Admin',
-        'SuperAdmin',
-        'Sales Director',
-        'Sales Executive',
-        'Sales Support',
-      ],
-      items: [
-        {
-          label: 'Quotations',
-          route: '/quotations',
-          roles: ['Sales Director', 'Sales Executive', 'Sales Support'],
-        },
-        {
-          label: 'Invoices',
-          route: '/invoices',
-          roles: ['Manager', 'Director', 'Admin', 'SuperAdmin'],
-        },
-        {
-          label: 'Clients',
-          route: '/clients',
-          roles: ['Manager', 'Director', 'Admin', 'SuperAdmin'],
-        },
-      ],
-    },
-    {
-      label: 'Purchases',
-      roles: [
-        'Manager',
-        'Director',
-        'Admin',
-        'SuperAdmin',
-        'Sales Director',
-        'Sales Executive',
-        'Sales Support',
-      ],
-      items: [
-        {
-          label: 'Purchase Orders',
-          route: '/purchase-orders',
-          roles: [
-            'Sales Director',
-            'Sales Executive',
-            'Sales Support',
-            'SuperAdmin',
-          ],
-        },
-        {
-          label: 'Suppliers',
-          route: '/supplier',
-          roles: [
-            'Sales Director',
-            'Sales Executive',
-            'Sales Support',
-            'SuperAdmin',
-          ],
-        },
-        {
-          label: 'Supplier Payments',
-          route: '/supplier-payments',
-        },
-        {
-          label: 'Material Requests',
-          route: '/material-requests',
-          roles: ['Purchasing Executive', 'Project Manager', 'SuperAdmin'],
-        },
-      ],
-    },
-    {
-      label: 'Finance & Accounts',
-      roles: ['Director', 'Admin', 'SuperAdmin'],
-      items: [
-        {
-          label: 'Expenses',
-          route: '/expenses',
-        },
-        {
-          label: 'Incomes',
-          route: '/incomes',
-        },
-        {
-          label: 'Payments',
-          route: '/payments',
-        },
-        {
-          label: 'Transactions',
-          route: '/transactions',
-        },
-      ],
-    },
-    {
-      label: 'Manage',
-      roles: ['Director', 'Admin', 'SuperAdmin'],
-      items: [
-        {
-          label: 'Department',
-          route: '/department',
-        },
-        {
-          label: 'Company',
-          route: '/company',
-        },
-        {
-          label: 'Manage Users',
-          route: '/user-management',
-        },
-        {
-          label: 'Access Permission',
-          route: '/access-permission',
-        },
-      ],
+      label: 'Suppliers',
+      route: '/supplier',
+      icon: 'pi-shop',
+      // roles: [
+      //   'Sales Director',
+      //   'Sales Executive',
+      //   'Sales Support',
+      //   'SuperAdmin',
+      // ],
     },
 
-    //Project Management
     {
-      label: 'Projects',
-      roles: ['SuperAdmin', 'Project Manager', 'System & Intelligence Manager'],
-      route: '/projects',
+      label: 'Clients',
+      route: '/clients',
+      icon: 'pi-users',
+      // roles: [
+      //   'Sales Director',
+      //   'Sales Executive',
+      //   'Sales Support',
+      //   'SuperAdmin',
+      // ],
     },
+
+    // {
+    //   label: 'Supplier Payments',
+    //   route: '/supplier-payments',
+    //   roles: ['Purchasing Executive', 'SuperAdmin'],
+    // },
     {
-      label: 'Request Materials',
-      roles: ['SuperAdmin', 'Project Manager', 'System & Intelligence Manager'],
+      label: 'Material Requests',
       route: '/material-requests',
+      icon: 'pi-list',
+      // roles: ['Purchasing Executive', 'Project Manager', 'SuperAdmin'],
     },
 
-    //Inventory (Logistic)
     {
       label: 'Inventory',
-      roles: ['Logistic Assistant', 'SuperAdmin', 'Purchasing Executive'],
       route: '/inventory',
+      icon: 'pi-box',
+      // roles: ['Logistic Assistant', 'SuperAdmin', 'Purchasing Executive'],
     },
-    {
-      label: 'Locations',
-      roles: ['Logistic Assistant', 'SuperAdmin'],
-      route: '/locations',
-    },
-    {
-      label: 'Category',
-      roles: ['Logistic Assistant', 'SuperAdmin'],
-      route: '/category',
-    },
-    {
-      label: 'Sections',
-      roles: ['Logistic Assistant', 'SuperAdmin'],
-      route: '/sections',
-    },
-    // {
-    //   label: 'Administration',
-    //   roles: ['Director', 'Admin', 'SuperAdmin'],
-    //   items: [
-    //     {
-    //       label: 'Settings',
-    //       route: '/settings',
-    //     },
-    //   ],
-    // },
-    // {
-    //   label: 'Delivery',
-    //   icon: 'pi pi-truck',
-    //   route: '/delivery',
-    //   roles: ['SuperAdmin', 'Admin'],
-    // },
-    // {
-    //   label: 'Timesheet',
-    //   icon: 'pi pi-calendar-clock',
-    //   roles: ['HR', 'SuperAdmin'],
-    //   items: [
-    //     {
-    //       label: 'Manage Holidays',
-    //       route: '/holiday',
-    //     },
-    //     {
-    //       label: 'Manage Leaves',
-    //       route: '/leaves',
-    //     },
-    //   ],
-    // },
-    // {
-    //   label: 'Leave Request',
-    //   icon: 'pi pi-calendar',
-    //   route: '/leave-request',
-    //   roles: ['Manager', 'Director', 'SuperAdmin'],
-    // },
-    // {
-    //   label: 'Payslip Management',
-    //   icon: 'pi pi-dollar',
-    //   route: '/payslips',
-    //   roles: ['SuperAdmin', 'HR'],
-    // },
 
-    // {
-    //   label: 'Audit Log',
-    //   icon: 'pi pi-list',
-    //   route: '/auditlog',
-    //   roles: ['SuperAdmin'],
-    // },
+    {
+      label: 'Delivery Orders',
+      icon: 'pi pi-truck',
+      items: [
+        {
+          label: 'Inbound DO',
+          route: '/delivery-orders/inbound',
+        },
+        {
+          label: 'Outbound DO',
+          route: '/delivery-orders/outbound',
+        },
+      ],
+    },
+
+    {
+      label: 'Work Orders',
+      icon: 'pi-wrench',
+      route: '/work-order',
+      // roles: ['SuperAdmin', 'Admin'],
+    },
+    {
+      label: 'Projects',
+      icon: 'pi-folder',
+      route: '/projects',
+      // roles: ['SuperAdmin', 'Admin'],
+    },
+    {
+      label: 'Tasks',
+      icon: 'pi-check-square',
+      route: '/tasks',
+      // roles: ['SuperAdmin', 'Admin'],
+    },
+    {
+      label: 'Invoices',
+      icon: 'pi-receipt',
+      route: '/invoices',
+      // roles: ['SuperAdmin', 'Admin'],
+    },
+    {
+      label: 'Expenses',
+      route: '/expenses',
+      icon: 'pi-wallet',
+      // roles: ['Purchasing Executive', 'SuperAdmin'],
+    },
+    {
+      label: 'Incomes',
+      route: '/incomes',
+      icon: 'pi-chart-line',
+      // roles: ['Purchasing Executive', 'SuperAdmin'],
+    },
+    {
+      label: 'Payments',
+      route: '/payments',
+      icon: 'pi-credit-card',
+      // roles: ['Purchasing Executive', 'SuperAdmin'],
+    },
   ];
 
   constructor() {

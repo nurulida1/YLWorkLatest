@@ -6,6 +6,7 @@ namespace YLWorks.Model
     {
         public Guid Id { get; set; }
         public string FullName { get; set; } = string.Empty;
+        public string? DisplayName { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
         public string? ContactNo { get; set; } = string.Empty;
         public string Password { get; set; } = string.Empty;
@@ -40,6 +41,8 @@ namespace YLWorks.Model
     {
         [Required]
         public string FullName { get; set; } = string.Empty;
+
+        public string? DisplayName { get; set;} = string.Empty;
         
         [Required]
         [EmailAddress]
@@ -115,6 +118,7 @@ namespace YLWorks.Model
         public string ContactNo { get; set; } = string.Empty;
         public string Password { get; set; } = string.Empty;
         public string FullName {  get; set; } = string.Empty;
+        public string? DisplayName { get; set; } = string.Empty;
         public string EmployeeNo { get; set; } = string.Empty;
         public string JobTitle { get; set; } = string.Empty;
         public string? Gender { get; set; } = string.Empty;
@@ -134,6 +138,7 @@ namespace YLWorks.Model
         public string Message { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
         public string FullName { get; set; } = string.Empty;
+        public string? DisplayName { get; set;} = string.Empty;
         public string EmployeeNo { get; set; } = string.Empty;
         public string AccessToken { get; set; } = string.Empty;
         public string RefreshToken { get; set; } = string.Empty;
@@ -150,6 +155,7 @@ namespace YLWorks.Model
     public class UpdateUserRequest
     {
         public string? FullName { get; set; }
+        public string? DisplayName { get; set;} = string.Empty;
         public string? ContactNo { get; set; }
         public string? Email { get; set; }
         public string? JobTitle { get; set; }

@@ -42,8 +42,12 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddAuthorization();
 
 // --- Controllers ---
-builder.Services.AddControllers();
-
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.ReferenceHandler =
+            System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
+    });
 // --- Swagger ---
 builder.Services.AddEndpointsApiExplorer();
 
@@ -137,7 +141,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAngular", policy =>
         policy.WithOrigins("http://localhost:4200",
-            "https://192.168.1.77:4200"
+            "https://192.168.1.203:4200"
         ) // <-- your Angular URL
               .AllowAnyHeader()
               .AllowAnyMethod()
@@ -173,19 +177,13 @@ app.UseHttpsRedirection();
 app.UseCors("AllowAngular");
 app.UseStaticFiles();
 
-// Serve /uploads
-var uploadsPath = Path.Combine(builder.Environment.ContentRootPath, "uploads");
-if (!Directory.Exists(uploadsPath)) Directory.CreateDirectory(uploadsPath);
-//app.UseStaticFiles(new StaticFileOptions
-//{
-//    FileProvider = new PhysicalFileProvider(uploadsPath),
-//    RequestPath = "/uploads"
-//});
 app.UseStaticFiles(new StaticFileOptions
 {
-    FileProvider = new PhysicalFileProvider(uploadsPath),
-    RequestPath = "/uploads"
+    FileProvider = new PhysicalFileProvider(
+        Path.Combine(Directory.GetCurrentDirectory(), "Uploads")),
+    RequestPath = "/Uploads"
 });
+
 
 
 // ✅ Order matters

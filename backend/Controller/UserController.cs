@@ -159,6 +159,7 @@ namespace WebApplication1.Controllers
           u.Id,
           u.EmployeeNo,
           u.FullName,
+          u.DisplayName,
           u.Email,
           u.SystemRole,
           u.JobTitle,
@@ -377,6 +378,7 @@ namespace WebApplication1.Controllers
                     {
                         user.Id,
                         user.FullName,
+                        user.DisplayName,
                         user.Email,
                         user.SystemRole,
                         user.JobTitle,
@@ -451,6 +453,7 @@ namespace WebApplication1.Controllers
                     Id = Guid.NewGuid(),
                     EmployeeNo = GenerateEmployeeNo(),
                     FullName = request.FullName,
+                    DisplayName = request.DisplayName,
                     Email = request.Email,
                     ContactNo = request.ContactNo,
                     JobTitle = request.JobTitle,
@@ -652,7 +655,7 @@ namespace WebApplication1.Controllers
                 _context.PasswordResetTokens.Add(resetToken);
                 _context.SaveChanges();
 
-                var resetLink = $"http://192.168.1.77:4200/reset-password?token={Uri.EscapeDataString(token)}";
+                var resetLink = $"http://localhost:4200/reset-password?token={Uri.EscapeDataString(token)}";
                 _emailService.SendResetEmail(user.Email, resetLink);
 
                 Console.WriteLine($"Password reset link for {user.Email}: {resetLink}");
@@ -707,6 +710,7 @@ namespace WebApplication1.Controllers
 
                 // Update fields only if they are provided in the request
                 if (!string.IsNullOrEmpty(request.FullName)) user.FullName = request.FullName;
+                if (!string.IsNullOrEmpty(request.DisplayName)) user.DisplayName = request.DisplayName;
                 if (!string.IsNullOrEmpty(request.ContactNo)) user.ContactNo = request.ContactNo;
                 if (!string.IsNullOrEmpty(request.Email)) user.Email = request.Email;
                 if (!string.IsNullOrEmpty(request.JobTitle)) user.JobTitle = request.JobTitle;
@@ -732,6 +736,7 @@ namespace WebApplication1.Controllers
                 {
                     Id = user.Id,
                     FullName = user.FullName,
+                    DisplayName = user.DisplayName,
                     ContactNo = user.ContactNo,
                     EmployeeNo = user.EmployeeNo,
                     JobTitle = user.JobTitle,

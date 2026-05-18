@@ -5,21 +5,16 @@ import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
   selector: 'spinner',
   imports: [CommonModule],
   template: `<div id="background">
-    <div id="loader">
-      <div id="shadow"></div>
-      <div class="flex flex-row gap-2">
+    <div class="flex-col gap-4 w-full h-full flex items-center justify-center">
+      <div
+        class="w-20 h-20 border-4 border-transparent text-blue-400 text-4xl animate-spin flex items-center justify-center border-t-blue-400 rounded-full"
+      >
         <div
-          class="w-4 h-4 rounded-full !bg-[#d9884d] animate-bounce [animation-delay:.7s]"
-        ></div>
-        <div
-          class="w-4 h-4 rounded-full !bg-[#d9884d] animate-bounce [animation-delay:.3s]"
-        ></div>
-        <div
-          class="w-4 h-4 rounded-full !bg-[#d9884d] animate-bounce [animation-delay:.7s]"
+          class="w-16 h-16 border-4 border-transparent text-red-400 text-2xl animate-spin flex items-center justify-center border-t-red-400 rounded-full"
         ></div>
       </div>
     </div>
-  </div>`,
+  </div> `,
   styleUrl: './spinner.component.less',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

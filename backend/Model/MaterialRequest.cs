@@ -7,7 +7,7 @@
         public string? RevNo { get; set; }
         public DateTime? EffDate { get; set; }
         public string? RequestNo { get; set; } = string.Empty;
-        public string? ProjectCode { get; set; }
+        public Guid? ProjectId { get; set; }
         public Project? Project { get; set; }
         public DateTime? RequestDate { get; set; }
         public DateTime? DeliveryDate { get; set; }
@@ -16,12 +16,12 @@
         public WorkOrder? WorkOrder { get; set; }
         public Guid? ClientId { get; set; }
         public Company? Client { get; set; }
-        public Guid? SupplierId { get; set; }
-        public Company? Supplier { get; set; }
         public Guid? PurchaseOrderId { get; set; }
         public PurchaseOrder? PurchaseOrder { get; set; }
         public string Status { get; set; } = "Draft"; // Draft, PendingApproval, Approved, Rejected, Issued, Partial, Completed
         public string? Remarks { get; set; }
+        public Guid? RequestedById { get; set; }
+        public User? RequestedBy { get; set; }
         public ICollection<MaterialRequestStatusHistory> MaterialRequestStatusHistories { get; set; } = new List<MaterialRequestStatusHistory>();
         public ICollection<MaterialItem>? MaterialItems { get; set; } = new List<MaterialItem>();
     }
@@ -37,8 +37,8 @@
         public string? TypeNo { get; set; }
         public decimal Quantity { get; set; }
         public DateTime? RequiredAt { get; set; }
-        public Guid SupplierId {  get; set; }
-        public Company Supplier { get; set; }
+        public Guid? SupplierId {  get; set; }
+        public Company? Supplier { get; set; }
         public string? Remarks { get; set; }
     }
 
@@ -48,14 +48,13 @@
         public string? RevNo { get; set; }
         public DateTime? EffDate { get; set; }
         public string? RequestNo { get; set; } = string.Empty;
-        public string? ProjectCode { get; set; }
+        public Guid? ClientId { get; set; }
+        public Guid? ProjectId { get; set; }
         public DateTime? RequestDate { get; set; }
         public DateTime? DeliveryDate { get; set; }
         public string? DeliveryPlace { get; set; }
         public Guid? WorkOrderId { get; set; }
-        public Guid? SupplierId { get; set; }
         public Guid? RequestedById { get; set; }
-        public Guid? PurchaseOrderId { get; set; }
         public string? Remarks { get; set; }
         public ICollection<MaterialItemRequest>? MaterialItems { get; set; } = new List<MaterialItemRequest>(); 
 
@@ -69,13 +68,13 @@
     public class MaterialItemRequest
     {
         public string Description { get; set; } = string.Empty;
-        public string Brand { get; set; } = string.Empty;
+        public string? Brand { get; set; } = string.Empty;
         public string Unit { get; set; } = string.Empty;
         public string? TypeNo { get; set; }
         public decimal? Quantity { get; set; }
         public DateTime? RequiredAt { get; set; }
         public string? Remarks { get; set; }
-        public Guid SupplierId { get; set; }
+        public Guid? SupplierId { get; set; }
     }
 
     public class MaterialItemUpdateRequest : MaterialItemRequest
@@ -90,12 +89,10 @@
         public string? RevNo { get; set; }
         public DateTime? EffDate { get; set; }
         public string RequestNo { get; set; }
-        public string? ProjectCode { get; set; }
         public DateTime? RequestDate { get; set; }
         public DateTime? DeliveryDate { get; set; }
         public string? DeliveryPlace { get; set; }
         public Guid? WorkOrderId { get; set; }
-        public Guid? SupplierId { get; set; }
         public Guid RequestedById { get; set; }
         public Guid? PurchaseOrderId { get; set; } = Guid.Empty;
         public string? Remarks { get; set; }

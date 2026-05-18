@@ -211,8 +211,22 @@ namespace YLWorks.Controller
             {
                 FullName = pm.User.FullName
             }
+        }),
+        MaterialRequests = x.MaterialRequest.Select(pm => new MaterialRequest
+        {
+            DocumentNo = pm.DocumentNo,
+            RequestDate = pm.RequestDate,
+            MaterialItems = pm.MaterialItems.Select(i => new MaterialItem
+            {
+                Description = i.Description,
+                Brand = i.Brand,
+                Quantity = i.Quantity,
+                Unit = i.Unit,
+                Remarks = i.Remarks
+            }).ToList()
+
         })
-        })
+    })
     .FirstOrDefaultAsync();
 
             if (data == null) return NotFound();

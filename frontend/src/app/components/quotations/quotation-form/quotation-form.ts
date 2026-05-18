@@ -54,9 +54,7 @@ import { CheckboxModule } from 'primeng/checkbox';
     CheckboxModule,
   ],
   template: `<div class="w-full p-5 flex flex-col">
-      <div
-        class="flex flex-row items-center gap-1 text-gray-500 text-[15px] tracking-wide"
-      >
+      <div class="flex flex-row items-center gap-1 text-gray-500 tracking-wide">
         <div
           [routerLink]="'/dashboard'"
           class="cursor-pointer hover:text-gray-600"
@@ -90,7 +88,6 @@ import { CheckboxModule } from 'primeng/checkbox';
             [outlined]="true"
             styleClass="py-1.5! px-4!"
             [routerLink]="'/quotations'"
-            size="small"
           ></p-button>
           <!-- <p-button
           label="Save As Draft"
@@ -104,7 +101,6 @@ import { CheckboxModule } from 'primeng/checkbox';
             [label]="currentId ? 'Save Changes' : 'Create'"
             severity="info"
             styleClass="py-1.5! px-4!"
-            size="small"
           ></p-button>
         </div>
       </div>
@@ -113,7 +109,7 @@ import { CheckboxModule } from 'primeng/checkbox';
           <div class="col-span-12 font-semibold text-lg">
             Quotes Information
           </div>
-          <div class="col-span-12 lg:col-span-6 gap-2">
+          <div class="col-span-12 lg:col-span-6 flex flex-col gap-1">
             <div class="mt-2 mb-1">
               From <span class="text-red-500">*</span>
             </div>
@@ -124,7 +120,7 @@ import { CheckboxModule } from 'primeng/checkbox';
               formControlName="fromCompanyId"
             ></p-select>
           </div>
-          <div class="col-span-12 lg:col-span-6 gap-2">
+          <div class="col-span-12 lg:col-span-6 flex flex-col gap-1">
             <div class="flex flex-row justify-between items-center">
               <div>Bill To <span class="text-red-500">*</span></div>
               <p-button
@@ -145,7 +141,7 @@ import { CheckboxModule } from 'primeng/checkbox';
               [showClear]="FG.get('clientId')?.value"
             ></p-select>
           </div>
-          <div class="col-span-12 lg:col-span-6">
+          <div class="col-span-12 lg:col-span-6 flex flex-col gap-1">
             <div>Reference No <span class="text-red-500">*</span></div>
             <input
               type="text"
@@ -154,7 +150,7 @@ import { CheckboxModule } from 'primeng/checkbox';
               formControlName="quotationNo"
             />
           </div>
-          <div class="col-span-12 lg:col-span-6 gap-2">
+          <div class="col-span-12 lg:col-span-6 flex flex-col gap-1">
             <div>Quote date <span class="text-red-500">*</span></div>
             <p-datepicker
               appendTo="body"
@@ -162,10 +158,9 @@ import { CheckboxModule } from 'primeng/checkbox';
               formControlName="quotationDate"
               [showIcon]="true"
               dateFormat="dd/mm/yy"
-              [showClear]="FG.get('clientId')?.value"
             ></p-datepicker>
           </div>
-          <div class="col-span-12">
+          <div class="col-span-12 flex flex-col gap-1">
             <div>Subject <span class="text-red-500">*</span></div>
             <input
               type="text"
@@ -177,7 +172,6 @@ import { CheckboxModule } from 'primeng/checkbox';
           <div class="col-span-12 font-semibold text-lg">Items Details</div>
           <div class="col-span-12">
             <p-table
-              size="small"
               showGridlines="true"
               [tableStyle]="{ 'min-width': '60rem', 'table-layout': 'fixed' }"
               [value]="Items.controls"
@@ -666,7 +660,6 @@ export class QuotationForm implements OnInit, OnDestroy {
     })
       .pipe(takeUntil(this.ngUnsubscribe))
       .subscribe(({ selection, data }) => {
-        // ✅ set dropdown first
         this.companySelection = selection.data
           .filter((x) => x.type === CompanyType.Own)
           .map((x) => ({ label: x.name, value: x.id }));
@@ -675,7 +668,6 @@ export class QuotationForm implements OnInit, OnDestroy {
           .filter((x) => x.type === CompanyType.Client)
           .map((x) => ({ label: x.name, value: x.id }));
 
-        // ✅ THEN patch form
         if (data && data.id) {
           this.patchData(data);
         }

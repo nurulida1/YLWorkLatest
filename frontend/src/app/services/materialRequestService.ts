@@ -10,6 +10,7 @@ import {
 } from '../shared/helpers/helpers';
 import {
   CreateMaterialRequest,
+  MaterialRequestDropdownDto,
   MaterialRequestDto,
   UpdateMaterialRequest,
 } from '../models/MaterialRequest';
@@ -86,12 +87,6 @@ export class MaterialRequestService {
       );
   }
 
-  GetDropdown(): Observable<any[]> {
-    return this.http
-      .get<any[]>(this.url + '/GetSelectOptions')
-      .pipe(retry(1), catchError(this.handleError('GetSelectOptions')));
-  }
-
   Create(request: CreateMaterialRequest): Observable<MaterialRequestDto> {
     return this.http
       .post<MaterialRequestDto>(`${this.url}/Create`, request) // no { Data: ... }
@@ -117,6 +112,12 @@ export class MaterialRequestService {
   //     .put<MaterialRequestDto>(`${this.url}/UpdateStatus`, request)
   //     .pipe(retry(1), catchError(this.handleError('UpdateStatus')));
   // }
+
+  GetDropdown(): Observable<MaterialRequestDropdownDto> {
+    return this.http
+      .get<MaterialRequestDropdownDto>(`${this.url}/GetDropdown`)
+      .pipe(retry(1), catchError(this.handleError('GetDropdown')));
+  }
 
   private handleError = (context: string) => (error: any) => {
     this.messageService.add({

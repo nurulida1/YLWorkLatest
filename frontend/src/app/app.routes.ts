@@ -246,6 +246,20 @@ export const routes: Routes = [
   },
 
   {
+    path: 'delivery-orders',
+    component: WebLayout,
+    children: [
+      {
+        path: '',
+        loadChildren: () =>
+          import('./components/delivery-order/delivery-order-routing.module').then(
+            (m) => m.DeliveryOrderRoutingModule,
+          ),
+      },
+    ],
+  },
+
+  {
     path: 'invoices',
     component: WebLayout,
     children: [

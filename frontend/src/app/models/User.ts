@@ -4,6 +4,7 @@ import { DepartmentDto } from './Department';
 
 export interface UserDto extends BaseModel {
   fullName: string;
+  displayName: string;
   email: string;
   contactNo: string;
   password: string;
@@ -31,6 +32,7 @@ export interface LoginRequest {
 
 export interface RegisterRequest {
   fullName: string;
+  displayName: string;
   email: string;
   password: string;
   confirmPassword: string;
@@ -44,6 +46,7 @@ export interface RegisterRequest {
 export interface UpdateUserRequest {
   id: string; // The Guid of the user
   fullName?: string;
+  displayName?: string;
   contactNo?: string;
   jobTitle?: string;
   gender?: string;
@@ -77,6 +80,7 @@ export interface LoginResponse {
   message: string;
   email: string;
   fullName: string;
+  displayName: string;
   employeeNo: string;
   accessToken: string;
   refreshToken: string;
@@ -91,6 +95,7 @@ export interface LoginResponse {
 export interface UpdateUserRequest {
   id: string;
   fullName?: string;
+  displayName?: string;
   email?: string;
   contactNo?: string;
   jobTitle?: string;

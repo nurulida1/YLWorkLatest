@@ -44,9 +44,7 @@ import {
     CheckboxModule,
   ],
   template: `<div class="w-full flex flex-col p-5">
-    <div
-      class="flex flex-row items-center gap-1 text-gray-500 text-[15px] tracking-wide"
-    >
+    <div class="flex flex-row items-center gap-1 text-gray-500 tracking-wide">
       <div
         class="cursor-pointer hover:text-gray-600"
         [routerLink]="'/dashboard'"

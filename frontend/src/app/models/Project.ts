@@ -1,5 +1,6 @@
 import { BaseModel } from './BaseModel';
 import { CompanyDto } from './Company';
+import { MaterialRequestDto } from './MaterialRequest';
 import { PurchaseOrderDto } from './PurchaseOrder';
 import { QuotationDto } from './Quotation';
 import { UserDto } from './User';
@@ -21,6 +22,7 @@ export interface ProjectDto extends BaseModel {
   workOrders: WorkOrderDto[];
   quotations: QuotationDto[];
   purchaseOrders: PurchaseOrderDto[];
+  materialRequests: MaterialRequestDto[];
 }
 
 export interface ProjectMember extends BaseModel {

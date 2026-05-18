@@ -6,7 +6,9 @@ import { UserDto } from './User';
 
 export interface PurchaseOrderDto extends BaseModel {
   purchaseOrderNo: string;
-  type: string;
+  fromCompanyId: string;
+  fromCompany: CompanyDto;
+  type: string; //Incoming / Outcoming
   poDate: Date;
   poReceivedDate: Date;
   clientId: string;
@@ -14,7 +16,7 @@ export interface PurchaseOrderDto extends BaseModel {
   supplierId: string;
   supplier: CompanyDto;
   terms: string;
-  projectCode: string;
+  projectId: string;
   project: ProjectDto;
   quotationId?: string;
   quotation?: QuotationDto;
@@ -29,6 +31,7 @@ export interface PurchaseOrderDto extends BaseModel {
   status: string;
   termsAndConditions: string;
   bankDetails: string;
+  attachment: string;
   purchaseOrderStatusHistories: PurchaseOrderStatusHistory[];
   purchaseOrderItems: PurchaseOrderItem[];
 }
@@ -74,14 +77,15 @@ export interface UpdatePOItemRequest extends POItemBase {
 
 export interface CreatePORequest {
   purchaseOrderNo: string;
+  fromCompanyId: string;
   type: string;
   poDate: Date;
   poReceivedDate: Date;
-  clientId: string;
-  supplierId: string;
+  clientId?: string;
+  supplierId?: string;
   terms: string;
   quotationId: string;
-  projectCode: string;
+  projectId: string;
   gross: number;
   discount: number;
   totalAmount: number;
@@ -90,6 +94,7 @@ export interface CreatePORequest {
   termsAndConditions: string;
   bankDetails: string;
   totalQuantity: number;
+  attachment?: string;
   purchaseOrderItems: POItemBase[];
 }
 
@@ -103,4 +108,10 @@ export interface UpdatePOStatusRequest {
   status: string;
   remarks: string;
   signatureImage: string;
+}
+
+export interface PurchaseOrderDropdownDto {
+  clients: CompanyDto[];
+  suppliers: CompanyDto[];
+  quotations: QuotationDto[];
 }

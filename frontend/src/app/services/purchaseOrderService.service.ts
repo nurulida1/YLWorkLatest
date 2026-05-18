@@ -1,8 +1,8 @@
 import { Injectable } from '@angular/core';
 import {
   CreatePORequest,
+  PurchaseOrderDropdownDto,
   PurchaseOrderDto,
-  UpdatePORequest,
 } from '../models/PurchaseOrder';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { MessageService } from 'primeng/api';
@@ -86,13 +86,13 @@ export class PurchaseOrderService {
       );
   }
 
-  Create(request: CreatePORequest): Observable<PurchaseOrderDto> {
+  Create(request: FormData): Observable<PurchaseOrderDto> {
     return this.http
       .post<PurchaseOrderDto>(`${this.url}/Create`, request) // no { Data: ... }
       .pipe(retry(1), catchError(this.handleError('Create')));
   }
 
-  Update(request: UpdatePORequest): Observable<PurchaseOrderDto> {
+  Update(request: FormData): Observable<PurchaseOrderDto> {
     return this.http
       .put<PurchaseOrderDto>(`${this.url}/Update`, request)
       .pipe(retry(1), catchError(this.handleError('Update')));
@@ -112,14 +112,20 @@ export class PurchaseOrderService {
       .pipe(retry(1), catchError(this.handleError('Delete')));
   }
 
-  UpdateStatus(id: string, status: string): Observable<PurchaseOrderDto> {
-    const request = {
-      Id: id,
-      Status: status,
+  UpdateStatus(
+    id: string,
+    status: string,
+    userId?: string | null,
+  ): Observable<any> {
+    const params: any = {
+      id,
+      status,
     };
-
+    if (userId) {
+      params.userId = userId;
+    }
     return this.http
-      .put<PurchaseOrderDto>(`${this.url}/UpdateStatus`, request)
+      .put<any>(`${this.url}/UpdateStatus`, null, { params })
       .pipe(retry(1), catchError(this.handleError('UpdateStatus')));
   }
 
@@ -137,6 +143,12 @@ export class PurchaseOrderService {
       params,
       responseType: 'blob', // important for files
     });
+  }
+
+  GetDropdown(): Observable<PurchaseOrderDropdownDto> {
+    return this.http
+      .get<PurchaseOrderDropdownDto>(`${this.url}/GetDropdown`)
+      .pipe(retry(1), catchError(this.handleError('GetDropdown')));
   }
 
   private handleError = (context: string) => (error: any) => {

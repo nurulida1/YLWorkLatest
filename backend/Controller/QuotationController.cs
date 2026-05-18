@@ -28,139 +28,135 @@ namespace YLWorks.Controller
 
         [HttpGet("GetMany")]
         public ActionResult<object> GetMany(
-      int page = 1,
-      int pageSize = 10,
-      string? filter = null,
-      string? orderBy = null,
-      string? select = null,
-      string? includes = null)
+int page = 1,
+int pageSize = 10,
+string? filter = null,
+string? orderBy = null,
+string? select = null,
+string? includes = null)
         {
             try
             {
-                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                var jobTitle = User.FindFirst("SystemRole")?.Value;
+                // 1. Initialize Query
+                var query = _context.Quotations.AsQueryable();
 
-                if (string.IsNullOrEmpty(userIdClaim))
-                    return Unauthorized();
+                // Dynamically include related data
+                if (!string.IsNullOrWhiteSpace(includes))
+                {
+                    foreach (var include in includes.Split(',', StringSplitOptions.RemoveEmptyEntries))
+                    {
+                        query = query.Include(include.Trim());
+                    }
+                }
 
-                var userId = Guid.Parse(userIdClaim);
+                // 3. Dynamic Filtering (Expression Tree)
+                if (!string.IsNullOrEmpty(filter))
+                {
+                    var parameter = Expression.Parameter(typeof(Quotation), "q");
+                    Expression? finalExpression = null;
 
-                // ======================================================
-                // BASE QUERY
-                // ======================================================
-                var query = _context.Quotations
-                    .AsNoTracking()
-                    .Include(q => q.Client)
-                    .Include(q => q.QuotationStatusHistories)
-                        .ThenInclude(h => h.ActionUser)
-                    .Include(q => q.QuotationStatusHistories)
-                        .ThenInclude(h => h.ReviewedByUser)
-                    .AsQueryable();
+                    var orParts = filter.Split('|');
+                    foreach (var orPart in orParts)
+                    {
+                        Expression? orExpression = null;
+                        var andParts = orPart.Split(',');
 
-                // ======================================================
-                // ROLE FLAGS
-                // ======================================================
-                var isAdmin =
-                    jobTitle == "Admin" ||
-                    jobTitle == "SuperAdmin" ||
-                    jobTitle == "Sales Director";
+                        foreach (var andPart in andParts)
+                        {
+                            bool isNotEqual = andPart.Contains("!=");
+                            var kv = isNotEqual ? andPart.Split("!=") : andPart.Split('=');
+                            if (kv.Length != 2) continue;
 
-                // ======================================================
-                // ACCESS CONTROL (FIXED)
-                // ======================================================
-                query = query.Where(q =>
-                    isAdmin ||
-                    q.CreatedById == userId ||
+                            var propertyName = kv[0].Trim();
+                            var valueStr = kv[1].Trim();
+                            var propertyAccess = Expression.PropertyOrField(parameter, propertyName);
 
-                    // 👇 IMPORTANT: reviewer can ALWAYS see
-                    q.QuotationStatusHistories.Any(h => h.ReviewedByUserId == userId)
-                );
+                            Expression condition;
+                            // String handling
+                            if (propertyAccess.Type == typeof(string))
+                            {
+                                var method = typeof(string).GetMethod("Contains", new[] { typeof(string) });
+                                var containsExpr = Expression.Call(propertyAccess, method!, Expression.Constant(valueStr));
+                                condition = isNotEqual ? Expression.Not(containsExpr) : containsExpr;
+                            }
+                            // Guid handling
+                            else if (propertyAccess.Type == typeof(Guid) || propertyAccess.Type == typeof(Guid?))
+                            {
+                                var guidValue = Guid.Parse(valueStr);
+                                condition = Expression.Equal(propertyAccess, Expression.Constant(guidValue, propertyAccess.Type));
+                            }
+                            // Enum handling (Status)
+                            else if (propertyAccess.Type.IsEnum)
+                            {
+                                var enumValue = Enum.Parse(propertyAccess.Type, valueStr);
+                                condition = Expression.Equal(propertyAccess, Expression.Constant(enumValue));
+                            }
+                            // General handling (Numbers/Dates)
+                            else
+                            {
+                                var convertedValue = Convert.ChangeType(valueStr, Nullable.GetUnderlyingType(propertyAccess.Type) ?? propertyAccess.Type);
+                                condition = Expression.Equal(propertyAccess, Expression.Constant(convertedValue, propertyAccess.Type));
+                            }
 
-                // ======================================================
-                // ORDER BY
-                // ======================================================
+                            orExpression = orExpression == null ? condition : Expression.AndAlso(orExpression, condition);
+                        }
+                        finalExpression = finalExpression == null ? orExpression : Expression.OrElse(finalExpression, orExpression);
+                    }
+
+                    if (finalExpression != null)
+                    {
+                        var lambda = Expression.Lambda<Func<Quotation, bool>>(finalExpression, parameter);
+                        query = query.Where(lambda);
+                    }
+                }
+
+                // 4. Sorting
                 if (!string.IsNullOrEmpty(orderBy))
                 {
-                    bool desc = orderBy.EndsWith(" desc", StringComparison.OrdinalIgnoreCase);
+                    bool descending = orderBy.EndsWith(" desc", StringComparison.OrdinalIgnoreCase);
                     var propertyName = orderBy.Replace(" desc", "", StringComparison.OrdinalIgnoreCase).Trim();
-
-                    query = desc
-                        ? query.OrderByDescending(x => EF.Property<object>(x, propertyName))
-                        : query.OrderBy(x => EF.Property<object>(x, propertyName));
-                }
-                else
-                {
-                    query = query.OrderByDescending(x => x.CreatedAt);
+                    query = descending ? query.OrderByDescending(x => EF.Property<object>(x, propertyName))
+                                       : query.OrderBy(x => EF.Property<object>(x, propertyName));
                 }
 
-                // ======================================================
-                // PAGING
-                // ======================================================
                 var totalElements = query.Count();
 
-                var items = query
-                    .Skip((page - 1) * pageSize)
-                    .Take(pageSize)
-                    .ToList();
+                // 5. Pagination and Execution
+                var items = query.Skip((page - 1) * pageSize).Take(pageSize).ToList();
 
-                // ======================================================
-                // PROJECTION (DTO)
-                // ======================================================
-                var result = items.Select(q => new
+                // 6. Selective Projection
+                if (!string.IsNullOrEmpty(select))
                 {
-                    q.Id,
-                    q.QuotationNo,
-                    q.ReferenceNo,
-                    q.QuotationDate,
-                    q.Status,
-                    q.Subject,
-                    q.TotalAmount,
-
-                    Client = q.Client == null ? null : new
+                    var selectedFields = select.Split(',').Select(f => f.Trim()).ToList();
+                    var projected = items.Select(item =>
                     {
-                        q.Client.Id,
-                        q.Client.Name
-                    },
-
-                    QuotationStatusHistories = q.QuotationStatusHistories
-                        .OrderBy(h => h.ActionAt)
-                        .Select(h => new
+                        var dict = new Dictionary<string, object?>();
+                        foreach (var field in selectedFields)
                         {
-                            h.Id,
-                            h.Status,
-                            h.ActionAt,
+                            // Note: GetProperty is case-sensitive. 
+                            // Ensure Angular sends "QuotationNo" not "quotationNo"
+                            var prop = item.GetType().GetProperty(field);
+                            dict[field] = prop?.GetValue(item);
+                        }
+                        return dict;
+                    });
 
-                            ActionUser = h.ActionUser == null ? null : new
-                            {
-                                h.ActionUser.Id,
-                                h.ActionUser.FullName
-                            },
+                    return Ok(new { Data = projected, TotalElements = totalElements });
+                }
 
-                            ReviewedByUser = h.ReviewedByUser == null ? null : new
-                            {
-                                h.ReviewedByUser.Id,
-                                h.ReviewedByUser.FullName
-                            },
+                // === SET IT HERE ===
+                // If no specific fields are selected, map the whole list to DTOs 
+                // to prevent circular reference crashes.
+                var dtoItems = items.Select(item => item).ToList();
 
-                            h.Remarks
-                        })
-                });
-
-                return Ok(new
-                {
-                    Data = result,
-                    TotalElements = totalElements
-                });
+                return Ok(new { Data = dtoItems, TotalElements = totalElements });
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new
-                {
-                    Error = "Search failed.",
-                    Details = ex.Message
-                });
+                return StatusCode(500, new { Error = "Search failed.", Details = ex.Message });
             }
         }
+
 
         [HttpGet("GetOne")]
         public async Task<IActionResult> GetOne(string? filter = null)
@@ -663,7 +659,7 @@ namespace YLWorks.Controller
         {
             return status switch
             {
-                "Revised" => $"Quotation revised by {userName} and sent for review",
+                "Revised" => $"Quotation updated by {userName} and sent for review to {reviewerName ?? "reviewer"}",
                 "Approved" => $"Quotation approved by {userName}",
                 "Rejected" => $"Quotation rejected by {userName}",
                 "Sent" => $"Quotation sent by {userName} to {reviewerName ?? "client"}",

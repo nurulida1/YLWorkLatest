@@ -10,7 +10,7 @@ export interface MaterialRequestDto extends BaseModel {
   revNo: string;
   effDate: Date;
   requestNo: string;
-  projectCode: string;
+  projectId: string;
   project: ProjectDto;
   requestDate: Date;
   deliveryDate: Date;
@@ -19,8 +19,6 @@ export interface MaterialRequestDto extends BaseModel {
   workOrder: WorkOrderDto;
   clientId: string;
   client: CompanyDto;
-  supplierId: string;
-  supplier: CompanyDto;
   purchaseOrderId: string;
   purchaseOrder: PurchaseOrderDto;
   status: string;
@@ -48,14 +46,13 @@ export interface CreateMaterialRequest {
   revNo: string;
   effDate: Date;
   requestNo: string;
-  projectCode: string;
+  projectId: string;
+  clientId: string;
   requestDate: Date;
   deliveryDate: Date;
   deliveryPlace: string;
   workOrderId: string;
-  supplierId: string;
   requestedById: string;
-  purchaseOrderId: string;
   remarks: string;
   materialItems: MaterialItemRequest[];
 }
@@ -85,15 +82,13 @@ export interface MaterialRequestDto {
   revNo: string;
   effDate: Date;
   requestNo: string;
-  projectCode: string;
+  projectId: string;
   project: ProjectDto;
   requestDate: Date;
   deliveryDate: Date;
   deliveryPlace: string;
   workOrderId: string;
   workOrder: WorkOrderDto;
-  supplierId: string;
-  supplier: CompanyDto;
   requestedById: string;
   requestedBy: UserDto;
   purchaseOrderId: string;
@@ -150,4 +145,10 @@ export interface MaterialRequestStatusUpdateDto {
   remarks: string;
   signatureImage: string;
   proofImageUrls: string[];
+}
+
+export interface MaterialRequestDropdownDto {
+  projects: { id: string; name: string }[];
+  suppliers: { id: string; name: string }[];
+  users: { id: string; fullName: string }[];
 }

@@ -9,31 +9,21 @@ import {
   signal,
   ViewChild,
 } from '@angular/core';
-import {
-  FormControl,
-  FormGroup,
-  FormsModule,
-  ReactiveFormsModule,
-  Validators,
-} from '@angular/forms';
+import { FormGroup, FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
-import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
 import { MenuModule } from 'primeng/menu';
 import { Table, TableLazyLoadEvent, TableModule } from 'primeng/table';
-import { TextareaModule } from 'primeng/textarea';
 import { MenuItem, MessageService } from 'primeng/api';
 import { Subject, takeUntil } from 'rxjs';
 import { LoadingService } from '../../../services/loading.service';
 import { SupplierService } from '../../../services/SupplierService';
-import { InputNumberModule } from 'primeng/inputnumber';
 import { CompanyDto } from '../../../models/Company';
 import {
   PagingContent,
   GridifyQueryExtend,
   BuildFilterText,
-  ValidateAllFormFields,
   BuildSortText,
 } from '../../../shared/helpers/helpers';
 import { ImageModule } from 'primeng/image';
@@ -52,9 +42,7 @@ import { ImageModule } from 'primeng/image';
     ImageModule,
   ],
   template: `<div class="w-full flex flex-col p-5">
-      <div
-        class="flex flex-row items-center gap-1 text-gray-500 text-[15px] tracking-wide"
-      >
+      <div class="flex flex-row items-center gap-1 text-gray-500 tracking-wide">
         <div
           class="cursor-pointer hover:text-gray-600"
           [routerLink]="'/dashboard'"
@@ -70,7 +58,7 @@ import { ImageModule } from 'primeng/image';
         <div class="flex flex-row items-center justify-between">
           <div class="flex flex-col">
             <div class="text-[20px] text-gray-700 font-semibold">Supplier</div>
-            <div class="text-gray-500 text-[15px]">
+            <div class="text-gray-500">
               Manage supplier profiles and information
             </div>
           </div>
@@ -79,7 +67,7 @@ import { ImageModule } from 'primeng/image';
               <input
                 type="text"
                 pInputText
-                class="w-full! text-[15px]!"
+                class="w-full!"
                 placeholder="Search by name"
                 [(ngModel)]="search"
                 (keyup)="onKeyDown($event)"
@@ -93,7 +81,6 @@ import { ImageModule } from 'primeng/image';
               (onClick)="ActionClick(null, 'add')"
               icon="pi pi-plus-circle"
               severity="info"
-              size="small"
               styleClass="py-2! whitespace-nowrap!"
             ></p-button>
           </div>
@@ -113,31 +100,23 @@ import { ImageModule } from 'primeng/image';
             (onLazyLoad)="NextPage($event)"
             ><ng-template #header>
               <tr>
-                <th
-                  class="bg-gray-100! text-[15px]! text-center! w-[10%]!"
-                ></th>
+                <th class="bg-gray-100! text-center! w-[10%]!"></th>
                 <th
                   pSortableColumn="Name"
-                  class="bg-gray-100! text-[15px]! text-center! w-[30%]!"
+                  class="bg-gray-100! text-center! w-[30%]!"
                 >
                   <div class="flex flex-row justify-center items-center gap-2">
                     <div>Name</div>
                     <p-sortIcon field="Name" class="mt-1" />
                   </div>
                 </th>
-                <th class="bg-gray-100! text-[15px]! text-center! w-[20%]!">
-                  Email
-                </th>
-                <th class="bg-gray-100! text-[15px]! text-center! w-[10%]!">
-                  Contact No
-                </th>
-                <th class="bg-gray-100! text-[15px]! text-center! w-[10%]!">
+                <th class="bg-gray-100! text-center! w-[20%]!">Email</th>
+                <th class="bg-gray-100! text-center! w-[10%]!">Contact No</th>
+                <th class="bg-gray-100! text-center! w-[10%]!">
                   Contact Person
                 </th>
 
-                <th class="bg-gray-100! text-[15px]! text-center! w-[10%]!">
-                  Action
-                </th>
+                <th class="bg-gray-100! text-center! w-[10%]!">Action</th>
               </tr>
             </ng-template>
             <ng-template #body let-data>
@@ -182,7 +161,7 @@ import { ImageModule } from 'primeng/image';
             ><ng-template #emptymessage>
               <tr>
                 <td class="border-x!" colspan="100%">
-                  <div class="text-[15px] text-center text-gray-500">
+                  <div class="text-center text-gray-500">
                     No supplier found in record.
                   </div>
                 </td>

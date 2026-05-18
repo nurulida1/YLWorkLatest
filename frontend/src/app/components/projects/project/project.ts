@@ -930,7 +930,7 @@ export class Project implements OnInit, OnDestroy {
       projectMembers: new FormControl<string[]>([]),
     });
 
-    if (action === 'Update') {
+    if (action === 'Edit') {
       this.isUpdate = true;
       this.title = 'Update Project';
       this.FG.get('id')?.enable();
@@ -942,7 +942,6 @@ export class Project implements OnInit, OnDestroy {
           projectMembers: data.projectMembers?.map((m: any) => m.userId) || [],
         });
       }
-      console.log(this.FG.value);
     } else {
       this.title = 'Create New Project';
       this.isUpdate = false;

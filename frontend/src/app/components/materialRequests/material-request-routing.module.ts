@@ -1,8 +1,13 @@
 import { NgModule } from '@angular/core';
 import { Routes, RouterModule } from '@angular/router';
 import { MaterialRequestForm } from './material-request-form/material-request-form';
+import { MaterialRequests } from './material-requests/material-requests';
 
 const routes: Routes = [
+  {
+    path: '',
+    component: MaterialRequests,
+  },
   {
     path: 'form',
     component: MaterialRequestForm,

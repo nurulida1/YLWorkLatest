@@ -10,6 +10,7 @@ import {
   ViewChild,
 } from '@angular/core';
 import {
+  FormArray,
   FormControl,
   FormGroup,
   FormsModule,
@@ -18,41 +19,41 @@ import {
 } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
-import { DatePickerModule } from 'primeng/datepicker';
-import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
 import { MenuModule } from 'primeng/menu';
-import { SelectModule } from 'primeng/select';
-import { Table, TableLazyLoadEvent, TableModule } from 'primeng/table';
-import { DeliveryOrderService } from '../../../services/deliveryOrderService';
-import { LoadingService } from '../../../services/loading.service';
+import { InvoiceService } from '../../../services/invoiceService.service';
 import { MenuItem, MessageService } from 'primeng/api';
+import { LoadingService } from '../../../services/loading.service';
 import { Subject, takeUntil } from 'rxjs';
-import { DeliveryOrderDto } from '../../../models/DeliveryOrder';
 import {
-  PagingContent,
-  GridifyQueryExtend,
   BuildFilterText,
   BuildSortText,
+  GridifyQueryExtend,
+  PagingContent,
   ValidateAllFormFields,
 } from '../../../shared/helpers/helpers';
-import { TimelineModule } from 'primeng/timeline';
+import { InvoiceDto } from '../../../models/Invoice';
+import { Table, TableLazyLoadEvent, TableModule } from 'primeng/table';
+import { SelectModule } from 'primeng/select';
+import { InputNumberModule } from 'primeng/inputnumber';
+import { DatePickerModule } from 'primeng/datepicker';
+import { DialogModule } from 'primeng/dialog';
 
 @Component({
-  selector: 'app-inbound-do',
+  selector: 'app-purchase-invoice',
   imports: [
     CommonModule,
     ButtonModule,
     InputTextModule,
     FormsModule,
-    TableModule,
     RouterLink,
-    DialogModule,
-    ReactiveFormsModule,
-    DatePickerModule,
-    SelectModule,
     MenuModule,
-    TimelineModule,
+    TableModule,
+    ReactiveFormsModule,
+    SelectModule,
+    InputNumberModule,
+    DatePickerModule,
+    DialogModule,
   ],
   template: `<div class="w-full min-h-[92.9vh] flex flex-col p-5">
       <div class="flex flex-row items-center gap-1 text-gray-500 tracking-wide">
@@ -63,7 +64,7 @@ import { TimelineModule } from 'primeng/timeline';
           Dashboard
         </div>
         /
-        <div class="text-gray-700 font-semibold">Inbound Delivery Orders</div>
+        <div class="text-gray-700 font-semibold">Purchase Invoice</div>
       </div>
       <div
         class="mt-3 border border-gray-200 rounded-md tracking-wide bg-white p-5 flex flex-col"
@@ -73,10 +74,10 @@ import { TimelineModule } from 'primeng/timeline';
         >
           <div class="flex flex-col">
             <div class="text-[18px] text-gray-700 font-semibold">
-              Inbound Delivery Orders
+              Purchase Invoices
             </div>
             <div class="text-gray-500">
-              Manage your inbound delivery orders with ease and efficiency
+              Manage your purchase invoice with ease and efficiency
             </div>
           </div>
           <div class="flex flex-row items-center gap-2">
@@ -86,7 +87,7 @@ import { TimelineModule } from 'primeng/timeline';
                 pInputText
                 [(ngModel)]="search"
                 class="w-full!"
-                placeholder="Search by Delivery Order No"
+                placeholder="Search by Invoice No"
                 (keydown)="onKeyDown($event)"
               />
               <i
@@ -94,7 +95,7 @@ import { TimelineModule } from 'primeng/timeline';
               ></i>
             </div>
             <p-button
-              label="Record Inbound DO"
+              label="Record Purchase Invoice"
               (onClick)="OpenFormDialog()"
               icon="pi pi-plus-circle"
               styleClass="bg-sky-600! border-none! py-2! whitespace-nowrap!"
@@ -117,23 +118,31 @@ import { TimelineModule } from 'primeng/timeline';
           >
             <ng-template #header>
               <tr>
-                <th class="w-[5%]! bg-gray-100!"></th>
+                <!-- <th class="w-[5%]! bg-gray-100!"></th> -->
 
                 <th
-                  pSortableColumn="DeliveryOrderNo"
-                  class="bg-gray-100! text-center! w-[15%]!"
+                  pSortableColumn="InvoiceNo"
+                  class="bg-gray-100! text-center! w-[10%]!"
                 >
                   <div class="flex flex-row justify-center items-center gap-2">
-                    <div>DO No</div>
-                    <p-sortIcon field="DeliveryOrderNo" />
+                    <div>Invoice No</div>
+                    <p-sortIcon field="InvoiceNo" />
                   </div>
                 </th>
                 <th class="bg-gray-100! w-[20%]">Supplier</th>
 
-                <th class="bg-gray-100! w-[20%]">Receiver</th>
-                <th class="bg-gray-100! text-center! w-[15%]">
-                  Delivery Method
+                <th
+                  pSortableColumn="InvoiceDate"
+                  class="bg-gray-100! w-[10%] text-center!"
+                >
+                  <div class="flex flex-row justify-center items-center gap-2">
+                    <div>Invoice Date</div>
+                    <p-sortIcon field="InvoiceDate" />
+                  </div>
                 </th>
+
+                <th class="bg-gray-100! text-center! w-[15%]">Total Amount</th>
+                <th class="bg-gray-100! text-center! w-[10%]">Due Date</th>
 
                 <th
                   pSortableColumn="Status"
@@ -154,7 +163,7 @@ import { TimelineModule } from 'primeng/timeline';
               let-expanded="expanded"
             >
               <tr>
-                <td>
+                <!-- <td>
                   <div
                     class="flex items-center justify-center cursor-pointer"
                     (click)="fTable.toggleRow(data)"
@@ -165,31 +174,42 @@ import { TimelineModule } from 'primeng/timeline';
                       "
                     ></i>
                   </div>
-                </td>
+                </td> -->
                 <td class="text-center! font-semibold!">
-                  {{ data.deliveryOrderNo }}
+                  {{ data.invoiceNo }}
                 </td>
-                <td>{{ data.senderCompany?.name }}</td>
-                <td>
-                  {{ data.receiverCompany?.name }}
+                <td>{{ data.supplier?.name }}</td>
+                <td class="text-center!">
+                  {{ data.invoiceDate | date: 'dd/MM/yyyy' }}
                 </td>
                 <td class="text-center!">
-                  {{ data.deliveryMethod }}
+                  {{ data.totalAmount | currency: 'RM ' }}
+                </td>
+                <td class="text-center!">
+                  {{ data.dueDate | date: 'dd/MM/yyyy' }}
                 </td>
                 <td class="text-center!">
                   <div class="flex justify-center">
                     <div
                       class="rounded-full px-6 text-[13px] py-0.5 font-medium w-fit whitespace-nowrap"
                       [ngClass]="{
-                        'bg-orange-200 text-orange-600':
-                          data.status === 'Draft',
-                        'bg-yellow-100 text-yellow-600':
-                          data.status === 'PartiallyReceived',
-                        'bg-green-200 text-green-600':
-                          data.status === 'Completed',
-                        'bg-blue-200 text-blue-600':
-                          data.status === 'FullyReceived',
-                        'bg-red-200 text-red-600': data.status === 'Cancelled',
+                        'bg-blue-100 text-blue-700': data.status === 'Received',
+
+                        'bg-indigo-100 text-indigo-700':
+                          data.status === 'Verified',
+
+                        'bg-amber-100 text-amber-700':
+                          data.status === 'PartiallyPaid',
+
+                        'bg-green-100 text-green-700': data.status === 'Paid',
+
+                        'bg-red-100 text-red-700': data.status === 'Overdue',
+
+                        'bg-orange-100 text-orange-700':
+                          data.status === 'Disputed' || data.status === 'Draft',
+
+                        'bg-gray-200 text-gray-600':
+                          data.status === 'Cancelled',
                       }"
                     >
                       {{ data.status }}
@@ -207,7 +227,7 @@ import { TimelineModule } from 'primeng/timeline';
                 </td>
               </tr>
             </ng-template>
-            <ng-template #expandedrow let-item>
+            <!-- <ng-template #expandedrow let-item>
               <tr>
                 <td colspan="100%">
                   <div class="px-5">
@@ -258,12 +278,12 @@ import { TimelineModule } from 'primeng/timeline';
                   </div>
                 </td>
               </tr>
-            </ng-template>
+            </ng-template> -->
             <ng-template #emptymessage>
               <tr>
                 <td colspan="100%" class="border-x!">
                   <div class="text-center text-gray-500">
-                    No delivery orders found in records.
+                    No purchase invoices found in records.
                   </div>
                 </td>
               </tr>
@@ -288,11 +308,11 @@ import { TimelineModule } from 'primeng/timeline';
           <div class="flex justify-between items-start">
             <div>
               <h1 class="text-xl font-bold text-gray-800">
-                Record Delivery Order
+                Record Purchase Invoice
               </h1>
               <p class="text-sm text-gray-500 mt-1">
-                Verify and log the delivery order details to initiate the
-                project.
+                Enter and verify supplier invoice details for accurate tracking
+                and payment processing.
               </p>
             </div>
             <p-button
@@ -306,108 +326,60 @@ import { TimelineModule } from 'primeng/timeline';
         </div>
         <div class="p-6 flex-1 overflow-y-auto">
           <div [formGroup]="FG" class="grid grid-cols-12 gap-4">
-            <div class="col-span-12 md:col-span-6 flex flex-col gap-1">
-              <div>Delivery Order No <span class="text-red-500">*</span></div>
+            <div class="col-span-12 flex flex-col gap-1">
+              <div>Invoice No <span class="text-red-500">*</span></div>
               <input
                 type="text"
                 pInputText
                 class="w-full"
-                formControlName="deliveryOrderNo"
+                formControlName="invoiceNo"
               />
             </div>
             <div class="col-span-12 md:col-span-6 flex flex-col gap-1">
-              <div>
-                Purchase Order<span class="text-sm italic text-gray-500"
-                  >(Optional)</span
-                >
-              </div>
-              <p-select
-                [options]="purchaseOrderSelection"
-                appendTo="body"
-                [filter]="true"
-                formControlName="purchaseOrderId"
-                [showClear]="FG.get('purchaseOrderId')?.value"
-              ></p-select>
-            </div>
-            <div class="col-span-12 md:col-span-6 flex flex-col gap-1">
-              <div>
-                Project
-                <span class="text-sm italic text-gray-500">(Optional)</span>
-              </div>
-              <p-select
-                [options]="projectSelection"
-                appendTo="body"
-                [filter]="true"
-                formControlName="projectId"
-                [showClear]="FG.get('projectId')?.value"
-              ></p-select>
-            </div>
-            <div class="col-span-12 md:col-span-6 flex flex-col gap-1">
-              <div>
-                Reference No
-                <span class="text-sm italic text-gray-500">(Optional)</span>
-              </div>
-              <input
-                type="text"
-                pInputText
-                class="w-full"
-                formControlName="referenceNo"
-              />
-            </div>
-
-            <div class="col-span-12 md:col-span-6 flex flex-col gap-1">
-              <div>Sender</div>
+              <div>Supplier</div>
               <p-select
                 [options]="companySelection"
                 appendTo="body"
                 [filter]="true"
-                formControlName="senderCompanyId"
-                [showClear]="FG.get('senderCompanyId')?.value"
+                formControlName="supplierId"
+                [showClear]="FG.get('supplierId')?.value"
               ></p-select>
             </div>
             <div class="col-span-12 md:col-span-6 flex flex-col gap-1">
-              <div>Receiver</div>
-              <p-select
-                [options]="companySelection"
+              <div>Total Amount</div>
+              <p-inputnumber
                 appendTo="body"
-                [filter]="true"
-                formControlName="receiverCompanyId"
-                [showClear]="FG.get('receiverCompanyId')?.value"
-              ></p-select>
+                styleClass="w-full"
+                inputStyleClass="w-full"
+                formControlName="totalAmount"
+                mode="currency"
+                currency="MYR"
+                locale="en-MY"
+                [useGrouping]="true"
+                [minFractionDigits]="2"
+                [maxFractionDigits]="2"
+              >
+              </p-inputnumber>
             </div>
-
             <div class="col-span-12 md:col-span-6 flex flex-col gap-1">
-              <div>Delivery Method</div>
-              <p-select
+              <div>Invoice Date</div>
+              <p-datepicker
                 appendTo="body"
-                formControlName="deliveryMethod"
-                [options]="[
-                  { label: 'Self Pickup', value: 'Self Pickup' },
-                  {
-                    label: 'Standard Courier (e.g. J&T, DHL, Pos Laju)',
-                    value: 'Standard Courier',
-                  },
-                  {
-                    label: 'Third Party Logistics (e.g. Grab, Lalamove)',
-                    value: 'Third Party Logistics',
-                  },
-                  { label: 'Air Freight', value: 'Air Freight' },
-                  { label: 'Other', value: 'Other' },
-                ]"
-              ></p-select>
+                dateFormat="dd/mm/yy"
+                styleClass="w-full!"
+                [showIcon]="true"
+                formControlName="invoiceDate"
+              ></p-datepicker>
             </div>
-
             <div class="col-span-12 md:col-span-6 flex flex-col gap-1">
-              <div>
-                Remarks
-                <span class="text-sm text-gray-500 italic">(Optiona)</span>
-              </div>
-              <input
-                type="text"
-                pInputText
-                class="w-full"
-                formControlName="remarks"
-              />
+              <div>Due Date</div>
+              <p-datepicker
+                appendTo="body"
+                dateFormat="dd/mm/yy"
+                styleClass="w-full!"
+                [showIcon]="true"
+                formControlName="dueDate"
+              ></p-datepicker>
             </div>
 
             <div class="col-span-12 flex flex-row items-center gap-3 md:mt-3">
@@ -465,128 +437,49 @@ import { TimelineModule } from 'primeng/timeline';
             severity="info"
             (onClick)="saveRecord()"
           ></p-button></div></ng-template
-    ></p-dialog>
-
-    <p-dialog
-      [(visible)]="showProofDialog"
-      [modal]="true"
-      [draggable]="false"
-      [resizable]="false"
-      header="Upload Proof Images"
-      styleClass="w-[500px]"
-    >
-      <div class="flex flex-col gap-4">
-        <input
-          #fileInput
-          type="file"
-          multiple
-          accept="image/*"
-          hidden
-          (change)="onProofSelected($event)"
-        />
-
-        <p-button
-          label="Upload Images"
-          icon="pi pi-upload"
-          severity="secondary"
-          (onClick)="fileInput.click()"
-        ></p-button>
-
-        <div class="text-sm text-gray-500">
-          {{
-            selectedStatus === 'FullyReceived'
-              ? 'Proof images required for Fully Received'
-              : 'Upload proof images (optional)'
-          }}
-        </div>
-
-        <div *ngIf="proofFiles.length > 0" class="grid grid-cols-3 gap-3 mt-2">
-          <div
-            *ngFor="let file of proofFiles; let i = index"
-            class="relative group border border-gray-200 rounded-lg overflow-hidden bg-gray-50"
-          >
-            <img [src]="previewUrls[i]" class="w-full h-50 object-cover" />
-
-            <div
-              class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 
-             flex items-center justify-center transition"
-            >
-              <p-button
-                icon="pi pi-times"
-                severity="danger"
-                [rounded]="true"
-                (onClick)="removeProof(i)"
-              ></p-button>
-            </div>
-          </div>
-        </div>
-
-        <div class="flex justify-end gap-2 mt-2">
-          <p-button
-            label="Cancel"
-            severity="secondary"
-            (onClick)="showProofDialog = false"
-          ></p-button>
-
-          <p-button
-            label="Confirm"
-            icon="pi pi-check"
-            (onClick)="confirmStatusUpdate()"
-          ></p-button>
-        </div>
-      </div>
-    </p-dialog>`,
-  styleUrl: './inbound-do.less',
+    ></p-dialog> `,
+  styleUrl: './purchase-invoice.less',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class InboundDo implements OnInit, OnDestroy {
+export class PurchaseInvoice implements OnInit, OnDestroy {
   @ViewChild('fTable') fTable?: Table;
 
-  private readonly deliveryOrderService = inject(DeliveryOrderService);
-  private readonly loadingService = inject(LoadingService);
+  private readonly invoiceService = inject(InvoiceService);
   private readonly messageService = inject(MessageService);
+  private readonly loadingService = inject(LoadingService);
   private readonly cdr = inject(ChangeDetectorRef);
   protected ngUnsubscribe: Subject<void> = new Subject<void>();
-
   private isInitializingForm: boolean = false;
 
-  PagingSignal = signal<PagingContent<DeliveryOrderDto>>({
-    data: [],
-    totalElements: 0,
-  } as PagingContent<DeliveryOrderDto>);
+  PagingSignal = signal<PagingContent<InvoiceDto>>(
+    {} as PagingContent<InvoiceDto>,
+  );
   Query: GridifyQueryExtend = {} as GridifyQueryExtend;
 
   search: string = '';
   selectedFileName: string = '';
   selectedFileUrl: string | null = null;
-  isEditMode: boolean = false;
-
   editingId: string | null = null;
 
+  isEditMode: boolean = false;
   showRecordDialog: boolean = false;
-  showProofDialog: boolean = false;
-
-  selectedStatusId: string | null = null;
-  selectedStatus: string = '';
-  proofFiles: File[] = [];
-  previewUrls: string[] = [];
 
   FG!: FormGroup;
 
   menuItems: MenuItem[] = [];
   companySelection: any[] = [];
-  supplierSelection: any[] = [];
   purchaseOrderSelection: any[] = [];
+  quotationSelection: any[] = [];
+  deliveryOrderSelection: any[] = [];
   projectSelection: any[] = [];
 
   constructor() {
     this.Query.Page = 1;
     this.Query.PageSize = 10;
-    this.Query.Filter = `Type=Inbound`;
+    this.Query.Filter = `Type=Purchase`;
     this.Query.OrderBy = 'CreatedAt desc';
     this.Query.Select = null;
-    this.Query.Includes =
-      'SenderCompany.BillingAddress,SenderCompany.DeliveryAddress';
+    this.Query.Includes = 'Supplier';
   }
 
   ngOnInit(): void {
@@ -596,126 +489,45 @@ export class InboundDo implements OnInit, OnDestroy {
   initForm() {
     this.FG = new FormGroup({
       id: new FormControl<string | null>({ value: null, disabled: true }),
-      deliveryOrderNo: new FormControl<string | null>(
-        null,
-        Validators.required,
-      ),
+      invoiceNo: new FormControl<string | null>(null, Validators.required),
+      deliveryOrderId: new FormControl<string | null>(null),
+      clientId: new FormControl<string | null>(null),
+      supplierId: new FormControl<string | null>(null),
       projectId: new FormControl<string | null>(null),
-      referenceNo: new FormControl<string | null>(null),
       purchaseOrderId: new FormControl<string | null>(null),
-      senderCompanyId: new FormControl<string | null>(
-        null,
-        Validators.required,
-      ),
-      receiverCompanyId: new FormControl<string | null>(
-        null,
-        Validators.required,
-      ),
-      deliveryMethod: new FormControl<string | null>(null),
+      quotationId: new FormControl<string | null>(null),
+      type: new FormControl<'Purchase' | 'Sales'>('Purchase'),
+      invoiceDate: new FormControl<Date | null>(null),
+      dueDate: new FormControl<Date | null>(null),
+      gross: new FormControl<number | null>(null),
+      discount: new FormControl<number | null>(null),
+      totalAmount: new FormControl<number | null>(null),
+      terms: new FormControl<string | null>(null),
+      termsAndConditions: new FormControl<string | null>(null),
+      bankDetails: new FormControl<string | null>(null),
       remarks: new FormControl<string | null>(null),
       notes: new FormControl<string | null>(null),
       attachment: new FormControl<File | null>(null),
-      type: new FormControl<'Inbound' | 'Outbound'>(
-        'Inbound',
-        Validators.required,
-      ),
+      invoiceItems: new FormArray([]),
     });
-
-    this.FG.get('purchaseOrderId')?.valueChanges.subscribe(
-      (purchaseOrderId) => {
-        if (this.isInitializingForm) return;
-        const selectedPO = this.purchaseOrderSelection.find(
-          (po) => po.value === purchaseOrderId,
-        );
-
-        if (selectedPO) {
-          this.FG.patchValue(
-            {
-              senderCompanyId: selectedPO.supplierId,
-              receiverCompanyId: selectedPO.clientId,
-              projectId: selectedPO.projectId,
-            },
-            { emitEvent: false },
-          );
-        }
-      },
-    );
   }
 
   GetData() {
     this.loadingService.start();
 
-    this.deliveryOrderService.GetMany(this.Query).subscribe({
-      next: (res) => {
-        const statusOrder = [
-          'Draft',
-          'PartiallyReceived',
-          'FullyReceived',
-          'Completed',
-          'Cancelled',
-        ];
-
-        const colorMap: Record<string, string> = {
-          Draft: 'bg-orange-400',
-          PartiallyReceived: 'bg-yellow-400',
-          FullyReceived: 'bg-blue-400',
-          Completed: 'bg-green-400',
-          Cancelled: 'bg-red-400',
-        };
-
-        const enhancedData = res.data.map((order) => {
-          const histories = order.deliveryOrderStatusHistories || [];
-
-          // group latest history per status (per ORDER, not global)
-          const latestByStatus = new Map<string, any>();
-
-          for (const h of histories) {
-            const existing = latestByStatus.get(h.status);
-
-            if (
-              !existing ||
-              new Date(h.actionAt) > new Date(existing.actionAt)
-            ) {
-              latestByStatus.set(h.status, h);
-            }
-          }
-
-          const reachedIndex =
-            Math.max(...histories.map((h) => statusOrder.indexOf(h.status))) ??
-            -1;
-
-          const timeline = statusOrder.map((status, index) => {
-            const item = latestByStatus.get(status);
-
-            return {
-              status,
-              actionAt: item?.actionAt ?? null,
-              actionUser: item?.actionUser?.fullName ?? null,
-              color: colorMap[status],
-              verified: index <= reachedIndex,
-            };
-          });
-
-          return {
-            ...order,
-            timeline, // 👈 IMPORTANT: attach per-order timeline
-          };
-        });
-
-        this.PagingSignal.set({
-          ...res,
-          data: enhancedData,
-        });
-
-        this.loadingService.stop();
-        this.cdr.markForCheck();
-      },
-
-      error: () => {
-        this.loadingService.stop();
-        this.cdr.markForCheck();
-      },
-    });
+    this.invoiceService
+      .GetMany(this.Query)
+      .pipe(takeUntil(this.ngUnsubscribe))
+      .subscribe({
+        next: (res) => {
+          this.loadingService.stop();
+          this.PagingSignal.set(res);
+          this.cdr.markForCheck();
+        },
+        error: (err) => {
+          this.loadingService.stop();
+        },
+      });
   }
 
   NextPage(event: TableLazyLoadEvent) {
@@ -730,8 +542,8 @@ export class InboundDo implements OnInit, OnDestroy {
     this.Query.Filter = BuildFilterText(event);
 
     this.Query.Filter = this.Query.Filter
-      ? `${this.Query.Filter},Type=Inbound`
-      : 'Type=Inbound';
+      ? `${this.Query.Filter},Type=Purchase`
+      : 'Type=Purchase';
 
     this.GetData();
   }
@@ -749,7 +561,7 @@ export class InboundDo implements OnInit, OnDestroy {
 
   Search(data: string) {
     const filter = {
-      DeliveryOrderNo: [
+      InvoiceNo: [
         {
           value: data,
           matchMode: '=',
@@ -783,11 +595,11 @@ export class InboundDo implements OnInit, OnDestroy {
       this.fTable.saveState();
     }
 
-    this.Query.Filter = `Type=Inbound`;
+    this.Query.Filter = `Type=Purchase`;
     this.GetData();
   }
 
-  ActionClick(data: DeliveryOrderDto | null, action: string) {
+  ActionClick(data: InvoiceDto | null, action: string) {
     if (action === 'Download' && data) {
       this.downloadAttachment(data);
     } else if (action === 'Update' && data) {
@@ -797,9 +609,9 @@ export class InboundDo implements OnInit, OnDestroy {
     }
   }
 
-  RemoveRecord(data: DeliveryOrderDto) {
+  RemoveRecord(data: InvoiceDto) {
     this.loadingService.start();
-    this.deliveryOrderService
+    this.invoiceService
       .Delete(data.id)
       .pipe(takeUntil(this.ngUnsubscribe))
       .subscribe({
@@ -818,7 +630,7 @@ export class InboundDo implements OnInit, OnDestroy {
           this.messageService.add({
             severity: 'success',
             summary: 'Deleted',
-            detail: `DO: ${data.deliveryOrderNo} deleted`,
+            detail: `Invoice: ${data.invoiceNo} deleted`,
           });
         },
         error: (err) => {
@@ -848,10 +660,10 @@ export class InboundDo implements OnInit, OnDestroy {
     }
   }
 
-  OpenFormDialog(data?: DeliveryOrderDto) {
+  OpenFormDialog(data?: InvoiceDto) {
     this.loadingService.start();
 
-    this.deliveryOrderService
+    this.invoiceService
       .GetDropdown()
       .pipe(takeUntil(this.ngUnsubscribe))
       .subscribe({
@@ -892,7 +704,7 @@ export class InboundDo implements OnInit, OnDestroy {
             this.isEditMode = false;
             this.editingId = null;
             this.FG.reset({
-              type: 'Inbound',
+              type: 'Purchase',
             });
           }
 
@@ -905,14 +717,14 @@ export class InboundDo implements OnInit, OnDestroy {
   createItemGroup(data?: any): FormGroup {
     return new FormGroup({
       id: new FormControl<string | null>(data?.id ?? null),
-      deliveryOrderId: new FormControl<string | null>(
-        data?.deliveryOrderId ?? null,
-      ),
+      invoiceId: new FormControl<string | null>(data?.invoiceId ?? null),
+      item: new FormControl<string | null>(data?.item ?? null),
       description: new FormControl<string | null>(data?.description ?? null),
-      quantityOrdered: new FormControl<number>(data?.quantityOrdered ?? false),
-      quantityDelivered: new FormControl<number>(data?.quantityDelivered ?? 0),
+      quantity: new FormControl<number>(data?.quantity ?? false),
+      unitPrice: new FormControl<number>(data?.unitPrice ?? 0),
       unit: new FormControl<string>(data?.unit ?? 'Unit'),
-      remarks: new FormControl<string | null>(data?.remarks ?? null),
+      discount: new FormControl<number | null>(data?.discount ?? null),
+      amount: new FormControl<number | null>(data?.amount ?? null),
     });
   }
 
@@ -947,8 +759,8 @@ export class InboundDo implements OnInit, OnDestroy {
     }
 
     const request$ = this.isEditMode
-      ? this.deliveryOrderService.Update(formData)
-      : this.deliveryOrderService.Create(formData);
+      ? this.invoiceService.Update(formData)
+      : this.invoiceService.Create(formData);
 
     request$.pipe(takeUntil(this.ngUnsubscribe)).subscribe({
       next: (res) => {
@@ -974,12 +786,12 @@ export class InboundDo implements OnInit, OnDestroy {
         this.messageService.add({
           severity: 'success',
           summary: 'Success',
-          detail: `DO: ${res.deliveryOrderNo} saved successfully`,
+          detail: `Invoice: ${res.invoiceNo} saved successfully`,
         });
 
         this.showRecordDialog = false;
         this.FG.reset({
-          type: 'Inbound',
+          type: 'Purchase',
         });
 
         this.isEditMode = false;
@@ -993,7 +805,8 @@ export class InboundDo implements OnInit, OnDestroy {
       },
     });
   }
-  downloadAttachment(data: DeliveryOrderDto) {
+
+  downloadAttachment(data: InvoiceDto) {
     if (!data.attachment) return;
 
     const cleanPath = data.attachment.replace(/\\/g, '/');
@@ -1019,239 +832,7 @@ export class InboundDo implements OnInit, OnDestroy {
       });
   }
 
-  onEllipsisClick(event: any, deliveryOrder: DeliveryOrderDto, menu: any) {
-    const items: any[] = [];
-
-    if (deliveryOrder.status !== 'Completed') {
-      items.push({
-        label: 'Update',
-        icon: 'pi pi-pencil',
-        command: () => this.ActionClick(deliveryOrder, 'Update'),
-      });
-    }
-
-    if (deliveryOrder.status === 'Draft') {
-      items.push(
-        {
-          label: 'Partially Received',
-          icon: 'pi pi-check',
-          command: () =>
-            this.openProofDialog(deliveryOrder.id, 'PartiallyReceived'),
-        },
-        {
-          label: 'Fully Received',
-          icon: 'pi pi-check-circle',
-          command: () =>
-            this.openProofDialog(deliveryOrder.id, 'FullyReceived'),
-        },
-      );
-    }
-
-    if (deliveryOrder.status === 'PartiallyReceived') {
-      items.push({
-        label: 'Fully Received',
-        icon: 'pi pi-check-circle',
-        command: () => this.updateStatus(deliveryOrder.id, 'FullyReceived'),
-      });
-    }
-
-    if (
-      deliveryOrder.status !== 'Cancelled' &&
-      deliveryOrder.status !== 'Completed'
-    ) {
-      items.push({
-        label: 'Cancel',
-        icon: 'pi pi-times',
-        styleClass: '!text-red-500',
-        command: () => this.updateStatus(deliveryOrder.id, 'Cancelled'),
-      });
-    }
-
-    if (deliveryOrder.status === 'FullyReceived') {
-      items.push({
-        label: 'Complete',
-        icon: 'pi pi-check',
-        command: () => this.updateStatus(deliveryOrder.id, 'Completed'),
-      });
-    }
-
-    items.push(
-      ...(deliveryOrder.attachment
-        ? [
-            {
-              label: 'Download File',
-              icon: 'pi pi-file',
-              command: () => this.ActionClick(deliveryOrder, 'Download'),
-            },
-          ]
-        : []),
-      {
-        label: 'Delete',
-        icon: 'pi pi-trash',
-        styleClass: '!text-red-500',
-        command: () => this.ActionClick(deliveryOrder, 'Delete'),
-      },
-    );
-    this.menuItems = items;
-    menu.toggle(event);
-  }
-
-  openProofDialog(id: string, status: string) {
-    this.selectedStatusId = id;
-    this.selectedStatus = status;
-    this.proofFiles = [];
-    this.showProofDialog = true;
-  }
-
-  onProofSelected(event: any) {
-    const files: File[] = Array.from(event.target.files);
-
-    this.proofFiles = [...this.proofFiles, ...files];
-
-    this.previewUrls = this.proofFiles.map((file) => URL.createObjectURL(file));
-  }
-
-  removeProof(index: number) {
-    this.proofFiles.splice(index, 1);
-    this.proofFiles = [...this.proofFiles];
-  }
-
-  confirmStatusUpdate() {
-    if (!this.selectedStatusId) return;
-
-    this.showProofDialog = false;
-
-    this.updateStatus(
-      this.selectedStatusId,
-      this.selectedStatus,
-      this.proofFiles,
-    );
-  }
-
-  updateStatus(id: string, newStatus: string, proofImages: File[] = []) {
-    this.loadingService.start();
-
-    this.deliveryOrderService
-      .UpdateStatus(id, newStatus, null, proofImages)
-      .pipe(takeUntil(this.ngUnsubscribe))
-      .subscribe({
-        next: (res) => {
-          this.loadingService.stop();
-
-          const statusOrder = [
-            'Draft',
-            'PartiallyReceived',
-            'FullyReceived',
-            'Completed',
-            'Cancelled',
-          ];
-
-          const colorMap: Record<string, string> = {
-            Draft: 'bg-orange-400',
-            PartiallyReceived: 'bg-yellow-400',
-            FullyReceived: 'bg-blue-400',
-            Completed: 'bg-green-400',
-            Cancelled: 'bg-red-400',
-          };
-
-          const currentPaging = this.PagingSignal();
-
-          const updatedData = currentPaging.data.map((order) => {
-            if (order.id !== id) return order;
-
-            const histories = [
-              ...(order.deliveryOrderStatusHistories || []),
-              {
-                ...res,
-                actionUser: res.actionUser ?? { fullName: 'System' },
-                proofImages: res.proofImages ?? [],
-              },
-            ];
-
-            const latestByStatus = new Map<string, any>();
-
-            for (const h of histories) {
-              const existing = latestByStatus.get(h.status);
-
-              if (
-                !existing ||
-                new Date(h.actionAt) > new Date(existing.actionAt)
-              ) {
-                latestByStatus.set(h.status, h);
-              }
-            }
-
-            const reachedIndex =
-              Math.max(
-                ...histories.map((h) => statusOrder.indexOf(h.status)),
-              ) ?? -1;
-
-            const timeline = statusOrder.map((status, index) => {
-              const item = latestByStatus.get(status);
-
-              return {
-                status,
-                actionAt: item?.actionAt ?? null,
-                actionUser: item?.actionUser?.fullName ?? null,
-                color: colorMap[status],
-                verified: index <= reachedIndex,
-              };
-            });
-
-            return {
-              ...order,
-              status: newStatus,
-              deliveryOrderStatusHistories: histories,
-              timeline, // ✅ updated only for this order
-            };
-          });
-
-          this.PagingSignal.set({
-            ...currentPaging,
-            data: updatedData,
-          });
-
-          this.messageService.add({
-            severity: 'success',
-            summary: 'Status Updated',
-            detail: res.remarks,
-          });
-
-          this.cdr.markForCheck();
-        },
-
-        error: (err) => {
-          this.loadingService.stop();
-
-          this.messageService.add({
-            severity: 'error',
-            summary: 'Update Failed',
-            detail: err.error?.error || 'Invalid status transition.',
-          });
-        },
-      });
-  }
-
-  getStatusColor(status: string): string {
-    switch (status) {
-      case 'Draft':
-        return 'bg-gray-400';
-
-      case 'PartiallyReceived':
-        return 'bg-yellow-400';
-
-      case 'Completed':
-        return 'bg-green-500';
-
-      case 'FullyReceived':
-        return 'bg-blue-500';
-      case 'Cancelled':
-        return 'bg-red-500';
-
-      default:
-        return 'bg-gray-300';
-    }
-  }
+  onEllipsisClick(event: any, deliveryOrder: InvoiceDto, menu: any) {}
 
   ngOnDestroy(): void {
     this.ngUnsubscribe.next();

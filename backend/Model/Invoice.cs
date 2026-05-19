@@ -10,7 +10,7 @@
         public Company? Client { get; set; }
         public Guid? SupplierId { get; set; }
         public Company? Supplier { get; set; }
-        public string? ProjectCode { get; set; }
+        public Guid? ProjectId { get; set; }
         public Project? Project { get; set; }
         public Guid? PurchaseOrderId { get; set; }
         public PurchaseOrder? PurchaseOrder { get; set; }
@@ -19,7 +19,10 @@
 
         public DateTime InvoiceDate {  get; set; }
         public DateTime DueDate { get; set; }
-       
+
+        public string? Type { get; set; } // Sales, Purchase
+
+        public string? Terms { get; set; }
         public string? Remarks { get; set; }
         public string Status { get; set; } = "Draft";  // Paid, Overdue, Upcoming, Cancelled, Partially Paid, Unpaid, Refunded, Draft
 
@@ -29,18 +32,14 @@
         public decimal? PaidAmount { get; set; }
 
         public string? Notes { get; set; }
-        public string? Description { get; set; }
         public string? TermsAndConditions { get; set; }
         public string? BankDetails { get; set; }
+        public string? Attachment { get; set; }
 
-        public Guid CreatedById { get; set; }
         public User CreatedBy { get; set; }
 
         public ICollection<InvoiceItem> InvoiceItems { get; set; } = new List<InvoiceItem>();
-        public ICollection<AttachmentDto> Attachments { get; set; } = new List<AttachmentDto>();
         public ICollection<Payments> Payments { get; set; } = new List<Payments>();
-
-
     }
 
     public class InvoiceItem: BaseEntity
@@ -51,11 +50,11 @@
 
         public string Item { get; set; }
         public string Description { get; set; } = string.Empty;
-        public int Quantity { get; set; }
+        public decimal Quantity { get; set; }
         public string Unit { get; set; } = "Unit";
         public decimal UnitPrice { get; set; }
         public decimal Discount { get; set; } // Percentage
-        public decimal TotalAmount { get; set; }
+        public decimal Amount { get; set; }
     }
 
     public class InvoiceItemBase
@@ -66,7 +65,7 @@
         public string Unit { get; set; } = "Unit";
         public decimal UnitPrice { get; set; }
         public decimal Discount { get; set; }
-        public decimal TotalAmount { get; set; }
+        public decimal Amount { get; set; }
     }
 
     // Used for Create: No ID needed as all items are new
@@ -80,11 +79,11 @@
 
     public class CreateInvoiceRequest
     {
-        public string InvoiceNo { get; set; } = string.Empty;
+        public string? InvoiceNo { get; set; } = string.Empty;
         public Guid? DeliveryOrderId { get; set; }
         public Guid? ClientId { get; set; }
         public Guid? SupplierId { get; set; }
-        public string? ProjectCode { get; set; }
+        public Guid? ProjectId { get; set; }
         public Guid? PurchaseOrderId { get; set; }
         public Guid? QuotationId { get; set; }
         public DateTime InvoiceDate { get; set; }
@@ -92,12 +91,13 @@
         public decimal Gross { get; set; }
         public decimal? Discount { get; set; }
         public decimal TotalAmount { get; set; }
-
-        public string? Description { get; set; }
-        public string? TermsConditions { get; set; }
+        public string? Terms { get; set; }
+        public string? Type { get; set; } // Sales, Purchase
+        public string? TermsAndConditions { get; set; }
         public string? BankDetails { get; set; }
         public string? Remarks { get; set; }
         public string? Notes { get; set; }
+        public IFormFile? Attachment { get; set; }
 
         public List<InvoiceItemRequest> InvoiceItems { get; set; } = new();
     }

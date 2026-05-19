@@ -1,6 +1,7 @@
 import { AttachmentDto } from './AttachmentDto';
 import { BaseModel } from './BaseModel';
 import { CompanyDto } from './Company';
+import { DeliveryOrderDto } from './DeliveryOrder';
 import { PaymentDto } from './Payments';
 import { ProjectDto } from './Project';
 import { PurchaseOrderDto } from './PurchaseOrder';
@@ -10,33 +11,35 @@ import { UserDto } from './User';
 // Invoice model
 export interface InvoiceDto extends BaseModel {
   invoiceNo: string;
-  referenceNo?: string;
-  projectId: string;
-  project: ProjectDto;
+  deliveryOrderId: string;
+  deliveryOrder: DeliveryOrderDto;
   clientId: string;
   client: CompanyDto;
   supplierId: string;
   supplier: CompanyDto;
+  projectId: string;
+  project: ProjectDto;
+  purchaseOrderId: string;
+  purchaseOrder: PurchaseOrderDto;
+  quotationId: string;
+  quotation: QuotationDto;
   invoiceDate: Date;
   dueDate: Date;
-  poId: string;
-  purchaseOrder: PurchaseOrderDto;
-  quotationId?: string;
-  quotation?: QuotationDto;
-  remarks?: string;
+  terms: string;
+  remarks: string;
   status: string;
-  discountRate: number;
+  type: string;
+  discount: number;
+  gross: number;
   totalAmount: number;
-  paidAmount?: number;
-  signatureName: string;
-  signatureImageUrl: string;
-  description: string;
-  termsConditions: string;
+  paidAmount: number;
+  notes: string;
+  termsAndConditions: string;
   bankDetails: string;
+  attachment: string;
   createdById: string;
   createdBy: UserDto;
   invoiceItems: InvoiceItem[];
-  attachments: AttachmentDto[];
   payments: PaymentDto[];
 }
 
@@ -44,62 +47,69 @@ export interface InvoiceDto extends BaseModel {
 export interface InvoiceItem extends BaseModel {
   invoiceId: string;
   invoice: InvoiceDto;
+  item: string;
   description: string;
   quantity: number;
   unit: string;
-  rate: number;
-  taxRate: number;
+  unitPrice: number;
+  discount: number;
   amount: number;
 }
 
 // Create Invoice Request
 export interface CreateInvoiceRequest {
   invoiceNo: string;
-  referenceNo: string;
+  deliveryOrderId: string;
   clientId: string;
   supplierId: string;
+  projectId: string;
+  purchaseOrderId: string;
+  quotationId: string;
+  type: string;
   invoiceDate: Date;
   dueDate: Date;
-  subTotal: number;
-  tax: number;
+  gross: number;
   discount: number;
   totalAmount: number;
-  isDraft: boolean;
-  description: string;
-  termsConditions: string;
+  terms: string;
+  termsAndConditions: string;
   bankDetails: string;
-  signatureName: string;
-  signatureImageUrl: string;
-  invoiceItems?: InvoiceItemRequest[];
+  remarks: string;
+  notes: string;
+  attachment: File;
+  invoiceItems: InvoiceItemRequest[];
 }
 
 export interface InvoiceItemRequest {
+  item: string;
   description: string;
   quantity: number;
   unit: string;
-  rate: number;
-  taxRate: number;
+  unitPrice: number;
+  discount: number;
   amount: number;
 }
 
 export interface UpdateInvoiceRequest {
   id: string;
   invoiceNo: string;
-  referenceNo: string;
+  deliveryOrderId: string;
   clientId: string;
   supplierId: string;
+  projectId: string;
+  purchaseOrderId: string;
+  quotationId: string;
   invoiceDate: Date;
   dueDate: Date;
-  subTotal: number;
-  tax: number;
+  gross: number;
   discount: number;
   totalAmount: number;
-  isDraft: boolean;
-  description: string;
-  termsConditions: string;
+  terms: string;
+  termsAndConditions: string;
   bankDetails: string;
-  signatureName: string;
-  signatureImageUrl: string;
+  remarks: string;
+  notes: string;
+  attachment: File;
   invoiceItems: InvoiceItemUpdateRequest[];
 }
 

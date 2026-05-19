@@ -151,14 +151,10 @@ import { TextareaModule } from 'primeng/textarea';
                   {{ data.client?.name }}
                 </td>
                 <td class="text-center!">
-                  {{ data.requestDate | date: 'dd MMM, yyyy' }}
+                  {{ data.requestDate | date: 'dd/MM/yyyy' }}
                 </td>
                 <td class="text-center!">
-                  {{
-                    data.requestedBy?.firstName +
-                      ' ' +
-                      data.requestedBy?.lastName
-                  }}
+                  {{ data.requestedBy?.fullName }}
                 </td>
                 <td class="text-center!">
                   <div class="flex items-center justify-center">

@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using YLWorks.Data;
 
@@ -11,9 +12,11 @@ using YLWorks.Data;
 namespace YLWorks.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260519023910_UpdatePOInvoices")]
+    partial class UpdatePOInvoices
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1424,9 +1427,6 @@ namespace YLWorks.Migrations
                     b.Property<decimal?>("Gross")
                         .HasColumnType("decimal(65,30)");
 
-                    b.Property<decimal>("InvoicedAmount")
-                        .HasColumnType("decimal(65,30)");
-
                     b.Property<string>("Notes")
                         .HasColumnType("longtext");
 
@@ -1514,6 +1514,9 @@ namespace YLWorks.Migrations
                         .HasColumnType("longtext");
 
                     b.Property<decimal>("Discount")
+                        .HasColumnType("decimal(65,30)");
+
+                    b.Property<decimal>("InvoicedQuantity")
                         .HasColumnType("decimal(65,30)");
 
                     b.Property<string>("Item")

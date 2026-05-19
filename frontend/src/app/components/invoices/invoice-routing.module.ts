@@ -1,17 +1,20 @@
 import { NgModule } from '@angular/core';
 import { Routes, RouterModule } from '@angular/router';
 import { Invoice } from './invoice/invoice';
+import { SalesInvoice } from './sales-invoice/sales-invoice';
+import { PurchaseInvoice } from './purchase-invoice/purchase-invoice';
 // import { InvoiceForm } from './invoice-form/invoice-form';
 
 const routes: Routes = [
   {
-    path: '',
-    component: Invoice,
+    path: 'sales',
+    component: SalesInvoice,
   },
   {
-    path: 'form',
-    // component: InvoiceForm,
+    path: 'purchase',
+    component: PurchaseInvoice,
   },
+
   // {
   //   path: 'sign',
   //   component: QuotesView,

@@ -30,6 +30,7 @@ import { DialogModule } from 'primeng/dialog';
 import { SelectModule } from 'primeng/select';
 import { TimelineModule } from 'primeng/timeline';
 import { UserService } from '../../../services/userService.service';
+import { InputNumberModule } from 'primeng/inputnumber';
 
 @Component({
   selector: 'app-supplier-purchase-order',
@@ -43,6 +44,7 @@ import { UserService } from '../../../services/userService.service';
     TableModule,
     DialogModule,
     SelectModule,
+    InputNumberModule,
     TimelineModule,
   ],
   template: `<div class="w-full min-h-[92.9vh] flex flex-col p-5">
@@ -183,22 +185,32 @@ import { UserService } from '../../../services/userService.service';
                     <div
                       class="rounded-full px-4 text-[13px] py-0.5 font-medium w-fit whitespace-nowrap"
                       [ngClass]="{
-                        'bg-teal-100 text-teal-600':
-                          data.status === 'PartiallyReceived',
-                        'bg-indigo-100 text-indigo-600':
-                          data.status === 'Issued',
+                        'bg-gray-100 text-gray-600': data.status === 'Draft',
+
+                        'bg-yellow-100 text-yellow-600':
+                          data.status === 'Revised',
+
                         'bg-blue-100 text-blue-600':
-                          data.status === 'Revised' ||
                           data.status === 'Approved' ||
                           data.status === 'InProgress',
-                        'bg-orange-100 text-orange-600':
-                          data.status === 'Pending Signature' ||
-                          data.status === 'Draft',
+
+                        'bg-indigo-100 text-indigo-600':
+                          data.status === 'Sent' || data.status === 'Issued',
+
+                        'bg-teal-100 text-teal-600':
+                          data.status === 'PartiallyReceived',
+
                         'bg-green-100 text-green-600':
-                          data.status === 'Accepted' ||
-                          data.status === 'Received' ||
-                          data.status === 'Sent',
+                          data.status === 'Received',
+
+                        'bg-purple-100 text-purple-600':
+                          data.status === 'PartiallyInvoiced',
+
+                        'bg-emerald-100 text-emerald-700':
+                          data.status === 'FullyInvoiced',
+
                         'bg-red-100 text-red-600':
+                          data.status === 'Rejected' ||
                           data.status === 'Declined' ||
                           data.status === 'Expired',
                       }"
@@ -245,7 +257,9 @@ import { UserService } from '../../../services/userService.service';
                       </ng-template>
 
                       <ng-template #content let-event>
-                        <div class="flex flex-col min-h-[70px]">
+                        <div
+                          class="flex flex-col min-h-[70px] whitespace-nowrap"
+                        >
                           <div class="font-semibold text-sm">
                             {{ event.status }}
                           </div>
@@ -321,7 +335,106 @@ import { UserService } from '../../../services/userService.service';
           [disabled]="!selectedReviewerId"
         ></p-button>
       </ng-template>
-    </p-dialog> `,
+    </p-dialog>
+
+    <p-dialog
+      [(visible)]="displayInvoiceDialog"
+      header="Create Purchase Invoice"
+      styleClass="w-[92%] lg:w-[45%] rounded-xl"
+      [modal]="true"
+      [draggable]="false"
+      [resizable]="false"
+    >
+      <div class="flex flex-col gap-5">
+        <div
+          class="bg-gray-50 border border-gray-200 rounded-lg p-4 flex flex-col gap-2"
+        >
+          <div class="flex justify-between text-gray-600">
+            <span>Total PO</span>
+            <span class="font-semibold text-gray-800">
+              {{ poTotalAmount | currency: 'RM ' }}
+            </span>
+          </div>
+
+          <div class="flex justify-between text-gray-600">
+            <span>Remaining</span>
+            <span class="font-bold text-green-600 text-base">
+              {{ poRemainingAmount | currency: 'RM ' }}
+            </span>
+          </div>
+        </div>
+
+        <div class="flex flex-col gap-2">
+          <label class="font-medium text-gray-700"> Invoice Amount </label>
+
+          <p-inputnumber
+            appendTo="body"
+            styleClass="w-full"
+            inputStyleClass="w-full p-2 text-lg"
+            [(ngModel)]="invoiceAmount"
+            mode="currency"
+            currency="MYR"
+            locale="en-MY"
+            [useGrouping]="true"
+            [minFractionDigits]="2"
+            [maxFractionDigits]="2"
+          >
+          </p-inputnumber>
+
+          <small class="text-gray-400">
+            You can partially invoice or fully settle remaining amount
+          </small>
+        </div>
+
+        <div class="flex flex-wrap gap-2 pt-1">
+          <p-button
+            label="Full"
+            severity="success"
+            styleClass="px-4 py-2 rounded-lg"
+            (onClick)="invoiceAmount = poRemainingAmount"
+          ></p-button>
+
+          <p-button
+            label="75%"
+            severity="info"
+            styleClass="px-4 py-2 rounded-lg"
+            (onClick)="invoiceAmount = poRemainingAmount * 0.75"
+          ></p-button>
+
+          <p-button
+            label="50%"
+            severity="warn"
+            styleClass="px-4 py-2 rounded-lg"
+            (onClick)="invoiceAmount = poRemainingAmount / 2"
+          ></p-button>
+
+          <p-button
+            label="25%"
+            severity="secondary"
+            styleClass="px-4 py-2 rounded-lg"
+            (onClick)="invoiceAmount = poRemainingAmount * 0.25"
+          ></p-button>
+        </div>
+      </div>
+
+      <ng-template pTemplate="footer">
+        <div class="flex justify-end gap-2 w-full">
+          <p-button
+            severity="secondary"
+            label="Cancel"
+            (onClick)="displayInvoiceDialog = false"
+          ></p-button>
+
+          <p-button
+            label="Generate Invoice"
+            icon="pi pi-receipt"
+            severity="info"
+            [disabled]="invoiceAmount <= 0"
+            (onClick)="GeneratePurchaseInvoice()"
+          ></p-button>
+        </div>
+      </ng-template>
+    </p-dialog>`,
   styleUrl: './supplier-purchase-order.less',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -331,7 +444,6 @@ export class SupplierPurchaseOrder implements OnDestroy {
   private readonly purchaseOrderService = inject(PurchaseOrderService);
   private readonly loadingService = inject(LoadingService);
   private readonly cdr = inject(ChangeDetectorRef);
-  private readonly appService = inject(AppService);
   private readonly messageService = inject(MessageService);
   private readonly router = inject(Router);
   private readonly userService = inject(UserService);
@@ -346,12 +458,17 @@ export class SupplierPurchaseOrder implements OnDestroy {
   selectedReviewerId: string | null = null;
 
   displayReviseByDialog: boolean = false;
+  displayInvoiceDialog: boolean = false;
 
   menuItems: MenuItem[] = [];
   currentUser = this.userService.currentUser;
 
   selectedPO: any;
   reviewerSelection: { label: string; value: string }[] = [];
+
+  invoiceAmount: number = 0;
+  poTotalAmount: number = 0;
+  poRemainingAmount: number = 0;
 
   constructor() {
     this.Query.Page = 1;
@@ -381,6 +498,8 @@ export class SupplierPurchaseOrder implements OnDestroy {
             'Issued',
             'PartiallyReceived',
             'Received',
+            'PartiallyInvoiced',
+            'FullyInvoiced',
             'Rejected',
           ];
 
@@ -392,6 +511,10 @@ export class SupplierPurchaseOrder implements OnDestroy {
             Issued: 'bg-green-400',
             PartiallyReceived: 'bg-yellow-400',
             Received: 'bg-green-400',
+
+            PartiallyInvoiced: 'bg-purple-400',
+            FullyInvoiced: 'bg-emerald-600',
+
             Rejected: 'bg-red-400',
           };
 
@@ -411,12 +534,15 @@ export class SupplierPurchaseOrder implements OnDestroy {
               }
             }
 
-            const reachedIndex =
-              Math.max(
-                ...histories.map((h) => statusOrder.indexOf(h.status)),
-              ) ?? -1;
+            const relevantStatuses = statusOrder.filter((s) =>
+              histories.some((h) => h.status === s),
+            );
 
-            const timeline = statusOrder.map((status, index) => {
+            const reachedIndex = Math.max(
+              ...histories.map((h) => statusOrder.indexOf(h.status)),
+            );
+
+            const timeline = relevantStatuses.map((status, index) => {
               const item = latestByStatus.get(status);
 
               let displayUser = '-';
@@ -432,7 +558,7 @@ export class SupplierPurchaseOrder implements OnDestroy {
                 actionAt: item?.actionAt ?? null,
                 actionUser: displayUser,
                 color: colorMap[status],
-                verified: index <= reachedIndex,
+                verified: statusOrder.indexOf(status) <= reachedIndex,
               };
             });
 
@@ -564,11 +690,57 @@ export class SupplierPurchaseOrder implements OnDestroy {
         break;
 
       case 'GenerateInvoice':
-        this.router.navigate(['/invoices/supplier/form'], {
-          queryParams: { poId: data!.id },
-        });
+        this.openInvoiceDialog(data);
         break;
     }
+  }
+
+  GeneratePurchaseInvoice() {
+    this.loadingService.start();
+
+    this.purchaseOrderService
+      .ConvertToPurchaseInvoice(this.selectedPO.id, this.invoiceAmount)
+      .pipe(takeUntil(this.ngUnsubscribe))
+      .subscribe({
+        next: (res) => {
+          this.loadingService.stop();
+
+          this.messageService.add({
+            severity: 'success',
+            summary: 'Invoice Generated',
+            detail: `Invoice ${res.invoice.invoiceNo} created successfully`,
+          });
+
+          const state = this.PagingSignal();
+
+          const updated = state.data.map((po) => {
+            if (po.id === this.selectedPO.id) {
+              return {
+                ...po,
+                status: res.purchaseOrder?.status ?? po.status,
+              };
+            }
+            return po;
+          });
+
+          this.PagingSignal.set({
+            ...state,
+            data: updated,
+          });
+
+          this.displayInvoiceDialog = false;
+          this.cdr.markForCheck();
+        },
+        error: (err) => {
+          this.loadingService.stop();
+
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Failed',
+            detail: err.error?.message || 'Failed to generate invoice',
+          });
+        },
+      });
   }
 
   RemoveRecord(data: PurchaseOrderDto) {
@@ -683,8 +855,9 @@ export class SupplierPurchaseOrder implements OnDestroy {
     //     command: () => this.ActionClick(po, 'Completed'),
     //   });
     // }
-
-    if (inStatus('Issued', 'PartiallyReceived', 'Received')) {
+    if (
+      inStatus('Issued', 'PartiallyReceived', 'Received', 'PartiallyInvoiced')
+    ) {
       add({
         label: 'Create Invoice',
         icon: 'pi pi-receipt',
@@ -718,6 +891,24 @@ export class SupplierPurchaseOrder implements OnDestroy {
     }
 
     return items;
+  }
+
+  openInvoiceDialog(po: any) {
+    this.selectedPO = po;
+
+    this.poTotalAmount = po.totalAmount;
+
+    const invoiced =
+      po.purchaseOrderItems?.reduce(
+        (sum: number, x: any) => sum + x.invoicedQuantity * x.unitPrice,
+        0,
+      ) || 0;
+
+    this.poRemainingAmount = this.poTotalAmount - po.invoicedAmount;
+
+    this.invoiceAmount = this.poRemainingAmount;
+
+    this.displayInvoiceDialog = true;
   }
 
   showReviewerSelectionDialog(po: any) {

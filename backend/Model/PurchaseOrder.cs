@@ -32,6 +32,7 @@ namespace YLWorks.Model
         public decimal? Gross { get; set; }
         public decimal? Discount { get; set; }
         public decimal? TotalAmount { get; set; }
+        public decimal InvoicedAmount { get; set; }
 
         public string? Remarks { get; set; }
         public string? Notes { get; set; }
@@ -46,8 +47,8 @@ namespace YLWorks.Model
         public string? Attachment { get; set; }
         public Guid? CreatedById { get; set; }
         public ICollection<PurchaseOrderStatusHistory> PurchaseOrderStatusHistories { get; set; } = new List<PurchaseOrderStatusHistory>();
-
         public ICollection<PurchaseOrderItem>? PurchaseOrderItems { get; set; } = new List<PurchaseOrderItem>();
+        public ICollection<Invoice> Invoices { get; set; } = new List<Invoice>();
 
     }
 
@@ -162,8 +163,18 @@ namespace YLWorks.Model
 
     public class DropdownResponseDto
     {
+        public List<Company> Companies { get; set; } = new();
         public List<Company> Clients { get; set; } = new();
         public List<Company> Suppliers { get; set; } = new();
         public List<QuotationDropdownDto> Quotations { get; set; } = new();
+        public List<PurchaseOrder> PurchaseOrders { get; set; } = new();
+        public List<DeliveryOrder> DeliveryOrders { get; set; } = new();
+        public List<Project> Projects { get; set; } = new();
+    }
+
+    public class ConvertPOToInvoiceRequest
+    {
+        public Guid PoId { get; set; }
+        public decimal Amount { get; set; }
     }
 }

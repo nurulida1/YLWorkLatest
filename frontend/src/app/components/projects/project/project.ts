@@ -201,12 +201,13 @@ import { CheckboxModule } from 'primeng/checkbox';
                 </td>
                 <td class="text-center! bg-white!">
                   <div
-                    class="px-2 py-1 rounded-full border"
+                    class="px-2 rounded-full border"
                     [ngClass]="{
                       'bg-yellow-100 text-yellow-600':
                         data.priority === 'Medium',
                       'bg-blue-100 text-blue-600': data.priority === 'Low',
-                      'bg-red-100 text-red-600': data.priority === 'High',
+                      'bg-red-100 text-red-600 animate-pulse':
+                        data.priority === 'High',
                     }"
                   >
                     {{ data.priority }}
@@ -221,7 +222,7 @@ import { CheckboxModule } from 'primeng/checkbox';
 
                 <td class="text-center! bg-white!">
                   <div
-                    class="px-2 py-1 rounded-full border flex flex-row justify-center gap-3 items-center"
+                    class="px-2 rounded-full border flex flex-row justify-center gap-3 items-center"
                     [ngClass]="{
                       'bg-yellow-100 text-yellow-600':
                         data.status === 'Planning',

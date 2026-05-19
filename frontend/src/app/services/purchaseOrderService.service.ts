@@ -151,6 +151,15 @@ export class PurchaseOrderService {
       .pipe(retry(1), catchError(this.handleError('GetDropdown')));
   }
 
+  ConvertToPurchaseInvoice(id: string, invoiceAmount: number): Observable<any> {
+    return this.http
+      .post<any>(
+        `${this.url}/ConvertToPurchaseInvoice/${id}?invoiceAmount=${invoiceAmount}`,
+        {},
+      )
+      .pipe(retry(1), catchError(this.handleError('ConvertToPurchaseInvoice')));
+  }
+
   private handleError = (context: string) => (error: any) => {
     this.messageService.add({
       severity: 'error',

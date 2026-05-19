@@ -556,6 +556,7 @@ namespace YLWorks.Controller
                 q.Attachment,
                 q.SupplierId,
                 q.ClientId,
+                q.InvoicedAmount,
 
                 Client = q.Client == null ? null : new
                 {
@@ -778,6 +779,116 @@ namespace YLWorks.Controller
             };
         }
 
+        [HttpPost("ConvertToPurchaseInvoice/{poId}")]
+        public async Task<IActionResult> ConvertToPurchaseInvoice(
+     Guid poId,
+     [FromQuery] decimal invoiceAmount)
+        {
+            var po = await _context.PurchaseOrders
+                .Include(x => x.Invoices)
+                .FirstOrDefaultAsync(x => x.Id == poId);
 
+            if (po == null)
+                return NotFound();
+
+            var poTotalAmount = po.TotalAmount ?? 0;
+
+            var alreadyInvoiced = await _context.Invoices
+                .Where(x => x.PurchaseOrderId == poId)
+                .SumAsync(x => (decimal?)x.TotalAmount) ?? 0;
+
+            var remainingAmount = poTotalAmount - alreadyInvoiced;
+
+            if (invoiceAmount <= 0)
+                return BadRequest("Invoice amount must be greater than 0.");
+
+            if (invoiceAmount > remainingAmount)
+                return BadRequest($"Max allowed amount is {remainingAmount}");
+
+            var invoiceDate = DateTime.UtcNow;
+
+            var invoice = new Invoice
+            {
+                InvoiceNo = GenerateInvoiceNo("PUR"),
+                InvoiceDate = invoiceDate,
+                DueDate = invoiceDate.AddDays(GetTermsDays(po.Terms)),
+                SupplierId = po.SupplierId,
+                ClientId = po.ClientId,
+                PurchaseOrderId = po.Id,
+                Type = "Purchase",
+                Gross = invoiceAmount,
+                TotalAmount = invoiceAmount,
+                InvoiceItems = new List<InvoiceItem>
+        {
+            new InvoiceItem
+            {
+                Item = "PO Invoice",
+                Description = "Partial / Full Invoice",
+                Quantity = 1,
+                UnitPrice = invoiceAmount,
+                Amount = invoiceAmount
+            }
+        }
+            };
+
+            _context.Invoices.Add(invoice);
+
+            var newTotalInvoiced = alreadyInvoiced + invoiceAmount;
+
+            po.InvoicedAmount = newTotalInvoiced;
+
+            po.Status =
+                newTotalInvoiced == 0 ? "Issued" :
+                newTotalInvoiced < poTotalAmount ? "PartiallyInvoiced" :
+                "FullyInvoiced";
+
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var actionUserId = Guid.Parse(userIdClaim);
+
+            _context.PurchaseOrderStatusHistories.Add(new PurchaseOrderStatusHistory
+            {
+                Id = Guid.NewGuid(),
+                PurchaseOrderId = po.Id,
+                Status = po.Status,
+                ActionAt = DateTime.UtcNow,
+                ActionUserId = actionUserId,
+                Remarks = $"Invoice generated RM {invoiceAmount}. Status: {po.Status}"
+            });
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new
+            {
+                invoice,
+                purchaseOrder = po,
+                alreadyInvoiced = newTotalInvoiced,
+                remainingAmount = poTotalAmount - newTotalInvoiced
+            });
+        }
+
+        public int GetTermsDays(string? terms)
+        {
+            if (string.IsNullOrWhiteSpace(terms))
+                return 30;
+
+            var match = System.Text.RegularExpressions.Regex.Match(terms, @"\d+");
+
+            return match.Success && int.TryParse(match.Value, out int days)
+                ? days
+                : 30;
+        }
+
+        private string GenerateInvoiceNo(string prefix)
+        {
+            var datePart = DateTime.UtcNow.ToString("yyyyMMdd");
+
+            var startOfDay = DateTime.UtcNow.Date;
+            var endOfDay = startOfDay.AddDays(1);
+
+            var countToday = _context.Invoices
+                .Count(x => x.CreatedAt >= startOfDay && x.CreatedAt < endOfDay);
+
+            return $"{prefix}-{datePart}-{(countToday + 1):D4}";
+        }
     }
 }

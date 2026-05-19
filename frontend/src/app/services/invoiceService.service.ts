@@ -84,13 +84,13 @@ export class InvoiceService {
     );
   }
 
-  Create(request: CreateInvoiceRequest): Observable<InvoiceDto> {
+  Create(request: FormData): Observable<InvoiceDto> {
     return this.http
       .post<InvoiceDto>(`${this.url}/Create`, request) // no { Data: ... }
       .pipe(retry(1), catchError(this.handleError('Create')));
   }
 
-  Update(request: UpdateInvoiceRequest): Observable<InvoiceDto> {
+  Update(request: FormData): Observable<InvoiceDto> {
     return this.http
       .put<InvoiceDto>(`${this.url}/Update`, request)
       .pipe(retry(1), catchError(this.handleError('Update')));

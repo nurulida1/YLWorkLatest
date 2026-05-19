@@ -231,7 +231,7 @@ namespace YLWorks.Data
 
             modelBuilder.Entity<InvoiceItem>(entity =>
             {
-                entity.Property(i => i.TotalAmount).HasColumnType("decimal(18,2)");
+                entity.Property(i => i.Amount).HasColumnType("decimal(18,2)");
             });
 
             modelBuilder.Entity<Payments>(entity =>

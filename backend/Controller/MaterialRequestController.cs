@@ -147,7 +147,16 @@ namespace YLWorks.Controller
                         p.RequestDate,
                         p.RequestNo,
                         p.Remarks,
-                        p.DeliveryPlace
+                        p.DeliveryPlace,
+                        RequestedBy = p.RequestedBy == null ? null : new
+                        {
+                            FullName = p.RequestedBy.FullName,
+                        },
+                        Client = p.Client == null ? null : new
+                        {
+                            Name = p.Client.Name
+                        },
+                        p.Status
                     })
                     .ToListAsync();
 

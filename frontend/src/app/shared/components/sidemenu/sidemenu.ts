@@ -246,11 +246,6 @@ export class Sidemenu {
         },
       ],
     },
-    {
-      label: 'Invoices',
-      route: '/invoices',
-      roles: ['Manager', 'Director', 'Admin', 'SuperAdmin'],
-    },
 
     {
       label: 'Suppliers',
@@ -307,6 +302,10 @@ export class Sidemenu {
           label: 'Outbound DO',
           route: '/delivery-orders/outbound',
         },
+        {
+          label: 'DO RMA',
+          route: '/delivery-orders/rma',
+        },
       ],
     },
 
@@ -331,8 +330,16 @@ export class Sidemenu {
     {
       label: 'Invoices',
       icon: 'pi-receipt',
-      route: '/invoices',
-      // roles: ['SuperAdmin', 'Admin'],
+      items: [
+        {
+          label: 'Sales Invoice',
+          route: '/invoices/sales',
+        },
+        {
+          label: 'Purchase Invoice',
+          route: '/invoices/purchase',
+        },
+      ],
     },
     {
       label: 'Expenses',

@@ -234,52 +234,56 @@ import { InputNumberModule } from 'primeng/inputnumber';
               <tr>
                 <td colspan="100%">
                   <div class="px-5">
-                    <p-timeline
-                      [value]="item.timeline"
-                      align="top"
-                      layout="horizontal"
-                      class="customized-timeline w-full"
-                    >
-                      <ng-template #marker let-event>
-                        <div
-                          class="w-6 h-6 p-2 flex items-center justify-center rounded-full shadow-sm text-white"
-                          [ngClass]="
-                            event.actionAt ? event.color : 'bg-gray-300'
-                          "
+                    <div class="overflow-x-auto pb-2">
+                      <div class="min-w-max">
+                        <p-timeline
+                          [value]="item.timeline"
+                          align="top"
+                          layout="horizontal"
+                          class="customized-timeline"
                         >
-                          <i
-                            class="pi text-xs"
-                            [ngClass]="
-                              event.verified ? 'pi-check' : 'pi-circle-fill'
-                            "
-                          ></i>
-                        </div>
-                      </ng-template>
+                          <ng-template #marker let-event>
+                            <div
+                              class="w-6 h-6 p-1 flex items-center justify-center rounded-full shadow-sm text-white"
+                              [ngClass]="
+                                event.actionAt ? 'bg-blue-500' : 'bg-gray-300'
+                              "
+                            >
+                              <i
+                                class="pi text-xs"
+                                [ngClass]="
+                                  event.verified ? 'pi-check' : 'pi-circle-fill'
+                                "
+                              ></i>
+                            </div>
+                          </ng-template>
 
-                      <ng-template #content let-event>
-                        <div
-                          class="flex flex-col min-h-[70px] whitespace-nowrap"
-                        >
-                          <div class="font-semibold text-sm">
-                            {{ event.status }}
-                          </div>
+                          <ng-template #content let-event>
+                            <div class="flex flex-col min-h-[70px]">
+                              <div
+                                class="font-semibold text-sm whitespace-nowrap"
+                              >
+                                {{ event.status }}
+                              </div>
 
-                          <small
-                            class="text-gray-500 text-xs"
-                            *ngIf="event.actionUser"
-                          >
-                            {{ event.actionUser }}
-                          </small>
+                              <small
+                                class="text-gray-500 text-xs w-[120px]"
+                                *ngIf="event.actionUser"
+                              >
+                                {{ event.actionUser }}
+                              </small>
 
-                          <small
-                            class="text-gray-400 text-xs"
-                            *ngIf="event.actionAt"
-                          >
-                            {{ event.actionAt | date: 'dd MMM, yyyy HH:mm aa' }}
-                          </small>
-                        </div>
-                      </ng-template>
-                    </p-timeline>
+                              <small
+                                class="text-gray-400 text-xs"
+                                *ngIf="event.actionAt"
+                              >
+                                {{ event.actionAt | date: 'dd MMM yyyy HH:mm' }}
+                              </small>
+                            </div>
+                          </ng-template>
+                        </p-timeline>
+                      </div>
+                    </div>
                   </div>
                 </td>
               </tr>
@@ -503,21 +507,6 @@ export class SupplierPurchaseOrder implements OnDestroy {
             'Rejected',
           ];
 
-          const colorMap: Record<string, string> = {
-            Draft: 'bg-orange-400',
-            Revised: 'bg-yellow-400',
-            Approved: 'bg-blue-400',
-            Sent: 'bg-blue-400',
-            Issued: 'bg-green-400',
-            PartiallyReceived: 'bg-yellow-400',
-            Received: 'bg-green-400',
-
-            PartiallyInvoiced: 'bg-purple-400',
-            FullyInvoiced: 'bg-emerald-600',
-
-            Rejected: 'bg-red-400',
-          };
-
           const enhancedData = res.data.map((order) => {
             const histories = order.purchaseOrderStatusHistories || [];
 
@@ -557,7 +546,6 @@ export class SupplierPurchaseOrder implements OnDestroy {
                 status,
                 actionAt: item?.actionAt ?? null,
                 actionUser: displayUser,
-                color: colorMap[status],
                 verified: statusOrder.indexOf(status) <= reachedIndex,
               };
             });

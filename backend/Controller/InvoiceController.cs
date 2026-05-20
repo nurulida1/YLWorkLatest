@@ -269,6 +269,8 @@ string? includes = null)
         {
             var invoice = await _context.Invoices
                 .Include(x => x.InvoiceItems)
+                .Include(x => x.Supplier)
+                .Include(x => x.PurchaseOrder)
                 .FirstOrDefaultAsync(x => x.Id == request.Id);
 
             if (invoice == null)
@@ -276,7 +278,31 @@ string? includes = null)
 
             try
             {
-                // update fields
+
+                if (request.Attachment != null)
+                {
+                    var uploadPath = Path.Combine(
+                        Directory.GetCurrentDirectory(),
+                        "wwwroot",
+                        "uploads"
+                    );
+
+                    if (!Directory.Exists(uploadPath))
+                    {
+                        Directory.CreateDirectory(uploadPath);
+                    }
+
+                    var fileName = $"{Guid.NewGuid()}_{request.Attachment.FileName}";
+                    var filePath = Path.Combine(uploadPath, fileName);
+
+                    using (var stream = new FileStream(filePath, FileMode.Create))
+                    {
+                        await request.Attachment.CopyToAsync(stream);
+                    }
+
+                    invoice.Attachment = Path.Combine("uploads", fileName);
+                }
+
                 invoice.InvoiceNo = request.InvoiceNo;
                 invoice.InvoiceDate = request.InvoiceDate;
                 invoice.DueDate = request.DueDate;
@@ -286,6 +312,11 @@ string? includes = null)
                 invoice.Remarks = request.Remarks;
                 invoice.Type = request.Type;
                 invoice.Notes = request.Notes;
+
+                if (invoice.Status == "Draft" && request.Attachment != null)
+                {
+                    invoice.Status = "Received";
+                }
 
                 _context.InvoiceItems.RemoveRange(invoice.InvoiceItems);
 
@@ -303,6 +334,9 @@ string? includes = null)
                 }).ToList();
 
                 await _context.SaveChangesAsync();
+
+                await _context.Entry(invoice).Reference(x => x.Supplier).LoadAsync();
+                await _context.Entry(invoice).Reference(x => x.PurchaseOrder).LoadAsync();
 
                 await _hub.Clients.All.SendAsync("InvoiceUpdated", invoice.Id);
 
@@ -479,31 +513,98 @@ string? includes = null)
             return Ok(new { invoice.Id, invoice.Status });
         }
 
-        [HttpPost("MarkPaid")]
-        public async Task<IActionResult> MarkPaid([FromBody] MarkInvoicePaidRequest request)
+
+        [HttpPost("MarkAsPaid")]
+        public async Task<IActionResult> MarkAsPaid([FromForm] CreatePaymentRequest request)
         {
-            var invoice = await _context.Invoices.FindAsync(request.InvoiceId);
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrEmpty(userIdClaim))
+                return Unauthorized();
+
+            var userId = Guid.Parse(userIdClaim);
+
+            var invoice = await _context.Invoices
+                .FirstOrDefaultAsync(x => x.Id == request.InvoiceId);
 
             if (invoice == null)
                 return NotFound();
 
-            invoice.PaidAmount = (invoice.PaidAmount ?? 0) + request.Amount;
+            string? filePath = null;
 
-            if (invoice.PaidAmount >= invoice.TotalAmount)
-                invoice.Status = "Paid";
-            else
-                invoice.Status = "Partially Paid";
+            if (request.Attachment != null && request.Attachment.Length > 0)
+            {
+                var uploads = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/uploads/payments");
+
+                if (!Directory.Exists(uploads))
+                    Directory.CreateDirectory(uploads);
+
+                var fileName = $"{Guid.NewGuid()}_{request.Attachment.FileName}";
+                var fullPath = Path.Combine(uploads, fileName);
+
+                using (var stream = new FileStream(fullPath, FileMode.Create))
+                {
+                    await request.Attachment.CopyToAsync(stream);
+                }
+
+                filePath = $"uploads/payments/{fileName}";
+            }
+
+            var payment = new Payments
+            {
+                Id = Guid.NewGuid(),
+                PaymentNo = request.PaymentNo ?? GeneratePaymentNo(),
+                InvoiceId = request.InvoiceId,
+                SupplierId = request.SupplierId,
+                PaymentDate = request.PaymentDate,
+                PaymentMode = request.PaymentMode,
+                Amount = request.Amount,
+                Notes = request.Notes,
+                Attachment = filePath,
+                Status = "Paid",
+                ProcessedById = userId
+            };
+
+            _context.Payments.Add(payment);
+
+            await _context.SaveChangesAsync();
+
+            var expense = new Expense
+            {
+                Id = Guid.NewGuid(),
+                ExpenseNo = await GenerateExpenseNo(),
+                PaymentId = payment.Id,
+                Amount = request.Amount,
+                ExpenseDate = request.PaymentDate,
+                PaymentMode = request.PaymentMode,
+                Attachment = filePath,
+                Description = $"Payment for Invoice {invoice.InvoiceNo}",
+                ProcessedById = userId
+            };
+
+            _context.Expenses.Add(expense);
+
+            var totalPaid = await _context.Payments
+    .Where(x => x.InvoiceId == request.InvoiceId)
+    .SumAsync(x => (decimal?)x.Amount) ?? 0m;
+
+            invoice.PaidAmount = totalPaid;
+
+            invoice.Status =
+    invoice.PaidAmount >= invoice.TotalAmount
+        ? "Paid"
+        : "PartiallyPaid";
 
             await _context.SaveChangesAsync();
 
             return Ok(new
             {
-                invoice.Id,
-                invoice.PaidAmount,
-                invoice.Status
+                payment,
+                expense,
+                invoice
             });
         }
-
+      
         private string GenerateInvoiceNo(string type)
         {
             var prefix = type == "Purchase" ? "PI" : "SI";
@@ -511,6 +612,40 @@ string? includes = null)
             var randomPart = new Random().Next(1000, 9999);
 
             return $"{prefix}-{datePart}-{randomPart}";
+        }
+
+        private string GeneratePaymentNo()
+        {
+            var date = DateTime.Now.ToString("yyyyMMdd");
+
+            var count = _context.Payments.Count(x =>
+                x.CreatedAt == DateTime.Today);
+
+            return $"PAY-{date}-{(count + 1).ToString("0000")}";
+        }
+
+        private async Task<string> GenerateExpenseNo()
+        {
+            var today = DateTime.UtcNow.ToString("yyyyMMdd");
+
+            var prefix = $"EXP-{today}";
+
+            var lastExpense = await _context.Expenses
+                .Where(x => x.ExpenseNo.StartsWith(prefix))
+                .OrderByDescending(x => x.ExpenseNo)
+                .FirstOrDefaultAsync();
+
+            if (lastExpense == null)
+            {
+                return $"{prefix}-0001";
+            }
+
+            var lastNumberStr = lastExpense.ExpenseNo.Split('-').Last();
+            var lastNumber = int.Parse(lastNumberStr);
+
+            var nextNumber = lastNumber + 1;
+
+            return $"{prefix}-{nextNumber:D4}";
         }
     }
 }

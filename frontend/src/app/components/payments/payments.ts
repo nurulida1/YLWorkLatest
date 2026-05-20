@@ -55,9 +55,7 @@ import { MenuModule } from 'primeng/menu';
     MenuModule,
   ],
   template: `<div class="w-full min-h-[92.9vh] flex flex-col p-5">
-      <div
-        class="flex flex-row items-center gap-1 text-gray-500 text-[15px] tracking-wide"
-      >
+      <div class="flex flex-row items-center gap-1 text-gray-500 tracking-wide">
         <div
           [routerLink]="'/dashboard'"
           class="cursor-pointer hover:text-gray-600"
@@ -73,7 +71,7 @@ import { MenuModule } from 'primeng/menu';
         <div class="flex flex-row items-center justify-between">
           <div class="flex flex-col">
             <div class="text-[20px] text-gray-700 font-semibold">Payments</div>
-            <div class="text-gray-500 text-[15px]">
+            <div class="text-gray-500">
               Manage and oversee all project payments
             </div>
           </div>
@@ -83,7 +81,7 @@ import { MenuModule } from 'primeng/menu';
                 type="text"
                 pInputText
                 [(ngModel)]="search"
-                class="w-full! text-[15px]!"
+                class="w-full!"
                 placeholder="Search by payment no"
                 (keyup)="onKeyDown($event)"
               />
@@ -96,7 +94,6 @@ import { MenuModule } from 'primeng/menu';
               (onClick)="ActionClick(null, 'add')"
               icon="pi pi-plus-circle"
               severity="info"
-              size="small"
               styleClass="py-2! whitespace-nowrap!"
             ></p-button>
           </div>
@@ -117,46 +114,36 @@ import { MenuModule } from 'primeng/menu';
           >
             <ng-template #header>
               <tr>
-                <th class="bg-gray-100! text-[15px]! text-center! w-[30%]!">
-                  Client/Vendor
-                </th>
-                <th class="bg-gray-100! text-[15px]! text-center! w-[10%]">
-                  Payment No
-                </th>
-                <th class="bg-gray-100! text-[15px]! text-center! w-[15%]">
-                  Paid Date
-                </th>
-                <th class="bg-gray-100! text-[15px]! text-center! w-[15%]">
-                  Amount
-                </th>
-                <th class="bg-gray-100! text-[15px]! text-center! w-[15%]">
+                <th class="bg-gray-100! w-[30%]!">Client/Vendor</th>
+                <th class="bg-gray-100! text-center! w-[15%]">Payment No</th>
+                <th class="bg-gray-100! text-center! w-[10%]">Paid Date</th>
+                <th class="bg-gray-100! text-center! w-[15%]">Amount</th>
+                <th class="bg-gray-100! text-center! w-[10%]">
                   Payment Method
                 </th>
 
-                <th class="bg-gray-100! text-[15px]! text-center! w-[10%]">
-                  Action
-                </th>
+                <th class="bg-gray-100! text-center! w-[10%]">Action</th>
               </tr>
             </ng-template>
             <ng-template #body let-data>
               <tr>
-                <td class="text-[14px]! text-center! font-semibold!">
+                <td class="font-semibold!">
                   {{ data.client?.name ?? data.supplier?.name }}
                 </td>
-                <td class="text-center! text-[14px]!">
+                <td class="text-center! font-semibold!">
                   {{ data.paymentNo }}
                 </td>
-                <td class="text-center! text-[14px]!">
-                  {{ data.paymentDate | date }}
+                <td class="text-center!">
+                  {{ data.paymentDate | date: 'dd/MM/yyyy' }}
                 </td>
-                <td class="text-center! text-[14px]!">
+                <td class="text-center!">
                   {{ data.amount | currency: 'RM ' }}
                 </td>
 
-                <td class="text-center! text-[14px]!">
+                <td class="text-center!">
                   {{ data.paymentMode }}
                 </td>
-                <td class="text-center! text-[14px]!">
+                <td class="text-center!">
                   <div class="flex items-center justify-center">
                     <i
                       (click)="onEllipsisClick($event, data, menu)"
@@ -169,7 +156,7 @@ import { MenuModule } from 'primeng/menu';
             <ng-template #emptymessage>
               <tr>
                 <td colspan="100%" class="border-x!">
-                  <div class="text-[15px] text-center text-gray-500">
+                  <div class="text-center text-gray-500">
                     No project found in records.
                   </div>
                 </td>
@@ -206,7 +193,7 @@ import { MenuModule } from 'primeng/menu';
               <input
                 type="text"
                 pInputText
-                class="w-full! text-[15px]!"
+                class="w-full!"
                 formControlName="paymentNo"
               />
             </div>
@@ -244,7 +231,7 @@ import { MenuModule } from 'primeng/menu';
               <input
                 type="text"
                 pInputText
-                class="w-full! text-[15px]!"
+                class="w-full!"
                 formControlName="referenceNo"
               />
             </div>
@@ -256,7 +243,7 @@ import { MenuModule } from 'primeng/menu';
                 dateFormat="dd/mm/yy"
                 [showIcon]="true"
                 styleClass="w-full"
-                inputStyleClass="w-full! text-[15px]!"
+                inputStyleClass="w-full!"
                 formControlName="paymentDate"
               ></p-datepicker>
             </div>
@@ -266,7 +253,7 @@ import { MenuModule } from 'primeng/menu';
               <p-select
                 appendTo="body"
                 styleClass="w-full"
-                inputStyleClass="w-full! text-[15px]!"
+                inputStyleClass="w-full!"
                 formControlName="paymentMode"
                 [options]="[
                   { label: 'Cash', value: 'Cash' },
@@ -382,7 +369,7 @@ import { MenuModule } from 'primeng/menu';
               (onClick)="visible = false"
               label="Cancel"
               severity="secondary"
-              styleClass="px-7! text-[14px]! tracking-wide! py-1.5! border-gray-200!"
+              styleClass="px-7! tracking-wide! py-1.5! border-gray-200!"
             >
             </p-button>
 
@@ -390,7 +377,7 @@ import { MenuModule } from 'primeng/menu';
               (onClick)="Submit()"
               [label]="isUpdate ? 'Save Changes' : 'Create'"
               severity="info"
-              styleClass="px-7! text-[14px]! tracking-wide! py-1.5!"
+              styleClass="px-7! tracking-wide! py-1.5!"
             >
             </p-button>
           </div>

@@ -15,6 +15,7 @@ import {
   PagingContent,
 } from '../shared/helpers/helpers';
 import { InvoiceStatus } from '../shared/enum/enum';
+import { CreatePaymentRequest } from '../models/Payments';
 
 @Injectable({
   providedIn: 'root',
@@ -74,10 +75,8 @@ export class InvoiceService {
       retry(1),
       catchError((error) => {
         if (error.status === 404) {
-          // Return null gracefully when not found
           return of(null);
         } else {
-          // Handle all other errors
           return this.handleError('GetOne')(error);
         }
       }),
@@ -97,36 +96,16 @@ export class InvoiceService {
   }
 
   Delete(id: string): Observable<BaseResponse> {
-    // Build query params
-    const params = { id }; // simpler than buildParams if it's just the id
+    const params = { id };
 
     return this.http
       .delete<BaseResponse>(`${this.url}/Delete`, { params })
       .pipe(retry(1), catchError(this.handleError('Delete')));
   }
 
-  MarkAsPaid(
-    id: string,
-    amount: number,
-    paidBy?: string,
-    paymentDate?: Date,
-    remarks?: string,
-    paymentNo?: string,
-    paymentMethod?: string,
-  ): Observable<any> {
-    let params = new HttpParams()
-      .set('id', id)
-      .set('amount', amount.toString());
-
-    if (paidBy) params = params.set('paidBy', paidBy);
-    if (paymentDate)
-      params = params.set('paymentDate', paymentDate.toISOString());
-    if (remarks) params = params.set('remarks', remarks);
-    if (paymentNo) params = params.set('paymentNo', paymentNo);
-    if (paymentMethod) params = params.set('paymentMethod', paymentMethod);
-
+  MarkAsPaid(request: FormData): Observable<any> {
     return this.http
-      .put<any>(`${this.url}/MarkAsPaid`, null, { params })
+      .post<any>(`${this.url}/MarkAsPaid`, request)
       .pipe(retry(1), catchError(this.handleError('MarkAsPaid')));
   }
 

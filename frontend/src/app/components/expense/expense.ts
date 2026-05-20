@@ -57,9 +57,7 @@ import { ExpenseDto } from '../../models/Expense';
     TextareaModule,
   ],
   template: `<div class="w-full min-h-screen flex flex-col p-5">
-      <div
-        class="flex flex-row items-center gap-1 text-gray-500 text-[15px] tracking-wide"
-      >
+      <div class="flex flex-row items-center gap-1 text-gray-500 tracking-wide">
         <div
           class="cursor-pointer hover:text-gray-600"
           [routerLink]="'/dashboard'"
@@ -75,7 +73,7 @@ import { ExpenseDto } from '../../models/Expense';
         <div class="flex flex-row items-center justify-between">
           <div class="flex flex-col">
             <div class="text-[20px] text-gray-700 font-semibold">Expenses</div>
-            <div class="text-gray-500 text-[15px]">
+            <div class="text-gray-500">
               Manage and oversee all expenses here.
             </div>
           </div>
@@ -85,7 +83,7 @@ import { ExpenseDto } from '../../models/Expense';
                 type="text"
                 pInputText
                 [(ngModel)]="search"
-                class="w-full! text-[15px]!"
+                class="w-full!"
                 placeholder="Search by expense no"
                 (keyup)="onKeyDown($event)"
               />
@@ -95,7 +93,6 @@ import { ExpenseDto } from '../../models/Expense';
             </div>
             <p-button
               label="Add New Expense"
-              size="small"
               (onClick)="ActionClick(null, 'Create')"
               icon="pi pi-plus-circle"
               severity="info"
@@ -118,57 +115,40 @@ import { ExpenseDto } from '../../models/Expense';
           >
             <ng-template #header>
               <tr>
-                <th class="bg-gray-100! text-[15px]! text-center! w-[15%]!">
-                  Expense No
-                </th>
-                <th class="bg-gray-100! text-[15px]! text-center! w-[15%]!">
-                  Date
-                </th>
-                <th class="bg-gray-100! text-[15px]! text-center! w-[25%]!">
-                  Description
-                </th>
-                <th class="bg-gray-100! text-[15px]! text-center! w-[15%]!">
-                  Amount
-                </th>
-                <th class="bg-gray-100! text-[15px]! text-center! w-[15%]!">
-                  Payment Mode
-                </th>
-                <th
-                  class="bg-gray-100! text-[15px]! text-center! w-[15%]!"
-                ></th>
+                <th class="bg-gray-100! text-center! w-[15%]!">Expense No</th>
+                <th class="bg-gray-100! text-center! w-[15%]!">Date</th>
+                <th class="bg-gray-100! text-center! w-[25%]!">Description</th>
+                <th class="bg-gray-100! text-center! w-[15%]!">Amount</th>
+                <th class="bg-gray-100! text-center! w-[15%]!">Payment Mode</th>
+                <th class="bg-gray-100! text-center! w-[15%]!">Processed By</th>
               </tr>
             </ng-template>
             <ng-template #body let-data>
               <tr>
-                <td class="text-[14px]! text-center! font-semibold!">
+                <td class="text-center! font-semibold!">
                   {{ data.expenseNo }}
                 </td>
-                <td class="text-[14px]! text-center!">
-                  {{ data.expenseDate | date }}
+                <td class="text-center!">
+                  {{ data.expenseDate | date: 'dd/MM/yyyy' }}
                 </td>
-                <td class="text-[14px]! text-center!">
+                <td class="text-center!">
                   {{ data.description }}
                 </td>
-                <td class="text-[14px]! text-center!">
+                <td class="text-center!">
                   {{ data.amount | currency: 'RM ' }}
                 </td>
-                <td class="text-[14px]! text-center!">
+                <td class="text-center!">
                   {{ data.paymentMode }}
                 </td>
-                <td class="text-center! text-[14px]!">
-                  <div class="flex items-center justify-center">
-                    <i
-                      (click)="onEllipsisClick($event, data, menu)"
-                      class="pi pi-ellipsis-h cursor-pointer"
-                    ></i>
-                  </div>
+                <td class="text-center!">
+                  {{ data.processedBy?.fullName }}
                 </td>
               </tr>
             </ng-template>
             <ng-template #emptymessage>
               <tr>
                 <td colspan="100%" class="border-x!">
-                  <div class="text-[15px] text-center text-gray-500">
+                  <div class="text-center text-gray-500">
                     No expense found in records.
                   </div>
                 </td>
@@ -191,21 +171,18 @@ import { ExpenseDto } from '../../models/Expense';
     >
       <ng-template #headless>
         <div class="flex flex-col p-5">
-          <div class="font-semibold text-[20px]">{{ title }}</div>
-          <div class="font-normal tracking-wide text-gray-500 text-[14px]">
+          <div class="font-semibold text-[18px]">{{ title }}</div>
+          <div class="font-normal tracking-wide text-gray-500">
             Fill in all required field.
           </div>
           <div class="border-b border-gray-200 w-full mt-2 mb-2"></div>
-          <div
-            [formGroup]="FG"
-            class="mt-3 grid grid-cols-12 gap-3 text-[15px]"
-          >
+          <div [formGroup]="FG" class="mt-3 grid grid-cols-12 gap-3">
             <div class="col-span-12 flex flex-col gap-1">
               <div>Amount</div>
               <p-inputnumber
                 appendTo="body"
                 styleClass="w-full"
-                inputStyleClass="w-full !text-[15px]"
+                inputStyleClass="w-full"
                 formControlName="amount"
                 mode="currency"
                 currency="MYR"
@@ -221,7 +198,7 @@ import { ExpenseDto } from '../../models/Expense';
               <p-datepicker
                 appendTo="body"
                 styleClass="w-full"
-                inputStyleClass="w-full !text-[15px]"
+                inputStyleClass="w-full"
                 formControlName="expenseDate"
                 showIcon="true"
                 dateFormat="dd/mm/yy"
@@ -233,7 +210,7 @@ import { ExpenseDto } from '../../models/Expense';
               <p-select
                 appendTo="body"
                 styleClass="w-full"
-                inputStyleClass="w-full !text-[15px]"
+                inputStyleClass="w-full"
                 formControlName="paymentMode"
                 [options]="[
                   { label: 'Cash', value: 'Cash' },
@@ -250,7 +227,7 @@ import { ExpenseDto } from '../../models/Expense';
               <div>Description</div>
               <textarea
                 pTextarea
-                class="w-full !text-[15px]"
+                class="w-full"
                 formControlName="description"
                 rows="4"
                 autoResize="true"
@@ -263,13 +240,11 @@ import { ExpenseDto } from '../../models/Expense';
             <p-button
               label="Cancel"
               (onClick)="visible = false"
-              size="small"
               severity="secondary"
               class="py-2! whitespace-nowrap! border-gray-200!"
             ></p-button>
             <p-button
               label="Submit"
-              size="small"
               (onClick)="Submit()"
               styleClass="bg-emerald-600! border-none!"
             ></p-button>
@@ -306,7 +281,7 @@ export class Expense implements OnInit, OnDestroy {
     this.Query.Filter = null;
     this.Query.OrderBy = 'CreatedAt desc';
     this.Query.Select = null;
-    this.Query.Includes = null;
+    this.Query.Includes = 'ProcessedBy';
   }
 
   ngOnInit(): void {}
@@ -319,6 +294,8 @@ export class Expense implements OnInit, OnDestroy {
       .subscribe({
         next: (res) => {
           this.PagingSignal.set(res);
+          console.log(this.PagingSignal().data);
+
           this.loadingService.stop();
           this.cdr.markForCheck();
         },

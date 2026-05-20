@@ -15,9 +15,7 @@
         public string? PaymentMode { get; set; }
 
         public string? Description { get; set; }
-
-        // Use centralized attachment system
-        public ICollection<AttachmentDto>? Attachments { get; set; } = new List<AttachmentDto>();
+        public string? Attachment { get; set; }
 
         public Guid? ProcessedById { get; set; }
         public User? ProcessedBy { get; set; }
@@ -30,7 +28,7 @@
         public DateTime ExpenseDate { get; set; }
         public string? PaymentMode { get; set; }
         public string? Description { get; set; }
-        public ICollection<string>? AttachmentUrls { get; set; } = new List<string>();
+        public IFormFile? Attachment { get; set; }
         public Guid? ProcessedById { get; set; }
     }
 }

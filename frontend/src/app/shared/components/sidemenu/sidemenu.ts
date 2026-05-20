@@ -26,24 +26,23 @@ import { ButtonModule } from 'primeng/button';
   >
     <div class="flex flex-col">
       <div
-        class="flex flex-row items-center justify-center lg:justify-start gap-4 lg:px-6 border-b border-white/10 pb-5"
+        class="flex flex-row items-center gap-4 lg:px-6 border-b border-white/10 pb-5"
       >
-        <div
-          class="bg-blue-500 rounded-md w-7 h-7 xl:w-[38px] xl:h-[38px] p-1.5"
-        >
+        <div class="w-50">
           <img
-            src="assets/logo.png"
+            src="assets/logo-yl-work.png"
             alt=""
             class="w-full h-full object-cover"
           />
         </div>
-        <div class="hidden lg:flex tracking-wide flex-col">
-          <div class="text-lg 3xl:text-xl font-bold">YL Works</div>
+        <!-- <div class="hidden lg:flex tracking-wide flex-col">
+          <div class="text-lg 3xl:text-xl font-bold">YL WORKS</div>
           <div class="text-gray-400 text-[10px] 3xl:text-[12px]">
             MANAGEMENT SYSTEM
           </div>
-        </div>
+        </div> -->
       </div>
+
       <div
         class="py-5 flex flex-col gap-7 lg:gap-3 lg:pl-3 lg:pr-2 overflow-y-auto scrollbar scroll-smooth"
       >

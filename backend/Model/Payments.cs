@@ -32,9 +32,7 @@
         public DateTime PaymentDate { get; set; }
         public string? PaymentMode { get; set; }
         public decimal Amount { get; set; }
-        public decimal PaidAmount { get; set; }
-        public decimal DueAmount { get; set; }
         public string? Notes { get; set; }
-        public string? Attachment { get; set; }
+        public IFormFile? Attachment { get; set; }
     }
 }

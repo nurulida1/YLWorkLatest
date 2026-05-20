@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { environment } from '../../environments/environment';
 import { MessageService } from 'primeng/api';
-import { catchError, map, Observable, of, retry, throwError } from 'rxjs';
+import { catchError, Observable, of, retry, throwError } from 'rxjs';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import {
   BaseResponse,

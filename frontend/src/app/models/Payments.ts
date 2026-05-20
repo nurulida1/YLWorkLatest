@@ -25,16 +25,14 @@ export interface PaymentDto extends BaseModel {
 }
 
 export interface CreatePaymentRequest {
-  paymentNo: string;
-  clientId: string;
-  supplierId: string;
-  invoiceId: string;
-  referenceNo: string;
+  paymentNo?: string;
+  clientId?: string;
+  supplierId?: string;
+  invoiceId?: string;
+  referenceNo?: string;
   paymentDate: Date;
   paymentMode: string;
   amount: number;
-  paidAmount: number;
-  dueAmount: number;
-  notes: string;
-  attachment: string;
+  notes?: string;
+  attachment?: string;
 }

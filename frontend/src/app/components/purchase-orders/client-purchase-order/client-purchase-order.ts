@@ -742,7 +742,7 @@ export class ClientPurchaseOrder implements OnInit, OnDestroy {
       items.push({
         label: 'Mark as Completed',
         icon: 'pi pi-check-circle',
-        command: () => this.ActionClick(purchaseOrder, 'Completed'), // Updates status to 'Completed'
+        command: () => this.ActionClick(purchaseOrder, 'Completed'),
       });
     }
     if (
@@ -757,10 +757,8 @@ export class ClientPurchaseOrder implements OnInit, OnDestroy {
       });
     }
 
-    // 3. Add the Separator
     items.push({ separator: true });
 
-    // 4. Bottom Section: PDF and Delete (Below Separator)
     items.push(
       ...(purchaseOrder.attachment
         ? [
@@ -779,7 +777,6 @@ export class ClientPurchaseOrder implements OnInit, OnDestroy {
       },
     );
 
-    // 5. Finalize
     this.menuItems = items;
     menu.toggle(event);
   }

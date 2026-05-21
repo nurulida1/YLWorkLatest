@@ -5,10 +5,17 @@ import {
   Component,
   inject,
   OnDestroy,
+  OnInit,
   signal,
   ViewChild,
 } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import {
+  FormControl,
+  FormGroup,
+  FormsModule,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
@@ -27,8 +34,11 @@ import {
   BuildSortText,
   GridifyQueryExtend,
   PagingContent,
+  ValidateAllFormFields,
 } from '../../../shared/helpers/helpers';
 import { InvoiceDto } from '../../../models/Invoice';
+import { TextareaModule } from 'primeng/textarea';
+import { DatePickerModule } from 'primeng/datepicker';
 
 @Component({
   selector: 'app-sales-invoice',
@@ -43,6 +53,9 @@ import { InvoiceDto } from '../../../models/Invoice';
     DialogModule,
     SelectModule,
     InputNumberModule,
+    TextareaModule,
+    ReactiveFormsModule,
+    DatePickerModule,
   ],
   template: `<div class="w-full min-h-[92.9vh] flex flex-col p-5">
       <div class="flex flex-row items-center gap-1 text-gray-500 tracking-wide">
@@ -109,8 +122,6 @@ import { InvoiceDto } from '../../../models/Invoice';
           >
             <ng-template #header>
               <tr>
-                <th class="w-[5%]! bg-gray-100!"></th>
-
                 <th
                   pSortableColumn="InvoiceNo"
                   class="bg-gray-100! text-center! w-[15%]!"
@@ -152,27 +163,15 @@ import { InvoiceDto } from '../../../models/Invoice';
               let-expanded="expanded"
             >
               <tr>
-                <td>
-                  <div
-                    class="flex items-center justify-center cursor-pointer"
-                    (click)="fTable.toggleRow(data)"
-                  >
-                    <i
-                      [class]="
-                        expanded ? 'pi pi-chevron-down' : 'pi pi-chevron-right'
-                      "
-                    ></i>
-                  </div>
-                </td>
                 <td class="text-center! font-semibold!">
-                  {{ data.purchaseOrderNo }}
+                  {{ data.invoiceNo }}
                 </td>
                 <td>
-                  {{ data.supplier?.name }}
+                  {{ data.client?.name }}
                 </td>
 
                 <td class="text-center!">
-                  {{ data.poDate | date: 'dd/MM/yyyy' }}
+                  {{ data.invoiceDate | date: 'dd/MM/yyyy' }}
                 </td>
                 <td class="text-center!">
                   {{ data.totalAmount | currency: 'RM ' }}
@@ -182,34 +181,19 @@ import { InvoiceDto } from '../../../models/Invoice';
                     <div
                       class="rounded-full px-4 text-[13px] py-0.5 font-medium w-fit whitespace-nowrap"
                       [ngClass]="{
-                        'bg-gray-100 text-gray-600': data.status === 'Draft',
+                        'bg-orange-100 text-orange-600':
+                          data.status === 'Draft' || data.status === 'Refunded',
+
+                        'bg-blue-100 text-blue-600': data.status === 'Sent',
 
                         'bg-yellow-100 text-yellow-600':
-                          data.status === 'Revised',
+                          data.status === 'PartiallyPaid',
 
-                        'bg-blue-100 text-blue-600':
-                          data.status === 'Approved' ||
-                          data.status === 'InProgress',
-
-                        'bg-indigo-100 text-indigo-600':
-                          data.status === 'Sent' || data.status === 'Issued',
-
-                        'bg-teal-100 text-teal-600':
-                          data.status === 'PartiallyReceived',
-
-                        'bg-green-100 text-green-600':
-                          data.status === 'Received',
-
-                        'bg-purple-100 text-purple-600':
-                          data.status === 'PartiallyInvoiced',
-
-                        'bg-emerald-100 text-emerald-700':
-                          data.status === 'FullyInvoiced',
+                        'bg-green-100 text-green-600': data.status === 'Paid',
 
                         'bg-red-100 text-red-600':
-                          data.status === 'Rejected' ||
-                          data.status === 'Declined' ||
-                          data.status === 'Expired',
+                          data.status === 'Overdue' ||
+                          data.status === 'Cancelled',
                       }"
                     >
                       {{ data.status }}
@@ -241,11 +225,161 @@ import { InvoiceDto } from '../../../models/Invoice';
         </div>
       </div>
     </div>
-    <p-menu #menu [model]="menuItems" [popup]="true"></p-menu> `,
+    <p-menu #menu [model]="menuItems" [popup]="true"></p-menu>
+
+    <p-dialog
+      [(visible)]="showPaymentDialog"
+      [modal]="true"
+      [draggable]="false"
+      [resizable]="false"
+      styleClass="w-[92%] lg:w-[40%] rounded-xl"
+    >
+      <ng-template pTemplate="header">
+        <div>
+          <div class="text-lg font-semibold">Record Payment</div>
+          <div class="text-sm text-gray-500 tracking-wide">
+            Enter payment details for this invoice
+          </div>
+        </div>
+      </ng-template>
+
+      <div class="grid grid-cols-12 gap-4" [formGroup]="paymentFG">
+        <div class="col-span-6 flex flex-col gap-1">
+          <label for="">Payment No</label>
+          <input
+            type="text"
+            pInputText
+            class="w-full"
+            placeholder="Auto-generated if empty"
+            formControlName="paymentNo"
+          />
+          <small class="text-gray-500">Leave empty to auto-generate</small>
+        </div>
+        <div class="col-span-6 flex flex-col gap-1">
+          <label>Payment Date <span class="text-red-500">*</span></label>
+          <p-datepicker
+            styleClass="w-full!"
+            dateFormat="dd/mm/yy"
+            [showIcon]="true"
+            appendTo="body"
+            formControlName="paymentDate"
+          ></p-datepicker>
+        </div>
+
+        <div class="col-span-6 flex flex-col gap-1">
+          <label>Payment Mode <span class="text-red-500">*</span></label>
+          <p-select
+            [options]="[
+              { label: 'Cash', value: 'Cash' },
+              { label: 'Bank Transfer', value: 'Bank Transfer' },
+              { label: 'Cheque', value: 'Cheque' },
+            ]"
+            formControlName="paymentMode"
+            appendTo="body"
+          ></p-select>
+        </div>
+
+        <div class="col-span-6 flex flex-col gap-1">
+          <label> Amount <span class="text-red-500">*</span> </label>
+
+          <p-inputnumber
+            styleClass="text-center!"
+            formControlName="amount"
+            inputStyleClass="w-full text-[13px]!"
+            mode="currency"
+            currency="MYR"
+            locale="ms-MY"
+            [max]="
+              selectedInvoice?.totalAmount - (selectedInvoice?.paidAmount || 0)
+            "
+            [minFractionDigits]="2"
+          ></p-inputnumber>
+
+          <small class="text-gray-500 text-xs">
+            Remaining amount: RM
+            {{ remainingAmount | number: '1.2-2' }} </small
+          ><small
+            *ngIf="paymentFG.get('amount')?.errors?.['exceed']"
+            class="text-red-500 text-xs"
+          >
+            Amount exceeds remaining balance
+          </small>
+        </div>
+
+        <div class="col-span-12 flex flex-col gap-1">
+          <label
+            >Notes
+            <span class="italic text-sm text-gray-500">(Optional)</span></label
+          >
+          <textarea
+            pTextarea
+            [cols]="30"
+            [rows]="3"
+            [autoResize]="true"
+            class="w-full"
+            formControlName="notes"
+          ></textarea>
+        </div>
+        <div class="col-span-12 flex flex-row items-center gap-3 md:mt-3">
+          <div>
+            Attachment
+            <span class="text-red-500">*</span>
+          </div>
+
+          :
+
+          <input
+            #file
+            type="file"
+            (change)="onPaymentFileSelected($event)"
+            hidden
+          />
+
+          <p-button
+            [label]="paymentFile ? 'Reupload' : 'Upload'"
+            severity="secondary"
+            icon="pi pi-upload"
+            styleClass="border-gray-200!"
+            size="small"
+            (onClick)="file.click()"
+          ></p-button>
+
+          <a
+            *ngIf="paymentFileName"
+            [href]="paymentFileUrl"
+            [download]="paymentFileName"
+            target="_blank"
+            class="bg-gray-100 border border-gray-200 rounded-lg px-3 py-2 text-sm flex items-center gap-2"
+          >
+            <i class="pi pi-file text-yellow-600!"></i>
+
+            <span class="truncate max-w-[200px]">
+              {{ paymentFileName }}
+            </span>
+          </a>
+        </div>
+      </div>
+
+      <ng-template pTemplate="footer">
+        <div class="flex justify-end gap-2">
+          <p-button
+            label="Cancel"
+            severity="secondary"
+            (onClick)="showPaymentDialog = false"
+          ></p-button>
+
+          <p-button
+            label="Save Payment"
+            severity="info"
+            (onClick)="submitPayment()"
+          ></p-button>
+        </div>
+      </ng-template>
+    </p-dialog>`,
   styleUrl: './sales-invoice.less',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class SalesInvoice implements OnDestroy {
+export class SalesInvoice implements OnInit, OnDestroy {
   @ViewChild('fTable') fTable?: Table;
 
   private readonly invoiceService = inject(InvoiceService);
@@ -262,9 +396,21 @@ export class SalesInvoice implements OnDestroy {
   Query: GridifyQueryExtend = {} as GridifyQueryExtend;
 
   search: string = '';
+  selectedInvoice: any;
+
+  paymentFile: File | null = null;
+  paymentFileName: string = '';
+  paymentFileUrl: string | null = null;
+
+  showRecordDialog: boolean = false;
+  showPaymentDialog: boolean = false;
+
+  remainingAmount: number = 0;
 
   menuItems: MenuItem[] = [];
   currentUser = this.userService.currentUser;
+
+  paymentFG!: FormGroup;
 
   constructor() {
     this.Query.Page = 1;
@@ -273,6 +419,39 @@ export class SalesInvoice implements OnDestroy {
     this.Query.OrderBy = 'CreatedAt desc';
     this.Query.Select = null;
     this.Query.Includes = 'Client';
+  }
+
+  ngOnInit(): void {
+    this.initPaymentForm();
+
+    this.paymentFG.get('amount')?.valueChanges.subscribe((value) => {
+      const total = this.selectedInvoice?.totalAmount || 0;
+      const currentPaid = this.selectedInvoice?.paidAmount || 0;
+      const input = value || 0;
+
+      const remaining = total - currentPaid;
+
+      this.remainingAmount = remaining - input;
+
+      if (input > remaining) {
+        this.paymentFG.get('amount')?.setErrors({ exceed: true });
+      } else {
+        this.paymentFG.get('amount')?.setErrors(null);
+      }
+    });
+  }
+
+  initPaymentForm() {
+    this.paymentFG = new FormGroup({
+      paymentNo: new FormControl<string | null>(null),
+      paymentDate: new FormControl<Date | null>(
+        new Date(),
+        Validators.required,
+      ),
+      paymentMode: new FormControl<string | null>(null, Validators.required),
+      amount: new FormControl<number | null>(null, Validators.required),
+      notes: new FormControl<string | null>(null),
+    });
   }
 
   GetData() {
@@ -362,7 +541,198 @@ export class SalesInvoice implements OnDestroy {
     this.GetData();
   }
 
-  onEllipsisClick(event: any, po: InvoiceDto, menu: any) {}
+  onEllipsisClick(event: any, invoice: InvoiceDto, menu: any) {
+    const items: any[] = [];
+    const status = invoice.status;
+
+    if (status === 'Draft') {
+      items.push(
+        {
+          label: 'Update',
+          icon: 'pi pi-pencil',
+          command: () => this.ActionClick(invoice, 'Update'),
+        },
+        {
+          label: 'Mark as Sent',
+          icon: 'pi pi-send',
+          command: () => this.updateStatus(invoice.id, 'Sent'),
+        },
+        {
+          label: 'Cancelled',
+          icon: 'pi pi-times-circle',
+          command: () => this.updateStatus(invoice.id, 'Cancelled'),
+        },
+      );
+    } else if (status === 'Sent' || status === 'PartiallyPaid') {
+      items.push(
+        {
+          label: 'Record Payment',
+          icon: 'pi pi-money-bill',
+          command: () => this.RecordPayment(invoice),
+        },
+        {
+          label: 'Cancelled',
+          icon: 'pi pi-times-circle',
+          command: () => this.updateStatus(invoice.id, 'Cancelled'),
+        },
+      );
+    }
+    this.menuItems = items;
+    menu.toggle(event);
+  }
+
+  updateStatus(id: string, newStatus: string) {
+    this.loadingService.start();
+
+    this.invoiceService
+      .UpdateStatus(id, newStatus)
+      .pipe(takeUntil(this.ngUnsubscribe))
+      .subscribe({
+        next: (res) => {
+          this.loadingService.stop();
+
+          const currentPaging = this.PagingSignal();
+
+          const updatedData = currentPaging.data.map((q) => {
+            if (q.id === id) {
+              return {
+                ...q,
+                status: newStatus,
+              };
+            }
+
+            return q;
+          });
+
+          this.PagingSignal.set({
+            ...currentPaging,
+            data: updatedData,
+          });
+
+          this.messageService.add({
+            severity: 'success',
+            summary: 'Status Updated',
+            detail: `#${res.invoiceNo} has been ${newStatus}`,
+          });
+
+          this.cdr.markForCheck();
+        },
+
+        error: (err) => {
+          this.loadingService.stop();
+
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Update Failed',
+            detail: err.error?.error || 'Invalid status transition.',
+          });
+        },
+      });
+  }
+
+  onPaymentFileSelected(event: any) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    this.paymentFile = file;
+    this.paymentFileName = file.name;
+    this.paymentFileUrl = URL.createObjectURL(file);
+  }
+
+  RecordPayment(data: InvoiceDto) {
+    this.selectedInvoice = data;
+
+    this.paymentFG.reset({
+      paymentNo: null,
+      paymentDate: new Date(),
+      paymentMode: null,
+      amount: data.totalAmount - data.paidAmount,
+      notes: null,
+    });
+
+    this.showPaymentDialog = true;
+
+    this.cdr.markForCheck();
+  }
+
+  submitPayment() {
+    if (this.paymentFG.invalid) {
+      ValidateAllFormFields(this.paymentFG);
+      return;
+    }
+
+    const formData = new FormData();
+
+    const val = this.paymentFG.value;
+
+    formData.append('invoiceId', this.selectedInvoice.id);
+    formData.append('clientId', this.selectedInvoice.clientId);
+    formData.append('amount', val.amount);
+    if (val.paymentNo && val.paymentNo.trim() !== '') {
+      formData.append('paymentNo', val.paymentNo.trim());
+    }
+    formData.append('paymentDate', val.paymentDate.toISOString());
+    formData.append('paymentMode', val.paymentMode);
+    formData.append('notes', val.notes || '');
+
+    if (this.paymentFile) {
+      formData.append('attachment', this.paymentFile);
+    }
+
+    this.loadingService.start();
+
+    this.invoiceService.MarkAsPaid(formData).subscribe({
+      next: (res) => {
+        this.loadingService.stop();
+
+        const state = this.PagingSignal();
+
+        const updated = state.data.map((x) => {
+          if (x.id === this.selectedInvoice.id) {
+            const newPaid = (x.paidAmount || 0) + val.amount;
+
+            let status = 'PartiallyPaid';
+            if (newPaid >= x.totalAmount) {
+              status = 'Paid';
+            }
+
+            return {
+              ...x,
+              paidAmount: newPaid,
+              status,
+            };
+          }
+          return x;
+        });
+
+        this.PagingSignal.set({
+          ...state,
+          data: updated,
+        });
+
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Payment Recorded',
+          detail: `RM ${val.amount} recorded for Invoice ${this.selectedInvoice.invoiceNo}`,
+        });
+
+        this.showPaymentDialog = false;
+        this.cdr.markForCheck();
+      },
+      error: (err) => {
+        this.loadingService.stop();
+        console.error(err);
+      },
+    });
+  }
+
+  ActionClick(data: InvoiceDto, action: string) {
+    if (data && action === 'Update') {
+      this.router.navigate(['/invoices/sales/form'], {
+        queryParams: { id: data?.id },
+      });
+    }
+  }
 
   ngOnDestroy(): void {
     this.ngUnsubscribe.next();

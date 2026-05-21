@@ -32,15 +32,10 @@ import { ButtonModule } from 'primeng/button';
           <img
             src="assets/logo-yl-work.png"
             alt=""
-            class="w-full h-full object-cover"
+            class="w-full h-full object-cover cursor-pointer"
+            [routerLink]="'/dashboard'"
           />
         </div>
-        <!-- <div class="hidden lg:flex tracking-wide flex-col">
-          <div class="text-lg 3xl:text-xl font-bold">YL WORKS</div>
-          <div class="text-gray-400 text-[10px] 3xl:text-[12px]">
-            MANAGEMENT SYSTEM
-          </div>
-        </div> -->
       </div>
 
       <div
@@ -100,7 +95,6 @@ import { ButtonModule } from 'primeng/button';
                 (click)="item.items ? toggleMenu(item.label) : null"
                 [routerLink]="!item.items ? item.route : null"
               >
-                <!-- LEFT: icon + label -->
                 <div class="flex items-center gap-3">
                   <i
                     class="pi {{ item.icon }} text-sm! xl:text-base!"
@@ -115,7 +109,6 @@ import { ButtonModule } from 'primeng/button';
                   </span>
                 </div>
 
-                <!-- RIGHT: chevron -->
                 <i
                   *ngIf="item.items"
                   class="text-sm! hidden! lg:block! pi"
@@ -126,7 +119,6 @@ import { ButtonModule } from 'primeng/button';
                 ></i>
               </div>
 
-              <!-- Sub menu -->
               <div
                 *ngIf="item.items && openMenu === item.label"
                 class="ml-10 flex flex-col gap-1"
@@ -245,7 +237,11 @@ export class Sidemenu {
         },
       ],
     },
-
+    {
+      label: 'Company',
+      route: '/company',
+      icon: 'pi-building',
+    },
     {
       label: 'Suppliers',
       route: '/supplier',
@@ -284,14 +280,31 @@ export class Sidemenu {
 
     {
       label: 'Inventory',
-      route: '/inventory',
       icon: 'pi-box',
+      items: [
+        {
+          label: 'Inventory Record',
+          route: '/inventory/listing',
+        },
+        {
+          label: 'Category',
+          route: '/inventory/category',
+        },
+        {
+          label: 'Location',
+          route: '/inventory/location',
+        },
+        {
+          label: 'Section',
+          route: '/inventory/section',
+        },
+      ],
       // roles: ['Logistic Assistant', 'SuperAdmin', 'Purchasing Executive'],
     },
 
     {
       label: 'Delivery Orders',
-      icon: 'pi pi-truck',
+      icon: 'pi-truck',
       items: [
         {
           label: 'Inbound DO',
@@ -357,6 +370,17 @@ export class Sidemenu {
       route: '/payments',
       icon: 'pi-credit-card',
       // roles: ['Purchasing Executive', 'SuperAdmin'],
+    },
+
+    {
+      label: 'Settings',
+      icon: 'pi-cog',
+      items: [
+        {
+          label: 'User Management',
+          route: '/user-management',
+        },
+      ],
     },
   ];
 

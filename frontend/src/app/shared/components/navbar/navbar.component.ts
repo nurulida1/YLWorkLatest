@@ -125,6 +125,7 @@ import { DrawerModule } from 'primeng/drawer';
       (onHide)="showSidebar = false"
       position="left"
       [modal]="true"
+      styleClass="bg-gray-800!"
       [closable]="false"
     >
       <ng-template #header>

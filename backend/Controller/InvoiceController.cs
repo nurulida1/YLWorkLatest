@@ -146,6 +146,7 @@ string? includes = null)
             {
                 IQueryable<Invoice> query = _context.Invoices.AsQueryable();
 
+                // 1. Dynamic Includes
                 if (!string.IsNullOrWhiteSpace(includes))
                 {
                     foreach (var include in includes.Split(',', StringSplitOptions.RemoveEmptyEntries))
@@ -154,30 +155,69 @@ string? includes = null)
                     }
                 }
 
+                // 2. Filter by ID
                 if (!string.IsNullOrEmpty(filter))
                 {
-                    var value = filter.Contains('=')
+                    var filterValue = filter.Contains('=')
                         ? filter.Split('=')[1].Trim()
-                        : filter;
+                        : filter.Trim();
 
-                    if (Guid.TryParse(value, out var id))
+                    if (Guid.TryParse(filterValue, out Guid guidId))
                     {
-                        query = query.Where(x => x.Id == id);
+                        query = query.Where(x => x.Id == guidId);
                     }
                 }
 
+                // 3. Execute
                 var data = await query.FirstOrDefaultAsync();
 
                 if (data == null)
                     return NotFound();
 
-                return Ok(MapToDto(data));
+                // 4. IMPORTANT: prevent circular reference crash
+                // (same idea as your GetMany DTO safety)
+                var safeResult = new
+                {
+                    data.Id,
+                    data.InvoiceNo,
+                    data.Type,
+                    data.InvoiceDate,
+                    data.Status,
+                    data.TotalAmount,
+                    data.SupplierId,
+                    data.ClientId,
+                    data.CompanyId,
+                    data.QuotationId,
+                    data.Terms,
+                    data.Remarks,
+                    data.ProjectId,
+                    data.DeliveryOrderId,
+                    InvoiceItems = data.InvoiceItems?.Select(i => new
+                    {
+                        i.Id,
+                        i.InvoiceId,
+                        i.Item,
+                        i.Description,
+                        i.Quantity,
+                        i.UnitPrice,
+                        i.Unit,
+                        i.Amount,
+                        i.Discount
+                    })
+                };
+
+                return Ok(safeResult);
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { Error = ex.Message });
+                return StatusCode(500, new
+                {
+                    Error = "GetOne failed.",
+                    Details = ex.Message
+                });
             }
         }
+
 
         [HttpPost("Create")]
         public async Task<IActionResult> Create([FromForm] CreateInvoiceRequest request)
@@ -188,6 +228,18 @@ string? includes = null)
 
             try
             {
+                if (!string.IsNullOrEmpty(Request.Form["invoiceItems"]))
+                {
+                    request.InvoiceItems =
+                        JsonSerializer.Deserialize<List<InvoiceItemRequest>>(
+                            Request.Form["invoiceItems"],
+                            new JsonSerializerOptions
+                            {
+                                PropertyNameCaseInsensitive = true
+                            }
+                        );
+                }
+
                 string? filePath = null;
 
                 if (request.Attachment != null)
@@ -208,9 +260,11 @@ string? includes = null)
                 {
                     Id = Guid.NewGuid(),
                     InvoiceNo = string.IsNullOrWhiteSpace(request.InvoiceNo)
-    ? GenerateInvoiceNo(request.Type)
-    : request.InvoiceNo,
+                        ? GenerateInvoiceNo(request.Type)
+                        : request.InvoiceNo,
+
                     DeliveryOrderId = request.DeliveryOrderId,
+                    CompanyId = request.CompanyId,
                     ClientId = request.ClientId,
                     SupplierId = request.SupplierId,
                     ProjectId = request.ProjectId,
@@ -231,28 +285,24 @@ string? includes = null)
                     Status = request.Type == "Purchase" ? "Received" : "Draft"
                 };
 
-                invoice.InvoiceItems = request.InvoiceItems.Select(x => new InvoiceItem
-                {
-                    Id = Guid.NewGuid(),
-                    InvoiceId = invoice.Id,
-                    Item = x.Item,
-                    Description = x.Description,
-                    Quantity = x.Quantity,
-                    Unit = x.Unit,
-                    UnitPrice = x.UnitPrice,
-                    Discount = x.Discount,
-                    Amount = x.Amount
-                }).ToList();
+                invoice.InvoiceItems = request.InvoiceItems?
+                    .Select(x => new InvoiceItem
+                    {
+                        Id = Guid.NewGuid(),
+                        InvoiceId = invoice.Id,
+                        Item = x.Item,
+                        Description = x.Description,
+                        Quantity = x.Quantity,
+                        Unit = x.Unit,
+                        UnitPrice = x.UnitPrice,
+                        Discount = x.Discount,
+                        Amount = x.Amount
+                    })
+                    .ToList()
+                    ?? new List<InvoiceItem>();
 
                 _context.Invoices.Add(invoice);
                 await _context.SaveChangesAsync();
-
-                if (invoice.SupplierId != null)
-                {
-                    await _context.Entry(invoice)
-                        .Reference(i => i.Supplier)
-                        .LoadAsync();
-                }
 
                 await _hub.Clients.All.SendAsync("InvoiceCreated", invoice.Id);
 
@@ -269,8 +319,6 @@ string? includes = null)
         {
             var invoice = await _context.Invoices
                 .Include(x => x.InvoiceItems)
-                .Include(x => x.Supplier)
-                .Include(x => x.PurchaseOrder)
                 .FirstOrDefaultAsync(x => x.Id == request.Id);
 
             if (invoice == null)
@@ -278,32 +326,23 @@ string? includes = null)
 
             try
             {
-
-                if (request.Attachment != null)
+                if (!string.IsNullOrEmpty(Request.Form["invoiceItems"]))
                 {
-                    var uploadPath = Path.Combine(
-                        Directory.GetCurrentDirectory(),
-                        "wwwroot",
-                        "uploads"
-                    );
-
-                    if (!Directory.Exists(uploadPath))
-                    {
-                        Directory.CreateDirectory(uploadPath);
-                    }
-
-                    var fileName = $"{Guid.NewGuid()}_{request.Attachment.FileName}";
-                    var filePath = Path.Combine(uploadPath, fileName);
-
-                    using (var stream = new FileStream(filePath, FileMode.Create))
-                    {
-                        await request.Attachment.CopyToAsync(stream);
-                    }
-
-                    invoice.Attachment = Path.Combine("uploads", fileName);
+                    request.InvoiceItems =
+                        JsonSerializer.Deserialize<List<UpdateInvoiceItemRequest>>(
+                            Request.Form["invoiceItems"],
+                            new JsonSerializerOptions
+                            {
+                                PropertyNameCaseInsensitive = true
+                            }
+                        );
                 }
 
+                // update scalar fields FIRST
                 invoice.InvoiceNo = request.InvoiceNo;
+                invoice.CompanyId = request.CompanyId;
+                invoice.SupplierId = request.SupplierId;
+                invoice.ClientId = request.ClientId;
                 invoice.InvoiceDate = request.InvoiceDate;
                 invoice.DueDate = request.DueDate;
                 invoice.Gross = request.Gross;
@@ -313,30 +352,33 @@ string? includes = null)
                 invoice.Type = request.Type;
                 invoice.Notes = request.Notes;
 
-                if (invoice.Status == "Draft" && request.Attachment != null)
-                {
-                    invoice.Status = "Received";
-                }
+                // remove old items (IMPORTANT: use DbSet, not navigation)
+                var oldItems = _context.InvoiceItems
+                    .Where(x => x.InvoiceId == invoice.Id);
 
-                _context.InvoiceItems.RemoveRange(invoice.InvoiceItems);
+                _context.InvoiceItems.RemoveRange(oldItems);
 
-                invoice.InvoiceItems = request.InvoiceItems?.Select(x => new InvoiceItem
-                {
-                    Id = x.Id ?? Guid.NewGuid(),
-                    InvoiceId = invoice.Id,
-                    Item = x.Item,
-                    Description = x.Description,
-                    Quantity = x.Quantity,
-                    Unit = x.Unit,
-                    UnitPrice = x.UnitPrice,
-                    Discount = x.Discount,
-                    Amount = x.Amount
-                }).ToList();
+                await _context.SaveChangesAsync(); // commit delete FIRST
+
+                // add new items
+                var newItems = request.InvoiceItems?
+                    .Select(x => new InvoiceItem
+                    {
+                        Id = Guid.NewGuid(),
+                        InvoiceId = invoice.Id,
+                        Item = x.Item,
+                        Description = x.Description,
+                        Quantity = x.Quantity,
+                        Unit = x.Unit,
+                        UnitPrice = x.UnitPrice,
+                        Discount = x.Discount,
+                        Amount = x.Amount
+                    })
+                    .ToList() ?? new List<InvoiceItem>();
+
+                await _context.InvoiceItems.AddRangeAsync(newItems);
 
                 await _context.SaveChangesAsync();
-
-                await _context.Entry(invoice).Reference(x => x.Supplier).LoadAsync();
-                await _context.Entry(invoice).Reference(x => x.PurchaseOrder).LoadAsync();
 
                 await _hub.Clients.All.SendAsync("InvoiceUpdated", invoice.Id);
 
@@ -393,7 +435,14 @@ string? includes = null)
                 i.TotalAmount,
                 i.PaidAmount,
                 i.Type,
-
+                i.ClientId,
+                i.PurchaseOrderId,
+                i.ProjectId,
+                i.QuotationId,
+                i.DeliveryOrderId,
+                i.CompanyId,
+                i.Terms,
+                i.Remarks,
                 Client = i.Client == null ? null : new
                 {
                     i.Client.Id,
@@ -450,11 +499,23 @@ string? includes = null)
                 })
                 .ToListAsync();
 
-            var deliveryOrders = await _context.DeliveryOrders.Select(x => new DeliveryOrder
-            {
-                Id = x.Id,
-                DeliveryOrderNo = x.DeliveryOrderNo
-            }).ToListAsync();
+            var deliveryOrders = await _context.DeliveryOrders
+      .Where(x => x.Type == "Outbound")
+      .Select(x => new DODropdownDto
+      {
+          Id = x.Id,
+          DeliveryOrderNo = x.DeliveryOrderNo,
+          PurchaseOrderId = x.PurchaseOrderId,
+
+          QuotationId = x.PurchaseOrder != null
+              ? x.PurchaseOrder.QuotationId
+              : null,
+
+          ProjectId = x.PurchaseOrder != null
+              ? x.PurchaseOrder.ProjectId
+              : null
+      })
+      .ToListAsync();
 
             var quotations = await _context.Quotations
                 .Select(x => new QuotationDropdownDto
@@ -466,13 +527,15 @@ string? includes = null)
                 })
                 .ToListAsync();
 
-            var purchaseOrders = await _context.PurchaseOrders
+            var purchaseOrders = await _context.PurchaseOrders.Where(x => x.Type == "Incoming")
                 .Select(x => new PurchaseOrder
                 {
                     Id = x.Id,
                     PurchaseOrderNo = x.PurchaseOrderNo,
                     TotalAmount = x.TotalAmount,
-                    ClientId = x.ClientId
+                    ClientId = x.ClientId,
+                    QuotationId = x.QuotationId,
+                    ProjectId = x.ProjectId
                 })
                 .ToListAsync();
 
@@ -498,19 +561,35 @@ string? includes = null)
             });
         }
 
+
         [HttpPut("UpdateStatus")]
-        public async Task<IActionResult> UpdateStatus([FromBody] UpdateInvoiceStatusRequest request)
+        public async Task<IActionResult> UpdateStatus(Guid id, string status)
         {
-            var invoice = await _context.Invoices.FindAsync(request.InvoiceId);
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim))
+                return Unauthorized(new { Error = "Invalid token." });
+
+            var actionUserId = Guid.Parse(userIdClaim);
+
+            var userName = await _context.Users
+                .Where(x => x.Id == actionUserId)
+                .Select(x => x.FullName)
+                .FirstOrDefaultAsync();
+
+            var invoice = await _context.Invoices
+                .FirstOrDefaultAsync(x => x.Id == id);
 
             if (invoice == null)
                 return NotFound();
 
-            invoice.Status = request.Status;
+            else
+            {
+                invoice.Status = status;
+            }
 
             await _context.SaveChangesAsync();
 
-            return Ok(new { invoice.Id, invoice.Status });
+            return Ok(invoice);
         }
 
 
@@ -534,7 +613,10 @@ string? includes = null)
 
             if (request.Attachment != null && request.Attachment.Length > 0)
             {
-                var uploads = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/uploads/payments");
+                var uploads = Path.Combine(
+                    Directory.GetCurrentDirectory(),
+                    "wwwroot/uploads/payments"
+                );
 
                 if (!Directory.Exists(uploads))
                     Directory.CreateDirectory(uploads);
@@ -556,6 +638,7 @@ string? includes = null)
                 PaymentNo = request.PaymentNo ?? GeneratePaymentNo(),
                 InvoiceId = request.InvoiceId,
                 SupplierId = request.SupplierId,
+                ClientId = request.ClientId,
                 PaymentDate = request.PaymentDate,
                 PaymentMode = request.PaymentMode,
                 Amount = request.Amount,
@@ -566,45 +649,64 @@ string? includes = null)
             };
 
             _context.Payments.Add(payment);
-
             await _context.SaveChangesAsync();
 
-            var expense = new Expense
+            if (string.Equals(invoice.Type, "Sales", StringComparison.OrdinalIgnoreCase))
             {
-                Id = Guid.NewGuid(),
-                ExpenseNo = await GenerateExpenseNo(),
-                PaymentId = payment.Id,
-                Amount = request.Amount,
-                ExpenseDate = request.PaymentDate,
-                PaymentMode = request.PaymentMode,
-                Attachment = filePath,
-                Description = $"Payment for Invoice {invoice.InvoiceNo}",
-                ProcessedById = userId
-            };
+                var income = new Income
+                {
+                    Id = Guid.NewGuid(),
+                    IncomeNo = await GenerateIncomeNo(),
+                    PaymentId = payment.Id,
+                    Amount = request.Amount,
+                    IncomeDate = request.PaymentDate,
+                    PaymentMode = request.PaymentMode,
+                    Attachment = filePath,
+                    Description = $"Payment for Invoice {invoice.InvoiceNo}",
+                    ProcessedById = userId
+                };
 
-            _context.Expenses.Add(expense);
+                _context.Incomes.Add(income);
+            }
+            else
+            {
+                var expense = new Expense
+                {
+                    Id = Guid.NewGuid(),
+                    ExpenseNo = await GenerateExpenseNo(),
+                    PaymentId = payment.Id,
+                    Amount = request.Amount,
+                    ExpenseDate = request.PaymentDate,
+                    PaymentMode = request.PaymentMode,
+                    Attachment = filePath,
+                    Description = $"Payment for Invoice {invoice.InvoiceNo}",
+                    ProcessedById = userId
+                };
+
+                _context.Expenses.Add(expense);
+            }
 
             var totalPaid = await _context.Payments
-    .Where(x => x.InvoiceId == request.InvoiceId)
-    .SumAsync(x => (decimal?)x.Amount) ?? 0m;
+                .Where(x => x.InvoiceId == request.InvoiceId)
+                .SumAsync(x => (decimal?)x.Amount) ?? 0m;
 
             invoice.PaidAmount = totalPaid;
 
             invoice.Status =
-    invoice.PaidAmount >= invoice.TotalAmount
-        ? "Paid"
-        : "PartiallyPaid";
+                invoice.PaidAmount >= invoice.TotalAmount
+                    ? "Paid"
+                    : "PartiallyPaid";
 
             await _context.SaveChangesAsync();
 
             return Ok(new
             {
                 payment,
-                expense,
-                invoice
+                invoice,
+                ledgerType = invoice.Type == "Sales" ? "Income" : "Expense"
             });
         }
-      
+
         private string GenerateInvoiceNo(string type)
         {
             var prefix = type == "Purchase" ? "PI" : "SI";
@@ -612,6 +714,26 @@ string? includes = null)
             var randomPart = new Random().Next(1000, 9999);
 
             return $"{prefix}-{datePart}-{randomPart}";
+        }
+
+        private async Task<string> GenerateIncomeNo()
+        {
+            var lastIncomeNo = await _context.Incomes
+                .OrderByDescending(x => x.CreatedAt)
+                .Select(x => x.IncomeNo)
+                .FirstOrDefaultAsync();
+
+            if (string.IsNullOrEmpty(lastIncomeNo))
+                return "INC-000001";
+
+            var numberPart = lastIncomeNo.Replace("INC-", "");
+
+            if (int.TryParse(numberPart, out int num))
+            {
+                return $"INC-{(num + 1).ToString("D6")}";
+            }
+
+            return $"INC-000001";
         }
 
         private string GeneratePaymentNo()

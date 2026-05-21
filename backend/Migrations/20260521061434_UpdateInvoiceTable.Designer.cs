@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using YLWorks.Data;
 
@@ -11,9 +12,11 @@ using YLWorks.Data;
 namespace YLWorks.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260521061434_UpdateInvoiceTable")]
+    partial class UpdateInvoiceTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -143,6 +146,9 @@ namespace YLWorks.Migrations
                         .IsRequired()
                         .HasColumnType("longtext");
 
+                    b.Property<Guid?>("IncomeId")
+                        .HasColumnType("char(36)");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime(6)");
 
@@ -159,6 +165,8 @@ namespace YLWorks.Migrations
                         .HasColumnType("char(36)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("IncomeId");
 
                     b.HasIndex("UploadedById");
 
@@ -660,9 +668,6 @@ namespace YLWorks.Migrations
                     b.Property<decimal>("Amount")
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<string>("Attachment")
-                        .HasColumnType("longtext");
-
                     b.Property<DateTime?>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
@@ -683,7 +688,7 @@ namespace YLWorks.Migrations
                     b.Property<Guid?>("PaymentId")
                         .HasColumnType("char(36)");
 
-                    b.Property<string>("PaymentMode")
+                    b.Property<string>("PaymentMethod")
                         .HasColumnType("longtext");
 
                     b.Property<Guid?>("ProcessedById")
@@ -822,7 +827,7 @@ namespace YLWorks.Migrations
                     b.Property<DateTime>("DueDate")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<decimal?>("Gross")
+                    b.Property<decimal>("Gross")
                         .HasColumnType("decimal(65,30)");
 
                     b.Property<DateTime>("InvoiceDate")
@@ -864,7 +869,7 @@ namespace YLWorks.Migrations
                     b.Property<string>("TermsAndConditions")
                         .HasColumnType("longtext");
 
-                    b.Property<decimal?>("TotalAmount")
+                    b.Property<decimal>("TotalAmount")
                         .HasColumnType("decimal(65,30)");
 
                     b.Property<string>("Type")
@@ -903,7 +908,7 @@ namespace YLWorks.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("char(36)");
 
-                    b.Property<decimal?>("Amount")
+                    b.Property<decimal>("Amount")
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<DateTime?>("CreatedAt")
@@ -916,7 +921,7 @@ namespace YLWorks.Migrations
                         .IsRequired()
                         .HasColumnType("longtext");
 
-                    b.Property<decimal?>("Discount")
+                    b.Property<decimal>("Discount")
                         .HasColumnType("decimal(65,30)");
 
                     b.Property<Guid>("InvoiceId")
@@ -930,9 +935,10 @@ namespace YLWorks.Migrations
                         .HasColumnType("decimal(65,30)");
 
                     b.Property<string>("Unit")
+                        .IsRequired()
                         .HasColumnType("longtext");
 
-                    b.Property<decimal?>("UnitPrice")
+                    b.Property<decimal>("UnitPrice")
                         .HasColumnType("decimal(65,30)");
 
                     b.Property<DateTime?>("UpdatedAt")
@@ -2154,6 +2160,10 @@ namespace YLWorks.Migrations
 
             modelBuilder.Entity("YLWorks.Model.AttachmentDto", b =>
                 {
+                    b.HasOne("YLWorks.Model.Income", null)
+                        .WithMany("Attachments")
+                        .HasForeignKey("IncomeId");
+
                     b.HasOne("YLWorks.Model.User", "UploadedBy")
                         .WithMany()
                         .HasForeignKey("UploadedById");
@@ -2779,6 +2789,11 @@ namespace YLWorks.Migrations
             modelBuilder.Entity("YLWorks.Model.DeliveryOrderStatusHistory", b =>
                 {
                     b.Navigation("ProofImages");
+                });
+
+            modelBuilder.Entity("YLWorks.Model.Income", b =>
+                {
+                    b.Navigation("Attachments");
                 });
 
             modelBuilder.Entity("YLWorks.Model.Invoice", b =>

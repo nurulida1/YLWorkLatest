@@ -8,13 +8,10 @@ import { NavbarComponent } from '../navbar/navbar.component';
   selector: 'app-web-layout',
   imports: [CommonModule, NavbarComponent, Sidemenu, RouterOutlet],
   template: `<div class="h-screen w-full flex flex-row">
-    <!-- SIDEMENU -->
-
     <div class="lg:w-[20%] 2xl:w-[18%] overflow-y-auto bg-gray-800">
       <app-sidemenu class="h-full w-0 lg:w-full"></app-sidemenu>
     </div>
 
-    <!-- MAIN CONTENT -->
     <div
       class="flex flex-col w-full lg:w-[80%] 2xl:w-[82%] bg-gray-50 overflow-y-auto"
     >

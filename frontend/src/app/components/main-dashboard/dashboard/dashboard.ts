@@ -20,7 +20,7 @@ import { RouterLink } from '@angular/router';
     <ng-template #mainTemplate>
       <div class="grid grid-cols-12 gap-2 xl:gap-5 justify-between">
         <div
-          class="col-span-12 bg-white rounded-lg p-5 border border-gray-200 flex flex-row items-center justify-between h-38"
+          class="col-span-12 bg-white rounded-lg p-5 border border-gray-200 flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-0 md:h-38"
         >
           <div class="flex flex-col justify-between h-full">
             <div class="font-semibold text-gray-500">
@@ -49,7 +49,7 @@ import { RouterLink } from '@angular/router';
           </div>
         </div>
         <div
-          class="col-span-3 border bg-white rounded-lg p-5 border-gray-200 flex flex-col h-40 justify-between"
+          class="col-span-6 md:col-span-3 border bg-white rounded-lg p-5 border-gray-200 flex flex-col h-40 justify-between"
         >
           <div class="flex flex-row justify-between">
             <div class="text-sm text-gray-500 font-semibold">
@@ -67,7 +67,7 @@ import { RouterLink } from '@angular/router';
           </div>
         </div>
         <div
-          class="col-span-3 border bg-white rounded-lg p-5 border-gray-200 flex flex-col h-40 justify-between"
+          class="col-span-6 md:col-span-3 border bg-white rounded-lg p-5 border-gray-200 flex flex-col h-40 justify-between"
         >
           <div class="flex flex-row justify-between">
             <div class="text-sm text-gray-500 font-semibold">
@@ -85,7 +85,7 @@ import { RouterLink } from '@angular/router';
           </div>
         </div>
         <div
-          class="col-span-3 border bg-white rounded-lg p-5 border-gray-200 flex flex-col h-40 justify-between"
+          class="col-span-6 md:col-span-3 border bg-white rounded-lg p-5 border-gray-200 flex flex-col h-40 justify-between"
         >
           <div class="flex flex-row justify-between">
             <div class="text-sm text-gray-500 font-semibold">
@@ -101,7 +101,7 @@ import { RouterLink } from '@angular/router';
           </div>
         </div>
         <div
-          class="col-span-3 border bg-white rounded-lg p-5 border-gray-200 flex flex-col h-40 justify-between"
+          class="col-span-6 md:col-span-3 border bg-white rounded-lg p-5 border-gray-200 flex flex-col h-40 justify-between"
         >
           <div class="flex flex-row justify-between">
             <div class="text-sm text-gray-500 font-semibold">
@@ -117,7 +117,7 @@ import { RouterLink } from '@angular/router';
           </div>
         </div>
         <div
-          class="col-span-4 p-5 rounded-lg border border-gray-200 bg-white flex flex-col h-80"
+          class="col-span-12 md:col-span-6 xl:col-span-4 p-5 rounded-lg border border-gray-200 bg-white flex flex-col h-80"
         >
           <div class="flex flex-row justify-between">
             <div class="flex flex-col">
@@ -161,7 +161,7 @@ import { RouterLink } from '@angular/router';
           </div>
         </div>
         <div
-          class="col-span-4 p-5 rounded-lg border border-gray-200 bg-white flex flex-col h-80"
+          class="col-span-12 md:col-span-6 xl:col-span-4 p-5 rounded-lg border border-gray-200 bg-white flex flex-col h-80"
         >
           <div class="flex flex-row justify-between">
             <div class="flex flex-col">
@@ -219,7 +219,7 @@ import { RouterLink } from '@angular/router';
           </div>
         </div>
         <div
-          class="col-span-4 p-5 rounded-lg border border-gray-200 bg-white flex flex-col h-80"
+          class="col-span-12 md:col-span-6 xl:col-span-4 p-5 rounded-lg border border-gray-200 bg-white flex flex-col h-80"
         >
           <div class="font-semibold text-xl">Financial Snapshot</div>
           <div class="text-sm text-gray-500">Expenses & recent payments</div>
@@ -244,7 +244,7 @@ import { RouterLink } from '@angular/router';
           </div>
         </div>
         <div
-          class="col-span-6 p-5 rounded-lg border border-gray-200 bg-white flex flex-col justify-between h-80"
+          class="col-span-12 md:col-span-6 p-5 rounded-lg border border-gray-200 bg-white flex flex-col justify-between h-80"
         >
           <div class="flex flex-col">
             <div class="flex flex-row justify-between">
@@ -282,7 +282,7 @@ import { RouterLink } from '@angular/router';
           </div>
         </div>
         <div
-          class="col-span-6 p-5 rounded-lg border border-gray-200 bg-white flex flex-col justify-between h-80"
+          class="col-span-12 xl:col-span-6 p-5 rounded-lg border border-gray-200 bg-white flex flex-col justify-between h-80"
         >
           <div class="flex flex-col">
             <div class="flex flex-row justify-between">
@@ -337,7 +337,7 @@ export class Dashboard implements OnInit, OnDestroy {
   private readonly userService = inject(UserService);
 
   jobTitle?: string = this.userService.currentUser?.jobTitle;
-  name?: string = this.userService.currentUser?.fullName;
+  name?: string = this.userService.currentUser?.displayName;
   now: Date = new Date();
 
   ngOnInit(): void {}

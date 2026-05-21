@@ -62,9 +62,7 @@ import { PasswordModule } from 'primeng/password';
     PasswordModule,
   ],
   template: `<div class="w-full min-h-[92.9vh] flex flex-col p-5">
-      <div
-        class="flex flex-row items-center gap-1 text-gray-500 text-[15px] tracking-wide"
-      >
+      <div class="flex flex-row items-center gap-1 text-gray-500 tracking-wide">
         <div
           [routerLink]="'/dashboard'"
           class="cursor-pointer hover:text-gray-600"
@@ -83,7 +81,7 @@ import { PasswordModule } from 'primeng/password';
             <div class="text-[20px] text-gray-700 font-semibold">
               User Management
             </div>
-            <div class="text-gray-500 text-[15px]">
+            <div class="text-gray-500">
               Create, edit, and manage user accounts
             </div>
           </div>
@@ -93,7 +91,7 @@ import { PasswordModule } from 'primeng/password';
                 type="text"
                 pInputText
                 [(ngModel)]="search"
-                class="w-full! text-[15px]!"
+                class="w-full!"
                 placeholder="Search by name"
                 (keyup)="onKeyDown($event)"
               />
@@ -106,7 +104,6 @@ import { PasswordModule } from 'primeng/password';
               (onClick)="ActionClick(null, 'add')"
               icon="pi pi-plus-circle"
               severity="info"
-              size="small"
               styleClass="py-2! whitespace-nowrap!"
             ></p-button>
           </div>
@@ -127,36 +124,24 @@ import { PasswordModule } from 'primeng/password';
           >
             <ng-template #header>
               <tr>
-                <th class="bg-gray-100! text-[15px]! text-center! w-[20%]!">
-                  User
-                </th>
-                <th class="bg-gray-100! text-[15px]! text-center! w-[15%]">
-                  Job Title
-                </th>
-                <th class="bg-gray-100! text-[15px]! text-center! w-[15%]">
-                  Last Activity
-                </th>
-                <th class="bg-gray-100! text-[15px]! text-center! w-[15%]">
-                  Created On
-                </th>
+                <th class="bg-gray-100! text-center! w-[20%]!">User</th>
+                <th class="bg-gray-100! text-center! w-[15%]">Job Title</th>
+                <th class="bg-gray-100! text-center! w-[15%]">Last Activity</th>
+                <th class="bg-gray-100! text-center! w-[15%]">Created On</th>
 
-                <th class="bg-gray-100! text-[15px]! text-center! w-[10%]">
-                  Status
-                </th>
-                <th class="bg-gray-100! text-[15px]! text-center! w-[5%]">
-                  Action
-                </th>
+                <th class="bg-gray-100! text-center! w-[10%]">Status</th>
+                <th class="bg-gray-100! text-center! w-[5%]">Action</th>
               </tr>
             </ng-template>
             <ng-template #body let-data>
               <tr>
-                <td class="text-[14px]! text-center! font-semibold">
+                <td class="text-center! font-semibold">
                   {{ data.fullName }}
                 </td>
-                <td class="text-center! text-[14px]!">
+                <td class="text-center!">
                   {{ data.jobTitle }}
                 </td>
-                <td class="text-center! text-[14px]! text-gray-500!">
+                <td class="text-center! text-gray-500!">
                   <div class="flex flex-row items-center gap-2 justify-center">
                     <div
                       class="pi pi-circle-fill !text-[5px] text-green-500!"
@@ -166,16 +151,16 @@ import { PasswordModule } from 'primeng/password';
                   </div>
                 </td>
 
-                <td class="text-center! text-[14px]!">
+                <td class="text-center!">
                   {{ data.createdAt | date: 'dd MMMM, yyyy' }}
                 </td>
-                <td class="text-center! text-[14px]!">
+                <td class="text-center!">
                   <p-toggleswitch
                     [(ngModel)]="data.isActive"
                     (ngModelChange)="isActiveOnChange($event, data.id)"
                   />
                 </td>
-                <td class="text-center! text-[14px]!">
+                <td class="text-center!">
                   <div class="flex items-center justify-center">
                     <i
                       (click)="onEllipsisClick($event, data, menu)"
@@ -188,8 +173,8 @@ import { PasswordModule } from 'primeng/password';
             <ng-template #emptymessage>
               <tr>
                 <td colspan="100%" class="border-x!">
-                  <div class="text-[15px] text-center text-gray-500">
-                    No project found in records.
+                  <div class="text-center text-gray-500">
+                    No user found in records.
                   </div>
                 </td>
               </tr>
@@ -211,15 +196,15 @@ import { PasswordModule } from 'primeng/password';
     >
       <ng-template #headless>
         <div class="p-5 flex flex-col">
-          <div class="font-semibold text-[20px]">{{ title }}</div>
-          <div class="font-normal tracking-wide text-gray-500 text-[14px]">
+          <div class="font-semibold text-[18px]">{{ title }}</div>
+          <div class="font-normal tracking-wide text-gray-500">
             Fill in all required field.
           </div>
           <div
-            class="text-[15px] tracking-wide mt-7 grid grid-cols-12 gap-4"
+            class="tracking-wide mt-7 grid grid-cols-12 gap-4"
             [formGroup]="FG"
           >
-            <div class="col-span-12 flex flex-col gap-1">
+            <div class="col-span-12 md:col-span-6 flex flex-col gap-1">
               <div>Full Name <span class="text-red-500">*</span></div>
               <input
                 type="text"
@@ -234,6 +219,16 @@ import { PasswordModule } from 'primeng/password';
                 "
                 >Full Name is required.</small
               >
+            </div>
+
+            <div class="col-span-12 md:col-span-6 flex flex-col gap-1">
+              <div>Display Name</div>
+              <input
+                type="text"
+                pInputText
+                class="w-full py-1.5!"
+                formControlName="displayName"
+              />
             </div>
 
             <div class="col-span-12 md:col-span-6 flex flex-col gap-1">
@@ -357,7 +352,7 @@ import { PasswordModule } from 'primeng/password';
           </div>
 
           <div class="border-b border-gray-200 mt-3 mb-3"></div>
-          <div class="flex flex-row items-center gap-3 justify-between">
+          <div class="flex flex-row justify-end items-center gap-3">
             <p-button
               (onClick)="visible = false"
               label="Cancel"
@@ -506,6 +501,7 @@ export class UserManagement implements OnInit, OnDestroy {
           data?.fullName || null,
           Validators.required,
         ),
+        displayName: new FormControl<string | null>(null),
         email: new FormControl<string | null>(data?.email || null, [
           Validators.required,
           Validators.email,
@@ -531,7 +527,7 @@ export class UserManagement implements OnInit, OnDestroy {
         gender: new FormControl<string | null>(data?.gender || 'Male'),
       },
       { validators: passwordMatchValidator },
-    ); // Add cross-field validator here
+    );
 
     if (this.isUpdate && data) {
       this.FG.patchValue({
@@ -553,7 +549,7 @@ export class UserManagement implements OnInit, OnDestroy {
       },
     ];
 
-    menu.toggle(event); // toggle the popup menu
+    menu.toggle(event);
   }
 
   GetHodSelection() {
@@ -604,11 +600,9 @@ export class UserManagement implements OnInit, OnDestroy {
   }
 
   isActiveOnChange(event: any, userId: string) {
-    // Note: event is the boolean value from p-toggleswitch
     this.userService.UpdateStatus(userId, event).subscribe({
       next: (res) => {
         if (res.success) {
-          // Update the Signal locally so the UI stays in sync without a refresh
           this.PagingSignal.update((current) => ({
             ...current,
             data: current.data.map((user) =>

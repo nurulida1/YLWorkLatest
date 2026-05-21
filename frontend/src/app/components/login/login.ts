@@ -134,7 +134,7 @@ import { MessageService } from 'primeng/api';
                 ></p-checkbox>
                 <label
                   for="rememberMe"
-                  class="text-slate-700 text-sm font-medium"
+                  class="text-slate-700 text-sm font-medium mt-1"
                 >
                   Remember my credentials
                 </label>

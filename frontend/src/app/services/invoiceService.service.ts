@@ -118,33 +118,14 @@ export class InvoiceService {
       .pipe(retry(1), catchError(this.handleError('VoidInvoice')));
   }
 
-  UpdateStatus(
-    id: string,
-    status: InvoiceStatus,
-    remarks?: string,
-    amount?: number,
-    paidBy?: string,
-    transferedDate?: Date,
-    receivedDate?: Date,
-    paymentMethod?: string,
-  ): Observable<InvoiceDto> {
-    const request: any = {
-      Id: id,
-      Status: status,
-      Remarks: remarks || null,
+  UpdateStatus(id: string, status: string): Observable<any> {
+    const params: any = {
+      id,
+      status,
     };
 
-    // Only include payment info if Paid or PartialPaid
-    if (status === InvoiceStatus.Paid || status === InvoiceStatus.PartialPaid) {
-      request.Amount = amount || null;
-      request.PaidBy = paidBy || null;
-      request.TransferedDate = transferedDate || null;
-      request.ReceivedDate = receivedDate || null;
-      request.PaymentMethod = paymentMethod || null;
-    }
-
     return this.http
-      .put<InvoiceDto>(`${this.url}/UpdateStatus`, request)
+      .put<any>(`${this.url}/UpdateStatus`, null, { params })
       .pipe(retry(1), catchError(this.handleError('UpdateStatus')));
   }
 

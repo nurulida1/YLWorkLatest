@@ -37,6 +37,7 @@ import { PaymentDto } from '../../models/Payments';
 import { RouterLink } from '@angular/router';
 import { DatePickerModule } from 'primeng/datepicker';
 import { MenuModule } from 'primeng/menu';
+import { TagModule } from 'primeng/tag';
 
 @Component({
   selector: 'app-payments',
@@ -52,6 +53,7 @@ import { MenuModule } from 'primeng/menu';
     DialogModule,
     RouterLink,
     DatePickerModule,
+    TagModule,
     MenuModule,
   ],
   template: `<div class="w-full min-h-[92.9vh] flex flex-col p-5">
@@ -118,6 +120,7 @@ import { MenuModule } from 'primeng/menu';
                 <th class="bg-gray-100! text-center! w-[15%]">Payment No</th>
                 <th class="bg-gray-100! text-center! w-[10%]">Paid Date</th>
                 <th class="bg-gray-100! text-center! w-[15%]">Amount</th>
+                <th class="bg-gray-100! text-center! w-[15%]">Type</th>
                 <th class="bg-gray-100! text-center! w-[10%]">
                   Payment Method
                 </th>
@@ -139,7 +142,12 @@ import { MenuModule } from 'primeng/menu';
                 <td class="text-center!">
                   {{ data.amount | currency: 'RM ' }}
                 </td>
-
+                <td class="text-center!">
+                  <p-tag
+                    [value]="data.clientId ? 'Income' : 'Expense'"
+                    [severity]="data.clientId ? 'success' : 'danger'"
+                  ></p-tag>
+                </td>
                 <td class="text-center!">
                   {{ data.paymentMode }}
                 </td>
@@ -465,7 +473,7 @@ export class Payments implements OnInit, OnDestroy {
 
   Search(data: string) {
     const filter = {
-      PaymentNo: [
+      paymentNo: [
         {
           value: data,
           matchMode: '=',

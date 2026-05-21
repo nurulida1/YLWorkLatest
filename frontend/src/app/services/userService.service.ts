@@ -116,7 +116,6 @@ export class UserService {
   UpdateUser(
     request: UpdateUserRequest,
   ): Observable<{ success: boolean; message: string; user?: UserDto }> {
-    // Extract id from request to use in the URL path
     return this.http
       .put<{
         success: boolean;

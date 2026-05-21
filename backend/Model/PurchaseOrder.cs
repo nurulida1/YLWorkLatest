@@ -188,7 +188,7 @@ namespace YLWorks.Model
         public List<Company> Suppliers { get; set; } = new();
         public List<QuotationDropdownDto> Quotations { get; set; } = new();
         public List<PurchaseOrder> PurchaseOrders { get; set; } = new();
-        public List<DeliveryOrder> DeliveryOrders { get; set; } = new();
+        public List<DODropdownDto> DeliveryOrders { get; set; } = new();
         public List<Project> Projects { get; set; } = new();
     }
 

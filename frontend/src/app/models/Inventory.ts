@@ -1,4 +1,4 @@
-import { SectionInventory } from '../components/logistic/sectionInventory/sectionInventory';
+import { SectionInventory } from '../components/inventories/sectionInventory/sectionInventory';
 import { BaseModel, BaseOption, DropdownDto } from './BaseModel';
 import { UserDto } from './User';
 

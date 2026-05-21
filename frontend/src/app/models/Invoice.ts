@@ -13,6 +13,8 @@ export interface InvoiceDto extends BaseModel {
   invoiceNo: string;
   deliveryOrderId: string;
   deliveryOrder: DeliveryOrderDto;
+  companyId: string;
+  company: CompanyDto;
   clientId: string;
   client: CompanyDto;
   supplierId: string;
@@ -60,6 +62,7 @@ export interface InvoiceItem extends BaseModel {
 export interface CreateInvoiceRequest {
   invoiceNo: string;
   deliveryOrderId: string;
+  companyId: string;
   clientId: string;
   supplierId: string;
   projectId: string;
@@ -94,6 +97,7 @@ export interface UpdateInvoiceRequest {
   id: string;
   invoiceNo: string;
   deliveryOrderId: string;
+  companyId: string;
   clientId: string;
   supplierId: string;
   projectId: string;

@@ -105,6 +105,7 @@ namespace YLWorks.Services
                 Message = "Login successful.",
                 Email = userAccount.Email,
                 FullName = userAccount.FullName,
+                DisplayName = userAccount.DisplayName,
                 EmployeeNo = userAccount.EmployeeNo,
                 UserId = userAccount.Id.ToString(),
                 SystemRole = userAccount.SystemRole,

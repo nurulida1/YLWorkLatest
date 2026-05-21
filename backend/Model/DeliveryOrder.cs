@@ -229,4 +229,13 @@ namespace YLWorks.Model
         public List<IFormFile>? ProofImages { get; set; }
         public string? Remarks { get; set; }
     }
+
+    public class DODropdownDto
+    {
+        public Guid? Id { get; set; }
+        public string? DeliveryOrderNo { get; set; }
+        public Guid? PurchaseOrderId { get; set; }
+        public Guid? QuotationId { get; set; }
+        public Guid? ProjectId { get; set; }
+    }
 }

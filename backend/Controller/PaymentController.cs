@@ -73,6 +73,7 @@ namespace YLWorks.Controller
                     x.PaymentNo,
                     x.InvoiceId,
                     x.SupplierId,
+                    x.ClientId,
                     x.PaymentDate,
                     x.PaymentMode,
                     x.Amount,

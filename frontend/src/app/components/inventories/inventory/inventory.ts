@@ -9,17 +9,8 @@ import {
   ViewChild,
 } from '@angular/core';
 import { Table, TableLazyLoadEvent, TableModule } from 'primeng/table';
-import { LoadingService } from '../../services/loading.service';
 import { MenuItem, MessageService } from 'primeng/api';
-import { InventoryService } from '../../services/InventoryService';
 import { Observable, Subject, takeUntil } from 'rxjs';
-import {
-  BuildFilterText,
-  BuildSortText,
-  GridifyQueryExtend,
-  PagingContent,
-} from '../../shared/helpers/helpers';
-import { InventoryDto } from '../../models/Inventory';
 import { CommonModule } from '@angular/common';
 import { ButtonModule } from 'primeng/button';
 import {
@@ -38,6 +29,15 @@ import { RouterLink } from '@angular/router';
 import { MenuModule } from 'primeng/menu';
 import { DialogModule } from 'primeng/dialog';
 import { ImageModule } from 'primeng/image';
+import { InventoryDto } from '../../../models/Inventory';
+import { InventoryService } from '../../../services/InventoryService';
+import { LoadingService } from '../../../services/loading.service';
+import {
+  PagingContent,
+  GridifyQueryExtend,
+  BuildSortText,
+  BuildFilterText,
+} from '../../../shared/helpers/helpers';
 
 @Component({
   selector: 'app-inventory',

@@ -64,9 +64,6 @@ namespace YLWorks.Data
         public DbSet<MaterialItem> MaterialItems { get; set; }
         public DbSet<MaterialRequestStatusHistory> MaterialRequestStatusHistories { get; set; }
         public DbSet<Inventory> Inventories { get; set; }
-
-        public DbSet<AttachmentDto> Attachments { get; set; }
-
         // =======================
         // FINANCE
         // =======================
@@ -297,14 +294,6 @@ namespace YLWorks.Data
                 entity.HasOne(sh => sh.Quotation)
                       .WithMany(q => q.QuotationStatusHistories)
                       .HasForeignKey(sh => sh.QuotationId);
-            });
-
-            // =======================
-            // ATTACHMENT
-            // =======================
-            modelBuilder.Entity<AttachmentDto>(entity =>
-            {
-                entity.HasKey(e => e.Id);
             });
         }
     }

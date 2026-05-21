@@ -102,12 +102,31 @@
         public List<InvoiceItemRequest> InvoiceItems { get; set; } = new();
     }
 
-    public class UpdateInvoiceRequest : CreateInvoiceRequest
+    public class UpdateInvoiceRequest
     {
         public Guid Id { get; set; }
+        public string? InvoiceNo { get; set; } = string.Empty;
+        public Guid? DeliveryOrderId { get; set; }
+        public Guid? ClientId { get; set; }
+        public Guid? SupplierId { get; set; }
+        public Guid? ProjectId { get; set; }
+        public Guid? PurchaseOrderId { get; set; }
+        public Guid? QuotationId { get; set; }
+        public DateTime InvoiceDate { get; set; }
+        public DateTime DueDate { get; set; }
+        public decimal Gross { get; set; }
+        public decimal? Discount { get; set; }
+        public decimal TotalAmount { get; set; }
+        public string? Terms { get; set; }
+        public string? Type { get; set; }
+        public string? TermsAndConditions { get; set; }
+        public string? BankDetails { get; set; }
+        public string? Remarks { get; set; }
+        public string? Notes { get; set; }
+        public IFormFile? Attachment { get; set; }
 
-        // Replaces ICollection<QuotationItemRequest> with the Update version
-        public new List<UpdateInvoiceItemRequest>? InvoiceItems { get; set; }
+        // Now there is absolutely zero ambiguity for reflection!
+        public List<UpdateInvoiceItemRequest> InvoiceItems { get; set; } = new();
     }
 
     public class UpdateInvoiceStatusRequest

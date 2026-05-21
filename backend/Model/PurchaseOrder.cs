@@ -146,13 +146,33 @@ namespace YLWorks.Model
         public List<POItemRequest> PurchaseOrderItems { get; set; } = new();
     }
 
-    public class UpdatePORequest : CreatePORequest
+    public class UpdatePORequest
     {
-        public Guid Id { get; set; }
+        public Guid Id { get; set; } // The ID of the PO being updated
+        public string PurchaseOrderNo { get; set; } = string.Empty;
+        public Guid? FromCompanyId { get; set; }
+        public string Type { get; set; } = string.Empty;
+        public DateTime? PODate { get; set; }
+        public DateTime? POReceivedDate { get; set; }
+        public Guid? ClientId { get; set; }
+        public Guid? SupplierId { get; set; }
+        public string? Terms { get; set; }
+        public Guid? QuotationId { get; set; }
+        public Guid? ProjectId { get; set; }
+        public decimal? Gross { get; set; }
+        public decimal? Discount { get; set; }
+        public decimal? TotalAmount { get; set; }
+        public string? Notes { get; set; }
+        public string? Remarks { get; set; }
+        public string? TermsAndConditions { get; set; }
+        public string? BankDetails { get; set; }
+        public int? TotalQuantity { get; set; }
+        public IFormFile? Attachment { get; set; }
 
-        // Replaces ICollection<QuotationItemRequest> with the Update version
-        public new List<UpdatePOItemRequest>? POItems { get; set; }
+        // Clean, direct list mapping for updating items without breaking Swagger
+        public List<UpdatePOItemRequest> PurchaseOrderItems { get; set; } = new();
     }
+
     public class UpdatePOStatusRequest
     {
         public Guid Id { get; set; }          // Quotation ID

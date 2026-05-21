@@ -3,6 +3,7 @@ import { Routes, RouterModule } from '@angular/router';
 import { Invoice } from './invoice/invoice';
 import { SalesInvoice } from './sales-invoice/sales-invoice';
 import { PurchaseInvoice } from './purchase-invoice/purchase-invoice';
+import { InvoiceForm } from './invoice-form/invoice-form';
 // import { InvoiceForm } from './invoice-form/invoice-form';
 
 const routes: Routes = [
@@ -15,10 +16,10 @@ const routes: Routes = [
     component: PurchaseInvoice,
   },
 
-  // {
-  //   path: 'sign',
-  //   component: QuotesView,
-  // },
+  {
+    path: 'sales/form',
+    component: InvoiceForm,
+  },
 ];
 
 @NgModule({

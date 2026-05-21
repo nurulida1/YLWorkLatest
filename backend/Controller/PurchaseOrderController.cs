@@ -389,7 +389,7 @@ namespace YLWorks.Controller
                 if (!string.IsNullOrEmpty(Request.Form["purchaseOrderItems"]))
                 {
                     request.PurchaseOrderItems =
-                        JsonSerializer.Deserialize<List<POItemRequest>>(
+                        JsonSerializer.Deserialize<List<UpdatePOItemRequest>>(
                             Request.Form["purchaseOrderItems"],
                             new JsonSerializerOptions
                             {
@@ -866,17 +866,7 @@ namespace YLWorks.Controller
             });
         }
 
-        public int GetTermsDays(string? terms)
-        {
-            if (string.IsNullOrWhiteSpace(terms))
-                return 30;
-
-            var match = System.Text.RegularExpressions.Regex.Match(terms, @"\d+");
-
-            return match.Success && int.TryParse(match.Value, out int days)
-                ? days
-                : 30;
-        }
+        private int GetTermsDays(string? terms) => int.TryParse(terms, out int days) ? days : 30;
 
         private string GenerateInvoiceNo(string prefix)
         {

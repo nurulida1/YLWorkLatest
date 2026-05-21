@@ -16,7 +16,6 @@ import { MenuModule } from 'primeng/menu';
 import { Table, TableLazyLoadEvent, TableModule } from 'primeng/table';
 import { PurchaseOrderService } from '../../../services/purchaseOrderService.service';
 import { LoadingService } from '../../../services/loading.service';
-import { AppService } from '../../../services/appService.service';
 import { map, Subject, takeUntil } from 'rxjs';
 import { PurchaseOrderDto } from '../../../models/PurchaseOrder';
 import {

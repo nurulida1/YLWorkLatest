@@ -1,4 +1,3 @@
-using Azure.Core;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
@@ -23,7 +22,7 @@ namespace YLWorks.Controller
 
         }
         [HttpGet("GetMany")]
-        public async Task<ActionResult<object>> GetMany(
+        public async Task<ActionResult<PagedResponse<CompanyDto>>> GetMany(
             int page = 1,
             int pageSize = 10,
             string? filter = null,
@@ -169,7 +168,7 @@ namespace YLWorks.Controller
                     })
                     .ToListAsync();
 
-                return Ok(new
+                return Ok(new PagedResponse<CompanyDto>
                 {
                     Data = items,
                     TotalElements = totalElements

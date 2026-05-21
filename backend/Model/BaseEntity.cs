@@ -16,4 +16,10 @@
         public string? ProjectCode { get; set; }
         public Guid? ClientId { get; set; }
     }
+
+    public class PagedResponse<T>
+    {
+        public List<T> Data { get; set; }
+        public int TotalElements { get; set; }
+    }
 }

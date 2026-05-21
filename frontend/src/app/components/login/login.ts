@@ -41,107 +41,157 @@ import { MessageService } from 'primeng/api';
   ],
   template: `
     <div
-      class="py-8 min-h-screen w-full flex flex-col gap-4 justify-center items-center bg-[#F2F4F8]"
+      class="w-full min-h-screen bg-slate-100 flex items-center justify-center font-sans"
     >
-      <div
-        class="w-[50%] xl:w-[32%] 2xl:w-[30%] p-8 shadow-sm bg-white border border-gray-200 rounded-2xl flex flex-col"
+      <main
+        class="w-[90%] max-w-[1300px] h-[85vh] bg-white shadow-2xl rounded-3xl overflow-hidden grid grid-cols-12 border border-slate-100"
       >
-        <div class="flex flex-col items-center">
-          <div
-            class="bg-[#202838] shadow-md rounded-md w-14 h-14 flex justify-center items-center p-2"
+        <section
+          class="col-span-12 lg:col-span-5 p-10 flex flex-col items-center justify-center"
+        >
+          <div class="flex flex-col items-center gap-3 mb-10 text-center">
+            <div
+              class="w-16 h-16 flex items-center justify-center p-3 rounded-2xl bg-slate-900 shadow-lg mb-2"
+            >
+              <img
+                src="assets/yl-works-logo.png"
+                alt="YL Works Icon"
+                class="w-full h-full object-contain"
+              />
+            </div>
+            <h1 class="text-3xl font-bold tracking-tight text-slate-950">
+              Welcome Back
+            </h1>
+            <p class="text-sm text-slate-600 max-w-sm">
+              Please sign in to your corporate account to access your workspace.
+            </p>
+          </div>
+
+          <form
+            [formGroup]="FG"
+            class="flex flex-col gap-5 w-full max-w-[380px]"
           >
-            <img src="assets/logo.png" alt="" class="w-full" />
-          </div>
-          <div class="font-semibold tracking-widest text-xl pt-2">YL Works</div>
-
-          <div class="pb-5 text-sm text-gray-500 tracking-wide">
-            Manage Everything. Effortlessly.
-          </div>
-        </div>
-        <div class="font-semibold tracking-wide text-2xl text-gray-700">
-          Welcome Back
-        </div>
-        <div class="pt-1 text-gray-500 text-sm tracking-wide">
-          Sign in to your account to continue
-        </div>
-        <div class="pt-8 flex flex-col gap-6" [formGroup]="FG">
-          <div class="flex flex-col gap-1">
-            <label for="" class="text-sm text-gray-600 tracking-wide"
-              >Email</label
-            >
-            <input
-              type="text"
-              pInputText
-              class="w-full py-3!"
-              formControlName="email"
-            />
-            <div
-              *ngIf="FG.get('email')?.touched && FG.get('email')?.invalid"
-              class="text-red-500 text-xs"
-            >
-              <div *ngIf="FG.get('email')?.errors?.['required']">
-                Email is required.
-              </div>
-              <div *ngIf="FG.get('email')?.errors?.['email']">
-                Please enter a valid email address.
-              </div>
-            </div>
-          </div>
-          <div class="flex flex-col gap-1">
-            <label for="" class="text-sm text-gray-600 tracking-wide"
-              >Password</label
-            >
-            <p-password
-              [toggleMask]="true"
-              styleClass="!w-full"
-              inputStyleClass="!w-full !py-3"
-              formControlName="password"
-            ></p-password>
-            <div
-              *ngIf="FG.get('password')?.touched && FG.get('password')?.invalid"
-              class="text-red-500 text-xs"
-            >
-              <div *ngIf="FG.get('password')?.errors?.['required']">
-                Password is required.
-              </div>
-            </div>
-            <div class="pt-2 flex flex-row items-center justify-between">
-              <div class="flex flex-row items-center gap-2">
-                <p-checkbox
-                  [binary]="true"
-                  formControlName="rememberMe"
-                ></p-checkbox>
-                <div class="text-sm text-gray-400 mt-1.5">Remember me</div>
-              </div>
-
-              <div
-                [routerLink]="'/reset-link'"
-                class="text-sm text-[#4D46F7] cursor-pointer hover:underline"
+            <div class="flex flex-col gap-1.5 relative">
+              <label
+                for="email"
+                class="text-xs font-semibold uppercase tracking-wider text-slate-600 pl-1"
               >
-                Forgot Password ?
-              </div>
+                Workspace Email
+              </label>
+              <input
+                id="email"
+                type="text"
+                pInputText
+                class="w-full text-sm! py-3! pl-4! pr-10! border-slate-200 focus:border-slate-800 transition shadow-inner bg-slate-50!"
+                placeholder="you@company.com"
+                formControlName="email"
+              />
+              <i
+                class="pi pi-envelope absolute right-3.5 top-1/2 -translate-y-[10%] text-slate-400"
+              ></i>
+
+              <small
+                *ngIf="FG.get('email')?.touched && FG.get('email')?.invalid"
+                class="text-rose-600 text-xs pl-1"
+              >
+                Please enter a valid workspace email address.
+              </small>
             </div>
+
+            <div class="flex flex-col gap-1.5 relative">
+              <label
+                for="password"
+                class="text-xs font-semibold uppercase tracking-wider text-slate-600 pl-1"
+              >
+                Password
+              </label>
+              <p-password
+                id="password"
+                formControlName="password"
+                [toggleMask]="true"
+                [feedback]="false"
+                inputStyleClass="w-full! text-sm! py-3! pl-4! pr-12! border-slate-200 focus:border-slate-800 transition shadow-inner bg-slate-50!"
+                styleClass="w-full!"
+                placeholder="Enter your password"
+              ></p-password>
+              <small
+                *ngIf="
+                  FG.get('password')?.touched && FG.get('password')?.invalid
+                "
+                class="text-rose-600 text-xs pl-1"
+              >
+                Password is required.
+              </small>
+            </div>
+
+            <div class="flex flex-row items-center justify-between mt-1 px-1">
+              <div class="flex flex-row items-center gap-2.5">
+                <p-checkbox
+                  id="rememberMe"
+                  formControlName="rememberMe"
+                  [binary]="true"
+                  styleClass="border-slate-300"
+                ></p-checkbox>
+                <label
+                  for="rememberMe"
+                  class="text-slate-700 text-sm font-medium"
+                >
+                  Remember my credentials
+                </label>
+              </div>
+              <a
+                routerLink="/forgot-password"
+                class="text-sm font-semibold text-slate-900 hover:text-slate-800 hover:underline cursor-pointer transition-colors"
+              >
+                Forgot Password?
+              </a>
+            </div>
+
+            <div class="w-full mt-6">
+              <p-button
+                label="Authenticate & Sign In"
+                size="large"
+                icon="pi pi-sign-in"
+                styleClass="w-full! py-4! text-base! font-semibold! rounded-xl!"
+                class="shadow-sm"
+                severity="contrast"
+                (onClick)="onLogin()"
+              ></p-button>
+            </div>
+          </form>
+
+          <footer class="mt-16 text-slate-400 text-xs text-center">
+            © 2026 YL Systems Sdn Bhd. All rights reserved.<br />
+            Petaling Jaya, Selangor.
+          </footer>
+        </section>
+
+        <aside
+          class="hidden lg:col-span-7 lg:flex h-full bg-slate-950 flex-col items-center justify-center p-12 relative"
+        >
+          <div
+            class="absolute inset-0 opacity-10 bg-[url('/assets/brand-pattern.png')] bg-cover"
+          ></div>
+
+          <img
+            src="assets/illustration.png"
+            alt="Collaborative Team Work"
+            class="w-[80%] object-contain relative z-10"
+          />
+
+          <div class="mt-12 text-center text-white relative z-10 max-w-sm">
+            <h2 class="text-2xl font-bold tracking-tight mb-2">
+              YL Works System
+            </h2>
+            <p
+              class="text-sm text-slate-400 leading-relaxed tracking-wide font-light"
+            >
+              Internal platform for managing business operations and information
+              workflows.
+            </p>
           </div>
-        </div>
-        <div class="pt-5">
-          <p-button
-            (onClick)="onLogin()"
-            label="Sign In"
-            styleClass="!bg-[#4D46F7] !w-full !border-none !py-3 !tracking-wide"
-          ></p-button>
-        </div>
-        <!-- <div class="text-center pt-3 text-gray-500 text-sm">
-          Don't have an account?
-          <b
-            class="text-[#4D46F7] cursor-pointer hover:underline tracking-wide!"
-            [routerLink]="'/register'"
-            >Create account</b
-          >
-        </div> -->
-      </div>
-      <div class="text-gray-500 text-sm w-full text-center">
-        © 2025 YL Systems Sdn Bhd. All rights reserved.
-      </div>
+        </aside>
+      </main>
     </div>
   `,
   styleUrl: './login.less',
@@ -206,19 +256,17 @@ export class Login implements OnDestroy, OnInit {
           this.loadingService.stop();
 
           if (res.success) {
-            // ✅ Set currentUser in UserService
             this.userService.setCurrentUser(res, rememberMe);
 
-            // Navigate only after currentUser is set
             this.router.navigate(['/dashboard']);
           } else {
             this.error = true;
             this.errorMessage = res.message ?? 'Login failed';
             this.messageService.add({
-              severity: 'error', // 'success', 'warn', 'info' also available
-              summary: 'Login Failed', // short title
-              detail: this.errorMessage, // detailed message
-              life: 5000, // duration in ms
+              severity: 'error',
+              summary: 'Authentication Failed',
+              detail: this.errorMessage,
+              life: 5000,
             });
           }
         },
@@ -226,7 +274,13 @@ export class Login implements OnDestroy, OnInit {
           this.loadingService.stop();
           this.error = true;
           this.errorMessage =
-            err?.error?.message ?? 'An unexpected error occurred';
+            err?.error?.message ?? 'An unexpected network error occurred';
+          this.messageService.add({
+            severity: 'warn',
+            summary: 'Network Error',
+            detail: this.errorMessage,
+            life: 6000,
+          });
         },
       });
   }

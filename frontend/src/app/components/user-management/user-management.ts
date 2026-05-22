@@ -124,8 +124,8 @@ import { PasswordModule } from 'primeng/password';
           >
             <ng-template #header>
               <tr>
-                <th class="bg-gray-100! text-center! w-[20%]!">User</th>
-                <th class="bg-gray-100! text-center! w-[15%]">Job Title</th>
+                <th class="bg-gray-100! w-[20%]!">User</th>
+                <th class="bg-gray-100! w-[15%]">Job Title</th>
                 <th class="bg-gray-100! text-center! w-[15%]">Last Activity</th>
                 <th class="bg-gray-100! text-center! w-[15%]">Created On</th>
 
@@ -135,10 +135,10 @@ import { PasswordModule } from 'primeng/password';
             </ng-template>
             <ng-template #body let-data>
               <tr>
-                <td class="text-center! font-semibold">
+                <td class="font-semibold">
                   {{ data.fullName }}
                 </td>
-                <td class="text-center!">
+                <td>
                   {{ data.jobTitle }}
                 </td>
                 <td class="text-center! text-gray-500!">

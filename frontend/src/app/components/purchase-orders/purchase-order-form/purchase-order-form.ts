@@ -96,7 +96,7 @@ import { CompanyType } from '../../../shared/enum/enum';
             severity="secondary"
             [outlined]="true"
             styleClass="py-1.5! px-4!"
-            [routerLink]="'/purchase-orders'"
+            [routerLink]="'/purchase-orders/supplier'"
           ></p-button>
           <!-- <p-button
           label="Save As Draft"
@@ -858,7 +858,6 @@ export class PurchaseOrderForm implements OnInit, OnDestroy {
   }
 
   getProjectSelection() {
-    this.loadingService.start();
     this.projectService
       .GetMany({
         Page: 1,
@@ -872,16 +871,13 @@ export class PurchaseOrderForm implements OnInit, OnDestroy {
       .subscribe({
         next: (res) => {
           this.projectSelection = res.data.map((x: ProjectDto) => {
-            this.loadingService.stop();
             return {
               label: x.projectCode + ' - ' + x.projectTitle,
               value: x.id,
             };
           });
         },
-        error: (err) => {
-          this.loadingService.stop();
-        },
+        error: (err) => {},
       });
   }
 

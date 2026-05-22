@@ -974,6 +974,8 @@ export class PurchaseInvoice implements OnInit, OnDestroy {
     this.invoiceFile = file;
     this.invoiceFileName = file.name;
     this.invoiceFileUrl = URL.createObjectURL(file);
+
+    this.FG.get('attachment')?.patchValue(this.invoiceFile);
   }
 
   onPaymentFileSelected(event: any) {
@@ -1160,7 +1162,7 @@ export class PurchaseInvoice implements OnInit, OnDestroy {
   onEllipsisClick(event: any, data: InvoiceDto, menu: any) {
     const items: any[] = [];
 
-    if (data.status === 'Draft') {
+    if (data.status === 'Draft' && !data.attachment) {
       items.push({
         label: 'Upload Invoice',
         icon: 'pi pi-receipt',
@@ -1188,6 +1190,7 @@ export class PurchaseInvoice implements OnInit, OnDestroy {
     this.selectedInvoice = data;
 
     this.FG.patchValue({
+      ...data,
       invoiceNo: data.invoiceNo,
       invoiceDate: data.invoiceDate ? new Date(data.invoiceDate) : null,
       dueDate: data.dueDate ? new Date(data.dueDate) : null,
@@ -1198,7 +1201,6 @@ export class PurchaseInvoice implements OnInit, OnDestroy {
     this.invoiceFileUrl = null;
     this.invoiceFile = null;
     this.FG.get('attachment')?.reset();
-
     this.showUploadInvoiceDialog = true;
     this.cdr.markForCheck();
   }

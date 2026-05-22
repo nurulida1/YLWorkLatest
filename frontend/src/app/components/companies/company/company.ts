@@ -43,9 +43,7 @@ import { CompanyType } from '../../../shared/enum/enum';
     ImageModule,
   ],
   template: `<div class="w-full flex flex-col p-5">
-      <div
-        class="flex flex-row items-center gap-1 text-gray-500 text-[15px] tracking-wide"
-      >
+      <div class="flex flex-row items-center gap-1 text-gray-500 tracking-wide">
         <div
           class="cursor-pointer hover:text-gray-600"
           [routerLink]="'/dashboard'"
@@ -61,7 +59,7 @@ import { CompanyType } from '../../../shared/enum/enum';
         <div class="flex flex-row items-center justify-between">
           <div class="flex flex-col">
             <div class="text-[20px] text-gray-700 font-semibold">Company</div>
-            <div class="text-gray-500 text-[15px]">
+            <div class="text-gray-500">
               Manage company profiles and information
             </div>
           </div>
@@ -70,7 +68,7 @@ import { CompanyType } from '../../../shared/enum/enum';
               <input
                 type="text"
                 pInputText
-                class="w-full! text-[15px]!"
+                class="w-full!"
                 placeholder="Search by name"
                 [(ngModel)]="search"
                 (keyup)="onKeyDown($event)"
@@ -84,7 +82,6 @@ import { CompanyType } from '../../../shared/enum/enum';
               (onClick)="ActionClick(null, 'add')"
               icon="pi pi-plus-circle"
               severity="info"
-              size="small"
               styleClass="py-2! whitespace-nowrap!"
             ></p-button>
           </div>
@@ -104,35 +101,27 @@ import { CompanyType } from '../../../shared/enum/enum';
             (onLazyLoad)="NextPage($event)"
             ><ng-template #header>
               <tr>
-                <th
-                  class="bg-gray-100! text-[15px]! text-center! w-[10%]!"
-                ></th>
+                <th class="bg-gray-100! text-center! w-[10%]!"></th>
                 <th
                   pSortableColumn="Name"
-                  class="bg-gray-100! text-[15px]! text-center! w-[30%]!"
+                  class="bg-gray-100! text-center! w-[30%]!"
                 >
                   <div class="flex flex-row justify-center items-center gap-2">
                     <div>Name</div>
                     <p-sortIcon field="Name" class="mt-1" />
                   </div>
                 </th>
-                <th class="bg-gray-100! text-[15px]! text-center! w-[20%]!">
-                  Contact No
-                </th>
-                <th class="bg-gray-100! text-[15px]! text-center! w-[20%]!">
+                <th class="bg-gray-100! text-center! w-[20%]!">Contact No</th>
+                <th class="bg-gray-100! text-center! w-[20%]!">
                   Contact Person
                 </th>
-                <th class="bg-gray-100! text-[15px]! text-center! w-[10%]!">
-                  Type
-                </th>
-                <th class="bg-gray-100! text-[15px]! text-center! w-[10%]!">
-                  Action
-                </th>
+                <th class="bg-gray-100! text-center! w-[10%]!">Type</th>
+                <th class="bg-gray-100! text-center! w-[10%]!">Action</th>
               </tr>
             </ng-template>
             <ng-template #body let-data>
               <tr>
-                <td class="text-[14px] text-center! font-semibold!">
+                <td class="text-center! font-semibold!">
                   <div class="flex items-center justify-center">
                     <div
                       class="w-[100px] flex items-center justify-center"
@@ -147,20 +136,20 @@ import { CompanyType } from '../../../shared/enum/enum';
                     ></p-image>
                   </div>
                 </td>
-                <td class="text-[14px] text-center! font-semibold!">
+                <td class="text-center! font-semibold!">
                   {{ data.name }}
                 </td>
-                <td class="text-[14px] text-center!">
+                <td class="text-center!">
                   {{ data.contactNo }}
                 </td>
-                <td class="text-[14px] text-center!">
+                <td class="text-center!">
                   {{ data.contactPerson1 }}
                 </td>
-                <td class="text-[14px] text-center!">
+                <td class="text-center!">
                   {{ getCompanyTypeLabel(data.type) }}
                 </td>
 
-                <td class="text-center! text-[14px]!">
+                <td class="text-center!">
                   <div class="flex items-center justify-center">
                     <i
                       class="pi pi-ellipsis-h cursor-pointer"
@@ -172,7 +161,7 @@ import { CompanyType } from '../../../shared/enum/enum';
             ><ng-template #emptymessage>
               <tr>
                 <td class="border-x!" colspan="100%">
-                  <div class="text-[15px] text-center text-gray-500">
+                  <div class="text-center text-gray-500">
                     No company found in record.
                   </div>
                 </td>

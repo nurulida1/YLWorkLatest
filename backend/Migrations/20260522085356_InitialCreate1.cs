@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace YLWorks.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class InitialCreate1 : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -22,7 +22,9 @@ namespace YLWorks.Migrations
                     Name = table.Column<string>(type: "longtext", nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true)
+                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    CreatedById = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
+                    UpdatedById = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci")
                 },
                 constraints: table =>
                 {
@@ -47,11 +49,49 @@ namespace YLWorks.Migrations
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     Poscode = table.Column<int>(type: "int", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true)
+                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    CreatedById = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
+                    UpdatedById = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci")
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Addresses", x => x.Id);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "CategoryInventories",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    Name = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    CreatedById = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
+                    UpdatedById = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_CategoryInventories", x => x.Id);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "LocationInventories",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    Name = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    CreatedById = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
+                    UpdatedById = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_LocationInventories", x => x.Id);
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
 
@@ -71,7 +111,9 @@ namespace YLWorks.Migrations
                     CreatedBy = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
                     RoleId = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
                     CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true)
+                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    CreatedById = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
+                    UpdatedById = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci")
                 },
                 constraints: table =>
                 {
@@ -89,11 +131,31 @@ namespace YLWorks.Migrations
                     AccessPermission = table.Column<string>(type: "longtext", nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true)
+                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    CreatedById = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
+                    UpdatedById = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci")
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_RolePermissions", x => x.Id);
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "SectionInventories",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    Name = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    CreatedById = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
+                    UpdatedById = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_SectionInventories", x => x.Id);
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
 
@@ -103,6 +165,8 @@ namespace YLWorks.Migrations
                 {
                     Id = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
                     FullName = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    DisplayName = table.Column<string>(type: "longtext", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     Email = table.Column<string>(type: "longtext", nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
@@ -129,7 +193,9 @@ namespace YLWorks.Migrations
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     RefreshTokenExpiryTime = table.Column<DateTime>(type: "datetime(6)", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true)
+                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    CreatedById = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
+                    UpdatedById = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci")
                 },
                 constraints: table =>
                 {
@@ -176,7 +242,9 @@ namespace YLWorks.Migrations
                     LogoImage = table.Column<string>(type: "longtext", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true)
+                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    CreatedById = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
+                    UpdatedById = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci")
                 },
                 constraints: table =>
                 {
@@ -208,7 +276,9 @@ namespace YLWorks.Migrations
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     IsActive = table.Column<bool>(type: "tinyint(1)", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true)
+                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    CreatedById = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
+                    UpdatedById = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci")
                 },
                 constraints: table =>
                 {
@@ -236,9 +306,13 @@ namespace YLWorks.Migrations
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     Description = table.Column<string>(type: "longtext", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
+                    Attachment = table.Column<string>(type: "longtext", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
                     ProcessedById = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
                     CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true)
+                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    CreatedById = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
+                    UpdatedById = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci")
                 },
                 constraints: table =>
                 {
@@ -261,13 +335,17 @@ namespace YLWorks.Migrations
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     Amount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     IncomeDate = table.Column<DateTime>(type: "datetime(6)", nullable: false),
-                    PaymentMethod = table.Column<string>(type: "longtext", nullable: true)
+                    PaymentMode = table.Column<string>(type: "longtext", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     Description = table.Column<string>(type: "longtext", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
+                    Attachment = table.Column<string>(type: "longtext", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
                     ProcessedById = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
                     CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true)
+                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    CreatedById = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
+                    UpdatedById = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci")
                 },
                 constraints: table =>
                 {
@@ -291,8 +369,7 @@ namespace YLWorks.Migrations
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     Model = table.Column<string>(type: "longtext", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    Category = table.Column<string>(type: "longtext", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    CategoryId = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
                     Description = table.Column<string>(type: "longtext", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     Unit = table.Column<string>(type: "longtext", nullable: false)
@@ -303,12 +380,9 @@ namespace YLWorks.Migrations
                     ReferenceType = table.Column<string>(type: "longtext", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     ReferenceId = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
-                    Location = table.Column<string>(type: "longtext", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    Section = table.Column<string>(type: "longtext", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    ParLevel = table.Column<string>(type: "longtext", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    LocationId = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
+                    SectionId = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
+                    ParLevel = table.Column<int>(type: "int", nullable: true),
                     Date = table.Column<DateTime>(type: "datetime(6)", nullable: true),
                     Status = table.Column<string>(type: "longtext", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
@@ -319,11 +393,27 @@ namespace YLWorks.Migrations
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     CreatedById = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
                     CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true)
+                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    UpdatedById = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci")
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Inventories", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Inventories_CategoryInventories_CategoryId",
+                        column: x => x.CategoryId,
+                        principalTable: "CategoryInventories",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_Inventories_LocationInventories_LocationId",
+                        column: x => x.LocationId,
+                        principalTable: "LocationInventories",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_Inventories_SectionInventories_SectionId",
+                        column: x => x.SectionId,
+                        principalTable: "SectionInventories",
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_Inventories_Users_CreatedById",
                         column: x => x.CreatedById,
@@ -359,7 +449,7 @@ namespace YLWorks.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
-                    RMANo = table.Column<string>(type: "varchar(50)", maxLength: 50, nullable: false)
+                    RMANo = table.Column<string>(type: "longtext", nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     DeliveryOrderId = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
                     Date = table.Column<DateTime>(type: "datetime(6)", nullable: true),
@@ -377,10 +467,18 @@ namespace YLWorks.Migrations
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     Remarks = table.Column<string>(type: "longtext", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    Status = table.Column<string>(type: "varchar(30)", maxLength: 30, nullable: false, defaultValue: "Draft")
+                    Status = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    ActionUserId = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
+                    ActionUserName = table.Column<string>(type: "longtext", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    StatusUpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    SignatureImage = table.Column<string>(type: "longtext", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true)
+                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    CreatedById = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
+                    UpdatedById = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci")
                 },
                 constraints: table =>
                 {
@@ -410,6 +508,7 @@ namespace YLWorks.Migrations
                     ClientId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
                     Status = table.Column<string>(type: "longtext", nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
+                    StartDate = table.Column<DateTime>(type: "datetime(6)", nullable: true),
                     DueDate = table.Column<DateTime>(type: "datetime(6)", nullable: true),
                     CreatedById = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
                     Description = table.Column<string>(type: "longtext", nullable: true)
@@ -417,7 +516,8 @@ namespace YLWorks.Migrations
                     Priority = table.Column<string>(type: "longtext", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true)
+                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    UpdatedById = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci")
                 },
                 constraints: table =>
                 {
@@ -491,31 +591,19 @@ namespace YLWorks.Migrations
                 .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
-                name: "RMAStatusHistories",
+                name: "RMAProofImages",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
                     DeliveryOrderRMAId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
-                    Status = table.Column<string>(type: "longtext", nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    ActionAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
-                    ActionUserId = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
-                    ActionUserName = table.Column<string>(type: "longtext", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    Remarks = table.Column<string>(type: "longtext", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    SignatureImage = table.Column<string>(type: "longtext", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    ProofImageUrls = table.Column<string>(type: "longtext", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true)
+                    Url = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4")
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_RMAStatusHistories", x => x.Id);
+                    table.PrimaryKey("PK_RMAProofImages", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_RMAStatusHistories_DeliveryOrderRMAs_DeliveryOrderRMAId",
+                        name: "FK_RMAProofImages_DeliveryOrderRMAs_DeliveryOrderRMAId",
                         column: x => x.DeliveryOrderRMAId,
                         principalTable: "DeliveryOrderRMAs",
                         principalColumn: "Id",
@@ -535,7 +623,9 @@ namespace YLWorks.Migrations
                     AssignedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     AssignedById = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
                     CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true)
+                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    CreatedById = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
+                    UpdatedById = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci")
                 },
                 constraints: table =>
                 {
@@ -587,7 +677,8 @@ namespace YLWorks.Migrations
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     CreatedById = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
                     CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true)
+                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    UpdatedById = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci")
                 },
                 constraints: table =>
                 {
@@ -641,7 +732,8 @@ namespace YLWorks.Migrations
                     Priority = table.Column<string>(type: "longtext", nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true)
+                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    UpdatedById = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci")
                 },
                 constraints: table =>
                 {
@@ -667,6 +759,7 @@ namespace YLWorks.Migrations
                     Id = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
                     PurchaseOrderNo = table.Column<string>(type: "longtext", nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
+                    FromCompanyId = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
                     Type = table.Column<string>(type: "longtext", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     PODate = table.Column<DateTime>(type: "datetime(6)", nullable: true),
@@ -675,14 +768,13 @@ namespace YLWorks.Migrations
                     SupplierId = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
                     Terms = table.Column<string>(type: "longtext", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    ProjectCode = table.Column<string>(type: "longtext", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
                     ProjectId = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
                     QuotationId = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
                     TotalQuantity = table.Column<int>(type: "int", nullable: true),
                     Gross = table.Column<decimal>(type: "decimal(65,30)", nullable: true),
                     Discount = table.Column<decimal>(type: "decimal(65,30)", nullable: true),
                     TotalAmount = table.Column<decimal>(type: "decimal(65,30)", nullable: true),
+                    InvoicedAmount = table.Column<decimal>(type: "decimal(65,30)", nullable: false),
                     Remarks = table.Column<string>(type: "longtext", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     Notes = table.Column<string>(type: "longtext", nullable: true)
@@ -697,8 +789,12 @@ namespace YLWorks.Migrations
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     BankDetails = table.Column<string>(type: "longtext", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
+                    Attachment = table.Column<string>(type: "longtext", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    CreatedById = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
                     CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true)
+                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    UpdatedById = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci")
                 },
                 constraints: table =>
                 {
@@ -706,6 +802,11 @@ namespace YLWorks.Migrations
                     table.ForeignKey(
                         name: "FK_PurchaseOrders_Companies_ClientId",
                         column: x => x.ClientId,
+                        principalTable: "Companies",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_PurchaseOrders_Companies_FromCompanyId",
+                        column: x => x.FromCompanyId,
                         principalTable: "Companies",
                         principalColumn: "Id");
                     table.ForeignKey(
@@ -745,7 +846,9 @@ namespace YLWorks.Migrations
                     UnitPrice = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     TotalPrice = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true)
+                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    CreatedById = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
+                    UpdatedById = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci")
                 },
                 constraints: table =>
                 {
@@ -814,7 +917,9 @@ namespace YLWorks.Migrations
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     AssignedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true)
+                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    CreatedById = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
+                    UpdatedById = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci")
                 },
                 constraints: table =>
                 {
@@ -854,7 +959,9 @@ namespace YLWorks.Migrations
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     AssignedToId = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
                     CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true)
+                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    CreatedById = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
+                    UpdatedById = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci")
                 },
                 constraints: table =>
                 {
@@ -880,7 +987,7 @@ namespace YLWorks.Migrations
                     Id = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
                     DeliveryOrderNo = table.Column<string>(type: "varchar(50)", maxLength: 50, nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    ProjectCode = table.Column<string>(type: "longtext", nullable: true)
+                    Type = table.Column<string>(type: "longtext", nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     ProjectId = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
                     PurchaseOrderId = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
@@ -894,10 +1001,14 @@ namespace YLWorks.Migrations
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     Remarks = table.Column<string>(type: "longtext", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    Status = table.Column<string>(type: "varchar(20)", maxLength: 20, nullable: true, defaultValue: "Draft")
+                    Attachment = table.Column<string>(type: "longtext", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Status = table.Column<string>(type: "varchar(20)", maxLength: 20, nullable: false, defaultValue: "Draft")
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true)
+                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    CreatedById = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
+                    UpdatedById = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci")
                 },
                 constraints: table =>
                 {
@@ -937,8 +1048,6 @@ namespace YLWorks.Migrations
                     EffDate = table.Column<DateTime>(type: "datetime(6)", nullable: true),
                     RequestNo = table.Column<string>(type: "varchar(50)", maxLength: 50, nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    ProjectCode = table.Column<string>(type: "longtext", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
                     ProjectId = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
                     RequestDate = table.Column<DateTime>(type: "datetime(6)", nullable: true),
                     DeliveryDate = table.Column<DateTime>(type: "datetime(6)", nullable: true),
@@ -946,14 +1055,16 @@ namespace YLWorks.Migrations
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     WorkOrderId = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
                     ClientId = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
-                    SupplierId = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
                     PurchaseOrderId = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
                     Status = table.Column<string>(type: "varchar(30)", maxLength: 30, nullable: false, defaultValue: "Draft")
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     Remarks = table.Column<string>(type: "longtext", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
+                    RequestedById = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
                     CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true)
+                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    CreatedById = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
+                    UpdatedById = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci")
                 },
                 constraints: table =>
                 {
@@ -961,11 +1072,6 @@ namespace YLWorks.Migrations
                     table.ForeignKey(
                         name: "FK_MaterialRequests_Companies_ClientId",
                         column: x => x.ClientId,
-                        principalTable: "Companies",
-                        principalColumn: "Id");
-                    table.ForeignKey(
-                        name: "FK_MaterialRequests_Companies_SupplierId",
-                        column: x => x.SupplierId,
                         principalTable: "Companies",
                         principalColumn: "Id");
                     table.ForeignKey(
@@ -977,6 +1083,11 @@ namespace YLWorks.Migrations
                         name: "FK_MaterialRequests_PurchaseOrders_PurchaseOrderId",
                         column: x => x.PurchaseOrderId,
                         principalTable: "PurchaseOrders",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_MaterialRequests_Users_RequestedById",
+                        column: x => x.RequestedById,
+                        principalTable: "Users",
                         principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_MaterialRequests_WorkOrders_WorkOrderId",
@@ -992,18 +1103,20 @@ namespace YLWorks.Migrations
                 {
                     Id = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
                     PurchaseOrderId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
-                    Item = table.Column<string>(type: "longtext", nullable: false)
+                    Item = table.Column<string>(type: "longtext", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    Description = table.Column<string>(type: "longtext", nullable: false)
+                    Description = table.Column<string>(type: "longtext", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    Quantity = table.Column<int>(type: "int", nullable: false),
+                    Quantity = table.Column<decimal>(type: "decimal(65,30)", nullable: false),
                     Unit = table.Column<string>(type: "longtext", nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     UnitPrice = table.Column<decimal>(type: "decimal(65,30)", nullable: false),
-                    Discount = table.Column<decimal>(type: "decimal(65,30)", nullable: true),
-                    TotalAmount = table.Column<decimal>(type: "decimal(65,30)", nullable: false),
+                    Discount = table.Column<decimal>(type: "decimal(65,30)", nullable: false),
+                    TotalPrice = table.Column<decimal>(type: "decimal(65,30)", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true)
+                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    CreatedById = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
+                    UpdatedById = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci")
                 },
                 constraints: table =>
                 {
@@ -1018,7 +1131,7 @@ namespace YLWorks.Migrations
                 .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
-                name: "PurchaseOrderStatusHistory",
+                name: "PurchaseOrderStatusHistories",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
@@ -1027,6 +1140,7 @@ namespace YLWorks.Migrations
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     ActionAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     ActionUserId = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
+                    ReviewedByUserId = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
                     Remarks = table.Column<string>(type: "longtext", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     SignatureImage = table.Column<string>(type: "longtext", nullable: true)
@@ -1034,17 +1148,61 @@ namespace YLWorks.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_PurchaseOrderStatusHistory", x => x.Id);
+                    table.PrimaryKey("PK_PurchaseOrderStatusHistories", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_PurchaseOrderStatusHistory_PurchaseOrders_PurchaseOrderId",
+                        name: "FK_PurchaseOrderStatusHistories_PurchaseOrders_PurchaseOrderId",
                         column: x => x.PurchaseOrderId,
                         principalTable: "PurchaseOrders",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_PurchaseOrderStatusHistory_Users_ActionUserId",
+                        name: "FK_PurchaseOrderStatusHistories_Users_ActionUserId",
                         column: x => x.ActionUserId,
                         principalTable: "Users",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_PurchaseOrderStatusHistories_Users_ReviewedByUserId",
+                        column: x => x.ReviewedByUserId,
+                        principalTable: "Users",
+                        principalColumn: "Id");
+                })
+                .Annotation("MySql:CharSet", "utf8mb4");
+
+            migrationBuilder.CreateTable(
+                name: "AttachmentDto",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    FileName = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    FileType = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    FileSize = table.Column<long>(type: "bigint", nullable: false),
+                    FileUrl = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    EntityType = table.Column<string>(type: "longtext", nullable: false)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    EntityId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    UploadedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    UploadedById = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
+                    WorkOrderTaskId = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
+                    CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    CreatedById = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
+                    UpdatedById = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci")
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AttachmentDto", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_AttachmentDto_Users_UploadedById",
+                        column: x => x.UploadedById,
+                        principalTable: "Users",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_AttachmentDto_WorkOrderTasks_WorkOrderTaskId",
+                        column: x => x.WorkOrderTaskId,
+                        principalTable: "WorkOrderTasks",
                         principalColumn: "Id");
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
@@ -1064,7 +1222,9 @@ namespace YLWorks.Migrations
                     Remarks = table.Column<string>(type: "longtext", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true)
+                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    CreatedById = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
+                    UpdatedById = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci")
                 },
                 constraints: table =>
                 {
@@ -1079,7 +1239,7 @@ namespace YLWorks.Migrations
                 .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
-                name: "DeliveryOrderStatusHistory",
+                name: "DeliveryOrderStatusHistories",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
@@ -1088,26 +1248,43 @@ namespace YLWorks.Migrations
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     ActionAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     ActionUserId = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
+                    ReviewByUserId = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
+                    ApprovedByUserId = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
                     Remarks = table.Column<string>(type: "longtext", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     SignatureImage = table.Column<string>(type: "longtext", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    ProofImageUrls = table.Column<string>(type: "longtext", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
                     TrackingNo = table.Column<string>(type: "longtext", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true)
+                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    CreatedById = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
+                    UpdatedById = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci")
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_DeliveryOrderStatusHistory", x => x.Id);
+                    table.PrimaryKey("PK_DeliveryOrderStatusHistories", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_DeliveryOrderStatusHistory_DeliveryOrders_DeliveryOrderId",
+                        name: "FK_DeliveryOrderStatusHistories_DeliveryOrders_DeliveryOrderId",
                         column: x => x.DeliveryOrderId,
                         principalTable: "DeliveryOrders",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_DeliveryOrderStatusHistories_Users_ActionUserId",
+                        column: x => x.ActionUserId,
+                        principalTable: "Users",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_DeliveryOrderStatusHistories_Users_ApprovedByUserId",
+                        column: x => x.ApprovedByUserId,
+                        principalTable: "Users",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_DeliveryOrderStatusHistories_Users_ReviewByUserId",
+                        column: x => x.ReviewByUserId,
+                        principalTable: "Users",
+                        principalColumn: "Id");
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
 
@@ -1119,34 +1296,38 @@ namespace YLWorks.Migrations
                     InvoiceNo = table.Column<string>(type: "varchar(50)", maxLength: 50, nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     DeliveryOrderId = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
+                    CompanyId = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
                     ClientId = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
                     SupplierId = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
-                    ProjectCode = table.Column<string>(type: "longtext", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
                     ProjectId = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
                     PurchaseOrderId = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
                     QuotationId = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
                     InvoiceDate = table.Column<DateTime>(type: "datetime(6)", nullable: false),
                     DueDate = table.Column<DateTime>(type: "datetime(6)", nullable: false),
+                    Type = table.Column<string>(type: "longtext", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
+                    Terms = table.Column<string>(type: "longtext", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
                     Remarks = table.Column<string>(type: "longtext", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     Status = table.Column<string>(type: "longtext", nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     Discount = table.Column<decimal>(type: "decimal(65,30)", nullable: true),
-                    Gross = table.Column<decimal>(type: "decimal(65,30)", nullable: false),
-                    TotalAmount = table.Column<decimal>(type: "decimal(65,30)", nullable: false),
+                    Gross = table.Column<decimal>(type: "decimal(65,30)", nullable: true),
+                    TotalAmount = table.Column<decimal>(type: "decimal(65,30)", nullable: true),
                     PaidAmount = table.Column<decimal>(type: "decimal(65,30)", nullable: true),
                     Notes = table.Column<string>(type: "longtext", nullable: true)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    Description = table.Column<string>(type: "longtext", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     TermsAndConditions = table.Column<string>(type: "longtext", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     BankDetails = table.Column<string>(type: "longtext", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    CreatedById = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    Attachment = table.Column<string>(type: "longtext", nullable: true)
+                        .Annotation("MySql:CharSet", "utf8mb4"),
                     CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true)
+                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    CreatedById = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
+                    UpdatedById = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci")
                 },
                 constraints: table =>
                 {
@@ -1154,6 +1335,11 @@ namespace YLWorks.Migrations
                     table.ForeignKey(
                         name: "FK_Invoices_Companies_ClientId",
                         column: x => x.ClientId,
+                        principalTable: "Companies",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_Invoices_Companies_CompanyId",
+                        column: x => x.CompanyId,
                         principalTable: "Companies",
                         principalColumn: "Id");
                     table.ForeignKey(
@@ -1185,8 +1371,7 @@ namespace YLWorks.Migrations
                         name: "FK_Invoices_Users_CreatedById",
                         column: x => x.CreatedById,
                         principalTable: "Users",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        principalColumn: "Id");
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
 
@@ -1206,11 +1391,13 @@ namespace YLWorks.Migrations
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     Quantity = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     RequiredAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
-                    SupplierId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    SupplierId = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
                     Remarks = table.Column<string>(type: "longtext", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true)
+                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    CreatedById = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
+                    UpdatedById = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci")
                 },
                 constraints: table =>
                 {
@@ -1219,8 +1406,7 @@ namespace YLWorks.Migrations
                         name: "FK_MaterialItems_Companies_SupplierId",
                         column: x => x.SupplierId,
                         principalTable: "Companies",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_MaterialItems_MaterialRequests_MaterialRequestId",
                         column: x => x.MaterialRequestId,
@@ -1249,7 +1435,9 @@ namespace YLWorks.Migrations
                     ProofImageUrls = table.Column<string>(type: "longtext", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true)
+                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    CreatedById = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
+                    UpdatedById = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci")
                 },
                 constraints: table =>
                 {
@@ -1264,57 +1452,30 @@ namespace YLWorks.Migrations
                 .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateTable(
-                name: "Attachments",
+                name: "DeliveryOrderProofImages",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
-                    FileName = table.Column<string>(type: "longtext", nullable: false)
+                    DeliveryOrderStatusHistoryId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
+                    ImageUrl = table.Column<string>(type: "longtext", nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    FileType = table.Column<string>(type: "longtext", nullable: false)
+                    Remarks = table.Column<string>(type: "longtext", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    FileSize = table.Column<long>(type: "bigint", nullable: false),
-                    FileUrl = table.Column<string>(type: "longtext", nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    EntityType = table.Column<string>(type: "longtext", nullable: false)
-                        .Annotation("MySql:CharSet", "utf8mb4"),
-                    EntityId = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
                     UploadedAt = table.Column<DateTime>(type: "datetime(6)", nullable: false),
-                    UploadedById = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
-                    ExpenseId = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
-                    IncomeId = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
-                    InvoiceId = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
-                    WorkOrderTaskId = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
                     CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true)
+                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    CreatedById = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
+                    UpdatedById = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci")
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Attachments", x => x.Id);
+                    table.PrimaryKey("PK_DeliveryOrderProofImages", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Attachments_Expenses_ExpenseId",
-                        column: x => x.ExpenseId,
-                        principalTable: "Expenses",
-                        principalColumn: "Id");
-                    table.ForeignKey(
-                        name: "FK_Attachments_Incomes_IncomeId",
-                        column: x => x.IncomeId,
-                        principalTable: "Incomes",
-                        principalColumn: "Id");
-                    table.ForeignKey(
-                        name: "FK_Attachments_Invoices_InvoiceId",
-                        column: x => x.InvoiceId,
-                        principalTable: "Invoices",
-                        principalColumn: "Id");
-                    table.ForeignKey(
-                        name: "FK_Attachments_Users_UploadedById",
-                        column: x => x.UploadedById,
-                        principalTable: "Users",
-                        principalColumn: "Id");
-                    table.ForeignKey(
-                        name: "FK_Attachments_WorkOrderTasks_WorkOrderTaskId",
-                        column: x => x.WorkOrderTaskId,
-                        principalTable: "WorkOrderTasks",
-                        principalColumn: "Id");
+                        name: "FK_DeliveryOrderProofImages_DeliveryOrderStatusHistories_Delive~",
+                        column: x => x.DeliveryOrderStatusHistoryId,
+                        principalTable: "DeliveryOrderStatusHistories",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
 
@@ -1328,14 +1489,16 @@ namespace YLWorks.Migrations
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     Description = table.Column<string>(type: "longtext", nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    Quantity = table.Column<int>(type: "int", nullable: false),
-                    Unit = table.Column<string>(type: "longtext", nullable: false)
+                    Quantity = table.Column<decimal>(type: "decimal(65,30)", nullable: false),
+                    Unit = table.Column<string>(type: "longtext", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    UnitPrice = table.Column<decimal>(type: "decimal(65,30)", nullable: false),
-                    Discount = table.Column<decimal>(type: "decimal(65,30)", nullable: false),
-                    TotalAmount = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    UnitPrice = table.Column<decimal>(type: "decimal(65,30)", nullable: true),
+                    Discount = table.Column<decimal>(type: "decimal(65,30)", nullable: true),
+                    Amount = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true)
+                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    CreatedById = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
+                    UpdatedById = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci")
                 },
                 constraints: table =>
                 {
@@ -1373,7 +1536,9 @@ namespace YLWorks.Migrations
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     ProcessedById = table.Column<Guid>(type: "char(36)", nullable: false, collation: "ascii_general_ci"),
                     CreatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true)
+                    UpdatedAt = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    CreatedById = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci"),
+                    UpdatedById = table.Column<Guid>(type: "char(36)", nullable: true, collation: "ascii_general_ci")
                 },
                 constraints: table =>
                 {
@@ -1403,28 +1568,13 @@ namespace YLWorks.Migrations
                 .Annotation("MySql:CharSet", "utf8mb4");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Attachments_ExpenseId",
-                table: "Attachments",
-                column: "ExpenseId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Attachments_IncomeId",
-                table: "Attachments",
-                column: "IncomeId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Attachments_InvoiceId",
-                table: "Attachments",
-                column: "InvoiceId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Attachments_UploadedById",
-                table: "Attachments",
+                name: "IX_AttachmentDto_UploadedById",
+                table: "AttachmentDto",
                 column: "UploadedById");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Attachments_WorkOrderTaskId",
-                table: "Attachments",
+                name: "IX_AttachmentDto_WorkOrderTaskId",
+                table: "AttachmentDto",
                 column: "WorkOrderTaskId");
 
             migrationBuilder.CreateIndex(
@@ -1441,6 +1591,11 @@ namespace YLWorks.Migrations
                 name: "IX_DeliveryOrderItems_DeliveryOrderId",
                 table: "DeliveryOrderItems",
                 column: "DeliveryOrderId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_DeliveryOrderProofImages_DeliveryOrderStatusHistoryId",
+                table: "DeliveryOrderProofImages",
+                column: "DeliveryOrderStatusHistoryId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_DeliveryOrderRMAs_ReceiverCompanyId",
@@ -1473,9 +1628,24 @@ namespace YLWorks.Migrations
                 column: "SenderCompanyId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_DeliveryOrderStatusHistory_DeliveryOrderId",
-                table: "DeliveryOrderStatusHistory",
+                name: "IX_DeliveryOrderStatusHistories_ActionUserId",
+                table: "DeliveryOrderStatusHistories",
+                column: "ActionUserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_DeliveryOrderStatusHistories_ApprovedByUserId",
+                table: "DeliveryOrderStatusHistories",
+                column: "ApprovedByUserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_DeliveryOrderStatusHistories_DeliveryOrderId",
+                table: "DeliveryOrderStatusHistories",
                 column: "DeliveryOrderId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_DeliveryOrderStatusHistories_ReviewByUserId",
+                table: "DeliveryOrderStatusHistories",
+                column: "ReviewByUserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Departments_HodId",
@@ -1498,9 +1668,24 @@ namespace YLWorks.Migrations
                 column: "ProcessedById");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Inventories_CategoryId",
+                table: "Inventories",
+                column: "CategoryId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Inventories_CreatedById",
                 table: "Inventories",
                 column: "CreatedById");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Inventories_LocationId",
+                table: "Inventories",
+                column: "LocationId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Inventories_SectionId",
+                table: "Inventories",
+                column: "SectionId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_InvoiceItems_InvoiceId",
@@ -1511,6 +1696,11 @@ namespace YLWorks.Migrations
                 name: "IX_Invoices_ClientId",
                 table: "Invoices",
                 column: "ClientId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Invoices_CompanyId",
+                table: "Invoices",
+                column: "CompanyId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Invoices_CreatedById",
@@ -1568,9 +1758,9 @@ namespace YLWorks.Migrations
                 column: "PurchaseOrderId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_MaterialRequests_SupplierId",
+                name: "IX_MaterialRequests_RequestedById",
                 table: "MaterialRequests",
-                column: "SupplierId");
+                column: "RequestedById");
 
             migrationBuilder.CreateIndex(
                 name: "IX_MaterialRequests_WorkOrderId",
@@ -1643,6 +1833,11 @@ namespace YLWorks.Migrations
                 column: "ClientId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_PurchaseOrders_FromCompanyId",
+                table: "PurchaseOrders",
+                column: "FromCompanyId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_PurchaseOrders_ProjectId",
                 table: "PurchaseOrders",
                 column: "ProjectId");
@@ -1658,14 +1853,19 @@ namespace YLWorks.Migrations
                 column: "SupplierId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_PurchaseOrderStatusHistory_ActionUserId",
-                table: "PurchaseOrderStatusHistory",
+                name: "IX_PurchaseOrderStatusHistories_ActionUserId",
+                table: "PurchaseOrderStatusHistories",
                 column: "ActionUserId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_PurchaseOrderStatusHistory_PurchaseOrderId",
-                table: "PurchaseOrderStatusHistory",
+                name: "IX_PurchaseOrderStatusHistories_PurchaseOrderId",
+                table: "PurchaseOrderStatusHistories",
                 column: "PurchaseOrderId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PurchaseOrderStatusHistories_ReviewedByUserId",
+                table: "PurchaseOrderStatusHistories",
+                column: "ReviewedByUserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_QuotationItems_ParentId",
@@ -1718,10 +1918,9 @@ namespace YLWorks.Migrations
                 column: "DeliveryOrderRMAId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_RMAStatusHistories_DeliveryOrderRMAId",
-                table: "RMAStatusHistories",
-                column: "DeliveryOrderRMAId",
-                unique: true);
+                name: "IX_RMAProofImages_DeliveryOrderRMAId",
+                table: "RMAProofImages",
+                column: "DeliveryOrderRMAId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Users_HodId",
@@ -1766,16 +1965,22 @@ namespace YLWorks.Migrations
                 name: "AccessPermissions");
 
             migrationBuilder.DropTable(
-                name: "Attachments");
+                name: "AttachmentDto");
 
             migrationBuilder.DropTable(
                 name: "DeliveryOrderItems");
 
             migrationBuilder.DropTable(
-                name: "DeliveryOrderStatusHistory");
+                name: "DeliveryOrderProofImages");
 
             migrationBuilder.DropTable(
                 name: "DepartmentUser");
+
+            migrationBuilder.DropTable(
+                name: "Expenses");
+
+            migrationBuilder.DropTable(
+                name: "Incomes");
 
             migrationBuilder.DropTable(
                 name: "Inventories");
@@ -1805,7 +2010,7 @@ namespace YLWorks.Migrations
                 name: "PurchaseOrderItems");
 
             migrationBuilder.DropTable(
-                name: "PurchaseOrderStatusHistory");
+                name: "PurchaseOrderStatusHistories");
 
             migrationBuilder.DropTable(
                 name: "QuotationItems");
@@ -1817,7 +2022,7 @@ namespace YLWorks.Migrations
                 name: "RMAItems");
 
             migrationBuilder.DropTable(
-                name: "RMAStatusHistories");
+                name: "RMAProofImages");
 
             migrationBuilder.DropTable(
                 name: "RolePermissions");
@@ -1826,16 +2031,22 @@ namespace YLWorks.Migrations
                 name: "WorkOrderAssignments");
 
             migrationBuilder.DropTable(
-                name: "Expenses");
-
-            migrationBuilder.DropTable(
-                name: "Incomes");
-
-            migrationBuilder.DropTable(
                 name: "WorkOrderTasks");
 
             migrationBuilder.DropTable(
+                name: "DeliveryOrderStatusHistories");
+
+            migrationBuilder.DropTable(
                 name: "Departments");
+
+            migrationBuilder.DropTable(
+                name: "CategoryInventories");
+
+            migrationBuilder.DropTable(
+                name: "LocationInventories");
+
+            migrationBuilder.DropTable(
+                name: "SectionInventories");
 
             migrationBuilder.DropTable(
                 name: "MaterialRequests");

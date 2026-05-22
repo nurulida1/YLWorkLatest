@@ -184,7 +184,8 @@ import { InputNumberModule } from 'primeng/inputnumber';
                     <div
                       class="rounded-full px-4 text-[13px] py-0.5 font-medium w-fit whitespace-nowrap"
                       [ngClass]="{
-                        'bg-gray-100 text-gray-600': data.status === 'Draft',
+                        'bg-orange-100 text-orange-600':
+                          data.status === 'Draft',
 
                         'bg-yellow-100 text-yellow-600':
                           data.status === 'Revised',

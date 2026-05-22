@@ -33,8 +33,9 @@ namespace YLWorks.Data
         public DbSet<DeliveryOrderProofImage> DeliveryOrderProofImages { get; set; }
 
         public DbSet<DeliveryOrderRMA> DeliveryOrderRMAs { get; set; }
-        public DbSet<RMAStatusHistory> RMAStatusHistories { get; set; }
         public DbSet<RMAItem> RMAItems { get; set; }
+        public DbSet<RMAProofImage> RMAProofImages { get; set; }
+
         public DbSet<SectionInventory> SectionInventories { get; set; }
         public DbSet<CategoryInventory> CategoryInventories { get; set; }
         public DbSet<LocationInventory> LocationInventories { get; set; }
@@ -190,23 +191,6 @@ namespace YLWorks.Data
 
                 entity.Property(e => e.QuantityOrdered).HasColumnType("decimal(18,2)");
                 entity.Property(e => e.QuantityDelivered).HasColumnType("decimal(18,2)");
-            });
-
-
-            // =======================
-            // RMA
-            // =======================
-            modelBuilder.Entity<DeliveryOrderRMA>(entity =>
-            {
-                entity.HasKey(e => e.Id);
-
-                entity.Property(e => e.RMANo).IsRequired().HasMaxLength(50);
-                entity.Property(e => e.Status).HasMaxLength(30).HasDefaultValue("Draft");
-            });
-
-            modelBuilder.Entity<RMAStatusHistory>(entity =>
-            {
-                entity.HasKey(e => e.Id);
             });
 
             modelBuilder.Entity<RMAItem>(entity =>

@@ -94,7 +94,6 @@ import { CheckboxModule } from 'primeng/checkbox';
           severity="info"
           [outlined]="true"
           styleClass="py-1.5!"
-          size="small"
         ></p-button> -->
           <p-button
             (onClick)="SaveQuotation()"
@@ -126,7 +125,6 @@ import { CheckboxModule } from 'primeng/checkbox';
               <p-button
                 label="Add New Client"
                 icon="pi pi-plus-circle"
-                size="small"
                 severity="info"
                 [text]="true"
                 (onClick)="AddClientClick()"
@@ -211,7 +209,6 @@ import { CheckboxModule } from 'primeng/checkbox';
                       <p-button
                         icon="pi pi-trash"
                         severity="danger"
-                        size="small"
                         [text]="true"
                         (onClick)="removeItem(i)"
                         class="flex items-center justify-center"
@@ -295,7 +292,6 @@ import { CheckboxModule } from 'primeng/checkbox';
                       <p-button
                         icon="pi pi-trash"
                         severity="danger"
-                        size="small"
                         class="flex items-center justify-center"
                         [text]="true"
                         (onClick)="removeItem(i)"
@@ -323,14 +319,12 @@ import { CheckboxModule } from 'primeng/checkbox';
                 styleClass="rounded-full!"
                 icon="pi pi-plus-circle"
                 severity="info"
-                size="small"
                 (onClick)="addGroup()"
               ></p-button>
               <p-button
                 label="Add Item"
                 styleClass="rounded-full!"
                 icon="pi pi-plus-circle"
-                size="small"
                 (onClick)="addItem()"
               ></p-button>
             </div>
@@ -595,14 +589,12 @@ import { CheckboxModule } from 'primeng/checkbox';
             <p-button
               label="Discard"
               severity="secondary"
-              size="small"
               (onClick)="visible = false"
               styleClass="py-1.5! px-4! border-gray-200!"
             ></p-button>
             <p-button
               label="Create"
               severity="info"
-              size="small"
               styleClass="py-1.5! px-4!"
               (onClick)="SaveClient()"
             ></p-button>

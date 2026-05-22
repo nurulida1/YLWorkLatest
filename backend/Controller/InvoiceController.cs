@@ -318,7 +318,7 @@ string? includes = null)
         public async Task<IActionResult> Update([FromForm] UpdateInvoiceRequest request)
         {
             var invoice = await _context.Invoices
-                .Include(x => x.InvoiceItems)
+                .Include(x => x.InvoiceItems).Include(x => x.Supplier)
                 .FirstOrDefaultAsync(x => x.Id == request.Id);
 
             if (invoice == null)
@@ -338,6 +338,23 @@ string? includes = null)
                         );
                 }
 
+                string? filePath = null;
+
+                if (request.Attachment != null)
+                {
+                    var folder = Path.Combine(Directory.GetCurrentDirectory(), "Uploads", "Invoice");
+                    if (!Directory.Exists(folder)) Directory.CreateDirectory(folder);
+
+                    var fileName = $"{Guid.NewGuid()}{Path.GetExtension(request.Attachment.FileName)}";
+                    var fullPath = Path.Combine(folder, fileName);
+
+                    using var stream = new FileStream(fullPath, FileMode.Create);
+                    await request.Attachment.CopyToAsync(stream);
+
+                    filePath = $"Uploads/Invoice/{fileName}";
+                }
+
+
                 // update scalar fields FIRST
                 invoice.InvoiceNo = request.InvoiceNo;
                 invoice.CompanyId = request.CompanyId;
@@ -351,6 +368,8 @@ string? includes = null)
                 invoice.Remarks = request.Remarks;
                 invoice.Type = request.Type;
                 invoice.Notes = request.Notes;
+                invoice.Attachment = filePath;
+                invoice.Status = !string.IsNullOrEmpty(filePath) ? "Received" : invoice.Status;
 
                 // remove old items (IMPORTANT: use DbSet, not navigation)
                 var oldItems = _context.InvoiceItems
@@ -443,6 +462,7 @@ string? includes = null)
                 i.CompanyId,
                 i.Terms,
                 i.Remarks,
+                i.Attachment,
                 Client = i.Client == null ? null : new
                 {
                     i.Client.Id,

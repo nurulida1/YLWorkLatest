@@ -82,7 +82,7 @@ import { Subject, takeUntil } from 'rxjs';
           severity="secondary"
           [outlined]="true"
           styleClass="py-1.5! px-4!"
-          [routerLink]="'/purchase-orders'"
+          [routerLink]="'/invoices/sales'"
         ></p-button>
 
         <p-button

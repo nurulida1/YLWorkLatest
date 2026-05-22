@@ -435,6 +435,12 @@ namespace YLWorks.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("char(36)");
 
+                    b.Property<Guid?>("ActionUserId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("ActionUserName")
+                        .HasColumnType("longtext");
+
                     b.Property<DateTime?>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
@@ -449,8 +455,7 @@ namespace YLWorks.Migrations
 
                     b.Property<string>("RMANo")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("varchar(50)");
+                        .HasColumnType("longtext");
 
                     b.Property<string>("Reason")
                         .HasColumnType("longtext");
@@ -476,12 +481,15 @@ namespace YLWorks.Migrations
                     b.Property<Guid?>("SenderCompanyId")
                         .HasColumnType("char(36)");
 
+                    b.Property<string>("SignatureImage")
+                        .HasColumnType("longtext");
+
                     b.Property<string>("Status")
                         .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(30)
-                        .HasColumnType("varchar(30)")
-                        .HasDefaultValue("Draft");
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime?>("StatusUpdatedAt")
+                        .HasColumnType("datetime(6)");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime(6)");
@@ -1787,55 +1795,24 @@ namespace YLWorks.Migrations
                     b.ToTable("RMAItems");
                 });
 
-            modelBuilder.Entity("YLWorks.Model.RMAStatusHistory", b =>
+            modelBuilder.Entity("YLWorks.Model.RMAProofImage", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("char(36)");
 
-                    b.Property<DateTime?>("ActionAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<Guid?>("ActionUserId")
-                        .HasColumnType("char(36)");
-
-                    b.Property<string>("ActionUserName")
-                        .HasColumnType("longtext");
-
-                    b.Property<DateTime?>("CreatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<Guid?>("CreatedById")
-                        .HasColumnType("char(36)");
-
                     b.Property<Guid>("DeliveryOrderRMAId")
                         .HasColumnType("char(36)");
 
-                    b.PrimitiveCollection<string>("ProofImageUrls")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("Remarks")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("SignatureImage")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("Status")
+                    b.Property<string>("Url")
                         .IsRequired()
                         .HasColumnType("longtext");
 
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<Guid?>("UpdatedById")
-                        .HasColumnType("char(36)");
-
                     b.HasKey("Id");
 
-                    b.HasIndex("DeliveryOrderRMAId")
-                        .IsUnique();
+                    b.HasIndex("DeliveryOrderRMAId");
 
-                    b.ToTable("RMAStatusHistories");
+                    b.ToTable("RMAProofImages");
                 });
 
             modelBuilder.Entity("YLWorks.Model.RolePermission", b =>
@@ -2689,11 +2666,11 @@ namespace YLWorks.Migrations
                     b.Navigation("DeliveryOrderRMA");
                 });
 
-            modelBuilder.Entity("YLWorks.Model.RMAStatusHistory", b =>
+            modelBuilder.Entity("YLWorks.Model.RMAProofImage", b =>
                 {
                     b.HasOne("YLWorks.Model.DeliveryOrderRMA", "DeliveryOrderRMA")
-                        .WithOne("RMAStatusHistory")
-                        .HasForeignKey("YLWorks.Model.RMAStatusHistory", "DeliveryOrderRMAId")
+                        .WithMany("ProofImages")
+                        .HasForeignKey("DeliveryOrderRMAId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -2771,9 +2748,9 @@ namespace YLWorks.Migrations
 
             modelBuilder.Entity("YLWorks.Model.DeliveryOrderRMA", b =>
                 {
-                    b.Navigation("RMAItems");
+                    b.Navigation("ProofImages");
 
-                    b.Navigation("RMAStatusHistory");
+                    b.Navigation("RMAItems");
                 });
 
             modelBuilder.Entity("YLWorks.Model.DeliveryOrderStatusHistory", b =>

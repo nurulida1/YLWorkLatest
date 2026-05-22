@@ -535,7 +535,8 @@ export class Quotation implements OnInit, OnDestroy {
     if (
       jobTitle === 'Sales Executive' ||
       jobTitle === 'Sales Support' ||
-      jobTitle === 'Sales Director'
+      jobTitle === 'Sales Director' ||
+      jobTitle === 'SuperAdmin'
     ) {
       this.menuItems = [
         {

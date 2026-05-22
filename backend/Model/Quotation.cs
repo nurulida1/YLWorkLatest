@@ -5,7 +5,7 @@ namespace YLWorks.Model
     public class Quotation: BaseEntity
     {
         public Guid Id {  get; set; }
-        public string QuotationNo { get; set; } = string.Empty;
+        public string? QuotationNo { get; set; } = string.Empty;
         public string? ReferenceNo { get; set; }
         public DateTime QuotationDate { get; set; }
         public Guid FromCompanyId { get; set; }
@@ -100,7 +100,7 @@ namespace YLWorks.Model
 
     public class CreateQuotationRequest
     {
-        public string QuotationNo { get; set; } = string.Empty;
+        public string? QuotationNo { get; set; } = string.Empty;
         public string? ReferenceNo { get; set; }
         public DateTime QuotationDate { get; set; }
         public Guid FromCompanyId { get; set; }

@@ -82,7 +82,7 @@ import { MenuModule } from 'primeng/menu';
             </div>
           </div>
           <div class="flex flex-row items-center gap-2">
-            <div class="w-full xl:min-w-[100px] relative">
+            <div class="w-full xl:min-w-[300px] relative">
               <input
                 type="text"
                 pInputText
@@ -167,7 +167,7 @@ import { MenuModule } from 'primeng/menu';
                 <td class="text-center!">
                   <div class="flex justify-center">
                     <div
-                      class="rounded-full px-4 text-[13px] py-0.5 font-medium w-fit whitespace-nowrap"
+                      class="rounded-full px-4 py-0.5 font-medium w-fit whitespace-nowrap"
                       [ngClass]="{
                         'bg-teal-100 text-teal-600':
                           data.status === 'PartiallyReceived',
@@ -313,7 +313,6 @@ import { MenuModule } from 'primeng/menu';
                 mode="currency"
                 currency="MYR"
                 locale="ms-MY"
-                placeholder="totalAmount"
                 [minFractionDigits]="2"
               ></p-inputnumber>
             </div>
@@ -419,6 +418,7 @@ export class ClientPurchaseOrder implements OnInit, OnDestroy {
 
   initForm() {
     this.FG = new FormGroup({
+      id: new FormControl<string | null>({ value: null, disabled: true }),
       purchaseOrderNo: new FormControl<string | null>(
         null,
         Validators.required,
@@ -540,10 +540,38 @@ export class ClientPurchaseOrder implements OnInit, OnDestroy {
   }
 
   ActionClick(data: PurchaseOrderDto | null, action: string) {
-    if (action === 'Download' && data) {
+    if (!data) return;
+
+    if (action === 'Download') {
       this.downloadAttachment(data);
-    } else if (action === 'Delete' && data) {
+    } else if (action === 'Delete') {
       this.RemoveRecord(data);
+    } else if (action === 'Update') {
+      this.OpenFormDialog();
+
+      this.FG.get('id')?.enable();
+      this.FG.patchValue({
+        ...data,
+        poDate: data.poDate ? new Date(data.poDate) : null,
+        poReceivedDate: data.poReceivedDate
+          ? new Date(data.poReceivedDate)
+          : null,
+      });
+
+      if (data.attachment) {
+        const cleanPath = data.attachment.replace(/\\/g, '/');
+
+        this.selectedFileName = cleanPath.split('/').pop() || '';
+
+        this.selectedFileUrl = `https://localhost:5000/${cleanPath}`;
+
+        this.FG.patchValue({
+          attachment: data.attachment,
+        });
+      } else {
+        this.selectedFileName = '';
+        this.selectedFileUrl = null;
+      }
     }
   }
 
@@ -650,56 +678,117 @@ export class ClientPurchaseOrder implements OnInit, OnDestroy {
   }
 
   saveRecord() {
-    if (this.FG.valid) {
-      this.loadingService.start();
+    if (!this.FG.valid) {
+      ValidateAllFormFields(this.FG);
+      return;
+    }
 
-      const formData = new FormData();
+    this.loadingService.start();
 
-      Object.keys(this.FG.controls).forEach((key) => {
-        let value = this.FG.get(key)?.value;
+    const formData = new FormData();
 
-        if (value === null || value === undefined) return;
+    Object.keys(this.FG.controls).forEach((key) => {
+      let value = this.FG.get(key)?.value;
 
-        if (value instanceof Date) {
-          value = value.toISOString();
+      if (value === null || value === undefined) return;
+
+      if (value instanceof Date) {
+        value = value.toISOString();
+      }
+
+      if (value instanceof File) {
+        formData.append(key, value, value.name);
+        return;
+      }
+
+      formData.append(key, value);
+    });
+
+    const id = this.FG.get('id')?.value;
+    if (id) {
+      formData.append('id', id);
+    }
+
+    const request$ = id
+      ? this.purchaseOrderService.Update(formData)
+      : this.purchaseOrderService.Create(formData);
+
+    request$.pipe(takeUntil(this.ngUnsubscribe)).subscribe({
+      next: (res: any) => {
+        this.loadingService.stop();
+
+        if (res?.success === false) {
+          this.messageService.add({
+            severity: 'warn',
+            summary: 'Duplicate PO',
+            detail: res.message,
+          });
+          return;
         }
 
-        formData.append(key, value);
-      });
+        if (id) {
+          const current = this.PagingSignal();
 
-      this.purchaseOrderService
-        .Create(formData)
-        .pipe(takeUntil(this.ngUnsubscribe))
-        .subscribe({
-          next: (res) => {
-            this.loadingService.stop();
-            this.PagingSignal.update((state) => ({
-              ...state,
-              data: [res, ...state.data],
-              totalElements: state.totalElements + 1,
-            }));
-            this.messageService.add({
-              severity: 'success',
-              summary: 'Success',
-              detail: `PO: ${res.purchaseOrderNo} recorded successfully`,
-            });
-            this.showRecordDialog = false;
-            this.FG.reset();
-            this.cdr.markForCheck();
-          },
-          error: (err) => {
-            this.loadingService.stop();
-            console.error('Backend Error:', err);
-            this.messageService.add({
-              severity: 'error',
-              summary: 'Error',
-              detail: 'Check console for details',
-            });
-          },
+          const updated = current.data.map((item) =>
+            item.id === id ? res : item,
+          );
+
+          this.PagingSignal.set({
+            ...current,
+            data: updated,
+          });
+
+          this.messageService.add({
+            severity: 'success',
+            summary: 'Updated',
+            detail: `PO: ${res.purchaseOrderNo} updated successfully`,
+          });
+        } else {
+          this.PagingSignal.update((state) => ({
+            ...state,
+            data: [res, ...state.data],
+            totalElements: state.totalElements + 1,
+          }));
+
+          this.messageService.add({
+            severity: 'success',
+            summary: 'Success',
+            detail: `PO: ${res.purchaseOrderNo} recorded successfully`,
+          });
+        }
+
+        this.resetForm();
+        this.showRecordDialog = false;
+        this.cdr.markForCheck();
+      },
+
+      error: (err) => {
+        this.loadingService.stop();
+
+        const message =
+          err?.error?.message ||
+          err?.error?.Error ||
+          'Check console for details';
+
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: message,
         });
-    } else {
-      ValidateAllFormFields(this.FG);
-    }
+      },
+    });
+  }
+
+  resetForm() {
+    this.FG.reset({
+      poDate: new Date(),
+      type: 'Incoming',
+    });
+
+    this.selectedFileName = '';
+    this.selectedFileUrl = null;
+
+    this.FG.get('id')?.disable();
   }
 
   downloadAttachment(data: PurchaseOrderDto) {
@@ -715,7 +804,11 @@ export class ClientPurchaseOrder implements OnInit, OnDestroy {
 
         const link = document.createElement('a');
         link.href = blobUrl;
-        link.download = cleanPath.split('/').pop() || 'attachment';
+
+        const fileExtension = cleanPath.split('.').pop() || '';
+        const poNo = data.purchaseOrderNo || 'PO';
+
+        link.download = `${poNo}.${fileExtension}`;
 
         document.body.appendChild(link);
         link.click();
@@ -730,12 +823,23 @@ export class ClientPurchaseOrder implements OnInit, OnDestroy {
 
   onEllipsisClick(event: any, purchaseOrder: PurchaseOrderDto, menu: any) {
     const items: any[] = [];
-    if (purchaseOrder.status === 'Draft' || purchaseOrder.status === 'Open') {
-      items.push({
-        label: 'Edit',
-        icon: 'pi pi-pencil',
-        command: () => this.ActionClick(purchaseOrder, 'Update'),
-      });
+    if (
+      purchaseOrder.status === 'Draft' ||
+      purchaseOrder.status === 'Open' ||
+      purchaseOrder.status === 'Received'
+    ) {
+      items.push(
+        {
+          label: 'Update',
+          icon: 'pi pi-pencil',
+          command: () => this.ActionClick(purchaseOrder, 'Update'),
+        },
+        {
+          label: 'Reviewed',
+          icon: 'pi pi-pencil',
+          command: () => this.ActionClick(purchaseOrder, 'Reviewed'),
+        },
+      );
     }
 
     if (purchaseOrder.status === 'InProgress') {

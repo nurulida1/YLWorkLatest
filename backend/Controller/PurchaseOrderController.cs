@@ -377,7 +377,7 @@ namespace YLWorks.Controller
                 return BadRequest(ModelState);
 
             var po = await _context.PurchaseOrders
-                .Include(x => x.PurchaseOrderItems)
+                .Include(x => x.PurchaseOrderItems).Include(x => x.Client)
                 .FirstOrDefaultAsync(x => x.Id == request.Id);
 
             if (po == null)
@@ -666,7 +666,7 @@ namespace YLWorks.Controller
                 .ToListAsync();
 
             var quotations = await _context.Quotations
-                .Select(x => new QuotationDropdownDto
+                .Where(x => x.Status == "Accepted").Select(x => new QuotationDropdownDto
                 {
                     Id = x.Id,
                     QuotationNo = x.QuotationNo,

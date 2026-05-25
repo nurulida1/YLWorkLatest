@@ -34,8 +34,6 @@ namespace YLWorks.Model
         public DateTime ActionAt { get; set; }
         public Guid? ActionUserId { get; set; }
         public User? ActionUser { get; set; }
-        public Guid? ReviewedByUserId { get; set; }
-        public User? ReviewedByUser { get; set; }
         public string? Remarks { get; set; }
         public string? SignatureImage { get; set; }
     }
@@ -87,16 +85,13 @@ namespace YLWorks.Model
         public List<QuotationItemRequest> Children { get; set; } = new();
     }
 
-    // Used for Create: No ID needed as all items are new
     public class QuotationItemRequest : QuotationItemBase { }
 
-    // Used for Update: Optional ID to differentiate between 'Edit' and 'Add New'
     public class UpdateQuotationItemRequest : QuotationItemBase
     {
         public Guid? Id { get; set; }
     }
 
-    // --- Main Request Models ---
 
     public class CreateQuotationRequest
     {
@@ -117,7 +112,6 @@ namespace YLWorks.Model
     {
         public Guid Id { get; set; }
 
-        // Replaces ICollection<QuotationItemRequest> with the Update version
         public new List<UpdateQuotationItemRequest>? QuotationItems { get; set; }
     }
     

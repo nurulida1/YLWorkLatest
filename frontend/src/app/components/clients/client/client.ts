@@ -233,7 +233,6 @@ export class Client implements OnInit, OnDestroy {
     this.Query.OrderBy = sortText ? sortText : 'Name';
 
     this.Query.Filter = BuildFilterText(event);
-    console.log(this.Query);
     this.GetData();
   }
 

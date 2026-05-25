@@ -7,6 +7,7 @@ using System.Security.Claims;
 using YLWorks.Data;
 using YLWorks.Hubs;
 using YLWorks.Model;
+using WebApplication1.Helpers;
 
 namespace YLWorks.Controller
 {
@@ -37,10 +38,8 @@ string? includes = null)
         {
             try
             {
-                // 1. Initialize Query
                 var query = _context.Quotations.AsQueryable();
 
-                // Dynamically include related data
                 if (!string.IsNullOrWhiteSpace(includes))
                 {
                     foreach (var include in includes.Split(',', StringSplitOptions.RemoveEmptyEntries))
@@ -49,7 +48,6 @@ string? includes = null)
                     }
                 }
 
-                // 3. Dynamic Filtering (Expression Tree)
                 if (!string.IsNullOrEmpty(filter))
                 {
                     var parameter = Expression.Parameter(typeof(Quotation), "q");
@@ -72,26 +70,22 @@ string? includes = null)
                             var propertyAccess = Expression.PropertyOrField(parameter, propertyName);
 
                             Expression condition;
-                            // String handling
                             if (propertyAccess.Type == typeof(string))
                             {
                                 var method = typeof(string).GetMethod("Contains", new[] { typeof(string) });
                                 var containsExpr = Expression.Call(propertyAccess, method!, Expression.Constant(valueStr));
                                 condition = isNotEqual ? Expression.Not(containsExpr) : containsExpr;
                             }
-                            // Guid handling
                             else if (propertyAccess.Type == typeof(Guid) || propertyAccess.Type == typeof(Guid?))
                             {
                                 var guidValue = Guid.Parse(valueStr);
                                 condition = Expression.Equal(propertyAccess, Expression.Constant(guidValue, propertyAccess.Type));
                             }
-                            // Enum handling (Status)
                             else if (propertyAccess.Type.IsEnum)
                             {
                                 var enumValue = Enum.Parse(propertyAccess.Type, valueStr);
                                 condition = Expression.Equal(propertyAccess, Expression.Constant(enumValue));
                             }
-                            // General handling (Numbers/Dates)
                             else
                             {
                                 var convertedValue = Convert.ChangeType(valueStr, Nullable.GetUnderlyingType(propertyAccess.Type) ?? propertyAccess.Type);
@@ -110,7 +104,6 @@ string? includes = null)
                     }
                 }
 
-                // 4. Sorting
                 if (!string.IsNullOrEmpty(orderBy))
                 {
                     bool descending = orderBy.EndsWith(" desc", StringComparison.OrdinalIgnoreCase);
@@ -121,10 +114,8 @@ string? includes = null)
 
                 var totalElements = query.Count();
 
-                // 5. Pagination and Execution
                 var items = query.Skip((page - 1) * pageSize).Take(pageSize).ToList();
 
-                // 6. Selective Projection
                 if (!string.IsNullOrEmpty(select))
                 {
                     var selectedFields = select.Split(',').Select(f => f.Trim()).ToList();
@@ -133,8 +124,6 @@ string? includes = null)
                         var dict = new Dictionary<string, object?>();
                         foreach (var field in selectedFields)
                         {
-                            // Note: GetProperty is case-sensitive. 
-                            // Ensure Angular sends "QuotationNo" not "quotationNo"
                             var prop = item.GetType().GetProperty(field);
                             dict[field] = prop?.GetValue(item);
                         }
@@ -144,9 +133,6 @@ string? includes = null)
                     return Ok(new { Data = projected, TotalElements = totalElements });
                 }
 
-                // === SET IT HERE ===
-                // If no specific fields are selected, map the whole list to DTOs 
-                // to prevent circular reference crashes.
                 var dtoItems = items.Select(item => item).ToList();
 
                 return Ok(new { Data = dtoItems, TotalElements = totalElements });
@@ -234,10 +220,9 @@ string? includes = null)
                     TermsAndConditions = request.TermsAndConditions,
                     Status = "Draft",
                     CreatedById = Guid.Parse(userIdClaim),
-                    CreatedAt = DateTime.UtcNow
+                    CreatedAt = DateTimeHelper.Now()
                 };
 
-                // Recursive Item Creation
                 quotation.QuotationItems = ProcessRequestItems(request.QuotationItems, quotation.Id, null);
 
                 var statusHistory = new QuotationStatusHistory
@@ -245,7 +230,7 @@ string? includes = null)
                     Id = Guid.NewGuid(),
                     QuotationId = quotation.Id,
                     Status = "Draft",
-                    ActionAt = DateTime.UtcNow,
+                    ActionAt = DateTimeHelper.Now(),
                     ActionUserId = Guid.Parse(userIdClaim),
                     Remarks = "Quotation created",
                 };
@@ -255,7 +240,7 @@ string? includes = null)
 
                 await _context.SaveChangesAsync();
 
-                var result = MapToDto(quotation); // Use the recursive MapToDto we discussed
+                var result = MapToDto(quotation); 
                 await _hub.Clients.All.SendAsync("QuotationAdded", result);
 
                 return Ok(result);
@@ -266,7 +251,6 @@ string? includes = null)
             }
         }
 
-        // Helper to handle nested items/categories
         private List<QuotationItems> ProcessRequestItems(List<QuotationItemRequest> requests, Guid quotationId, Guid? parentId)
         {
             var items = new List<QuotationItems>();
@@ -279,21 +263,18 @@ string? includes = null)
                     QuotationId = quotationId,
                     ParentId = parentId,
                     IsGroup = req.IsGroup,
-                    Type = req.Type, // "CATEGORY" or "ITEM"
+                    Type = req.Type,
                     Description = req.Description,
                     Quantity = req.Quantity,
                     Unit = req.Unit ?? "Nos",
                     UnitPrice = req.UnitPrice,
                     TotalPrice = req.TotalPrice,
                     SortOrder = req.SortOrder,
-                    CreatedAt = DateTime.UtcNow
+                    CreatedAt = DateTimeHelper.Now()
                 };
 
-                // If this item has children (e.g. a Category containing products), process them
                 if (req.Children?.Any() == true)
                 {
-                    // Note: In EF Core, if you add children to the context, 
-                    // ensure the ParentId is set or they are added to a collection.
                     newItem.Children = ProcessRequestItems(req.Children, quotationId, itemId);
                 }
 
@@ -312,31 +293,21 @@ string? includes = null)
             if (quotation == null)
                 return NotFound();
 
-            // =========================
-            // 1. Update main quotation
-            // =========================
             quotation.QuotationNo = request.QuotationNo;
             quotation.QuotationDate = request.QuotationDate;
             quotation.Subject = request.Subject;
             quotation.TotalAmount = request.TotalAmount;
             quotation.ClientId = request.ClientId;
             quotation.FromCompanyId = request.FromCompanyId;
-            quotation.UpdatedAt = DateTime.UtcNow;
+            quotation.UpdatedAt = DateTimeHelper.Now();
 
-            // =========================
-            // 2. Remove existing items (IMPORTANT FIX)
-            // =========================
             var existingItems = _context.QuotationItems
                 .Where(x => x.QuotationId == quotation.Id);
 
             _context.QuotationItems.RemoveRange(existingItems);
 
-            // Flush DELETE first to avoid concurrency conflict
             await _context.SaveChangesAsync();
 
-            // =========================
-            // 3. Rebuild new items
-            // =========================
             var newItems = ProcessRequestItems(
                 request.QuotationItems?
                     .Select(x => new QuotationItemRequest
@@ -360,9 +331,6 @@ string? includes = null)
 
             _context.QuotationItems.AddRange(newItems);
 
-            // =========================
-            // 4. Save final state
-            // =========================
             await _context.SaveChangesAsync();
 
             return Ok(MapToDto(quotation));
@@ -395,7 +363,6 @@ string? includes = null)
                     i.Remarks,
                     i.SignatureImage
                 }),
-                // Build the tree structure here
                 QuotationItems = q.QuotationItems
                     .Where(i => i.ParentId == null || i.ParentId == Guid.Empty)
                     .OrderBy(i => i.SortOrder)
@@ -404,13 +371,12 @@ string? includes = null)
             };
         }
 
-        // Recursive helper for Items/Categories
         private object MapItemRecursive(QuotationItems item, IEnumerable<QuotationItems> allItems)
         {
             return new
             {
                 item.Id,
-                item.Type, // CATEGORY or ITEM
+                item.Type, 
                 item.IsGroup,
                 item.Description,
                 item.Quantity,
@@ -418,7 +384,6 @@ string? includes = null)
                 item.UnitPrice,
                 item.TotalPrice,
                 item.SortOrder,
-                // Find children where ParentId matches current Id
                 Children = allItems
                     .Where(c => c.ParentId == item.Id)
                     .OrderBy(c => c.SortOrder)
@@ -427,7 +392,6 @@ string? includes = null)
             };
         }
 
-        // Clean helper for Company mapping to reduce code duplication
         private object? MapCompany(Company? c)
         {
             if (c == null) return null;
@@ -470,8 +434,8 @@ string? includes = null)
                 {
                     Id = Guid.NewGuid(),
                     QuotationNo = newQuotationNo,
-                    ReferenceNo = source.ReferenceNo, // Keep original ref or set to new quote no
-                    QuotationDate = DateTime.UtcNow,
+                    ReferenceNo = source.ReferenceNo,
+                    QuotationDate = DateTimeHelper.Now(),
                     FromCompanyId = source.FromCompanyId,
                     ClientId = source.ClientId,
                     Subject = source.Subject,
@@ -480,28 +444,23 @@ string? includes = null)
                     TotalAmount = source.TotalAmount,
                     TermsAndConditions = source.TermsAndConditions,
                     Remarks = $"Cloned from {source.QuotationNo}",
-                    CreatedAt = DateTime.UtcNow
+                    CreatedAt = DateTimeHelper.Now()
                 };
 
-                // --- FIX: Handle Hierarchical Items ---
-                // 1. Create a map to link Old Item IDs to New Item IDs
                 var idMap = new Dictionary<Guid, Guid>();
                 var newItems = new List<QuotationItems>();
 
-                // 2. First pass: Create new IDs for every item
                 foreach (var oldItem in source.QuotationItems)
                 {
                     idMap[oldItem.Id] = Guid.NewGuid();
                 }
 
-                // 3. Second pass: Build the new items list with corrected ParentIds
                 foreach (var oldItem in source.QuotationItems)
                 {
                     var newItem = new QuotationItems
                     {
                         Id = idMap[oldItem.Id],
                         QuotationId = clonedQuotation.Id,
-                        // If the old item had a parent, find that parent's new ID in our map
                         ParentId = oldItem.ParentId.HasValue && idMap.ContainsKey(oldItem.ParentId.Value)
                                    ? idMap[oldItem.ParentId.Value]
                                    : null,
@@ -513,20 +472,19 @@ string? includes = null)
                         UnitPrice = oldItem.UnitPrice,
                         TotalPrice = oldItem.TotalPrice,
                         SortOrder = oldItem.SortOrder,
-                        CreatedAt = DateTime.UtcNow
+                        CreatedAt = DateTimeHelper.Now()
                     };
                     newItems.Add(newItem);
                 }
 
                 clonedQuotation.QuotationItems = newItems;
 
-                // 4. Record Status History for the new clone
                 var statusHistory = new QuotationStatusHistory
                 {
                     Id = Guid.NewGuid(),
                     QuotationId = clonedQuotation.Id,
                     Status = "Draft",
-                    ActionAt = DateTime.UtcNow,
+                    ActionAt = DateTimeHelper.Now(),
                     ActionUserId = Guid.Parse(userIdClaim),
                     Remarks = "Quotation cloned",
                 };
@@ -536,7 +494,6 @@ string? includes = null)
 
                 await _context.SaveChangesAsync();
 
-                // Use the recursive MapToDto we built earlier
                 var result = MapToDto(clonedQuotation);
                 await _hub.Clients.All.SendAsync("QuotationAdded", result);
 
@@ -547,6 +504,7 @@ string? includes = null)
                 return StatusCode(500, new { Error = "Cloning failed", Details = ex.Message });
             }
         }
+        
         private async Task<string> GenerateQuotationNo()
         {
             var yearShort = DateTime.UtcNow.Year % 100; // 2026 -> 26
@@ -571,8 +529,16 @@ string? includes = null)
             return $"YL/Q/{nextNumber}/{yearShort}";
         }
 
+        [HttpGet("generate-no")]
+        public async Task<IActionResult> GenerateQuotationNoEndpoint()
+        {
+            var quotationNo = await GenerateQuotationNo();
+            return Ok(new { quotationNo });
+        
+        }
+
         [HttpPut("UpdateStatus")]
-        public async Task<IActionResult> UpdateStatus(Guid id, string status, Guid? userId)
+        public async Task<IActionResult> UpdateStatus(Guid id, string status)
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userIdClaim))
@@ -585,49 +551,24 @@ string? includes = null)
                 .Select(x => x.FullName)
                 .FirstOrDefaultAsync();
 
-            string? reviewerName = null;
-
-            if (userId.HasValue)
-            {
-                reviewerName = await _context.Users
-                    .Where(x => x.Id == userId.Value)
-                    .Select(x => x.FullName)
-                    .FirstOrDefaultAsync();
-            }
-
             var quotation = await _context.Quotations
                 .FirstOrDefaultAsync(x => x.Id == id);
 
             if (quotation == null)
                 return NotFound();
 
-            // ======================================================
-            // 🔥 BUSINESS RULE: REJECTED → BACK TO DRAFT
-            // ======================================================
-            if (status == "Rejected")
-            {
-                quotation.Status = "Draft";
-            }
-            else
-            {
-                quotation.Status = status;
-            }
+            quotation.Status = status == "Rejected" ? "Draft" : status;
 
             var history = new QuotationStatusHistory
             {
+                Id = Guid.NewGuid(),
                 QuotationId = id,
-
-                // store actual transition result
                 Status = quotation.Status,
-
                 ActionUserId = actionUserId,
-                ActionAt = DateTime.UtcNow,
-                ReviewedByUserId = userId,
-
+                ActionAt = DateTimeHelper.Now(),
                 Remarks = GenerateStatusRemark(
                     quotation.Status,
-                    userName ?? "System",
-                    reviewerName
+                    userName ?? "System"
                 )
             };
 
@@ -655,14 +596,16 @@ string? includes = null)
             return Ok(result);
         }
 
-        private string GenerateStatusRemark(string status, string userName, string? reviewerName)
+        private string GenerateStatusRemark(string status, string userName)
         {
             return status switch
             {
-                "Revised" => $"Quotation updated by {userName} and sent for review to {reviewerName ?? "reviewer"}",
+                "Reviewed" => $"Quotation reviewed by {userName}",
                 "Approved" => $"Quotation approved by {userName}",
                 "Rejected" => $"Quotation rejected by {userName}",
-                "Sent" => $"Quotation sent by {userName} to {reviewerName ?? "client"}",
+                "Sent" => $"Quotation sent by {userName}",
+                "Accepted" => $"Quotation accepted by {userName}",
+                "Cancelled" => $"Quotation cancelled by {userName}",
                 _ => $"Quotation updated to {status} by {userName}"
             };
         }

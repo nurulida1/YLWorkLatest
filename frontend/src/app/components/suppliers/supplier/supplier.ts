@@ -100,7 +100,7 @@ import { ImageModule } from 'primeng/image';
             (onLazyLoad)="NextPage($event)"
             ><ng-template #header>
               <tr>
-                <th class="bg-gray-100! text-center! w-[10%]!"></th>
+                <th class="bg-gray-100! text-center! w-[5%]!"></th>
                 <th
                   pSortableColumn="Name"
                   class="bg-gray-100! text-center! w-[30%]!"
@@ -110,21 +110,21 @@ import { ImageModule } from 'primeng/image';
                     <p-sortIcon field="Name" class="mt-1" />
                   </div>
                 </th>
-                <th class="bg-gray-100! text-center! w-[20%]!">Email</th>
-                <th class="bg-gray-100! text-center! w-[10%]!">Contact No</th>
-                <th class="bg-gray-100! text-center! w-[10%]!">
+                <th class="bg-gray-100! text-center! w-[15%]!">Email</th>
+                <th class="bg-gray-100! text-center! w-[15%]!">Contact No</th>
+                <th class="bg-gray-100! text-center! w-[15%]!">
                   Contact Person
                 </th>
 
-                <th class="bg-gray-100! text-center! w-[10%]!">Action</th>
+                <th class="bg-gray-100! text-center! w-[5%]!">Action</th>
               </tr>
             </ng-template>
             <ng-template #body let-data>
               <tr>
-                <td class="text-[14px] text-center! font-semibold!">
+                <td class="text-center! font-semibold!">
                   <div class="flex items-center justify-center">
                     <div
-                      class="w-[100px] flex items-center justify-center"
+                      class="w-[50px] flex items-center justify-center"
                       *ngIf="!data.logoImage"
                     >
                       <i class="pi pi-building text-[30px]!"></i>
@@ -132,24 +132,24 @@ import { ImageModule } from 'primeng/image';
                     <p-image
                       *ngIf="data.logoImage"
                       [src]="data.logoImage"
-                      width="100px"
+                      width="50px"
                     ></p-image>
                   </div>
                 </td>
-                <td class="text-[14px] text-center! font-semibold!">
+                <td class="text-center! font-semibold!">
                   {{ data.name }}
                 </td>
-                <td class="text-[14px] text-center!">
+                <td class="text-center!">
                   {{ data.email }}
                 </td>
-                <td class="text-[14px] text-center!">
+                <td class="text-center!">
                   {{ data.contactNo }}
                 </td>
-                <td class="text-[14px] text-center!">
+                <td class="text-center!">
                   {{ data.contactPerson1 }}
                 </td>
 
-                <td class="text-center! text-[14px]!">
+                <td class="text-center!">
                   <div class="flex items-center justify-center">
                     <i
                       class="pi pi-ellipsis-h cursor-pointer"

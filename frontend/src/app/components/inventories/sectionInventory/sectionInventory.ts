@@ -76,7 +76,7 @@ import { BaseOption } from '../../../models/BaseModel';
               ></i>
             </div>
             <p-button
-              label="Add Category"
+              label="Add Section"
               icon="pi pi-plus-circle"
               (onClick)="ActionClick(null, 'add')"
               severity="info"

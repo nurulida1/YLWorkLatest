@@ -25,9 +25,6 @@ export class QuotationService {
     private messageService: MessageService,
   ) {}
 
-  /**
-   * Helper to build HttpParams from GridifyQueryExtend
-   */
   private buildParams(query: GridifyQueryExtend): HttpParams {
     let params = new HttpParams()
       .set('page', query.Page.toString())
@@ -138,8 +135,11 @@ export class QuotationService {
 
   downloadPdf(id: string) {
     const url = `${environment.ApiBaseUrl}/Quotation/DownloadPdf/${id}`;
-    // We specify responseType: 'blob' so Angular knows this is a file
     return this.http.get(url, { responseType: 'blob' });
+  }
+
+  GenerateNo() {
+    return this.http.get<{ quotationNo: string }>(`${this.url}/generate-no`);
   }
 
   private handleError = (context: string) => (error: any) => {

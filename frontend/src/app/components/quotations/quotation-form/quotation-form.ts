@@ -89,12 +89,6 @@ import { CheckboxModule } from 'primeng/checkbox';
             styleClass="py-1.5! px-4!"
             [routerLink]="'/quotations'"
           ></p-button>
-          <!-- <p-button
-          label="Save As Draft"
-          severity="info"
-          [outlined]="true"
-          styleClass="py-1.5!"
-        ></p-button> -->
           <p-button
             (onClick)="SaveQuotation()"
             [label]="currentId ? 'Save Changes' : 'Create'"
@@ -107,6 +101,26 @@ import { CheckboxModule } from 'primeng/checkbox';
         <div class="grid grid-cols-12 gap-4 items-center" [formGroup]="FG">
           <div class="col-span-12 font-semibold text-lg">
             Quotes Information
+          </div>
+          <div class="col-span-12 lg:col-span-6 flex flex-col gap-1">
+            <div>Quotation No <span class="text-red-500">*</span></div>
+            <input
+              type="text"
+              pInputText
+              class="w-full bg-gray-100!"
+              formControlName="quotationNo"
+              [readonly]="true"
+            />
+          </div>
+          <div class="col-span-12 lg:col-span-6 flex flex-col gap-1">
+            <div>Quote date <span class="text-red-500">*</span></div>
+            <p-datepicker
+              appendTo="body"
+              styleClass="w-full!"
+              formControlName="quotationDate"
+              [showIcon]="true"
+              dateFormat="dd/mm/yy"
+            ></p-datepicker>
           </div>
           <div class="col-span-12 lg:col-span-6 flex flex-col gap-1">
             <div class="mt-2 mb-1">
@@ -138,25 +152,6 @@ import { CheckboxModule } from 'primeng/checkbox';
               formControlName="clientId"
               [showClear]="FG.get('clientId')?.value"
             ></p-select>
-          </div>
-          <div class="col-span-12 lg:col-span-6 flex flex-col gap-1">
-            <div>Reference No <span class="text-red-500">*</span></div>
-            <input
-              type="text"
-              pInputText
-              class="w-full"
-              formControlName="quotationNo"
-            />
-          </div>
-          <div class="col-span-12 lg:col-span-6 flex flex-col gap-1">
-            <div>Quote date <span class="text-red-500">*</span></div>
-            <p-datepicker
-              appendTo="body"
-              styleClass="w-full!"
-              formControlName="quotationDate"
-              [showIcon]="true"
-              dateFormat="dd/mm/yy"
-            ></p-datepicker>
           </div>
           <div class="col-span-12 flex flex-col gap-1">
             <div>Subject <span class="text-red-500">*</span></div>
@@ -318,6 +313,7 @@ import { CheckboxModule } from 'primeng/checkbox';
                 label="Add Group"
                 styleClass="rounded-full!"
                 icon="pi pi-plus-circle"
+                size="small"
                 severity="info"
                 (onClick)="addGroup()"
               ></p-button>
@@ -325,6 +321,7 @@ import { CheckboxModule } from 'primeng/checkbox';
                 label="Add Item"
                 styleClass="rounded-full!"
                 icon="pi pi-plus-circle"
+                size="small"
                 (onClick)="addItem()"
               ></p-button>
             </div>
@@ -630,6 +627,10 @@ export class QuotationForm implements OnInit, OnDestroy {
 
     this.initForm();
 
+    if (!this.currentId) {
+      this.generateQuotationNo();
+    }
+
     forkJoin({
       selection: this.companyService.GetMany({
         Page: 1,
@@ -663,6 +664,18 @@ export class QuotationForm implements OnInit, OnDestroy {
         if (data && data.id) {
           this.patchData(data);
         }
+      });
+  }
+
+  generateQuotationNo() {
+    this.quotationService
+      .GenerateNo()
+      .pipe(takeUntil(this.ngUnsubscribe))
+      .subscribe({
+        next: (res) => {
+          this.FG.get('quotationNo')?.setValue(res.quotationNo);
+          this.cdr.markForCheck();
+        },
       });
   }
 
@@ -778,7 +791,6 @@ export class QuotationForm implements OnInit, OnDestroy {
               res.quotationItems.forEach((item: any) => {
                 const group = this.createItemGroup(item);
 
-                // ensure total is recalculated properly
                 const qty = item.quantity ?? 0;
                 const price = item.unitPrice ?? 0;
 
@@ -793,7 +805,6 @@ export class QuotationForm implements OnInit, OnDestroy {
               });
             }
 
-            // 4. recompute totals once
             this.calculateTotal();
 
             this.cdr.markForCheck();
@@ -810,7 +821,7 @@ export class QuotationForm implements OnInit, OnDestroy {
 
     return items.map((x, index) => ({
       id: x.id || null,
-      type: x.type, // ✅ REQUIRED
+      type: x.type,
       parentId: x.parentId || null,
 
       description: x.description,
@@ -943,7 +954,7 @@ export class QuotationForm implements OnInit, OnDestroy {
           const billing = this.clientForm.get('billingAddress')?.value;
 
           this.clientForm.get('deliveryAddress')?.patchValue(billing);
-          this.clientForm.get('deliveryAddress')?.disable(); // optional UX
+          this.clientForm.get('deliveryAddress')?.disable();
         } else {
           this.clientForm.get('deliveryAddress')?.enable();
         }
@@ -985,7 +996,6 @@ export class QuotationForm implements OnInit, OnDestroy {
 
           this.visible = false;
 
-          // return refresh observable (IMPORTANT)
           return this.companyService
             .GetMany({
               Page: 1,
@@ -1007,7 +1017,6 @@ export class QuotationForm implements OnInit, OnDestroy {
             .filter((x) => x.type === CompanyType.Client)
             .map((x) => ({ label: x.name, value: x.id }));
 
-          // auto select new client
           this.FG.get('clientId')?.setValue(newClientId);
 
           this.cdr.markForCheck();

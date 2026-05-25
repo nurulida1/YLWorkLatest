@@ -28,7 +28,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
 import { TableModule } from 'primeng/table';
 import { TextareaModule } from 'primeng/textarea';
-import { PurchaseOrderService } from '../../../services/purchaseOrderService.service';
+import { PurchaseOrderService } from '../../../services/purchaseOrderService';
 import { LoadingService } from '../../../services/loading.service';
 import { forkJoin, of, Subject, takeUntil } from 'rxjs';
 import { ValidateAllFormFields } from '../../../shared/helpers/helpers';
@@ -38,6 +38,8 @@ import { ProjectDto } from '../../../models/Project';
 import { SupplierService } from '../../../services/SupplierService';
 import { CompanyService } from '../../../services/companyService';
 import { CompanyType } from '../../../shared/enum/enum';
+import { MultiSelectModule } from 'primeng/multiselect';
+import { RadioButtonModule } from 'primeng/radiobutton';
 
 @Component({
   selector: 'app-purchase-order-form',
@@ -55,6 +57,8 @@ import { CompanyType } from '../../../shared/enum/enum';
     DialogModule,
     EditorModule,
     TextareaModule,
+    MultiSelectModule,
+    RadioButtonModule,
   ],
   template: `
     <div class="w-full p-5 flex flex-col">
@@ -138,8 +142,16 @@ import { CompanyType } from '../../../shared/enum/enum';
             />
           </div>
           <div class="col-span-12 lg:col-span-6 flex flex-col gap-1">
-            <div class="mt-2 mb-1">
-              From <span class="text-red-500">*</span>
+            <div class="flex flex-row justify-between items-center">
+              <div>From <span class="text-red-500">*</span></div>
+              <p-button
+                label="Add New Company"
+                icon="pi pi-plus-circle"
+                size="small"
+                severity="info"
+                [text]="true"
+                (onClick)="AddCompanyClick(companyTypeEnum.Own)"
+              ></p-button>
             </div>
             <p-select
               [options]="companySelection || []"
@@ -157,7 +169,7 @@ import { CompanyType } from '../../../shared/enum/enum';
                 size="small"
                 severity="info"
                 [text]="true"
-                (onClick)="AddVendorClick()"
+                (onClick)="AddCompanyClick(companyTypeEnum.Supplier)"
               ></p-button>
             </div>
             <p-select
@@ -170,13 +182,18 @@ import { CompanyType } from '../../../shared/enum/enum';
             ></p-select>
           </div>
           <div class="col-span-12 lg:col-span-6 flex flex-col gap-1">
-            <div>Reference No</div>
-            <input
-              type="text"
-              pInputText
-              class="w-full"
+            <div>
+              Quotation No
+              <span class="text-gray-500 text-xs italic">(Optional)</span>
+            </div>
+            <p-select
+              [filter]="true"
+              [options]="quotationSelection || []"
+              appendTo="body"
+              styleClass="w-full!"
               formControlName="quotationId"
-            />
+              [showClear]="poForm.get('quotationId')?.value"
+            ></p-select>
           </div>
           <div class="col-span-12 lg:col-span-6 flex flex-col gap-1">
             <div>PO date <span class="text-red-500">*</span></div>
@@ -198,7 +215,18 @@ import { CompanyType } from '../../../shared/enum/enum';
             />
           </div>
           <div class="col-span-12 lg:col-span-6 flex flex-col gap-1">
-            <div>Project Code</div>
+            <div class="flex flex-row items-center justify-between">
+              <div>Project</div>
+              <p-button
+                label="Add New Project"
+                icon="pi pi-plus-circle"
+                size="small"
+                severity="info"
+                [text]="true"
+                (onClick)="AddProject()"
+              ></p-button>
+            </div>
+
             <p-select
               [options]="projectSelection || []"
               appendTo="body"
@@ -389,7 +417,7 @@ import { CompanyType } from '../../../shared/enum/enum';
       </div>
     </div>
     <p-dialog
-      [(visible)]="showVendorDialog"
+      [(visible)]="showCompanyDialog"
       [modal]="true"
       [style]="{ width: '850px' }"
       styleClass="preview-dialog overflow-hidden rounded-xl!"
@@ -404,11 +432,11 @@ import { CompanyType } from '../../../shared/enum/enum';
             </div>
             <div>
               <h2 class="text-xl font-bold text-gray-800 m-0">
-                Create New Vendor
+                Create New Company
               </h2>
-              <p class="text-sm text-gray-500 mt-1">
+              <p class="text-sm text-gray-500 mt-1 tracking-wide">
                 Fill in the primary details and address information to register
-                a new vendor.
+                a new company.
               </p>
             </div>
           </div>
@@ -416,12 +444,12 @@ import { CompanyType } from '../../../shared/enum/enum';
 
         <div class="p-6 max-h-[70vh] overflow-y-auto">
           <div
-            [formGroup]="vendorForm"
-            class="grid grid-cols-12 gap-x-4 gap-y-3 text-[14px]"
+            [formGroup]="companyForm"
+            class="grid grid-cols-12 gap-x-4 gap-y-3"
           >
             <div class="col-span-12 lg:col-span-6 flex flex-col gap-1.5">
               <label class="font-medium text-gray-700"
-                >Vendor Name <span class="text-red-500">*</span></label
+                >Name <span class="text-red-500">*</span></label
               >
               <input
                 type="text"
@@ -438,7 +466,7 @@ import { CompanyType } from '../../../shared/enum/enum';
                 pInputText
                 class="w-full!"
                 formControlName="email"
-                placeholder="client@example.com"
+                placeholder="company@example.com"
               />
             </div>
             <div class="col-span-12 lg:col-span-6 flex flex-col gap-1.5">
@@ -593,7 +621,7 @@ import { CompanyType } from '../../../shared/enum/enum';
 
             <div
               class="col-span-12 p-4 bg-blue-50/50 border border-blue-100 rounded-lg text-blue-700 text-center text-sm flex items-center justify-center gap-2 mt-2"
-              *ngIf="vendorForm.get('sameAsBilling')?.value"
+              *ngIf="companyForm.get('sameAsBilling')?.value"
             >
               <i class="pi pi-info-circle"></i>
               System will use the billing address for delivery.
@@ -605,19 +633,200 @@ import { CompanyType } from '../../../shared/enum/enum';
           class="p-4 bg-gray-50 border-t border-gray-100 flex justify-end items-center gap-3"
         >
           <p-button
-            (onClick)="showVendorDialog = false"
+            (onClick)="showCompanyDialog = false"
             label="Discard"
             severity="secondary"
             styleClass="px-6 py-2! border-gray-200!"
           ></p-button>
 
           <p-button
-            (onClick)="AddNewVendor()"
-            label="Create Vendor"
+            (onClick)="SaveCompany()"
+            label="Save"
             severity="info"
-            [disabled]="vendorForm.invalid"
+            [disabled]="companyForm.invalid"
             styleClass="px-8 py-2! shadow-sm"
           ></p-button>
+        </div>
+      </ng-template>
+    </p-dialog>
+
+    <p-dialog
+      [(visible)]="showProjectDialog"
+      [modal]="true"
+      [style]="{ width: '850px' }"
+      styleClass="preview-dialog overflow-hidden rounded-xl!"
+      [maskStyle]="{ 'overflow-y': 'auto' }"
+      appendTo="body"
+    >
+      <ng-template #headless>
+        <div class="bg-gray-50/50 p-6 border-b border-gray-100">
+          <div class="flex items-center gap-3">
+            <div class="bg-blue-100 p-2.5 rounded-lg">
+              <i class="pi pi-user-plus text-blue-600 text-xl"></i>
+            </div>
+            <div>
+              <h2 class="text-xl font-bold text-gray-800 m-0">
+                Create New Project
+              </h2>
+              <p class="text-sm text-gray-500 mt-1 tracking-wide">
+                Fill in the primary details to create new project.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="p-6 max-h-[70vh] overflow-y-auto">
+          <div
+            [formGroup]="projectForm"
+            class="grid grid-cols-12 gap-x-4 gap-y-3"
+          >
+            <div class="col-span-12 flex flex-col gap-1.5">
+              <label class="font-medium text-gray-700"
+                >Project Title<span class="text-red-500">*</span></label
+              >
+              <input
+                type="text"
+                pInputText
+                class="w-full!"
+                formControlName="projectTitle"
+              />
+            </div>
+            <div class="col-span-12 lg:col-span-6 flex flex-col gap-1.5">
+              <label class="font-medium text-gray-700">Project Code </label>
+              <input
+                type="text"
+                pInputText
+                class="w-full!"
+                formControlName="projectCode"
+                placeholder="e.g. 112-1"
+              />
+            </div>
+
+            <div class="col-span-12 lg:col-span-6 flex flex-col gap-1.5">
+              <label class="font-medium text-gray-700">Client</label>
+              <p-select
+                [options]="clientSelection"
+                appendTo="body"
+                [filter]="true"
+                [showClear]="projectForm.get('clientId')?.value"
+                formControlName="clientId"
+              ></p-select>
+            </div>
+            <div class="col-span-12 lg:col-span-6 flex flex-col gap-1.5">
+              <div>Start Date</div>
+              <p-datepicker
+                appendTo="body"
+                styleClass="w-full!"
+                formControlName="startDate"
+                dateFormat="dd/mm/yy"
+                [showIcon]="true"
+              ></p-datepicker>
+            </div>
+            <div class="col-span-12 lg:col-span-6 flex flex-col gap-1.5">
+              <div>Due Date</div>
+              <p-datepicker
+                appendTo="body"
+                styleClass="w-full!"
+                formControlName="dueDate"
+                dateFormat="dd/mm/yy"
+                [showIcon]="true"
+              ></p-datepicker>
+            </div>
+            <div class="col-span-12 lg:col-span-6 flex flex-col gap-1.5">
+              <div>Priority</div>
+              <div class="flex flex-row gap-5">
+                <div class="flex flex-row gap-3">
+                  <p-radiobutton
+                    value="Low"
+                    formControlName="priority"
+                  ></p-radiobutton>
+                  <label for="">Low</label>
+                </div>
+                <div class="flex flex-row gap-3">
+                  <p-radiobutton
+                    value="Medium"
+                    formControlName="priority"
+                  ></p-radiobutton>
+                  <label for="">Medium</label>
+                </div>
+                <div class="flex flex-row gap-3">
+                  <p-radiobutton
+                    value="High"
+                    formControlName="priority"
+                  ></p-radiobutton>
+                  <label for="">High</label>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-span-12 flex flex-col gap-1">
+              <div>Description</div>
+              <textarea
+                pTextarea
+                rows="3"
+                cols="30"
+                formControlName="description"
+              ></textarea>
+            </div>
+            <div class="col-span-12 flex flex-col gap-1 mb-3">
+              <div>Project Members</div>
+
+              <p-multiselect
+                [options]="userSelection"
+                formControlName="projectMembers"
+                optionLabel="label"
+                optionValue="value"
+                display="chip"
+                [filter]="true"
+                appendTo="body"
+              >
+                <ng-template let-team #item>
+                  <div class="flex items-center gap-2">
+                    <div>{{ team.label }}</div>
+                  </div>
+                </ng-template>
+                <ng-template let-team #selecteditems>
+                  <div class="flex items-center" *ngIf="team?.length > 0">
+                    <div class="font-semibold tracking-wide">
+                      {{ team?.length }} team members selected
+                    </div>
+                  </div>
+                </ng-template>
+              </p-multiselect>
+              <div class="flex flex-wrap gap-3">
+                <ng-container *ngFor="let user of selectedTeamMembers">
+                  <div
+                    class="flex flex-row px-3 py-1 bg-gray-100 cursor-pointer rounded-full gap-2 items-center"
+                  >
+                    <div
+                      class="pi pi-times-circle"
+                      (click)="RemoveSelectedMember(user)"
+                    ></div>
+                    <div class="">{{ user?.label }}</div>
+                  </div>
+                </ng-container>
+              </div>
+            </div>
+          </div>
+
+          <div
+            class="p-4 bg-gray-50 border-t border-gray-100 flex justify-end items-center gap-3"
+          >
+            <p-button
+              (onClick)="showProjectDialog = false"
+              label="Discard"
+              severity="secondary"
+              styleClass="px-6 py-2! border-gray-200!"
+            ></p-button>
+
+            <p-button
+              (onClick)="SaveProject()"
+              label="Save"
+              severity="info"
+              [disabled]="projectForm.invalid"
+              styleClass="px-8 py-2! shadow-sm"
+            ></p-button>
+          </div>
         </div>
       </ng-template>
     </p-dialog>
@@ -632,7 +841,6 @@ export class PurchaseOrderForm implements OnInit, OnDestroy {
   private readonly messageService = inject(MessageService);
   private readonly purchaseOrderService = inject(PurchaseOrderService);
   private readonly activatedRoute = inject(ActivatedRoute);
-  private readonly supplierService = inject(SupplierService);
   private readonly companyService = inject(CompanyService);
   private readonly projectService = inject(ProjectService);
   private readonly loadingService = inject(LoadingService);
@@ -642,17 +850,21 @@ export class PurchaseOrderForm implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
 
   poForm!: FormGroup;
-  vendorForm!: FormGroup;
+  companyForm!: FormGroup;
+  projectForm!: FormGroup;
+
   currentId: string = '';
-  name = this.userService.currentUser?.fullName;
 
   displayPreview: boolean = false;
-  showVendorDialog: boolean = false;
-  previewData: any = null;
+  showCompanyDialog: boolean = false;
+  showProjectDialog: boolean = false;
 
-  today: Date = new Date();
+  companyTypeEnum = CompanyType;
 
   supplierSelection: any[] = [];
+  quotationSelection: any[] = [];
+  clientSelection: any[] = [];
+  userSelection: any[] = [];
   companySelection: { label: string; value: string }[] = [];
 
   selectedVendor: any;
@@ -667,13 +879,29 @@ export class PurchaseOrderForm implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.initForm();
     this.currentId = this.activatedRoute.snapshot.queryParams['id'];
+    this.getDropdown();
 
-    this.getCompanySelection();
-    this.getProjectSelection();
+    if (!this.currentId) {
+      this.generatePONo();
+    } else {
+      this.LoadForm();
+    }
 
     this.poForm.valueChanges
       .pipe(takeUntil(this.destroy$))
       .subscribe(() => this.calculateTotals());
+  }
+
+  generatePONo() {
+    this.purchaseOrderService
+      .GenerateNo()
+      .pipe(takeUntil(this.ngUnsubscribe))
+      .subscribe({
+        next: (res) => {
+          this.poForm.get('purchaseOrderNo')?.setValue(res.purchaseOrderNo);
+          this.cdr.markForCheck();
+        },
+      });
   }
 
   initForm() {
@@ -699,20 +927,6 @@ export class PurchaseOrderForm implements OnInit, OnDestroy {
       attachment: new FormControl<string | null>(null),
       purchaseOrderItems: new FormArray([]),
     });
-
-    // this.poForm.get('quotationId')?.valueChanges.subscribe((x) => {
-    //   const selectedQuotation = this.quotationSelection.find(
-    //     (y) => y.value === x,
-    //   );
-
-    //   if (selectedQuotation) {
-    //     this.poForm.get('clientId')?.patchValue(selectedQuotation.clientId);
-    //     this.poForm
-    //       .get('totalAmount')
-    //       ?.patchValue(selectedQuotation.totalAmount);
-    //     this.poForm.get('gross')?.patchValue(selectedQuotation.totalAmount);
-    //   }
-    // });
   }
 
   get items(): FormArray {
@@ -795,66 +1009,104 @@ export class PurchaseOrderForm implements OnInit, OnDestroy {
 
     const total = subtotal - headerDiscountAmount;
 
-    // UI values
     this.grossTotal.set(gross);
     this.discountTotal.set(itemDiscountTotal + headerDiscountAmount);
     this.totalAmount.set(total);
 
-    // Sync form
     this.poForm.get('gross')?.setValue(gross, { emitEvent: false });
     this.poForm.get('totalAmount')?.setValue(total, { emitEvent: false });
   }
 
-  getCompanySelection() {
-    forkJoin({
-      selection: this.companyService.GetMany({
-        Page: 1,
-        PageSize: 1000000,
-        OrderBy: 'Name',
-        Select: null,
-        Filter: null,
-        Includes: null,
-      }),
-      data: this.currentId
-        ? this.purchaseOrderService.GetOne({
-            Page: 1,
-            PageSize: 1,
-            OrderBy: null,
-            Select: null,
-            Includes: 'PurchaseOrderItems',
-            Filter: `Id=${this.currentId}`,
-          })
-        : of({} as any),
-    })
+  getDropdown() {
+    this.loadingService.start();
+    this.purchaseOrderService
+      .GetDropdown()
       .pipe(takeUntil(this.ngUnsubscribe))
-      .subscribe(({ selection, data }) => {
-        this.companySelection = selection.data
-          .filter((x) => x.type === CompanyType.Own)
-          .map((x) => ({ label: x.name, value: x.id }));
+      .subscribe({
+        next: (res) => {
+          this.loadingService.stop();
 
-        this.supplierSelection = selection.data
-          .filter((x) => x.type === CompanyType.Supplier)
-          .map((x) => ({ label: x.name, value: x.id }));
+          this.quotationSelection = res.quotations.map((q: any) => ({
+            label: q.quotationNo,
+            value: q.id,
+            fromCompanyId: q.fromCompanyId,
+          }));
 
-        if (data && data.id) {
-          this.patchData(data);
-        }
+          this.companySelection = res.companies.map((c: any) => ({
+            label: c.name,
+            value: c.id,
+          }));
+
+          this.supplierSelection = res.suppliers.map((c: any) => ({
+            label: c.name,
+            value: c.id,
+          }));
+
+          this.clientSelection = res.clients.map((c: any) => ({
+            label: c.name,
+            value: c.id,
+          }));
+
+          this.projectSelection = res.projects.map((c: any) => ({
+            label: `${c.projectCode} - ${c.projectTitle}`,
+            value: c.id,
+          }));
+
+          this.userSelection = res.users.map((c: any) => ({
+            label: c.fullName,
+            value: c.id,
+          }));
+        },
+        error: (err) => {
+          this.loadingService.stop();
+        },
       });
   }
 
-  patchData(res: any) {
-    this.poForm.patchValue({
-      ...res,
-      poDate: new Date(res.poDate),
-    });
+  LoadForm() {
+    this.loadingService.start();
+    this.purchaseOrderService
+      .GetOne({
+        Page: 1,
+        PageSize: 1,
+        OrderBy: null,
+        Includes: 'PurchaseOrderItems',
+        Select: null,
+        Filter: `Id=${this.currentId}`,
+      })
+      .pipe(takeUntil(this.ngUnsubscribe))
+      .subscribe({
+        next: (res) => {
+          this.loadingService.stop();
+          this.poForm.get('id')?.enable();
+          this.poForm.patchValue({
+            ...res,
+            poDate: res?.poDate ? new Date(res.poDate) : null,
+          });
 
-    this.items.clear();
+          this.items.clear();
 
-    res.purchaseOrderItems.forEach((item: any) => {
-      this.items.push(this.createItem(item));
-    });
-    this.calculateTotals();
-    this.cdr.markForCheck();
+          res?.purchaseOrderItems
+            ?.sort((a: any, b: any) => a.sortOrder - b.sortOrder)
+            .forEach((item: any) => {
+              const group = this.createItem(item);
+
+              group.patchValue(
+                {
+                  totalPrice: (item.quantity ?? 0) * (item.unitPrice ?? 0),
+                },
+                { emitEvent: false },
+              );
+
+              this.items.push(group);
+            });
+          this.calculateTotals();
+          this.cdr.markForCheck();
+        },
+        error: (err) => {
+          this.loadingService.stop();
+        },
+      });
   }
 
   getProjectSelection() {
@@ -948,16 +1200,17 @@ export class PurchaseOrderForm implements OnInit, OnDestroy {
     window.print();
   }
 
-  AddVendorClick() {
-    this.vendorForm = new FormGroup({
+  AddCompanyClick(type: CompanyType) {
+    this.companyForm = new FormGroup({
       name: new FormControl<string | null>(null, Validators.required),
       email: new FormControl<string | null>(null, [Validators.email]),
       contactNo: new FormControl<string | null>(null, Validators.required),
       faxNo: new FormControl<string | null>(null),
       contactPerson: new FormControl<string | null>(null),
       acNo: new FormControl<string | null>(null),
+      type: new FormControl<CompanyType>(type),
       sameAsBilling: new FormControl(false),
-      // Create nested group for billing address
+
       billingAddress: new FormGroup({
         name: new FormControl('Billing'),
         addressLine1: new FormControl(null, Validators.required),
@@ -979,42 +1232,42 @@ export class PurchaseOrderForm implements OnInit, OnDestroy {
       }),
     });
 
-    this.vendorForm.get('sameAsBilling')?.valueChanges.subscribe((checked) => {
+    this.companyForm.get('sameAsBilling')?.valueChanges.subscribe((checked) => {
       if (checked) {
-        const billingValue = this.vendorForm.get('billingAddress')?.value;
-        this.vendorForm.get('deliveryAddress')?.patchValue({
+        const billingValue = this.companyForm.get('billingAddress')?.value;
+        this.companyForm.get('deliveryAddress')?.patchValue({
           ...billingValue,
-          name: 'Delivery', // Keep the name as Delivery
+          name: 'Delivery',
         });
       }
     });
 
-    this.showVendorDialog = true;
+    this.showCompanyDialog = true;
   }
 
-  AddNewVendor() {
-    ValidateAllFormFields(this.vendorForm);
+  SaveCompany() {
+    ValidateAllFormFields(this.companyForm);
 
-    if (!this.vendorForm.valid) return;
+    if (!this.companyForm.valid) return;
 
     this.loadingService.start();
 
-    this.supplierService
-      .Create(this.vendorForm.value)
+    this.companyService
+      .Create(this.companyForm.value)
       .pipe(takeUntil(this.ngUnsubscribe))
       .subscribe({
         next: (res: any) => {
           this.loadingService.stop();
           const activeAddress = res.deliveryAddress ?? res.billingAddress;
 
-          const newVendor = {
-            label: res.name || this.vendorForm.value.name,
+          const newCompany = {
+            label: res.name || this.companyForm.value.name,
             value: res.id,
             email: res.email,
             contactNo: res.contactNo,
             faxNo: res.faxNo,
             acNo: res.acNo,
-            addressType: res.deliveryAddress ? 'Delivery' : 'Billing', // Optional: track which one is being shown
+            addressType: res.deliveryAddress ? 'Delivery' : 'Billing',
             deliveryAddress: {
               addressLine1: activeAddress.addressLine1,
               addressLine2: activeAddress.addressLine2,
@@ -1025,19 +1278,19 @@ export class PurchaseOrderForm implements OnInit, OnDestroy {
             },
           };
 
-          this.supplierSelection = [...this.supplierSelection, newVendor];
+          this.supplierSelection = [...this.supplierSelection, newCompany];
 
-          this.vendorForm.get('supplierId')?.setValue(res.id);
+          this.companyForm.get('supplierId')?.setValue(res.id);
 
           this.messageService.add({
             severity: 'success',
             summary: 'Success',
-            detail: 'Vendor created and selected successfully',
+            detail: `${this.companyForm.get('name')?.value} created and selected successfully`,
             life: 3000,
           });
 
-          this.showVendorDialog = false;
-          this.vendorForm.reset();
+          this.showCompanyDialog = false;
+          this.companyForm.reset();
           this.cdr.detectChanges();
         },
         error: (err) => {
@@ -1048,7 +1301,86 @@ export class PurchaseOrderForm implements OnInit, OnDestroy {
             summary: 'Error',
             detail:
               err.error?.message ||
-              'Failed to create vendor. Please try again.',
+              'Failed to create company. Please try again.',
+            life: 5000,
+          });
+
+          this.cdr.markForCheck();
+        },
+      });
+  }
+
+  AddProject() {
+    this.projectForm = new FormGroup({
+      id: new FormControl<string | null>({ value: null, disabled: true }),
+      projectCode: new FormControl<string | null>(null),
+      projectTitle: new FormControl<string | null>(null, Validators.required),
+      clientId: new FormControl<string | null>(null, Validators.required),
+      startDate: new FormControl<string | null>(null),
+      dueDate: new FormControl<Date | null>(null),
+      description: new FormControl<string | null>(null),
+      priority: new FormControl<string | null>(null),
+      projectMembers: new FormControl<string[]>([]),
+    });
+
+    this.showProjectDialog = true;
+  }
+
+  get selectedTeamMembers() {
+    const selectedIds = this.projectForm.get('projectMembers')?.value || [];
+
+    return this.userSelection.filter((u) => selectedIds.includes(u.value));
+  }
+
+  RemoveSelectedMember(user: any) {
+    const selectedIds = this.projectForm.get('projectMembers')?.value || [];
+
+    const updated = selectedIds.filter((id: string) => id !== user.value);
+
+    this.projectForm.get('projectMembers')?.setValue(updated);
+  }
+
+  SaveProject() {
+    ValidateAllFormFields(this.projectForm);
+
+    if (!this.projectForm.valid) return;
+
+    this.loadingService.start();
+    this.projectService
+      .Create(this.projectForm.value)
+      .pipe(takeUntil(this.ngUnsubscribe))
+      .subscribe({
+        next: (res) => {
+          this.loadingService.stop();
+          const newProject = {
+            label: `${res.projectCode} - ${res.projectTitle}`,
+            value: res.id,
+          };
+
+          this.projectSelection = [...this.projectSelection, newProject];
+
+          this.poForm.get('projectId')?.setValue(res.id);
+
+          this.messageService.add({
+            severity: 'success',
+            summary: 'Success',
+            detail: `${this.projectForm.get('projectCode')?.value} created and selected successfully`,
+            life: 3000,
+          });
+
+          this.showProjectDialog = false;
+          this.projectForm.reset();
+          this.cdr.detectChanges();
+        },
+        error: (err) => {
+          this.loadingService.stop();
+
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Error',
+            detail:
+              err.error?.message ||
+              'Failed to create project. Please try again.',
             life: 5000,
           });
 

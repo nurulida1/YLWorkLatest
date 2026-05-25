@@ -500,6 +500,16 @@ namespace YLWorks.Controller
                 .Select(x => x.FullName)
                 .FirstOrDefaultAsync();
 
+            string? reviewerName = null;
+
+            if (request.ReviewerUserId.HasValue)
+            {
+                reviewerName = await _context.Users
+                    .Where(x => x.Id == request.ReviewerUserId.Value)
+                    .Select(x => x.FullName)
+                    .FirstOrDefaultAsync();
+            }
+
             var deliveryOrder = await _context.DeliveryOrders
                 .FirstOrDefaultAsync(x => x.Id == request.Id);
 
@@ -508,8 +518,32 @@ namespace YLWorks.Controller
 
             deliveryOrder.Status = request.Status;
 
-            var isReviewAction = request.Status == "UnderReview";
-            var isApproveAction = request.Status == "Approved";
+            var po = await _context.PurchaseOrders
+                .FirstOrDefaultAsync(x => x.Id == deliveryOrder.PurchaseOrderId);
+
+            if (po != null)
+            {
+                switch (request.Status)
+                {
+                    case "Approved":
+                        po.Status = "In Progress";
+                        break;
+
+                    case "Prepared":
+                    case "OutDelivery":
+                    case "PartiallyDelivered":
+                        po.Status = "In Progress";
+                        break;
+
+                    case "Delivered":
+                        po.Status = "Completed";
+                        break;
+
+                    case "Cancelled":
+                        po.Status = "Cancelled";
+                        break;
+                }
+            }
 
             var history = new DeliveryOrderStatusHistory
             {
@@ -518,10 +552,11 @@ namespace YLWorks.Controller
                 Status = request.Status,
                 ActionAt = DateTime.UtcNow,
                 ActionUserId = actionUserId,
+
                 Remarks = request.Remarks ?? $"DO updated to {request.Status} by {userName}",
 
                 ReviewByUserId = request.ReviewerUserId,
-                ApprovedByUserId = isApproveAction ? actionUserId : null,
+                ApprovedByUserId = request.Status == "Approved" ? actionUserId : null,
             };
 
             _context.DeliveryOrderStatusHistories.Add(history);

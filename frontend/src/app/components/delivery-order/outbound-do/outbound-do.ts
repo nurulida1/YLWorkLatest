@@ -856,6 +856,13 @@ export class OutboundDo implements OnInit, OnDestroy {
       });
   }
 
+  isLogistic(): boolean {
+    return (
+      this.currentUser?.jobTitle === 'Senior Procurement Executive' ||
+      this.currentUser?.jobTitle === 'Purchasing Executive'
+    );
+  }
+
   ngOnDestroy(): void {
     this.ngUnsubscribe.next();
     this.ngUnsubscribe.complete();

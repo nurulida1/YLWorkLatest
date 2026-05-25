@@ -14,7 +14,7 @@ import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { MenuModule } from 'primeng/menu';
 import { Table, TableLazyLoadEvent, TableModule } from 'primeng/table';
-import { PurchaseOrderService } from '../../../services/purchaseOrderService.service';
+import { PurchaseOrderService } from '../../../services/purchaseOrderService';
 import { LoadingService } from '../../../services/loading.service';
 import { map, Subject, takeUntil } from 'rxjs';
 import { PurchaseOrderDto } from '../../../models/PurchaseOrder';
@@ -111,7 +111,11 @@ import { InputNumberModule } from 'primeng/inputnumber';
           >
             <ng-template #header>
               <tr>
-                <th class="w-[5%]! bg-gray-100!"></th>
+                <th
+                  *ngIf="isPurchasing()"
+                  ssss
+                  class="w-[5%]! bg-gray-100!"
+                ></th>
 
                 <th
                   pSortableColumn="PurchaseOrderNo"
@@ -154,10 +158,10 @@ import { InputNumberModule } from 'primeng/inputnumber';
               let-expanded="expanded"
             >
               <tr>
-                <td>
+                <td *ngIf="isPurchasing()">
                   <div
                     class="flex items-center justify-center cursor-pointer"
-                    (click)="fTable.toggleRow(data)"
+                    (click)="onRowExpand(data, fTable)"
                   >
                     <i
                       [class]="
@@ -188,7 +192,7 @@ import { InputNumberModule } from 'primeng/inputnumber';
                           data.status === 'Draft',
 
                         'bg-yellow-100 text-yellow-600':
-                          data.status === 'Revised',
+                          data.status === 'Reviewed',
 
                         'bg-blue-100 text-blue-600':
                           data.status === 'Approved' ||
@@ -237,7 +241,7 @@ import { InputNumberModule } from 'primeng/inputnumber';
                     <div class="overflow-x-auto pb-2">
                       <div class="min-w-max">
                         <p-timeline
-                          [value]="item.timeline"
+                          [value]="timelineMap[item.id]"
                           align="top"
                           layout="horizontal"
                           class="customized-timeline"
@@ -277,7 +281,9 @@ import { InputNumberModule } from 'primeng/inputnumber';
                                 class="text-gray-400 text-xs"
                                 *ngIf="event.actionAt"
                               >
-                                {{ event.actionAt | date: 'dd MMM yyyy HH:mm' }}
+                                {{
+                                  event.actionAt | date: 'dd MMM yyyy hh:mm aa'
+                                }}
                               </small>
                             </div>
                           </ng-template>
@@ -466,8 +472,11 @@ export class SupplierPurchaseOrder implements OnDestroy {
 
   menuItems: MenuItem[] = [];
   currentUser = this.userService.currentUser;
+  timelineMap: { [key: string]: any[] } = {};
 
   selectedPO: any;
+  events: any[] = [];
+
   reviewerSelection: { label: string; value: string }[] = [];
 
   invoiceAmount: number = 0;
@@ -481,7 +490,7 @@ export class SupplierPurchaseOrder implements OnDestroy {
     this.Query.OrderBy = 'CreatedAt desc';
     this.Query.Select = null;
     this.Query.Includes =
-      'Supplier.BillingAddress,Supplier.DeliveryAddress,PurchaseOrderStatusHistories.ActionUser,PurchaseOrderStatusHistories.ReviewedByUser';
+      'Supplier.BillingAddress,Supplier.DeliveryAddress,PurchaseOrderStatusHistories.ActionUser';
   }
 
   GetData() {
@@ -493,13 +502,12 @@ export class SupplierPurchaseOrder implements OnDestroy {
       .subscribe({
         next: (res) => {
           this.loadingService.stop();
-
+          this.PagingSignal.set(res);
           const statusOrder = [
             'Draft',
-            'Revised',
+            'Reviewed',
             'Approved',
             'Sent',
-            'Issued',
             'PartiallyReceived',
             'Received',
             'PartiallyInvoiced',
@@ -507,58 +515,37 @@ export class SupplierPurchaseOrder implements OnDestroy {
             'Rejected',
           ];
 
-          const enhancedData = res.data.map((order) => {
-            const histories = order.purchaseOrderStatusHistories || [];
+          const allHistories = res.data.flatMap(
+            (x) => x.purchaseOrderStatusHistories || [],
+          );
 
-            const latestByStatus = new Map<string, any>();
+          const latestByStatus = new Map<string, any>();
 
-            for (const h of histories) {
-              const existing = latestByStatus.get(h.status);
+          for (const h of allHistories) {
+            const existing = latestByStatus.get(h.status);
 
-              if (
-                !existing ||
-                new Date(h.actionAt) > new Date(existing.actionAt)
-              ) {
-                latestByStatus.set(h.status, h);
-              }
+            if (
+              !existing ||
+              new Date(h.actionAt) > new Date(existing.actionAt)
+            ) {
+              latestByStatus.set(h.status, h);
             }
+          }
 
-            const relevantStatuses = statusOrder.filter((s) =>
-              histories.some((h) => h.status === s),
-            );
+          const reachedIndex =
+            Math.max(
+              ...allHistories.map((h) => statusOrder.indexOf(h.status)),
+            ) ?? -1;
 
-            const reachedIndex = Math.max(
-              ...histories.map((h) => statusOrder.indexOf(h.status)),
-            );
-
-            const timeline = relevantStatuses.map((status, index) => {
-              const item = latestByStatus.get(status);
-
-              let displayUser = '-';
-
-              if (status === 'Revised') {
-                displayUser = item?.reviewedByUser?.fullName ?? '-';
-              } else {
-                displayUser = item?.actionUser?.fullName ?? '-';
-              }
-
-              return {
-                status,
-                actionAt: item?.actionAt ?? null,
-                actionUser: displayUser,
-                verified: statusOrder.indexOf(status) <= reachedIndex,
-              };
-            });
+          this.events = statusOrder.map((status, index) => {
+            const item = latestByStatus.get(status);
 
             return {
-              ...order,
-              timeline,
+              status,
+              actionAt: item?.actionAt ?? null,
+              actionUser: item?.actionUser?.displayName,
+              verified: index <= reachedIndex,
             };
-          });
-
-          this.PagingSignal.set({
-            ...res,
-            data: enhancedData,
           });
 
           this.cdr.markForCheck();
@@ -768,16 +755,59 @@ export class SupplierPurchaseOrder implements OnDestroy {
       });
   }
 
-  onEllipsisClick(event: any, po: PurchaseOrderDto, menu: any) {
-    const isReviewer = po.purchaseOrderStatusHistories?.some(
-      (h: any) => h.reviewedByUser?.id === this.currentUser?.userId,
-    );
+  onRowExpand(data: PurchaseOrderDto, table: Table) {
+    if (!this.timelineMap[data.id]) {
+      this.timelineMap[data.id] = this.buildTimeline(data);
+    }
 
-    this.menuItems = this.buildMenuItems(po, isReviewer);
+    table.toggleRow(data);
+  }
+
+  buildTimeline(po: PurchaseOrderDto): any[] {
+    const statusOrder = [
+      'Draft',
+      'Reviewed',
+      'Approved',
+      'Sent',
+      'PartiallyReceived',
+      'Received',
+      'PartiallyInvoiced',
+      'FullyInvoiced',
+      'Rejected',
+    ];
+
+    const histories = po.purchaseOrderStatusHistories || [];
+    const latestByStatus = new Map<string, any>();
+
+    for (const h of histories) {
+      const existing = latestByStatus.get(h.status);
+
+      if (!existing || new Date(h.actionAt) > new Date(existing.actionAt)) {
+        latestByStatus.set(h.status, h);
+      }
+    }
+
+    const reachedIndex =
+      Math.max(...histories.map((h) => statusOrder.indexOf(h.status))) ?? -1;
+
+    return statusOrder.map((status, index) => {
+      const item = latestByStatus.get(status);
+
+      return {
+        status,
+        actionAt: item?.actionAt ?? null,
+        actionUser: item?.actionUser?.displayName || '-',
+        verified: index <= reachedIndex,
+      };
+    });
+  }
+
+  onEllipsisClick(event: any, po: PurchaseOrderDto, menu: any) {
+    this.menuItems = this.buildMenuItems(po);
     menu.toggle(event);
   }
 
-  private buildMenuItems(po: PurchaseOrderDto, isReviewer: boolean) {
+  private buildMenuItems(po: PurchaseOrderDto) {
     const items: any[] = [];
     const status = po.status;
 
@@ -785,8 +815,7 @@ export class SupplierPurchaseOrder implements OnDestroy {
 
     const inStatus = (...s: string[]) => s.includes(status);
 
-    // EDIT
-    if (inStatus('Draft', 'Open')) {
+    if (inStatus('Draft', 'Open') && this.isPurchasing()) {
       add({
         label: 'Edit',
         icon: 'pi pi-pencil',
@@ -794,16 +823,28 @@ export class SupplierPurchaseOrder implements OnDestroy {
       });
     }
 
-    // SEND FOR REVISION
-    if (status === 'Draft') {
+    if (status === 'Draft' && this.isPurchasing()) {
       add({
-        label: 'Send for Revision',
+        label: 'Under review',
         icon: 'pi pi-file-edit',
-        command: () => this.ActionClick(po, 'Revised'),
+        command: () => this.updateStatus(po.id, 'Reviewed'),
       });
     }
 
-    if (status === 'Approved') {
+    if (status === 'Reviewed' && this.isPurchasing()) {
+      add({
+        label: 'Approved',
+        icon: 'pi pi-check-circle',
+        command: () => this.updateStatus(po.id, 'Approved'),
+      });
+      add({
+        label: 'Rejected',
+        icon: 'pi pi-times-circle',
+        command: () => this.updateStatus(po.id, 'Rejected'),
+      });
+    }
+
+    if (status === 'Approved' && this.isPurchasing()) {
       add({
         label: 'Mark as Sent',
         icon: 'pi pi-send',
@@ -811,16 +852,7 @@ export class SupplierPurchaseOrder implements OnDestroy {
       });
     }
 
-    // STATUS FLOW
-    if (status === 'Sent') {
-      add({
-        label: 'Mark as Issued',
-        icon: 'pi pi-file-check',
-        command: () => this.updateStatus(po.id, 'Issued'),
-      });
-    }
-
-    if (status === 'Issued') {
+    if (status === 'Sent' && this.isPurchasing()) {
       add({
         label: 'Partially Received',
         icon: 'pi pi-box',
@@ -828,7 +860,7 @@ export class SupplierPurchaseOrder implements OnDestroy {
       });
     }
 
-    if (inStatus('Issued', 'PartiallyReceived')) {
+    if (inStatus('Sent', 'PartiallyReceived') && this.isPurchasing()) {
       add({
         label: 'Received',
         icon: 'pi pi-box',
@@ -836,15 +868,9 @@ export class SupplierPurchaseOrder implements OnDestroy {
       });
     }
 
-    // if (status === 'Received') {
-    //   add({
-    //     label: 'Mark as Completed',
-    //     icon: 'pi pi-check-circle',
-    //     command: () => this.ActionClick(po, 'Completed'),
-    //   });
-    // }
     if (
-      inStatus('Issued', 'PartiallyReceived', 'Received', 'PartiallyInvoiced')
+      inStatus('PartiallyReceived', 'Received', 'PartiallyInvoiced') &&
+      this.isAccounting()
     ) {
       add({
         label: 'Create Invoice',
@@ -853,28 +879,19 @@ export class SupplierPurchaseOrder implements OnDestroy {
       });
     }
 
-    // REVIEW FLOW
-    if (isReviewer && status === 'Revised') {
-      add({
-        label: 'Approve',
-        icon: 'pi pi-check-circle',
-        command: () => this.ActionClick(po, 'Approved'),
-      });
-
-      add({
-        label: 'Reject',
-        icon: 'pi pi-times',
-        command: () => this.ActionClick(po, 'Draft'),
-      });
-    }
-
-    // DELETE
-    if (inStatus('Draft', 'Open')) {
+    if (inStatus('Draft')) {
       add({
         label: 'Delete',
         icon: 'pi pi-trash',
         styleClass: '!text-red-500',
         command: () => this.ActionClick(po, 'Delete'),
+      });
+    }
+    if (!inStatus('Rejected') || !inStatus('Cancelled')) {
+      add({
+        label: 'Download PO',
+        icon: 'pi pi-file',
+        command: () => this.ActionClick(po, 'Download'),
       });
     }
 
@@ -1047,6 +1064,17 @@ export class SupplierPurchaseOrder implements OnDestroy {
                 newHistory,
               ];
 
+              const updatedPO = {
+                ...q,
+                status: res.status,
+                purchaseOrderStatusHistories: updatedHistories,
+              };
+
+              this.timelineMap = {
+                ...this.timelineMap,
+                [id]: this.buildTimeline(updatedPO),
+              };
+
               return {
                 ...q,
                 status: newStatus,
@@ -1114,6 +1142,19 @@ export class SupplierPurchaseOrder implements OnDestroy {
       default:
         return 'bg-gray-300';
     }
+  }
+
+  isPurchasing(): boolean {
+    return (
+      this.currentUser?.jobTitle === 'Senior Procurement Executive' ||
+      this.currentUser?.jobTitle === 'Purchasing Executive' ||
+      this.currentUser?.jobTitle === 'Project Director' ||
+      this.currentUser?.jobTitle === 'Sales Director'
+    );
+  }
+
+  isAccounting(): boolean {
+    return this.currentUser?.jobTitle === 'Admin and Account Executive';
   }
 
   ngOnDestroy(): void {

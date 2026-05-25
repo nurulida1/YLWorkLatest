@@ -6,6 +6,7 @@ export interface IncomeDto extends BaseModel {
   incomeDate: Date;
   paymentMode: string;
   description: string;
+  attachment: string;
 }
 
 export interface CreateIncomeRequest {

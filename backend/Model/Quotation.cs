@@ -129,5 +129,10 @@ namespace YLWorks.Model
         public string QuotationNo { get; set; } = string.Empty;
         public decimal? TotalAmount { get; set; }
         public Guid? ClientId { get; set; }
+        public Guid? Project { get; set; }
+        public string? ProjectCode { get; set; }
+        public string? ProjectTitle { get; set; }
+        public Guid? FromCompanyId {  get; set; }
+        public string? CompanyName { get; set; }
     }
 }

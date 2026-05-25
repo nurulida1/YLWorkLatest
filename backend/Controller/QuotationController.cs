@@ -557,7 +557,7 @@ string? includes = null)
             if (quotation == null)
                 return NotFound();
 
-            quotation.Status = status == "Rejected" ? "Draft" : status;
+            quotation.Status = status;
 
             var history = new QuotationStatusHistory
             {
@@ -588,7 +588,8 @@ string? includes = null)
                     ActionUser = x.ActionUser == null ? null : new
                     {
                         x.ActionUser.Id,
-                        x.ActionUser.FullName
+                        x.ActionUser.FullName,
+                        x.ActionUser.DisplayName
                     }
                 })
                 .FirstOrDefaultAsync();

@@ -121,6 +121,7 @@ import { TextareaModule } from 'primeng/textarea';
                 <th class="bg-gray-100! text-center! w-[15%]!">Amount</th>
                 <th class="bg-gray-100! text-center! w-[15%]!">Payment Mode</th>
                 <th class="bg-gray-100! text-center! w-[15%]!">Processed By</th>
+                <th class="bg-gray-100! text-center! w-[5%]!">Action</th>
               </tr>
             </ng-template>
             <ng-template #body let-data>
@@ -142,6 +143,12 @@ import { TextareaModule } from 'primeng/textarea';
                 </td>
                 <td class="text-center!">
                   {{ data.processedBy?.fullName }}
+                </td>
+                <td class="text-center!">
+                  <i
+                    (click)="downloadAttachment(data)"
+                    class="pi pi-download text-blue-500! cursor-pointer hover:scale-101"
+                  ></i>
                 </td>
               </tr>
             </ng-template>
@@ -417,6 +424,36 @@ export class Income implements OnInit, OnDestroy {
       paymentMode: new FormControl<string | null>(null),
       description: new FormControl<string | null>(null),
     });
+  }
+
+  downloadAttachment(data: IncomeDto) {
+    if (!data) return;
+
+    const cleanPath = data.attachment.replace(/\\/g, '/');
+    const fileUrl = `https://localhost:5000/${cleanPath}`;
+
+    fetch(fileUrl)
+      .then((response) => response.blob())
+      .then((blob) => {
+        const blobUrl = window.URL.createObjectURL(blob);
+
+        const link = document.createElement('a');
+        link.href = blobUrl;
+
+        const fileExtension = cleanPath.split('.').pop() || '';
+        const incomeNo = data.incomeNo || 'Income';
+
+        link.download = `${incomeNo}.${fileExtension}`;
+
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        window.URL.revokeObjectURL(blobUrl);
+      })
+      .catch((error) => {
+        console.error('Download failed:', error);
+      });
   }
 
   Submit() {

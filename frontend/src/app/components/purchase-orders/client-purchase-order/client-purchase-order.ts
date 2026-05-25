@@ -21,7 +21,7 @@ import { RouterLink } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { Table, TableLazyLoadEvent, TableModule } from 'primeng/table';
-import { PurchaseOrderService } from '../../../services/purchaseOrderService.service';
+import { PurchaseOrderService } from '../../../services/purchaseOrderService';
 import { LoadingService } from '../../../services/loading.service';
 import { AppService } from '../../../services/appService.service';
 import { Subject, takeUntil } from 'rxjs';
@@ -696,14 +696,14 @@ export class ClientPurchaseOrder implements OnInit, OnDestroy {
         next: (res) => {
           this.loadingService.stop();
 
-          this.quotationSelection = res.quotations.map((q) => ({
+          this.quotationSelection = res.quotations.map((q: any) => ({
             label: q.quotationNo,
             value: q.id,
             clientId: q.clientId,
             totalAmount: q.totalAmount,
           }));
 
-          this.clientSelection = res.clients.map((c) => ({
+          this.clientSelection = res.clients.map((c: any) => ({
             label: c.name,
             value: c.id,
           }));

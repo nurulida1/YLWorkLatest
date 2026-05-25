@@ -293,7 +293,7 @@ namespace YLWorks.Controller
                 var po = new PurchaseOrder
                 {
                     Id = Guid.NewGuid(),
-                    PurchaseOrderNo = request.PurchaseOrderNo,
+                    PurchaseOrderNo = request.PurchaseOrderNo ?? await GeneratePONo(),
                     FromCompanyId = request.FromCompanyId,
                     Type = request.Type,
                     PODate = request.PODate,
@@ -368,6 +368,38 @@ namespace YLWorks.Controller
             {
                 return StatusCode(500, new { Error = "Failed to create.", Details = ex.Message });
             }
+        }
+
+        private async Task<string> GeneratePONo()
+        {
+            var yearShort = DateTime.UtcNow.Year % 100; // 2026 -> 26
+
+            var lastPO = await _context.PurchaseOrders
+                .Where(q => q.PurchaseOrderNo.Contains($"YL/PO/") && q.PurchaseOrderNo.EndsWith($"/{yearShort}"))
+                .OrderByDescending(q => q.CreatedAt)
+                .Select(q => q.PurchaseOrderNo)
+                .FirstOrDefaultAsync();
+
+            int nextNumber = 1;
+
+            if (!string.IsNullOrEmpty(lastPO))
+            {
+                var parts = lastPO.Split('/');
+                if (parts.Length >= 3 && int.TryParse(parts[2], out int lastNumber))
+                {
+                    nextNumber = lastNumber + 1;
+                }
+            }
+
+            return $"YL/PO/{nextNumber}/{yearShort}";
+        }
+
+        [HttpGet("generate-no")]
+        public async Task<IActionResult> GeneratePurchaseOrderNoEndpoint()
+        {
+            var purchaseOrderNo = await GeneratePONo();
+            return Ok(new { purchaseOrderNo });
+
         }
 
         [HttpPut("Update")]
@@ -645,47 +677,8 @@ namespace YLWorks.Controller
             return entity;
         }
 
-        [HttpGet("GetDropdown")]
-        public async Task<IActionResult> GetDropdown()
-        {
-            var clients = await _context.Companies
-                .Where(x => x.Type == CompanyType.Client)
-                .Select(x => new Company
-                {
-                    Id = x.Id,
-                    Name = x.Name
-                })
-                .ToListAsync();
-
-            var suppliers = await _context.Companies
-                .Where(x => x.Type == CompanyType.Supplier)
-                .Select(x => new Company
-                {
-                    Id = x.Id,
-                    Name = x.Name
-                })
-                .ToListAsync();
-
-            var quotations = await _context.Quotations
-                .Where(x => x.Status == "Accepted").Select(x => new QuotationDropdownDto
-                {
-                    Id = x.Id,
-                    QuotationNo = x.QuotationNo,
-                    TotalAmount = x.TotalAmount,
-                    ClientId = x.ClientId
-                })
-                .ToListAsync();
-
-            return Ok(new DropdownResponseDto
-            {
-                Clients = clients,
-                Suppliers = suppliers,
-                Quotations = quotations
-            });
-        }
-
         [HttpPut("UpdateStatus")]
-        public async Task<IActionResult> UpdateStatus(Guid id, string status, Guid? userId)
+        public async Task<IActionResult> UpdateStatus(Guid id, string status)
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userIdClaim))
@@ -698,36 +691,24 @@ namespace YLWorks.Controller
                 .Select(x => x.FullName)
                 .FirstOrDefaultAsync();
 
-            string? reviewerName = null;
-
-            if (userId.HasValue)
-            {
-                reviewerName = await _context.Users
-                    .Where(x => x.Id == userId.Value)
-                    .Select(x => x.FullName)
-                    .FirstOrDefaultAsync();
-            }
-
             var po = await _context.PurchaseOrders
                 .FirstOrDefaultAsync(x => x.Id == id);
 
             if (po == null)
                 return NotFound();
-            
+
             po.Status = status;
 
             var history = new PurchaseOrderStatusHistory
             {
+                Id = Guid.NewGuid(),
                 PurchaseOrderId = id,
                 Status = po.Status,
                 ActionUserId = actionUserId,
                 ActionAt = DateTimeHelper.Now(),
-                ReviewedByUserId = userId,
-
                 Remarks = GenerateStatusRemark(
                     po.Status,
-                    userName ?? "System",
-                    reviewerName
+                    userName ?? "System"
                 )
             };
 
@@ -737,22 +718,18 @@ namespace YLWorks.Controller
 
             var result = await _context.PurchaseOrderStatusHistories
                 .Where(x => x.Id == history.Id)
-                .Include(x => x.ActionUser).Include(x => x.ReviewedByUser)
+                .Include(x => x.ActionUser)
                 .Select(x => new
                 {
                     x.Id,
                     x.Status,
                     x.ActionAt,
                     x.Remarks,
-                    ReviewedByUser = x.ReviewedByUser == null ? null : new
-                    {
-                        x.ReviewedByUser.Id,
-                        x.ReviewedByUser.FullName
-                    },
                     ActionUser = x.ActionUser == null ? null : new
                     {
                         x.ActionUser.Id,
-                        x.ActionUser.FullName
+                        x.ActionUser.FullName,
+                        x.ActionUser.DisplayName
                     }
                 })
                 .FirstOrDefaultAsync();
@@ -760,14 +737,14 @@ namespace YLWorks.Controller
             return Ok(result);
         }
 
-        private string GenerateStatusRemark(string status, string userName, string? reviewerName)
+        private string GenerateStatusRemark(string status, string userName)
         {
             return status switch
             {
-                "Revised" => $"PO updated by {userName} and sent for review to {reviewerName ?? "reviewer"}",
+                "Reviewed" => $"PO reviewed by {userName}",
                 "Approved" => $"PO approved by {userName}",
                 "Rejected" => $"PO rejected by {userName}",
-                "Sent" => $"PO sent by {userName} to {reviewerName ?? "supplier"}",
+                "Sent" => $"PO sent by {userName} to supplier",
                 _ => $"PO updated to {status} by {userName}"
             };
         }
@@ -873,5 +850,94 @@ namespace YLWorks.Controller
 
             return $"{prefix}-{datePart}-{(countToday + 1):D4}";
         }
+
+        [HttpGet("GetDropdown")]
+        public async Task<IActionResult> GetPODropdown()
+        {
+            try
+            {
+                var quotation = await _context.Quotations
+    .Include(x => x.FromCompany)
+    .Include(x => x.Project)
+    .Where(x => x.Status == "Accepted")
+    .OrderByDescending(x => x.CreatedAt)
+    .Select(x => new QuotationDropdownDto
+    {
+        Id = x.Id,
+        QuotationNo = x.QuotationNo,
+        FromCompanyId = x.FromCompanyId,
+        CompanyName = x.FromCompany != null ? x.FromCompany.Name : null
+    })
+    .ToListAsync();
+
+                var projects = await _context.Projects
+                    .OrderByDescending(x => x.CreatedAt)
+                    .Select(x => new ProjectDropdownItem
+                    {
+                        Id = x.Id,
+                        ProjectCode = x.ProjectCode,
+                        ProjectTitle = x.ProjectTitle,
+                    })
+                    .ToListAsync();
+
+                var clients = await _context.Companies
+               .Where(x => x.Type == CompanyType.Client)
+               .Select(x => new CompanyDropdownItem
+               {
+                   Id = x.Id,
+                   Name = x.Name
+               })
+               .ToListAsync();
+
+                var suppliers = await _context.Companies
+                    .Where(x => x.Type == CompanyType.Supplier)
+                    .Select(x => new CompanyDropdownItem
+                    {
+                        Id = x.Id,
+                        Name = x.Name
+                    })
+                    .ToListAsync();
+
+
+                var companies = await _context.Companies
+                    .Where(x => x.Type == CompanyType.Own)
+                    .OrderBy(x => x.Name)
+                    .Select(x => new CompanyDropdownItem
+                    {
+                        Id = x.Id,
+                        Name = x.Name
+                    })
+                    .ToListAsync();
+
+                var users = await _context.Users
+                    .Where(x => x.JobTitle != "SuperAdmin")
+                    .OrderBy(x => x.FullName)
+                    .Select(x => new UserDto
+                    { 
+                        Id = x.Id,
+                        FullName = x.FullName,
+                        DisplayName = x.DisplayName,
+                    }).ToListAsync();
+
+                return Ok(new PurchaseOrderDropdownDto
+                {
+                    Quotations = quotation,
+                    Projects = projects,
+                    Companies = companies,
+                    Suppliers = suppliers,
+                    Clients = clients,
+                    Users = users
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    Error = "Failed to load dropdown",
+                    Details = ex.Message
+                });
+            }
+        }
+
     }
 }

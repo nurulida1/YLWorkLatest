@@ -39,6 +39,7 @@ import { InputNumberModule } from 'primeng/inputnumber';
 import { DatePickerModule } from 'primeng/datepicker';
 import { DialogModule } from 'primeng/dialog';
 import { TextareaModule } from 'primeng/textarea';
+import { UserService } from '../../../services/userService.service';
 
 @Component({
   selector: 'app-purchase-invoice',
@@ -737,6 +738,7 @@ export class PurchaseInvoice implements OnInit, OnDestroy {
   private readonly invoiceService = inject(InvoiceService);
   private readonly messageService = inject(MessageService);
   private readonly loadingService = inject(LoadingService);
+  private readonly userService = inject(UserService);
   private readonly cdr = inject(ChangeDetectorRef);
   protected ngUnsubscribe: Subject<void> = new Subject<void>();
   private isInitializingForm: boolean = false;
@@ -761,6 +763,7 @@ export class PurchaseInvoice implements OnInit, OnDestroy {
   remainingAmount: number = 0;
 
   selectedInvoice: any;
+  currentUser = this.userService.currentUser;
 
   isEditMode: boolean = false;
   showRecordDialog: boolean = false;

@@ -784,12 +784,10 @@ export class Project implements OnInit, OnDestroy {
       .subscribe({
         next: (res) => {
           console.log(res);
-          // Map clients for p-select
           this.clients = res.clients
             .map((c) => ({ label: c.name, value: c.id }))
             .sort((a, b) => a.label.localeCompare(b.label));
 
-          // Map users for p-select
           this.users = res.users
             .map((u: any) => ({
               label: u.name,
@@ -798,7 +796,7 @@ export class Project implements OnInit, OnDestroy {
             .sort((a, b) => a.label.localeCompare(b.label));
 
           this.loadingService.stop();
-          this.cdr.markForCheck(); // update the view
+          this.cdr.markForCheck();
         },
         error: (err) => {
           this.loadingService.stop();
@@ -1067,7 +1065,6 @@ export class Project implements OnInit, OnDestroy {
             .filter((x) => x.type === CompanyType.Client)
             .map((x) => ({ label: x.name, value: x.id }));
 
-          // auto select new client
           this.FG.get('clientId')?.setValue(newClientId);
 
           this.cdr.markForCheck();

@@ -121,6 +121,7 @@ import { ExpenseDto } from '../../models/Expense';
                 <th class="bg-gray-100! text-center! w-[15%]!">Amount</th>
                 <th class="bg-gray-100! text-center! w-[15%]!">Payment Mode</th>
                 <th class="bg-gray-100! text-center! w-[15%]!">Processed By</th>
+                <th class="bg-gray-100! text-center! w-[5%]!">Action</th>
               </tr>
             </ng-template>
             <ng-template #body let-data>
@@ -142,6 +143,12 @@ import { ExpenseDto } from '../../models/Expense';
                 </td>
                 <td class="text-center!">
                   {{ data.processedBy?.fullName }}
+                </td>
+                <td class="text-center!">
+                  <i
+                    (click)="downloadAttachment(data)"
+                    class="pi pi-download text-blue-500! cursor-pointer hover:scale-101"
+                  ></i>
                 </td>
               </tr>
             </ng-template>
@@ -331,6 +338,36 @@ export class Expense implements OnInit, OnDestroy {
     } else if (isBackspaceClear) {
       this.Search('');
     }
+  }
+
+  downloadAttachment(data: ExpenseDto) {
+    if (!data) return;
+
+    const cleanPath = data.attachment.replace(/\\/g, '/');
+    const fileUrl = `https://localhost:5000/${cleanPath}`;
+
+    fetch(fileUrl)
+      .then((response) => response.blob())
+      .then((blob) => {
+        const blobUrl = window.URL.createObjectURL(blob);
+
+        const link = document.createElement('a');
+        link.href = blobUrl;
+
+        const fileExtension = cleanPath.split('.').pop() || '';
+        const expenseNo = data.expenseNo || 'Income';
+
+        link.download = `${expenseNo}.${fileExtension}`;
+
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        window.URL.revokeObjectURL(blobUrl);
+      })
+      .catch((error) => {
+        console.error('Download failed:', error);
+      });
   }
 
   Search(data: string) {

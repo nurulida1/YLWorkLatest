@@ -145,9 +145,9 @@ export class PurchaseOrderService {
     });
   }
 
-  GetDropdown(): Observable<PurchaseOrderDropdownDto> {
+  GetDropdown(): Observable<any> {
     return this.http
-      .get<PurchaseOrderDropdownDto>(`${this.url}/GetDropdown`)
+      .get<any>(`${this.url}/GetDropdown`)
       .pipe(retry(1), catchError(this.handleError('GetDropdown')));
   }
 
@@ -158,6 +158,12 @@ export class PurchaseOrderService {
         {},
       )
       .pipe(retry(1), catchError(this.handleError('ConvertToPurchaseInvoice')));
+  }
+
+  GenerateNo() {
+    return this.http.get<{ purchaseOrderNo: string }>(
+      `${this.url}/generate-no`,
+    );
   }
 
   private handleError = (context: string) => (error: any) => {

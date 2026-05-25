@@ -62,8 +62,6 @@ namespace YLWorks.Model
         public DateTime ActionAt { get; set; }
         public Guid? ActionUserId { get; set; }
         public User? ActionUser { get; set; }
-        public Guid? ReviewedByUserId { get; set; }
-        public User? ReviewedByUser { get; set; }
         public string? Remarks { get; set; }
         public string? SignatureImage { get; set; } 
     }
@@ -197,4 +195,18 @@ namespace YLWorks.Model
         public Guid PoId { get; set; }
         public decimal Amount { get; set; }
     }
+
+    public class PurchaseOrderDropdownDto
+    {
+        public List<QuotationDropdownDto> Quotations { get; set; } = new();
+
+        public List<ProjectDropdownItem> Projects { get; set; } = new();
+
+        public List<CompanyDropdownItem> Companies { get; set; } = new();
+        public List<CompanyDropdownItem> Suppliers { get; set; } = new();
+        public List<CompanyDropdownItem> Clients { get; set; } = new();
+        public List<UserDto> Users { get; set; } = new();
+
+    }
+
 }

@@ -7,6 +7,7 @@ using YLWorks.Data;
 using YLWorks.Hubs;
 using YLWorks.Model;
 using System.Text.Json;
+using WebApplication1.Helpers;
 
 namespace YLWorks.Controller
 {
@@ -313,7 +314,7 @@ namespace YLWorks.Controller
                     Attachment = filePath,
                     Status = request.ClientId.HasValue ? "Received" : "Draft",
                     CreatedById = Guid.Parse(userIdClaim),
-                    CreatedAt = DateTime.UtcNow
+                    CreatedAt = DateTimeHelper.Now()
                 };
 
                 po.PurchaseOrderItems = request.PurchaseOrderItems?.Select(x => new PurchaseOrderItem
@@ -334,7 +335,7 @@ namespace YLWorks.Controller
                     Id = Guid.NewGuid(),
                     PurchaseOrderId = po.Id,
                     Status = request.Type == "Incoming" ? "Received" : "Draft",
-                    ActionAt = DateTime.UtcNow,
+                    ActionAt = DateTimeHelper.Now(),
                     ActionUserId = Guid.Parse(userIdClaim),
                     Remarks = "PO created",
                 };
@@ -728,7 +729,7 @@ namespace YLWorks.Controller
                 Status = po.Status,
 
                 ActionUserId = actionUserId,
-                ActionAt = DateTime.UtcNow,
+                ActionAt = DateTimeHelper.Now(),
                 ReviewedByUserId = userId,
 
                 Remarks = GenerateStatusRemark(
@@ -805,7 +806,7 @@ namespace YLWorks.Controller
             if (invoiceAmount > remainingAmount)
                 return BadRequest($"Max allowed amount is {remainingAmount}");
 
-            var invoiceDate = DateTime.UtcNow;
+            var invoiceDate = DateTimeHelper.Now();
 
             var invoice = new Invoice
             {
@@ -850,7 +851,7 @@ namespace YLWorks.Controller
                 Id = Guid.NewGuid(),
                 PurchaseOrderId = po.Id,
                 Status = po.Status,
-                ActionAt = DateTime.UtcNow,
+                ActionAt = DateTimeHelper.Now(),
                 ActionUserId = actionUserId,
                 Remarks = $"Invoice generated RM {invoiceAmount}. Status: {po.Status}"
             });

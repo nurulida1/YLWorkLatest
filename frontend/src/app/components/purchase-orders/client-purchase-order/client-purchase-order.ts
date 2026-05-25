@@ -169,24 +169,17 @@ import { MenuModule } from 'primeng/menu';
                     <div
                       class="rounded-full px-4 py-0.5 font-medium w-fit whitespace-nowrap"
                       [ngClass]="{
-                        'bg-teal-100 text-teal-600':
-                          data.status === 'PartiallyReceived',
                         'bg-indigo-100 text-indigo-600':
-                          data.status === 'Issued',
+                          data.status === 'Approved',
                         'bg-blue-100 text-blue-600':
-                          data.status === 'Open' ||
-                          data.status === 'Signed' ||
-                          data.status === 'InProgress',
-                        'bg-orange-100 text-orange-600':
-                          data.status === 'Pending Signature' ||
-                          data.status === 'Draft',
+                          data.status === 'Reviewed' ||
+                          data.status === 'In Progress',
                         'bg-green-100 text-green-600':
                           data.status === 'Accepted' ||
-                          data.status === 'Received' ||
-                          data.status === 'Sent',
+                          data.status === 'Received',
                         'bg-red-100 text-red-600':
-                          data.status === 'Declined' ||
-                          data.status === 'Expired',
+                          data.status === 'Rejected' ||
+                          data.status === 'Cancelled',
                       }"
                     >
                       {{ data.status }}
@@ -575,6 +568,73 @@ export class ClientPurchaseOrder implements OnInit, OnDestroy {
     }
   }
 
+  updateStatus(id: string, newStatus: string) {
+    this.loadingService.start();
+
+    this.purchaseOrderService
+      .UpdateStatus(id, newStatus)
+      .pipe(takeUntil(this.ngUnsubscribe))
+      .subscribe({
+        next: (res) => {
+          this.loadingService.stop();
+
+          const currentPaging = this.PagingSignal();
+
+          const updatedData = currentPaging.data.map((q) => {
+            if (q.id === id) {
+              const newHistory = {
+                id: res.id,
+                status: res.status,
+                actionAt: res.actionAt,
+                remarks: res.remarks,
+                actionUser: res.actionUser,
+                purchaseOrderId: q.id,
+                actionUserId: res.actionUser?.id,
+                createdAt: res.actionAt,
+                signatureImage: null,
+              } as any;
+
+              const updatedHistories = [
+                ...(q.purchaseOrderStatusHistories || []),
+                newHistory,
+              ];
+
+              return {
+                ...q,
+                status: newStatus,
+                purchaseOrderStatusHistories: updatedHistories,
+              };
+            }
+
+            return q;
+          });
+
+          this.PagingSignal.set({
+            ...currentPaging,
+            data: updatedData,
+          });
+
+          this.messageService.add({
+            severity: 'success',
+            summary: 'Status Updated',
+            detail: res.remarks,
+          });
+
+          this.cdr.markForCheck();
+        },
+
+        error: (err) => {
+          this.loadingService.stop();
+
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Update Failed',
+            detail: err.error?.error || 'Invalid status transition.',
+          });
+        },
+      });
+  }
+
   RemoveRecord(data: PurchaseOrderDto) {
     this.loadingService.start();
     this.purchaseOrderService
@@ -823,11 +883,16 @@ export class ClientPurchaseOrder implements OnInit, OnDestroy {
 
   onEllipsisClick(event: any, purchaseOrder: PurchaseOrderDto, menu: any) {
     const items: any[] = [];
-    if (
-      purchaseOrder.status === 'Draft' ||
-      purchaseOrder.status === 'Open' ||
-      purchaseOrder.status === 'Received'
-    ) {
+
+    const status = purchaseOrder.status;
+
+    const isEditable = status === 'Received';
+
+    const canProgress = status === 'In Progress';
+
+    const canInvoice = status === 'InProgress' || status === 'Completed';
+
+    if (isEditable) {
       items.push(
         {
           label: 'Update',
@@ -836,23 +901,51 @@ export class ClientPurchaseOrder implements OnInit, OnDestroy {
         },
         {
           label: 'Reviewed',
-          icon: 'pi pi-pencil',
-          command: () => this.ActionClick(purchaseOrder, 'Reviewed'),
+          icon: 'pi pi-file-edit',
+          command: () => this.updateStatus(purchaseOrder.id, 'Reviewed'),
         },
       );
     }
 
-    if (purchaseOrder.status === 'InProgress') {
+    if (status === 'Reviewed') {
+      items.push(
+        {
+          label: 'Approve',
+          icon: 'pi pi-check-circle',
+          command: () => this.updateStatus(purchaseOrder.id, 'Approved'),
+        },
+        {
+          label: 'Reject',
+          icon: 'pi pi-times-circle',
+          command: () => this.updateStatus(purchaseOrder.id, 'Rejected'),
+        },
+      );
+    }
+
+    if (status === 'Approved') {
+      items.push(
+        {
+          label: 'In Progress',
+          icon: 'pi pi-play',
+          command: () => this.updateStatus(purchaseOrder.id, 'In Progress'),
+        },
+        {
+          label: 'Cancel',
+          icon: 'pi pi-times-circle',
+          command: () => this.updateStatus(purchaseOrder.id, 'Cancelled'),
+        },
+      );
+    }
+
+    if (canProgress) {
       items.push({
         label: 'Mark as Completed',
         icon: 'pi pi-check-circle',
         command: () => this.ActionClick(purchaseOrder, 'Completed'),
       });
     }
-    if (
-      purchaseOrder.status === 'InProgress' ||
-      purchaseOrder.status === 'Completed'
-    ) {
+
+    if (canInvoice) {
       items.push({
         label: 'Issue Invoice',
         icon: 'pi pi-money-bill',
@@ -861,25 +954,26 @@ export class ClientPurchaseOrder implements OnInit, OnDestroy {
       });
     }
 
-    items.push({ separator: true });
+    if (items.length > 0) {
+      items.push({ separator: true });
+    }
 
-    items.push(
-      ...(purchaseOrder.attachment
-        ? [
-            {
-              label: 'Download File',
-              icon: 'pi pi-file',
-              command: () => this.ActionClick(purchaseOrder, 'Download'),
-            },
-          ]
-        : []),
-      {
+    if (purchaseOrder.attachment) {
+      items.push({
+        label: 'Download File',
+        icon: 'pi pi-file',
+        command: () => this.ActionClick(purchaseOrder, 'Download'),
+      });
+    }
+
+    if (status === 'Received') {
+      items.push({
         label: 'Delete',
         icon: 'pi pi-trash',
         styleClass: '!text-red-500',
         command: () => this.ActionClick(purchaseOrder, 'Delete'),
-      },
-    );
+      });
+    }
 
     this.menuItems = items;
     menu.toggle(event);

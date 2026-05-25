@@ -713,21 +713,13 @@ namespace YLWorks.Controller
 
             if (po == null)
                 return NotFound();
-
-            if (status == "Rejected")
-            {
-                po.Status = "Draft";
-            }
-            else
-            {
-                po.Status = status;
-            }
+            
+            po.Status = status;
 
             var history = new PurchaseOrderStatusHistory
             {
                 PurchaseOrderId = id,
                 Status = po.Status,
-
                 ActionUserId = actionUserId,
                 ActionAt = DateTimeHelper.Now(),
                 ReviewedByUserId = userId,

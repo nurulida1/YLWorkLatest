@@ -125,109 +125,128 @@ import { DrawerModule } from 'primeng/drawer';
       (onHide)="showSidebar = false"
       position="left"
       [modal]="true"
-      styleClass="bg-gray-800!"
+      styleClass="bg-gray-800! border-none! text-white! overflow-y-auto!"
       [closable]="false"
     >
-      <ng-template #header>
-        <div class="flex flex-row items-center gap-2 w-full">
-          <div class="bg-blue-500 rounded-md w-8 h-8 p-1.5">
-            <img
-              src="assets/logo.png"
-              alt=""
-              class="w-full h-full object-cover"
-            />
-          </div>
-          <span class="font-bold text-2xl tracking-wide"> YL Works </span>
-        </div>
-      </ng-template>
-      <div class="border-b border-gray-100 mb-4"></div>
-      <div class="w-full flex flex-col gap-3 overflow-y-auto max-h-96">
-        <div class="text-gray-500 text-sm">MAIN MENU</div>
-        <div class="flex flex-col gap-2 w-full">
-          <ng-container *ngFor="let item of mainMenu">
-            <div
-              *ngIf="item.roles.includes(currentUser?.systemRole)"
-              class="flex flex-row py-2 px-5 items-center justify-start gap-3"
-              [routerLink]="item.route"
-              [ngClass]="{
-                'rounded-lg bg-blue-500 text-white': isActive(item.route),
-                'cursor-pointer hover:text-gray-500': !isActive(item.route),
-              }"
-            >
-              <div class="text-[15px]">
-                {{ item.label }}
-              </div>
-            </div>
-          </ng-container>
-        </div>
-      </div>
-      <div class="text-gray-500 text-sm mt-5 mb-3">MANAGEMENT</div>
-      <div class="flex flex-col items-center lg:items-start gap-3 mt-3">
-        <ng-container *ngFor="let item of management">
+      <ng-template #headless>
+        <div class="flex flex-col pt-7 pb-5 text-white">
           <div
-            class="flex flex-col gap-2 w-full"
-            *ngIf="item.roles.includes(currentUser?.systemRole)"
+            class="flex flex-row items-center gap-4 px-5 border-b border-white/10 pb-5"
           >
-            <div
-              class="flex flex-row items-center justify-between gap-3 py-2 rounded-lg px-2"
-              [ngClass]="{
-                'bg-blue-500 text-white': isActive(item.route, item),
-                'hover:text-gray-500 cursor-pointer': !isActive(
-                  item.route,
-                  item
-                ),
-              }"
-              (click)="item.items ? toggleMenu(item.label) : null"
-              [routerLink]="!item.items ? item.route : null"
-            >
-              <!-- LEFT: icon + label -->
-              <div class="flex items-center gap-3">
-                <i
-                  class="{{ item.icon }}"
-                  [ngClass]="{
-                    'text-white': isActive(item.route, item),
-                    'text-gray-600': !isActive(item.route, item),
-                  }"
-                ></i>
-
-                <span class="text-[15px]">
-                  {{ item.label }}
-                </span>
-              </div>
-
-              <!-- RIGHT: chevron -->
-              <i
-                *ngIf="item.items"
-                class="text-sm! pi"
-                [ngClass]="{
-                  'pi-chevron-right': openMenu !== item.label,
-                  'pi-chevron-down': openMenu === item.label,
-                }"
-              ></i>
-            </div>
-
-            <!-- Sub menu -->
-            <div
-              *ngIf="item.items && openMenu === item.label"
-              class="ml-10 flex flex-col gap-1"
-            >
-              <div
-                *ngFor="let sub of item.items"
-                class="py-3 px-3 rounded-md cursor-pointer text-[15px]"
-                [ngClass]="{
-                  'bg-gray-200 font-semibold text-blue-500': isActive(
-                    sub.route
-                  ),
-                  'hover:bg-gray-100': !isActive(sub.route),
-                }"
-                [routerLink]="sub.route"
-              >
-                {{ sub.label }}
-              </div>
+            <div class="w-50">
+              <img
+                src="assets/logo-yl-work.png"
+                alt=""
+                class="w-full h-full object-cover cursor-pointer"
+                [routerLink]="'/dashboard'"
+              />
             </div>
           </div>
-        </ng-container>
-      </div>
+
+          <div
+            class="py-5 flex flex-col px-3 overflow-y-auto scrollbar scroll-smooth"
+          >
+            <div class="flex flex-col gap-2 w-full">
+              <ng-container *ngFor="let item of mainMenu">
+                <div
+                  *ngIf="
+                    item.roles.includes(currentUser?.systemRole) &&
+                    (!item.items || hasVisibleSubItems(item))
+                  "
+                  class="flex flex-row items-center gap-3 py-3 px-2 text-[14px]"
+                  [routerLink]="item.route"
+                  [ngClass]="{
+                    'rounded-lg bg-blue-500 text-white': isActive(item.route),
+                    'cursor-pointer hover:text-gray-400 text-gray-300':
+                      !isActive(item.route),
+                  }"
+                >
+                  <div class="flex items-center gap-3">
+                    <i
+                      class="pi {{ item.icon }} text-sm! xl:text-base!"
+                      [ngClass]="{
+                        'text-white': isActive(item.route, item),
+                        'text-gray-400': !isActive(item.route, item),
+                      }"
+                    ></i>
+
+                    <span>
+                      {{ item.label }}
+                    </span>
+                  </div>
+                </div>
+              </ng-container>
+            </div>
+            <div
+              class="mt-1 flex flex-col items-center lg:items-start gap-3 text-[14px]"
+            >
+              <ng-container *ngFor="let item of management">
+                <div
+                  class="flex flex-col gap-2 w-full"
+                  *ngIf="
+                    !item.roles || item.roles.includes(currentUser?.systemRole)
+                  "
+                >
+                  <div
+                    class="flex flex-row lg:pl-4 items-center justify-between gap-3 py-2 rounded-lg px-2"
+                    [ngClass]="{
+                      'bg-blue-500 text-white': isActive(item.route, item),
+                      'hover:text-gray-400 cursor-pointer text-gray-300':
+                        !isActive(item.route, item),
+                    }"
+                    (click)="item.items ? toggleMenu(item.label) : null"
+                    [routerLink]="!item.items ? item.route : null"
+                  >
+                    <div class="flex items-center gap-3">
+                      <i
+                        class="pi {{ item.icon }} text-sm! xl:text-base!"
+                        [ngClass]="{
+                          'text-white': isActive(item.route, item),
+                          'text-gray-400': !isActive(item.route, item),
+                        }"
+                      ></i>
+
+                      <span>
+                        {{ item.label }}
+                      </span>
+                    </div>
+
+                    <i
+                      *ngIf="item.items"
+                      class="text-sm! hidden! lg:block! pi"
+                      [ngClass]="{
+                        'pi-chevron-right': openMenu !== item.label,
+                        'pi-chevron-down': openMenu === item.label,
+                      }"
+                    ></i>
+                  </div>
+
+                  <div
+                    *ngIf="item.items && openMenu === item.label"
+                    class="ml-10 flex flex-col gap-1"
+                  >
+                    <div
+                      *ngFor="let sub of getAllowedSubItems(item)"
+                      class="py-3 px-3 rounded-md cursor-pointer"
+                      [ngClass]="{
+                        'bg-gray-700 font-semibold text-blue-500': isActive(
+                          sub.route
+                        ),
+                        'hover:bg-gray-700 hover:text-blue-500': !isActive(
+                          sub.route
+                        ),
+                      }"
+                      [routerLink]="sub.route"
+                    >
+                      {{ sub.label }}
+                    </div>
+                  </div>
+                </div>
+              </ng-container>
+            </div>
+          </div>
+        </div></ng-template
+      >
     </p-drawer>
 
     <p-dialog
@@ -312,9 +331,23 @@ export class NavbarComponent implements OnDestroy, OnInit {
   mainMenu: any[] = [
     {
       label: 'Dashboard',
-      icon: 'pi pi-home',
       route: '/dashboard',
-      roles: ['SuperAdmin', 'Admin', 'Staff', 'HR', 'Manager', 'Director'],
+      icon: 'pi-home',
+      roles: [
+        'SuperAdmin',
+        'Admin',
+        'Staff',
+        'HR',
+        'Manager',
+        'Sales Director',
+        'Sales Support',
+        'Sales Executive',
+        'Logistic Assistant',
+        'Project Manager',
+        'System & Intelligence Manager',
+        'Account & Admin Manager',
+        'Purchasing Executive',
+      ],
     },
     // {
     //   label: 'Apply Leave',
@@ -338,137 +371,186 @@ export class NavbarComponent implements OnDestroy, OnInit {
 
   management: any[] = [
     {
-      label: 'Project',
-      roles: ['Manager', 'Director', 'Admin', 'SuperAdmin'],
+      label: 'Quotations',
+      route: '/quotations',
+      icon: 'pi-file',
+      // roles: ['Sales Director', 'Sales Executive', 'Sales Support'],
+    },
+    {
+      label: 'Purchase Orders',
+      icon: 'pi-shopping-cart',
       items: [
         {
-          label: 'Projects',
-          route: '/projects',
+          label: 'Supplier PO',
+          route: '/purchase-orders/supplier',
+          // roles: [
+          //   'Sales Director',
+          //   'Sales Executive',
+          //   'Sales Support',
+          //   'Account & Admin Manager',
+          //   'Purchasing Executive',
+          //   'SuperAdmin',
+          // ],
         },
         {
-          label: 'Tasks',
-          route: '/tasks',
+          label: 'Client PO',
+          route: '/purchase-orders/client',
+          // roles: [
+          //   'Sales Director',
+          //   'Sales Executive',
+          //   'Sales Support',
+          //   'Account & Admin Manager',
+          //   'Purchasing Executive',
+          //   'SuperAdmin',
+          // ],
         },
       ],
     },
     {
-      label: 'Inventory & Sales',
-      roles: ['Manager', 'Director', 'Admin', 'SuperAdmin'],
+      label: 'Company',
+      route: '/company',
+      icon: 'pi-building',
+    },
+    {
+      label: 'Suppliers',
+      route: '/supplier',
+      icon: 'pi-shop',
+      // roles: [
+      //   'Sales Director',
+      //   'Sales Executive',
+      //   'Sales Support',
+      //   'SuperAdmin',
+      // ],
+    },
+
+    {
+      label: 'Clients',
+      route: '/clients',
+      icon: 'pi-users',
+      // roles: [
+      //   'Sales Director',
+      //   'Sales Executive',
+      //   'Sales Support',
+      //   'SuperAdmin',
+      // ],
+    },
+
+    // {
+    //   label: 'Supplier Payments',
+    //   route: '/supplier-payments',
+    //   roles: ['Purchasing Executive', 'SuperAdmin'],
+    // },
+    {
+      label: 'Material Requests',
+      route: '/material-requests',
+      icon: 'pi-list',
+      // roles: ['Purchasing Executive', 'Project Manager', 'SuperAdmin'],
+    },
+
+    {
+      label: 'Inventory',
+      icon: 'pi-box',
       items: [
         {
-          label: 'Quotations',
-          route: '/quotations',
+          label: 'Inventory Record',
+          route: '/inventory/listing',
         },
         {
-          label: 'Invoices',
-          route: '/invoices',
+          label: 'Category',
+          route: '/inventory/category',
         },
         {
-          label: 'Clients',
-          route: '/clients',
+          label: 'Location',
+          route: '/inventory/location',
+        },
+        {
+          label: 'Section',
+          route: '/inventory/section',
+        },
+      ],
+      // roles: ['Logistic Assistant', 'SuperAdmin', 'Purchasing Executive'],
+    },
+
+    {
+      label: 'Delivery Orders',
+      icon: 'pi-truck',
+      items: [
+        {
+          label: 'Inbound DO',
+          route: '/delivery-orders/inbound',
+        },
+        {
+          label: 'Outbound DO',
+          route: '/delivery-orders/outbound',
+        },
+        {
+          label: 'DO RMA',
+          route: '/delivery-orders/rma',
+        },
+      ],
+    },
+
+    {
+      label: 'Work Orders',
+      icon: 'pi-wrench',
+      route: '/work-order',
+      // roles: ['SuperAdmin', 'Admin'],
+    },
+    {
+      label: 'Projects',
+      icon: 'pi-folder',
+      route: '/projects',
+      // roles: ['SuperAdmin', 'Admin'],
+    },
+    {
+      label: 'Tasks',
+      icon: 'pi-check-square',
+      route: '/tasks',
+      // roles: ['SuperAdmin', 'Admin'],
+    },
+    {
+      label: 'Invoices',
+      icon: 'pi-receipt',
+      items: [
+        {
+          label: 'Sales Invoice',
+          route: '/invoices/sales',
+        },
+        {
+          label: 'Purchase Invoice',
+          route: '/invoices/purchase',
         },
       ],
     },
     {
-      label: 'Purchases',
-      roles: ['Manager', 'Director', 'Admin', 'SuperAdmin'],
-      items: [
-        {
-          label: 'Purchase Orders',
-          route: '/purchase-orders',
-        },
-        {
-          label: 'Suppliers',
-          route: '/suppliers',
-        },
-        {
-          label: 'Supplier Payments',
-          route: '/supplier-payments',
-        },
-      ],
+      label: 'Expenses',
+      route: '/expenses',
+      icon: 'pi-wallet',
+      // roles: ['Purchasing Executive', 'SuperAdmin'],
     },
     {
-      label: 'Finance & Accounts',
-      roles: ['Director', 'Admin', 'SuperAdmin'],
-      items: [
-        {
-          label: 'Expenses',
-          route: '/expenses',
-        },
-        {
-          label: 'Incomes',
-          route: '/incomes',
-        },
-        {
-          label: 'Payments',
-          route: '/payments',
-        },
-        {
-          label: 'Transactions',
-          route: '/transactions',
-        },
-      ],
+      label: 'Incomes',
+      route: '/incomes',
+      icon: 'pi-chart-line',
+      // roles: ['Purchasing Executive', 'SuperAdmin'],
     },
     {
-      label: 'Manage',
-      roles: ['Director', 'Admin', 'SuperAdmin'],
+      label: 'Payments',
+      route: '/payments',
+      icon: 'pi-credit-card',
+      // roles: ['Purchasing Executive', 'SuperAdmin'],
+    },
+
+    {
+      label: 'Settings',
+      icon: 'pi-cog',
       items: [
         {
-          label: 'Manage Users',
+          label: 'User Management',
           route: '/user-management',
         },
       ],
     },
-    {
-      label: 'Administration',
-      roles: ['Director', 'Admin', 'SuperAdmin'],
-      items: [
-        {
-          label: 'Settings',
-          route: '/settings',
-        },
-      ],
-    },
-    // {
-    //   label: 'Delivery',
-    //   icon: 'pi pi-truck',
-    //   route: '/delivery',
-    //   roles: ['SuperAdmin', 'Admin'],
-    // },
-    // {
-    //   label: 'Timesheet',
-    //   icon: 'pi pi-calendar-clock',
-    //   roles: ['HR', 'SuperAdmin'],
-    //   items: [
-    //     {
-    //       label: 'Manage Holidays',
-    //       route: '/holiday',
-    //     },
-    //     {
-    //       label: 'Manage Leaves',
-    //       route: '/leaves',
-    //     },
-    //   ],
-    // },
-    // {
-    //   label: 'Leave Request',
-    //   icon: 'pi pi-calendar',
-    //   route: '/leave-request',
-    //   roles: ['Manager', 'Director', 'SuperAdmin'],
-    // },
-    // {
-    //   label: 'Payslip Management',
-    //   icon: 'pi pi-dollar',
-    //   route: '/payslips',
-    //   roles: ['SuperAdmin', 'HR'],
-    // },
-
-    // {
-    //   label: 'Audit Log',
-    //   icon: 'pi pi-list',
-    //   route: '/auditlog',
-    //   roles: ['SuperAdmin'],
-    // },
   ];
 
   @HostListener('window:resize', [])
@@ -494,35 +576,35 @@ export class NavbarComponent implements OnDestroy, OnInit {
   }
 
   ngOnInit(): void {
-    this.notificationService.unreadCount$
-      .pipe(takeUntil(this.destroy$))
-      .subscribe((count) => {
-        this.unreadCount = count;
-        this.cdr.markForCheck();
-      });
+    // this.notificationService.unreadCount$
+    //   .pipe(takeUntil(this.destroy$))
+    //   .subscribe((count) => {
+    //     this.unreadCount = count;
+    //     this.cdr.markForCheck();
+    //   });
 
-    this.notificationService.loadUnreadCount(
-      this.userService.currentUser?.userId,
-    );
+    // this.notificationService.loadUnreadCount(
+    //   this.userService.currentUser?.userId,
+    // );
 
-    this.notificationService.message$
-      .pipe(takeUntil(this.destroy$))
-      .subscribe((msg) => {
-        if (msg) {
-          this.addNotification(msg);
-          if (this.userId)
-            this.notificationService.refreshUnreadCount(this.userId);
-        }
-      });
+    // this.notificationService.message$
+    //   .pipe(takeUntil(this.destroy$))
+    //   .subscribe((msg) => {
+    //     if (msg) {
+    //       this.addNotification(msg);
+    //       if (this.userId)
+    //         this.notificationService.refreshUnreadCount(this.userId);
+    //     }
+    //   });
 
-    if (!this.isMobile && this.userId) {
-      this.notificationService.GetNotifications(this.userId).subscribe({
-        next: (res) => (this.notificationLists = res),
-        error: (err) => console.error('Failed to load notifications', err),
-      });
-    } else {
-      this.notificationLists = [];
-    }
+    // if (!this.isMobile && this.userId) {
+    //   this.notificationService.GetNotifications(this.userId).subscribe({
+    //     next: (res) => (this.notificationLists = res),
+    //     error: (err) => console.error('Failed to load notifications', err),
+    //   });
+    // } else {
+    //   this.notificationLists = [];
+    // }
 
     this.items = [
       {
@@ -537,6 +619,29 @@ export class NavbarComponent implements OnDestroy, OnInit {
         ],
       },
     ];
+
+    this.router.events.subscribe(() => {
+      this.currentUrl = this.router.url;
+      this.syncOpenMenuWithRoute();
+      this.cdr.markForCheck();
+    });
+
+    this.syncOpenMenuWithRoute();
+  }
+
+  syncOpenMenuWithRoute() {
+    for (const item of this.management) {
+      if (!item.items) continue;
+
+      const isChildActive = item.items.some((sub: any) =>
+        this.currentUrl.startsWith(sub.route),
+      );
+
+      if (isChildActive) {
+        this.openMenu = item.label;
+        return;
+      }
+    }
   }
 
   refreshUnreadCount() {
@@ -609,10 +714,8 @@ export class NavbarComponent implements OnDestroy, OnInit {
             this.notificationService.MarkAllAsRead(this.userId).subscribe({
               next: (res) => {
                 if (res.success) {
-                  // ✅ update each notification in place
                   this.notificationLists.forEach((x) => (x.isRead = true));
 
-                  // ✅ update unread count
                   this.notificationService['_unreadCount$'].next(0);
                 }
               },
@@ -640,8 +743,6 @@ export class NavbarComponent implements OnDestroy, OnInit {
 
   CancelDialog() {
     this.userRequestVisible = false;
-
-    //markAsRead
     this.cdr.detectChanges();
   }
 
@@ -651,6 +752,20 @@ export class NavbarComponent implements OnDestroy, OnInit {
       ? [newNotification, ...this.notifications]
       : [newNotification];
     this.cdr.detectChanges();
+  }
+
+  getAllowedSubItems(item: any) {
+    if (!item.items) return [];
+
+    return item.items.filter((sub: any) => {
+      if (!sub.roles) return true;
+      return sub.roles.includes(this.currentUser?.systemRole);
+    });
+  }
+
+  hasVisibleSubItems(item: any): boolean {
+    if (!item.items) return false;
+    return this.getAllowedSubItems(item).length > 0;
   }
 
   ngOnDestroy(): void {

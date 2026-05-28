@@ -87,6 +87,7 @@ import { InputNumberModule } from 'primeng/inputnumber';
             </div>
 
             <p-button
+              *ngIf="isPurchasing()"
               label="Generate Supplier PO"
               [routerLink]="'/purchase-orders/supplier/form'"
               icon="pi pi-file-pdf"

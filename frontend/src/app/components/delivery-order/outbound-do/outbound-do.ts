@@ -87,6 +87,7 @@ import { SelectModule } from 'primeng/select';
             </div>
 
             <p-button
+              *ngIf="isPurchasing()"
               label="Generate Outbound DO"
               [routerLink]="'/delivery-orders/outbound/form'"
               icon="pi pi-file-pdf"
@@ -464,8 +465,8 @@ export class OutboundDo implements OnInit, OnDestroy {
     this.Query.Filter = BuildFilterText(event);
 
     this.Query.Filter = this.Query.Filter
-      ? `${this.Query.Filter},Type=Outbound`
-      : 'Type=Outbound';
+      ? `${this.Query.Filter},Type=Dispatch`
+      : 'Type=Dispatch';
 
     this.GetData();
   }
@@ -518,7 +519,7 @@ export class OutboundDo implements OnInit, OnDestroy {
       this.fTable.saveState();
     }
 
-    this.Query.Filter = `Type=Outbound`;
+    this.Query.Filter = `Type=Dispatch`;
     this.GetData();
   }
 
@@ -856,10 +857,12 @@ export class OutboundDo implements OnInit, OnDestroy {
       });
   }
 
-  isLogistic(): boolean {
+  isPurchasing(): boolean {
     return (
       this.currentUser?.jobTitle === 'Senior Procurement Executive' ||
-      this.currentUser?.jobTitle === 'Purchasing Executive'
+      this.currentUser?.jobTitle === 'Purchasing Executive' ||
+      this.currentUser?.jobTitle === 'Project Director' ||
+      this.currentUser?.jobTitle === 'Sales Director'
     );
   }
 

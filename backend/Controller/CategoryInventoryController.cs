@@ -2,12 +2,14 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
+using Microsoft.AspNetCore.Authorization;
 using YLWorks.Data;
 using YLWorks.Hubs;
 using YLWorks.Model;
 
 namespace YLWorks.Controller
 {
+    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class CategoryInventoryController : ControllerBase

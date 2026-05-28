@@ -134,5 +134,7 @@ namespace YLWorks.Model
         public string? ProjectTitle { get; set; }
         public Guid? FromCompanyId {  get; set; }
         public string? CompanyName { get; set; }
+        public List<QuotationItemDto>? Items { get; set; } = new();
+
     }
 }

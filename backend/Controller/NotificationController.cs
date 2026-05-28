@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using YLWorks.Data;
 using YLWorks.Hubs;
+using Microsoft.AspNetCore.Authorization;
 
 namespace WebApplication1.Controllers
 {

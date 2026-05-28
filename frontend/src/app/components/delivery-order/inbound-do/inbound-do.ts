@@ -37,6 +37,7 @@ import {
   ValidateAllFormFields,
 } from '../../../shared/helpers/helpers';
 import { TimelineModule } from 'primeng/timeline';
+import { UserService } from '../../../services/userService.service';
 
 @Component({
   selector: 'app-inbound-do',
@@ -94,6 +95,7 @@ import { TimelineModule } from 'primeng/timeline';
               ></i>
             </div>
             <p-button
+              *ngIf="isPurchasing()"
               label="Record Inbound DO"
               (onClick)="OpenFormDialog()"
               icon="pi pi-plus-circle"
@@ -545,10 +547,13 @@ export class InboundDo implements OnInit, OnDestroy {
   private readonly deliveryOrderService = inject(DeliveryOrderService);
   private readonly loadingService = inject(LoadingService);
   private readonly messageService = inject(MessageService);
+  private readonly userService = inject(UserService);
   private readonly cdr = inject(ChangeDetectorRef);
   protected ngUnsubscribe: Subject<void> = new Subject<void>();
 
   private isInitializingForm: boolean = false;
+
+  currentUser = this.userService.currentUser;
 
   PagingSignal = signal<PagingContent<DeliveryOrderDto>>({
     data: [],
@@ -582,7 +587,7 @@ export class InboundDo implements OnInit, OnDestroy {
   constructor() {
     this.Query.Page = 1;
     this.Query.PageSize = 10;
-    this.Query.Filter = `Type=Inbound`;
+    this.Query.Filter = `Type=Receiving`;
     this.Query.OrderBy = 'CreatedAt desc';
     this.Query.Select = null;
     this.Query.Includes =
@@ -615,8 +620,8 @@ export class InboundDo implements OnInit, OnDestroy {
       remarks: new FormControl<string | null>(null),
       notes: new FormControl<string | null>(null),
       attachment: new FormControl<File | null>(null),
-      type: new FormControl<'Inbound' | 'Outbound'>(
-        'Inbound',
+      type: new FormControl<'Receiving' | 'Dispatch'>(
+        'Receiving',
         Validators.required,
       ),
     });
@@ -627,6 +632,7 @@ export class InboundDo implements OnInit, OnDestroy {
         const selectedPO = this.purchaseOrderSelection.find(
           (po) => po.value === purchaseOrderId,
         );
+        console.log(selectedPO);
 
         if (selectedPO) {
           this.FG.patchValue(
@@ -649,6 +655,7 @@ export class InboundDo implements OnInit, OnDestroy {
       next: (res) => {
         const statusOrder = [
           'Draft',
+          'Confirmed',
           'PartiallyReceived',
           'FullyReceived',
           'Completed',
@@ -698,7 +705,7 @@ export class InboundDo implements OnInit, OnDestroy {
 
           return {
             ...order,
-            timeline, // 👈 IMPORTANT: attach per-order timeline
+            timeline,
           };
         });
 
@@ -730,8 +737,8 @@ export class InboundDo implements OnInit, OnDestroy {
     this.Query.Filter = BuildFilterText(event);
 
     this.Query.Filter = this.Query.Filter
-      ? `${this.Query.Filter},Type=Inbound`
-      : 'Type=Inbound';
+      ? `${this.Query.Filter},Type=Receiving`
+      : 'Type=Receiving';
 
     this.GetData();
   }
@@ -783,7 +790,7 @@ export class InboundDo implements OnInit, OnDestroy {
       this.fTable.saveState();
     }
 
-    this.Query.Filter = `Type=Inbound`;
+    this.Query.Filter = `Type=Receiving`;
     this.GetData();
   }
 
@@ -858,12 +865,14 @@ export class InboundDo implements OnInit, OnDestroy {
         next: (res) => {
           this.loadingService.stop();
 
-          this.purchaseOrderSelection = res.purchaseOrders.map((q: any) => ({
-            label: q.purchaseOrderNo,
-            value: q.id,
-            clientId: q.clientId,
-            supplierId: q.supplierId,
-          }));
+          this.purchaseOrderSelection = res.purchaseOrders
+            .filter((q: any) => q.type === 'Incoming')
+            .map((q: any) => ({
+              label: q.purchaseOrderNo,
+              value: q.id,
+              supplierId: q.supplierId,
+              projectId: q.projectId,
+            }));
 
           this.companySelection = res.companies.map((c: any) => ({
             label: c.name,
@@ -993,6 +1002,7 @@ export class InboundDo implements OnInit, OnDestroy {
       },
     });
   }
+
   downloadAttachment(data: DeliveryOrderDto) {
     if (!data.attachment) return;
 
@@ -1022,16 +1032,13 @@ export class InboundDo implements OnInit, OnDestroy {
   onEllipsisClick(event: any, deliveryOrder: DeliveryOrderDto, menu: any) {
     const items: any[] = [];
 
-    if (deliveryOrder.status !== 'Completed') {
-      items.push({
-        label: 'Update',
-        icon: 'pi pi-pencil',
-        command: () => this.ActionClick(deliveryOrder, 'Update'),
-      });
-    }
-
-    if (deliveryOrder.status === 'Draft') {
+    if (deliveryOrder.status === 'Draft' && this.isPurchasing()) {
       items.push(
+        {
+          label: 'Update',
+          icon: 'pi pi-pencil',
+          command: () => this.ActionClick(deliveryOrder, 'Update'),
+        },
         {
           label: 'Partially Received',
           icon: 'pi pi-check',
@@ -1047,7 +1054,7 @@ export class InboundDo implements OnInit, OnDestroy {
       );
     }
 
-    if (deliveryOrder.status === 'PartiallyReceived') {
+    if (deliveryOrder.status === 'PartiallyReceived' && this.isPurchasing()) {
       items.push({
         label: 'Fully Received',
         icon: 'pi pi-check-circle',
@@ -1057,7 +1064,9 @@ export class InboundDo implements OnInit, OnDestroy {
 
     if (
       deliveryOrder.status !== 'Cancelled' &&
-      deliveryOrder.status !== 'Completed'
+      deliveryOrder.status !== 'Completed' &&
+      deliveryOrder.status !== 'Draft' &&
+      this.isPurchasing()
     ) {
       items.push({
         label: 'Cancel',
@@ -1067,11 +1076,19 @@ export class InboundDo implements OnInit, OnDestroy {
       });
     }
 
-    if (deliveryOrder.status === 'FullyReceived') {
+    if (deliveryOrder.status === 'FullyReceived' && this.isPurchasing()) {
       items.push({
         label: 'Complete',
         icon: 'pi pi-check',
         command: () => this.updateStatus(deliveryOrder.id, 'Completed'),
+      });
+    }
+
+    if (deliveryOrder.status === 'Draft' && this.isPurchasing()) {
+      items.push({
+        label: 'Delete',
+        icon: 'pi pi-trash',
+        command: () => this.ActionClick(deliveryOrder, 'Delete'),
       });
     }
 
@@ -1085,13 +1102,8 @@ export class InboundDo implements OnInit, OnDestroy {
             },
           ]
         : []),
-      {
-        label: 'Delete',
-        icon: 'pi pi-trash',
-        styleClass: '!text-red-500',
-        command: () => this.ActionClick(deliveryOrder, 'Delete'),
-      },
     );
+
     this.menuItems = items;
     menu.toggle(event);
   }
@@ -1140,6 +1152,7 @@ export class InboundDo implements OnInit, OnDestroy {
 
           const statusOrder = [
             'Draft',
+            'Confirmed',
             'PartiallyReceived',
             'FullyReceived',
             'Completed',
@@ -1251,6 +1264,15 @@ export class InboundDo implements OnInit, OnDestroy {
       default:
         return 'bg-gray-300';
     }
+  }
+
+  isPurchasing(): boolean {
+    return (
+      this.currentUser?.jobTitle === 'Senior Procurement Executive' ||
+      this.currentUser?.jobTitle === 'Purchasing Executive' ||
+      this.currentUser?.jobTitle === 'Project Director' ||
+      this.currentUser?.jobTitle === 'Sales Director'
+    );
   }
 
   ngOnDestroy(): void {

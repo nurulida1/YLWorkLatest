@@ -7,11 +7,11 @@ import { DoRma } from './do-rma/do-rma';
 
 const routes: Routes = [
   {
-    path: 'inbound',
+    path: 'goods-receiving',
     component: InboundDo,
   },
   {
-    path: 'outbound',
+    path: 'goods-dispatch',
     component: OutboundDo,
   },
   {

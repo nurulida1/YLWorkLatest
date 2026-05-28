@@ -4,10 +4,12 @@ using System.Linq.Expressions;
 using System.Security.Claims;
 using YLWorks.Data;
 using YLWorks.Model;
+using Microsoft.AspNetCore.Authorization;
 
 namespace YLWorks.Controller
 {
-	[Route("api/[controller]")]
+    [Authorize]
+    [Route("api/[controller]")]
 	[ApiController]
 	public class IncomeController : ControllerBase
 	{

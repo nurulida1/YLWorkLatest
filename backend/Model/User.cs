@@ -10,7 +10,6 @@ namespace YLWorks.Model
         public string Email { get; set; } = string.Empty;
         public string? ContactNo { get; set; } = string.Empty;
         public string Password { get; set; } = string.Empty;
-        public Guid? DepartmentId { get; set; }
         public ICollection<Department> Departments { get; set; }
         public DateTime? JoinedDate { get; set; }
         public string? AccessPermission { get; set; }
@@ -58,10 +57,11 @@ namespace YLWorks.Model
 
         public string? ContactNo { get; set; }
         public string JobTitle {  get; set; } = string.Empty;
+        public string? SystemRole { get; set; } = string.Empty;
         public string? Gender { get; set; } = string.Empty;
         public DateTime? JoinedDate { get; set; }
         public Guid? HodId { get; set; }
-        
+        public List<Guid> DepartmentIds { get; set; } = new List<Guid>();
 
     }
 
@@ -110,14 +110,14 @@ namespace YLWorks.Model
         public string ConfirmPassword { get; set; } = string.Empty;
     }
 
-  
+
     public class UserDto
     {
         public Guid Id { get; set; }
         public string Email { get; set; } = string.Empty;
         public string ContactNo { get; set; } = string.Empty;
         public string Password { get; set; } = string.Empty;
-        public string FullName {  get; set; } = string.Empty;
+        public string FullName { get; set; } = string.Empty;
         public string? DisplayName { get; set; } = string.Empty;
         public string EmployeeNo { get; set; } = string.Empty;
         public string JobTitle { get; set; } = string.Empty;
@@ -125,11 +125,19 @@ namespace YLWorks.Model
         public DateTime? JoinedDate { get; set; }
         public Guid? HodId { get; set; }
         public string? SystemRole { get; set; }
-        public DateTime? UpdatedAt { get; set; }    
+        public DateTime? UpdatedAt { get; set; }
         public DateTime? CreatedAt { get; set; }
         public DateTime? LastLoginAt { get; set; }
         public bool IsActive { get; set; } = true;
 
+        public List<Guid> DepartmentIds { get; set; } = new List<Guid>();
+        public List<UserDepartmentDto> Departments { get; set; } = new List<UserDepartmentDto>();
+    }
+
+    public class UserDepartmentDto
+    {
+        public Guid Id { get; set; }
+        public string Name { get; set; } = string.Empty;
     }
 
     public class LoginResponse
@@ -150,6 +158,7 @@ namespace YLWorks.Model
         public Guid? HodId { get; set; }
         public User? Hod { get; set; }
         public List<string> Departments { get; set; } = new();
+        public List<Guid>? DepartmentIds { get; set; } = new();
     }
 
     public class UpdateUserRequest
@@ -161,7 +170,8 @@ namespace YLWorks.Model
         public string? JobTitle { get; set; }
         public DateTime? JoinedDate { get; set; }
         public Guid? HodId { get; set; }
-        public string? SystemRole { get; set; }
+        public List<Guid>? DepartmentIds { get; set; }
+        public string SystemRole { get; set; } = "Staff"; // e.g., SuperAdmin, Management, HOD, Executive, Support, Staff
         public string? Gender { get; set; }
     }
 

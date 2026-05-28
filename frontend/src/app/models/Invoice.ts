@@ -6,6 +6,7 @@ import { PaymentDto } from './Payments';
 import { ProjectDto } from './Project';
 import { PurchaseOrderDto } from './PurchaseOrder';
 import { QuotationDto } from './Quotation';
+import { SalesOrderDto } from './SalesOrder';
 import { UserDto } from './User';
 
 // Invoice model
@@ -23,6 +24,8 @@ export interface InvoiceDto extends BaseModel {
   project: ProjectDto;
   purchaseOrderId: string;
   purchaseOrder: PurchaseOrderDto;
+  salesOrderId?: string;
+  salesOrder?: SalesOrderDto;
   quotationId: string;
   quotation: QuotationDto;
   invoiceDate: Date;
@@ -67,6 +70,7 @@ export interface CreateInvoiceRequest {
   supplierId: string;
   projectId: string;
   purchaseOrderId: string;
+  salesOrderId: string;
   quotationId: string;
   type: string;
   invoiceDate: Date;
@@ -102,6 +106,7 @@ export interface UpdateInvoiceRequest {
   supplierId: string;
   projectId: string;
   purchaseOrderId: string;
+  salesOrderId: string;
   quotationId: string;
   invoiceDate: Date;
   dueDate: Date;

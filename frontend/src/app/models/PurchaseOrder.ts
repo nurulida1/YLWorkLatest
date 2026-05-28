@@ -1,5 +1,6 @@
 import { BaseModel } from './BaseModel';
 import { CompanyDto } from './Company';
+import { InvoiceDto } from './Invoice';
 import { ProjectDto } from './Project';
 import { QuotationDto } from './Quotation';
 import { UserDto } from './User';
@@ -8,11 +9,8 @@ export interface PurchaseOrderDto extends BaseModel {
   purchaseOrderNo: string;
   fromCompanyId: string;
   fromCompany: CompanyDto;
-  type: string; //Incoming / Outcoming
   poDate: Date;
   poReceivedDate: Date;
-  clientId: string;
-  client: CompanyDto;
   supplierId: string;
   supplier: CompanyDto;
   terms: string;
@@ -34,6 +32,7 @@ export interface PurchaseOrderDto extends BaseModel {
   attachment: string;
   purchaseOrderStatusHistories: PurchaseOrderStatusHistory[];
   purchaseOrderItems: PurchaseOrderItem[];
+  invoices: InvoiceDto[];
 }
 
 export interface PurchaseOrderStatusHistory extends BaseModel {
@@ -56,7 +55,8 @@ export interface PurchaseOrderItem extends BaseModel {
   unit: string;
   unitPrice: number;
   discount: number;
-  totalAmount: number;
+  totalPrice: number;
+  receivedQuantity: number;
 }
 
 export interface POItemBase {
@@ -66,7 +66,8 @@ export interface POItemBase {
   unit: string;
   unitPrice: number;
   discount: number;
-  totalAmount: number;
+  totalPrice: number;
+  receivedQuantity: number;
 }
 
 export interface POItemRequest extends POItemBase {}
@@ -78,10 +79,8 @@ export interface UpdatePOItemRequest extends POItemBase {
 export interface CreatePORequest {
   purchaseOrderNo: string;
   fromCompanyId: string;
-  type: string;
   poDate: Date;
   poReceivedDate: Date;
-  clientId?: string;
   supplierId?: string;
   terms: string;
   quotationId: string;

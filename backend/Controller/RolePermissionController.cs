@@ -1,41 +1,72 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authorization;
 using System.Linq.Expressions;
 using YLWorks.Data;
-using YLWorks.Hubs;
 using YLWorks.Model;
+using Microsoft.AspNetCore.Authorization;
 
-namespace YLWorks.Controller
+namespace YLWorks.Controllers
 {
-    [Route("api/[controller]")]
+    [Authorize]
     [ApiController]
+    [Route("api/[controller]")]
     public class RolePermissionController : ControllerBase
     {
         private readonly AppDbContext _context;
-        private readonly IHubContext<NotificationHub> _hub;
 
-        public RolePermissionController(AppDbContext context, IHubContext<NotificationHub> hub)
+        public RolePermissionController(AppDbContext context)
         {
             _context = context;
-            _hub = hub;
+        }
 
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<RolePermission>>> GetRolePermissions()
+        {
+            var permissions = await _context.RolePermissions
+                .Include(p => p.Module)
+                .Include(p => p.Department)
+                .ToListAsync();
+
+            return Ok(permissions);
+        }
+
+        [HttpGet("by-matrix")]
+        public async Task<ActionResult<IEnumerable<RolePermission>>> GetPermissionsByMatrix(
+    [FromQuery] string systemRole,
+    [FromQuery] List<Guid>? departmentIds)
+        {
+            var query = _context.RolePermissions
+                .Include(p => p.Module)
+                .Where(p => p.SystemRole == systemRole);
+
+            if (departmentIds != null && departmentIds.Any())
+            {
+                query = query.Where(p =>
+                    p.DepartmentId == null || departmentIds.Contains(p.DepartmentId.Value)
+                );
+            }
+
+            var permissions = await query.ToListAsync();
+
+            return Ok(permissions);
         }
 
         [HttpGet("GetMany")]
         public ActionResult<object> GetMany(
-  int page = 1,
-  int pageSize = 10,
-  string? filter = null,
-  string? orderBy = null,
-  string? select = null,
-  string? includes = null)
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10,
+            [FromQuery] string? filter = null,
+            [FromQuery] string? orderBy = null,
+            [FromQuery] string? select = null,
+            [FromQuery] string? includes = null)
         {
             try
             {
+                // FIX: Query target switched from Departments to RolePermissions
                 var query = _context.RolePermissions.AsQueryable();
 
-                // Includes (e.g., "Customer,Items")
+                // Dynamic Includes handling
                 if (!string.IsNullOrEmpty(includes))
                 {
                     foreach (var include in includes.Split(','))
@@ -44,26 +75,23 @@ namespace YLWorks.Controller
                     }
                 }
 
+                // Dynamic Filtering Expression Assembly
                 if (!string.IsNullOrEmpty(filter))
                 {
-                    var parameter = Expression.Parameter(typeof(RolePermission), "u");
+                    // FIX: Target type changed from Department to RolePermission
+                    var parameter = Expression.Parameter(typeof(RolePermission), "p");
                     Expression? finalExpression = null;
 
-                    // Split OR conditions first
                     var orParts = filter.Split('|');
                     foreach (var orPart in orParts)
                     {
                         Expression? orExpression = null;
-
-                        // Split AND conditions
                         var andParts = orPart.Split(',');
+
                         foreach (var andPart in andParts)
                         {
                             bool isNotEqual = andPart.Contains("!=");
-
-                            var kv = isNotEqual
-                                ? andPart.Split("!=")
-                                : andPart.Split('=');
+                            var kv = isNotEqual ? andPart.Split("!=") : andPart.Split('=');
 
                             if (kv.Length != 2) continue;
 
@@ -71,54 +99,59 @@ namespace YLWorks.Controller
                             var valueStr = kv[1].Trim();
 
                             var propertyAccess = Expression.PropertyOrField(parameter, property);
-
                             Expression condition;
 
                             if (propertyAccess.Type == typeof(string))
                             {
                                 var toLowerMethod = typeof(string).GetMethod("ToLower", Type.EmptyTypes)!;
-
                                 var propertyToLower = Expression.Call(propertyAccess, toLowerMethod);
                                 var valueToLower = Expression.Constant(valueStr.ToLower());
 
                                 var containsMethod = typeof(string).GetMethod("Contains", new[] { typeof(string) })!;
-
                                 var containsExpr = Expression.Call(propertyToLower, containsMethod, valueToLower);
 
-                                condition = isNotEqual
-                                    ? Expression.Not(containsExpr)
-                                    : containsExpr;
+                                condition = isNotEqual ? Expression.Not(containsExpr) : containsExpr;
                             }
                             else if (propertyAccess.Type == typeof(Guid) || propertyAccess.Type == typeof(Guid?))
                             {
-                                condition = Expression.Equal(
-                                    propertyAccess,
-                                    Expression.Constant(Guid.Parse(valueStr), propertyAccess.Type)
-                                );
+                                // Handle Nullable<Guid> assignment mappings
+                                var parsedGuid = Guid.Parse(valueStr);
+                                var underlyingType = Nullable.GetUnderlyingType(propertyAccess.Type) ?? propertyAccess.Type;
+                                var constantExpr = Expression.Constant(parsedGuid, underlyingType);
+
+                                Expression leftExpr = propertyAccess;
+                                if (propertyAccess.Type != underlyingType)
+                                {
+                                    leftExpr = Expression.Convert(propertyAccess, underlyingType);
+                                }
+
+                                var equalsExpr = Expression.Equal(leftExpr, constantExpr);
+                                condition = isNotEqual ? Expression.Not(equalsExpr) : equalsExpr;
                             }
                             else if (propertyAccess.Type.IsEnum)
                             {
                                 var enumValue = Enum.Parse(propertyAccess.Type, valueStr);
                                 var equalsExpr = Expression.Equal(propertyAccess, Expression.Constant(enumValue));
 
-                                condition = isNotEqual
-                                    ? Expression.Not(equalsExpr)
-                                    : equalsExpr;
+                                condition = isNotEqual ? Expression.Not(equalsExpr) : equalsExpr;
+                            }
+                            else if (propertyAccess.Type == typeof(bool))
+                            {
+                                var boolValue = bool.Parse(valueStr);
+                                var equalsExpr = Expression.Equal(propertyAccess, Expression.Constant(boolValue));
+                                condition = isNotEqual ? Expression.Not(equalsExpr) : equalsExpr;
                             }
                             else
                             {
                                 var convertedValue = Convert.ChangeType(valueStr, propertyAccess.Type);
-                                condition = Expression.Equal(propertyAccess, Expression.Constant(convertedValue));
+                                var equalsExpr = Expression.Equal(propertyAccess, Expression.Constant(convertedValue));
+                                condition = isNotEqual ? Expression.Not(equalsExpr) : equalsExpr;
                             }
 
-                            orExpression = orExpression == null
-                                ? condition
-                                : Expression.AndAlso(orExpression, condition); // AND inside one OR part
+                            orExpression = orExpression == null ? condition : Expression.AndAlso(orExpression, condition);
                         }
 
-                        finalExpression = finalExpression == null
-                            ? orExpression
-                            : Expression.OrElse(finalExpression, orExpression); // OR between parts
+                        finalExpression = finalExpression == null ? orExpression : Expression.OrElse(finalExpression, orExpression);
                     }
 
                     if (finalExpression != null)
@@ -128,167 +161,150 @@ namespace YLWorks.Controller
                     }
                 }
 
-
-                // OrderBy (e.g., "CreatedDate desc")
+                // Dynamic Ordering Handling
                 if (!string.IsNullOrEmpty(orderBy))
                 {
-                    if (orderBy.ToLower().Contains("desc"))
-                        query = query.OrderByDescending(q => EF.Property<object>(q, orderBy.Replace(" desc", "").Trim()));
+                    var isDescending = orderBy.ToLower().Contains("desc");
+                    var cleanProperty = orderBy.Replace(" desc", "", StringComparison.OrdinalIgnoreCase).Replace(" asc", "", StringComparison.OrdinalIgnoreCase).Trim();
+
+                    if (isDescending)
+                        query = query.OrderByDescending(q => EF.Property<object>(q, cleanProperty));
                     else
-                        query = query.OrderBy(q => EF.Property<object>(q, orderBy.Trim()));
+                        query = query.OrderBy(q => EF.Property<object>(q, cleanProperty));
                 }
 
-                var TotalElements = query.Count();
+                var totalElements = query.Count();
 
+                // FIX: Map actual projection shape matching RolePermissionDto design
                 var items = query
-      .Skip((page - 1) * pageSize)
-      .Take(pageSize)
-      .Select(u => new
-      {
-          u.Id,
-          u.SystemRole,
-          u.AccessPermission,
-      })
-      .ToList();
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .Select(p => new
+                    {
+                        p.Id,
+                        p.SystemRole,
+                        p.DepartmentId,
+                        DepartmentName = p.Department == null ? "Global" : p.Department.Name,
+                        p.SystemModuleId,
+                        ModuleName = p.Module == null ? "Unknown Module" : p.Module.Name,
+                        p.CanCreate,
+                        p.CanRead,
+                        p.CanUpdate,
+                        p.CanDelete,
+                        p.CanUpdateStatus
+                    })
+                    .ToList();
 
-
-                // Select (e.g., "Id,Status")
+                // Dynamic Field Selector projection processing
                 if (!string.IsNullOrEmpty(select))
                 {
                     var selectedFields = select.Split(',').Select(f => f.Trim()).ToList();
                     var projected = items.Select(item =>
                     {
-                        var dict = new Dictionary<string, object>();
+                        var dict = new Dictionary<string, object?>();
+                        var type = item.GetType();
                         foreach (var field in selectedFields)
                         {
-                            var value = item.GetType().GetProperty(field)?.GetValue(item);
-                            dict[field] = value ?? "null";
+                            // Fix casing lookup matching target JSON structure properties safely
+                            var prop = type.GetProperties().FirstOrDefault(p => string.Equals(p.Name, field, StringComparison.OrdinalIgnoreCase));
+                            dict[field] = prop?.GetValue(item) ?? null;
                         }
                         return dict;
                     });
 
-                    return Ok(new
-                    {
-                        Data = projected,
-                        TotalElements
-                    });
+                    return Ok(new { Data = projected, TotalElements = totalElements });
                 }
 
-                return Ok(new
-                {
-                    Data = items,
-                    TotalElements
-                });
+                return Ok(new { Data = items, TotalElements = totalElements });
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { Error = "An unexpected error occured." });
+                Console.WriteLine(ex);
+                return StatusCode(500, new { Error = "An unexpected error occurred processing grid collection." });
             }
-
         }
 
-        [HttpPost("Create")]
-        public async Task<ActionResult<RolePermission>> AddDepartment([FromBody] CreateRolePermissionRequest request)
+        [HttpPost("bulk-save")]
+        public async Task<IActionResult> BulkSaveRolePermissions([FromBody] List<UpsertRolePermissionDto> dtos)
         {
-            if (string.IsNullOrWhiteSpace(request.SystemRole))
-                return BadRequest(new { Error = "System Role is required." });
+            if (dtos == null || !dtos.Any())
+            {
+                return BadRequest("No permission configurations provided.");
+            }
 
+            using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                var rolePermission = new RolePermission
+                foreach (var dto in dtos)
                 {
-                    Id = Guid.NewGuid(),
-                    SystemRole = request.SystemRole,
-                    AccessPermission = request.AccessPermission,
-                };
+                    RolePermission? permission;
 
-                rolePermission.CreatedAt = DateTime.Now;
-
-                _context.RolePermissions.Add(rolePermission);
-                await _context.SaveChangesAsync();
-
-
-                var result = await _context.RolePermissions
-                    .Where(d => d.Id == rolePermission.Id)
-                    .Select(d => new RolePermission
+                    if (dto.Id.HasValue && dto.Id.Value != Guid.Empty)
                     {
-                        Id = d.Id,
-                        SystemRole = d.SystemRole,
-                        AccessPermission = d.AccessPermission,
-                    })
-                    .FirstAsync();
+                        permission = await _context.RolePermissions.FindAsync(dto.Id.Value);
+                    }
+                    else
+                    {
+                        permission = await _context.RolePermissions
+                            .FirstOrDefaultAsync(p => p.SystemRole == dto.SystemRole
+                                                   && p.DepartmentId == dto.DepartmentId
+                                                   && p.SystemModuleId == dto.SystemModuleId);
+                    }
 
-                // Optional: Notify via SignalR
-                await _hub.Clients.All.SendAsync("RolePermissionAdded", rolePermission);
+                    if (permission != null)
+                    {
+                        permission.CanCreate = dto.CanCreate;
+                        permission.CanRead = dto.CanRead;
+                        permission.CanUpdate = dto.CanUpdate;
+                        permission.CanDelete = dto.CanDelete;
+                        permission.CanUpdateStatus = dto.CanUpdateStatus;
 
-                return Ok(result);
-            }
-            catch (Exception)
-            {
-                return StatusCode(500, new { Error = "Failed to add role permission." });
-            }
-        }
+                        _context.RolePermissions.Update(permission);
+                    }
+                    else
+                    {
+                        var newPermission = new RolePermission
+                        {
+                            Id = Guid.NewGuid(),
+                            SystemRole = dto.SystemRole,
+                            DepartmentId = dto.DepartmentId,
+                            SystemModuleId = dto.SystemModuleId,
+                            CanCreate = dto.CanCreate,
+                            CanRead = dto.CanRead,
+                            CanUpdate = dto.CanUpdate,
+                            CanDelete = dto.CanDelete,
+                            CanUpdateStatus = dto.CanUpdateStatus
+                        };
 
-        [HttpPut("Update")]
-        public async Task<ActionResult<RolePermission>> UpdateRolePermission([FromBody] UpdateRolePermissionRequest request)
-        {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+                        await _context.RolePermissions.AddAsync(newPermission);
+                    }
+                }
 
-            var rolePermission = await _context.RolePermissions.FindAsync(request.Id);
-            if (rolePermission == null)
-                return NotFound(new { Error = "Role Permission not found." });
-
-            try
-            {
-                rolePermission.SystemRole = request.SystemRole ?? rolePermission.SystemRole;
-                rolePermission.AccessPermission = request.AccessPermission;
-                rolePermission.UpdatedAt = DateTime.Now;
-
-                _context.RolePermissions.Update(rolePermission);
                 await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
 
-                // Optional: Notify via SignalR
-                var result = await _context.RolePermissions
-           .Where(d => d.Id == rolePermission.Id)
-           .Select(d => new RolePermission
-           {
-               Id = d.Id,
-               SystemRole = d.SystemRole,
-               AccessPermission = d.AccessPermission
-           })
-           .FirstAsync();
-                await _hub.Clients.All.SendAsync("RolePermissionUpdated", rolePermission);
-
-                return Ok(result);
+                return Ok(new { Success = true, Message = "Matrix settings updated successfully." });
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { Error = "Failed to update role permission." });
+                await transaction.RollbackAsync();
+                return StatusCode(500, new { Message = "An error occurred while bulk updating matrix settings.", Details = ex.Message });
             }
         }
 
-        [HttpDelete("Delete")]
-        public async Task<ActionResult> DeleteRolePermission([FromQuery] Guid id)
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteRolePermission(Guid id)
         {
             var rolePermission = await _context.RolePermissions.FindAsync(id);
             if (rolePermission == null)
-                return NotFound(new { Error = "Role Permission not found." });
-
-            try
             {
-                _context.RolePermissions.Remove(rolePermission);
-                await _context.SaveChangesAsync();
-
-                // Optional: Notify via SignalR
-                await _hub.Clients.All.SendAsync("RolePermissionDeleted", id);
-
-                return Ok(new { Message = "Role Permission deleted successfully." });
+                return NotFound();
             }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { Error = "Failed to delete role permission." });
-            }
+
+            _context.RolePermissions.Remove(rolePermission);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { Message = "Permission rule removed successfully." });
         }
     }
 }

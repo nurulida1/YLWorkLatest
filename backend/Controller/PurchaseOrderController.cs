@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authorization;
 using System.Linq.Expressions;
 using System.Security.Claims;
 using YLWorks.Data;
@@ -11,6 +12,7 @@ using WebApplication1.Helpers;
 
 namespace YLWorks.Controller
 {
+    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class PurchaseOrderController : ControllerBase
@@ -36,10 +38,8 @@ namespace YLWorks.Controller
         {
             try
             {
-                // 1. Initialize Query
                 var query = _context.PurchaseOrders.AsQueryable();
 
-                // Dynamically include related data
                 if (!string.IsNullOrWhiteSpace(includes))
                 {
                     foreach (var include in includes.Split(',', StringSplitOptions.RemoveEmptyEntries))
@@ -48,7 +48,6 @@ namespace YLWorks.Controller
                     }
                 }
 
-                // 3. Dynamic Filtering (Expression Tree)
                 if (!string.IsNullOrEmpty(filter))
                 {
                     var parameter = Expression.Parameter(typeof(PurchaseOrder), "q");
@@ -71,26 +70,22 @@ namespace YLWorks.Controller
                             var propertyAccess = Expression.PropertyOrField(parameter, propertyName);
 
                             Expression condition;
-                            // String handling
                             if (propertyAccess.Type == typeof(string))
                             {
                                 var method = typeof(string).GetMethod("Contains", new[] { typeof(string) });
                                 var containsExpr = Expression.Call(propertyAccess, method!, Expression.Constant(valueStr));
                                 condition = isNotEqual ? Expression.Not(containsExpr) : containsExpr;
                             }
-                            // Guid handling
                             else if (propertyAccess.Type == typeof(Guid) || propertyAccess.Type == typeof(Guid?))
                             {
                                 var guidValue = Guid.Parse(valueStr);
                                 condition = Expression.Equal(propertyAccess, Expression.Constant(guidValue, propertyAccess.Type));
                             }
-                            // Enum handling (Status)
                             else if (propertyAccess.Type.IsEnum)
                             {
                                 var enumValue = Enum.Parse(propertyAccess.Type, valueStr);
                                 condition = Expression.Equal(propertyAccess, Expression.Constant(enumValue));
                             }
-                            // General handling (Numbers/Dates)
                             else
                             {
                                 var convertedValue = Convert.ChangeType(valueStr, Nullable.GetUnderlyingType(propertyAccess.Type) ?? propertyAccess.Type);
@@ -109,7 +104,6 @@ namespace YLWorks.Controller
                     }
                 }
 
-                // 4. Sorting
                 if (!string.IsNullOrEmpty(orderBy))
                 {
                     bool descending = orderBy.EndsWith(" desc", StringComparison.OrdinalIgnoreCase);
@@ -120,10 +114,8 @@ namespace YLWorks.Controller
 
                 var totalElements = query.Count();
 
-                // 5. Pagination and Execution
                 var items = query.Skip((page - 1) * pageSize).Take(pageSize).ToList();
 
-                // 6. Selective Projection
                 if (!string.IsNullOrEmpty(select))
                 {
                     var selectedFields = select.Split(',').Select(f => f.Trim()).ToList();
@@ -132,8 +124,6 @@ namespace YLWorks.Controller
                         var dict = new Dictionary<string, object?>();
                         foreach (var field in selectedFields)
                         {
-                            // Note: GetProperty is case-sensitive. 
-                            // Ensure Angular sends "QuotationNo" not "quotationNo"
                             var prop = item.GetType().GetProperty(field);
                             dict[field] = prop?.GetValue(item);
                         }
@@ -143,9 +133,6 @@ namespace YLWorks.Controller
                     return Ok(new { Data = projected, TotalElements = totalElements });
                 }
 
-                // === SET IT HERE ===
-                // If no specific fields are selected, map the whole list to DTOs 
-                // to prevent circular reference crashes.
                 var dtoItems = items.Select(item => item).ToList();
 
                 return Ok(new { Data = dtoItems, TotalElements = totalElements });
@@ -163,7 +150,6 @@ namespace YLWorks.Controller
             {
                 IQueryable<PurchaseOrder> query = _context.PurchaseOrders.AsQueryable();
 
-                // 1. Dynamic Includes
                 if (!string.IsNullOrWhiteSpace(includes))
                 {
                     foreach (var include in includes.Split(',', StringSplitOptions.RemoveEmptyEntries))
@@ -172,7 +158,6 @@ namespace YLWorks.Controller
                     }
                 }
 
-                // 2. Filter by ID
                 if (!string.IsNullOrEmpty(filter))
                 {
                     var filterValue = filter.Contains('=')
@@ -185,29 +170,28 @@ namespace YLWorks.Controller
                     }
                 }
 
-                // 3. Execute
                 var data = await query.FirstOrDefaultAsync();
 
                 if (data == null)
                     return NotFound();
 
-                // 4. IMPORTANT: prevent circular reference crash
-                // (same idea as your GetMany DTO safety)
                 var safeResult = new
                 {
                     data.Id,
                     data.PurchaseOrderNo,
-                    data.Type,
                     data.PODate,
+                    data.POReceivedDate,
                     data.Status,
                     data.TotalAmount,
+                    data.TotalInWords,
                     data.SupplierId,
-                    data.ClientId,
                     data.FromCompanyId,
                     data.QuotationId,
                     data.Terms,
                     data.Remarks,
                     data.ProjectId,
+                    data.InvoiceStatus,
+                    data.InvoicedAmount,
 
                     PurchaseOrderItems = data.PurchaseOrderItems?.Select(i => new
                     {
@@ -295,24 +279,26 @@ namespace YLWorks.Controller
                     Id = Guid.NewGuid(),
                     PurchaseOrderNo = request.PurchaseOrderNo ?? await GeneratePONo(),
                     FromCompanyId = request.FromCompanyId,
-                    Type = request.Type,
                     PODate = request.PODate,
                     POReceivedDate = request.POReceivedDate,
-                    ClientId = request.ClientId,
                     SupplierId = request.SupplierId,
+                    ClientId = request.ClientId,
                     Terms = request.Terms,
                     QuotationId = request.QuotationId,
                     ProjectId = request.ProjectId,
+                    PurchaseOrderId = request.PurchaseOrderId,
+                    SalesOrderId = request.SalesOrderId,
                     Gross = request.Gross,
                     Discount = request.Discount,
                     TotalAmount = request.TotalAmount,
+                    TotalInWords = ConvertAmountToWords(request.TotalAmount),
                     Notes = request.Notes,
                     Remarks = request.Remarks,
                     TermsAndCondition = request.TermsAndConditions,
                     BankDetails = request.BankDetails,
                     TotalQuantity = request.TotalQuantity,
                     Attachment = filePath,
-                    Status = request.ClientId.HasValue ? "Received" : "Draft",
+                    Status = "Draft",
                     CreatedById = Guid.Parse(userIdClaim),
                     CreatedAt = DateTimeHelper.Now()
                 };
@@ -334,7 +320,7 @@ namespace YLWorks.Controller
                 {
                     Id = Guid.NewGuid(),
                     PurchaseOrderId = po.Id,
-                    Status = request.Type == "Incoming" ? "Received" : "Draft",
+                    Status = "Draft",
                     ActionAt = DateTimeHelper.Now(),
                     ActionUserId = Guid.Parse(userIdClaim),
                     Remarks = "PO created",
@@ -346,13 +332,13 @@ namespace YLWorks.Controller
                 await _context.SaveChangesAsync();
 
                 var poWithRelations = await _context.PurchaseOrders
-                    .Include(x => x.Client)
-                        .ThenInclude(c => c.BillingAddress)
-                    .Include(x => x.Client)
-                        .ThenInclude(c => c.DeliveryAddress)
                     .Include(x => x.Supplier)
                         .ThenInclude(s => s.BillingAddress)
                     .Include(x => x.Supplier)
+                        .ThenInclude(s => s.DeliveryAddress)
+                    .Include(x => x.Client)
+                        .ThenInclude(s => s.BillingAddress)
+                    .Include(x => x.Client)
                         .ThenInclude(s => s.DeliveryAddress)
                     .Include(x => x.Project)
                     .Include(x => x.Quotation)
@@ -375,7 +361,7 @@ namespace YLWorks.Controller
             var yearShort = DateTime.UtcNow.Year % 100; // 2026 -> 26
 
             var lastPO = await _context.PurchaseOrders
-                .Where(q => q.PurchaseOrderNo.Contains($"YL/PO/") && q.PurchaseOrderNo.EndsWith($"/{yearShort}"))
+                .Where(q => q.PurchaseOrderNo.StartsWith($"YL/PO/") && q.PurchaseOrderNo.EndsWith($"/{yearShort}"))
                 .OrderByDescending(q => q.CreatedAt)
                 .Select(q => q.PurchaseOrderNo)
                 .FirstOrDefaultAsync();
@@ -410,7 +396,7 @@ namespace YLWorks.Controller
                 return BadRequest(ModelState);
 
             var po = await _context.PurchaseOrders
-                .Include(x => x.PurchaseOrderItems).Include(x => x.Client)
+                .Include(x => x.PurchaseOrderItems).Include(x => x.Supplier).Include(x => x.Client)
                 .FirstOrDefaultAsync(x => x.Id == request.Id);
 
             if (po == null)
@@ -455,28 +441,28 @@ namespace YLWorks.Controller
                     po.Attachment = $"Uploads/PO/{fileName}";
                 }
 
-                // Update fields
                 po.PurchaseOrderNo = request.PurchaseOrderNo;
                 po.FromCompanyId = request.FromCompanyId;
-                po.Type = request.Type;
                 po.PODate = request.PODate;
                 po.POReceivedDate = request.POReceivedDate;
-                po.ClientId = request.ClientId;
                 po.SupplierId = request.SupplierId;
+                po.ClientId = request.ClientId;
                 po.Terms = request.Terms;
                 po.QuotationId = request.QuotationId;
                 po.ProjectId = request.ProjectId;
+                po.PurchaseOrderId = request.PurchaseOrderId;
+                po.SalesOrderId = request.SalesOrderId;
                 po.Gross = request.Gross;
                 po.Discount = request.Discount;
                 po.TotalAmount = request.TotalAmount;
+                po.TotalInWords = ConvertAmountToWords(request.TotalAmount);
                 po.Notes = request.Notes;
                 po.Remarks = request.Remarks;
                 po.TermsAndCondition = request.TermsAndConditions;
                 po.BankDetails = request.BankDetails;
                 po.TotalQuantity = request.TotalQuantity;
-                po.UpdatedAt = DateTime.Now;
+                po.UpdatedAt = DateTimeHelper.Now();
 
-                // Remove existing items from DB first
                 var existingItems = await _context.PurchaseOrderItems
                     .Where(x => x.PurchaseOrderId == po.Id)
                     .ToListAsync();
@@ -485,7 +471,6 @@ namespace YLWorks.Controller
 
                 await _context.SaveChangesAsync();
 
-                // Add new items
                 var newItems = request.PurchaseOrderItems?
                     .Select(x => new PurchaseOrderItem
                     {
@@ -538,7 +523,6 @@ namespace YLWorks.Controller
                 _context.PurchaseOrders.Remove(po);
                 await _context.SaveChangesAsync();
 
-                // Optional: Notify via SignalR
                 await _hub.Clients.All.SendAsync("PurchaseOrderDeleted", id);
 
                 return Ok(new { Message = "Purchase order deleted successfully." });
@@ -559,7 +543,6 @@ namespace YLWorks.Controller
             {
                 q.Id,
                 q.PurchaseOrderNo,
-                q.Type,
                 q.PODate,
                 q.POReceivedDate,
                 q.Terms,
@@ -579,25 +562,27 @@ namespace YLWorks.Controller
                 q.Gross,
                 q.Discount,
                 q.TotalAmount,
+                q.TotalInWords,
                 q.Remarks,
                 q.Notes,
-                q.POClientNo,
-                q.SOClientNo,
+                q.PurchaseOrderId,
+                q.SalesOrderId,
                 q.Status,
                 q.TermsAndCondition,
                 q.BankDetails,
                 q.Attachment,
                 q.SupplierId,
-                q.ClientId,
                 q.InvoicedAmount,
-
                 Client = q.Client == null ? null : new
                 {
                     Id = q.Client.Id,
                     q.Client.Name,
                     q.Client.ContactNo,
+                    q.Client.FaxNo,
                     q.Client.Email,
+                    q.Client.ACNo,
                     q.Client.ContactPerson1,
+                    q.Client.ContactPerson2,
 
                     BillingAddress = q.Client.BillingAddress == null ? null : new Address
                     {
@@ -621,7 +606,6 @@ namespace YLWorks.Controller
                         Poscode = q.Client.DeliveryAddress.Poscode
                     }
                 },
-
                 Supplier = q.Supplier == null ? null : new
                 {
                     Id = q.Supplier.Id,
@@ -631,6 +615,7 @@ namespace YLWorks.Controller
                     q.Supplier.Email,
                     q.Supplier.ACNo,
                     q.Supplier.ContactPerson1,
+                    q.Supplier.ContactPerson2,
 
                     BillingAddress = q.Supplier.BillingAddress == null ? null : new Address
                     {
@@ -783,7 +768,6 @@ namespace YLWorks.Controller
                 InvoiceDate = invoiceDate,
                 DueDate = invoiceDate.AddDays(GetTermsDays(po.Terms)),
                 SupplierId = po.SupplierId,
-                ClientId = po.ClientId,
                 PurchaseOrderId = po.Id,
                 Type = "Purchase",
                 Gross = invoiceAmount,
@@ -807,8 +791,8 @@ namespace YLWorks.Controller
 
             po.InvoicedAmount = newTotalInvoiced;
 
-            po.Status =
-                newTotalInvoiced == 0 ? "Issued" :
+            po.InvoiceStatus =
+                newTotalInvoiced == 0 ? "NotInvoiced" :
                 newTotalInvoiced < poTotalAmount ? "PartiallyInvoiced" :
                 "FullyInvoiced";
 
@@ -939,5 +923,146 @@ namespace YLWorks.Controller
             }
         }
 
+        [HttpPost("GenerateDOFromPO/{poId}")]
+        public async Task<IActionResult> GenerateDOFromPO(Guid poId)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim))
+                return Unauthorized();
+
+            var po = await _context.PurchaseOrders
+                .Include(x => x.PurchaseOrderItems)
+                .FirstOrDefaultAsync(x => x.Id == poId);
+
+            if (po == null)
+                return NotFound("PO not found");
+
+            if (po.Status == "Completed")
+                return BadRequest("PO already completed");
+
+            var remainingItems = po.PurchaseOrderItems
+                .Where(x => (x.Quantity - x.ReceivedQuantity) > 0)
+                .ToList();
+
+            if (!remainingItems.Any())
+                return BadRequest("All items already received");
+
+            var deliveryOrder = new DeliveryOrder
+            {
+                Id = Guid.NewGuid(),
+                DeliveryOrderNo = await GenerateDONo(),
+                Type = "Receipt", 
+
+                PurchaseOrderId = po.Id,
+                ProjectId = po.ProjectId,
+
+                SenderCompanyId = po.SupplierId,
+                ReceiverCompanyId = po.FromCompanyId,
+
+                Status = "Draft",
+                CreatedAt = DateTimeHelper.Now(),
+
+                DeliveryOrderItems = remainingItems.Select(item => new DeliveryOrderItem
+                {
+                    Id = Guid.NewGuid(),
+                    Description = item.Description,
+                    QuantityOrdered = item.Quantity,
+                    QuantityDelivered = item.Quantity - item.ReceivedQuantity,
+                    Unit = item.Unit
+                }).ToList()
+            };
+
+            _context.DeliveryOrders.Add(deliveryOrder);
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new
+            {
+                message = "DO generated successfully",
+                deliveryOrder.Id,
+                deliveryOrder.DeliveryOrderNo
+            });
+        }
+
+        private async Task<string> GenerateDONo()
+        {
+            var year = DateTime.UtcNow.Year % 100;
+
+            var last = await _context.DeliveryOrders
+                .Where(x => x.DeliveryOrderNo.StartsWith("YL/DO/"))
+                .OrderByDescending(x => x.CreatedAt)
+                .Select(x => x.DeliveryOrderNo)
+                .FirstOrDefaultAsync();
+
+            int next = 1;
+
+            if (!string.IsNullOrEmpty(last))
+            {
+                var parts = last.Split('/');
+                if (parts.Length >= 3 && int.TryParse(parts[2], out int num))
+                    next = num + 1;
+            }
+
+            return $"YL/DO/{next}/{year}";
+        }
+
+        private string ConvertAmountToWords(decimal? amount)
+        {
+            if (amount == null || amount == 0) return "ZERO RINGGIT ONLY";
+
+            decimal value = Math.Round(amount.Value, 2);
+            long ringgit = (long)Math.Truncate(value);
+            long sen = (long)Math.Round((value - ringgit) * 100);
+
+            string ringgitStr = NumberToWords(ringgit) + " RINGGIT";
+            string senStr = sen > 0 ? $" AND {NumberToWords(sen)} SEN" : "";
+
+            return $"{ringgitStr}{senStr} ONLY".ToUpper().Trim();
+        }
+
+        private string NumberToWords(long number)
+        {
+            if (number == 0) return "ZERO";
+            if (number < 0) return "NEGATIVE " + NumberToWords(Math.Abs(number));
+
+            string words = "";
+
+            if ((number / 1000000) > 0)
+            {
+                words += NumberToWords(number / 1000000) + " MILLION ";
+                number %= 1000000;
+            }
+
+            if ((number / 1000) > 0)
+            {
+                words += NumberToWords(number / 1000) + " THOUSAND ";
+                number %= 1000;
+            }
+
+            if ((number / 100) > 0)
+            {
+                words += NumberToWords(number / 100) + " HUNDRED ";
+                number %= 100;
+            }
+
+            if (number > 0)
+            {
+                if (words != "") words += "AND ";
+
+                var unitsMap = new[] { "ZERO", "ONE", "TWO", "THREE", "FOUR", "FIVE", "SIX", "SEVEN", "EIGHT", "NINE", "TEN", "ELEVEN", "TWELVE", "THIRTEEN", "FOURTEEN", "FIFTEEN", "SIXTEEN", "SEVENTEEN", "EIGHTEEN", "NINETEEN" };
+                var tensMap = new[] { "ZERO", "TEN", "TWENTY", "THIRTY", "FORTY", "FIFTY", "SIXTY", "SEVENTY", "EIGHTY", "NINETY" };
+
+                if (number < 20)
+                    words += unitsMap[number];
+                else
+                {
+                    words += tensMap[number / 10];
+                    if ((number % 10) > 0)
+                        words += "-" + unitsMap[number % 10];
+                }
+            }
+
+            return words.Trim();
+        }
     }
 }

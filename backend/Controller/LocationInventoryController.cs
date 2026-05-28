@@ -5,10 +5,12 @@ using System.Linq.Expressions;
 using YLWorks.Data;
 using YLWorks.Hubs;
 using YLWorks.Model;
+using Microsoft.AspNetCore.Authorization;
 
 namespace YLWorks.Controller
 {
-	[Route("api/[controller]")]
+    [Authorize]
+    [Route("api/[controller]")]
 	[ApiController]
 	public class LocationInventoryController : ControllerBase
 	{

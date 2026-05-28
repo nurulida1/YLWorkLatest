@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authorization;
 using System.Linq.Expressions;
 using YLWorks.Data;
 using YLWorks.Hubs;
@@ -8,6 +9,7 @@ using YLWorks.Model;
 
 namespace YLWorks.Controller
 {
+    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class CompanyController : ControllerBase

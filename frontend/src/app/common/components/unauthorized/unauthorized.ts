@@ -5,7 +5,8 @@ import { Router } from '@angular/router';
 @Component({
   selector: 'app-unauthorized',
   imports: [CommonModule],
-  template: `<div class="svg text-center">
+  template: `<div class="flex flex-col items-center justify-center h-screen">
+    <div class="w-200">
       <svg
         version="1.1"
         xmlns="http://www.w3.org/2000/svg"
@@ -1768,23 +1769,31 @@ import { Router } from '@angular/router';
         </g>
       </svg>
     </div>
-    <div class="message text-center">
-      <h1>Ooops...Unauthorized!</h1>
-      <div nz-result-extra>
-        <a (click)="HomeClick()">Back to previous page</a>
+    <div class="text-center flex flex-col gap-3">
+      <h1 class="font-bold text-3xl">Ooops...Unauthorized!</h1>
+      <div>
+        <a
+          (click)="HomeClick()"
+          class="cursor-pointer hover:underline text-emerald-800"
+          >Back to homepage</a
+        >
       </div>
-    </div>`,
+    </div>
+  </div> `,
   styleUrl: './unauthorized.less',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Unauthorized {
-  constructor(private location: Location, private router: Router) {}
+  constructor(
+    private location: Location,
+    private router: Router,
+  ) {}
 
   BackClick() {
     this.location.back();
   }
 
   HomeClick() {
-    this.router.navigate(['/']);
+    this.router.navigate(['/dashboard']);
   }
 }

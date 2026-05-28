@@ -205,40 +205,19 @@ export class Sidemenu {
       label: 'Quotations',
       route: '/quotations',
       icon: 'pi-file',
-      // roles: ['Sales Director', 'Sales Executive', 'Sales Support'],
     },
     {
       label: 'Purchase Orders',
       icon: 'pi-shopping-cart',
-      items: [
-        {
-          label: 'Supplier PO',
-          route: '/purchase-orders/supplier',
-          // roles: [
-          //   'Sales Director',
-          //   'Sales Executive',
-          //   'Sales Support',
-          //   'Account & Admin Manager',
-          //   'Purchasing Executive',
-          //   'SuperAdmin',
-          // ],
-        },
-        {
-          label: 'Client PO',
-          route: '/purchase-orders/client',
-          // roles: [
-          //   'Sales Director',
-          //   'Sales Executive',
-          //   'Sales Support',
-          //   'Account & Admin Manager',
-          //   'Purchasing Executive',
-          //   'SuperAdmin',
-          // ],
-        },
-      ],
+      route: '/purchase-orders',
     },
     {
-      label: 'Company',
+      label: 'Sales Order',
+      icon: 'pi-money-bill',
+      route: '/sales-order',
+    },
+    {
+      label: 'My Company',
       route: '/company',
       icon: 'pi-building',
     },
@@ -246,36 +225,17 @@ export class Sidemenu {
       label: 'Suppliers',
       route: '/supplier',
       icon: 'pi-shop',
-      // roles: [
-      //   'Sales Director',
-      //   'Sales Executive',
-      //   'Sales Support',
-      //   'SuperAdmin',
-      // ],
     },
 
     {
       label: 'Clients',
       route: '/clients',
       icon: 'pi-users',
-      // roles: [
-      //   'Sales Director',
-      //   'Sales Executive',
-      //   'Sales Support',
-      //   'SuperAdmin',
-      // ],
     },
-
-    // {
-    //   label: 'Supplier Payments',
-    //   route: '/supplier-payments',
-    //   roles: ['Purchasing Executive', 'SuperAdmin'],
-    // },
     {
       label: 'Material Requests',
       route: '/material-requests',
       icon: 'pi-list',
-      // roles: ['Purchasing Executive', 'Project Manager', 'SuperAdmin'],
     },
 
     {
@@ -299,7 +259,6 @@ export class Sidemenu {
           route: '/inventory/section',
         },
       ],
-      // roles: ['Logistic Assistant', 'SuperAdmin', 'Purchasing Executive'],
     },
 
     {
@@ -307,12 +266,12 @@ export class Sidemenu {
       icon: 'pi-truck',
       items: [
         {
-          label: 'Inbound DO',
-          route: '/delivery-orders/inbound',
+          label: 'Goods Receiving',
+          route: '/delivery-orders/goods-receiving',
         },
         {
-          label: 'Outbound DO',
-          route: '/delivery-orders/outbound',
+          label: 'Goods Dispatch',
+          route: '/delivery-orders/goods-dispatch',
         },
         {
           label: 'DO RMA',
@@ -371,6 +330,12 @@ export class Sidemenu {
       icon: 'pi-credit-card',
       // roles: ['Purchasing Executive', 'SuperAdmin'],
     },
+    {
+      label: 'Department',
+      route: '/department',
+      icon: 'pi-building',
+      // roles: ['Purchasing Executive', 'SuperAdmin'],
+    },
 
     {
       label: 'Settings',
@@ -378,7 +343,15 @@ export class Sidemenu {
       items: [
         {
           label: 'User Management',
-          route: '/user-management',
+          route: '/settings/user-management',
+        },
+        {
+          label: 'System Module',
+          route: '/settings/system-module',
+        },
+        {
+          label: 'Role Permissions',
+          route: '/settings/role-permission',
         },
       ],
     },

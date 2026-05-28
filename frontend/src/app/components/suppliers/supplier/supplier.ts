@@ -101,11 +101,8 @@ import { ImageModule } from 'primeng/image';
             ><ng-template #header>
               <tr>
                 <th class="bg-gray-100! text-center! w-[5%]!"></th>
-                <th
-                  pSortableColumn="Name"
-                  class="bg-gray-100! text-center! w-[30%]!"
-                >
-                  <div class="flex flex-row justify-center items-center gap-2">
+                <th pSortableColumn="Name" class="bg-gray-100! w-[30%]!">
+                  <div class="flex flex-row items-center gap-2">
                     <div>Name</div>
                     <p-sortIcon field="Name" class="mt-1" />
                   </div>
@@ -136,7 +133,7 @@ import { ImageModule } from 'primeng/image';
                     ></p-image>
                   </div>
                 </td>
-                <td class="text-center! font-semibold!">
+                <td class="font-semibold!">
                   {{ data.name }}
                 </td>
                 <td class="text-center!">
@@ -146,7 +143,18 @@ import { ImageModule } from 'primeng/image';
                   {{ data.contactNo }}
                 </td>
                 <td class="text-center!">
-                  {{ data.contactPerson1 }}
+                  <div class="flex flex-col items-center justify-center gap-1">
+                    <span class="font-medium text-gray-800">{{
+                      data.contactPerson1
+                    }}</span>
+
+                    <span
+                      *ngIf="data.contactPerson2"
+                      class="text-xs text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded"
+                    >
+                      Alt: {{ data.contactPerson2 }}
+                    </span>
+                  </div>
                 </td>
 
                 <td class="text-center!">

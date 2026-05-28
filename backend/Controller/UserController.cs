@@ -14,6 +14,7 @@ using YLWorks.Data;
 using YLWorks.Hubs;
 using YLWorks.Model;
 using YLWorks.Services;
+using WebApplication1.Helpers;
 
 namespace WebApplication1.Controllers
 {
@@ -34,6 +35,7 @@ namespace WebApplication1.Controllers
             _config = config;
         }
 
+        [Authorize]
         [HttpGet("GetMany")]
         public ActionResult<object> GetMany(
      int page = 1,
@@ -170,7 +172,8 @@ namespace WebApplication1.Controllers
           u.CreatedAt,
           u.JoinedDate,
           u.HodId,
-          Departments = u.Departments.Select(d => new { d.Id, d.Name }),
+          DepartmentIds = u.Departments.Select(d => d.Id).ToList(),
+          Departments = u.Departments.Select(d => new { d.Id, d.Name }).ToList()
       })
       .ToList();
 
@@ -210,6 +213,7 @@ namespace WebApplication1.Controllers
 
         }
 
+        [Authorize]
         [HttpGet("GetOne")]
         public ActionResult<object> GetOne(
      int page = 1,
@@ -326,7 +330,7 @@ namespace WebApplication1.Controllers
             }
         }
 
-
+        [Authorize]
         [HttpPut("{id}/status")]
         public async Task<IActionResult> UpdateUserStatus(Guid id, [FromQuery] bool isActive)
         {
@@ -335,7 +339,7 @@ namespace WebApplication1.Controllers
                 return NotFound(new { Error = "User not found." });
 
             user.IsActive = isActive;
-            user.UpdatedAt = DateTime.UtcNow;
+            user.UpdatedAt = DateTimeHelper.Now();
             // user.UpdatedById = currentUserId; // Recommended if you have a BaseEntity
 
             await _context.SaveChangesAsync();
@@ -344,6 +348,7 @@ namespace WebApplication1.Controllers
         }
 
         //login
+        [AllowAnonymous]
         [HttpPost("Login")]
         public IActionResult Login([FromBody] LoginRequest request)
         {
@@ -389,7 +394,9 @@ namespace WebApplication1.Controllers
                             user.Hod.FullName,
                             user.Hod.Email,
                             user.Hod.JobTitle
-                        }
+                        },
+                        DepartmentIds = user.Departments.Select(d => d.Id).ToList(),
+                        Departments = user.Departments.Select(d => new {d.Id, d.Name }).ToList()
                     }
                 });
             }
@@ -398,6 +405,7 @@ namespace WebApplication1.Controllers
                 return StatusCode(500, new { Error = "Login failed." });
             }
         }
+       
         private string GenerateJwtToken(User user)
         {
             var claims = new[]
@@ -432,6 +440,7 @@ namespace WebApplication1.Controllers
             }
         }
 
+        [AllowAnonymous]
         [HttpPost("Register")]
         public async Task<IActionResult> Register([FromBody] RegisterRequest request)
         {
@@ -440,11 +449,9 @@ namespace WebApplication1.Controllers
 
             try
             {
-                // Check password confirmation
                 if (request.Password != request.ConfirmPassword)
                     return Ok(new { Success = false, Message = "Passwords do not match." });
 
-                // Check email uniqueness
                 if (await _context.Users.AnyAsync(u => u.Email == request.Email))
                     return Ok(new { Success = false, Message = "Email already in use." });
 
@@ -457,13 +464,22 @@ namespace WebApplication1.Controllers
                     Email = request.Email,
                     ContactNo = request.ContactNo,
                     JobTitle = request.JobTitle,
-                    SystemRole = request.JobTitle,
+                    SystemRole = request.SystemRole ?? "Support",
                     JoinedDate = request.JoinedDate,
                     HodId = request.HodId,
                     Gender = request.Gender,
                     IsActive = true,
-                    CreatedAt = DateTime.UtcNow
+                    CreatedAt = DateTimeHelper.Now()
                 };
+
+                if (request.DepartmentIds != null && request.DepartmentIds.Any())
+                {
+                    var dbDepartments = await _context.Departments
+                        .Where(d => request.DepartmentIds.Contains(d.Id))
+                        .ToListAsync();
+                    newUser.Departments = dbDepartments;
+                }
+
                 var passwordHasher = new PasswordHasher<User>();
                 newUser.Password = passwordHasher.HashPassword(newUser, request.Password);
 
@@ -476,7 +492,7 @@ namespace WebApplication1.Controllers
                     Title = "New User Registered",
                     Message = $"{newUser.FullName} has joined as {newUser.JobTitle}.",
                     Type = "info",
-                    Time = DateTime.UtcNow
+                    Time = DateTimeHelper.Now()
                 });
 
                 return Ok(new
@@ -510,7 +526,7 @@ namespace WebApplication1.Controllers
             return $"EMP-{nextNumber:D4}"; // EMP-0001, EMP-0002 ...
         }
 
-
+        [AllowAnonymous]
         [HttpPut("ChangePassword")]
         public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
         {
@@ -527,7 +543,7 @@ namespace WebApplication1.Controllers
                     return Ok(new { Success = false, Message = "Passwords do not match." });
 
                 user.Password = HashPassword(request.NewPassword);
-                user.UpdatedAt = DateTime.UtcNow;
+                user.UpdatedAt = DateTimeHelper.Now();
                 await _context.SaveChangesAsync();
 
                 // 🔔 Notify via SignalR
@@ -536,7 +552,7 @@ namespace WebApplication1.Controllers
                     Title = "Password Changed",
                     Message = $"Password for {user.FullName} has been updated.",
                     Type = "info",
-                    Time = DateTime.UtcNow
+                    Time = DateTimeHelper.Now()
                 });
 
                 return Ok(new { Success = true, Message = "Password changed successfully." });
@@ -548,7 +564,7 @@ namespace WebApplication1.Controllers
             }
         }
 
-
+        [AllowAnonymous]
         [HttpPost("ResetPassword")]
         public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
         {
@@ -566,7 +582,7 @@ namespace WebApplication1.Controllers
 
                 // Update password
                 resetToken.User.Password = HashPassword(request.NewPassword);
-                resetToken.User.UpdatedAt = DateTime.UtcNow;
+                resetToken.User.UpdatedAt = DateTimeHelper.Now();
 
                 // Remove used token
                 _context.PasswordResetTokens.Remove(resetToken);
@@ -578,7 +594,7 @@ namespace WebApplication1.Controllers
                     Title = "Password Reset",
                     Message = $"Password for user {resetToken.User.Email} has been successfully reset.",
                     Type = "info",
-                    Time = DateTime.UtcNow
+                    Time = DateTimeHelper.Now()
                 });
 
                 return Ok(new { Success = true, Message = "Password has been reset successfully." });
@@ -624,6 +640,7 @@ namespace WebApplication1.Controllers
             }
         }
 
+        [AllowAnonymous]
         [HttpPost("ForgotPassword")]
         public IActionResult ForgotPassword([FromQuery] string Email)
         {
@@ -643,7 +660,7 @@ namespace WebApplication1.Controllers
                 }
 
                 var token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(48));
-                var expiry = DateTime.UtcNow.AddHours(1);
+                var expiry = DateTimeHelper.Now().AddHours(1);
 
                 var resetToken = new PasswordResetToken
                 {
@@ -696,6 +713,7 @@ namespace WebApplication1.Controllers
             }
         }
 
+        [Authorize]
         [HttpPut("Update/{id}")]
         public async Task<IActionResult> UpdateUser(Guid id, [FromBody] UpdateUserRequest request)
         {
@@ -704,32 +722,52 @@ namespace WebApplication1.Controllers
 
             try
             {
-                var user = await _context.Users.FindAsync(id);
+                var user = await _context.Users
+                    .Include(u => u.Departments)
+                    .FirstOrDefaultAsync(u => u.Id == id);
+
                 if (user == null)
                     return NotFound(new { Success = false, Message = "User not found." });
 
-                // Update fields only if they are provided in the request
                 if (!string.IsNullOrEmpty(request.FullName)) user.FullName = request.FullName;
                 if (!string.IsNullOrEmpty(request.DisplayName)) user.DisplayName = request.DisplayName;
                 if (!string.IsNullOrEmpty(request.ContactNo)) user.ContactNo = request.ContactNo;
                 if (!string.IsNullOrEmpty(request.Email)) user.Email = request.Email;
                 if (!string.IsNullOrEmpty(request.JobTitle)) user.JobTitle = request.JobTitle;
-                user.SystemRole = request.JobTitle;
-                if (request.JoinedDate.HasValue) user.JoinedDate = request.JoinedDate.Value; 
+                user.SystemRole = request.SystemRole;
+                if (request.JoinedDate.HasValue) user.JoinedDate = request.JoinedDate.Value;
                 if (!string.IsNullOrEmpty(request.Gender)) user.Gender = request.Gender;
                 if (request.HodId.HasValue) user.HodId = request.HodId.Value;
-                user.UpdatedAt = DateTime.UtcNow;
+
+                if (request.DepartmentIds != null)
+                {
+                    user.Departments ??= new List<Department>();
+                    user.Departments.Clear();
+
+                    if (request.DepartmentIds.Any())
+                    {
+                        var targetDepts = await _context.Departments
+                            .Where(d => request.DepartmentIds.Contains(d.Id))
+                            .ToListAsync();
+
+                        foreach (var dept in targetDepts)
+                        {
+                            user.Departments.Add(dept);
+                        }
+                    }
+                }
+
+                user.UpdatedAt = DateTimeHelper.Now();
 
                 _context.Users.Update(user);
                 await _context.SaveChangesAsync();
 
-                // 🔔 Optional: Notify via SignalR
                 await _hub.Clients.All.SendAsync("ReceiveNotification", new
                 {
                     Title = "User Updated",
                     Message = $"Profile for {user.FullName} has been updated.",
                     Type = "success",
-                    Time = DateTime.UtcNow
+                    Time = DateTimeHelper.Now()
                 });
 
                 var result = new UserDto
@@ -745,6 +783,12 @@ namespace WebApplication1.Controllers
                     JoinedDate = user.JoinedDate,
                     Gender = user.Gender,
                     HodId = user.HodId,
+                    DepartmentIds = user.Departments.Select(d => d.Id).ToList(),
+                    Departments = user.Departments.Select(d => new UserDepartmentDto
+                    {
+                        Id = d.Id,
+                        Name = d.Name
+                    }).ToList(),
                     UpdatedAt = user.UpdatedAt,
                     CreatedAt = user.CreatedAt,
                     LastLoginAt = user.LastLoginAt,
@@ -759,6 +803,5 @@ namespace WebApplication1.Controllers
                 return StatusCode(500, new { Success = false, Error = "Failed to update user.", Details = ex.Message });
             }
         }
-
     }
 }

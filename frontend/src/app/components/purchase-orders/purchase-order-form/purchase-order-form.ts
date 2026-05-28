@@ -100,9 +100,9 @@ import { RadioButtonModule } from 'primeng/radiobutton';
             severity="secondary"
             [outlined]="true"
             styleClass="py-1.5! px-4!"
-            [routerLink]="'/purchase-orders/supplier'"
+            [routerLink]="'/purchase-orders'"
           ></p-button>
-          <!-- <p-button
+          <!-- <p-buttons
           label="Save As Draft"
           severity="info"
           [outlined]="true"
@@ -205,7 +205,7 @@ import { RadioButtonModule } from 'primeng/radiobutton';
               dateFormat="dd/mm/yy"
             ></p-datepicker>
           </div>
-          <div class="col-span-12 lg:col-span-6 flex flex-col gap-1">
+          <div class="col-span-12 lg:col-span-6 flex flex-col gap-2 mt-2">
             <div>Terms</div>
             <input
               type="text"
@@ -399,19 +399,76 @@ import { RadioButtonModule } from 'primeng/radiobutton';
               ></p-button>
             </div>
           </div>
-          <div class="col-span-12 flex flex-row items-center justify-end gap-2">
-            <div class="font-semibold">Total Amount :</div>
-            <p-inputnumber
-              styleClass="text-center!"
-              formControlName="totalAmount"
-              inputStyleClass="w-full font-semibold! cursor-pointer! bg-gray-200!"
-              mode="currency"
-              currency="MYR"
-              readonly="true"
-              locale="ms-MY"
-              placeholder="totalAmount"
-              [minFractionDigits]="2"
-            ></p-inputnumber>
+          <div
+            class="col-span-12 flex flex-col items-end justify-end mt-4 pt-4 border-t border-gray-100"
+          >
+            <div class="w-full max-w-[360px] flex flex-col gap-3">
+              <div class="flex items-center justify-between gap-4">
+                <div
+                  class="text-sm font-semibold text-gray-500 uppercase tracking-wider flex items-center gap-1.5"
+                >
+                  <span>Gross (RM)</span>
+                  <span
+                    class="text-[10px] text-blue-500 lowercase font-normal bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100"
+                    >auto</span
+                  >
+                </div>
+                <p-inputnumber
+                  formControlName="gross"
+                  styleClass="w-[180px]"
+                  inputStyleClass="w-full px-3 py-1.5 text-right font-medium text-sm text-gray-500 bg-gray-100! border border-gray-200 rounded-lg cursor-not-allowed select-none"
+                  mode="currency"
+                  currency="MYR"
+                  [readonly]="true"
+                  locale="ms-MY"
+                  placeholder="0.00"
+                  [minFractionDigits]="2"
+                ></p-inputnumber>
+              </div>
+
+              <div class="flex items-center justify-between gap-4">
+                <div
+                  class="text-sm font-semibold text-gray-600 uppercase tracking-wider"
+                >
+                  - Discount (RM)
+                </div>
+                <p-inputnumber
+                  formControlName="discount"
+                  styleClass="w-[180px]"
+                  inputStyleClass="w-full px-3 py-1.5 text-right text-sm font-semibold text-gray-800 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                  mode="currency"
+                  currency="MYR"
+                  locale="ms-MY"
+                  placeholder="0.00"
+                  [minFractionDigits]="2"
+                ></p-inputnumber>
+              </div>
+
+              <div class="border-b border-gray-200 my-1"></div>
+
+              <div class="flex items-center justify-between gap-4">
+                <div
+                  class="text-sm font-bold text-gray-800 uppercase tracking-wider flex items-center gap-1.5"
+                >
+                  <span>Total Amount</span>
+                  <span
+                    class="text-[10px] text-emerald-600 lowercase font-normal bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100 tracking-normal"
+                    >auto</span
+                  >
+                </div>
+                <p-inputnumber
+                  formControlName="totalAmount"
+                  styleClass="w-[180px]"
+                  inputStyleClass="w-full px-3 py-2 text-right font-bold text-base bg-gray-100! border border-emerald-200 rounded-lg cursor-not-allowed select-none shadow-sm"
+                  mode="currency"
+                  currency="MYR"
+                  [readonly]="true"
+                  locale="ms-MY"
+                  placeholder="0.00"
+                  [minFractionDigits]="2"
+                ></p-inputnumber>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -419,98 +476,187 @@ import { RadioButtonModule } from 'primeng/radiobutton';
     <p-dialog
       [(visible)]="showCompanyDialog"
       [modal]="true"
-      [style]="{ width: '850px' }"
-      styleClass="preview-dialog overflow-hidden rounded-xl!"
-      [maskStyle]="{ 'overflow-y': 'auto' }"
+      [draggable]="false"
+      [resizable]="false"
+      styleClass="preview-dialog overflow-hidden rounded-xl! w-[95%]! max-w-[850px]! shadow-2xl"
+      [maskStyle]="{
+        'overflow-y': 'auto',
+        'background-color': 'rgba(15, 23, 42, 0.4)',
+        'backdrop-filter': 'blur(4px)',
+      }"
       appendTo="body"
     >
       <ng-template #headless>
-        <div class="bg-gray-50/50 p-6 border-b border-gray-100">
-          <div class="flex items-center gap-3">
-            <div class="bg-blue-100 p-2.5 rounded-lg">
-              <i class="pi pi-user-plus text-blue-600 text-xl"></i>
+        <div class="bg-slate-50 p-6 border-b border-gray-200/80 flex-none">
+          <div class="flex justify-between items-start gap-4">
+            <div class="flex items-center gap-3.5">
+              <div
+                class="bg-blue-50 border border-blue-100 p-2.5 rounded-xl shadow-sm text-blue-600"
+              >
+                <i class="pi pi-building text-xl flex"></i>
+              </div>
+              <div>
+                <h2 class="text-xl font-bold text-gray-900 tracking-tight m-0">
+                  Add New Company
+                </h2>
+                <p class="text-sm text-gray-500 mt-0.5 leading-relaxed">
+                  Fill in the company details, contact people, and addresses to
+                  create a new account.
+                </p>
+              </div>
             </div>
-            <div>
-              <h2 class="text-xl font-bold text-gray-800 m-0">
-                Create New Company
-              </h2>
-              <p class="text-sm text-gray-500 mt-1 tracking-wide">
-                Fill in the primary details and address information to register
-                a new company.
-              </p>
-            </div>
+            <p-button
+              icon="pi pi-times"
+              [rounded]="true"
+              [text]="true"
+              severity="secondary"
+              styleClass="hover:bg-gray-200/60 text-gray-400 hover:text-gray-600 transition-colors"
+              (onClick)="showCompanyDialog = false"
+            ></p-button>
           </div>
         </div>
 
-        <div class="p-6 max-h-[70vh] overflow-y-auto">
+        <div class="p-6 max-h-[70vh] overflow-y-auto bg-white">
           <div
             [formGroup]="companyForm"
-            class="grid grid-cols-12 gap-x-4 gap-y-3"
+            class="grid grid-cols-12 gap-x-5 gap-y-4"
           >
-            <div class="col-span-12 lg:col-span-6 flex flex-col gap-1.5">
-              <label class="font-medium text-gray-700"
-                >Name <span class="text-red-500">*</span></label
+            <div
+              class="col-span-12 grid grid-cols-12 gap-x-5 gap-y-4 bg-slate-50/40 p-4 border border-gray-100 rounded-xl"
+            >
+              <div class="col-span-12 lg:col-span-8 flex flex-col gap-1.5">
+                <label
+                  class="text-xs font-bold text-gray-700 uppercase tracking-wider flex items-center gap-1"
+                >
+                  Company Name <span class="text-rose-500 font-bold">*</span>
+                </label>
+                <input
+                  type="text"
+                  pInputText
+                  class="w-full px-3.5 py-2 text-sm border border-gray-300 rounded-lg bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all shadow-sm placeholder:text-gray-400"
+                  formControlName="name"
+                  placeholder="e.g. Acme Corp Bhd"
+                />
+              </div>
+
+              <div class="col-span-12 lg:col-span-4 flex flex-col gap-1.5">
+                <label
+                  class="text-xs font-semibold text-gray-600 uppercase tracking-wider"
+                  >Account Ref No.</label
+                >
+                <input
+                  type="text"
+                  pInputText
+                  class="w-full px-3.5 py-2 text-sm border border-gray-300 rounded-lg bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all shadow-sm placeholder:text-gray-400"
+                  formControlName="acNo"
+                  placeholder="e.g. ACC-2026-89"
+                />
+              </div>
+
+              <div class="col-span-12 md:col-span-4 flex flex-col gap-1.5">
+                <label
+                  class="text-xs font-semibold text-gray-600 uppercase tracking-wider"
+                  >Email Address</label
+                >
+                <input
+                  type="text"
+                  pInputText
+                  class="w-full px-3.5 py-2 text-sm border border-gray-300 rounded-lg bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all shadow-sm placeholder:text-gray-400"
+                  formControlName="email"
+                  placeholder="info@acme.com"
+                />
+              </div>
+
+              <div
+                class="col-span-12 sm:col-span-6 md:col-span-4 flex flex-col gap-1.5"
               >
+                <label
+                  class="text-xs font-semibold text-gray-600 uppercase tracking-wider"
+                  >Phone Number</label
+                >
+                <input
+                  type="text"
+                  pInputText
+                  class="w-full px-3.5 py-2 text-sm border border-gray-300 rounded-lg bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all shadow-sm placeholder:text-gray-400"
+                  formControlName="contactNo"
+                  placeholder="e.g. +60 3-XXXX XXXX"
+                />
+              </div>
+
+              <div
+                class="col-span-12 sm:col-span-6 md:col-span-4 flex flex-col gap-1.5"
+              >
+                <label
+                  class="text-xs font-semibold text-gray-600 uppercase tracking-wider"
+                  >Fax Number</label
+                >
+                <input
+                  type="text"
+                  pInputText
+                  class="w-full px-3.5 py-2 text-sm border border-gray-300 rounded-lg bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all shadow-sm placeholder:text-gray-400"
+                  formControlName="faxNo"
+                  placeholder="e.g. +60 3-XXXX XXXX"
+                />
+              </div>
+            </div>
+
+            <div class="col-span-12 border-t border-gray-100 pt-4 mt-2">
+              <div class="flex items-center gap-2 mb-1">
+                <i class="pi pi-users text-gray-400 text-sm"></i>
+                <span
+                  class="font-bold text-gray-900 uppercase tracking-wider text-xs"
+                  >Contact People</span
+                >
+              </div>
+            </div>
+
+            <div
+              class="col-span-12 lg:col-span-6 flex flex-col gap-1.5 p-3.5 bg-slate-50/60 border border-slate-100 rounded-xl"
+            >
+              <div
+                class="text-sm font-bold text-blue-700 tracking-wide flex items-center gap-1.5 mb-1"
+              >
+                <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                Primary Contact
+              </div>
+              <label class="text-sm font-medium text-gray-500">Full Name</label>
               <input
                 type="text"
                 pInputText
-                class="w-full!"
-                formControlName="name"
-                placeholder="e.g. Acme Corp"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-shadow"
+                formControlName="contactPerson1"
+                placeholder="e.g. Mr. John Doe or Dr. Smith"
               />
             </div>
-            <div class="col-span-12 lg:col-span-6 flex flex-col gap-1.5">
-              <label class="font-medium text-gray-700">Email Address</label>
+
+            <div
+              class="col-span-12 lg:col-span-6 flex flex-col gap-1.5 p-3.5 bg-slate-50/60 border border-slate-100 rounded-xl"
+            >
+              <div
+                class="text-xs font-bold text-gray-600 tracking-wide flex items-center gap-1.5 mb-1"
+              >
+                <span class="w-1.5 h-1.5 rounded-full bg-gray-400"></span>
+                Secondary Contact
+                <span
+                  class="text-[10px] text-gray-400 lowercase font-normal italic"
+                  >(Optional)</span
+                >
+              </div>
+              <label class="text-sm font-medium text-gray-500">Full Name</label>
               <input
                 type="text"
                 pInputText
-                class="w-full!"
-                formControlName="email"
-                placeholder="company@example.com"
-              />
-            </div>
-            <div class="col-span-12 lg:col-span-6 flex flex-col gap-1.5">
-              <label class="font-medium text-gray-700">Contact Number</label>
-              <input
-                type="text"
-                pInputText
-                class="w-full!"
-                formControlName="contactNo"
-              />
-            </div>
-            <div class="col-span-12 lg:col-span-6 flex flex-col gap-1.5">
-              <label class="font-medium text-gray-700">Fax No</label>
-              <input
-                type="text"
-                pInputText
-                class="w-full!"
-                formControlName="faxNo"
-              />
-            </div>
-            <div class="col-span-12 lg:col-span-6 flex flex-col gap-1.5">
-              <label class="font-medium text-gray-700">Contact Person</label>
-              <input
-                type="text"
-                pInputText
-                class="w-full!"
-                formControlName="contactPerson"
-              />
-            </div>
-            <div class="col-span-12 lg:col-span-6 flex flex-col gap-1.5">
-              <label class="font-medium text-gray-700">A/C No</label>
-              <input
-                type="text"
-                pInputText
-                class="w-full!"
-                formControlName="acNo"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-shadow"
+                formControlName="contactPerson2"
+                placeholder="e.g. Ms. Jane Doe"
               />
             </div>
 
             <div class="col-span-12 border-t border-gray-100 pt-4 mt-2">
-              <div class="flex items-center gap-2 mb-3">
-                <i class="pi pi-file text-gray-400"></i>
+              <div class="flex items-center gap-2 mb-1">
+                <i class="pi pi-credit-card text-gray-400 text-sm"></i>
                 <span
-                  class="font-bold text-gray-800 uppercase tracking-wider text-xs"
+                  class="font-bold text-gray-900 uppercase tracking-wider text-sm"
                   >Billing Address</span
                 >
               </div>
@@ -518,133 +664,173 @@ import { RadioButtonModule } from 'primeng/radiobutton';
 
             <div
               formGroupName="billingAddress"
-              class="col-span-12 grid grid-cols-12 gap-3"
+              class="col-span-12 grid grid-cols-12 gap-x-5 gap-y-3"
             >
               <div class="col-span-12 flex flex-col gap-1.5">
-                <label class="text-gray-600">Address Line 1</label>
+                <label class="font-medium text-gray-500">Address Line 1</label>
                 <input
                   pInputText
                   formControlName="addressLine1"
-                  class="w-full!"
+                  class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                  placeholder="Floor, building, or suite number"
                 />
               </div>
               <div class="col-span-12 flex flex-col gap-1.5">
-                <label class="text-gray-600">Address Line 2</label>
+                <label class="font-medium text-gray-500">Address Line 2</label>
                 <input
                   pInputText
                   formControlName="addressLine2"
-                  class="w-full!"
+                  class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                  placeholder="Street name or neighborhood"
                 />
               </div>
               <div class="col-span-12 lg:col-span-6 flex flex-col gap-1.5">
-                <label class="text-gray-600">City</label>
-                <input pInputText formControlName="city" class="w-full!" />
+                <label class="font-medium text-gray-500">City</label>
+                <input
+                  pInputText
+                  formControlName="city"
+                  class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                />
               </div>
               <div class="col-span-12 lg:col-span-6 flex flex-col gap-1.5">
-                <label class="text-gray-600">Postcode</label>
-                <input pInputText formControlName="poscode" class="w-full!" />
+                <label class="font-medium text-gray-500">Postcode / ZIP</label>
+                <input
+                  pInputText
+                  formControlName="poscode"
+                  class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                />
               </div>
               <div class="col-span-12 lg:col-span-6 flex flex-col gap-1.5">
-                <label class="text-gray-600">State</label>
-                <input pInputText formControlName="state" class="w-full!" />
+                <label class="font-medium text-gray-500">State</label>
+                <input
+                  pInputText
+                  formControlName="state"
+                  class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                />
               </div>
               <div class="col-span-12 lg:col-span-6 flex flex-col gap-1.5">
-                <label class="text-gray-600">Country</label>
-                <input pInputText formControlName="country" class="w-full!" />
+                <label class="font-medium text-gray-500">Country</label>
+                <input
+                  pInputText
+                  formControlName="country"
+                  class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                />
               </div>
             </div>
 
             <div
-              class="col-span-12 border-t border-gray-100 pt-4 mt-4 flex justify-between items-center"
+              class="col-span-12 border-t border-gray-100 pt-4 mt-2 flex justify-between items-center"
             >
               <div class="flex items-center gap-2">
-                <i class="pi pi-truck text-gray-400"></i>
-                <span
-                  class="font-bold text-gray-800 uppercase tracking-wider text-xs"
+                <i class="pi pi-truck text-gray-400 text-sm"></i>
+                <span class="font-bold text-gray-900 uppercase tracking-wider"
                   >Delivery Address</span
                 >
               </div>
               <div
-                class="flex items-center gap-2 text-sm bg-gray-100 px-3 py-1 rounded-full cursor-pointer hover:bg-gray-200 transition-colors"
+                class="flex items-center gap-2 bg-slate-100 border border-slate-200/60 px-3 py-1 rounded-lg cursor-pointer hover:bg-slate-200/80 transition-colors group"
               >
                 <input
                   type="checkbox"
                   formControlName="sameAsBilling"
                   id="sameAsBilling"
-                  class="cursor-pointer"
+                  class="cursor-pointer h-3.5 w-3.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                 />
                 <label
                   for="sameAsBilling"
-                  class="cursor-pointer font-medium text-gray-600 text-xs"
-                  >Same as Billing</label
+                  class="cursor-pointer font-semibold text-gray-700 text-xs select-none"
                 >
+                  Same as Billing
+                </label>
               </div>
             </div>
 
             <div
+              *ngIf="!companyForm.get('sameAsBilling')?.value"
               formGroupName="deliveryAddress"
-              class="col-span-12 grid grid-cols-12 gap-3"
+              class="col-span-12 grid grid-cols-12 gap-x-5 gap-y-3 transition-all"
             >
               <div class="col-span-12 flex flex-col gap-1.5">
-                <label class="text-gray-600">Address Line 1</label>
+                <label class="font-medium text-gray-500">Address Line 1</label>
                 <input
                   pInputText
                   formControlName="addressLine1"
-                  class="w-full!"
+                  class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                  placeholder="Warehouse, loading bay, or suite number"
                 />
               </div>
               <div class="col-span-12 flex flex-col gap-1.5">
-                <label class="text-gray-600">Address Line 2</label>
+                <label class="font-medium text-gray-500">Address Line 2</label>
                 <input
                   pInputText
                   formControlName="addressLine2"
-                  class="w-full!"
+                  class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                  placeholder="Street name or neighborhood"
                 />
               </div>
               <div class="col-span-12 lg:col-span-6 flex flex-col gap-1.5">
-                <label class="text-gray-600">City</label>
-                <input pInputText formControlName="city" class="w-full!" />
+                <label class="font-medium text-gray-500">City</label>
+                <input
+                  pInputText
+                  formControlName="city"
+                  class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                />
               </div>
               <div class="col-span-12 lg:col-span-6 flex flex-col gap-1.5">
-                <label class="text-gray-600">Postcode</label>
-                <input pInputText formControlName="poscode" class="w-full!" />
+                <label class="font-medium text-gray-500">Postcode / ZIP</label>
+                <input
+                  pInputText
+                  formControlName="poscode"
+                  class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                />
               </div>
               <div class="col-span-12 lg:col-span-6 flex flex-col gap-1.5">
-                <label class="text-gray-600">State</label>
-                <input pInputText formControlName="state" class="w-full!" />
+                <label class="font-medium text-gray-500">State</label>
+                <input
+                  pInputText
+                  formControlName="state"
+                  class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                />
               </div>
               <div class="col-span-12 lg:col-span-6 flex flex-col gap-1.5">
-                <label class="text-gray-600">Country</label>
-                <input pInputText formControlName="country" class="w-full!" />
+                <label class="font-medium text-gray-500">Country</label>
+                <input
+                  pInputText
+                  formControlName="country"
+                  class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                />
               </div>
             </div>
 
             <div
-              class="col-span-12 p-4 bg-blue-50/50 border border-blue-100 rounded-lg text-blue-700 text-center text-sm flex items-center justify-center gap-2 mt-2"
+              class="col-span-12 p-4 bg-blue-50 border border-blue-100 rounded-xl text-blue-800 text-sm flex items-center gap-2.5 mt-2 transition-all shadow-sm"
               *ngIf="companyForm.get('sameAsBilling')?.value"
             >
-              <i class="pi pi-info-circle"></i>
-              System will use the billing address for delivery.
+              <i class="pi pi-info-circle text-base text-blue-600"></i>
+              <span class="font-medium"
+                >Delivery address will automatically match the billing
+                address.</span
+              >
             </div>
           </div>
         </div>
 
         <div
-          class="p-4 bg-gray-50 border-t border-gray-100 flex justify-end items-center gap-3"
+          class="p-4 bg-slate-50 border-t border-gray-200 flex justify-end items-center gap-3 flex-none"
         >
           <p-button
             (onClick)="showCompanyDialog = false"
-            label="Discard"
+            label="Cancel"
             severity="secondary"
-            styleClass="px-6 py-2! border-gray-200!"
+            styleClass="border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 py-2 px-5 text-sm font-medium rounded-lg shadow-sm"
           ></p-button>
 
           <p-button
             (onClick)="SaveCompany()"
-            label="Save"
+            label="Save Company"
             severity="info"
             [disabled]="companyForm.invalid"
-            styleClass="px-8 py-2! shadow-sm"
+            styleClass="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-100 disabled:text-gray-400 border-none text-white py-2 px-6 text-sm font-medium shadow-sm rounded-lg"
           ></p-button>
         </div>
       </ng-template>
@@ -653,123 +839,192 @@ import { RadioButtonModule } from 'primeng/radiobutton';
     <p-dialog
       [(visible)]="showProjectDialog"
       [modal]="true"
-      [style]="{ width: '850px' }"
-      styleClass="preview-dialog overflow-hidden rounded-xl!"
-      [maskStyle]="{ 'overflow-y': 'auto' }"
+      [draggable]="false"
+      [resizable]="false"
+      styleClass="preview-dialog overflow-hidden rounded-xl! w-[95%]! max-w-[800px]! shadow-2xl"
+      [maskStyle]="{
+        'overflow-y': 'auto',
+        'background-color': 'rgba(15, 23, 42, 0.4)',
+        'backdrop-filter': 'blur(4px)',
+      }"
       appendTo="body"
     >
       <ng-template #headless>
-        <div class="bg-gray-50/50 p-6 border-b border-gray-100">
-          <div class="flex items-center gap-3">
-            <div class="bg-blue-100 p-2.5 rounded-lg">
-              <i class="pi pi-user-plus text-blue-600 text-xl"></i>
+        <div class="bg-slate-50 p-6 border-b border-gray-200/80 flex-none">
+          <div class="flex justify-between items-start gap-4">
+            <div class="flex items-center gap-3.5">
+              <div
+                class="bg-blue-50 border border-blue-100 p-2.5 rounded-xl shadow-sm text-blue-600"
+              >
+                <i class="pi pi-folder-plus text-xl flex"></i>
+              </div>
+              <div>
+                <h2 class="text-xl font-bold text-gray-900 tracking-tight m-0">
+                  Create New Project
+                </h2>
+                <p class="text-sm text-gray-500 mt-0.5 leading-relaxed">
+                  Define primary metrics, set milestones, and allocate initial
+                  team responsibilities.
+                </p>
+              </div>
             </div>
-            <div>
-              <h2 class="text-xl font-bold text-gray-800 m-0">
-                Create New Project
-              </h2>
-              <p class="text-sm text-gray-500 mt-1 tracking-wide">
-                Fill in the primary details to create new project.
-              </p>
-            </div>
+            <p-button
+              icon="pi pi-times"
+              [rounded]="true"
+              [text]="true"
+              severity="secondary"
+              styleClass="hover:bg-gray-200/60 text-gray-400 hover:text-gray-600 transition-colors"
+              (onClick)="showProjectDialog = false"
+            ></p-button>
           </div>
         </div>
 
         <div class="p-6 max-h-[70vh] overflow-y-auto">
           <div
             [formGroup]="projectForm"
-            class="grid grid-cols-12 gap-x-4 gap-y-3"
+            class="grid grid-cols-12 gap-x-5 gap-y-4"
           >
             <div class="col-span-12 flex flex-col gap-1.5">
-              <label class="font-medium text-gray-700"
-                >Project Title<span class="text-red-500">*</span></label
+              <label
+                class="text-sm font-semibold text-gray-600 uppercase tracking-wider"
+              >
+                Project Title <span class="text-rose-500">*</span>
+              </label>
+              <input
+                type="text"
+                pInputText
+                class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-shadow"
+                formControlName="projectTitle"
+                placeholder="e.g. Phase 2 Cloud Migration Pipeline"
+              />
+            </div>
+
+            <div class="col-span-12 lg:col-span-6 flex flex-col gap-1.5">
+              <label
+                class="text-sm font-semibold text-gray-600 uppercase tracking-wider"
+                >Project Code</label
               >
               <input
                 type="text"
                 pInputText
-                class="w-full!"
-                formControlName="projectTitle"
-              />
-            </div>
-            <div class="col-span-12 lg:col-span-6 flex flex-col gap-1.5">
-              <label class="font-medium text-gray-700">Project Code </label>
-              <input
-                type="text"
-                pInputText
-                class="w-full!"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-shadow"
                 formControlName="projectCode"
                 placeholder="e.g. 112-1"
               />
             </div>
 
             <div class="col-span-12 lg:col-span-6 flex flex-col gap-1.5">
-              <label class="font-medium text-gray-700">Client</label>
+              <label
+                class="text-sm font-semibold text-gray-600 uppercase tracking-wider"
+                >Client Account</label
+              >
               <p-select
                 [options]="clientSelection"
                 appendTo="body"
                 [filter]="true"
                 [showClear]="projectForm.get('clientId')?.value"
                 formControlName="clientId"
+                styleClass="w-full border border-gray-300 rounded-lg shadow-none"
+                placeholder="Assign customer corporate profile"
               ></p-select>
             </div>
+
             <div class="col-span-12 lg:col-span-6 flex flex-col gap-1.5">
-              <div>Start Date</div>
+              <label
+                class="text-sm font-semibold text-gray-600 uppercase tracking-wider"
+                >Kickoff Date</label
+              >
               <p-datepicker
                 appendTo="body"
-                styleClass="w-full!"
+                styleClass="w-full"
+                inputStyleClass="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:border-blue-500"
                 formControlName="startDate"
                 dateFormat="dd/mm/yy"
                 [showIcon]="true"
+                placeholder="Select start date"
               ></p-datepicker>
             </div>
+
             <div class="col-span-12 lg:col-span-6 flex flex-col gap-1.5">
-              <div>Due Date</div>
+              <label
+                class="text-sm font-semibold text-gray-600 uppercase tracking-wider"
+                >Target Deadline</label
+              >
               <p-datepicker
                 appendTo="body"
-                styleClass="w-full!"
+                styleClass="w-full"
+                inputStyleClass="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:border-blue-500"
                 formControlName="dueDate"
                 dateFormat="dd/mm/yy"
                 [showIcon]="true"
+                placeholder="Select delivery target"
               ></p-datepicker>
             </div>
-            <div class="col-span-12 lg:col-span-6 flex flex-col gap-1.5">
-              <div>Priority</div>
-              <div class="flex flex-row gap-5">
-                <div class="flex flex-row gap-3">
+
+            <div class="col-span-12 lg:col-span-6 flex flex-col gap-1 mt-2">
+              <label
+                class="text-sm font-semibold text-gray-600 uppercase tracking-wider"
+                >Operational Priority Level</label
+              >
+              <div class="flex items-center gap-6 h-full min-h-[38px]">
+                <div class="flex items-center gap-2 cursor-pointer group">
                   <p-radiobutton
                     value="Low"
                     formControlName="priority"
+                    inputId="prio-low"
                   ></p-radiobutton>
-                  <label for="">Low</label>
+                  <label
+                    for="prio-low"
+                    class="mt-1 font-medium text-gray-700 cursor-pointer group-hover:text-gray-900"
+                    >Low</label
+                  >
                 </div>
-                <div class="flex flex-row gap-3">
+                <div class="flex items-center gap-2 cursor-pointer group">
                   <p-radiobutton
                     value="Medium"
                     formControlName="priority"
+                    inputId="prio-med"
                   ></p-radiobutton>
-                  <label for="">Medium</label>
+                  <label
+                    for="prio-med"
+                    class="mt-1 font-medium text-gray-700 cursor-pointer group-hover:text-gray-900"
+                    >Medium</label
+                  >
                 </div>
-                <div class="flex flex-row gap-3">
+                <div class="flex items-center gap-2 cursor-pointer group">
                   <p-radiobutton
                     value="High"
                     formControlName="priority"
+                    inputId="prio-high"
                   ></p-radiobutton>
-                  <label for="">High</label>
+                  <label
+                    for="prio-high"
+                    class="mt-1 font-medium text-gray-700 cursor-pointer group-hover:text-gray-900"
+                    >High</label
+                  >
                 </div>
               </div>
             </div>
 
-            <div class="col-span-12 flex flex-col gap-1">
-              <div>Description</div>
+            <div class="col-span-12 flex flex-col gap-1.5">
+              <label
+                class="text-sm font-semibold text-gray-600 uppercase tracking-wider"
+                >Project Objectives Scope</label
+              >
               <textarea
                 pTextarea
                 rows="3"
-                cols="30"
+                class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-1 focus:ring-blue-500 resize-none"
                 formControlName="description"
+                placeholder="Summarize structural project milestones, contractual dependencies or general notes..."
               ></textarea>
             </div>
-            <div class="col-span-12 flex flex-col gap-1 mb-3">
-              <div>Project Members</div>
+
+            <div class="col-span-12 flex flex-col gap-2.5 mt-1">
+              <label
+                class="text-sm font-semibold text-gray-600 uppercase tracking-wider"
+                >Allocate Team</label
+              >
 
               <p-multiselect
                 [options]="userSelection"
@@ -779,54 +1034,68 @@ import { RadioButtonModule } from 'primeng/radiobutton';
                 display="chip"
                 [filter]="true"
                 appendTo="body"
+                styleClass="w-full border border-gray-300 rounded-lg shadow-none"
+                placeholder="Search and add team member(s)..."
               >
                 <ng-template let-team #item>
-                  <div class="flex items-center gap-2">
-                    <div>{{ team.label }}</div>
+                  <div class="flex items-center gap-2 py-0.5">
+                    <i class="pi pi-user text-gray-400 text-xs"></i>
+                    <span class="font-medium text-gray-700">{{
+                      team.label
+                    }}</span>
                   </div>
                 </ng-template>
                 <ng-template let-team #selecteditems>
-                  <div class="flex items-center" *ngIf="team?.length > 0">
-                    <div class="font-semibold tracking-wide">
-                      {{ team?.length }} team members selected
-                    </div>
+                  <div
+                    class="flex items-center gap-2 px-1 font-semibold text-blue-700"
+                    *ngIf="team?.length > 0"
+                  >
+                    <i class="pi pi-users"></i>
+                    <span>{{ team?.length }} assigned team members</span>
                   </div>
                 </ng-template>
               </p-multiselect>
-              <div class="flex flex-wrap gap-3">
+
+              <div
+                class="flex flex-wrap gap-2 mt-1"
+                *ngIf="selectedTeamMembers && selectedTeamMembers.length > 0"
+              >
                 <ng-container *ngFor="let user of selectedTeamMembers">
                   <div
-                    class="flex flex-row px-3 py-1 bg-gray-100 cursor-pointer rounded-full gap-2 items-center"
+                    class="inline-flex items-center gap-2 px-3 py-1 bg-slate-100 hover:bg-slate-200/80 border border-slate-200 text-xs font-medium text-slate-700 rounded-full transition-colors group"
                   >
-                    <div
-                      class="pi pi-times-circle"
+                    <span class="truncate max-w-[180px]">{{
+                      user?.label
+                    }}</span>
+                    <button
+                      type="button"
                       (click)="RemoveSelectedMember(user)"
-                    ></div>
-                    <div class="">{{ user?.label }}</div>
+                      class="pi pi-times text-[10px] text-slate-400 hover:text-rose-600 rounded-full p-0.5 transition-colors focus:outline-none"
+                    ></button>
                   </div>
                 </ng-container>
               </div>
             </div>
           </div>
+        </div>
 
-          <div
-            class="p-4 bg-gray-50 border-t border-gray-100 flex justify-end items-center gap-3"
-          >
-            <p-button
-              (onClick)="showProjectDialog = false"
-              label="Discard"
-              severity="secondary"
-              styleClass="px-6 py-2! border-gray-200!"
-            ></p-button>
+        <div
+          class="p-4 bg-slate-50 border-t border-gray-200 flex justify-end items-center gap-3 flex-none"
+        >
+          <p-button
+            (onClick)="showProjectDialog = false"
+            label="Discard"
+            severity="secondary"
+            styleClass="border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 py-2 px-5 text-sm font-medium rounded-lg shadow-sm"
+          ></p-button>
 
-            <p-button
-              (onClick)="SaveProject()"
-              label="Save"
-              severity="info"
-              [disabled]="projectForm.invalid"
-              styleClass="px-8 py-2! shadow-sm"
-            ></p-button>
-          </div>
+          <p-button
+            (onClick)="SaveProject()"
+            label="Create Project"
+            severity="info"
+            [disabled]="projectForm.invalid"
+            styleClass="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-100 disabled:text-gray-400 border-none text-white py-2 px-6 text-sm font-medium shadow-sm rounded-lg"
+          ></p-button>
         </div>
       </ng-template>
     </p-dialog>
@@ -871,7 +1140,7 @@ export class PurchaseOrderForm implements OnInit, OnDestroy {
   selectedTemplate: string = 'notes';
 
   grossTotal = signal(0);
-  discountTotal = signal(0);
+  totalDiscount = signal(0);
   totalAmount = signal(0);
 
   projectSelection: any[] = [];
@@ -908,7 +1177,6 @@ export class PurchaseOrderForm implements OnInit, OnDestroy {
     this.poForm = new FormGroup({
       purchaseOrderNo: new FormControl<string | null>(null),
       fromCompanyId: new FormControl<string | null>(null, Validators.required),
-      type: new FormControl<string>('Outcoming'),
       poDate: new FormControl<Date | null>(new Date(), Validators.required),
       poReceivedDate: new FormControl<Date | null>(null),
       supplierId: new FormControl<string | null>(null),
@@ -917,7 +1185,7 @@ export class PurchaseOrderForm implements OnInit, OnDestroy {
       projectId: new FormControl<string | null>(null),
       quotationId: new FormControl<string | null>(null),
       gross: new FormControl<number | null>(0),
-      discount: new FormControl<number | null>(null),
+      discount: new FormControl<number | null>(0),
       totalAmount: new FormControl<number | null>(0),
       remarks: new FormControl<string | null>(null),
       notes: new FormControl<string | null>(null),
@@ -988,12 +1256,11 @@ export class PurchaseOrderForm implements OnInit, OnDestroy {
     let subtotal = 0;
 
     this.items.controls.forEach((control) => {
-      const qty = control.get('quantity')?.value || 0;
-      const unitPrice = control.get('unitPrice')?.value || 0;
-      const itemDiscountPercent = control.get('discount')?.value || 0;
+      const qty = Number(control.get('quantity')?.value || 0);
+      const unitPrice = Number(control.get('unitPrice')?.value || 0);
+      const itemDiscountPercent = Number(control.get('discount')?.value || 0);
 
       const lineTotal = qty * unitPrice;
-
       const itemDiscount = lineTotal * (itemDiscountPercent / 100);
       const netLine = lineTotal - itemDiscount;
 
@@ -1004,17 +1271,23 @@ export class PurchaseOrderForm implements OnInit, OnDestroy {
       subtotal += netLine;
     });
 
-    const headerDiscountPercent = this.poForm.get('discount')?.value || 0;
-    const headerDiscountAmount = subtotal * (headerDiscountPercent / 100);
-
-    const total = subtotal - headerDiscountAmount;
+    const headerDiscount = Number(this.poForm.get('discount')?.value || 0);
+    const total = subtotal - headerDiscount;
+    const safeTotal = Math.max(0, total);
 
     this.grossTotal.set(gross);
-    this.discountTotal.set(itemDiscountTotal + headerDiscountAmount);
-    this.totalAmount.set(total);
+    this.totalDiscount.set(itemDiscountTotal + headerDiscount);
+    this.totalAmount.set(safeTotal);
 
-    this.poForm.get('gross')?.setValue(gross, { emitEvent: false });
-    this.poForm.get('totalAmount')?.setValue(total, { emitEvent: false });
+    this.poForm.patchValue(
+      {
+        gross: subtotal,
+        totalAmount: safeTotal,
+      },
+      { emitEvent: false },
+    );
+
+    this.cdr.markForCheck();
   }
 
   getDropdown() {
@@ -1191,7 +1464,7 @@ export class PurchaseOrderForm implements OnInit, OnDestroy {
           summary: 'Success',
           detail: `PO: ${res.purchaseOrderNo} has been saved`,
         });
-        this.router.navigate(['/purchase-orders/supplier']);
+        this.router.navigate(['/purchase-orders']);
       }
     });
   }
@@ -1206,7 +1479,8 @@ export class PurchaseOrderForm implements OnInit, OnDestroy {
       email: new FormControl<string | null>(null, [Validators.email]),
       contactNo: new FormControl<string | null>(null, Validators.required),
       faxNo: new FormControl<string | null>(null),
-      contactPerson: new FormControl<string | null>(null),
+      contactPerson1: new FormControl<string | null>(null),
+      contactPerson2: new FormControl<string | null>(null),
       acNo: new FormControl<string | null>(null),
       type: new FormControl<CompanyType>(type),
       sameAsBilling: new FormControl(false),

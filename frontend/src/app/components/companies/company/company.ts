@@ -58,9 +58,11 @@ import { CompanyType } from '../../../shared/enum/enum';
       >
         <div class="flex flex-row items-center justify-between">
           <div class="flex flex-col">
-            <div class="text-[20px] text-gray-700 font-semibold">Company</div>
+            <div class="text-[20px] text-gray-700 font-semibold">
+              My Company
+            </div>
             <div class="text-gray-500">
-              Manage company profiles and information
+              Manage your internal corporate profile configurations
             </div>
           </div>
           <div class="flex flex-row items-center gap-2">
@@ -115,7 +117,6 @@ import { CompanyType } from '../../../shared/enum/enum';
                 <th class="bg-gray-100! text-center! w-[20%]!">
                   Contact Person
                 </th>
-                <th class="bg-gray-100! text-center! w-[10%]!">Type</th>
                 <th class="bg-gray-100! text-center! w-[10%]!">Action</th>
               </tr>
             </ng-template>
@@ -143,10 +144,18 @@ import { CompanyType } from '../../../shared/enum/enum';
                   {{ data.contactNo }}
                 </td>
                 <td class="text-center!">
-                  {{ data.contactPerson1 }}
-                </td>
-                <td class="text-center!">
-                  {{ getCompanyTypeLabel(data.type) }}
+                  <div class="flex flex-col items-center justify-center gap-1">
+                    <span class="font-medium text-gray-800">{{
+                      data.contactPerson1
+                    }}</span>
+
+                    <span
+                      *ngIf="data.contactPerson2"
+                      class="text-xs text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded"
+                    >
+                      Alt: {{ data.contactPerson2 }}
+                    </span>
+                  </div>
                 </td>
 
                 <td class="text-center!">
@@ -235,7 +244,11 @@ export class Company implements OnInit, OnDestroy {
     const sortText = BuildSortText(event);
     this.Query.OrderBy = sortText ? sortText : 'Name';
 
-    this.Query.Filter = BuildFilterText(event);
+    const tableFilter = BuildFilterText(event);
+    const ownCompanyFilter = `Type=${CompanyType.Own}`;
+    this.Query.Filter = tableFilter
+      ? `${tableFilter}, ${ownCompanyFilter}`
+      : ownCompanyFilter;
     this.GetData();
   }
 
@@ -286,7 +299,7 @@ export class Company implements OnInit, OnDestroy {
       this.fTable.saveState();
     }
 
-    this.Query.Filter = null;
+    this.Query.Filter = `Type=${CompanyType.Own}`;
     this.GetData();
   }
 
@@ -330,7 +343,7 @@ export class Company implements OnInit, OnDestroy {
         });
     } else {
       this.router.navigate(['/company/form'], {
-        queryParams: { id: data?.id },
+        queryParams: { id: data?.id, type: CompanyType.Own },
       });
     }
   }

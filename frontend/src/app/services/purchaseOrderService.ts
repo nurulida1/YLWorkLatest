@@ -1,9 +1,5 @@
 import { Injectable } from '@angular/core';
-import {
-  CreatePORequest,
-  PurchaseOrderDropdownDto,
-  PurchaseOrderDto,
-} from '../models/PurchaseOrder';
+import { CreatePORequest, PurchaseOrderDto } from '../models/PurchaseOrder';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { MessageService } from 'primeng/api';
 import { Observable, retry, catchError, of, throwError } from 'rxjs';

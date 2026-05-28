@@ -1,13 +1,16 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authorization;
 using System.Linq.Expressions;
 using YLWorks.Data;
 using YLWorks.Hubs;
 using YLWorks.Model;
+using WebApplication1.Helpers;
 
 namespace YLWorks.Controller
 {
+    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class DepartmentController : ControllerBase
@@ -207,7 +210,7 @@ namespace YLWorks.Controller
                     IsActive = request.IsActive,
                 };
 
-                dept.CreatedAt = DateTime.Now;
+                dept.CreatedAt = DateTimeHelper.Now();
 
                 _context.Departments.Add(dept);
                 await _context.SaveChangesAsync();
@@ -255,7 +258,7 @@ namespace YLWorks.Controller
                 dept.Name = request.Name ?? dept.Name;
                 dept.HodId = request.HodId;
                 dept.IsActive = request.IsActive;
-                dept.UpdatedAt = DateTime.Now;
+                dept.UpdatedAt = DateTimeHelper.Now();
 
                 _context.Departments.Update(dept);
                 await _context.SaveChangesAsync();

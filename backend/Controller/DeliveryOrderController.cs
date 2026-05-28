@@ -1,15 +1,18 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authorization;
 using System.Linq.Expressions;
 using System.Security.Claims;
 using System.Text.Json;
 using YLWorks.Data;
 using YLWorks.Hubs;
 using YLWorks.Model;
+using WebApplication1.Helpers;
 
 namespace YLWorks.Controller
 {
+    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class DeliveryOrderController : ControllerBase
@@ -293,7 +296,7 @@ namespace YLWorks.Controller
                     Status = "Draft",
                     Attachment = filePath,
                     CreatedById = Guid.Parse(userIdClaim),
-                    CreatedAt = DateTime.UtcNow
+                    CreatedAt = DateTimeHelper.Now()
                 };
 
                 deliveryOrder.DeliveryOrderItems =
@@ -315,7 +318,7 @@ namespace YLWorks.Controller
                     Id = Guid.NewGuid(),
                     DeliveryOrderId = deliveryOrder.Id,
                     Status = "Draft",
-                    ActionAt = DateTime.UtcNow,
+                    ActionAt = DateTimeHelper.Now(),
                     ActionUserId = Guid.Parse(userIdClaim),
                     Remarks = "Delivery order created"
                 };
@@ -325,6 +328,8 @@ namespace YLWorks.Controller
                 _context.DeliveryOrderStatusHistories.Add(history);
 
                 await _context.SaveChangesAsync();
+
+                await UpdatePurchaseOrderStatusAsync(deliveryOrder.PurchaseOrderId);
 
                 var result = await _context.DeliveryOrders
                     .Include(x => x.Project)
@@ -418,7 +423,7 @@ namespace YLWorks.Controller
                 deliveryOrder.Remarks = request.Remarks;
 
                 deliveryOrder.Attachment = filePath; 
-                deliveryOrder.UpdatedAt = DateTime.UtcNow;
+                deliveryOrder.UpdatedAt = DateTimeHelper.Now();
                 deliveryOrder.UpdatedById = Guid.Parse(userIdClaim);
 
                 _context.DeliveryOrderItems.RemoveRange(deliveryOrder.DeliveryOrderItems);
@@ -438,6 +443,8 @@ namespace YLWorks.Controller
 
                 await _context.DeliveryOrderItems.AddRangeAsync(newItems);
                 await _context.SaveChangesAsync();
+
+                await UpdatePurchaseOrderStatusAsync(deliveryOrder.PurchaseOrderId);
 
                 var result = await _context.DeliveryOrders
                     .Include(x => x.Project)
@@ -472,9 +479,27 @@ namespace YLWorks.Controller
             if (deliveryOrder == null)
                 return NotFound();
 
+            var doItems = await _context.DeliveryOrderItems
+     .Where(x => x.DeliveryOrderId == id)
+     .ToListAsync();
+
+            foreach (var item in doItems)
+            {
+                var poItem = await _context.PurchaseOrderItems
+                    .FirstOrDefaultAsync(x =>
+                        x.PurchaseOrderId == deliveryOrder.PurchaseOrderId &&
+                        x.Description == item.Description);
+
+                if (poItem != null)
+                {
+                    poItem.ReceivedQuantity -= item.QuantityDelivered;
+                }
+            }
+
             _context.DeliveryOrders.Remove(deliveryOrder);
 
             await _context.SaveChangesAsync();
+            await UpdatePurchaseOrderStatusAsync(deliveryOrder.PurchaseOrderId);
 
             await _hub.Clients.All.SendAsync(
                 "DeliveryOrderDeleted",
@@ -500,49 +525,73 @@ namespace YLWorks.Controller
                 .Select(x => x.FullName)
                 .FirstOrDefaultAsync();
 
-            string? reviewerName = null;
-
-            if (request.ReviewerUserId.HasValue)
-            {
-                reviewerName = await _context.Users
-                    .Where(x => x.Id == request.ReviewerUserId.Value)
-                    .Select(x => x.FullName)
-                    .FirstOrDefaultAsync();
-            }
-
             var deliveryOrder = await _context.DeliveryOrders
                 .FirstOrDefaultAsync(x => x.Id == request.Id);
 
             if (deliveryOrder == null)
                 return NotFound();
 
-            deliveryOrder.Status = request.Status;
-
             var po = await _context.PurchaseOrders
                 .FirstOrDefaultAsync(x => x.Id == deliveryOrder.PurchaseOrderId);
 
-            if (po != null)
+            if (po == null)
+                return NotFound();
+
+            var poItems = await _context.PurchaseOrderItems
+                .Where(x => x.PurchaseOrderId == po.Id)
+                .ToListAsync();
+
+            var doItems = await _context.DeliveryOrderItems
+                .Where(x => x.DeliveryOrderId == request.Id)
+                .ToListAsync();
+
+            deliveryOrder.Status = request.Status;
+
+            if (request.Status == "Delivered")
             {
-                switch (request.Status)
+                foreach (var doItem in doItems)
                 {
-                    case "Approved":
-                        po.Status = "In Progress";
-                        break;
+                    var poItem = poItems.FirstOrDefault(x =>
+                        x.Description == doItem.Description);
 
-                    case "Prepared":
-                    case "OutDelivery":
-                    case "PartiallyDelivered":
-                        po.Status = "In Progress";
-                        break;
-
-                    case "Delivered":
-                        po.Status = "Completed";
-                        break;
-
-                    case "Cancelled":
-                        po.Status = "Cancelled";
-                        break;
+                    if (poItem != null)
+                    {
+                        poItem.ReceivedQuantity += doItem.QuantityDelivered;
+                    }
                 }
+
+                await UpdatePurchaseOrderStatusAsync(po.Id);
+
+                await UpdateSalesOrderFromPOAsync(po.Id);
+            }
+
+            bool allDelivered = poItems.All(x =>
+                x.ReceivedQuantity >= x.Quantity);
+
+            bool partiallyDelivered = poItems.Any(x =>
+                x.ReceivedQuantity > 0 &&
+                x.ReceivedQuantity < x.Quantity);
+
+            switch (request.Status)
+            {
+                case "Delivered":
+                    if (allDelivered)
+                        po.Status = "Completed";
+                    else if (partiallyDelivered)
+                        po.Status = "PartiallyDelivered";
+                    else
+                        po.Status = "In Progress";
+                    break;
+
+                case "Approved":
+                case "Prepared":
+                case "OutDelivery":
+                    po.Status = "In Progress";
+                    break;
+
+                case "Cancelled":
+                    po.Status = "Cancelled";
+                    break;
             }
 
             var history = new DeliveryOrderStatusHistory
@@ -550,11 +599,9 @@ namespace YLWorks.Controller
                 Id = Guid.NewGuid(),
                 DeliveryOrderId = request.Id,
                 Status = request.Status,
-                ActionAt = DateTime.UtcNow,
+                ActionAt = DateTimeHelper.Now(),
                 ActionUserId = actionUserId,
-
                 Remarks = request.Remarks ?? $"DO updated to {request.Status} by {userName}",
-
                 ReviewByUserId = request.ReviewerUserId,
                 ApprovedByUserId = request.Status == "Approved" ? actionUserId : null,
             };
@@ -562,35 +609,6 @@ namespace YLWorks.Controller
             _context.DeliveryOrderStatusHistories.Add(history);
 
             await _context.SaveChangesAsync();
-
-            if (request.ProofImages != null && request.ProofImages.Count > 0)
-            {
-                var uploadFolder = Path.Combine(Directory.GetCurrentDirectory(), "Uploads", "DO-Proof");
-
-                if (!Directory.Exists(uploadFolder))
-                    Directory.CreateDirectory(uploadFolder);
-
-                foreach (var file in request.ProofImages)
-                {
-                    var fileName = $"{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
-                    var fullPath = Path.Combine(uploadFolder, fileName);
-
-                    using (var stream = new FileStream(fullPath, FileMode.Create))
-                    {
-                        await file.CopyToAsync(stream);
-                    }
-
-                    _context.DeliveryOrderProofImages.Add(new DeliveryOrderProofImage
-                    {
-                        Id = Guid.NewGuid(),
-                        DeliveryOrderStatusHistoryId = history.Id,
-                        ImageUrl = $"Uploads/DO-Proof/{fileName}",
-                        UploadedAt = DateTime.UtcNow
-                    });
-                }
-
-                await _context.SaveChangesAsync();
-            }
 
             return Ok(new
             {
@@ -658,6 +676,33 @@ namespace YLWorks.Controller
             };
         }
 
+        private async Task UpdatePurchaseOrderStatusAsync(Guid? purchaseOrderId)
+        {
+            var po = await _context.PurchaseOrders
+                .FirstOrDefaultAsync(x => x.Id == purchaseOrderId);
+
+            if (po == null) return;
+
+            var poItems = await _context.PurchaseOrderItems
+                .Where(x => x.PurchaseOrderId == purchaseOrderId)
+                .ToListAsync();
+
+            bool allDelivered = poItems.All(x => x.ReceivedQuantity >= x.Quantity);
+            bool partiallyDelivered = poItems.Any(x => x.ReceivedQuantity > 0 && x.ReceivedQuantity < x.Quantity);
+            bool noneReceived = poItems.All(x => x.ReceivedQuantity == 0);
+
+            if (noneReceived)
+                po.Status = "In Progress";
+            else if (allDelivered)
+                po.Status = "Completed";
+            else if (partiallyDelivered)
+                po.Status = "PartiallyDelivered";
+            else
+                po.Status = "In Progress";
+
+            await _context.SaveChangesAsync();
+        }
+
         [HttpGet("GetDropdown")]
         public async Task<IActionResult> GetDropdown()
         {
@@ -665,23 +710,18 @@ namespace YLWorks.Controller
             {
                 var purchaseOrders = await _context.PurchaseOrders
     .Include(x => x.Supplier)
-    .Include(x => x.Client)
     .Include(x => x.Project)
     .OrderByDescending(x => x.CreatedAt)
     .Select(x => new PurchaseOrderDropdownItem
     {
         Id = x.Id,
         PurchaseOrderNo = x.PurchaseOrderNo,
-        Type = x.Type,
 
         ProjectId = x.ProjectId,
         ProjectCode = x.Project != null ? x.Project.ProjectCode : null,
 
         SupplierId = x.SupplierId,
         SupplierName = x.Supplier != null ? x.Supplier.Name : null,
-
-        ClientId = x.ClientId,
-        ClientName = x.Client != null ? x.Client.Name : null
     })
     .ToListAsync();
 
@@ -719,6 +759,53 @@ namespace YLWorks.Controller
                     Details = ex.Message
                 });
             }
+        }
+
+        private async Task UpdateSalesOrderFromPOAsync(Guid purchaseOrderId)
+        {
+            var po = await _context.PurchaseOrders
+                .FirstOrDefaultAsync(x => x.Id == purchaseOrderId);
+
+            if (po == null) return;
+
+            var salesOrders = await _context.SalesOrders
+                .Where(x => x.QuotationId == po.QuotationId)
+                .Include(x => x.SalesOrderItems)
+                .ToListAsync();
+
+            foreach (var so in salesOrders)
+            {
+                await UpdateSalesOrderCompletionAsync(so.Id);
+            }
+        }
+
+        private async Task UpdateSalesOrderCompletionAsync(Guid salesOrderId)
+        {
+            var so = await _context.SalesOrders
+                .Include(x => x.SalesOrderItems)
+                .FirstOrDefaultAsync(x => x.Id == salesOrderId);
+
+            if (so == null) return;
+
+            var items = so.SalesOrderItems;
+
+            if (items == null || !items.Any())
+                return;
+
+            bool allDelivered = items.All(x =>
+                x.QuantityDelivered >= x.Quantity);
+
+            bool partiallyDelivered = items.Any(x =>
+                x.QuantityDelivered > 0 &&
+                x.QuantityDelivered < x.Quantity);
+
+            so.Status =
+                allDelivered ? "Completed" :
+                partiallyDelivered ? "PartiallyDelivered" :
+                "In Progress";
+
+            _context.SalesOrders.Update(so);
+            await _context.SaveChangesAsync();
         }
     }
 }

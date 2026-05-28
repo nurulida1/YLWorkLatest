@@ -39,6 +39,7 @@ import { DatePickerModule } from 'primeng/datepicker';
 import { SelectModule } from 'primeng/select';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { MenuModule } from 'primeng/menu';
+import { UserService } from '../../../services/userService.service';
 
 @Component({
   selector: 'app-client-purchase-order',
@@ -96,6 +97,7 @@ import { MenuModule } from 'primeng/menu';
               ></i>
             </div>
             <p-button
+              *ngIf="isPurchasing()"
               label="Record Client PO"
               (onClick)="OpenFormDialog()"
               icon="pi pi-plus-circle"
@@ -377,6 +379,7 @@ export class ClientPurchaseOrder implements OnInit, OnDestroy {
   private readonly messageService = inject(MessageService);
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly appService = inject(AppService);
+  private readonly userService = inject(UserService);
   protected ngUnsubscribe: Subject<void> = new Subject<void>();
 
   PagingSignal = signal<PagingContent<PurchaseOrderDto>>(
@@ -387,6 +390,8 @@ export class ClientPurchaseOrder implements OnInit, OnDestroy {
   search: string = '';
   selectedFileName: string = '';
   selectedFileUrl: string | null = null;
+
+  currentUser = this.userService.currentUser;
 
   showRecordDialog: boolean = false;
 
@@ -892,7 +897,7 @@ export class ClientPurchaseOrder implements OnInit, OnDestroy {
 
     const canInvoice = status === 'InProgress' || status === 'Completed';
 
-    if (isEditable) {
+    if (isEditable && this.isPurchasing()) {
       items.push(
         {
           label: 'Update',
@@ -907,7 +912,7 @@ export class ClientPurchaseOrder implements OnInit, OnDestroy {
       );
     }
 
-    if (status === 'Reviewed') {
+    if (status === 'Reviewed' && this.isPurchasing()) {
       items.push(
         {
           label: 'Approve',
@@ -922,7 +927,7 @@ export class ClientPurchaseOrder implements OnInit, OnDestroy {
       );
     }
 
-    if (status === 'Approved') {
+    if (status === 'Approved' && this.isPurchasing()) {
       items.push(
         {
           label: 'In Progress',
@@ -937,7 +942,7 @@ export class ClientPurchaseOrder implements OnInit, OnDestroy {
       );
     }
 
-    if (canProgress) {
+    if (canProgress && this.isPurchasing()) {
       items.push({
         label: 'Mark as Completed',
         icon: 'pi pi-check-circle',
@@ -945,7 +950,7 @@ export class ClientPurchaseOrder implements OnInit, OnDestroy {
       });
     }
 
-    if (canInvoice) {
+    if (canInvoice && this.isAccounting()) {
       items.push({
         label: 'Issue Invoice',
         icon: 'pi pi-money-bill',
@@ -966,7 +971,7 @@ export class ClientPurchaseOrder implements OnInit, OnDestroy {
       });
     }
 
-    if (status === 'Received') {
+    if (status === 'Received' && this.isPurchasing()) {
       items.push({
         label: 'Delete',
         icon: 'pi pi-trash',
@@ -977,6 +982,19 @@ export class ClientPurchaseOrder implements OnInit, OnDestroy {
 
     this.menuItems = items;
     menu.toggle(event);
+  }
+
+  isPurchasing(): boolean {
+    return (
+      this.currentUser?.jobTitle === 'Senior Procurement Executive' ||
+      this.currentUser?.jobTitle === 'Purchasing Executive' ||
+      this.currentUser?.jobTitle === 'Project Director' ||
+      this.currentUser?.jobTitle === 'Sales Director'
+    );
+  }
+
+  isAccounting(): boolean {
+    return this.currentUser?.jobTitle === 'Admin and Account Executive';
   }
 
   ngOnDestroy(): void {

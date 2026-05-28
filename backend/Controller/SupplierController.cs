@@ -5,9 +5,11 @@ using System.Linq.Expressions;
 using YLWorks.Data;
 using YLWorks.Hubs;
 using YLWorks.Model;
+using Microsoft.AspNetCore.Authorization;
 
 namespace YLWorks.Controller
 {
+    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class SupplierController : ControllerBase

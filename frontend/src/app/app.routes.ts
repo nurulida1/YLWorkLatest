@@ -70,8 +70,21 @@ export const routes: Routes = [
   },
   {
     path: 'settings',
+    canActivate: [authGuard],
     loadComponent: () =>
-      import('./components/settings/settings').then((m) => m.Settings),
+      import('./shared/components/web-layout/web-layout').then(
+        (m) => m.WebLayout,
+      ),
+
+    children: [
+      {
+        path: '',
+        loadChildren: () =>
+          import('./components/settings/settings-routing.module').then(
+            (m) => m.SettingsRoutingModule,
+          ),
+      },
+    ],
   },
   {
     path: 'clients',
@@ -211,7 +224,7 @@ export const routes: Routes = [
       {
         path: '',
         loadComponent: () =>
-          import('./components/user-management/user-management').then(
+          import('./components/settings/user-management/user-management').then(
             (m) => m.UserManagement,
           ),
       },
@@ -233,13 +246,35 @@ export const routes: Routes = [
 
   {
     path: 'purchase-orders',
-    component: WebLayout,
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./shared/components/web-layout/web-layout').then(
+        (m) => m.WebLayout,
+      ),
     children: [
       {
         path: '',
         loadChildren: () =>
           import('./components/purchase-orders/purchase-order-routing.module').then(
             (m) => m.PurchaseOrderRoutingModule,
+          ),
+      },
+    ],
+  },
+
+  {
+    path: 'sales-order',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./shared/components/web-layout/web-layout').then(
+        (m) => m.WebLayout,
+      ),
+    children: [
+      {
+        path: '',
+        loadChildren: () =>
+          import('./components/sales-orders/sales-order-routing.module').then(
+            (m) => m.SalesOrderRoutingModule,
           ),
       },
     ],

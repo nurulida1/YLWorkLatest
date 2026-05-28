@@ -3,8 +3,13 @@ import { Routes, RouterModule } from '@angular/router';
 import { PurchaseOrderForm } from './purchase-order-form/purchase-order-form';
 import { ClientPurchaseOrder } from './client-purchase-order/client-purchase-order';
 import { SupplierPurchaseOrder } from './supplier-purchase-order/supplier-purchase-order';
+import { PurchaseOrder } from './purchaseOrder/purchaseOrder';
 
 const routes: Routes = [
+  {
+    path: '',
+    component: PurchaseOrder,
+  },
   {
     path: 'client',
     component: ClientPurchaseOrder,

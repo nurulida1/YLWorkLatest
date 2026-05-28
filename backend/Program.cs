@@ -9,10 +9,12 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Scalar.AspNetCore;
 using QuestPDF.Infrastructure;
+using Microsoft.AspNetCore.Authorization;
+using Swashbuckle.AspNetCore.SwaggerGen;
+using YLWorks.Swagger;
 
 var builder = WebApplication.CreateBuilder(args);
-//1
-// --- JWT Configuration ---
+
 var jwtSettings = builder.Configuration.GetSection("Jwt");
 var key = jwtSettings["Key"];
 var issuer = jwtSettings["Issuer"];
@@ -23,15 +25,17 @@ builder.Services.AddAuthentication(options =>
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
     options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
     options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
-}).AddJwtBearer(options =>
+})
+.AddJwtBearer(options =>
 {
     options.RequireHttpsMetadata = false;
     options.SaveToken = true;
     options.TokenValidationParameters = new TokenValidationParameters
     {
-        ValidIssuer = builder.Configuration["Jwt:Issuer"],
-        ValidAudience = builder.Configuration["Jwt:Audience"],
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!)),
+        ValidIssuer = issuer,
+        ValidAudience = audience,
+        IssuerSigningKey = new SymmetricSecurityKey(
+            Encoding.UTF8.GetBytes(key!)),
         ValidateIssuer = true,
         ValidateAudience = true,
         ValidateLifetime = true,
@@ -41,57 +45,15 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.AddAuthorization();
 
-// --- Controllers ---
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
         options.JsonSerializerOptions.ReferenceHandler =
             System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
     });
-// --- Swagger ---
+
 builder.Services.AddEndpointsApiExplorer();
 
-QuestPDF.Settings.License = LicenseType.Community;
-//builder.Services.AddSwaggerGen(options =>
-//{
-//    options.SwaggerDoc("v1", new OpenApiInfo
-//    {
-//        Version = "v1",
-//        Title = "YL Works API",
-//        Description = "An ASP.NET Core Web API for managing YL Works",
-//        Contact = new OpenApiContact
-//        {
-//            Name = "YL Systems Sdn Bhd",
-//            Url = new Uri("https://www.ylsystems.com.my/")
-//        },
-//    });
-
-//    // ✅ Add JWT support for Swagger
-//    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
-//    {
-//        Description = "Please enter a valid JWT token (example: Bearer eyJhb...)",
-//        Name = "Authorization",
-//        In = ParameterLocation.Header,
-//        Type = SecuritySchemeType.ApiKey,
-//        Scheme = "Bearer",
-//        BearerFormat = "JWT"
-
-//    });
-//    options.AddSecurityRequirement(new OpenApiSecurityRequirement
-//    {
-//        {
-//            new OpenApiSecurityScheme
-//            {
-//                Reference = new OpenApiReference
-//                {
-//                    Type = ReferenceType.SecurityScheme,
-//                    Id = "Bearer"
-//                }
-//            },
-//            new string[] {}
-//        }
-//    });
-//});
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo
@@ -101,69 +63,50 @@ builder.Services.AddSwaggerGen(c =>
         Description = "API for YL Works"
     });
 
-    // Bearer token (JWT)
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",
-        Type = SecuritySchemeType.ApiKey,
-        Scheme = "Bearer",
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
         BearerFormat = "JWT",
         In = ParameterLocation.Header,
-        Description = "Paste your JWT token here (example: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6...)"
+        Description = "Enter: Bearer {your token}"
     });
 
-    c.AddSecurityRequirement(new OpenApiSecurityRequirement
-    {
-        {
-            new OpenApiSecurityScheme
-            {
-                Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" }
-            },
-            new string[] {}
-        }
-    });
+    c.OperationFilter<AuthorizeCheckOperationFilter>();
 });
-
-//Database
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
     options.UseMySql(
         builder.Configuration.GetConnectionString("DefaultConnection"),
-        ServerVersion.AutoDetect(
-            builder.Configuration.GetConnectionString("DefaultConnection")
-        )
+        ServerVersion.AutoDetect(builder.Configuration.GetConnectionString("DefaultConnection"))
     );
 });
 
-// --- SignalR + CORS ---
 builder.Services.AddSignalR();
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAngular", policy =>
-        policy.WithOrigins("http://localhost:4200",
+        policy.WithOrigins(
+            "http://localhost:4200",
             "https://192.168.1.203:4200"
-        ) // <-- your Angular URL
-              .AllowAnyHeader()
-              .AllowAnyMethod()
-              .AllowCredentials()
+        )
+        .AllowAnyHeader()
+        .AllowAnyMethod()
+        .AllowCredentials()
     );
 });
 
 builder.Services.AddHealthChecks();
-builder.Services.AddScoped<YLWorks.Services.EmailService>();
+builder.Services.AddScoped<EmailService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<JwtService>();
 
 var app = builder.Build();
 
-// ✅ REMOVE this line: it bypasses ASP.NET’s built-in JWT validation
-// app.UseMiddleware<WebApplication1.Handlers.JwtValidationHandler>();
-
-// --- Swagger ---
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
-    //app.MapScalarApiReference();
     app.UseSwagger();
     app.UseSwaggerUI(c =>
     {
@@ -172,9 +115,10 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-// --- Pipeline ---
 app.UseHttpsRedirection();
+
 app.UseCors("AllowAngular");
+
 app.UseStaticFiles();
 
 app.UseStaticFiles(new StaticFileOptions
@@ -184,16 +128,13 @@ app.UseStaticFiles(new StaticFileOptions
     RequestPath = "/Uploads"
 });
 
-
-
-// ✅ Order matters
-app.UseAuthentication();   // must come before UseAuthorization
+app.UseAuthentication();
 app.UseAuthorization();
 
-// --- Map routes ---
 app.MapControllers();
 app.MapHub<NotificationHub>("/hubs/notifications");
 app.MapHealthChecks("/health");
+
 app.MapGet("/api", () => Results.Ok("Hello from API"));
 
 app.Run();

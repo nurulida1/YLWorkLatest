@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authorization;
 using System.Linq.Expressions;
 using System.Security.Claims;
 using YLWorks.Data;
@@ -10,6 +11,7 @@ using System.Text.Json;
 
 namespace YLWorks.Controller
 {
+    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class InvoiceController : ControllerBase
@@ -146,7 +148,6 @@ string? includes = null)
             {
                 IQueryable<Invoice> query = _context.Invoices.AsQueryable();
 
-                // 1. Dynamic Includes
                 if (!string.IsNullOrWhiteSpace(includes))
                 {
                     foreach (var include in includes.Split(',', StringSplitOptions.RemoveEmptyEntries))
@@ -155,7 +156,6 @@ string? includes = null)
                     }
                 }
 
-                // 2. Filter by ID
                 if (!string.IsNullOrEmpty(filter))
                 {
                     var filterValue = filter.Contains('=')
@@ -168,14 +168,11 @@ string? includes = null)
                     }
                 }
 
-                // 3. Execute
                 var data = await query.FirstOrDefaultAsync();
 
                 if (data == null)
                     return NotFound();
 
-                // 4. IMPORTANT: prevent circular reference crash
-                // (same idea as your GetMany DTO safety)
                 var safeResult = new
                 {
                     data.Id,
@@ -192,6 +189,7 @@ string? includes = null)
                     data.Remarks,
                     data.ProjectId,
                     data.DeliveryOrderId,
+                    data.SalesOrderId,
                     InvoiceItems = data.InvoiceItems?.Select(i => new
                     {
                         i.Id,
@@ -268,6 +266,7 @@ string? includes = null)
                     ClientId = request.ClientId,
                     SupplierId = request.SupplierId,
                     ProjectId = request.ProjectId,
+                    SalesOrderId = request.SalesOrderId,
                     PurchaseOrderId = request.PurchaseOrderId,
                     QuotationId = request.QuotationId,
                     InvoiceDate = request.InvoiceDate,
@@ -355,10 +354,11 @@ string? includes = null)
                 }
 
 
-                // update scalar fields FIRST
                 invoice.InvoiceNo = request.InvoiceNo;
                 invoice.CompanyId = request.CompanyId;
                 invoice.SupplierId = request.SupplierId;
+                invoice.SalesOrderId = request.SalesOrderId;
+                invoice.PurchaseOrderId = request.PurchaseOrderId;
                 invoice.ClientId = request.ClientId;
                 invoice.InvoiceDate = request.InvoiceDate;
                 invoice.DueDate = request.DueDate;
@@ -371,15 +371,13 @@ string? includes = null)
                 invoice.Attachment = filePath;
                 invoice.Status = !string.IsNullOrEmpty(filePath) ? "Received" : invoice.Status;
 
-                // remove old items (IMPORTANT: use DbSet, not navigation)
                 var oldItems = _context.InvoiceItems
                     .Where(x => x.InvoiceId == invoice.Id);
 
                 _context.InvoiceItems.RemoveRange(oldItems);
 
-                await _context.SaveChangesAsync(); // commit delete FIRST
+                await _context.SaveChangesAsync();
 
-                // add new items
                 var newItems = request.InvoiceItems?
                     .Select(x => new InvoiceItem
                     {
@@ -459,6 +457,7 @@ string? includes = null)
                 i.ProjectId,
                 i.QuotationId,
                 i.DeliveryOrderId,
+                i.SalesOrderId,
                 i.CompanyId,
                 i.Terms,
                 i.Remarks,
@@ -547,13 +546,12 @@ string? includes = null)
                 })
                 .ToListAsync();
 
-            var purchaseOrders = await _context.PurchaseOrders.Where(x => x.Type == "Incoming")
+            var purchaseOrders = await _context.PurchaseOrders
                 .Select(x => new PurchaseOrder
                 {
                     Id = x.Id,
                     PurchaseOrderNo = x.PurchaseOrderNo,
                     TotalAmount = x.TotalAmount,
-                    ClientId = x.ClientId,
                     QuotationId = x.QuotationId,
                     ProjectId = x.ProjectId
                 })
@@ -569,6 +567,14 @@ string? includes = null)
                 })
                 .ToListAsync();
 
+            var salesOrders = await _context.SalesOrders
+    .Select(x => new SalesOrderDropdownDto
+    {
+        Id = x.Id,
+        SalesOrderNo = x.SalesOrderNo
+    })
+    .ToListAsync();
+
             return Ok(new DropdownResponseDto
             {
                 Companies = companies,
@@ -577,7 +583,8 @@ string? includes = null)
                 Quotations = quotations,
                 PurchaseOrders = purchaseOrders,
                 Projects = projects,
-                DeliveryOrders = deliveryOrders
+                DeliveryOrders = deliveryOrders,
+                SalesOrders = salesOrders
             });
         }
 

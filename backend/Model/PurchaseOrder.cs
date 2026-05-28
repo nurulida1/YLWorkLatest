@@ -9,17 +9,15 @@ namespace YLWorks.Model
         public string PurchaseOrderNo { get; set; } = string.Empty;
         public Guid? FromCompanyId { get; set; }
         public Company? FromCompany { get; set; }
-        public string? Type { get; set; } //Incoming / Outcoming
+
         public DateTime? PODate { get; set; }
         public DateTime? POReceivedDate { get; set; }
 
-        public Guid? ClientId { get; set; }
-        [ForeignKey("ClientId")] 
-        public Company? Client { get; set; } = null!;
-
         public Guid? SupplierId { get; set; }
-        [ForeignKey("SupplierId")] 
         public Company? Supplier { get; set; }
+
+        public Guid? ClientId { get; set; }
+        public Company? Client { get; set; }
 
         public string? Terms { get; set; }
         public Guid? ProjectId { get; set; }
@@ -32,15 +30,20 @@ namespace YLWorks.Model
         public decimal? Gross { get; set; }
         public decimal? Discount { get; set; }
         public decimal? TotalAmount { get; set; }
-        public decimal InvoicedAmount { get; set; }
+        public string? TotalInWords { get; set; }
 
         public string? Remarks { get; set; }
         public string? Notes { get; set; }
 
-        public string? POClientNo { get; set; }
-        public string? SOClientNo { get; set; }
+        public Guid? PurchaseOrderId { get; set; }
+        public Guid? SalesOrderId { get; set; }
 
-        public string Status { get; set; } = "Draft"; // Draft, Sent, Accepted, Received, Completed, Cancelled
+        public string Status { get; set; } = "Draft"; // Draft, Sent, Accepted, PartiallyReceived, Completed, Cancelled
+
+        public decimal? InvoicedAmount { get; set; }
+        public string? InvoiceStatus { get; set; } = "NotInvoiced";
+        // NotInvoiced | PartiallyInvoiced | FullyInvoiced
+
         public string? TermsAndCondition { get; set; }
         public string? BankDetails { get; set; }
 
@@ -78,6 +81,7 @@ namespace YLWorks.Model
         public decimal UnitPrice { get; set; }
         public decimal Discount { get; set; }
         public decimal TotalPrice { get; set; }
+        public decimal? ReceivedQuantity { get; set; } = 0;
     }
 
     public class POItemDto
@@ -90,6 +94,7 @@ namespace YLWorks.Model
         public decimal UnitPrice { get; set; }
         public decimal Discount { get; set; }
         public decimal TotalPrice { get; set; }
+        public decimal? ReceivedQuantity { get; set; } = 0;
     }
 
     public class POItemBase
@@ -98,37 +103,36 @@ namespace YLWorks.Model
         public Guid? PurchaseOrderId { get; set; }
         public string? Item { get; set; }
         public string? Description { get; set; } = string.Empty;
-        public int Quantity { get; set; }
+        public decimal Quantity { get; set; }
         public string Unit { get; set; } = "Unit";
         public decimal UnitPrice { get; set; }
         public decimal Discount { get; set; }
         public decimal TotalPrice { get; set; }
     }
 
-    // Used for Create: No ID needed as all items are new
     public class POItemRequest : POItemBase { }
 
-    // Used for Update: Optional ID to differentiate between 'Edit' and 'Add New'
     public class UpdatePOItemRequest : POItemBase
     {
         public Guid? Id { get; set; }
     }
 
-    // --- Main Request Models ---
 
     public class CreatePORequest
     {
         public string PurchaseOrderNo { get; set; } = string.Empty;
         public Guid? FromCompanyId { get; set; }
-        public string Type { get; set; } = string.Empty;
         public DateTime? PODate { get; set; }
         public DateTime? POReceivedDate {  get; set; }
-        public Guid? ClientId { get; set; }
         public Guid? SupplierId { get; set; }
+        public Guid? ClientId {  get; set; }
         public string? Terms { get; set; }
 
         public Guid? QuotationId { get; set; }
         public Guid? ProjectId { get; set; }
+
+        public Guid? PurchaseOrderId { get; set; }
+        public Guid? SalesOrderId {  get; set; }
 
         public decimal? Gross { get; set; }
         public decimal? Discount { get; set; }
@@ -146,17 +150,18 @@ namespace YLWorks.Model
 
     public class UpdatePORequest
     {
-        public Guid Id { get; set; } // The ID of the PO being updated
+        public Guid Id { get; set; } 
         public string PurchaseOrderNo { get; set; } = string.Empty;
         public Guid? FromCompanyId { get; set; }
-        public string Type { get; set; } = string.Empty;
         public DateTime? PODate { get; set; }
         public DateTime? POReceivedDate { get; set; }
-        public Guid? ClientId { get; set; }
         public Guid? SupplierId { get; set; }
+        public Guid? ClientId { get; set; }
         public string? Terms { get; set; }
         public Guid? QuotationId { get; set; }
         public Guid? ProjectId { get; set; }
+        public Guid? PurchaseOrderId {  get; set; }
+        public Guid? SalesOrderId {  get; set; }
         public decimal? Gross { get; set; }
         public decimal? Discount { get; set; }
         public decimal? TotalAmount { get; set; }
@@ -167,16 +172,15 @@ namespace YLWorks.Model
         public int? TotalQuantity { get; set; }
         public IFormFile? Attachment { get; set; }
 
-        // Clean, direct list mapping for updating items without breaking Swagger
         public List<UpdatePOItemRequest> PurchaseOrderItems { get; set; } = new();
     }
 
     public class UpdatePOStatusRequest
     {
-        public Guid Id { get; set; }          // Quotation ID
-        public string? Status { get; set; }   // New status value
-        public string? Remarks { get; set; }  // Optional remarks for status change
-        public string? SignatureImage { get; set; } // Optional signature image for approval
+        public Guid Id { get; set; }         
+        public string? Status { get; set; } 
+        public string? Remarks { get; set; }  
+        public string? SignatureImage { get; set; } 
     }
 
     public class DropdownResponseDto
@@ -188,6 +192,7 @@ namespace YLWorks.Model
         public List<PurchaseOrder> PurchaseOrders { get; set; } = new();
         public List<DODropdownDto> DeliveryOrders { get; set; } = new();
         public List<Project> Projects { get; set; } = new();
+        public List<SalesOrderDropdownDto> SalesOrders { get; set; }
     }
 
     public class ConvertPOToInvoiceRequest
@@ -201,7 +206,6 @@ namespace YLWorks.Model
         public List<QuotationDropdownDto> Quotations { get; set; } = new();
 
         public List<ProjectDropdownItem> Projects { get; set; } = new();
-
         public List<CompanyDropdownItem> Companies { get; set; } = new();
         public List<CompanyDropdownItem> Suppliers { get; set; } = new();
         public List<CompanyDropdownItem> Clients { get; set; } = new();

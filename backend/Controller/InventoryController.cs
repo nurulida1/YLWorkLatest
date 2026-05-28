@@ -6,9 +6,11 @@ using YLWorks.Data;
 using YLWorks.Hubs;
 using YLWorks.Model;
 using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 
 namespace YLWorks.Controller
 {
+    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class InventoryController : ControllerBase

@@ -52,9 +52,30 @@ export class RolePermissionService {
       .pipe(retry(1), catchError(this.handleError('GetMany')));
   }
 
+  GetByMatrix(
+    systemRole: string,
+    departmentId: string | null,
+  ): Observable<RolePermissionDto[]> {
+    let params = new HttpParams().set('systemRole', systemRole);
+
+    if (departmentId) {
+      params = params.set('departmentId', departmentId);
+    }
+
+    return this.http
+      .get<RolePermissionDto[]>(`${this.url}/by-matrix`, { params })
+      .pipe(retry(1), catchError(this.handleError('GetByMatrix')));
+  }
+
+  BulkSave(request: Partial<RolePermissionDto>[]): Observable<any> {
+    return this.http
+      .post<any>(`${this.url}/bulk-save`, request)
+      .pipe(retry(1), catchError(this.handleError('BulkSave')));
+  }
+
   Create(request: CreateRolePermissionRequest): Observable<RolePermissionDto> {
     return this.http
-      .post<RolePermissionDto>(`${this.url}/Create`, request) // no { Data: ... }
+      .post<RolePermissionDto>(`${this.url}/Create`, request)
       .pipe(retry(1), catchError(this.handleError('Create')));
   }
 
@@ -73,9 +94,12 @@ export class RolePermissionService {
   private handleError = (context: string) => (error: any) => {
     this.messageService.add({
       severity: 'error',
-      summary: 'Error',
+      summary: `Error [${context}]`,
       detail:
-        error?.error?.detail || error?.message || 'Unexpected error occurred.',
+        error?.error?.detail ||
+        error?.error?.Message ||
+        error?.message ||
+        'Unexpected error occurred.',
     });
     return throwError(() => error);
   };

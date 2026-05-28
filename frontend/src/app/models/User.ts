@@ -8,8 +8,10 @@ export interface UserDto extends BaseModel {
   email: string;
   contactNo: string;
   password: string;
-  departmentId: string;
+
+  departmentIds: string[];
   departments: DepartmentDto[];
+
   joinedDate: Date;
   accessPermission: string;
   employeeNo: string;
@@ -24,7 +26,6 @@ export interface UserDto extends BaseModel {
   gender: string;
 }
 
-// Login & Auth Requests
 export interface LoginRequest {
   email: string;
   password: string;
@@ -41,21 +42,8 @@ export interface RegisterRequest {
   gender: string;
   joinedDate: Date;
   hodId: string;
-}
 
-export interface UpdateUserRequest {
-  id: string; // The Guid of the user
-  fullName?: string;
-  displayName?: string;
-  contactNo?: string;
-  jobTitle?: string;
-  gender?: string;
-  employeeNo?: string;
-  systemRole?: string;
-  departmentId?: string;
-  joinedDate?: Date;
-  hodId?: string;
-  isActive?: boolean;
+  departmentIds: string[];
 }
 
 export interface ForgotPasswordRequest {
@@ -74,7 +62,6 @@ export interface ChangePasswordRequest {
   confirmPassword: string;
 }
 
-// Login Response
 export interface LoginResponse {
   success: boolean;
   message: string;
@@ -88,10 +75,11 @@ export interface LoginResponse {
   userId: string;
   systemRole: UserRole | string;
   jobTitle?: string;
-  department: string;
+
+  departmentIds: string[];
+  departments: DepartmentDto[];
 }
 
-// Update User Request
 export interface UpdateUserRequest {
   id: string;
   fullName?: string;
@@ -103,4 +91,6 @@ export interface UpdateUserRequest {
   joinedDate?: Date;
   hodId?: string;
   gender?: string;
+
+  departmentIds?: string[];
 }

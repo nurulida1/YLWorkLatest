@@ -143,7 +143,18 @@ import { ClientService } from '../../../services/ClientService';
                   {{ data.contactNo }}
                 </td>
                 <td class="text-center!">
-                  {{ data.contactPerson1 }}
+                  <div class="flex flex-col items-center justify-center gap-1">
+                    <span class="font-medium text-gray-800">{{
+                      data.contactPerson1
+                    }}</span>
+
+                    <span
+                      *ngIf="data.contactPerson2"
+                      class="text-xs text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded"
+                    >
+                      Alt: {{ data.contactPerson2 }}
+                    </span>
+                  </div>
                 </td>
 
                 <td class="text-center!">

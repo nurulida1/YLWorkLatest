@@ -108,12 +108,14 @@ namespace YLWorks.Services
                 DisplayName = userAccount.DisplayName,
                 EmployeeNo = userAccount.EmployeeNo,
                 UserId = userAccount.Id.ToString(),
+                Gender = userAccount.Gender,
                 SystemRole = userAccount.SystemRole,
                 JobTitle = userAccount.JobTitle,
                 AccessToken = accessToken,
                 RefreshToken = userAccount.RefreshToken ?? string.Empty,
                 ExpiresAt = tokenExpiryTimeStamp,
-                Departments = userAccount.Departments?.Select(d => d.Name).ToList() ?? new List<string>()
+                Departments = userAccount.Departments?.Select(d => d.Name).ToList() ?? new List<string>(),
+                DepartmentIds = userAccount.Departments?.Select(d => d.Id).ToList() ?? new List<Guid>(),
             };
         }
     }

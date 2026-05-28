@@ -10,7 +10,6 @@ using YLWorks.Model;
 
 namespace YLWorks.Controller
 {
-    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class AppController : ControllerBase

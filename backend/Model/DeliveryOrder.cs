@@ -6,15 +6,17 @@ namespace YLWorks.Model
 
         public string DeliveryOrderNo { get; set; } = string.Empty;
 
-        // Inbound = Supplier -> Your Company
-        // Outbound = Your Company -> Client
-        public string Type { get; set; } = "Outbound";
+        //Receiving (Inbound) or Dispatch (Outbound)
+        public string Type { get; set; } = "Dispatch";
 
         public Guid? ProjectId { get; set; }
         public Project? Project { get; set; }
 
         public Guid? PurchaseOrderId { get; set; }
         public PurchaseOrder? PurchaseOrder { get; set; }
+
+        public Guid? SalesOrderId { get; set; }
+        public SalesOrder? SalesOrder { get; set; }
 
         public string? ReferenceNo { get; set; }
 
@@ -34,16 +36,15 @@ namespace YLWorks.Model
 
         /*
          
-        INBOUND FLOW
+        RECEIPT (Inbound) FLOW
         Draft
         PartiallyReceived
-        Received
+        FullyReceived
         Completed
         Cancelled
 
-        OUTBOUND FLOW
+        DELIVERY (OUTBOUND) FLOW
         Draft
-        UnderReview
         Approved
         Prepared
         OutForDelivery
@@ -134,7 +135,7 @@ namespace YLWorks.Model
     {
         public string DeliveryOrderNo { get; set; } = string.Empty;
 
-        public string Type { get; set; } = "Outbound";
+        public string Type { get; set; } = "Receipt";
 
         public Guid? ProjectId { get; set; }
 

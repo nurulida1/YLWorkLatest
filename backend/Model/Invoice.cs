@@ -16,6 +16,8 @@
         public Project? Project { get; set; }
         public Guid? PurchaseOrderId { get; set; }
         public PurchaseOrder? PurchaseOrder { get; set; }
+        public Guid? SalesOrderId {  get; set; }
+        public SalesOrder? SalesOrder {  get; set; }
         public Guid? QuotationId { get; set; }
         public Quotation? Quotation { get; set; }
 
@@ -70,10 +72,8 @@
         public decimal? Amount { get; set; }
     }
 
-    // Used for Create: No ID needed as all items are new
     public class InvoiceItemRequest : InvoiceItemBase { }
 
-    // Used for Update: Optional ID to differentiate between 'Edit' and 'Add New'
     public class UpdateInvoiceItemRequest : InvoiceItemBase
     {
         public Guid? Id { get; set; }
@@ -87,6 +87,7 @@
         public Guid? ClientId { get; set; }
         public Guid? SupplierId { get; set; }
         public Guid? ProjectId { get; set; }
+        public Guid? SalesOrderId { get; set; }
         public Guid? PurchaseOrderId { get; set; }
         public Guid? QuotationId { get; set; }
         public DateTime InvoiceDate { get; set; }
@@ -114,6 +115,7 @@
         public Guid? ClientId { get; set; }
         public Guid? SupplierId { get; set; }
         public Guid? ProjectId { get; set; }
+        public Guid? SalesOrderId { get; set; }
         public Guid? PurchaseOrderId { get; set; }
         public Guid? QuotationId { get; set; }
         public DateTime InvoiceDate { get; set; }
@@ -129,7 +131,6 @@
         public string? Notes { get; set; }
         public IFormFile? Attachment { get; set; }
 
-        // Now there is absolutely zero ambiguity for reflection!
         public List<UpdateInvoiceItemRequest> InvoiceItems { get; set; } = new();
     }
 
@@ -146,7 +147,7 @@
         public decimal Amount { get; set; }
         public string? PaymentMethod { get; set; }
         public string? Notes { get; set; }
-        public Guid ProcessedById { get; set; } // Who processed the payment
+        public Guid ProcessedById { get; set; } 
     }
 
     public class InvoiceSummaryDto

@@ -30,6 +30,8 @@ import {
 import { QuotationDto } from '../../../models/Quotation';
 import { UserService } from '../../../services/userService.service';
 import { TimelineModule } from 'primeng/timeline';
+import { HasPermissionDirective } from '../../../common/directives/hasPermission.directive';
+import { PermissionService } from '../../../services/permissionService';
 
 @Component({
   selector: 'app-quotation',
@@ -44,6 +46,7 @@ import { TimelineModule } from 'primeng/timeline';
     MenuModule,
     SelectModule,
     TimelineModule,
+    HasPermissionDirective,
   ],
   template: `<div class="w-full min-h-[92.9vh] flex flex-col p-5">
       <div class="flex flex-row items-center gap-1 text-gray-500 tracking-wide">
@@ -56,6 +59,7 @@ import { TimelineModule } from 'primeng/timeline';
         /
         <div class="text-gray-700 font-semibold">Quotations</div>
       </div>
+
       <div
         class="mt-3 border border-gray-200 rounded-md tracking-wide bg-white p-5 flex flex-col"
       >
@@ -68,12 +72,14 @@ import { TimelineModule } from 'primeng/timeline';
               View, create, and track all project quotations
             </div>
           </div>
+
           <div class="flex flex-row items-center gap-2">
             <div class="min-w-[300px] relative">
               <input
                 type="text"
                 pInputText
                 [(ngModel)]="search"
+                (keydown)="onKeyDown($event)"
                 class="w-full!"
                 placeholder="Search by quotation no"
               />
@@ -81,8 +87,9 @@ import { TimelineModule } from 'primeng/timeline';
                 class="pi pi-search absolute! top-3! right-2! text-gray-500!"
               ></i>
             </div>
+
             <p-button
-              *ngIf="isEditor()"
+              *hasPermission="'Quotations'; action: 'canCreate'"
               label="New Quotation"
               [routerLink]="'/quotations/form'"
               icon="pi pi-plus"
@@ -91,6 +98,7 @@ import { TimelineModule } from 'primeng/timeline';
             ></p-button>
           </div>
         </div>
+
         <div class="mt-3">
           <p-table
             #fTable
@@ -109,7 +117,10 @@ import { TimelineModule } from 'primeng/timeline';
           >
             <ng-template #header>
               <tr>
-                <th class="w-[5%]! bg-gray-100!" *ngIf="isEditor()"></th>
+                <th
+                  class="w-[5%]! bg-gray-100!"
+                  *ngIf="permissions().canUpdate"
+                ></th>
                 <th
                   pSortableColumn="QuotationNo"
                   class="bg-gray-100! text-center! w-[20%]!"
@@ -141,6 +152,7 @@ import { TimelineModule } from 'primeng/timeline';
                 <th class="bg-gray-100! text-center! w-[10%]">Action</th>
               </tr>
             </ng-template>
+
             <ng-template
               #body
               let-data
@@ -148,7 +160,7 @@ import { TimelineModule } from 'primeng/timeline';
               let-expanded="expanded"
             >
               <tr>
-                <td *ngIf="isEditor()">
+                <td *ngIf="permissions().canUpdate">
                   <div
                     class="flex items-center justify-center cursor-pointer"
                     (click)="onRowExpand(data, fTable)"
@@ -163,9 +175,7 @@ import { TimelineModule } from 'primeng/timeline';
                 <td class="text-center! font-semibold!">
                   {{ data.quotationNo }}
                 </td>
-                <td class="text-center!">
-                  {{ data.client?.name }}
-                </td>
+                <td class="text-center!">{{ data.client?.name }}</td>
                 <td class="text-center!">
                   {{ data.quotationDate | date: 'dd/MM/yyyy' }}
                 </td>
@@ -191,7 +201,6 @@ import { TimelineModule } from 'primeng/timeline';
                     </div>
                   </div>
                 </td>
-
                 <td class="text-center!">
                   <div
                     class="flex items-center justify-center"
@@ -205,6 +214,7 @@ import { TimelineModule } from 'primeng/timeline';
                 </td>
               </tr>
             </ng-template>
+
             <ng-template #expandedrow let-item>
               <tr>
                 <td colspan="100%">
@@ -230,20 +240,17 @@ import { TimelineModule } from 'primeng/timeline';
                           ></i>
                         </div>
                       </ng-template>
-
                       <ng-template #content let-event>
                         <div class="flex flex-col min-h-[70px]">
                           <div class="font-semibold text-sm">
                             {{ event.status }}
                           </div>
-
                           <small
                             class="text-gray-500 text-xs"
                             *ngIf="event.actionUser"
                           >
                             {{ event.actionUser }}
                           </small>
-
                           <small
                             class="text-gray-400 text-xs"
                             *ngIf="event.actionAt"
@@ -271,12 +278,13 @@ import { TimelineModule } from 'primeng/timeline';
         </div>
       </div>
     </div>
+
     <p-menu
       #menu
       [model]="menuItems"
       [popup]="true"
       [style]="{ transform: 'translate(20px, 8px)' }"
-    ></p-menu> `,
+    ></p-menu>`,
   styleUrl: './quotation.less',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -290,6 +298,7 @@ export class Quotation implements OnInit, OnDestroy {
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly router = inject(Router);
   protected ngUnsubscribe: Subject<void> = new Subject<void>();
+  private readonly permissionService = inject(PermissionService);
 
   PagingSignal = signal<PagingContent<QuotationDto>>(
     {} as PagingContent<QuotationDto>,
@@ -311,6 +320,7 @@ export class Quotation implements OnInit, OnDestroy {
   isAdmin: boolean = false;
 
   timelineMap: { [key: string]: any[] } = {};
+  permissions = this.permissionService.getModuleRights('Quotations');
 
   constructor() {
     this.Query.Page = 1;
@@ -394,9 +404,11 @@ export class Quotation implements OnInit, OnDestroy {
     const sortText = BuildSortText(event);
     this.Query.OrderBy = sortText ? sortText : 'CreatedAt desc';
 
-    this.Query.Filter = !this.isEditor()
-      ? `${BuildFilterText(event)},Status=Accepted`
-      : BuildFilterText(event);
+    this.Query.Filter =
+      !this.permissions().canUpdate && !this.permissions().canCreate
+        ? `${BuildFilterText(event)},Status=Accepted`
+        : BuildFilterText(event);
+
     this.GetData();
   }
 
@@ -447,7 +459,10 @@ export class Quotation implements OnInit, OnDestroy {
       this.fTable.saveState();
     }
 
-    this.Query.Filter = !this.isEditor() ? 'Status=Accepted' : null;
+    this.Query.Filter =
+      !this.permissions().canUpdate && !this.permissions().canCreate
+        ? 'Status=Accepted'
+        : null;
     this.GetData();
   }
 
@@ -470,82 +485,80 @@ export class Quotation implements OnInit, OnDestroy {
   }
 
   onEllipsisClick(event: any, quotation: QuotationDto, menu: any) {
-    const jobTitle = this.currentUser?.systemRole;
     const status = quotation.status;
+    const rights = this.permissions();
 
     this.menuItems = [];
 
-    if (
-      jobTitle === 'Sales Executive' ||
-      jobTitle === 'Sales Support' ||
-      jobTitle === 'Sales Director' ||
-      jobTitle === 'SuperAdmin'
-    ) {
-      this.menuItems = [
-        {
-          label: 'Edit',
-          icon: 'pi pi-pencil',
-          visible: status === 'Draft',
-          command: () => this.ActionClick(quotation, 'Update'),
-        },
-        {
+    if (rights.canUpdate && status === 'Draft') {
+      this.menuItems.push({
+        label: 'Edit',
+        icon: 'pi pi-pencil',
+        command: () => this.ActionClick(quotation, 'Update'),
+      });
+    }
+
+    if (rights.canUpdateStatus) {
+      if (status === 'Draft') {
+        this.menuItems.push({
           label: 'Reviewed',
           icon: 'pi pi-file-edit',
-          visible: status === 'Draft',
           command: () => this.updateQuotationStatus(quotation.id, 'Reviewed'),
-        },
-        {
+        });
+      }
+      if (status === 'Reviewed') {
+        this.menuItems.push({
           label: 'Mark As Sent',
           icon: 'pi pi-send',
-          visible: status === 'Reviewed',
           command: () => this.updateQuotationStatus(quotation.id, 'Sent'),
-        },
-        {
-          label: 'Accepted',
-          icon: 'pi pi-check-circle',
-          visible: status === 'Sent',
-          command: () => this.updateQuotationStatus(quotation.id, 'Accepted'),
-        },
-        {
-          label: 'Rejected',
-          icon: 'pi pi-times',
-          visible: status === 'Sent',
-          command: () => this.updateQuotationStatus(quotation.id, 'Rejected'),
-        },
-        {
+        });
+      }
+      if (status === 'Sent') {
+        this.menuItems.push(
+          {
+            label: 'Accepted',
+            icon: 'pi pi-check-circle',
+            command: () => this.updateQuotationStatus(quotation.id, 'Accepted'),
+          },
+          {
+            label: 'Rejected',
+            icon: 'pi pi-times',
+            command: () => this.updateQuotationStatus(quotation.id, 'Rejected'),
+          },
+        );
+      }
+      if (
+        status !== 'Accepted' &&
+        status !== 'Rejected' &&
+        status !== 'Cancelled'
+      ) {
+        this.menuItems.push({
           label: 'Cancel',
           icon: 'pi pi-times-circle',
-          visible:
-            status !== 'Accepted' &&
-            status !== 'Rejected' &&
-            status !== 'Cancelled',
           command: () => this.updateQuotationStatus(quotation.id, 'Cancelled'),
-        },
-        {
-          label: 'Convert to PO',
-          icon: 'pi pi-file',
-          visible: status === 'Accepted',
-          command: () => this.ActionClick(quotation, 'Convert'),
-        },
-        {
-          label: 'Download File',
-          icon: 'pi pi-file',
-          visible: status === 'Accepted',
-          command: () => this.ActionClick(quotation, 'Download'),
-        },
-      ];
+        });
+      }
     }
-    if (!this.isEditor()) {
-      this.menuItems = [
-        {
-          label: 'Download File',
-          icon: 'pi pi-file',
-          visible: status === 'Accepted',
-          command: () => this.ActionClick(quotation, 'Download'),
-        },
-      ];
+
+    if (rights.canUpdate && status === 'Accepted') {
+      this.menuItems.push({
+        label: 'Convert to PO',
+        icon: 'pi pi-file',
+        command: () => this.ActionClick(quotation, 'Convert'),
+      });
     }
-    menu.toggle(event);
+
+    if (rights.canRead && status === 'Accepted') {
+      this.menuItems.push({
+        label: 'Download File',
+        icon: 'pi pi-file',
+        command: () => this.ActionClick(quotation, 'Download'),
+      });
+    }
+
+    if (this.menuItems.length > 0) {
+      menu.toggle(event);
+    }
   }
 
   updateQuotationStatus(id: string, newStatus: string) {

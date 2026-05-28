@@ -2,6 +2,7 @@ import { BaseModel } from './BaseModel';
 import { CompanyDto } from './Company';
 import { ProjectDto } from './Project';
 import { PurchaseOrderDto } from './PurchaseOrder';
+import { SalesOrderDto } from './SalesOrder';
 import { UserDto } from './User';
 
 export interface DeliveryOrderDto extends BaseModel {
@@ -12,6 +13,9 @@ export interface DeliveryOrderDto extends BaseModel {
 
   purchaseOrderId?: string;
   purchaseOrder?: PurchaseOrderDto;
+
+  salesOrderId?: string;
+  salesOrder?: SalesOrderDto;
 
   referenceNo?: string;
 
@@ -25,7 +29,7 @@ export interface DeliveryOrderDto extends BaseModel {
   notes?: string;
   remarks?: string;
 
-  type: 'Inbound' | 'Outbound';
+  type: 'Receipt' | 'Delivery';
 
   status: string;
   attachment?: string;
@@ -87,7 +91,7 @@ export interface CreateDeliveryOrderRequest {
 
   notes?: string;
   attachment?: string;
-  type: 'Inbound' | 'Outbound';
+  type: 'Receipt' | 'Delivery';
 }
 
 export interface CreateDeliveryOrderItemRequest {

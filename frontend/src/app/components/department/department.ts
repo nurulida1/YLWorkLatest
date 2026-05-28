@@ -43,107 +43,139 @@ import { DialogModule } from 'primeng/dialog';
     MenuModule,
     DialogModule,
   ],
-  template: `<div class="w-full flex flex-col p-5">
+  template: `<div class="w-full flex flex-col p-6">
       <div
-        class="flex flex-row items-center gap-1 text-gray-500 text-[15px] tracking-wide"
+        class="flex flex-row items-center gap-2 text-xs tracking-wider uppercase text-gray-400 font-medium"
       >
-        <div
-          class="cursor-pointer hover:text-gray-600"
+        <span
+          class="cursor-pointer hover:text-gray-600 transition-colors"
           [routerLink]="'/dashboard'"
         >
           Dashboard
-        </div>
-        /
-        <div class="text-gray-700 font-semibold">Department</div>
+        </span>
+        <span class="text-gray-300">/</span>
+        <span class="text-gray-600 font-semibold text-gray-700"
+          >Department</span
+        >
       </div>
 
       <div
-        class="mt-3 border border-gray-200 rounded-md tracking-wide bg-white p-5 flex flex-col"
+        class="mt-4 border border-gray-100 rounded-xl shadow-sm bg-white overflow-hidden flex flex-col"
       >
-        <div class="flex flex-row items-center justify-between">
+        <div
+          class="p-6 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-gray-50/50"
+        >
           <div class="flex flex-col">
-            <div class="text-[20px] text-gray-700 font-semibold">
-              Department
-            </div>
-            <div class="text-gray-500 text-[15px]">
-              Create, edit, and manage department
-            </div>
+            <h1 class="text-xl text-gray-800 font-bold tracking-tight">
+              Departments
+            </h1>
+            <p class="text-sm text-gray-500 mt-0.5">
+              Create, edit, and orchestrate functional organizational branches.
+            </p>
           </div>
-          <div class="flex flex-row items-center gap-2">
-            <div class="min-w-[300px] relative">
+
+          <div class="flex flex-row items-center gap-2.5 self-end sm:self-auto">
+            <div class="w-72 relative">
               <input
                 type="text"
                 pInputText
                 [(ngModel)]="search"
-                class="w-full! text-[15px]!"
-                placeholder="Search by name"
+                class="w-full pl-3 pr-9 py-2 text-sm rounded-lg border-gray-200 focus:border-sky-500! shadow-inner!"
+                placeholder="Search branches by name..."
                 (keyup)="onKeyDown($event)"
               />
               <i
-                class="pi pi-search absolute! top-3! right-2! text-gray-500!"
+                class="pi pi-search absolute top-1/2 -translate-y-1/2 right-3 text-gray-400 text-sm pointer-events-none"
               ></i>
             </div>
+
             <p-button
               label="New Department"
               (onClick)="ActionClick(null, 'add')"
               icon="pi pi-plus-circle"
               severity="info"
-              size="small"
-              styleClass="py-2! whitespace-nowrap!"
+              styleClass="py-2 px-4 rounded-lg text-sm font-medium tracking-wide shadow-sm"
             ></p-button>
           </div>
         </div>
-        <div class="mt-3">
+
+        <div class="p-4 bg-white">
           <p-table
             #fTable
             [value]="PagingSignal().data"
             [paginator]="true"
             [rows]="Query.PageSize"
             [totalRecords]="PagingSignal().totalElements"
-            [tableStyle]="{ 'min-width': '60rem' }"
+            [tableStyle]="{ 'min-width': '50rem' }"
             [rowsPerPageOptions]="[10, 20, 30, 50]"
             [stripedRows]="true"
-            [showGridlines]="true"
+            [showGridlines]="false"
             [lazy]="true"
             (onLazyLoad)="NextPage($event)"
+            styleClass="p-datatable-sm"
           >
             <ng-template #header>
-              <tr>
-                <th class="bg-gray-100! text-[15px]! text-center! w-[40%]!">
-                  Name
+              <tr
+                class="text-xs uppercase text-gray-500 font-bold border-b border-gray-200"
+              >
+                <th class="bg-gray-50/70 py-3.5 px-5 text-left w-[45%]">
+                  Department Name
                 </th>
-                <th class="bg-gray-100! text-[15px]! text-center! w-[40%]!">
-                  HOD
+                <th class="bg-gray-50/70 py-3.5 px-5 text-left w-[40%]">
+                  Head of Department (HOD)
                 </th>
-                <th class="bg-gray-100! text-[15px]! text-center! w-[20%]!">
-                  Action
+                <th class="bg-gray-50/70 py-3.5 px-5 text-center w-[15%]">
+                  Actions
                 </th>
               </tr>
             </ng-template>
+
             <ng-template #body let-data>
-              <tr>
-                <td class="text-[14px] text-center! font-semibold!">
-                  {{ data.name }}
-                </td>
-                <td class="text-[14px] text-center!">
-                  {{ data.hod?.fullName }}
-                </td>
-                <td class="text-center! text-[14px]!">
-                  <div class="flex items-center justify-center">
-                    <i
-                      class="pi pi-ellipsis-h cursor-pointer"
-                      (click)="onEllipsisClick($event, data, menu)"
-                    ></i>
+              <tr
+                class="border-b border-gray-100 last:border-0 hover:bg-gray-50/50 transition-colors text-sm text-gray-700"
+              >
+                <td class="py-3 px-5 font-semibold text-gray-900">
+                  <div class="flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-sky-400"></span>
+                    {{ data.name }}
                   </div>
                 </td>
+                <td class="py-3 px-5 text-gray-600">
+                  <div
+                    class="flex items-center gap-2"
+                    *ngIf="data.hod?.fullName; else noHod"
+                  >
+                    <i class="pi pi-user text-xs text-gray-400"></i>
+                    <span>{{ data.hod?.fullName }}</span>
+                  </div>
+                  <ng-template #noHod>
+                    <span class="text-xs italic text-gray-400"
+                      >Unassigned / Vacant</span
+                    >
+                  </ng-template>
+                </td>
+                <td class="py-3 px-5 text-center">
+                  <button
+                    class="p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-md transition-all inline-flex items-center justify-center"
+                    (click)="onEllipsisClick($event, data, menu)"
+                  >
+                    <i class="pi pi-ellipsis-h text-sm"></i>
+                  </button>
+                </td>
               </tr>
             </ng-template>
+
             <ng-template #emptymessage>
               <tr>
-                <td class="border-x!" colspan="100%">
-                  <div class="text-[15px] text-center text-gray-500">
-                    No department found in record.
-                  </div>
+                <td
+                  colspan="3"
+                  class="py-12 text-center text-gray-400 bg-white font-medium border border-gray-100 rounded-lg"
+                >
+                  <i
+                    class="pi pi-folder-open text-3xl text-gray-200 mb-2 block"
+                  ></i>
+                  No workspace department branches discovered matching selection
+                  records.
                 </td>
               </tr>
             </ng-template>
@@ -151,7 +183,13 @@ import { DialogModule } from 'primeng/dialog';
         </div>
       </div>
     </div>
-    <p-menu #menu [model]="menuItems" [popup]="true"></p-menu>
+
+    <p-menu
+      #menu
+      [model]="menuItems"
+      [popup]="true"
+      styleClass="text-sm shadow-md border-gray-100!"
+    ></p-menu>
 
     <p-dialog
       *ngIf="visible"
@@ -160,48 +198,65 @@ import { DialogModule } from 'primeng/dialog';
       [draggable]="false"
       [closable]="true"
       (onHide)="visible = false"
-      styleClass="relative! border-0! bg-white! overflow-y-auto! w-[80%]! md:w-[50%]!"
+      styleClass="relative border-0 bg-white rounded-xl shadow-2xl overflow-y-auto w-[90%] max-w-lg"
     >
       <ng-template #headless>
-        <div class="p-5 flex flex-col">
-          <div class="font-semibold text-[20px]">{{ title }}</div>
-          <div class="font-normal tracking-wide text-gray-500 text-[15px]">
-            Fill in all required field.
+        <div class="p-6 flex flex-col space-y-6">
+          <div class="flex flex-col">
+            <h3 class="font-bold text-lg text-gray-800">{{ title }}</h3>
+            <p class="text-xs text-gray-400 mt-0.5 tracking-wide">
+              Provide management parameters to configure structural data
+              profiles.
+            </p>
           </div>
-          <div class="text-[15px] tracking-wide mt-7 grid grid-cols-12 gap-4">
-            <div class="col-span-12 flex flex-col gap-1">
-              <div>Name <span class="text-red-500">*</span></div>
+
+          <div class="space-y-4 text-sm text-gray-700">
+            <div class="flex flex-col gap-1.5">
+              <label class="font-semibold text-gray-700">
+                Department Name <span class="text-rose-500 font-bold">*</span>
+              </label>
               <input
                 type="text"
                 pInputText
-                class="w-full py-1.5!"
+                class="w-full py-2 px-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-sky-100"
+                placeholder="e.g. Technology Support Services"
                 [(ngModel)]="departmentName"
               />
             </div>
-            <div class="col-span-12 flex flex-col gap-1">
-              <div>HOD</div>
+
+            <div class="flex flex-col gap-1.5">
+              <label class="font-semibold text-gray-700"
+                >Head of Department (HOD)</label
+              >
               <p-select
                 [options]="hodSelection || []"
+                optionLabel="label"
+                optionValue="value"
                 appendTo="body"
                 [filter]="true"
-                [showClear]="hodId"
+                filterPlaceholder="Search user identity profiles..."
+                [showClear]="!!hodId"
+                placeholder="Assign dynamic leadership authority..."
                 [(ngModel)]="hodId"
+                styleClass="w-full border-gray-200! rounded-lg! shadow-none!"
               ></p-select>
             </div>
           </div>
-          <div class="border-b border-gray-200 mt-3 mb-3"></div>
-          <div class="flex flex-row items-center gap-3 justify-between">
+
+          <div class="border-b border-gray-100"></div>
+
+          <div class="flex flex-row items-center justify-between gap-3 pt-1">
             <p-button
               label="Cancel"
               severity="secondary"
               (onClick)="visible = false"
-              styleClass="border-gray-200! py-1.5! px-4!"
+              styleClass="border border-gray-200! py-2 px-4 rounded-lg text-sm font-medium hover:bg-gray-50!"
             ></p-button>
             <p-button
               (onClick)="SaveDepartment()"
-              [label]="isUpdate ? 'Save Changes' : 'Create'"
+              [label]="isUpdate ? 'Save Changes' : 'Create Branch'"
               severity="info"
-              styleClass="py-1.5! px-4!"
+              styleClass="py-2 px-5 rounded-lg text-sm font-medium tracking-wide shadow-sm"
             ></p-button>
           </div>
         </div>

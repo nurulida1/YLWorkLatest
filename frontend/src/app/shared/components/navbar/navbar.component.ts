@@ -95,7 +95,7 @@ import { DrawerModule } from 'primeng/drawer';
                 styleClass="p-2! border border-gray-200 bg-gray-100!"
               ></p-avatar>
               <span class="flex flex-col">
-                <span class="font-bold">{{ currentUser.fullName }}</span>
+                <span class="font-bold">{{ currentUser.displayName }}</span>
                 <span class="text-sm">{{ currentUser.email }}</span>
               </span>
             </div>
@@ -379,32 +379,12 @@ export class NavbarComponent implements OnDestroy, OnInit {
     {
       label: 'Purchase Orders',
       icon: 'pi-shopping-cart',
-      items: [
-        {
-          label: 'Supplier PO',
-          route: '/purchase-orders/supplier',
-          // roles: [
-          //   'Sales Director',
-          //   'Sales Executive',
-          //   'Sales Support',
-          //   'Account & Admin Manager',
-          //   'Purchasing Executive',
-          //   'SuperAdmin',
-          // ],
-        },
-        {
-          label: 'Client PO',
-          route: '/purchase-orders/client',
-          // roles: [
-          //   'Sales Director',
-          //   'Sales Executive',
-          //   'Sales Support',
-          //   'Account & Admin Manager',
-          //   'Purchasing Executive',
-          //   'SuperAdmin',
-          // ],
-        },
-      ],
+      route: '/purchase-orders',
+    },
+    {
+      label: 'Sales Order',
+      icon: 'pi-money-bill',
+      route: '/sales-order',
     },
     {
       label: 'Company',

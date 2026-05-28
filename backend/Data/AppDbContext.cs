@@ -15,6 +15,7 @@ namespace YLWorks.Data
         public DbSet<Notification> Notifications { get; set; }
         public DbSet<RolePermission> RolePermissions { get; set; }
         public DbSet<AccessPermission> AccessPermissions { get; set; }
+        public DbSet<SystemModule> SystemModules { get; set; }
 
         // =======================
         // ORGANIZATION
@@ -57,6 +58,10 @@ namespace YLWorks.Data
         public DbSet<PurchaseOrder> PurchaseOrders { get; set; }
         public DbSet<PurchaseOrderItem> PurchaseOrderItems { get; set; }
         public DbSet<PurchaseOrderStatusHistory> PurchaseOrderStatusHistories { get; set; }
+
+        public DbSet<SalesOrder> SalesOrders { get; set; }
+        public DbSet<SalesOrderItem> SalesOrderItems { get; set; }
+        public DbSet<SalesOrderStatusHistory> SalesOrderStatusHistories { get; set; }
 
         // =======================
         // INVENTORY / MATERIAL

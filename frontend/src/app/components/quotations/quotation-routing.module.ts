@@ -8,13 +8,12 @@ const routes: Routes = [
   {
     path: '',
     component: Quotation,
-    canActivate: [permissionGuard('Quotations', 'canRead')],
+    // canActivate: [permissionGuard('Quotation', 'canRead')],
   },
 
   {
     path: 'form',
     component: QuotationForm,
-    canActivate: [permissionGuard('Quotations', 'canCreate')],
   },
 ];
 

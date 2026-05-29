@@ -280,3 +280,23 @@ export const passwordMatchValidator: ValidatorFn = (
     ? { passwordMismatch: true }
     : null;
 };
+
+export function normalizeHtml(html: string): string {
+  if (!html) return html;
+
+  return html
+    .replace(/<strong>/g, '<b>')
+    .replace(/<\/strong>/g, '</b>')
+    .replace(/<em>/g, '<i>')
+    .replace(/<\/em>/g, '</i>');
+}
+
+export function denormalizeHtml(html: string): string {
+  if (!html) return html;
+
+  return html
+    .replace(/<b>/g, '<strong>')
+    .replace(/<\/b>/g, '</strong>')
+    .replace(/<i>/g, '<em>')
+    .replace(/<\/i>/g, '</em>');
+}

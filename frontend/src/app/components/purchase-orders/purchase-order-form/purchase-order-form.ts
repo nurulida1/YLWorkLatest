@@ -31,7 +31,11 @@ import { TextareaModule } from 'primeng/textarea';
 import { PurchaseOrderService } from '../../../services/purchaseOrderService';
 import { LoadingService } from '../../../services/loading.service';
 import { forkJoin, of, Subject, takeUntil } from 'rxjs';
-import { ValidateAllFormFields } from '../../../shared/helpers/helpers';
+import {
+  denormalizeHtml,
+  normalizeHtml,
+  ValidateAllFormFields,
+} from '../../../shared/helpers/helpers';
 import { UserService } from '../../../services/userService.service';
 import { ProjectService } from '../../../services/ProjectService';
 import { ProjectDto } from '../../../models/Project';
@@ -1364,7 +1368,7 @@ export class PurchaseOrderForm implements OnInit, OnDestroy {
             .forEach((item: any) => {
               const group = this.createItem({
                 ...item,
-                description: this.denormalizeHtml(item.description),
+                description: denormalizeHtml(item.description),
               });
 
               group.patchValue(
@@ -1444,7 +1448,7 @@ export class PurchaseOrderForm implements OnInit, OnDestroy {
 
     const items = raw.purchaseOrderItems.map((item: any) => ({
       ...item,
-      description: this.normalizeHtml(item.description),
+      description: normalizeHtml(item.description),
     }));
 
     formData.append('purchaseOrderItems', JSON.stringify(items));
@@ -1666,26 +1670,6 @@ export class PurchaseOrderForm implements OnInit, OnDestroy {
           this.cdr.markForCheck();
         },
       });
-  }
-
-  normalizeHtml(html: string): string {
-    if (!html) return html;
-
-    return html
-      .replace(/<strong>/g, '<b>')
-      .replace(/<\/strong>/g, '</b>')
-      .replace(/<em>/g, '<i>')
-      .replace(/<\/em>/g, '</i>');
-  }
-
-  denormalizeHtml(html: string): string {
-    if (!html) return html;
-
-    return html
-      .replace(/<b>/g, '<strong>')
-      .replace(/<\/b>/g, '</strong>')
-      .replace(/<i>/g, '<em>')
-      .replace(/<\/i>/g, '</em>');
   }
 
   ngOnDestroy(): void {

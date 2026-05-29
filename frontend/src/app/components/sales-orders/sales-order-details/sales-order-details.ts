@@ -32,9 +32,7 @@ import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
   template: `<div
     class="relative w-full flex flex-col gap-3 p-5 pb-24 min-h-[93.9vh]"
   >
-    <div
-      class="flex flex-row items-center gap-1 text-gray-500 tracking-wide text-sm"
-    >
+    <div class="flex flex-row items-center gap-1 text-gray-500 tracking-wide">
       <div
         [routerLink]="'/dashboard'"
         class="cursor-pointer hover:text-gray-600"
@@ -43,10 +41,10 @@ import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
       </div>
       /
       <div
-        [routerLink]="'/purchase-orders'"
+        [routerLink]="'/sales-order'"
         class="cursor-pointer hover:text-gray-600"
       >
-        Purchase Orders
+        Sales Order
       </div>
       /
       <div class="text-gray-700 font-semibold">

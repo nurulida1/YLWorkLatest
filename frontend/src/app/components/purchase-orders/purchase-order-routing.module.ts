@@ -4,6 +4,7 @@ import { PurchaseOrderForm } from './purchase-order-form/purchase-order-form';
 import { ClientPurchaseOrder } from './client-purchase-order/client-purchase-order';
 import { SupplierPurchaseOrder } from './supplier-purchase-order/supplier-purchase-order';
 import { PurchaseOrder } from './purchaseOrder/purchaseOrder';
+import { PurchaseOrderDetails } from './purchase-order-details/purchase-order-details';
 
 const routes: Routes = [
   {
@@ -19,8 +20,12 @@ const routes: Routes = [
     component: SupplierPurchaseOrder,
   },
   {
-    path: 'supplier/form',
+    path: 'form',
     component: PurchaseOrderForm,
+  },
+  {
+    path: 'details',
+    component: PurchaseOrderDetails,
   },
 ];
 

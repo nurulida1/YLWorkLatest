@@ -45,7 +45,7 @@ export class HasPermissionDirective {
       const targetAction = this.actionInput();
 
       const rights = this.permissionService.getModuleRights(targetModule)();
-
+      console.log(rights);
       const isAuthorized = rights && rights[targetAction] === true;
 
       if (isAuthorized && !this.hasView) {

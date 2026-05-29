@@ -89,7 +89,7 @@ import { PermissionService } from '../../../services/permissionService';
             </div>
 
             <p-button
-              *hasPermission="'Quotations'; action: 'canCreate'"
+              *hasPermission="'QUOTATION'; action: 'canCreate'"
               label="New Quotation"
               [routerLink]="'/quotations/form'"
               icon="pi pi-plus"
@@ -149,7 +149,16 @@ import { PermissionService } from '../../../services/permissionService';
                     <p-sortIcon field="Status" />
                   </div>
                 </th>
-                <th class="bg-gray-100! text-center! w-[10%]">Action</th>
+                <th
+                  *ngIf="
+                    permissions().canUpdate ||
+                    permissions().canUpdateStatus ||
+                    permissions().canDelete
+                  "
+                  class="bg-gray-100! text-center! w-[10%]"
+                >
+                  Action
+                </th>
               </tr>
             </ng-template>
 
@@ -201,7 +210,14 @@ import { PermissionService } from '../../../services/permissionService';
                     </div>
                   </div>
                 </td>
-                <td class="text-center!">
+                <td
+                  *ngIf="
+                    permissions().canUpdate ||
+                    permissions().canUpdateStatus ||
+                    permissions().canDelete
+                  "
+                  class="text-center!"
+                >
                   <div
                     class="flex items-center justify-center"
                     *ngIf="data.status !== 'Cancelled'"
@@ -320,7 +336,7 @@ export class Quotation implements OnInit, OnDestroy {
   isAdmin: boolean = false;
 
   timelineMap: { [key: string]: any[] } = {};
-  permissions = this.permissionService.getModuleRights('Quotations');
+  permissions = this.permissionService.getModuleRights('QUOTATION');
 
   constructor() {
     this.Query.Page = 1;
@@ -490,6 +506,7 @@ export class Quotation implements OnInit, OnDestroy {
 
     this.menuItems = [];
 
+    // ✅ UPDATE (Edit)
     if (rights.canUpdate && status === 'Draft') {
       this.menuItems.push({
         label: 'Edit',
@@ -498,6 +515,7 @@ export class Quotation implements OnInit, OnDestroy {
       });
     }
 
+    // ✅ STATUS FLOW
     if (rights.canUpdateStatus) {
       if (status === 'Draft') {
         this.menuItems.push({
@@ -506,6 +524,7 @@ export class Quotation implements OnInit, OnDestroy {
           command: () => this.updateQuotationStatus(quotation.id, 'Reviewed'),
         });
       }
+
       if (status === 'Reviewed') {
         this.menuItems.push({
           label: 'Mark As Sent',
@@ -513,6 +532,7 @@ export class Quotation implements OnInit, OnDestroy {
           command: () => this.updateQuotationStatus(quotation.id, 'Sent'),
         });
       }
+
       if (status === 'Sent') {
         this.menuItems.push(
           {
@@ -527,6 +547,7 @@ export class Quotation implements OnInit, OnDestroy {
           },
         );
       }
+
       if (
         status !== 'Accepted' &&
         status !== 'Rejected' &&
@@ -540,6 +561,16 @@ export class Quotation implements OnInit, OnDestroy {
       }
     }
 
+    // ✅ DELETE (you didn’t implement before)
+    if (rights.canDelete && status !== 'Cancelled') {
+      this.menuItems.push({
+        label: 'Delete',
+        icon: 'pi pi-trash',
+        command: () => this.deleteQuotation(quotation.id),
+      });
+    }
+
+    // ✅ EXTRA ACTIONS
     if (rights.canUpdate && status === 'Accepted') {
       this.menuItems.push({
         label: 'Convert to PO',
@@ -690,17 +721,39 @@ export class Quotation implements OnInit, OnDestroy {
     });
   }
 
+  deleteQuotation(id: string) {
+    this.loadingService.start();
+
+    this.quotationService
+      .Delete(id)
+      .pipe(takeUntil(this.ngUnsubscribe))
+      .subscribe({
+        next: () => {
+          this.loadingService.stop();
+
+          const current = this.PagingSignal();
+          this.PagingSignal.set({
+            ...current,
+            data: current.data.filter((x) => x.id !== id),
+          });
+
+          this.messageService.add({
+            severity: 'success',
+            summary: 'Deleted',
+            detail: 'Quotation removed successfully',
+          });
+
+          this.cdr.markForCheck();
+        },
+        error: () => {
+          this.loadingService.stop();
+        },
+      });
+  }
+
   ngOnDestroy(): void {
     this.ngUnsubscribe.next();
     this.ngUnsubscribe.complete();
     this.loadingService.stop();
-  }
-
-  isEditor(): boolean {
-    return (
-      this.currentUser?.jobTitle === 'Sales Executive' ||
-      this.currentUser?.jobTitle === 'Sales Support' ||
-      this.currentUser?.jobTitle === 'Sales Director'
-    );
   }
 }

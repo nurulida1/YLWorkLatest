@@ -111,14 +111,14 @@ export class PurchaseOrderService {
   UpdateStatus(
     id: string,
     status: string,
-    userId?: string | null,
+    remarks?: string | null,
   ): Observable<any> {
     const params: any = {
       id,
       status,
     };
-    if (userId) {
-      params.userId = userId;
+    if (remarks) {
+      params.remarks = remarks;
     }
     return this.http
       .put<any>(`${this.url}/UpdateStatus`, null, { params })
@@ -137,7 +137,7 @@ export class PurchaseOrderService {
 
     return this.http.get(`${this.url}/ExportExcel`, {
       params,
-      responseType: 'blob', // important for files
+      responseType: 'blob',
     });
   }
 

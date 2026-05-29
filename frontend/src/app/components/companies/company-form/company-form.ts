@@ -43,43 +43,56 @@ import { CheckboxModule } from 'primeng/checkbox';
     TabsModule,
     CheckboxModule,
   ],
-  template: `<div class="w-full flex flex-col p-5">
-    <div class="flex flex-row items-center gap-1 text-gray-500 tracking-wide">
-      <div
-        class="cursor-pointer hover:text-gray-600"
+  template: ` <div class="w-full flex flex-col p-6 bg-gray-50 min-h-screen">
+    <div
+      class="flex flex-row items-center gap-2 text-gray-500 tracking-wide mb-4"
+    >
+      <span
+        class="cursor-pointer hover:text-primary transition-colors"
         [routerLink]="'/dashboard'"
+        >Dashboard</span
       >
-        Dashboard
-      </div>
-      /
-      <div class="cursor-pointer hover:text-gray-600" [routerLink]="'/company'">
-        Company
-      </div>
-      /
-      <div class="text-gray-700 font-semibold">
-        {{ currentId ? 'Update ' + FG.get('name')?.value : 'New Company' }}
-      </div>
+      <span class="text-gray-400">/</span>
+      <span
+        class="cursor-pointer hover:text-primary transition-colors"
+        [routerLink]="'/company'"
+        >My Company</span
+      >
+      <span class="text-gray-400">/</span>
+      <span class="text-gray-800 font-semibold">
+        {{
+          currentId ? 'Update ' + (FG.get('name')?.value || '') : 'New Company'
+        }}
+      </span>
     </div>
 
     <div
-      class="mt-3 border border-gray-200 rounded-md bg-white p-5 flex flex-col"
+      class="border border-gray-200 rounded-xl bg-white shadow-sm overflow-hidden"
+      [formGroup]="FG"
     >
       <p-tabs value="0">
-        <p-tablist>
-          <p-tab value="0">Details</p-tab>
-          <p-tab value="1">Delivery Address</p-tab>
-          <p-tab value="2">Billing Address</p-tab>
+        <p-tablist class="bg-gray-50 border-b border-gray-200">
+          <p-tab value="0" class="font-medium">Details</p-tab>
+          <p-tab value="1" class="font-medium">Billing Address</p-tab>
+          <p-tab value="2" class="font-medium">Delivery Address</p-tab>
         </p-tablist>
-        <p-tabpanels>
+
+        <p-tabpanels class="p-6">
           <p-tabpanel value="0">
-            <div class="grid grid-cols-12 gap-4 items-center" [formGroup]="FG">
-              <div class="col-span-4">Company Logo</div>
-              <div class="col-span-8">
-                <div class="flex flex-row items-center gap-4">
-                  <div *ngIf="FG.get('logoImage')?.value" class="mt-2">
+            <div class="grid grid-cols-12 gap-y-5 gap-x-6 items-center">
+              <div class="col-span-12 md:col-span-3 font-medium text-gray-700">
+                Company Logo
+              </div>
+              <div class="col-span-12 md:col-span-9">
+                <div class="flex items-center gap-4">
+                  <div
+                    *ngIf="FG.get('logoImage')?.value"
+                    class="relative group"
+                  >
                     <img
                       [src]="FG.get('logoImage')?.value"
-                      class="w-32 h-32 object-contain border border-gray-200"
+                      class="w-28 h-28 object-contain border border-gray-200 rounded-lg p-1 bg-gray-50"
+                      alt="Client Logo"
                     />
                   </div>
                   <input
@@ -89,280 +102,330 @@ import { CheckboxModule } from 'primeng/checkbox';
                     (change)="onFileSelected($event)"
                     hidden
                   />
-                  <p-button
-                    [label]="FG.get('logoImage')?.value ? 'Reupload' : 'Upload'"
-                    severity="secondary"
-                    icon="pi pi-upload"
-                    styleClass="border-gray-200!"
-                    size="small"
-                    (onClick)="file.click()"
-                  ></p-button
-                  ><p-button
-                    *ngIf="FG.get('logoImage')?.value"
-                    label="Remove"
-                    severity="danger"
-                    icon="pi pi-trash"
-                    size="small"
-                    (onClick)="removeImage(file, $event)"
-                  ></p-button>
+                  <div class="flex gap-2">
+                    <p-button
+                      [label]="
+                        FG.get('logoImage')?.value ? 'Reupload' : 'Upload Logo'
+                      "
+                      severity="secondary"
+                      icon="pi pi-upload"
+                      size="small"
+                      (onClick)="file.click()"
+                    ></p-button>
+                    <p-button
+                      *ngIf="FG.get('logoImage')?.value"
+                      label="Remove"
+                      severity="danger"
+                      icon="pi pi-trash"
+                      size="small"
+                      outlined="true"
+                      (onClick)="removeImage(file, $event)"
+                    ></p-button>
+                  </div>
                 </div>
               </div>
-              <div class="col-span-4">
+
+              <div class="col-span-12 md:col-span-3 font-medium text-gray-700">
                 Company Name <span class="text-red-500">*</span>
               </div>
-              <div class="col-span-8">
+              <div class="col-span-12 md:col-span-9">
                 <input
                   type="text"
                   pInputText
                   class="w-full"
                   formControlName="name"
+                  placeholder="Enter company name"
                 />
-                <small
+                <div
                   *ngIf="
                     FG.get('name')?.errors?.['required'] &&
                     FG.get('name')?.touched
                   "
-                  class="text-red-500"
-                  >Name is required.</small
+                  class="text-red-500 text-sm mt-1"
                 >
+                  Name is required.
+                </div>
               </div>
-              <div class="col-span-4">Company Email</div>
-              <div class="col-span-8">
+
+              <div class="col-span-12 md:col-span-3 font-medium text-gray-700">
+                Company Email
+              </div>
+              <div class="col-span-12 md:col-span-9">
                 <input
-                  type="text"
+                  type="email"
                   pInputText
                   class="w-full"
                   formControlName="email"
+                  placeholder="example@domain.com"
                 />
-                <small
+                <div
                   *ngIf="
                     FG.get('email')?.errors?.['email'] &&
                     FG.get('email')?.touched
                   "
-                  class="text-red-500"
-                  >Email is invalid.</small
+                  class="text-red-500 text-sm mt-1"
                 >
+                  Please provide a valid email address.
+                </div>
               </div>
-              <div class="col-span-4">Contact No</div>
-              <div class="col-span-8">
+
+              <div class="col-span-12 md:col-span-3 font-medium text-gray-700">
+                Contact / Fax No
+              </div>
+              <div
+                class="col-span-12 md:col-span-9 grid grid-cols-1 md:grid-cols-2 gap-4"
+              >
                 <input
                   type="text"
                   pInputText
                   class="w-full"
                   formControlName="contactNo"
+                  placeholder="Contact number"
                 />
-              </div>
-              <div class="col-span-4">Fax No</div>
-              <div class="col-span-8">
                 <input
                   type="text"
                   pInputText
                   class="w-full"
                   formControlName="faxNo"
+                  placeholder="Fax number"
                 />
               </div>
-              <div class="col-span-4">Contact Person</div>
-              <div class="col-span-8">
+
+              <div class="col-span-12 md:col-span-3 font-medium text-gray-700">
+                Contact Persons
+              </div>
+              <div
+                class="col-span-12 md:col-span-9 grid grid-cols-1 md:grid-cols-2 gap-4"
+              >
                 <input
                   type="text"
                   pInputText
                   class="w-full"
                   formControlName="contactPerson1"
+                  placeholder="Primary Contact Person"
                 />
-              </div>
-              <div class="col-span-4">Contact Person 2</div>
-              <div class="col-span-8">
                 <input
                   type="text"
                   pInputText
                   class="w-full"
                   formControlName="contactPerson2"
+                  placeholder="Secondary Contact Person"
                 />
               </div>
 
-              <div class="col-span-4">A/C No</div>
-              <div class="col-span-8">
+              <div class="col-span-12 md:col-span-3 font-medium text-gray-700">
+                A/C & TIN No
+              </div>
+              <div
+                class="col-span-12 md:col-span-9 grid grid-cols-1 md:grid-cols-2 gap-4"
+              >
                 <input
                   type="text"
                   pInputText
                   class="w-full"
                   formControlName="acNo"
+                  placeholder="Account Number"
                 />
-              </div>
-              <div class="col-span-4">TIN No</div>
-              <div class="col-span-8">
                 <input
                   type="text"
                   pInputText
                   class="w-full"
                   formControlName="tinNo"
+                  placeholder="Tax Identification Number"
                 />
               </div>
-              <div class="col-span-4">SST Reg No</div>
-              <div class="col-span-8">
+
+              <div class="col-span-12 md:col-span-3 font-medium text-gray-700">
+                SST Reg & Website
+              </div>
+              <div
+                class="col-span-12 md:col-span-9 grid grid-cols-1 md:grid-cols-2 gap-4"
+              >
                 <input
                   type="text"
                   pInputText
                   class="w-full"
                   formControlName="sstRegNo"
+                  placeholder="SST Registration Number"
                 />
-              </div>
-              <div class="col-span-4">Website Url</div>
-              <div class="col-span-8">
                 <input
                   type="text"
                   pInputText
                   class="w-full"
                   formControlName="websiteUrl"
+                  placeholder="https://example.com"
                 />
               </div>
-              <div class="col-span-4">Company Type</div>
-              <div class="col-span-8">
-                <p-select
-                  formControlName="type"
-                  [options]="[
-                    { label: 'Own', value: 1 },
-                    { label: 'Client', value: 2 },
-                    { label: 'Supplier', value: 3 },
-                  ]"
-                  styleClass="w-full!"
-                  inputStyleClass="w-full!"
-                  appendTo="body"
-                ></p-select>
-              </div>
             </div>
           </p-tabpanel>
+
           <p-tabpanel value="1">
-            <div class="flex flex-col gap-2" [formGroup]="FG">
-              <div
-                class="grid grid-cols-12 gap-4 mt-4 items-center"
-                formGroupName="billingAddress"
-              >
-                <div class="col-span-4">Address Line 1</div>
-                <div class="col-span-8">
-                  <input
-                    type="text"
-                    pInputText
-                    class="w-full"
-                    formControlName="addressLine1"
-                  />
-                </div>
-                <div class="col-span-4">Address Line 2</div>
-                <div class="col-span-8">
-                  <input
-                    type="text"
-                    pInputText
-                    class="w-full"
-                    formControlName="addressLine2"
-                  />
-                </div>
-                <div class="col-span-4">City</div>
-                <div class="col-span-8">
-                  <input
-                    type="text"
-                    pInputText
-                    class="w-full"
-                    formControlName="city"
-                  />
-                </div>
-                <div class="col-span-4">Poscode</div>
-                <div class="col-span-8">
-                  <input
-                    type="text"
-                    pInputText
-                    class="w-full"
-                    formControlName="poscode"
-                  />
-                </div>
-                <div class="col-span-4">State</div>
-                <div class="col-span-8">
-                  <input
-                    type="text"
-                    pInputText
-                    class="w-full"
-                    formControlName="state"
-                  />
-                </div>
-                <div class="col-span-4">Country</div>
-                <div class="col-span-8">
-                  <input
-                    type="text"
-                    pInputText
-                    class="w-full"
-                    formControlName="country"
-                  />
-                </div>
+            <div
+              class="grid grid-cols-12 gap-y-4 gap-x-6 items-center pt-2"
+              formGroupName="billingAddress"
+            >
+              <div class="col-span-12 md:col-span-3 font-medium text-gray-700">
+                Address Line 1
+              </div>
+              <div class="col-span-12 md:col-span-9">
+                <input
+                  type="text"
+                  pInputText
+                  class="w-full"
+                  formControlName="addressLine1"
+                  placeholder="Street address, P.O. box"
+                />
+              </div>
+
+              <div class="col-span-12 md:col-span-3 font-medium text-gray-700">
+                Address Line 2
+              </div>
+              <div class="col-span-12 md:col-span-9">
+                <input
+                  type="text"
+                  pInputText
+                  class="w-full"
+                  formControlName="addressLine2"
+                  placeholder="Apartment, suite, unit, building"
+                />
+              </div>
+
+              <div class="col-span-12 md:col-span-3 font-medium text-gray-700">
+                City & Postcode
+              </div>
+              <div class="col-span-12 md:col-span-9 grid grid-cols-2 gap-4">
+                <input
+                  type="text"
+                  pInputText
+                  class="w-full"
+                  formControlName="city"
+                  placeholder="City"
+                />
+                <input
+                  type="text"
+                  pInputText
+                  class="w-full"
+                  formControlName="poscode"
+                  placeholder="Postcode"
+                />
+              </div>
+
+              <div class="col-span-12 md:col-span-3 font-medium text-gray-700">
+                State & Country
+              </div>
+              <div class="col-span-12 md:col-span-9 grid grid-cols-2 gap-4">
+                <input
+                  type="text"
+                  pInputText
+                  class="w-full"
+                  formControlName="state"
+                  placeholder="State"
+                />
+                <input
+                  type="text"
+                  pInputText
+                  class="w-full"
+                  formControlName="country"
+                  placeholder="Country"
+                />
               </div>
             </div>
           </p-tabpanel>
+
           <p-tabpanel value="2">
-            <div class="flex flex-col gap-2" [formGroup]="FG">
-              <div class="flex flex-row items-center gap-2">
+            <div class="flex flex-col gap-4 pt-2">
+              <div
+                class="flex flex-row items-center gap-2 bg-blue-50/50 border border-blue-100 rounded-lg p-3"
+              >
                 <p-checkbox
                   formControlName="sameAsBillingAddress"
                   [binary]="true"
+                  inputId="syncAddress"
                 ></p-checkbox>
-                <label class="mt-1 text-sm text-gray-600" for=""
-                  >Same with Delivery Address</label
+                <label
+                  class="text-sm font-medium text-blue-800 cursor-pointer select-none"
+                  for="syncAddress"
                 >
+                  Link Addresses (Changes made to either Billing or Delivery
+                  will sync automatically)
+                </label>
               </div>
-              <div class="border-b border-gray-200 mt-2"></div>
+
               <div
-                class="grid grid-cols-12 gap-4 mt-4 items-center"
+                class="grid grid-cols-12 gap-y-4 gap-x-6 items-center mt-2"
                 formGroupName="deliveryAddress"
               >
-                <div class="col-span-4">Address Line 1</div>
-                <div class="col-span-8">
+                <div
+                  class="col-span-12 md:col-span-3 font-medium text-gray-700"
+                >
+                  Address Line 1
+                </div>
+                <div class="col-span-12 md:col-span-9">
                   <input
                     type="text"
                     pInputText
                     class="w-full"
                     formControlName="addressLine1"
+                    placeholder="Street address, P.O. box"
                   />
                 </div>
-                <div class="col-span-4">Address Line 2</div>
-                <div class="col-span-8">
+
+                <div
+                  class="col-span-12 md:col-span-3 font-medium text-gray-700"
+                >
+                  Address Line 2
+                </div>
+                <div class="col-span-12 md:col-span-9">
                   <input
                     type="text"
                     pInputText
                     class="w-full"
                     formControlName="addressLine2"
+                    placeholder="Apartment, suite, unit, building"
                   />
                 </div>
-                <div class="col-span-4">City</div>
-                <div class="col-span-8">
+
+                <div
+                  class="col-span-12 md:col-span-3 font-medium text-gray-700"
+                >
+                  City & Postcode
+                </div>
+                <div class="col-span-12 md:col-span-9 grid grid-cols-2 gap-4">
                   <input
                     type="text"
                     pInputText
                     class="w-full"
                     formControlName="city"
+                    placeholder="City"
                   />
-                </div>
-                <div class="col-span-4">Poscode</div>
-                <div class="col-span-8">
                   <input
                     type="text"
                     pInputText
                     class="w-full"
                     formControlName="poscode"
+                    placeholder="Postcode"
                   />
                 </div>
-                <div class="col-span-4">State</div>
-                <div class="col-span-8">
+
+                <div
+                  class="col-span-12 md:col-span-3 font-medium text-gray-700"
+                >
+                  State & Country
+                </div>
+                <div class="col-span-12 md:col-span-9 grid grid-cols-2 gap-4">
                   <input
                     type="text"
                     pInputText
                     class="w-full"
                     formControlName="state"
+                    placeholder="State"
                   />
-                </div>
-                <div class="col-span-4">Country</div>
-                <div class="col-span-8">
                   <input
                     type="text"
                     pInputText
                     class="w-full"
                     formControlName="country"
+                    placeholder="Country"
                   />
                 </div>
               </div>
@@ -373,18 +436,17 @@ import { CheckboxModule } from 'primeng/checkbox';
     </div>
 
     <div
-      class="mt-3 border border-gray-200 rounded-md bg-white p-5 flex flex-row items-center justify-end gap-2"
+      class="mt-4 border border-gray-200 rounded-xl bg-white p-4 flex flex-row items-center justify-end gap-3 shadow-sm"
     >
       <p-button
         label="Discard"
         severity="secondary"
-        styleClass="tracking-wide! py-1.5! border-gray-200!"
+        outlined="true"
         [routerLink]="'/company'"
       ></p-button>
       <p-button
-        [label]="currentId ? 'Save Change' : 'Create'"
-        severity="info"
-        styleClass="tracking-wide! py-1.5!"
+        [label]="currentId ? 'Save Changes' : 'Create Company'"
+        severity="primary"
         (onClick)="SaveCompany()"
       ></p-button>
     </div>
@@ -401,16 +463,13 @@ export class CompanyForm implements OnInit, OnDestroy {
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly router = inject(Router);
 
-  protected ngUnsubscribe: Subject<void> = new Subject<void>();
+  protected ngUnsubscribe = new Subject<void>();
 
   Query: GridifyQueryExtend = {} as GridifyQueryExtend;
   currentId: string | null = null;
-
   FG!: FormGroup;
 
-  constructor() {}
-
-  initForm() {
+  initForm(): void {
     this.FG = new FormGroup({
       id: new FormControl<string | null>({ value: null, disabled: true }),
       name: new FormControl<string | null>(null, Validators.required),
@@ -433,42 +492,55 @@ export class CompanyForm implements OnInit, OnDestroy {
 
   createAddressGroup(): FormGroup {
     return new FormGroup({
-      addressLine1: new FormControl(null),
-      addressLine2: new FormControl(null),
-      city: new FormControl(null),
-      state: new FormControl(null),
-      country: new FormControl(null),
-      poscode: new FormControl(null),
+      addressLine1: new FormControl<string | null>(null),
+      addressLine2: new FormControl<string | null>(null),
+      city: new FormControl<string | null>(null),
+      state: new FormControl<string | null>(null),
+      country: new FormControl<string | null>(null),
+      poscode: new FormControl<string | null>(null),
     });
   }
 
   ngOnInit(): void {
-    this.currentId = this.activatedRoute.snapshot.queryParams['id'];
+    this.currentId = this.activatedRoute.snapshot.queryParams['id'] || null;
     this.initForm();
+
     if (this.currentId) {
       this.FG.get('id')?.enable();
       this.GetData();
     }
 
-    this.SameAddressOnChanges();
+    this.setupAddressSync();
   }
 
-  SameAddressOnChanges() {
+  private setupAddressSync(): void {
+    this.FG.get('billingAddress')
+      ?.valueChanges.pipe(takeUntil(this.ngUnsubscribe))
+      .subscribe((billingValues) => {
+        if (this.FG.get('sameAsBillingAddress')?.value) {
+          this.FG.get('deliveryAddress')?.patchValue(billingValues, {
+            emitEvent: false,
+          });
+        }
+      });
+
     this.FG.get('sameAsBillingAddress')
       ?.valueChanges.pipe(takeUntil(this.ngUnsubscribe))
       .subscribe((checked: boolean) => {
+        const deliveryCtrl = this.FG.get('deliveryAddress');
         if (checked) {
           const billing = this.FG.get('billingAddress')?.value;
-
-          this.FG.get('deliveryAddress')?.patchValue(billing);
-          this.FG.get('deliveryAddress')?.disable(); // optional UX
+          deliveryCtrl?.patchValue(billing, { emitEvent: false });
+          deliveryCtrl?.disable();
         } else {
-          this.FG.get('deliveryAddress')?.enable();
+          deliveryCtrl?.enable();
         }
+        this.cdr.markForCheck();
       });
   }
 
-  GetData() {
+  GetData(): void {
+    this.loadingService.start();
     this.companyService
       .GetOne({
         Page: 1,
@@ -481,24 +553,31 @@ export class CompanyForm implements OnInit, OnDestroy {
       .pipe(takeUntil(this.ngUnsubscribe))
       .subscribe({
         next: (res) => {
+          this.loadingService.stop();
           if (res) {
-            this.loadingService.stop();
             this.FG.patchValue(res);
-            this.FG.get('billingAddress')?.patchValue(res.billingAddress ?? {});
-            this.FG.get('deliveryAddress')?.patchValue(
-              res.deliveryAddress ?? {},
-            );
+
+            // Explicit safety patch if backend nests address properties differently
+            if (res.billingAddress)
+              this.FG.get('billingAddress')?.patchValue(res.billingAddress);
+            if (res.deliveryAddress)
+              this.FG.get('deliveryAddress')?.patchValue(res.deliveryAddress);
+
+            // Re-run checkbox check explicitly once data populates
+            if (this.FG.get('sameAsBillingAddress')?.value) {
+              this.FG.get('deliveryAddress')?.disable();
+            }
+
             this.cdr.markForCheck();
           }
         },
-        error: (err) => {
-          this.loadingService.stop();
-        },
+        error: () => this.loadingService.stop(),
       });
   }
 
-  onFileSelected(event: any) {
-    const file = event.target.files[0];
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
@@ -511,71 +590,62 @@ export class CompanyForm implements OnInit, OnDestroy {
     }
 
     const reader = new FileReader();
-
     reader.onload = () => {
-      const base64 = reader.result as string;
-
-      this.FG.patchValue({
-        logoImage: base64,
-      });
-      this.cdr.detectChanges();
+      this.FG.patchValue({ logoImage: reader.result as string });
+      this.cdr.markForCheck();
     };
-
     reader.readAsDataURL(file);
   }
 
-  removeImage(fileInput: HTMLInputElement, event: any) {
+  removeImage(fileInput: HTMLInputElement, event: Event): void {
     this.confirmationService.confirm({
       target: event.target as EventTarget,
       message: 'Remove this image?',
-      header: 'Confirm',
+      header: 'Confirm Changes',
       icon: 'pi pi-exclamation-triangle',
       accept: () => {
         this.FG.patchValue({ logoImage: null });
         fileInput.value = '';
-        this.cdr.detectChanges();
+        this.cdr.markForCheck();
       },
     });
   }
 
-  SaveCompany() {
-    if (this.FG.valid) {
-      const payload = this.FG.getRawValue();
-      this.loadingService.start();
-
-      const request$: Observable<any> = this.currentId
-        ? this.companyService.Update(payload)
-        : this.companyService.Create(payload);
-
-      request$.pipe(takeUntil(this.ngUnsubscribe)).subscribe({
-        next: (res) => {
-          this.loadingService.stop();
-          this.messageService.add({
-            severity: 'success',
-            summary: 'Success',
-            detail: `${res.name} has been ${
-              this.currentId ? 'updated' : 'created'
-            } successfully`,
-          });
-
-          this.router.navigate(['/company']);
-        },
-        error: (err: any) => {
-          this.loadingService.stop();
-
-          this.messageService.add({
-            severity: 'error',
-            summary: 'Error',
-            detail:
-              err.error?.message ||
-              err.error?.Message ||
-              'Something went wrong. Please try again.',
-          });
-        },
-      });
+  SaveCompany(): void {
+    if (this.FG.invalid) {
+      ValidateAllFormFields(this.FG);
+      return;
     }
 
-    ValidateAllFormFields(this.FG);
+    const payload = this.FG.getRawValue();
+    this.loadingService.start();
+
+    const request$: Observable<any> = this.currentId
+      ? this.companyService.Update(payload)
+      : this.companyService.Create(payload);
+
+    request$.pipe(takeUntil(this.ngUnsubscribe)).subscribe({
+      next: (res) => {
+        this.loadingService.stop();
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Success',
+          detail: `${res?.name || 'Company'} has been saved successfully`,
+        });
+        this.router.navigate(['/company']);
+      },
+      error: (err: any) => {
+        this.loadingService.stop();
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Error',
+          detail:
+            err.error?.message ||
+            err.error?.Message ||
+            'Something went wrong. Please try again.',
+        });
+      },
+    });
   }
 
   ngOnDestroy(): void {

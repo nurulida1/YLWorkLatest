@@ -158,6 +158,7 @@ namespace YLWorks.Controller
                         LogoImage = c.LogoImage,
                         ContactNo = c.ContactNo,
                         ContactPerson1 = c.ContactPerson1,
+                        ContactPerson2 = c.ContactPerson2,
                         BillingAddress = c.BillingAddress == null ? null : new AddressDto
                         {
                             Id = c.BillingAddress.Id

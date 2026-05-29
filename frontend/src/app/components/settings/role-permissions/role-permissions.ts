@@ -62,7 +62,11 @@ import { SystemModuleService } from '../../../services/SystemModuleService';
         label="Apply Permission Changes"
         icon="pi pi-shield"
         [loading]="isSaving()"
-        [disabled]="matrixRows().length === 0"
+        [disabled]="
+          !selectedSystemRole ||
+          !selectedDepartmentId ||
+          matrixRows().length === 0
+        "
         (onClick)="onSaveChanges()"
         styleClass="!bg-[#2b6cb0] hover:!bg-[#2b5a9e] disabled:!opacity-60 !border-0 !py-2 !px-4 !text-sm font-medium rounded-lg shadow-sm text-white transition-all whitespace-nowrap"
       ></p-button>
@@ -115,11 +119,11 @@ import { SystemModuleService } from '../../../services/SystemModuleService';
                 <th class="py-3 px-5 w-[35%]">
                   System Module Context Identifier
                 </th>
-                <th class="py-3 px-3 text-center w-[13%]">Read / View</th>
-                <th class="py-3 px-3 text-center w-[13%]">Write / Create</th>
-                <th class="py-3 px-3 text-center w-[13%]">Modify / Edit</th>
-                <th class="py-3 px-3 text-center w-[13%]">Purge / Delete</th>
-                <th class="py-3 px-3 text-center w-[13%]">State / Status</th>
+                <th class="py-3 px-3 text-center w-[13%]">View</th>
+                <th class="py-3 px-3 text-center w-[13%]">Create</th>
+                <th class="py-3 px-3 text-center w-[13%]">Edit</th>
+                <th class="py-3 px-3 text-center w-[13%]">Delete</th>
+                <th class="py-3 px-3 text-center w-[13%]">Status</th>
               </tr>
             </thead>
             <tbody class="text-sm">
@@ -137,7 +141,7 @@ import { SystemModuleService } from '../../../services/SystemModuleService';
               </tr>
 
               <tr
-                *ngFor="let row of matrixRows()"
+                *ngFor="let row of matrixRows(); trackBy: trackByModule"
                 class="border-b border-gray-100 last:border-0 hover:bg-gray-50/60 transition-colors bg-white"
                 [ngClass]="{
                   'bg-amber-50/30':
@@ -159,6 +163,7 @@ import { SystemModuleService } from '../../../services/SystemModuleService';
                 <td class="py-3.5 px-3 text-center">
                   <p-checkbox
                     [(ngModel)]="row.canRead"
+                    (ngModelChange)="updatePermission(row, 'canRead', $event)"
                     [binary]="true"
                   ></p-checkbox>
                 </td>
@@ -166,6 +171,7 @@ import { SystemModuleService } from '../../../services/SystemModuleService';
                 <td class="py-3.5 px-3 text-center">
                   <p-checkbox
                     [(ngModel)]="row.canCreate"
+                    (ngModelChange)="updatePermission(row, 'canCreate', $event)"
                     [binary]="true"
                   ></p-checkbox>
                 </td>
@@ -173,6 +179,7 @@ import { SystemModuleService } from '../../../services/SystemModuleService';
                 <td class="py-3.5 px-3 text-center">
                   <p-checkbox
                     [(ngModel)]="row.canUpdate"
+                    (ngModelChange)="updatePermission(row, 'canUpdate', $event)"
                     [binary]="true"
                   ></p-checkbox>
                 </td>
@@ -181,11 +188,7 @@ import { SystemModuleService } from '../../../services/SystemModuleService';
                   <p-checkbox
                     [(ngModel)]="row.canDelete"
                     [binary]="true"
-                    [styleClass]="
-                      row.moduleKey === 'purchase-orders'
-                        ? '![--p-checkbox-border-color:#f43f5e]'
-                        : ''
-                    "
+                    (ngModelChange)="updatePermission(row, 'canDelete', $event)"
                   ></p-checkbox>
                 </td>
 
@@ -193,6 +196,9 @@ import { SystemModuleService } from '../../../services/SystemModuleService';
                   <p-checkbox
                     [(ngModel)]="row.canUpdateStatus"
                     [binary]="true"
+                    (ngModelChange)="
+                      updatePermission(row, 'canUpdateStatus', $event)
+                    "
                   ></p-checkbox>
                 </td>
               </tr>
@@ -248,6 +254,7 @@ export class RolePermissions implements OnInit, OnDestroy {
   private readonly rolePermissionService = inject(RolePermissionService);
 
   protected ngUnsubscribe: Subject<void> = new Subject<void>();
+  private filterChange$ = new Subject<void>();
 
   PagingSignal = signal<PagingContent<RolePermissionDto>>(
     {} as PagingContent<RolePermissionDto>,
@@ -255,7 +262,7 @@ export class RolePermissions implements OnInit, OnDestroy {
   Query: GridifyQueryExtend = {} as GridifyQueryExtend;
 
   search: string = '';
-  selectedSystemRole: string = 'Support';
+  selectedSystemRole: string | null = null;
   selectedDepartmentId: string = '';
 
   matrixRows = signal<RolePermissionDto[]>([]);
@@ -282,6 +289,10 @@ export class RolePermissions implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.GetDropdown();
+
+    this.filterChange$
+      .pipe(takeUntil(this.ngUnsubscribe))
+      .subscribe(() => this.loadMatrix());
   }
 
   GetDropdown() {
@@ -316,6 +327,10 @@ export class RolePermissions implements OnInit, OnDestroy {
   }
 
   onFilterScopeChanged(): void {
+    this.filterChange$.next();
+  }
+
+  loadMatrix() {
     if (!this.selectedSystemRole || !this.selectedDepartmentId) return;
 
     this.loadingService.start();
@@ -323,8 +338,8 @@ export class RolePermissions implements OnInit, OnDestroy {
     forkJoin({
       modules: this.systemModuleService.GetMany({
         Page: 1,
-        PageSize: 10000,
-        OrderBy: 'Name',
+        PageSize: 1000,
+        OrderBy: null,
         Includes: null,
         Select: null,
         Filter: null,
@@ -341,21 +356,32 @@ export class RolePermissions implements OnInit, OnDestroy {
 
           const completeMatrix: RolePermissionDto[] = modules.data.map(
             (mod: any) => {
-              const existingMatch = assignedPermissions.find(
-                (p) => p.systemModuleId === mod.id,
+              const existing = assignedPermissions.find(
+                (p) => p.moduleKey === mod.code,
               );
-
-              if (existingMatch) {
+              if (existing) {
                 return {
-                  ...existingMatch,
+                  id: existing.id,
+                  systemRole: existing.systemRole,
+                  departmentId: existing.departmentId,
+                  systemModuleId: mod.id,
+
                   moduleName: mod.name,
-                  moduleKey: mod.code || existingMatch.moduleKey,
+                  moduleKey: mod.code || existing.moduleKey,
+
+                  canRead: !!existing.canRead,
+                  canCreate: !!existing.canCreate,
+                  canUpdate: !!existing.canUpdate,
+                  canDelete: !!existing.canDelete,
+                  canUpdateStatus: !!existing.canUpdateStatus,
+
+                  createdAt: existing.createdAt ?? new Date(),
+                  updatedAt: existing.updatedAt ?? new Date(),
                 };
               }
-
               return {
-                id: '00000000-0000-0000-0000-000000000000',
-                systemRole: this.selectedSystemRole,
+                id: '00000000-0000-0000-0000-000000000000', // ✅ better than null
+                systemRole: this.selectedSystemRole!,
                 departmentId: this.selectedDepartmentId,
                 systemModuleId: mod.id,
                 moduleName: mod.name,
@@ -365,21 +391,18 @@ export class RolePermissions implements OnInit, OnDestroy {
                 canUpdate: false,
                 canDelete: false,
                 canUpdateStatus: false,
-              } as unknown as RolePermissionDto;
+
+                createdAt: new Date(),
+                updatedAt: new Date(),
+              };
             },
           );
 
           this.matrixRows.set(completeMatrix);
           this.cdr.markForCheck();
         },
-        error: (err: any) => {
+        error: () => {
           this.loadingService.stop();
-          this.messageService.add({
-            severity: 'error',
-            summary: 'Fetch Error',
-            detail:
-              'Failed to securely map master functional elements into current layout matrix.',
-          });
         },
       });
   }
@@ -492,6 +515,23 @@ export class RolePermissions implements OnInit, OnDestroy {
           this.cdr.markForCheck();
         },
       });
+  }
+
+  trackByModule(index: number, item: RolePermissionDto) {
+    return item.systemModuleId;
+  }
+
+  updatePermission(
+    row: RolePermissionDto,
+    field: keyof RolePermissionDto,
+    value: boolean,
+  ) {
+    const updated = this.matrixRows().map((r) =>
+      r.systemModuleId === row.systemModuleId ? { ...r, [field]: value } : r,
+    );
+
+    this.matrixRows.set(updated);
+    this.cdr.markForCheck();
   }
 
   ngOnDestroy(): void {

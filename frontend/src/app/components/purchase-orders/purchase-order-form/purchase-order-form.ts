@@ -1157,7 +1157,9 @@ export class PurchaseOrderForm implements OnInit, OnDestroy {
     if (!this.currentId) {
       this.generatePONo();
     } else {
-      this.LoadForm();
+      setTimeout(() => {
+        this.LoadForm();
+      }, 100);
     }
 
     this.poForm.valueChanges

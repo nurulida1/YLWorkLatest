@@ -142,6 +142,14 @@ export class QuotationService {
     return this.http.get<{ quotationNo: string }>(`${this.url}/generate-no`);
   }
 
+  Delete(id: string): Observable<BaseResponse> {
+    const params = { id };
+
+    return this.http
+      .delete<BaseResponse>(`${this.url}/Delete`, { params })
+      .pipe(retry(1), catchError(this.handleError('Delete')));
+  }
+
   private handleError = (context: string) => (error: any) => {
     this.messageService.add({
       severity: 'error',

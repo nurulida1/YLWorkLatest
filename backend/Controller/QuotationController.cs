@@ -537,6 +537,35 @@ string? includes = null)
         
         }
 
+        [HttpDelete("Delete")]
+        public async Task<ActionResult> DeleteQuotation([FromQuery] Guid id)
+        {
+            var quote = await _context.Quotations.FindAsync(id);
+            if (quote == null)
+                return NotFound(new { Error = "Quotation not found." });
+
+            try
+            {
+                var items = await _context.QuotationItems
+    .Where(x => x.QuotationId == id)
+    .ToListAsync();
+
+                _context.QuotationItems.RemoveRange(items);
+                _context.Quotations.Remove(quote);
+
+                await _context.SaveChangesAsync();
+
+                await _hub.Clients.All.SendAsync("QuotationDeleted", id);
+
+                return Ok(new { Message = "Quotation deleted successfully." });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Error = "Failed to delete quotation." });
+            }
+        }
+
+
         [HttpPut("UpdateStatus")]
         public async Task<IActionResult> UpdateStatus(Guid id, string status)
         {

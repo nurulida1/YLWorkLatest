@@ -42,4 +42,30 @@ namespace YLWorks.Model
         public bool CanDelete { get; set; }
         public bool CanUpdateStatus { get; set; }
     }
+
+        public class RolePermissionDto
+        {
+            public Guid Id { get; set; }
+
+            public string SystemRole { get; set; } = string.Empty;
+
+            public Guid? DepartmentId { get; set; }
+
+            public Guid ModuleId { get; set; }
+
+            public string ModuleName { get; set; } = string.Empty;
+
+            public string ModuleKey { get; set; } = string.Empty;
+
+            public bool CanCreate { get; set; }
+
+            public bool CanRead { get; set; }
+
+            public bool CanUpdate { get; set; }
+
+            public bool CanDelete { get; set; }
+
+            public bool CanUpdateStatus { get; set; }
+        
+    }
 }

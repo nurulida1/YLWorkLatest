@@ -58,11 +58,11 @@ import { CompanyType } from '../../../shared/enum/enum';
       >
         <div class="flex flex-row items-center justify-between">
           <div class="flex flex-col">
-            <div class="text-[20px] text-gray-700 font-semibold">
-              My Company
+            <div class="text-[18px] text-gray-700 font-semibold">
+              My Company Profiles
             </div>
             <div class="text-gray-500">
-              Manage your internal corporate profile configurations
+              Manage internal corporate profile configurations
             </div>
           </div>
           <div class="flex flex-row items-center gap-2">
@@ -80,7 +80,7 @@ import { CompanyType } from '../../../shared/enum/enum';
               ></i>
             </div>
             <p-button
-              label="New Company"
+              label="Add Company"
               (onClick)="ActionClick(null, 'add')"
               icon="pi pi-plus-circle"
               severity="info"
@@ -108,7 +108,7 @@ import { CompanyType } from '../../../shared/enum/enum';
                   pSortableColumn="Name"
                   class="bg-gray-100! text-center! w-[30%]!"
                 >
-                  <div class="flex flex-row justify-center items-center gap-2">
+                  <div class="flex flex-row items-center gap-2">
                     <div>Name</div>
                     <p-sortIcon field="Name" class="mt-1" />
                   </div>
@@ -133,11 +133,12 @@ import { CompanyType } from '../../../shared/enum/enum';
                     <p-image
                       *ngIf="data.logoImage"
                       [src]="data.logoImage"
-                      width="100px"
+                      [preview]="true"
+                      width="80px"
                     ></p-image>
                   </div>
                 </td>
-                <td class="text-center! font-semibold!">
+                <td class="font-semibold!">
                   {{ data.name }}
                 </td>
                 <td class="text-center!">

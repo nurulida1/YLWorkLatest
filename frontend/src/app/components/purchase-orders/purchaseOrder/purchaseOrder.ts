@@ -89,7 +89,7 @@ import {
             <p-button
               *ngIf="isPurchasing()"
               label="Generate PO"
-              [routerLink]="'/purchase-orders/supplier/form'"
+              [routerLink]="'/purchase-orders/form'"
               icon="pi pi-file-pdf"
               severity="info"
               styleClass="py-2! whitespace-nowrap!"
@@ -457,7 +457,6 @@ export class PurchaseOrder implements OnDestroy {
           this.PagingSignal.set(res);
           const statusOrder = [
             'Draft',
-            'Reviewed',
             'Approved',
             'Sent',
             'PartiallyReceived',
@@ -578,7 +577,7 @@ export class PurchaseOrder implements OnDestroy {
 
     switch (action) {
       case 'Update':
-        this.router.navigate(['/purchase-orders/supplier/form'], {
+        this.router.navigate(['/purchase-orders/form'], {
           queryParams: { id: data?.id },
         });
         break;
@@ -709,7 +708,6 @@ export class PurchaseOrder implements OnDestroy {
   buildTimeline(po: PurchaseOrderDto): any[] {
     const statusOrder = [
       'Draft',
-      'Reviewed',
       'Approved',
       'Sent',
       'PartiallyReceived',
@@ -767,22 +765,12 @@ export class PurchaseOrder implements OnDestroy {
 
     if (status === 'Draft' && this.isPurchasing()) {
       add({
-        label: 'Under review',
+        label: 'Review',
         icon: 'pi pi-file-edit',
-        command: () => this.updateStatus(po.id, 'Reviewed'),
-      });
-    }
-
-    if (status === 'Reviewed' && this.isPurchasing()) {
-      add({
-        label: 'Approved',
-        icon: 'pi pi-check-circle',
-        command: () => this.updateStatus(po.id, 'Approved'),
-      });
-      add({
-        label: 'Rejected',
-        icon: 'pi pi-times-circle',
-        command: () => this.updateStatus(po.id, 'Rejected'),
+        command: () =>
+          this.router.navigate(['/purchase-orders/details'], {
+            queryParams: { id: po.id },
+          }),
       });
     }
 

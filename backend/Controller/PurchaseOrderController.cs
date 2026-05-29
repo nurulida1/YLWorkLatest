@@ -182,14 +182,83 @@ namespace YLWorks.Controller
                     data.PODate,
                     data.POReceivedDate,
                     data.Status,
+                    data.Gross,
+                    data.Discount,
                     data.TotalAmount,
                     data.TotalInWords,
                     data.SupplierId,
+                    Supplier = data.Supplier == null ? null : new
+                    {
+                      Name = data.Supplier.Name,
+                      FaxNo = data.Supplier.FaxNo,
+                      ContactPerson1 = data.Supplier.ContactPerson1,
+                      ContactPerson2 = data.Supplier.ContactPerson2,
+                      ContactNo = data.Supplier.ContactNo,
+                      ACNo = data.Supplier.ACNo,
+                      BillingAddress = data.Supplier.BillingAddress == null ? null : new Address
+                        {
+                            Id = data.Supplier.BillingAddress.Id,
+                            AddressLine1 = data.Supplier.BillingAddress.AddressLine1,
+                            AddressLine2 = data.Supplier.BillingAddress.AddressLine2,
+                            City = data.Supplier.BillingAddress.City,
+                            State = data.Supplier.BillingAddress.State,
+                            Country = data.Supplier.BillingAddress.Country,
+                            Poscode = data.Supplier.BillingAddress.Poscode
+                        },
+
+                      DeliveryAddress = data.Supplier.DeliveryAddress == null ? null : new Address
+                        {
+                            Id = data.Supplier.DeliveryAddress.Id,
+                            AddressLine1 = data.Supplier.DeliveryAddress.AddressLine1,
+                            AddressLine2 = data.Supplier.DeliveryAddress.AddressLine2,
+                            City = data.Supplier.DeliveryAddress.City,
+                            State = data.Supplier.DeliveryAddress.State,
+                            Country = data.Supplier.DeliveryAddress.Country,
+                            Poscode = data.Supplier.DeliveryAddress.Poscode
+                        }
+
+                    },
                     data.FromCompanyId,
+                    FromCompany = data.FromCompany == null ? null : new
+                    {
+                        Name = data.FromCompany.Name,
+                        FaxNo = data.FromCompany.FaxNo,
+                        ContactPerson1 = data.FromCompany.ContactPerson1,
+                        ContactPerson2 = data.FromCompany.ContactPerson2,
+                        ContactNo = data.FromCompany.ContactNo,
+                        ACNo = data.FromCompany.ACNo,
+                        BillingAddress = data.FromCompany.BillingAddress == null ? null : new Address
+                        {
+                            Id = data.FromCompany.BillingAddress.Id,
+                            AddressLine1 = data.FromCompany.BillingAddress.AddressLine1,
+                            AddressLine2 = data.FromCompany.BillingAddress.AddressLine2,
+                            City = data.FromCompany.BillingAddress.City,
+                            State = data.FromCompany.BillingAddress.State,
+                            Country = data.FromCompany.BillingAddress.Country,
+                            Poscode = data.FromCompany.BillingAddress.Poscode
+                        },
+
+                        DeliveryAddress = data.FromCompany.DeliveryAddress == null ? null : new Address
+                        {
+                            Id = data.FromCompany.DeliveryAddress.Id,
+                            AddressLine1 = data.FromCompany.DeliveryAddress.AddressLine1,
+                            AddressLine2 = data.FromCompany.DeliveryAddress.AddressLine2,
+                            City = data.FromCompany.DeliveryAddress.City,
+                            State = data.FromCompany.DeliveryAddress.State,
+                            Country = data.FromCompany.DeliveryAddress.Country,
+                            Poscode = data.FromCompany.DeliveryAddress.Poscode
+                        }
+                    },
+                
                     data.QuotationId,
                     data.Terms,
                     data.Remarks,
                     data.ProjectId,
+                    Project = data.Project == null ? null : new
+                    {
+                        ProjectCode = data.Project.ProjectCode,
+                        ProjectTitle = data.Project.ProjectTitle
+                    },
                     data.InvoiceStatus,
                     data.InvoicedAmount,
 
@@ -663,7 +732,7 @@ namespace YLWorks.Controller
         }
 
         [HttpPut("UpdateStatus")]
-        public async Task<IActionResult> UpdateStatus(Guid id, string status)
+        public async Task<IActionResult> UpdateStatus(Guid id, string status, string? remarks = null)
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userIdClaim))
@@ -684,6 +753,10 @@ namespace YLWorks.Controller
 
             po.Status = status;
 
+            var finalRemark = !string.IsNullOrWhiteSpace(remarks)
+                ? remarks
+                : GenerateStatusRemark(status, userName ?? "System");
+
             var history = new PurchaseOrderStatusHistory
             {
                 Id = Guid.NewGuid(),
@@ -691,10 +764,7 @@ namespace YLWorks.Controller
                 Status = po.Status,
                 ActionUserId = actionUserId,
                 ActionAt = DateTimeHelper.Now(),
-                Remarks = GenerateStatusRemark(
-                    po.Status,
-                    userName ?? "System"
-                )
+                Remarks = finalRemark
             };
 
             _context.PurchaseOrderStatusHistories.Add(history);

@@ -32,24 +32,70 @@ namespace YLWorks.Controllers
         }
 
         [HttpGet("by-matrix")]
-        public async Task<ActionResult<IEnumerable<RolePermission>>> GetPermissionsByMatrix(
+        public async Task<ActionResult<IEnumerable<RolePermissionDto>>> GetPermissionsByMatrix(
     [FromQuery] string systemRole,
     [FromQuery] List<Guid>? departmentIds)
         {
-            var query = _context.RolePermissions
-                .Include(p => p.Module)
-                .Where(p => p.SystemRole == systemRole);
-
-            if (departmentIds != null && departmentIds.Any())
+            try
             {
-                query = query.Where(p =>
-                    p.DepartmentId == null || departmentIds.Contains(p.DepartmentId.Value)
-                );
+                if (string.IsNullOrWhiteSpace(systemRole))
+                {
+                    return BadRequest(new
+                    {
+                        Error = "System role is required."
+                    });
+                }
+
+                var query = _context.RolePermissions
+                    .Include(p => p.Module)
+                    .Where(p => p.SystemRole.ToLower() == systemRole.ToLower());
+
+                // Department-based filtering
+                if (departmentIds != null && departmentIds.Any())
+                {
+                    query = query.Where(p =>
+                        p.DepartmentId == null ||
+                        departmentIds.Contains(p.DepartmentId.Value)
+                    );
+                }
+
+                var permissions = await query
+                    .Select(p => new RolePermissionDto
+                    {
+                        Id = p.Id,
+
+                        SystemRole = p.SystemRole,
+
+                        DepartmentId = p.DepartmentId,
+
+                        ModuleId = p.SystemModuleId,
+
+                        ModuleName = p.Module != null
+                            ? p.Module.Name
+                            : "",
+
+                        ModuleKey = p.Module != null
+                            ? p.Module.Code
+                            : "",
+
+                        CanCreate = p.CanCreate,
+                        CanRead = p.CanRead,
+                        CanUpdate = p.CanUpdate,
+                        CanDelete = p.CanDelete,
+                        CanUpdateStatus = p.CanUpdateStatus
+                    })
+                    .ToListAsync();
+
+                return Ok(permissions);
             }
-
-            var permissions = await query.ToListAsync();
-
-            return Ok(permissions);
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    Error = "Failed to load permission matrix.",
+                    Details = ex.Message
+                });
+            }
         }
 
         [HttpGet("GetMany")]
@@ -233,23 +279,17 @@ namespace YLWorks.Controllers
             }
 
             using var transaction = await _context.Database.BeginTransactionAsync();
+
             try
             {
                 foreach (var dto in dtos)
                 {
-                    RolePermission? permission;
-
-                    if (dto.Id.HasValue && dto.Id.Value != Guid.Empty)
-                    {
-                        permission = await _context.RolePermissions.FindAsync(dto.Id.Value);
-                    }
-                    else
-                    {
-                        permission = await _context.RolePermissions
-                            .FirstOrDefaultAsync(p => p.SystemRole == dto.SystemRole
-                                                   && p.DepartmentId == dto.DepartmentId
-                                                   && p.SystemModuleId == dto.SystemModuleId);
-                    }
+                    var permission = await _context.RolePermissions
+                        .FirstOrDefaultAsync(p =>
+                            p.SystemRole == dto.SystemRole &&
+                            p.DepartmentId == dto.DepartmentId &&
+                            p.SystemModuleId == dto.SystemModuleId
+                        );
 
                     if (permission != null)
                     {
@@ -283,12 +323,20 @@ namespace YLWorks.Controllers
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
-                return Ok(new { Success = true, Message = "Matrix settings updated successfully." });
+                return Ok(new
+                {
+                    Success = true,
+                    Message = "Permissions updated (no new records created)."
+                });
             }
             catch (Exception ex)
             {
                 await transaction.RollbackAsync();
-                return StatusCode(500, new { Message = "An error occurred while bulk updating matrix settings.", Details = ex.Message });
+                return StatusCode(500, new
+                {
+                    Message = "Error updating permissions.",
+                    Details = ex.Message
+                });
             }
         }
 

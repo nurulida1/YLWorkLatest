@@ -25,7 +25,11 @@ import { TextareaModule } from 'primeng/textarea';
 import { DeliveryOrderService } from '../../../services/deliveryOrderService';
 import { LoadingService } from '../../../services/loading.service';
 import { Subject, takeUntil } from 'rxjs';
-import { ValidateAllFormFields } from '../../../shared/helpers/helpers';
+import {
+  denormalizeHtml,
+  normalizeHtml,
+  ValidateAllFormFields,
+} from '../../../shared/helpers/helpers';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { TableModule } from 'primeng/table';
 import { EditorModule } from 'primeng/editor';
@@ -472,10 +476,17 @@ export class DeliveryOrderForm implements OnInit, OnDestroy {
 
           this.Items.clear();
 
-          if (res?.deliveryOrderItems)
-            res.deliveryOrderItems.forEach((item: any) => {
-              this.Items.push(this.createItem(item));
+          res?.deliveryOrderItems
+            ?.sort((a: any, b: any) => a.sortOrder - b.sortOrder)
+            .forEach((item: any) => {
+              const group = this.createItem({
+                ...item,
+                description: denormalizeHtml(item.description),
+              });
+
+              this.Items.push(group);
             });
+
           this.cdr.markForCheck();
         },
         error: (err) => {
@@ -509,10 +520,12 @@ export class DeliveryOrderForm implements OnInit, OnDestroy {
       formData.append(key, value instanceof Date ? value.toISOString() : value);
     });
 
-    formData.append(
-      'deliveryOrderItems',
-      JSON.stringify(raw.deliveryOrderItems),
-    );
+    const items = raw.deliveryOrderItems.map((item: any) => ({
+      ...item,
+      description: normalizeHtml(item.description),
+    }));
+
+    formData.append('deliveryOrderItems', JSON.stringify(items));
     if (this.currentId) {
       formData.append('id', this.currentId);
     }

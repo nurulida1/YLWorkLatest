@@ -30,7 +30,7 @@ import { TableModule } from 'primeng/table';
 import { TextareaModule } from 'primeng/textarea';
 import { PurchaseOrderService } from '../../../services/purchaseOrderService';
 import { LoadingService } from '../../../services/loading.service';
-import { forkJoin, of, Subject, takeUntil } from 'rxjs';
+import { Subject, takeUntil } from 'rxjs';
 import {
   denormalizeHtml,
   normalizeHtml,

@@ -25,7 +25,11 @@ import { QuotationService } from '../../../services/quotationService.service';
 import { MessageService } from 'primeng/api';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { forkJoin, map, of, Subject, switchMap, takeUntil } from 'rxjs';
-import { ValidateAllFormFields } from '../../../shared/helpers/helpers';
+import {
+  denormalizeHtml,
+  normalizeHtml,
+  ValidateAllFormFields,
+} from '../../../shared/helpers/helpers';
 import { CompanyService } from '../../../services/companyService';
 import { CompanyType } from '../../../shared/enum/enum';
 import { DatePickerModule } from 'primeng/datepicker';
@@ -687,10 +691,13 @@ export class QuotationForm implements OnInit, OnDestroy {
 
     this.Items.clear();
 
-    res.quotationItems
+    res?.quotationItems
       ?.sort((a: any, b: any) => a.sortOrder - b.sortOrder)
       .forEach((item: any) => {
-        const group = this.createItemGroup(item);
+        const group = this.createItemGroup({
+          ...item,
+          description: denormalizeHtml(item.description),
+        });
 
         group.patchValue(
           {
@@ -701,6 +708,7 @@ export class QuotationForm implements OnInit, OnDestroy {
 
         this.Items.push(group);
       });
+
     this.calculateTotal();
     this.cdr.markForCheck();
   }
@@ -824,7 +832,7 @@ export class QuotationForm implements OnInit, OnDestroy {
       type: x.type,
       parentId: x.parentId || null,
 
-      description: x.description,
+      description: normalizeHtml(x.description),
       quantity: x.quantity,
       unit: x.unit,
       unitPrice: x.unitPrice,
@@ -1032,6 +1040,7 @@ export class QuotationForm implements OnInit, OnDestroy {
       this.loadingService.start();
       const payload = {
         ...this.FG.getRawValue(),
+        termsAndConditions: normalizeHtml(this.FG.value.termsAndConditions),
         quotationItems: this.buildQuotationItemsPayload(),
       };
       const request$ = this.currentId

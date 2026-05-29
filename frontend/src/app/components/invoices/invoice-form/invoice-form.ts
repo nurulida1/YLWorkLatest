@@ -29,6 +29,10 @@ import { TextareaModule } from 'primeng/textarea';
 import { InvoiceService } from '../../../services/invoiceService.service';
 import { LoadingService } from '../../../services/loading.service';
 import { Subject, takeUntil } from 'rxjs';
+import {
+  denormalizeHtml,
+  normalizeHtml,
+} from '../../../shared/helpers/helpers';
 
 @Component({
   selector: 'app-invoice-form',
@@ -531,6 +535,17 @@ export class InvoiceForm implements OnInit, OnDestroy {
             });
           }
 
+          res?.invoiceItems
+            ?.sort((a: any, b: any) => a.sortOrder - b.sortOrder)
+            .forEach((item: any) => {
+              const group = this.createItem({
+                ...item,
+                description: denormalizeHtml(item.description),
+              });
+
+              this.Items.push(group);
+            });
+
           this.calculateTotals();
 
           this.cdr.markForCheck();
@@ -640,7 +655,12 @@ export class InvoiceForm implements OnInit, OnDestroy {
       formData.append(key, value instanceof Date ? value.toISOString() : value);
     });
 
-    formData.append('invoiceItems', JSON.stringify(raw.invoiceItems));
+    const items = raw.invoiceItems.map((item: any) => ({
+      ...item,
+      description: normalizeHtml(item.description),
+    }));
+
+    formData.append('invoiceItems', JSON.stringify(items));
     if (this.currentId) {
       formData.append('id', this.currentId);
     }

@@ -1362,7 +1362,10 @@ export class PurchaseOrderForm implements OnInit, OnDestroy {
           res?.purchaseOrderItems
             ?.sort((a: any, b: any) => a.sortOrder - b.sortOrder)
             .forEach((item: any) => {
-              const group = this.createItem(item);
+              const group = this.createItem({
+                ...item,
+                description: this.denormalizeHtml(item.description),
+              });
 
               group.patchValue(
                 {
@@ -1439,10 +1442,12 @@ export class PurchaseOrderForm implements OnInit, OnDestroy {
       formData.append(key, value instanceof Date ? value.toISOString() : value);
     });
 
-    formData.append(
-      'purchaseOrderItems',
-      JSON.stringify(raw.purchaseOrderItems),
-    );
+    const items = raw.purchaseOrderItems.map((item: any) => ({
+      ...item,
+      description: this.normalizeHtml(item.description),
+    }));
+
+    formData.append('purchaseOrderItems', JSON.stringify(items));
     if (this.currentId) {
       formData.append('id', this.currentId);
     }
@@ -1661,6 +1666,26 @@ export class PurchaseOrderForm implements OnInit, OnDestroy {
           this.cdr.markForCheck();
         },
       });
+  }
+
+  normalizeHtml(html: string): string {
+    if (!html) return html;
+
+    return html
+      .replace(/<strong>/g, '<b>')
+      .replace(/<\/strong>/g, '</b>')
+      .replace(/<em>/g, '<i>')
+      .replace(/<\/em>/g, '</i>');
+  }
+
+  denormalizeHtml(html: string): string {
+    if (!html) return html;
+
+    return html
+      .replace(/<b>/g, '<strong>')
+      .replace(/<\/b>/g, '</strong>')
+      .replace(/<i>/g, '<em>')
+      .replace(/<\/i>/g, '</em>');
   }
 
   ngOnDestroy(): void {

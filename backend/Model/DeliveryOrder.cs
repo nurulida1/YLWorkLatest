@@ -6,19 +6,11 @@ namespace YLWorks.Model
 
         public string DeliveryOrderNo { get; set; } = string.Empty;
 
-        //Receiving (Inbound) or Dispatch (Outbound)
-        public string Type { get; set; } = "Dispatch";
-
         public Guid? ProjectId { get; set; }
         public Project? Project { get; set; }
 
-        public Guid? PurchaseOrderId { get; set; }
-        public PurchaseOrder? PurchaseOrder { get; set; }
-
         public Guid? SalesOrderId { get; set; }
         public SalesOrder? SalesOrder { get; set; }
-
-        public string? ReferenceNo { get; set; }
 
         public Guid? SenderCompanyId { get; set; }
         public Company? SenderCompany { get; set; }
@@ -28,21 +20,22 @@ namespace YLWorks.Model
 
         public string? DeliveryMethod { get; set; }
 
+        public DateTime? EstimatedDeliveryDate {  get; set; }
+
         public string? Notes { get; set; }
 
         public string? Remarks { get; set; }
         public string? Attachment { get; set; }
         public string Status { get; set; } = "Draft";
+        public string? TrackingNo { get; set; }
+        public DateTime? DeliveredAt { get; set; }
+        public string? ReceivedBy { get; set; }
+        public bool IsReceiverSigned { get; set; } = false;
+        public string? ReceiverSignatureImage { get; set; }
 
+        public string? PaymentTerms { get; set; }
         /*
          
-        RECEIPT (Inbound) FLOW
-        Draft
-        PartiallyReceived
-        FullyReceived
-        Completed
-        Cancelled
-
         DELIVERY (OUTBOUND) FLOW
         Draft
         Approved
@@ -50,7 +43,6 @@ namespace YLWorks.Model
         OutForDelivery
         PartiallyDelivered
         Delivered
-        Completed
         Cancelled
 
         */
@@ -80,15 +72,7 @@ namespace YLWorks.Model
 
         public User? ActionUser { get; set; }
 
-        public Guid? ReviewByUserId { get; set; }
-        public User? ReviewByUser { get; set; }
-
-        public Guid? ApprovedByUserId { get; set; }
-        public User? ApprovedByUser { get; set; }
-
         public string? Remarks { get; set; }
-        public string? SignatureImage { get; set; }
-        public string? TrackingNo { get; set; }
 
         public ICollection<DeliveryOrderProofImage>
             ProofImages
@@ -119,8 +103,11 @@ namespace YLWorks.Model
         public DeliveryOrder DeliveryOrder { get; set; } = null!;
 
         public string? Description { get; set; }
+        
+        public Guid? SalesOrderItemId { get; set; }
+        public SalesOrderItem? SalesOrderItem { get; set; }
 
-        // Quantity from PO
+        // Quantity from SO
         public decimal? QuantityOrdered { get; set; }
 
         // Actual delivered quantity
@@ -135,13 +122,9 @@ namespace YLWorks.Model
     {
         public string DeliveryOrderNo { get; set; } = string.Empty;
 
-        public string Type { get; set; } = "Receipt";
-
         public Guid? ProjectId { get; set; }
 
-        public string? ReferenceNo { get; set; }
-
-        public Guid? PurchaseOrderId { get; set; }
+        public Guid? SalesOrderId { get; set; }
 
         public Guid? SenderCompanyId { get; set; }
 
@@ -151,6 +134,8 @@ namespace YLWorks.Model
 
         public string? Remarks { get; set; }
 
+        public string? PaymentTerms { get; set; }
+
         public string? Notes { get; set; }
         public IFormFile? Attachment { get; set; }
         public List<CreateDeliveryOrderItemRequest> DeliveryOrderItems { get; set; }
@@ -159,7 +144,10 @@ namespace YLWorks.Model
 
     public class CreateDeliveryOrderItemRequest
     {
+
         public string? Description { get; set; }
+
+        public Guid? SalesOrderItemId { get; set; }
 
         public decimal? QuantityOrdered { get; set; }
 
@@ -183,21 +171,17 @@ namespace YLWorks.Model
 
     public class DeliveryOrderDropdownDto
     {
-        public List<PurchaseOrderDropdownItem> PurchaseOrders { get; set; } = new();
+        public List<SalesOrderDropdownDto> SalesOrders { get; set; } = new();
 
         public List<ProjectDropdownItem> Projects { get; set; } = new();
 
         public List<CompanyDropdownItem> Companies { get; set; } = new();
-
-        public string? DefaultSenderCompanyId { get; set; }
     }
 
     public class PurchaseOrderDropdownItem
     {
         public Guid Id { get; set; }
         public string PurchaseOrderNo { get; set; } = string.Empty;
-
-        public string Type { get; set; } = string.Empty;
 
         public Guid? ProjectId { get; set; }
         public string? ProjectCode { get; set; }
@@ -216,17 +200,10 @@ namespace YLWorks.Model
         public string? ProjectTitle { get; set; }
     }
 
-    public class CompanyDropdownItem
-    {
-        public Guid Id { get; set; }
-        public string Name { get; set; } = string.Empty;
-    }
-
     public class UpdateStatusRequest
     {
         public Guid Id { get; set; }
         public string Status { get; set; } = string.Empty;
-        public Guid? ReviewerUserId { get; set; }
         public List<IFormFile>? ProofImages { get; set; }
         public string? Remarks { get; set; }
     }
@@ -235,8 +212,35 @@ namespace YLWorks.Model
     {
         public Guid? Id { get; set; }
         public string? DeliveryOrderNo { get; set; }
-        public Guid? PurchaseOrderId { get; set; }
+        public Guid? SalesOrderId { get; set; }
         public Guid? QuotationId { get; set; }
         public Guid? ProjectId { get; set; }
+        public Guid? SenderCompanyId { get; set; }
+        public CompanyDropdownItem? SenderCompany { get; set; }
+    }
+
+    public class GenerateDORequest
+    {
+        public Guid SalesOrderId { get; set; }
+        public List<Guid> SalesOrderItemIds { get; set; } = new();
+    }
+
+    public class BulkDORequest
+    {
+        public List<DOPayload> DeliveryOrders { get; set; } = new();
+    }
+
+    public class DOPayload
+    {
+        public Guid SalesOrderId { get; set; }
+        public string DeliveryMethod { get; set; } = string.Empty;
+        public DateTime EstimatedDeliveryDate { get; set; }
+        public List<BulkDOItemInput> Items { get; set; } = new();
+    }
+
+    public class BulkDOItemInput
+    {
+        public Guid SalesOrderItemId { get; set; }
+        public int QuantityToDeliver { get; set; }
     }
 }

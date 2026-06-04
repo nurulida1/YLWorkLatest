@@ -6,7 +6,6 @@ namespace YLWorks.Model
     {
         public Guid Id {  get; set; }
         public string? QuotationNo { get; set; } = string.Empty;
-        public string? ReferenceNo { get; set; }
         public DateTime QuotationDate { get; set; }
         public Guid FromCompanyId { get; set; }
         public Company FromCompany { get; set; }
@@ -15,8 +14,17 @@ namespace YLWorks.Model
         public string? ProjectCode { get; set; }
         public Project? Project { get; set; }
         public string? Subject { get; set; }
+
+        public decimal? SubTotal { get; set; }
+        public decimal? Discount { get; set; }
+        public decimal? TaxAmount { get; set; }
         public decimal? TotalAmount { get; set; }
-        public string? TermsAndConditions { get; set; }
+
+        public string? PaymentTerms { get; set; }
+        public int? ValidityDays {  get; set; }
+        public string? DeliveryTimeline { get; set; }
+        public string? WarrantyTerms { get; set; }
+
         public string Status { get; set; } = "Draft"; // Draft, Revised, Approved, Sent, Accepted, Rejected
         public string? Remarks { get; set; }
         public Guid CreatedById { get; set; }
@@ -52,6 +60,8 @@ namespace YLWorks.Model
         public decimal Quantity { get; set; }
         public string Unit { get; set; } = "Nos";
         public decimal UnitPrice { get; set; }
+        public decimal? Discount {  get; set; }
+        public decimal? TaxRate {  get; set; }
         public decimal TotalPrice { get; set; }
         public List<QuotationItems> Children { get; set; } = new List<QuotationItems>();
     }
@@ -66,6 +76,8 @@ namespace YLWorks.Model
         public string? Unit { get; set; }
         public decimal Quantity { get; set; }
         public decimal UnitPrice { get; set; }
+        public decimal? Discount { get; set; }
+        public decimal? TaxRate { get; set; }
         public decimal TotalPrice { get; set; }
         public List<QuotationItemDto> Children { get; set;} = new List<QuotationItemDto>();
     }
@@ -78,43 +90,54 @@ namespace YLWorks.Model
         public bool IsGroup { get; set; }
         public Guid? ParentId { get; set; }
         public string? Description { get; set; } = string.Empty;
-        public int Quantity { get; set; }
-        public string Unit { get; set; } = "Unit";
+        public decimal Quantity { get; set; }
+        public string Unit { get; set; } = "Nos";
         public decimal UnitPrice { get; set; }
+        public decimal? Discount { get; set; }
+        public decimal? TaxRate { get; set; }
         public decimal TotalPrice { get; set; }
         public List<QuotationItemRequest> Children { get; set; } = new();
     }
 
-    public class QuotationItemRequest : QuotationItemBase { }
+    public class QuotationItemRequest : QuotationItemBase 
+    { 
+        public List<QuotationItemRequest> Children { get; set; } = new(); 
+    }
 
     public class UpdateQuotationItemRequest : QuotationItemBase
     {
-        public Guid? Id { get; set; }
+        public List<QuotationItemRequest> Children { get; set; } = new();
     }
 
-
-    public class CreateQuotationRequest
+    public abstract class BaseQuotationRequest
     {
         public string? QuotationNo { get; set; } = string.Empty;
-        public string? ReferenceNo { get; set; }
         public DateTime QuotationDate { get; set; }
         public Guid FromCompanyId { get; set; }
         public Guid ClientId { get; set; }
         public string? ProjectCode { get; set; }
         public string? Subject { get; set; }
+        public decimal? SubTotal { get; set; }
+        public decimal? Discount { get; set; }
+        public decimal? TaxAmount { get; set; }
         public decimal TotalAmount { get; set; }
-        public string? TermsAndConditions { get; set; }
+        public string? PaymentTerms { get; set; }
+        public int? ValidityDays { get; set; }
+        public string? DeliveryTimeline { get; set; }
+        public string? WarrantyTerms { get; set; }
+    }
 
+    public class CreateQuotationRequest : BaseQuotationRequest
+    {
         public List<QuotationItemRequest> QuotationItems { get; set; } = new();
     }
 
-    public class UpdateQuotationRequest : CreateQuotationRequest
+    public class UpdateQuotationRequest : BaseQuotationRequest
     {
         public Guid Id { get; set; }
-
-        public new List<UpdateQuotationItemRequest>? QuotationItems { get; set; }
+        public List<UpdateQuotationItemRequest> QuotationItems { get; set; } = new();
     }
-    
+
     public class UpdateQuotationStatusRequest
     {
         public Guid Id { get; set; }          
@@ -136,5 +159,13 @@ namespace YLWorks.Model
         public string? CompanyName { get; set; }
         public List<QuotationItemDto>? Items { get; set; } = new();
 
+    }
+
+    public class ConvertQuotationToSoRequest
+    {
+        public string? ClientPONumber { get; set; }
+        public DateTime? ClientPODate { get; set; }
+        public IFormFile? ClientPOAttachment { get; set; }
+        public string? Remarks { get; set; }
     }
 }

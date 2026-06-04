@@ -2,7 +2,7 @@ import { BaseModel } from './BaseModel';
 import { CompanyDto } from './Company';
 import { ProjectDto } from './Project';
 import { PurchaseOrderDto } from './PurchaseOrder';
-import { SalesOrderDto } from './SalesOrder';
+import { SalesOrderDto, SalesOrderItem } from './SalesOrder';
 import { UserDto } from './User';
 
 export interface DeliveryOrderDto extends BaseModel {
@@ -17,8 +17,6 @@ export interface DeliveryOrderDto extends BaseModel {
   salesOrderId?: string;
   salesOrder?: SalesOrderDto;
 
-  referenceNo?: string;
-
   senderCompanyId?: string;
   senderCompany?: CompanyDto;
 
@@ -29,10 +27,16 @@ export interface DeliveryOrderDto extends BaseModel {
   notes?: string;
   remarks?: string;
 
-  type: 'Receipt' | 'Delivery';
-
   status: string;
   attachment?: string;
+  trackingNo?: string;
+  deliveredAt?: Date;
+  receivedBy?: string;
+  isReceiverSigned: boolean;
+  receiverSignatureImage?: string;
+
+  paymentTerms?: string;
+
   deliveryOrderStatusHistories: DeliveryOrderStatusHistory[];
 
   deliveryOrderItems: DeliveryOrderItem[];
@@ -77,9 +81,7 @@ export interface CreateDeliveryOrderRequest {
 
   projectId?: string;
 
-  referenceNo?: string;
-
-  purchaseOrderId?: string;
+  salesOrderId?: string;
 
   senderCompanyId?: string;
 
@@ -88,16 +90,19 @@ export interface CreateDeliveryOrderRequest {
   deliveryMethod?: string;
 
   remarks?: string;
+  paymentTerms?: string;
 
   notes?: string;
   attachment?: string;
-  type: 'Receipt' | 'Delivery';
+  deliveryOrderItems: CreateDeliveryOrderItemRequest[];
 }
 
 export interface CreateDeliveryOrderItemRequest {
   deliveryOrderId?: string;
 
   description?: string;
+
+  salesOrderItemId?: string;
 
   quantityOrdered?: number;
 
@@ -115,6 +120,9 @@ export interface DeliveryOrderItem extends BaseModel {
 
   description?: string;
 
+  salesOrderItemId?: string;
+  salesOrderItem?: SalesOrderItem;
+
   quantityOrdered?: number;
 
   quantityDelivered?: number;
@@ -130,4 +138,20 @@ export interface UpdateDeliveryOrderRequest extends CreateDeliveryOrderRequest {
 
 export interface UpdateDeliveryOrderItemRequest extends CreateDeliveryOrderItemRequest {
   id: string;
+}
+
+export interface BulkDOItemInput {
+  salesOrderItemId: string;
+  quantityToDeliver: number;
+}
+
+export interface BulkDOShipmentPayload {
+  salesOrderId: string;
+  deliveryMethod: string;
+  estimatedDeliveryDate: Date | string;
+  items: BulkDOItemInput[];
+}
+
+export interface BulkDORequest {
+  deliveryOrders: BulkDOShipmentPayload[];
 }

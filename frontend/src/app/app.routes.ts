@@ -295,6 +295,20 @@ export const routes: Routes = [
   },
 
   {
+    path: 'do-rma',
+    component: WebLayout,
+    children: [
+      {
+        path: '',
+        loadChildren: () =>
+          import('./components/do-rma/do-rma-routing.module').then(
+            (m) => m.DORMARoutingModule,
+          ),
+      },
+    ],
+  },
+
+  {
     path: 'invoices',
     component: WebLayout,
     children: [

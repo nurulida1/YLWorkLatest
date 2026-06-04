@@ -30,7 +30,7 @@ export interface InvoiceDto extends BaseModel {
   quotation: QuotationDto;
   invoiceDate: Date;
   dueDate: Date;
-  terms: string;
+  paymentTerms: string;
   remarks: string;
   status: string;
   type: string;
@@ -78,7 +78,7 @@ export interface CreateInvoiceRequest {
   gross: number;
   discount: number;
   totalAmount: number;
-  terms: string;
+  paymentTerms: string;
   termsAndConditions: string;
   bankDetails: string;
   remarks: string;
@@ -113,7 +113,7 @@ export interface UpdateInvoiceRequest {
   gross: number;
   discount: number;
   totalAmount: number;
-  terms: string;
+  paymentTerms: string;
   termsAndConditions: string;
   bankDetails: string;
   remarks: string;

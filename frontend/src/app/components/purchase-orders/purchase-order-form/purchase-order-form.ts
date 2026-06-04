@@ -106,13 +106,6 @@ import { RadioButtonModule } from 'primeng/radiobutton';
             styleClass="py-1.5! px-4!"
             [routerLink]="'/purchase-orders'"
           ></p-button>
-          <!-- <p-buttons
-          label="Save As Draft"
-          severity="info"
-          [outlined]="true"
-          styleClass="py-1.5!"
-          size="small"
-        ></p-button> -->
           <p-button
             (onClick)="onSave()"
             [label]="currentId ? 'Save Changes' : 'Create'"
@@ -123,7 +116,7 @@ import { RadioButtonModule } from 'primeng/radiobutton';
       </div>
 
       <div class="mt-3 border border-gray-200 bg-white p-5 flex flex-col">
-        <div class="grid grid-cols-12 gap-4 items-center" [formGroup]="poForm">
+        <div class="grid grid-cols-12 gap-4" [formGroup]="poForm">
           <div class="col-span-12 font-semibold text-lg">
             Purchase Order Information
           </div>
@@ -163,6 +156,36 @@ import { RadioButtonModule } from 'primeng/radiobutton';
               styleClass="w-full!"
               formControlName="fromCompanyId"
             ></p-select>
+            <div
+              *ngIf="selectedFromCompany"
+              class="mt-2 bg-slate-50 p-4 rounded-xl border border-slate-200 text-sm text-gray-600 flex flex-col gap-1.5 transition-all"
+            >
+              <div
+                class="font-semibold text-slate-800 flex items-center gap-2 border-b border-slate-200 pb-1.5 mb-1"
+              >
+                <i class="pi pi-building text-indigo-500"></i> From Company
+                Details
+              </div>
+
+              <div>
+                <span class="font-medium text-gray-500">Phone:</span>
+                {{ selectedFromCompany.contactNo }}
+              </div>
+              <div>
+                <span class="font-medium text-gray-500">Email:</span>
+                {{ selectedFromCompany.email }}
+              </div>
+              <div class="mt-1 pt-1.5 border-t border-dashed border-slate-200">
+                <span class="font-medium text-gray-500">Address:</span>
+                <div class="text-xs text-gray-500 mt-0.5 leading-relaxed">
+                  {{ selectedFromCompany.deliveryAddress?.addressLine1 }},
+                  {{ selectedFromCompany.deliveryAddress?.addressLine2 }},
+
+                  {{ selectedFromCompany.deliveryAddress?.city }},
+                  {{ selectedFromCompany.deliveryAddress?.state }}
+                </div>
+              </div>
+            </div>
           </div>
           <div class="col-span-12 lg:col-span-6 flex flex-col gap-1">
             <div class="flex flex-row justify-between items-center">
@@ -184,6 +207,50 @@ import { RadioButtonModule } from 'primeng/radiobutton';
               formControlName="supplierId"
               [showClear]="poForm.get('supplierId')?.value"
             ></p-select>
+            <div
+              *ngIf="selectedSupplier"
+              class="mt-2 bg-slate-50 p-4 rounded-xl border border-slate-200 text-sm text-gray-600 flex flex-col gap-1.5 transition-all"
+            >
+              <div
+                class="font-semibold text-slate-800 flex items-center gap-2 border-b border-slate-200 pb-1.5 mb-1"
+              >
+                <i class="pi pi-user text-indigo-500"></i> Supplier Details
+              </div>
+              <div>
+                <span class="font-medium text-gray-500">Contact:</span>
+                {{
+                  selectedSupplier.contactPerson1 +
+                    (selectedSupplier.contactPerson2
+                      ? ' / ' + selectedSupplier.contactPerson2
+                      : '')
+                }}
+              </div>
+              <div>
+                <span class="font-medium text-gray-500">Phone:</span>
+                {{ selectedSupplier.contactNo }}
+              </div>
+              <div>
+                <span class="font-medium text-gray-500">Email:</span>
+                {{ selectedSupplier.email }}
+              </div>
+
+              <div
+                class="grid grid-cols-2 gap-3 mt-1 pt-1.5 border-t border-dashed border-slate-200"
+              >
+                <div class="col-span-2">
+                  <span class="font-medium text-gray-500"
+                    >Billing Address:</span
+                  >
+                  <div class="text-xs text-gray-500 mt-0.5 leading-relaxed">
+                    {{ selectedSupplier.billingAddress?.addressLine1 }},
+                    {{ selectedSupplier.billingAddress?.addressLine2 }},
+
+                    {{ selectedSupplier.billingAddress?.city }},
+                    {{ selectedSupplier.billingAddress?.state }}
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
           <div class="col-span-12 lg:col-span-6 flex flex-col gap-1">
             <div>
@@ -1138,7 +1205,7 @@ export class PurchaseOrderForm implements OnInit, OnDestroy {
   quotationSelection: any[] = [];
   clientSelection: any[] = [];
   userSelection: any[] = [];
-  companySelection: { label: string; value: string }[] = [];
+  companySelection: { label: string; value: string; data?: any }[] = [];
 
   selectedVendor: any;
   selectedTemplate: string = 'notes';
@@ -1148,6 +1215,9 @@ export class PurchaseOrderForm implements OnInit, OnDestroy {
   totalAmount = signal(0);
 
   projectSelection: any[] = [];
+
+  selectedFromCompany: any = null;
+  selectedSupplier: any = null;
 
   ngOnInit(): void {
     this.initForm();
@@ -1200,6 +1270,20 @@ export class PurchaseOrderForm implements OnInit, OnDestroy {
       totalQuantity: new FormControl<number | null>(null),
       attachment: new FormControl<string | null>(null),
       purchaseOrderItems: new FormArray([]),
+    });
+
+    this.poForm.get('fromCompanyId')?.valueChanges.subscribe((id) => {
+      this.selectedFromCompany = this.companySelection.find(
+        (x) => x.value === id,
+      )?.data;
+      this.cdr.markForCheck();
+    });
+
+    this.poForm.get('supplierId')?.valueChanges.subscribe((id) => {
+      this.selectedSupplier = this.supplierSelection.find(
+        (x) => x.value === id,
+      )?.data;
+      this.cdr.markForCheck();
     });
   }
 
@@ -1314,16 +1398,19 @@ export class PurchaseOrderForm implements OnInit, OnDestroy {
           this.companySelection = res.companies.map((c: any) => ({
             label: c.name,
             value: c.id,
+            data: c,
           }));
 
           this.supplierSelection = res.suppliers.map((c: any) => ({
             label: c.name,
             value: c.id,
+            data: c,
           }));
 
           this.clientSelection = res.clients.map((c: any) => ({
             label: c.name,
             value: c.id,
+            data: c,
           }));
 
           this.projectSelection = res.projects.map((c: any) => ({

@@ -216,14 +216,14 @@ import { LoadingService } from '../../../services/loading.service';
                     pInputText
                     class="w-full"
                     formControlName="contactPerson1"
-                    placeholder="Primary Contact Person"
+                    placeholder="Primary Contact Person (e.g. Mrs. Aina / Address if applicable)"
                   />
                   <input
                     type="text"
                     pInputText
                     class="w-full"
                     formControlName="contactPerson2"
-                    placeholder="Secondary Contact Person"
+                    placeholder="Secondary Contact Person (e.g. Mr. John / Address if applicable)"
                   />
                 </div>
 

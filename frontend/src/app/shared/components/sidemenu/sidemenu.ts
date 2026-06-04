@@ -207,31 +207,33 @@ export class Sidemenu {
       icon: 'pi-file',
     },
     {
-      label: 'Purchase Orders',
-      icon: 'pi-shopping-cart',
-      route: '/purchase-orders',
-    },
-    {
       label: 'Sales Order',
       icon: 'pi-money-bill',
       route: '/sales-order',
     },
     {
-      label: 'My Company',
-      route: '/company',
-      icon: 'pi-building',
-    },
-    {
-      label: 'Suppliers',
-      route: '/supplier',
-      icon: 'pi-shop',
+      label: 'Delivery Orders',
+      icon: 'pi-truck',
+      route: '/delivery-orders',
     },
 
     {
-      label: 'Clients',
-      route: '/clients',
-      icon: 'pi-users',
+      label: 'Purchase Orders',
+      icon: 'pi-shopping-cart',
+      route: '/purchase-orders',
     },
+    {
+      label: 'Goods Receiving',
+      icon: 'pi-clipboard',
+      route: '/goods-receiving',
+    },
+
+    {
+      label: 'DO RMA',
+      icon: 'pi-refresh',
+      route: '/do-rma',
+    },
+
     {
       label: 'Material Requests',
       route: '/material-requests',
@@ -261,43 +263,6 @@ export class Sidemenu {
       ],
     },
 
-    {
-      label: 'Delivery Orders',
-      icon: 'pi-truck',
-      items: [
-        {
-          label: 'Goods Receiving',
-          route: '/delivery-orders/goods-receiving',
-        },
-        {
-          label: 'Goods Dispatch',
-          route: '/delivery-orders/goods-dispatch',
-        },
-        {
-          label: 'DO RMA',
-          route: '/delivery-orders/rma',
-        },
-      ],
-    },
-
-    {
-      label: 'Work Orders',
-      icon: 'pi-wrench',
-      route: '/work-order',
-      // roles: ['SuperAdmin', 'Admin'],
-    },
-    {
-      label: 'Projects',
-      icon: 'pi-folder',
-      route: '/projects',
-      // roles: ['SuperAdmin', 'Admin'],
-    },
-    {
-      label: 'Tasks',
-      icon: 'pi-check-square',
-      route: '/tasks',
-      // roles: ['SuperAdmin', 'Admin'],
-    },
     {
       label: 'Invoices',
       icon: 'pi-receipt',
@@ -336,7 +301,41 @@ export class Sidemenu {
       icon: 'pi-building',
       // roles: ['Purchasing Executive', 'SuperAdmin'],
     },
+    {
+      label: 'Projects',
+      icon: 'pi-folder',
+      route: '/projects',
+      // roles: ['SuperAdmin', 'Admin'],
+    },
+    {
+      label: 'Work Orders',
+      icon: 'pi-wrench',
+      route: '/work-order',
+      // roles: ['SuperAdmin', 'Admin'],
+    },
 
+    {
+      label: 'Tasks',
+      icon: 'pi-check-square',
+      route: '/tasks',
+      // roles: ['SuperAdmin', 'Admin'],
+    },
+    {
+      label: 'My Company',
+      route: '/company',
+      icon: 'pi-building',
+    },
+    {
+      label: 'Suppliers',
+      route: '/supplier',
+      icon: 'pi-shop',
+    },
+
+    {
+      label: 'Clients',
+      route: '/clients',
+      icon: 'pi-users',
+    },
     {
       label: 'Settings',
       icon: 'pi-cog',

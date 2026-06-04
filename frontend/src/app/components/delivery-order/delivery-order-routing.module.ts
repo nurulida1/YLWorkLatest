@@ -1,26 +1,17 @@
 import { NgModule } from '@angular/core';
 import { Routes, RouterModule } from '@angular/router';
-import { InboundDo } from './inbound-do/inbound-do';
-import { OutboundDo } from './outbound-do/outbound-do';
 import { DeliveryOrderForm } from './delivery-order-form/delivery-order-form';
-import { DoRma } from './do-rma/do-rma';
+import { DoRma } from '../do-rma/do-rma/do-rma';
+import { DeliveryOrders } from './delivery-orders/delivery-orders';
 
 const routes: Routes = [
   {
-    path: 'goods-receiving',
-    component: InboundDo,
+    path: '',
+    component: DeliveryOrders,
   },
   {
-    path: 'goods-dispatch',
-    component: OutboundDo,
-  },
-  {
-    path: 'outbound/form',
+    path: 'form',
     component: DeliveryOrderForm,
-  },
-  {
-    path: 'rma',
-    component: DoRma,
   },
 ];
 

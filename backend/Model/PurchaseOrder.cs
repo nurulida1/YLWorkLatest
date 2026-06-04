@@ -7,6 +7,7 @@ namespace YLWorks.Model
     {
         public Guid Id { get; set; }
         public string PurchaseOrderNo { get; set; } = string.Empty;
+
         public Guid? FromCompanyId { get; set; }
         public Company? FromCompany { get; set; }
 

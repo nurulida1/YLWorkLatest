@@ -87,4 +87,18 @@ namespace YLWorks.Model
         public AddressDto? DeliveryAddress { get; set; }
     }
 
+
+    public class CompanyDropdownItem
+    {
+        public Guid Id { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public Address? DeliveryAddress { get; set; }
+        public Address? BillingAddress { get; set; }
+        public string? ContactPerson1 { get; set; }
+        public string? ContactPerson2 { get; set; }
+        public string? Email { get; set; }
+        public string? FaxNo { get; set; }
+        public string? ContactNo { get; set; }
+    }
+
 }

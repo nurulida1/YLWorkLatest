@@ -84,9 +84,9 @@ import { MessageService } from 'primeng/api';
                 styleClass="text-xs px-3 py-1 font-semibold uppercase"
               ></p-tag>
             </div>
-            <div *ngIf="poData()?.projectId" class="text-sm text-gray-500">
+            <div *ngIf="poData()?.projectId" class=" text-gray-500">
               Project:
-              <span class="font-medium">
+              <span class="font-bold text-gray-800">
                 {{ poData()?.project?.projectCode }} -
                 {{ poData()?.project?.projectTitle }}
               </span>
@@ -309,7 +309,7 @@ import { MessageService } from 'primeng/api';
         >
           <div class="text-xs uppercase text-gray-400 mb-3">Remarks</div>
 
-          <div class="text-sm text-gray-600 leading-relaxed">
+          <div class="text-gray-600 leading-relaxed">
             {{ poData()?.remarks || 'No notes available.' }}
           </div>
         </div>
@@ -427,7 +427,7 @@ export class PurchaseOrderDetails implements OnInit, OnDestroy {
         OrderBy: null,
         Select: null,
         Includes:
-          'PurchaseOrderItems,Supplier.BillingAddress,Supplier.DeliveryAddress,FromCompany.BillingAddress,FromCompany.DeliveryAddress',
+          'PurchaseOrderItems,Supplier.BillingAddress,Supplier.DeliveryAddress,FromCompany.BillingAddress,FromCompany.DeliveryAddress,Project',
         Filter: `Id=${this.currentId}`,
       })
       .pipe(takeUntil(this.ngUnsubscribe))

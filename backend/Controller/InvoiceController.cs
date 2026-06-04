@@ -185,7 +185,7 @@ string? includes = null)
                     data.ClientId,
                     data.CompanyId,
                     data.QuotationId,
-                    data.Terms,
+                    data.PaymentTerms,
                     data.Remarks,
                     data.ProjectId,
                     data.DeliveryOrderId,
@@ -275,7 +275,7 @@ string? includes = null)
                     Discount = request.Discount,
                     TotalAmount = request.TotalAmount,
                     Type = request.Type,
-                    Terms = request.Terms,
+                    PaymentTerms = request.PaymentTerms,
                     Remarks = request.Remarks,
                     Notes = request.Notes,
                     BankDetails = request.BankDetails,
@@ -459,7 +459,7 @@ string? includes = null)
                 i.DeliveryOrderId,
                 i.SalesOrderId,
                 i.CompanyId,
-                i.Terms,
+                i.PaymentTerms,
                 i.Remarks,
                 i.Attachment,
                 Client = i.Client == null ? null : new
@@ -519,19 +519,18 @@ string? includes = null)
                 .ToListAsync();
 
             var deliveryOrders = await _context.DeliveryOrders
-      .Where(x => x.Type == "Outbound")
       .Select(x => new DODropdownDto
       {
           Id = x.Id,
           DeliveryOrderNo = x.DeliveryOrderNo,
-          PurchaseOrderId = x.PurchaseOrderId,
+          SalesOrderId = x.SalesOrderId,
 
-          QuotationId = x.PurchaseOrder != null
-              ? x.PurchaseOrder.QuotationId
+          QuotationId = x.SalesOrder != null
+              ? x.SalesOrder.QuotationId
               : null,
 
-          ProjectId = x.PurchaseOrder != null
-              ? x.PurchaseOrder.ProjectId
+          ProjectId = x.SalesOrder != null
+              ? x.SalesOrder.ProjectId
               : null
       })
       .ToListAsync();

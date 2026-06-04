@@ -26,7 +26,7 @@
 
         public string? Type { get; set; } // Sales, Purchase
 
-        public string? Terms { get; set; }
+        public string? PaymentTerms { get; set; }
         public string? Remarks { get; set; }
         public string Status { get; set; } = "Draft";  // Paid, Overdue, Upcoming, Cancelled, Partially Paid, Unpaid, Refunded, Draft
 
@@ -95,7 +95,7 @@
         public decimal? Gross { get; set; }
         public decimal? Discount { get; set; }
         public decimal? TotalAmount { get; set; }
-        public string? Terms { get; set; }
+        public string? PaymentTerms { get; set; }
         public string? Type { get; set; } // Sales, Purchase
         public string? TermsAndConditions { get; set; }
         public string? BankDetails { get; set; }
@@ -123,7 +123,7 @@
         public decimal? Gross { get; set; }
         public decimal? Discount { get; set; }
         public decimal? TotalAmount { get; set; }
-        public string? Terms { get; set; }
+        public string? PaymentTerms { get; set; }
         public string? Type { get; set; }
         public string? TermsAndConditions { get; set; }
         public string? BankDetails { get; set; }

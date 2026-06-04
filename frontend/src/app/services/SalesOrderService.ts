@@ -9,6 +9,7 @@ import {
   PagingContent,
   BaseResponse,
 } from '../shared/helpers/helpers';
+import { BulkDORequest } from '../models/DeliveryOrder';
 
 @Injectable({
   providedIn: 'root',
@@ -106,13 +107,13 @@ export class SalesOrderService {
       .pipe(retry(1), catchError(this.handleError('UpdateStatus')));
   }
 
-  Approve(payload: { id: string; remarks?: string | null }): Observable<any> {
+  Approve(payload: any): Observable<any> {
     return this.http
       .put<any>(`${this.url}/Approve`, payload)
       .pipe(retry(1), catchError(this.handleError('Approve')));
   }
 
-  Reject(payload: { id: string; remarks: string | null }): Observable<any> {
+  Reject(payload: any): Observable<any> {
     return this.http
       .put<any>(`${this.url}/Reject`, payload)
       .pipe(retry(1), catchError(this.handleError('Reject')));
@@ -128,10 +129,16 @@ export class SalesOrderService {
     return this.http.get<{ salesOrderNo: string }>(`${this.url}/generate-no`);
   }
 
-  GenerateDO(salesOrderId: string): Observable<any> {
+  GenerateDO(payload: any): Observable<any> {
     return this.http
-      .post<any>(`${this.url}/GenerateDO/${salesOrderId}`, {})
+      .post<any>(`${this.url}/GenerateDO`, payload)
       .pipe(retry(1), catchError(this.handleError('GenerateDO')));
+  }
+
+  GenerateBulkDOs(payload: BulkDORequest): Observable<any> {
+    return this.http
+      .post<any>(`${this.url}/GenerateBulkDOs`, payload)
+      .pipe(retry(1), catchError(this.handleError('GenerateBulkDOs')));
   }
 
   private handleError = (context: string) => (error: any) => {

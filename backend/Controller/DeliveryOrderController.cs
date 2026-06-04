@@ -94,14 +94,13 @@ namespace YLWorks.Controller
 
                 var data = await query
      .Include(x => x.Project)
-     .Include(x => x.PurchaseOrder)
+     .Include(x => x.SalesOrder)
      .Include(x => x.SenderCompany)
      .Include(x => x.ReceiverCompany)
      .Include(x => x.DeliveryOrderItems)
      .Include(x => x.DeliveryOrderStatusHistories)
          .ThenInclude(h => h.ActionUser)
      .Include(x => x.DeliveryOrderStatusHistories)
-         .ThenInclude(h => h.ReviewByUser)
      .Skip((page - 1) * pageSize)
      .Take(pageSize)
      .ToListAsync();
@@ -136,9 +135,11 @@ namespace YLWorks.Controller
                     var allowedIncludes = new HashSet<string>
             {
                 "Project",
-                "PurchaseOrder",
+                "SalesOrder",
                 "SenderCompany",
+                "SenderCompany.DeliveryAddress",
                 "ReceiverCompany",
+                "ReceiverCompany.DeliveryAddress",
                 "DeliveryOrderItems",
                 "DeliveryOrderStatusHistories",
                 "DeliveryOrderStatusHistories.ActionUser"
@@ -176,17 +177,17 @@ namespace YLWorks.Controller
                 {
                     Id = data.Id,
                     DeliveryOrderNo = data.DeliveryOrderNo,
-                    Type = data.Type,
                     Status = data.Status,
                     ProjectId = data.ProjectId,
-                    PurchaseOrderId = data.PurchaseOrderId,
+                    SalesOrderId = data.SalesOrderId,
                     SenderCompanyId = data.SenderCompanyId,
+                    SenderCompany = data.SenderCompany,
                     ReceiverCompanyId = data.ReceiverCompanyId,
+                    ReceiverCompany = data.ReceiverCompany,
                     DeliveryMethod = data.DeliveryMethod,
                     Notes = data.Notes,
                     Remarks = data.Remarks,
-                    ReferenceNo = data.ReferenceNo,
-
+                    PaymentTerms = data.PaymentTerms,
                     DeliveryOrderItems = data.DeliveryOrderItems?.Select(i => new DeliveryOrderItem
                     {
                         Id = i.Id,
@@ -212,411 +213,199 @@ namespace YLWorks.Controller
                 });
             }
         }
-       
-        
+
+
         [HttpPost("Create")]
-        public async Task<ActionResult<object>> Create(
-            [FromForm] CreateDeliveryOrderRequest request)
+        public async Task<IActionResult> Create([FromForm] CreateDeliveryOrderRequest request)
         {
-            var userIdClaim =
-                User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (userId == null) return Unauthorized();
 
-            if (string.IsNullOrEmpty(userIdClaim))
+            if (!string.IsNullOrEmpty(Request.Form["deliveryOrderItems"]))
             {
-                return Unauthorized(new
-                {
-                    Error = "Invalid token."
-                });
+                request.DeliveryOrderItems =
+                    JsonSerializer.Deserialize<List<CreateDeliveryOrderItemRequest>>(
+                        Request.Form["deliveryOrderItems"]
+                    ) ?? new();
             }
 
-            try
+            var exists = await _context.DeliveryOrders
+                .AnyAsync(x => x.DeliveryOrderNo == request.DeliveryOrderNo);
+
+            if (exists)
+                return BadRequest("DO number already exists");
+
+            string? filePath = null;
+
+            if (request.Attachment != null)
             {
-                if (!string.IsNullOrEmpty(
-                    Request.Form["deliveryOrderItems"]))
-                {
-                    request.DeliveryOrderItems =
-                        JsonSerializer.Deserialize<
-                            List<CreateDeliveryOrderItemRequest>>(
-                            Request.Form["deliveryOrderItems"],
-                            new JsonSerializerOptions
-                            {
-                                PropertyNameCaseInsensitive = true
-                            }) ?? new();
-                }
+                var folder = Path.Combine(Directory.GetCurrentDirectory(), "Uploads/DO");
+                if (!Directory.Exists(folder)) Directory.CreateDirectory(folder);
 
-                var exists = await _context.DeliveryOrders
-                    .AnyAsync(x =>
-                        x.DeliveryOrderNo ==
-                        request.DeliveryOrderNo);
+                var fileName = $"{Guid.NewGuid()}{Path.GetExtension(request.Attachment.FileName)}";
+                var path = Path.Combine(folder, fileName);
 
-                if (exists)
-                {
-                    return Ok(new
-                    {
-                        success = false,
-                        message =
-                            "Delivery Order No already exists."
-                    });
-                }
+                using var stream = new FileStream(path, FileMode.Create);
+                await request.Attachment.CopyToAsync(stream);
 
-                string? filePath = null;
+                filePath = $"Uploads/DO/{fileName}";
+            }
 
-                if (request.Attachment != null)
-                {
-                    var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "Uploads", "DO");
+            var doEntity = new DeliveryOrder
+            {
+                Id = Guid.NewGuid(),
+                DeliveryOrderNo = request.DeliveryOrderNo ?? await GenerateDONo(),
+                ProjectId = request.ProjectId,
+                SalesOrderId = request.SalesOrderId,
+                SenderCompanyId = request.SenderCompanyId,
+                ReceiverCompanyId = request.ReceiverCompanyId,
+                DeliveryMethod = request.DeliveryMethod,
+                Notes = request.Notes,
+                Remarks = request.Remarks,
+                PaymentTerms = request.PaymentTerms,
+                Attachment = filePath,
+                Status = "Draft"
+            };
 
-                    if (!Directory.Exists(uploadsFolder))
-                        Directory.CreateDirectory(uploadsFolder);
-
-                    var fileName = $"{Guid.NewGuid()}{Path.GetExtension(request.Attachment.FileName)}";
-                    var fullPath = Path.Combine(uploadsFolder, fileName);
-
-                    using (var stream = new FileStream(fullPath, FileMode.Create))
-                    {
-                        await request.Attachment.CopyToAsync(stream);
-                    }
-
-                    filePath = $"Uploads/DO/{fileName}";
-                }
-
-
-                var deliveryOrder = new DeliveryOrder
+            doEntity.DeliveryOrderItems = request.DeliveryOrderItems
+                .Select(x => new DeliveryOrderItem
                 {
                     Id = Guid.NewGuid(),
-                    DeliveryOrderNo = request.DeliveryOrderNo,
-                    Type = request.Type,
-                    ProjectId = request.ProjectId,
-                    PurchaseOrderId = request.PurchaseOrderId,
-                    ReferenceNo = request.ReferenceNo,
-                    SenderCompanyId = request.SenderCompanyId,
-                    ReceiverCompanyId = request.ReceiverCompanyId,
-                    DeliveryMethod = request.DeliveryMethod,
-                    Notes = request.Notes,
-                    Remarks = request.Remarks,
-                    Status = "Draft",
-                    Attachment = filePath,
-                    CreatedById = Guid.Parse(userIdClaim),
-                    CreatedAt = DateTimeHelper.Now()
-                };
+                    DeliveryOrderId = doEntity.Id,
+                    Description = x.Description,
+                    SalesOrderItemId = x.SalesOrderItemId,
+                    QuantityOrdered = x.QuantityOrdered,
+                    QuantityDelivered = x.QuantityDelivered,
+                    Unit = x.Unit,
+                    Remarks = x.Remarks
+                }).ToList();
 
-                deliveryOrder.DeliveryOrderItems =
-                    request.DeliveryOrderItems
-                    .Select(x => new DeliveryOrderItem
-                    {
-                        Id = Guid.NewGuid(),
-                        DeliveryOrderId = deliveryOrder.Id,
-                        Description = x.Description,
-                        QuantityOrdered = x.QuantityOrdered,
-                        QuantityDelivered = x.QuantityDelivered,
-                        Unit = x.Unit,
-                        Remarks = x.Remarks
-                    })
-                    .ToList();
-
-                var history = new DeliveryOrderStatusHistory
-                {
-                    Id = Guid.NewGuid(),
-                    DeliveryOrderId = deliveryOrder.Id,
-                    Status = "Draft",
-                    ActionAt = DateTimeHelper.Now(),
-                    ActionUserId = Guid.Parse(userIdClaim),
-                    Remarks = "Delivery order created"
-                };
-
-                _context.DeliveryOrders.Add(deliveryOrder);
-
-                _context.DeliveryOrderStatusHistories.Add(history);
-
-                await _context.SaveChangesAsync();
-
-                await UpdatePurchaseOrderStatusAsync(deliveryOrder.PurchaseOrderId);
-
-                var result = await _context.DeliveryOrders
-                    .Include(x => x.Project)
-                    .Include(x => x.PurchaseOrder)
-                    .Include(x => x.SenderCompany)
-                    .Include(x => x.ReceiverCompany)
-                    .Include(x => x.DeliveryOrderItems)
-                    .Include(x => x.DeliveryOrderStatusHistories)
-                    .FirstOrDefaultAsync(x =>
-                        x.Id == deliveryOrder.Id);
-
-                var dto = MapToDto(result!);
-
-                await _hub.Clients.All.SendAsync(
-                    "DeliveryOrderAdded",
-                    dto);
-
-                return Ok(dto);
-            }
-            catch (Exception ex)
+            var history = new DeliveryOrderStatusHistory
             {
-                return StatusCode(500, new
-                {
-                    Error = "Failed to create delivery order.",
-                    Details = ex.Message
-                });
-            }
+                Id = Guid.NewGuid(),
+                DeliveryOrderId = doEntity.Id,
+                Status = "Draft",
+                ActionUserId = Guid.Parse(userId),
+                ActionAt = DateTime.UtcNow,
+                Remarks = "Created"
+            };
+
+            _context.DeliveryOrders.Add(doEntity);
+            _context.DeliveryOrderStatusHistories.Add(history);
+
+            await _context.SaveChangesAsync();
+
+            await _hub.Clients.All.SendAsync("DeliveryOrderAdded", MapToDto(doEntity));
+
+            return Ok(MapToDto(doEntity));
         }
 
         [HttpPut("Update")]
-        public async Task<ActionResult<object>> Update([FromForm] UpdateDeliveryOrderRequest request)
+        public async Task<IActionResult> Update([FromForm] UpdateDeliveryOrderRequest request)
         {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-
-            if (string.IsNullOrEmpty(userIdClaim))
-            {
-                return Unauthorized(new { Error = "Invalid token." });
-            }
-
-            var deliveryOrder = await _context.DeliveryOrders
+            var entity = await _context.DeliveryOrders
                 .Include(x => x.DeliveryOrderItems)
                 .FirstOrDefaultAsync(x => x.Id == request.Id);
 
-            if (deliveryOrder == null)
-            {
-                return NotFound(new { Error = "Delivery order not found." });
-            }
+            if (entity == null)
+                return NotFound();
 
-            try
-            {
-                if (!string.IsNullOrEmpty(Request.Form["deliveryOrderItems"]))
+            entity.DeliveryOrderNo = request.DeliveryOrderNo;
+            entity.ProjectId = request.ProjectId;
+            entity.SalesOrderId = request.SalesOrderId;
+            entity.SenderCompanyId = request.SenderCompanyId;
+            entity.ReceiverCompanyId = request.ReceiverCompanyId;
+            entity.DeliveryMethod = request.DeliveryMethod;
+            entity.Notes = request.Notes;
+            entity.Remarks = request.Remarks;
+            entity.PaymentTerms = request.PaymentTerms;
+
+            _context.DeliveryOrderItems.RemoveRange(entity.DeliveryOrderItems);
+
+            entity.DeliveryOrderItems = request.DeliveryOrderItems
+                .Select(x => new DeliveryOrderItem
                 {
-                    request.DeliveryOrderItems =
-                        JsonSerializer.Deserialize<List<CreateDeliveryOrderItemRequest>>(
-                            Request.Form["deliveryOrderItems"],
-                            new JsonSerializerOptions
-                            {
-                                PropertyNameCaseInsensitive = true
-                            }) ?? new();
-                }
+                    Id = Guid.NewGuid(),
+                    DeliveryOrderId = entity.Id,
+                    Description = x.Description,
+                    SalesOrderItemId = x.SalesOrderItemId,
+                    QuantityOrdered = x.QuantityOrdered,
+                    QuantityDelivered = x.QuantityDelivered,
+                    Unit = x.Unit,
+                    Remarks = x.Remarks
+                }).ToList();
 
-                string? filePath = deliveryOrder.Attachment;
+            await _context.SaveChangesAsync();
 
-                if (request.Attachment != null)
-                {
-                    var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "Uploads", "DO");
-
-                    if (!Directory.Exists(uploadsFolder))
-                        Directory.CreateDirectory(uploadsFolder);
-
-                    var fileName = $"{Guid.NewGuid()}{Path.GetExtension(request.Attachment.FileName)}";
-                    var fullPath = Path.Combine(uploadsFolder, fileName);
-
-                    using (var stream = new FileStream(fullPath, FileMode.Create))
-                    {
-                        await request.Attachment.CopyToAsync(stream);
-                    }
-
-                    filePath = $"Uploads/DO/{fileName}";
-                }
-
-                deliveryOrder.DeliveryOrderNo = request.DeliveryOrderNo;
-                deliveryOrder.Type = request.Type;
-                deliveryOrder.ProjectId = request.ProjectId;
-                deliveryOrder.PurchaseOrderId = request.PurchaseOrderId;
-                deliveryOrder.ReferenceNo = request.ReferenceNo;
-                deliveryOrder.SenderCompanyId = request.SenderCompanyId;
-                deliveryOrder.ReceiverCompanyId = request.ReceiverCompanyId;
-                deliveryOrder.DeliveryMethod = request.DeliveryMethod;
-                deliveryOrder.Notes = request.Notes;
-                deliveryOrder.Remarks = request.Remarks;
-
-                deliveryOrder.Attachment = filePath; 
-                deliveryOrder.UpdatedAt = DateTimeHelper.Now();
-                deliveryOrder.UpdatedById = Guid.Parse(userIdClaim);
-
-                _context.DeliveryOrderItems.RemoveRange(deliveryOrder.DeliveryOrderItems);
-                await _context.SaveChangesAsync();
-
-                var newItems = request.DeliveryOrderItems
-                    .Select(x => new DeliveryOrderItem
-                    {
-                        Id = Guid.NewGuid(),
-                        DeliveryOrderId = deliveryOrder.Id,
-                        Description = x.Description,
-                        QuantityOrdered = x.QuantityOrdered,
-                        QuantityDelivered = x.QuantityDelivered,
-                        Unit = x.Unit,
-                        Remarks = x.Remarks
-                    });
-
-                await _context.DeliveryOrderItems.AddRangeAsync(newItems);
-                await _context.SaveChangesAsync();
-
-                await UpdatePurchaseOrderStatusAsync(deliveryOrder.PurchaseOrderId);
-
-                var result = await _context.DeliveryOrders
-                    .Include(x => x.Project)
-                    .Include(x => x.PurchaseOrder)
-                    .Include(x => x.SenderCompany)
-                    .Include(x => x.ReceiverCompany)
-                    .Include(x => x.DeliveryOrderItems)
-                    .Include(x => x.DeliveryOrderStatusHistories)
-                    .FirstOrDefaultAsync(x => x.Id == deliveryOrder.Id);
-
-                var dto = MapToDto(result!);
-
-                return Ok(dto);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new
-                {
-                    Error = "Failed to update delivery order.",
-                    Details = ex.Message
-                });
-            }
+            return Ok(MapToDto(entity));
         }
 
         [HttpDelete("Delete")]
         public async Task<IActionResult> Delete(Guid id)
         {
-            var deliveryOrder =
-                await _context.DeliveryOrders
+            var entity = await _context.DeliveryOrders
                 .FirstOrDefaultAsync(x => x.Id == id);
 
-            if (deliveryOrder == null)
+            if (entity == null)
                 return NotFound();
 
-            var doItems = await _context.DeliveryOrderItems
-     .Where(x => x.DeliveryOrderId == id)
-     .ToListAsync();
-
-            foreach (var item in doItems)
-            {
-                var poItem = await _context.PurchaseOrderItems
-                    .FirstOrDefaultAsync(x =>
-                        x.PurchaseOrderId == deliveryOrder.PurchaseOrderId &&
-                        x.Description == item.Description);
-
-                if (poItem != null)
-                {
-                    poItem.ReceivedQuantity -= item.QuantityDelivered;
-                }
-            }
-
-            _context.DeliveryOrders.Remove(deliveryOrder);
-
+            _context.DeliveryOrders.Remove(entity);
             await _context.SaveChangesAsync();
-            await UpdatePurchaseOrderStatusAsync(deliveryOrder.PurchaseOrderId);
 
-            await _hub.Clients.All.SendAsync(
-                "DeliveryOrderDeleted",
-                id);
+            await _hub.Clients.All.SendAsync("DeliveryOrderDeleted", id);
 
-            return Ok(new
-            {
-                Message = "Delivery order deleted."
-            });
+            return Ok();
         }
 
         [HttpPut("UpdateStatus")]
-        public async Task<IActionResult> UpdateStatus([FromForm] UpdateStatusRequest request)
+        public async Task<IActionResult> UpdateStatus(UpdateStatusRequest request)
         {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(userIdClaim))
-                return Unauthorized(new { Error = "Invalid token." });
+            var userId = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
 
-            var actionUserId = Guid.Parse(userIdClaim);
-
-            var userName = await _context.Users
-                .Where(x => x.Id == actionUserId)
-                .Select(x => x.FullName)
-                .FirstOrDefaultAsync();
-
-            var deliveryOrder = await _context.DeliveryOrders
+            var entity = await _context.DeliveryOrders
+                .Include(x => x.DeliveryOrderItems)
                 .FirstOrDefaultAsync(x => x.Id == request.Id);
 
-            if (deliveryOrder == null)
+            if (entity == null)
                 return NotFound();
 
-            var po = await _context.PurchaseOrders
-                .FirstOrDefaultAsync(x => x.Id == deliveryOrder.PurchaseOrderId);
-
-            if (po == null)
-                return NotFound();
-
-            var poItems = await _context.PurchaseOrderItems
-                .Where(x => x.PurchaseOrderId == po.Id)
-                .ToListAsync();
-
-            var doItems = await _context.DeliveryOrderItems
-                .Where(x => x.DeliveryOrderId == request.Id)
-                .ToListAsync();
-
-            deliveryOrder.Status = request.Status;
+            entity.Status = request.Status;
 
             if (request.Status == "Delivered")
             {
-                foreach (var doItem in doItems)
+                entity.DeliveredAt = DateTime.UtcNow;
+            }
+
+            if (request.ProofImages?.Count > 0)
+            {
+                var folder = Path.Combine("Uploads/DO/Proof");
+                if (!Directory.Exists(folder)) Directory.CreateDirectory(folder);
+
+                foreach (var file in request.ProofImages)
                 {
-                    var poItem = poItems.FirstOrDefault(x =>
-                        x.Description == doItem.Description);
+                    var name = $"{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
+                    var path = Path.Combine(folder, name);
 
-                    if (poItem != null)
+                    using var stream = new FileStream(path, FileMode.Create);
+                    await file.CopyToAsync(stream);
+
+                    var history = new DeliveryOrderStatusHistory
                     {
-                        poItem.ReceivedQuantity += doItem.QuantityDelivered;
-                    }
+                        Id = Guid.NewGuid(),
+                        DeliveryOrderId = entity.Id,
+                        Status = request.Status,
+                        ActionUserId = userId,
+                        Remarks = request.Remarks,
+                        ActionAt = DateTime.UtcNow
+                    };
+
+                    _context.DeliveryOrderStatusHistories.Add(history);
                 }
-
-                await UpdatePurchaseOrderStatusAsync(po.Id);
-
-                await UpdateSalesOrderFromPOAsync(po.Id);
             }
-
-            bool allDelivered = poItems.All(x =>
-                x.ReceivedQuantity >= x.Quantity);
-
-            bool partiallyDelivered = poItems.Any(x =>
-                x.ReceivedQuantity > 0 &&
-                x.ReceivedQuantity < x.Quantity);
-
-            switch (request.Status)
-            {
-                case "Delivered":
-                    if (allDelivered)
-                        po.Status = "Completed";
-                    else if (partiallyDelivered)
-                        po.Status = "PartiallyDelivered";
-                    else
-                        po.Status = "In Progress";
-                    break;
-
-                case "Approved":
-                case "Prepared":
-                case "OutDelivery":
-                    po.Status = "In Progress";
-                    break;
-
-                case "Cancelled":
-                    po.Status = "Cancelled";
-                    break;
-            }
-
-            var history = new DeliveryOrderStatusHistory
-            {
-                Id = Guid.NewGuid(),
-                DeliveryOrderId = request.Id,
-                Status = request.Status,
-                ActionAt = DateTimeHelper.Now(),
-                ActionUserId = actionUserId,
-                Remarks = request.Remarks ?? $"DO updated to {request.Status} by {userName}",
-                ReviewByUserId = request.ReviewerUserId,
-                ApprovedByUserId = request.Status == "Approved" ? actionUserId : null,
-            };
-
-            _context.DeliveryOrderStatusHistories.Add(history);
 
             await _context.SaveChangesAsync();
 
-            return Ok(new
-            {
-                history.Id,
-                history.Status,
-                history.ActionAt,
-                history.Remarks
-            });
+            return Ok();
         }
 
         private object MapToDto(DeliveryOrder d)
@@ -625,103 +414,91 @@ namespace YLWorks.Controller
             {
                 d.Id,
                 d.DeliveryOrderNo,
-                d.Type,
                 d.Status,
                 d.ProjectId,
-                d.PurchaseOrderId,
-                d.ReferenceNo,
+                d.SalesOrderId,
                 d.SenderCompanyId,
                 d.ReceiverCompanyId,
                 d.DeliveryMethod,
                 d.Notes,
                 d.Remarks,
                 d.Attachment,
+                d.TrackingNo,
+                d.DeliveredAt,
+                d.ReceivedBy,
+                d.IsReceiverSigned,
+                d.CreatedAt,
+                d.PaymentTerms,
+                ReceiverCompany  = d.ReceiverCompany != null ? new
+                {
+                    d.ReceiverCompany.Name,
+                    d.ReceiverCompany.Email,
+                    d.ReceiverCompany.ContactNo,
+                    d.ReceiverCompany.FaxNo,
+                    d.ReceiverCompany.ContactPerson1,
+                    d.ReceiverCompany.ContactPerson2,
+                    d.ReceiverCompany.BillingAddress,
+                    d.ReceiverCompany.DeliveryAddress,
+                } : null,
+                 SenderCompany = d.SenderCompany != null ? new
+                {
+                    d.SenderCompany.Name,
+                     d.SenderCompany.Email,
+                     d.SenderCompany.ContactNo,
+                     d.SenderCompany.FaxNo,
+                     d.SenderCompany.ContactPerson1,
+                     d.SenderCompany.ContactPerson2,
+                     d.SenderCompany.BillingAddress,
+                     d.SenderCompany.DeliveryAddress,
+                 } : null,
+                Project = d.Project != null ? new
+                {
+                    d.Project.ProjectCode,
+                    d.Project.ProjectTitle
+                } : null,
 
-                Project = d.Project == null
-                    ? null
-                    : new
-                    {
-                        d.Project.ProjectCode,
-                        d.Project.ProjectTitle
-                    },
+                SalesOrder = d.SalesOrder != null ? new
+                {
+                    d.SalesOrder.SalesOrderNo
+                } : null,
 
-                PurchaseOrder = d.PurchaseOrder == null
-                    ? null
-                    : new
-                    {
-                        d.PurchaseOrder.PurchaseOrderNo
-                    },
-
-                SenderCompany = d.SenderCompany == null
-                    ? null
-                    : new
-                    {
-                        d.SenderCompany.Id,
-                        d.SenderCompany.Name
-                    },
-
-                ReceiverCompany = d.ReceiverCompany == null
-                    ? null
-                    : new
-                    {
-                        d.ReceiverCompany.Id,
-                        d.ReceiverCompany.Name
-                    },
-
-                DeliveryOrderItems =
-                    d.DeliveryOrderItems,
-
-                DeliveryOrderStatusHistories =
-                    d.DeliveryOrderStatusHistories
+                Items = d.DeliveryOrderItems,
+                History = d.DeliveryOrderStatusHistories
             };
         }
-
-        private async Task UpdatePurchaseOrderStatusAsync(Guid? purchaseOrderId)
-        {
-            var po = await _context.PurchaseOrders
-                .FirstOrDefaultAsync(x => x.Id == purchaseOrderId);
-
-            if (po == null) return;
-
-            var poItems = await _context.PurchaseOrderItems
-                .Where(x => x.PurchaseOrderId == purchaseOrderId)
-                .ToListAsync();
-
-            bool allDelivered = poItems.All(x => x.ReceivedQuantity >= x.Quantity);
-            bool partiallyDelivered = poItems.Any(x => x.ReceivedQuantity > 0 && x.ReceivedQuantity < x.Quantity);
-            bool noneReceived = poItems.All(x => x.ReceivedQuantity == 0);
-
-            if (noneReceived)
-                po.Status = "In Progress";
-            else if (allDelivered)
-                po.Status = "Completed";
-            else if (partiallyDelivered)
-                po.Status = "PartiallyDelivered";
-            else
-                po.Status = "In Progress";
-
-            await _context.SaveChangesAsync();
-        }
-
+ 
         [HttpGet("GetDropdown")]
         public async Task<IActionResult> GetDropdown()
         {
             try
             {
-                var purchaseOrders = await _context.PurchaseOrders
-    .Include(x => x.Supplier)
+                var salesOrder = await _context.SalesOrders
+    .AsNoTracking()
+    .Include(x => x.Client)
     .Include(x => x.Project)
+    .Include(x => x.SalesOrderItems)
     .OrderByDescending(x => x.CreatedAt)
-    .Select(x => new PurchaseOrderDropdownItem
+    .Select(x => new SalesOrderDropdownDto
     {
         Id = x.Id,
-        PurchaseOrderNo = x.PurchaseOrderNo,
-
+        SalesOrderNo = x.SalesOrderNo,
         ProjectId = x.ProjectId,
         ProjectCode = x.Project != null ? x.Project.ProjectCode : null,
+        ClientId = x.ClientId,
+        ClientName = x.Client != null ? x.Client.Name : null,
+        PaymentTerms = x.PaymentTerms,
+        DeliveryTimeline = x.DeliveryTimeline,
+        WarrantyTerms = x.WarrantyTerms,
 
-        SupplierId = x.SupplierId,
-        SupplierName = x.Supplier != null ? x.Supplier.Name : null,
+        SalesOrderItems = x.SalesOrderItems.Where(i => i.Type == "Item")
+            .Select(i => new SalesOrderItemDropdownDto
+            {
+                Id = i.Id,
+                Description = i.Description,
+                Quantity = i.Quantity,
+                Unit = i.Unit
+            })
+            .ToList()
     })
     .ToListAsync();
 
@@ -736,17 +513,21 @@ namespace YLWorks.Controller
                     .ToListAsync();
 
                 var companies = await _context.Companies
-                    .OrderBy(x => x.Name)
+                    .OrderBy(x => x.Name).Include(x =>  x.DeliveryAddress).Include(x => x.BillingAddress)
                     .Select(x => new CompanyDropdownItem
                     {
                         Id = x.Id,
-                        Name = x.Name
+                        Name = x.Name,
+                        DeliveryAddress = x.DeliveryAddress,
+                        BillingAddress = x.BillingAddress,
+                        ContactPerson1 = x.ContactPerson1,
+                        ContactNo = x.ContactNo,
                     })
                     .ToListAsync();
 
                 return Ok(new DeliveryOrderDropdownDto
                 {
-                    PurchaseOrders = purchaseOrders,
+                    SalesOrders = salesOrder,
                     Projects = projects,
                     Companies = companies
                 });
@@ -761,51 +542,38 @@ namespace YLWorks.Controller
             }
         }
 
-        private async Task UpdateSalesOrderFromPOAsync(Guid purchaseOrderId)
+        private async Task<string> GenerateDONo()
         {
-            var po = await _context.PurchaseOrders
-                .FirstOrDefaultAsync(x => x.Id == purchaseOrderId);
+            var yearShort = DateTime.UtcNow.Year % 100; // 2026 -> 26
 
-            if (po == null) return;
+            var lastDO = await _context.PurchaseOrders
+                .Where(q => q.PurchaseOrderNo.StartsWith($"YL/DO/") && q.PurchaseOrderNo.EndsWith($"/{yearShort}"))
+                .OrderByDescending(q => q.CreatedAt)
+                .Select(q => q.PurchaseOrderNo)
+                .FirstOrDefaultAsync();
 
-            var salesOrders = await _context.SalesOrders
-                .Where(x => x.QuotationId == po.QuotationId)
-                .Include(x => x.SalesOrderItems)
-                .ToListAsync();
+            int nextNumber = 1;
 
-            foreach (var so in salesOrders)
+            if (!string.IsNullOrEmpty(lastDO))
             {
-                await UpdateSalesOrderCompletionAsync(so.Id);
+                var parts = lastDO.Split('/');
+                if (parts.Length >= 3 && int.TryParse(parts[2], out int lastNumber))
+                {
+                    nextNumber = lastNumber + 1;
+                }
             }
+
+            return $"YL/DO/{nextNumber}/{yearShort}";
         }
 
-        private async Task UpdateSalesOrderCompletionAsync(Guid salesOrderId)
+        [HttpGet("generate-no")]
+        public async Task<IActionResult> GenerateDeliveryOrderNoEndpoint()
         {
-            var so = await _context.SalesOrders
-                .Include(x => x.SalesOrderItems)
-                .FirstOrDefaultAsync(x => x.Id == salesOrderId);
+            var deliveryOrderNo = await GenerateDONo();
+            return Ok(new { deliveryOrderNo });
 
-            if (so == null) return;
-
-            var items = so.SalesOrderItems;
-
-            if (items == null || !items.Any())
-                return;
-
-            bool allDelivered = items.All(x =>
-                x.QuantityDelivered >= x.Quantity);
-
-            bool partiallyDelivered = items.Any(x =>
-                x.QuantityDelivered > 0 &&
-                x.QuantityDelivered < x.Quantity);
-
-            so.Status =
-                allDelivered ? "Completed" :
-                partiallyDelivered ? "PartiallyDelivered" :
-                "In Progress";
-
-            _context.SalesOrders.Update(so);
-            await _context.SaveChangesAsync();
         }
+
+
     }
 }

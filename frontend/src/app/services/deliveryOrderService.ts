@@ -8,11 +8,7 @@ import {
   GridifyQueryExtend,
   PagingContent,
 } from '../shared/helpers/helpers';
-import {
-  CreateDeliveryOrderRequest,
-  DeliveryOrderDto,
-  UpdateDeliveryOrderRequest,
-} from '../models/DeliveryOrder';
+import { DeliveryOrderDto } from '../models/DeliveryOrder';
 
 @Injectable({
   providedIn: 'root',
@@ -137,6 +133,12 @@ export class DeliveryOrderService {
     return this.http
       .get<any>(`${this.url}/GetDropdown`)
       .pipe(retry(1), catchError(this.handleError('GetDropdown')));
+  }
+
+  GenerateNo() {
+    return this.http.get<{ deliveryOrderNo: string }>(
+      `${this.url}/generate-no`,
+    );
   }
 
   private handleError = (context: string) => (error: any) => {

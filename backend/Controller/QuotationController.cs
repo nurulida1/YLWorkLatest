@@ -165,8 +165,14 @@ string? includes = null)
         x.QuotationDate,
         x.FromCompanyId,
         x.ClientId,
+        x.SubTotal,
+        x.Discount,
+        x.TaxAmount,
         x.TotalAmount,
-        x.TermsAndConditions,
+        x.PaymentTerms,
+        x.WarrantyTerms,
+        x.ValidityDays,
+        x.DeliveryTimeline,
         x.Subject,
         x.QuotationItems
     })
@@ -188,6 +194,8 @@ string? includes = null)
                 Quantity = item.Quantity,
                 Unit = item.Unit,
                 UnitPrice = item.UnitPrice,
+                Discount = item.Discount,
+                TaxRate = item.TaxRate,
                 TotalPrice = item.TotalPrice,
                 SortOrder = item.SortOrder,
                 Children = allItems
@@ -210,14 +218,19 @@ string? includes = null)
                 {
                     Id = Guid.NewGuid(),
                     QuotationNo = request.QuotationNo ?? await GenerateQuotationNo(),
-                    ReferenceNo = request.ReferenceNo,
                     QuotationDate = request.QuotationDate,
                     FromCompanyId = request.FromCompanyId,
                     ClientId = request.ClientId,
                     ProjectCode = request.ProjectCode,
                     Subject = request.Subject,
+                    SubTotal = request.SubTotal,
+                    Discount = request.Discount,
+                    TaxAmount = request.TaxAmount,
                     TotalAmount = request.TotalAmount,
-                    TermsAndConditions = request.TermsAndConditions,
+                    PaymentTerms = request.PaymentTerms,
+                    ValidityDays = request.ValidityDays,
+                    DeliveryTimeline = request.DeliveryTimeline,
+                    WarrantyTerms = request.WarrantyTerms,
                     Status = "Draft",
                     CreatedById = Guid.Parse(userIdClaim),
                     CreatedAt = DateTimeHelper.Now()
@@ -268,6 +281,8 @@ string? includes = null)
                     Quantity = req.Quantity,
                     Unit = req.Unit ?? "Nos",
                     UnitPrice = req.UnitPrice,
+                    Discount = req.Discount,
+                    TaxRate = req.TaxRate,
                     TotalPrice = req.TotalPrice,
                     SortOrder = req.SortOrder,
                     CreatedAt = DateTimeHelper.Now()
@@ -296,9 +311,17 @@ string? includes = null)
             quotation.QuotationNo = request.QuotationNo;
             quotation.QuotationDate = request.QuotationDate;
             quotation.Subject = request.Subject;
+            quotation.SubTotal = request.SubTotal;
+            quotation.TaxAmount = request.TaxAmount;
+            quotation.Discount = request.Discount;
             quotation.TotalAmount = request.TotalAmount;
             quotation.ClientId = request.ClientId;
             quotation.FromCompanyId = request.FromCompanyId;
+            quotation.ProjectCode = request.ProjectCode;
+            quotation.PaymentTerms = request.PaymentTerms;
+            quotation.ValidityDays = request.ValidityDays;
+            quotation.DeliveryTimeline = request.DeliveryTimeline;
+            quotation.WarrantyTerms = request.WarrantyTerms;
             quotation.UpdatedAt = DateTimeHelper.Now();
 
             var existingItems = _context.QuotationItems
@@ -319,6 +342,8 @@ string? includes = null)
                         Quantity = x.Quantity,
                         Unit = x.Unit,
                         UnitPrice = x.UnitPrice,
+                        Discount = x.Discount,
+                        TaxRate = x.TaxRate,
                         TotalPrice = x.TotalPrice,
                         SortOrder = x.SortOrder,
                         ParentId = x.ParentId,
@@ -342,7 +367,6 @@ string? includes = null)
             {
                 q.Id,
                 q.QuotationNo,
-                q.ReferenceNo,
                 q.QuotationDate,
                 q.ClientId,
                 q.FromCompanyId,
@@ -350,8 +374,14 @@ string? includes = null)
                 Client = MapCompany(q.Client),
                 q.ProjectCode,
                 q.Subject,
+                q.SubTotal,
+                q.TaxAmount,
+                q.Discount,
                 q.TotalAmount,
-                q.TermsAndConditions,
+                q.PaymentTerms,
+                q.ValidityDays,
+                q.DeliveryTimeline,
+                q.WarrantyTerms,
                 q.Status,
                 q.Remarks,
                 QuotationStatusHistories = q.QuotationStatusHistories.OrderByDescending(h => h.ActionAt).Select(i => new
@@ -382,6 +412,8 @@ string? includes = null)
                 item.Quantity,
                 item.Unit,
                 item.UnitPrice,
+                item.Discount,
+                item.TaxRate,
                 item.TotalPrice,
                 item.SortOrder,
                 Children = allItems
@@ -434,15 +466,20 @@ string? includes = null)
                 {
                     Id = Guid.NewGuid(),
                     QuotationNo = newQuotationNo,
-                    ReferenceNo = source.ReferenceNo,
                     QuotationDate = DateTimeHelper.Now(),
                     FromCompanyId = source.FromCompanyId,
                     ClientId = source.ClientId,
                     Subject = source.Subject,
                     ProjectCode = source.ProjectCode,
                     Status = "Draft",
+                    SubTotal = source.SubTotal,
+                    TaxAmount = source.TaxAmount,
+                    Discount = source.Discount,
                     TotalAmount = source.TotalAmount,
-                    TermsAndConditions = source.TermsAndConditions,
+                    PaymentTerms = source.PaymentTerms,
+                    ValidityDays = source.ValidityDays,
+                    DeliveryTimeline = source.DeliveryTimeline,
+                    WarrantyTerms = source.WarrantyTerms,
                     Remarks = $"Cloned from {source.QuotationNo}",
                     CreatedAt = DateTimeHelper.Now()
                 };
@@ -470,6 +507,8 @@ string? includes = null)
                         Quantity = oldItem.Quantity,
                         Unit = oldItem.Unit,
                         UnitPrice = oldItem.UnitPrice,
+                        Discount = oldItem.Discount,
+                        TaxRate = oldItem.TaxRate,
                         TotalPrice = oldItem.TotalPrice,
                         SortOrder = oldItem.SortOrder,
                         CreatedAt = DateTimeHelper.Now()
@@ -638,6 +677,187 @@ string? includes = null)
                 "Cancelled" => $"Quotation cancelled by {userName}",
                 _ => $"Quotation updated to {status} by {userName}"
             };
+        }
+
+        [HttpPost("ConvertFromQuotation/{quotationId}")]
+        public async Task<IActionResult> ConvertFromQuotation(Guid quotationId, [FromForm] ConvertQuotationToSoRequest request)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim))
+                return Unauthorized(new { Error = "Invalid token." });
+
+            var actionUserId = Guid.Parse(userIdClaim);
+
+            var quotation = await _context.Quotations
+                .Include(q => q.QuotationItems)
+                .FirstOrDefaultAsync(q => q.Id == quotationId);
+
+            if (quotation == null)
+                return NotFound(new { Error = "Source quotation not found." });
+
+            try
+            {
+                string? attachmentPath = null;
+                if (request.ClientPOAttachment != null && request.ClientPOAttachment.Length > 0)
+                {
+                    var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "Uploads", "ClientPOs");
+                    if (!Directory.Exists(uploadsFolder)) Directory.CreateDirectory(uploadsFolder);
+
+                    var uniqueFileName = $"{Guid.NewGuid()}_{Path.GetFileName(request.ClientPOAttachment.FileName)}";
+                    attachmentPath = Path.Combine("Uploads", "ClientPOs", uniqueFileName);
+
+                    using (var fileStream = new FileStream(Path.Combine(Directory.GetCurrentDirectory(), attachmentPath), FileMode.Create))
+                    {
+                        await request.ClientPOAttachment.CopyToAsync(fileStream);
+                    }
+                }
+
+                var salesOrder = new SalesOrder
+                {
+                    Id = Guid.NewGuid(),
+                    SalesOrderNo = await GenerateSalesOrderNo(),
+                    QuotationId = quotation.Id,
+                    ClientId = quotation.ClientId,
+                    CompanyId = quotation.FromCompanyId, 
+                    SODate = DateTimeHelper.Now(),
+                    Status = "Draft",
+                    SubTotal = quotation.SubTotal,
+                    Discount = quotation.Discount,
+                    TaxAmount = quotation.TaxAmount,
+                    TotalAmount = quotation.TotalAmount.GetValueOrDefault(),
+                    Notes = $"Converted from Quotation {quotation.QuotationNo}.",
+                    Remarks = request.Remarks,
+                    PaymentTerms = quotation.PaymentTerms,
+                    WarrantyTerms = quotation.WarrantyTerms,
+                    DeliveryTimeline = quotation.DeliveryTimeline,
+
+                    ClientPONumber = request.ClientPONumber,
+                    ClientPODate = request.ClientPODate,
+                    ClientPOAttachment = attachmentPath,
+
+                    CreatedAt = DateTimeHelper.Now(),
+                    CreatedById = actionUserId
+                };
+
+                var oldRootItems = quotation.QuotationItems
+                    .Where(i => i.ParentId == null || i.ParentId == Guid.Empty)
+                    .OrderBy(i => i.SortOrder)
+                    .ToList();
+
+                salesOrder.SalesOrderItems = ProcessConvertedItems(oldRootItems, quotation.QuotationItems, salesOrder.Id, null);
+
+                var statusHistory = new SalesOrderStatusHistory
+                {
+                    Id = Guid.NewGuid(),
+                    SalesOrderId = salesOrder.Id,
+                    Status = "Draft",
+                    ActionAt = DateTimeHelper.Now(),
+                    ActionUserId = actionUserId,
+                    Remarks = $"Sales Order generated and matched from Quotation {quotation.QuotationNo} via Client PO."
+                };
+
+                quotation.Status = "Accepted";
+                quotation.Remarks = $"Converted into Sales Order {salesOrder.SalesOrderNo}";
+
+                var quotationHistory = new QuotationStatusHistory 
+                {
+                    Id = Guid.NewGuid(),
+                    QuotationId = quotation.Id,
+                    Status = "Accepted",
+                    ActionAt = DateTimeHelper.Now(),
+                    ActionUserId = actionUserId,
+                    Remarks = $"System auto-accepted upon successful conversion to Sales Order {salesOrder.SalesOrderNo}."
+                };
+                _context.QuotationStatusHistories.Add(quotationHistory);
+
+                _context.SalesOrders.Add(salesOrder);
+                _context.SalesOrderStatusHistories.Add(statusHistory);
+
+                await _context.SaveChangesAsync();
+
+                await _hub.Clients.All.SendAsync("SalesOrderAdded", new { salesOrder.Id, salesOrder.SalesOrderNo, salesOrder.Status });
+                await _hub.Clients.All.SendAsync("QuotationUpdated", new { Id = quotation.Id, Status = quotation.Status, Remarks = quotation.Remarks });
+
+                return Ok(new { Message = "Quotation successfully converted to Sales Order.", SalesOrderId = salesOrder.Id, SalesOrderNo = salesOrder.SalesOrderNo });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Error = "Conversion processing failed.", Details = ex.Message });
+            }
+        }
+
+        private List<SalesOrderItem> ProcessConvertedItems(
+            IEnumerable<QuotationItems> currentLevelItems,
+            IEnumerable<QuotationItems> allSourceItems,
+            Guid salesOrderId,
+            Guid? parentId)
+        {
+            var convertedList = new List<SalesOrderItem>();
+
+            foreach (var qItem in currentLevelItems)
+            {
+                var soItemId = Guid.NewGuid();
+                decimal qty = qItem.Quantity;
+
+                var newSoItem = new SalesOrderItem
+                {
+                    Id = soItemId,
+                    SalesOrderId = salesOrderId,
+                    ParentId = parentId,
+                    SortOrder = qItem.SortOrder,
+                    Type = qItem.Type,
+                    IsGroup = qItem.IsGroup,
+                    Description = qItem.Description,
+                    Unit = qItem.Unit ?? "Nos",
+                    Quantity = qItem.Quantity,
+
+                    QuantityDelivered = 0,
+                    QuantityRemaining = qty,
+
+                    UnitPrice = qItem.UnitPrice,
+                    Discount = qItem.Discount,
+                    TaxRate = qItem.TaxRate,
+                    TotalPrice = qItem.TotalPrice,
+                };
+
+                var targetChildren = allSourceItems
+                    .Where(c => c.ParentId == qItem.Id)
+                    .OrderBy(c => c.SortOrder)
+                    .ToList();
+
+                if (targetChildren.Any())
+                {
+                    newSoItem.Children = ProcessConvertedItems(targetChildren, allSourceItems, salesOrderId, soItemId);
+                }
+
+                convertedList.Add(newSoItem);
+            }
+
+            return convertedList;
+        }
+
+        private async Task<string> GenerateSalesOrderNo()
+        {
+            var yearShort = DateTime.UtcNow.Year % 100; 
+
+            var lastSO = await _context.SalesOrders
+                .Where(so => so.SalesOrderNo.Contains("YL/SO/") && so.SalesOrderNo.EndsWith($"/{yearShort}"))
+                .OrderByDescending(so => so.CreatedAt)
+                .Select(so => so.SalesOrderNo)
+                .FirstOrDefaultAsync();
+
+            int nextNumber = 1;
+
+            if (!string.IsNullOrEmpty(lastSO))
+            {
+                var parts = lastSO.Split('/');
+                if (parts.Length >= 3 && int.TryParse(parts[2], out int lastNumber))
+                {
+                    nextNumber = lastNumber + 1;
+                }
+            }
+
+            return $"YL/SO/{nextNumber}/{yearShort}";
         }
     }
 }

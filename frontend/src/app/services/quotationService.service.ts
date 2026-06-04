@@ -102,13 +102,37 @@ export class QuotationService {
       .pipe(retry(1), catchError(this.handleError('ConvertToInvoice')));
   }
 
-  ConvertToPO(id: string): Observable<{ message: string; poNo: string }> {
+  ConvertToSalesOrder(
+    quotationId: string,
+    clientPONumber?: string,
+    clientPODate?: string,
+    clientPOAttachment?: File,
+    remarks?: string,
+  ): Observable<{
+    message: string;
+    salesOrderId: string;
+    salesOrderNo: string;
+  }> {
+    const formData = new FormData();
+
+    if (clientPONumber) formData.append('ClientPONumber', clientPONumber);
+    if (clientPODate) formData.append('ClientPODate', clientPODate);
+    if (remarks) formData.append('Remarks', remarks);
+    if (clientPOAttachment) {
+      formData.append(
+        'ClientPOAttachment',
+        clientPOAttachment,
+        clientPOAttachment.name,
+      );
+    }
+
     return this.http
       .post<{
         message: string;
-        poNo: string;
-      }>(`${this.url}/ConvertToPO/${id}`, {})
-      .pipe(retry(1), catchError(this.handleError('ConvertToPO')));
+        salesOrderId: string;
+        salesOrderNo: string;
+      }>(`${this.url}/ConvertFromQuotation/${quotationId}`, formData)
+      .pipe(retry(1), catchError(this.handleError('ConvertToSalesOrder')));
   }
 
   GetDashboardCount(): Observable<{

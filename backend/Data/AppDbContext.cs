@@ -31,11 +31,16 @@ namespace YLWorks.Data
         public DbSet<DeliveryOrder> DeliveryOrders { get; set; }
         public DbSet<DeliveryOrderItem> DeliveryOrderItems { get; set; }
         public DbSet<DeliveryOrderStatusHistory> DeliveryOrderStatusHistories { get; set; }
-        public DbSet<DeliveryOrderProofImage> DeliveryOrderProofImages { get; set; }
+        public DbSet<DORMAProofImage> DORMAProofImages { get; set; }
+        public DbSet<DORMAStatusHistory> DORMAStatusHistories { get; set; }
 
         public DbSet<DeliveryOrderRMA> DeliveryOrderRMAs { get; set; }
-        public DbSet<RMAItem> RMAItems { get; set; }
-        public DbSet<RMAProofImage> RMAProofImages { get; set; }
+        public DbSet<DORMAItem> DORMAItems { get; set; }
+        public DbSet<DORMAProofImage> DOProofImages { get; set; }
+
+        public DbSet<PurchaseOrderRMA> PurchaseOrderRMAs { get; set; }
+        public DbSet<PORMAItem> PORMAItems { get; set; }
+        public DbSet<PORMAProofImage> PORMAProofImages { get; set; }
 
         public DbSet<SectionInventory> SectionInventories { get; set; }
         public DbSet<CategoryInventory> CategoryInventories { get; set; }
@@ -66,6 +71,9 @@ namespace YLWorks.Data
         // =======================
         // INVENTORY / MATERIAL
         // =======================
+        public DbSet<GoodsReceiving> GoodsReceivings { get; set; }
+        public DbSet<GoodsReceivingItem> GoodsReceivingItems { get; set; }
+
         public DbSet<MaterialRequest> MaterialRequests { get; set; }
         public DbSet<MaterialItem> MaterialItems { get; set; }
         public DbSet<MaterialRequestStatusHistory> MaterialRequestStatusHistories { get; set; }
@@ -198,7 +206,7 @@ namespace YLWorks.Data
                 entity.Property(e => e.QuantityDelivered).HasColumnType("decimal(18,2)");
             });
 
-            modelBuilder.Entity<RMAItem>(entity =>
+            modelBuilder.Entity<DORMAItem>(entity =>
             {
                 entity.HasKey(e => e.Id);
 

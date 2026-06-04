@@ -27,11 +27,16 @@ import {
   GridifyQueryExtend,
   PagingContent,
 } from '../../../shared/helpers/helpers';
-import { QuotationDto } from '../../../models/Quotation';
+import {
+  QuotationDto,
+  QuotationStatusHistory,
+} from '../../../models/Quotation';
 import { UserService } from '../../../services/userService.service';
 import { TimelineModule } from 'primeng/timeline';
 import { HasPermissionDirective } from '../../../common/directives/hasPermission.directive';
 import { PermissionService } from '../../../services/permissionService';
+import { DatePickerModule } from 'primeng/datepicker';
+import { DrawerModule } from 'primeng/drawer';
 
 @Component({
   selector: 'app-quotation',
@@ -47,6 +52,8 @@ import { PermissionService } from '../../../services/permissionService';
     SelectModule,
     TimelineModule,
     HasPermissionDirective,
+    DatePickerModule,
+    DrawerModule,
   ],
   template: `<div class="w-full min-h-[92.9vh] flex flex-col p-5">
       <div class="flex flex-row items-center gap-1 text-gray-500 tracking-wide">
@@ -300,7 +307,329 @@ import { PermissionService } from '../../../services/permissionService';
       [model]="menuItems"
       [popup]="true"
       [style]="{ transform: 'translate(20px, 8px)' }"
-    ></p-menu>`,
+    ></p-menu>
+
+    <p-dialog
+      header="Convert Quotation to Sales Order"
+      [(visible)]="displayConvertSODialog"
+      [modal]="true"
+      [style]="{ width: '450px' }"
+      [draggable]="false"
+      [resizable]="false"
+      (onHide)="resetConvertForm()"
+    >
+      <div class="flex flex-col gap-4 py-2 text-sm text-gray-700 tracking-wide">
+        <div class="flex flex-col gap-1">
+          <label class="font-semibold text-gray-600"
+            >Client PO Number <span class="text-red-500">*</span></label
+          >
+          <input
+            type="text"
+            pInputText
+            [(ngModel)]="soForm.clientPONumber"
+            placeholder="e.g., PO-12345"
+            class="w-full"
+          />
+        </div>
+
+        <div class="flex flex-col gap-1">
+          <label class="font-semibold text-gray-600">PO Received Date</label>
+
+          <p-datepicker
+            [(ngModel)]="soForm.clientPODate"
+            appendTo="body"
+            [showIcon]="true"
+            dateFormat="dd/mm/yy"
+            inputStyleClass="w-full"
+            styleClass="w-full"
+          >
+          </p-datepicker>
+        </div>
+
+        <div class="flex flex-col gap-1">
+          <label class="font-semibold text-gray-600">Remarks</label>
+          <input
+            type="text"
+            pInputText
+            [(ngModel)]="soForm.remarks"
+            placeholder="Optional notes..."
+            class="w-full"
+          />
+        </div>
+
+        <div class="flex flex-col gap-1">
+          <label class="font-semibold text-gray-600"
+            >PO Attachment File <span class="text-red-500">*</span></label
+          >
+          <div
+            class="flex items-center justify-between gap-2 border border-dashed border-gray-300 rounded p-3 bg-gray-50"
+          >
+            <input
+              type="file"
+              id="poFile"
+              (change)="onFileSelected($event)"
+              accept=".pdf,.png,.jpg,.jpeg"
+              class="hidden"
+              #fileInput
+            />
+            <div class="flex flex-col truncate max-w-[250px]">
+              <span
+                *ngIf="soForm.clientPOAttachment"
+                (click)="downloadLocalFile(soForm.clientPOAttachment)"
+                class="text-xs text-blue-600 hover:text-blue-800 font-medium underline cursor-pointer truncate flex items-center gap-1"
+              >
+                <i class="pi pi-download text-[10px]"></i>
+                {{ soForm.clientPOAttachment.name }}
+              </span>
+              <span
+                *ngIf="!soForm.clientPOAttachment"
+                class="text-xs text-gray-500 font-medium truncate"
+                >No file chosen</span
+              >
+            </div>
+            <p-button
+              label="Choose File"
+              size="small"
+              icon="pi pi-upload"
+              severity="secondary"
+              (click)="fileInput.click()"
+            ></p-button>
+          </div>
+        </div>
+      </div>
+
+      <ng-template #footer>
+        <div class="flex justify-end gap-2 mt-2">
+          <p-button
+            label="Cancel"
+            severity="secondary"
+            styleClass="py-1.5!"
+            (click)="displayConvertSODialog = false"
+          ></p-button>
+          <p-button
+            label="Convert"
+            severity="success"
+            styleClass="py-1.5!"
+            [disabled]="!soForm.clientPONumber || !soForm.clientPOAttachment"
+            (click)="submitConvertToSO()"
+          ></p-button>
+        </div>
+      </ng-template>
+    </p-dialog>
+
+    <p-drawer
+      [(visible)]="displayDetailsDrawer"
+      position="right"
+      styleClass="w-[60%]!"
+      [modal]="true"
+      [showCloseIcon]="false"
+      (onHide)="selectedQuotation = null"
+      ><ng-template #header>
+        <div class="flex items-center gap-3 tracking-wide">
+          <span class="text-xl font-semibold text-gray-800"
+            >Quotation Details</span
+          >
+
+          <div
+            *ngIf="!loadingDetails && selectedQuotation"
+            class="rounded-full px-3 py-0.5 text-xs font-semibold uppercase tracking-wider"
+            [ngClass]="{
+              'bg-blue-100 text-blue-600':
+                selectedQuotation.status === 'Reviewed' ||
+                selectedQuotation.status === 'Sent' ||
+                selectedQuotation.status === 'Approved',
+              'bg-orange-100 text-orange-600':
+                selectedQuotation.status === 'Draft',
+              'bg-green-100 text-green-600':
+                selectedQuotation.status === 'Accepted',
+              'bg-red-100 text-red-600':
+                selectedQuotation.status === 'Rejected' ||
+                selectedQuotation.status === 'Cancelled',
+            }"
+          >
+            {{ selectedQuotation.status }}
+          </div>
+        </div>
+      </ng-template>
+      <div
+        *ngIf="loadingDetails"
+        class="flex flex-col items-center justify-center py-8 gap-2 text-gray-500"
+      >
+        <i class="pi pi-spin pi-spinner text-2xl"></i>
+        <span>Loading detailed items...</span>
+      </div>
+
+      <div
+        *ngIf="!loadingDetails && selectedQuotation"
+        class="flex flex-col gap-5 tracking-wide text-gray-700"
+      >
+        <div
+          class="bg-gray-50 border border-gray-100 rounded-lg p-4 flex flex-col gap-1.5"
+        >
+          <div class="flex justify-between items-center">
+            <span class="text-sm font-bold text-gray-400 uppercase"
+              >Quotation No</span
+            >
+            <span class="font-semibold text-gray-800">{{
+              selectedQuotation.quotationNo
+            }}</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-sm font-bold text-gray-400 uppercase"
+              >Subject</span
+            >
+            <span class="text-gray-600 truncate max-w-[600px] font-medium">{{
+              selectedQuotation.subject || '-'
+            }}</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-sm font-bold text-gray-400 uppercase"
+              >Project Code</span
+            >
+            <span class="text-gray-600 font-mono">{{
+              selectedQuotation.projectCode || '-'
+            }}</span>
+          </div>
+        </div>
+
+        <div>
+          <h3
+            class="text-sm font-bold text-gray-400 uppercase tracking-wider mb-2"
+          >
+            Terms & Conditions
+          </h3>
+          <div
+            class="grid grid-cols-2 gap-3 bg-white border border-gray-200 rounded-lg p-4"
+          >
+            <div>
+              <label class="text-sm text-gray-400 block">Payment Terms</label>
+              <span class="font-medium text-gray-700">{{
+                selectedQuotation.paymentTerms || '-'
+              }}</span>
+            </div>
+            <div>
+              <label class="text-sm text-gray-400 block">Validity period</label>
+              <span class="font-medium text-gray-700">{{
+                selectedQuotation.validityDays
+                  ? selectedQuotation.validityDays +
+                    ' Days (with effect from the date of this quotation)'
+                  : '-'
+              }}</span>
+            </div>
+            <div class="col-span-2 border-t border-gray-100 pt-2">
+              <label class="text-sm text-gray-400 block"
+                >Delivery Timeline</label
+              >
+              <span class="font-medium text-gray-700">{{
+                selectedQuotation.deliveryTimeline || '-'
+              }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <h3
+            class="text-sm font-bold text-gray-400 uppercase tracking-wider mb-2"
+          >
+            Line Summary
+          </h3>
+          <div
+            class="border border-gray-200 rounded-lg overflow-hidden bg-white"
+          >
+            <p-table
+              class="w-full text-left border-collapse"
+              [value]="selectedQuotation.quotationItems || []"
+            >
+              <ng-template #header>
+                <tr
+                  class="bg-gray-50 border-b border-gray-200 text-sm font-semibold text-gray-500"
+                >
+                  <th class="p-2.5 bg-gray-100!">Item Description</th>
+                  <th class="p-2.5 text-center! w-[15%] bg-gray-100!">Qty</th>
+                  <th class="p-2.5 text-right! w-[25%] bg-gray-100!">
+                    Unit Price
+                  </th>
+                  <th class="p-2.5 text-center! w-[25%] bg-gray-100!">Unit</th>
+
+                  <th class="p-2.5 text-right! w-[25%] bg-gray-100!">Total</th>
+                </tr>
+              </ng-template>
+              <ng-template #body let-item>
+                <tr>
+                  <td class="p-2.5 font-medium text-gray-700 text-sm">
+                    <div [innerHTML]="item.description"></div>
+                  </td>
+                  <td class="p-2.5 text-center! text-gray-600">
+                    {{ item.quantity }}
+                  </td>
+                  <td
+                    class="p-2.5 text-right! text-gray-600 font-mono text-base"
+                  >
+                    {{ item.unitPrice | currency: 'RM ' : 'symbol' : '1.2-2' }}
+                  </td>
+                  <td class="p-2.5 text-center! text-gray-600 text-sm">
+                    {{ item.unit }}
+                  </td>
+                  <td
+                    class="p-2.5 text-right! text-gray-600 font-mono text-base"
+                  >
+                    {{ item.totalPrice | currency: 'RM ' : 'symbol' : '1.2-2' }}
+                  </td>
+                </tr>
+                <tr *ngIf="!selectedQuotation.quotationItems?.length">
+                  <td
+                    colspan="100%"
+                    class="p-4 text-center! text-gray-400 italic"
+                  >
+                    No items found.
+                  </td>
+                </tr>
+              </ng-template>
+            </p-table>
+          </div>
+        </div>
+
+        <div
+          class="mt-2 border-t border-gray-200 pt-4 flex flex-col items-end gap-2 text-sm"
+        >
+          <div class="flex justify-between w-[220px] text-gray-500">
+            <span>Subtotal:</span>
+            <span class="font-mono text-base">{{
+              selectedQuotation.subTotal ?? 0
+                | currency: 'RM ' : 'symbol' : '1.2-2'
+            }}</span>
+          </div>
+          <div
+            *ngIf="selectedQuotation.discount"
+            class="flex justify-between w-[250px] text-red-500"
+          >
+            <span>Discount:</span>
+            <span class="font-mono text-base"
+              >-{{
+                selectedQuotation.discount ?? 0
+                  | currency: 'RM ' : 'symbol' : '1.2-2'
+              }}</span
+            >
+          </div>
+          <div class="flex justify-between w-[250px] text-gray-500">
+            <span>Tax Amount:</span>
+            <span class="font-mono text-base">{{
+              selectedQuotation.taxAmount ?? 0
+                | currency: 'RM ' : 'symbol' : '1.2-2'
+            }}</span>
+          </div>
+          <div
+            class="flex justify-between w-[250px] text-lg font-bold text-gray-800 border-t border-gray-100 pt-2"
+          >
+            <span>Total Amount:</span>
+            <span class="font-mono text-blue-600">{{
+              selectedQuotation.totalAmount
+                | currency: 'RM ' : 'symbol' : '1.2-2'
+            }}</span>
+          </div>
+        </div>
+      </div>
+    </p-drawer>`,
   styleUrl: './quotation.less',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -327,6 +656,10 @@ export class Quotation implements OnInit, OnDestroy {
   events: any[] = [];
 
   displayReviseByDialog: boolean = false;
+  displayConvertSODialog: boolean = false;
+  displayDetailsDrawer: boolean = false;
+  loadingDetails: boolean = false;
+
   selectedQuotation: any;
 
   currentUser = this.userService.currentUser;
@@ -338,6 +671,14 @@ export class Quotation implements OnInit, OnDestroy {
   timelineMap: { [key: string]: any[] } = {};
   permissions = this.permissionService.getModuleRights('QUOTATION');
 
+  soForm = {
+    quotationData: null as any,
+    clientPONumber: '',
+    clientPODate: '',
+    remarks: '',
+    clientPOAttachment: null as File | null,
+  };
+
   constructor() {
     this.Query.Page = 1;
     this.Query.PageSize = 10;
@@ -345,7 +686,7 @@ export class Quotation implements OnInit, OnDestroy {
     this.Query.OrderBy = 'CreatedAt desc';
     this.Query.Select = null;
     this.Query.Includes =
-      'Client,QuotationStatusHistories,QuotationStatusHistories.ActionUser';
+      'Client,QuotationStatusHistories,QuotationStatusHistories.ActionUser,QuotationItems,Project';
   }
 
   ngOnInit(): void {}
@@ -489,6 +830,12 @@ export class Quotation implements OnInit, OnDestroy {
       this.router.navigate(['/quotations/form'], {
         queryParams: { id: data.id },
       });
+    } else if (action === 'Convert') {
+      this.soForm.quotationData = data;
+      this.displayConvertSODialog = true;
+      this.cdr.markForCheck();
+    } else if (action === 'Download') {
+      this.quotationService.downloadPdf(data.id);
     }
   }
 
@@ -506,7 +853,6 @@ export class Quotation implements OnInit, OnDestroy {
 
     this.menuItems = [];
 
-    // ✅ UPDATE (Edit)
     if (rights.canUpdate && status === 'Draft') {
       this.menuItems.push({
         label: 'Edit',
@@ -515,7 +861,6 @@ export class Quotation implements OnInit, OnDestroy {
       });
     }
 
-    // ✅ STATUS FLOW
     if (rights.canUpdateStatus) {
       if (status === 'Draft') {
         this.menuItems.push({
@@ -536,23 +881,19 @@ export class Quotation implements OnInit, OnDestroy {
       if (status === 'Sent') {
         this.menuItems.push(
           {
-            label: 'Accepted',
-            icon: 'pi pi-check-circle',
-            command: () => this.updateQuotationStatus(quotation.id, 'Accepted'),
+            label: 'Convert to SO',
+            icon: 'pi pi-file',
+            command: () => this.ActionClick(quotation, 'Convert'),
           },
           {
             label: 'Rejected',
-            icon: 'pi pi-times',
+            icon: 'pi pi-times-circle',
             command: () => this.updateQuotationStatus(quotation.id, 'Rejected'),
           },
         );
       }
 
-      if (
-        status !== 'Accepted' &&
-        status !== 'Rejected' &&
-        status !== 'Cancelled'
-      ) {
+      if (status === 'Reviewed') {
         this.menuItems.push({
           label: 'Cancel',
           icon: 'pi pi-times-circle',
@@ -561,8 +902,7 @@ export class Quotation implements OnInit, OnDestroy {
       }
     }
 
-    // ✅ DELETE (you didn’t implement before)
-    if (rights.canDelete && status !== 'Cancelled') {
+    if (rights.canDelete && status === 'Draft') {
       this.menuItems.push({
         label: 'Delete',
         icon: 'pi pi-trash',
@@ -570,26 +910,40 @@ export class Quotation implements OnInit, OnDestroy {
       });
     }
 
-    // ✅ EXTRA ACTIONS
-    if (rights.canUpdate && status === 'Accepted') {
-      this.menuItems.push({
-        label: 'Convert to PO',
-        icon: 'pi pi-file',
-        command: () => this.ActionClick(quotation, 'Convert'),
-      });
-    }
-
     if (rights.canRead && status === 'Accepted') {
+      this.menuItems.push(
+        {
+          label: 'View Details',
+          icon: 'pi pi-eye',
+          command: () => this.openDetailsDrawer(quotation),
+        },
+        {
+          label: 'Download File',
+          icon: 'pi pi-file',
+          command: () => this.ActionClick(quotation, 'Download'),
+        },
+      );
+    } else if (rights.canRead && status === 'Rejected') {
       this.menuItems.push({
-        label: 'Download File',
-        icon: 'pi pi-file',
-        command: () => this.ActionClick(quotation, 'Download'),
+        label: 'View Details',
+        icon: 'pi pi-eye',
+        command: () => this.openDetailsDrawer(quotation),
       });
     }
 
     if (this.menuItems.length > 0) {
       menu.toggle(event);
     }
+  }
+
+  openDetailsDrawer(data: QuotationDto) {
+    this.displayDetailsDrawer = true;
+    this.loadingDetails = true;
+    setTimeout(() => {
+      this.selectedQuotation = data;
+      this.loadingDetails = false;
+    }, 100);
+    this.cdr.markForCheck();
   }
 
   updateQuotationStatus(id: string, newStatus: string) {
@@ -700,13 +1054,145 @@ export class Quotation implements OnInit, OnDestroy {
     });
   }
 
-  convert(type: 'Invoice' | 'PO', data: any) {
+  onFileSelected(event: any) {
+    const fileList: FileList = event.target.files;
+    if (fileList.length > 0) {
+      this.soForm.clientPOAttachment = fileList[0];
+    }
+  }
+
+  submitConvertToSO() {
+    if (
+      !this.soForm.clientPONumber ||
+      !this.soForm.clientPOAttachment ||
+      !this.soForm.quotationData
+    ) {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Validation Error',
+        detail: 'Please provide a PO Number and upload an attachment file.',
+      });
+      return;
+    }
+
+    this.loadingService.start();
+    this.displayConvertSODialog = false;
+
+    const quotationId = this.soForm.quotationData.id;
+
+    let formattedPODate: string | undefined = undefined;
+    if (this.soForm.clientPODate) {
+      const dateObj = new Date(this.soForm.clientPODate);
+      if (!isNaN(dateObj.getTime())) {
+        formattedPODate = dateObj.toISOString().split('T')[0];
+      }
+    }
+
+    this.quotationService
+      .ConvertToSalesOrder(
+        quotationId,
+        this.soForm.clientPONumber,
+        formattedPODate || undefined,
+        this.soForm.clientPOAttachment || undefined,
+        this.soForm.remarks || undefined,
+      )
+      .pipe(takeUntil(this.ngUnsubscribe))
+      .subscribe({
+        next: (res: any) => {
+          this.loadingService.stop();
+          this.messageService.add({
+            severity: 'success',
+            summary: 'Converted Successfully',
+            detail: `Sales Order generated: ${res.salesOrderNo}`,
+          });
+
+          const currentPaging = this.PagingSignal();
+
+          const newHistory: QuotationStatusHistory = {
+            id: res.id ?? crypto.randomUUID(),
+            status: 'Accepted',
+            actionAt: new Date(),
+            remarks: `Converted into Sales Order ${res.salesOrderNo}`,
+            actionUser: this.currentUser
+              ? {
+                  id: this.currentUser.userId,
+                  fullName: this.currentUser.fullName,
+                }
+              : undefined,
+            actionUserId: this.currentUser?.userId || '',
+            quotationId: quotationId,
+
+            quotation: null as any,
+          };
+
+          const updatedData: QuotationDto[] = currentPaging.data.map((q) => {
+            if (q.id !== quotationId) return q;
+
+            const updatedHistories: QuotationStatusHistory[] = [
+              ...(q.quotationStatusHistories || []),
+              newHistory,
+            ];
+
+            const updatedQuotation: QuotationDto = {
+              ...q,
+              status: 'Accepted',
+              quotationStatusHistories: updatedHistories,
+            };
+
+            this.timelineMap = {
+              ...this.timelineMap,
+              [quotationId]: this.buildTimeline(updatedQuotation),
+            };
+
+            return updatedQuotation;
+          });
+
+          this.PagingSignal.set({
+            ...currentPaging,
+            data: updatedData,
+          });
+          this.resetConvertForm();
+          this.cdr.markForCheck();
+        },
+        error: () => {
+          this.loadingService.stop();
+        },
+      });
+  }
+
+  downloadLocalFile(file: File | null) {
+    if (!file) return;
+
+    const objectUrl = URL.createObjectURL(file);
+
+    const tempAnchor = document.createElement('a');
+    tempAnchor.href = objectUrl;
+    tempAnchor.download = file.name;
+
+    document.body.appendChild(tempAnchor);
+    tempAnchor.click();
+
+    document.body.removeChild(tempAnchor);
+    URL.revokeObjectURL(objectUrl);
+  }
+
+  resetConvertForm() {
+    this.soForm = {
+      quotationData: null,
+      clientPONumber: '',
+      clientPODate: '',
+      remarks: '',
+      clientPOAttachment: null,
+    };
+  }
+
+  convert(type: 'Invoice' | 'SO', data: any) {
     this.loadingService.start();
 
     const action$: Observable<any> =
       type === 'Invoice'
         ? this.quotationService.ConvertToInvoice(data.id)
-        : this.quotationService.ConvertToPO(data.id);
+        : this.quotationService.ConvertToSalesOrder(data.id);
 
     action$.subscribe({
       next: (res: any) => {
@@ -714,7 +1200,7 @@ export class Quotation implements OnInit, OnDestroy {
         this.messageService.add({
           severity: 'success',
           summary: 'Converted Successfully',
-          detail: `${type} generated: ${res.invoiceNo || res.poNo}`,
+          detail: `${type} generated: ${res.invoiceNo || res.salesOrderNo}`,
         });
       },
       error: () => this.loadingService.stop(),

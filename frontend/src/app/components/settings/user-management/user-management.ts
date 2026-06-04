@@ -494,6 +494,7 @@ import { DepartmentService } from '../../../services/departmentService';
                 { label: 'Executive', value: 'Executive' },
                 { label: 'HOD', value: 'HOD' },
                 { label: 'Support', value: 'Support' },
+                { label: 'SuperAdmin', value: 'SuperAdmin' },
               ]"
               formControlName="systemRole"
             ></p-select>
@@ -719,10 +720,7 @@ export class UserManagement implements OnInit, OnDestroy {
           null,
           this.isUpdate ? [] : [Validators.required],
         ),
-        jobTitle: new FormControl<string | null>(
-          data?.jobTitle ?? null,
-          Validators.required,
-        ),
+        jobTitle: new FormControl<string | null>(data?.jobTitle ?? null),
         joinedDate: new FormControl<Date | null>(
           data?.joinedDate ? new Date(data.joinedDate) : null,
         ),

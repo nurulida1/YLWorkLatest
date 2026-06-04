@@ -83,4 +83,11 @@
         public UserDto User { get; set; }
     }
 
+    public class ProjectDropdownDto
+    {
+        public Guid Id { get; set; }
+        public string ProjectCode { get; set; } = string.Empty;
+        public string ProjectTitle { get; set; } = string.Empty;
+    }
+
 }

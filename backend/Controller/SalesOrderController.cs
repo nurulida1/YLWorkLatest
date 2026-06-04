@@ -181,6 +181,9 @@ namespace YLWorks.Controller
                     data.SalesOrderNo,
                     data.SODate,
                     data.Status,
+                    data.SubTotal,
+                    data.Discount,
+                    data.TaxAmount,
                     data.TotalAmount,
                     data.ClientId,
                     data.CompanyId,
@@ -208,8 +211,9 @@ namespace YLWorks.Controller
                         i.Quantity,
                         i.UnitPrice,
                         i.Unit,
+                        i.Discount,
+                        i.TaxRate,
                         i.TotalPrice,
-                        i.Discount
                     })
                 };
 
@@ -307,10 +311,15 @@ namespace YLWorks.Controller
                     ClientPONumber = request.ClientPONumber,
                     ClientPODate = request.ClientPODate,
 
+                    SubTotal = request.SubTotal,
+                    Discount = request.Discount,
+                    TaxAmount = request.TaxAmount,
                     TotalAmount = request.TotalAmount,
                     Notes = request.Notes,
                     Remarks = request.Remarks,
-                    Terms = request.Terms,
+                    PaymentTerms = request.PaymentTerms,
+                    DeliveryTimeline = request.DeliveryTimeline,
+                    WarrantyTerms = request.WarrantyTerms,
                     ClientPOAttachment = filePath,
                     Status = "Draft",
                     CreatedById = Guid.Parse(userIdClaim),
@@ -330,7 +339,10 @@ namespace YLWorks.Controller
                     Quantity = x.Quantity,
                     Unit = x.Unit ?? "Unit",
                     UnitPrice = x.UnitPrice,
-                    TotalPrice = x.TotalPrice
+                    Discount = x.Discount,
+                    TaxRate = x.TaxRate,
+                    TotalPrice = x.TotalPrice,
+                    IncludeInDeliveryOrder = x.IncludeInDeliveryOrder
                 }).ToList() ?? new List<SalesOrderItem>();
 
                 var statusHistory = new SalesOrderStatusHistory
@@ -447,10 +459,15 @@ namespace YLWorks.Controller
                 so.ClientId = request.ClientId;
                 so.QuotationId = request.QuotationId;
                 so.ProjectId = request.ProjectId;
+                so.SubTotal = request.SubTotal;
+                so.Discount = request.Discount;
+                so.TaxAmount = request.TaxAmount;
                 so.TotalAmount = request.TotalAmount;
                 so.Notes = request.Notes;
                 so.Remarks = request.Remarks;
-                so.Terms = request.Terms;
+                so.PaymentTerms = request.PaymentTerms;
+                so.DeliveryTimeline = request.DeliveryTimeline;
+                so.WarrantyTerms = request.WarrantyTerms;
                 so.ClientPONumber = request.ClientPONumber;
                 so.ClientPODate = request.ClientPODate;
                 so.UpdatedAt = DateTimeHelper.Now();
@@ -479,7 +496,9 @@ namespace YLWorks.Controller
                         Unit = x.Unit,
                         UnitPrice = x.UnitPrice ?? 0,
                         Discount = x.Discount ?? 0,
-                        TotalPrice = x.TotalPrice ?? 0
+                        TaxRate = x.TaxRate ?? 0,
+                        TotalPrice = x.TotalPrice ?? 0,
+                        IncludeInDeliveryOrder = x.IncludeInDeliveryOrder,
                     })
                     .ToList() ?? new();
 
@@ -558,11 +577,16 @@ namespace YLWorks.Controller
                 {
                     Name = q.Company.Name
                 },
+                q.SubTotal,
+                q.TaxAmount,
+                q.Discount,
                 q.TotalAmount,
                 q.Remarks,
                 q.Notes,
                 q.Status,
-                q.Terms,
+                q.PaymentTerms,
+                q.DeliveryTimeline,
+                q.WarrantyTerms,
                 q.ClientPOAttachment,
                 q.ClientPONumber,
                 q.ClientPODate,
@@ -605,6 +629,8 @@ namespace YLWorks.Controller
                     x.Quantity,
                     x.Unit,
                     x.UnitPrice,
+                    x.Discount,
+                    x.TaxRate,
                     x.TotalPrice
                 })
             };
@@ -622,6 +648,7 @@ namespace YLWorks.Controller
                 Unit = req.Unit,
                 UnitPrice = req.UnitPrice,
                 Discount = req.Discount,
+                TaxRate = req.TaxRate,
                 TotalPrice = req.TotalPrice,
             };
 
@@ -631,11 +658,11 @@ namespace YLWorks.Controller
         [HttpPut("Approve")]
         public async Task<IActionResult> Approve([FromBody] UpdateSalesOrderStatusRequest request)
         {
-            if (request.Id == Guid.Empty)
-                return BadRequest(new { Error = "Invalid request." });
+            if (request == null || request.Id == Guid.Empty)
+                return BadRequest(new { Error = "Invalid request payload." });
 
             request.Status = "Confirmed";
-            request.Remarks ??= "SO approved";
+            request.Remarks = string.IsNullOrWhiteSpace(request.Remarks) ? "SO approved" : request.Remarks;
 
             return await UpdateStatusInternal(request);
         }
@@ -643,8 +670,8 @@ namespace YLWorks.Controller
         [HttpPut("Reject")]
         public async Task<IActionResult> Reject([FromBody] UpdateSalesOrderStatusRequest request)
         {
-            if (request.Id == Guid.Empty)
-                return BadRequest(new { Error = "Invalid request." });
+            if (request == null || request.Id == Guid.Empty)
+                return BadRequest(new { Error = "Invalid request payload." });
 
             if (string.IsNullOrWhiteSpace(request.Remarks))
                 return BadRequest(new { Error = "Rejection reason is required." });
@@ -656,55 +683,75 @@ namespace YLWorks.Controller
 
         private async Task<IActionResult> UpdateStatusInternal(UpdateSalesOrderStatusRequest request)
         {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(userIdClaim))
-                return Unauthorized(new { Error = "Invalid token." });
-
-            var actionUserId = Guid.Parse(userIdClaim);
-
-            var userName = await _context.Users
-                .Where(x => x.Id == actionUserId)
-                .Select(x => x.FullName ?? "System")
-                .FirstOrDefaultAsync();
-
-            var so = await _context.SalesOrders.FirstOrDefaultAsync(x => x.Id == request.Id);
-
-            if (so == null)
-                return NotFound(new { Error = "Sales Order not found." });
-
-            if (so.Status == "Confirmed" || so.Status == "Rejected")
-                return BadRequest(new { Error = "This SO is already finalized." });
-
-            so.Status = request.Status;
-
-            _context.SalesOrders.Update(so);
-
-            var history = new SalesOrderStatusHistory
+            try
             {
-                Id = Guid.NewGuid(),
-                SalesOrderId = request.Id,
-                Status = request.Status,
-                ActionUserId = actionUserId,
-                ActionAt = DateTimeHelper.Now(),
-                Remarks = request.Remarks ?? GenerateStatusRemark(request.Status, userName ?? "System")
-            };
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userIdClaim))
+                    return Unauthorized(new { Error = "Invalid token." });
 
-            _context.SalesOrderStatusHistories.Add(history);
+                var actionUserId = Guid.Parse(userIdClaim);
 
-            await _context.SaveChangesAsync();
+                var userName = await _context.Users
+                    .Where(x => x.Id == actionUserId)
+                    .Select(x => x.DisplayName ?? "System")
+                    .FirstOrDefaultAsync();
 
-            await _hub.Clients.All.SendAsync("SalesOrderStatusUpdated", new
+                var salesOrder = await _context.SalesOrders
+                    .Include(so => so.SalesOrderItems)
+                    .FirstOrDefaultAsync(so => so.Id == request.Id);
+
+                if (salesOrder == null)
+                    return NotFound(new { Error = "Sales Order not found." });
+
+                salesOrder.Status = request.Status;
+                salesOrder.Remarks = request.Remarks;
+                salesOrder.SubTotal = request.SubTotal;
+                salesOrder.Discount = request.Discount;
+                salesOrder.TaxAmount = request.TaxAmount;
+                salesOrder.TotalAmount = request.TotalAmount;
+                salesOrder.UpdatedAt = DateTime.UtcNow; 
+
+                if (request.Items != null && request.Items.Any())
+                {
+                    foreach (var itemDto in request.Items)
+                    {
+                        var existingItem = salesOrder.SalesOrderItems.FirstOrDefault(i => i.Id == itemDto.Id);
+                        if (existingItem != null)
+                        {
+                            existingItem.Quantity = itemDto.Quantity;
+                            existingItem.UnitPrice = itemDto.UnitPrice;
+                            existingItem.Discount = itemDto.Discount;
+                            existingItem.TaxRate = itemDto.TaxRate;
+                            existingItem.TotalPrice = itemDto.TotalPrice;
+                        }
+                    }
+                }
+
+
+                var history = new SalesOrderStatusHistory
+                {
+                    Id = Guid.NewGuid(),
+                    SalesOrderId = request.Id,
+                    Status = request.Status,
+                    ActionUserId = actionUserId,
+                    ActionAt = DateTimeHelper.Now(),
+                    Remarks = request.Remarks ?? GenerateStatusRemark(request.Status, userName ?? "System")
+                };
+
+                _context.SalesOrderStatusHistories.Add(history);
+
+                await _context.SaveChangesAsync();
+
+                return Ok(new { Message = $"Sales order status updated to {request.Status} successfully." });
+            }
+            catch (DbUpdateException ex)
             {
-                so.Id,
-                so.Status
-            });
-
-            return Ok(new
+                return StatusCode(500, new { Error = "A database error occurred while updating the order data." });
+            }
+            catch (Exception ex)
             {
-                so.Id,
-                so.Status,
-                Message = "Status updated successfully"
-            });
+                return StatusCode(500, new { Error = "An unexpected error occurred processing your validation routing." });
+            }
         }
 
         [HttpPut("UpdateStatus")]
@@ -726,7 +773,7 @@ namespace YLWorks.Controller
 
             var userName = await _context.Users
                 .Where(x => x.Id == actionUserId)
-                .Select(x => x.FullName ?? "System")
+                .Select(x => x.DisplayName ?? "System")
                 .FirstOrDefaultAsync();
 
             var so = await _context.SalesOrders.FirstOrDefaultAsync(x => x.Id == request.Id);
@@ -908,6 +955,8 @@ namespace YLWorks.Controller
                     Unit = i.Unit,
                     Quantity = i.Quantity,
                     UnitPrice = i.UnitPrice,
+                    TaxRate = i.TaxRate,
+                    Discount = i.Discount,
                     TotalPrice = i.TotalPrice,
 
                     Children = MapItems(
@@ -976,13 +1025,25 @@ namespace YLWorks.Controller
             await _context.SaveChangesAsync();
         }
 
-        [HttpPost("GenerateDO/{salesOrderId}")]
-        public async Task<IActionResult> GenerateDO(Guid salesOrderId)
+        [HttpPost("GenerateDO")]
+        public async Task<IActionResult> GenerateDO([FromBody] GenerateDORequest request)
         {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim))
+                return Unauthorized(new { Error = "Invalid token." });
+
+            var actionUserId = Guid.Parse(userIdClaim);
+
+            var userName = await _context.Users
+                .Where(x => x.Id == actionUserId)
+                .Select(x => x.DisplayName ?? "System")
+                .FirstOrDefaultAsync();
+
+
             var so = await _context.SalesOrders
                 .Include(x => x.SalesOrderItems)
                 .Include(x => x.DeliveryOrders)
-                .FirstOrDefaultAsync(x => x.Id == salesOrderId);
+                .FirstOrDefaultAsync(x => x.Id == request.SalesOrderId);
 
             if (so == null)
                 return NotFound(new { message = "Sales Order not found" });
@@ -990,19 +1051,22 @@ namespace YLWorks.Controller
             if (so.Status != "Confirmed" && so.Status != "InProgress")
                 return BadRequest(new { message = "SO must be confirmed first." });
 
+            var selectedItems = so.SalesOrderItems
+                .Where(x => request.SalesOrderItemIds.Contains(x.Id))
+                .ToList();
+
             var doEntity = new DeliveryOrder
             {
                 Id = Guid.NewGuid(),
                 DeliveryOrderNo = await GenerateDONo(),
                 SalesOrderId = so.Id,
-                ReferenceNo = so.SalesOrderNo,
                 SenderCompanyId = so.CompanyId,
                 ReceiverCompanyId = so.ClientId,
-                Type = "Dispatch",
+                PaymentTerms = so.PaymentTerms,
                 Status = "Draft"
             };
 
-            doEntity.DeliveryOrderItems = so.SalesOrderItems.Select(x => new DeliveryOrderItem
+            doEntity.DeliveryOrderItems = selectedItems.Select(x => new DeliveryOrderItem
             {
                 Id = Guid.NewGuid(),
                 DeliveryOrderId = doEntity.Id,
@@ -1015,19 +1079,39 @@ namespace YLWorks.Controller
 
             _context.DeliveryOrders.Add(doEntity);
 
+            so.Status = "InProgress";
+
+            var history = new DeliveryOrderStatusHistory
+            {
+                Id = Guid.NewGuid(),
+                DeliveryOrderId = doEntity.Id,
+                Status = "Draft",
+                ActionUserId = actionUserId,  
+                ActionAt = DateTimeHelper.Now(),
+                Remarks = $"DO Draft initialized from Sales Order {so.SalesOrderNo ?? ""}" 
+            };
+
+            _context.DeliveryOrderStatusHistories.Add(history);
+
             await _context.SaveChangesAsync();
 
-            await UpdateSalesOrderStatusFromDO(so.Id);
+            await UpdateSalesOrderStatusFromDO(so.Id, actionUserId);
 
             return Ok(new
             {
                 message = "Delivery Order created successfully",
-                deliveryOrder = doEntity
+                deliveryOrder = doEntity,
+                salesOrderStatus = so.Status
             });
         }
 
-        private async Task UpdateSalesOrderStatusFromDO(Guid salesOrderId)
+        private async Task UpdateSalesOrderStatusFromDO(Guid salesOrderId, Guid actionUserId)
         {
+            var userName = await _context.Users
+                .Where(x => x.Id == actionUserId)
+                .Select(x => x.DisplayName ?? "System")
+                .FirstOrDefaultAsync();
+
             var so = await _context.SalesOrders
                 .Include(x => x.SalesOrderItems)
                 .Include(x => x.DeliveryOrders)
@@ -1040,10 +1124,13 @@ namespace YLWorks.Controller
                 .Where(x => x.Quantity != null)
                 .Sum(x => x.Quantity ?? 0) ?? 0;
 
+
             var totalDelivered = so.DeliveryOrders?
                 .SelectMany(d => d.DeliveryOrderItems ?? new List<DeliveryOrderItem>())
                 .Where(x => x != null)
                 .Sum(x => x.QuantityDelivered ?? 0) ?? 0;
+
+            string oldStatus = so.Status;
 
             if (totalDelivered == 0)
             {
@@ -1056,6 +1143,21 @@ namespace YLWorks.Controller
             else
             {
                 so.Status = "Delivered";
+            }
+
+            if (oldStatus != so.Status)
+            {
+                var history = new SalesOrderStatusHistory
+                {
+                    Id = Guid.NewGuid(),
+                    SalesOrderId = so.Id,
+                    Status = so.Status,
+                    ActionUserId = actionUserId,
+                    ActionAt = DateTimeHelper.Now(),
+                    Remarks = $"Status updated to {so.Status} via Delivery Order processing by {userName ?? "System"}."
+                };
+
+                _context.SalesOrderStatusHistories.Add(history);
             }
 
             await _context.SaveChangesAsync();
@@ -1083,6 +1185,97 @@ namespace YLWorks.Controller
             }
 
             return $"YL/DO/{next}/{year}";
+        }
+
+        [HttpPost("GenerateBulkDOs")]
+        public async Task<IActionResult> GenerateBulkDOs([FromBody] BulkDORequest request)
+        {
+            if (request?.DeliveryOrders == null || !request.DeliveryOrders.Any())
+                return BadRequest(new { message = "No delivery schedules provided." });
+
+            var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            Guid actionUserId = string.IsNullOrEmpty(userIdClaim) ? Guid.Empty : Guid.Parse(userIdClaim);
+
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                var primarySalesOrderId = request.DeliveryOrders.First().SalesOrderId;
+
+                var so = await _context.SalesOrders
+                    .Include(x => x.SalesOrderItems)
+                    .FirstOrDefaultAsync(x => x.Id == primarySalesOrderId);
+
+                if (so == null)
+                    return NotFound(new { message = "Sales Order not found." });
+
+                foreach (var deliveryOrder in request.DeliveryOrders)
+                {
+                    var doEntity = new DeliveryOrder
+                    {
+                        Id = Guid.NewGuid(),
+                        DeliveryOrderNo = await GenerateDONo(),
+                        SalesOrderId = so.Id,
+                        SenderCompanyId = so.CompanyId,
+                        ReceiverCompanyId = so.ClientId,
+                        PaymentTerms = so.PaymentTerms,
+                        DeliveryMethod = deliveryOrder.DeliveryMethod,
+                        EstimatedDeliveryDate = deliveryOrder.EstimatedDeliveryDate,
+                        Status = "Draft",
+                        CreatedAt = DateTime.UtcNow
+                    };
+
+                    foreach (var itemInput in deliveryOrder.Items)
+                    {
+                        var originalSoItem = so.SalesOrderItems.FirstOrDefault(x => x.Id == itemInput.SalesOrderItemId);
+                        if (originalSoItem == null) continue;
+
+                        var doItem = new DeliveryOrderItem
+                        {
+                            Id = Guid.NewGuid(),
+                            DeliveryOrderId = doEntity.Id,
+                            Description = originalSoItem.Description,
+                            QuantityOrdered = itemInput.QuantityToDeliver,
+                            QuantityDelivered = 0,                        
+                            Unit = originalSoItem.Unit,
+                            Remarks = $"Scheduled batch via delivery matrix allocation."
+                        };
+
+                        doEntity.DeliveryOrderItems.Add(doItem);
+                    }
+
+                    _context.DeliveryOrders.Add(doEntity);
+
+                    var history = new DeliveryOrderStatusHistory
+                    {
+                        Id = Guid.NewGuid(),
+                        DeliveryOrderId = doEntity.Id,
+                        Status = "Draft",
+                        ActionUserId = actionUserId != Guid.Empty ? actionUserId : null,
+                        ActionAt = DateTime.UtcNow,
+                        Remarks = $"Scheduled bulk allocation generated. Target Delivery: {deliveryOrder.EstimatedDeliveryDate:dd/MM/yyyy} via {deliveryOrder.DeliveryMethod}."
+                    };
+
+                    _context.DeliveryOrderStatusHistories.Add(history);
+                }
+
+                so.Status = "InProgress";
+
+                await _context.SaveChangesAsync();
+
+                if (actionUserId != Guid.Empty)
+                {
+                    await UpdateSalesOrderStatusFromDO(so.Id, actionUserId);
+                }
+
+                await transaction.CommitAsync();
+
+                return Ok(new { message = $"{request.DeliveryOrders.Count} Delivery Orders scheduled and generated successfully." });
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                return StatusCode(500, new { error = "An internal processing error occurred while writing bulk shipments to the database." });
+            }
         }
     }
 }

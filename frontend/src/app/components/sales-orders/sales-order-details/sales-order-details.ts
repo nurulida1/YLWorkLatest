@@ -17,6 +17,8 @@ import { Subject, takeUntil } from 'rxjs';
 import { SalesOrderDto } from '../../../models/SalesOrder';
 import { TableModule } from 'primeng/table';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
+import { MessageService } from 'primeng/api';
+import { InputNumberModule } from 'primeng/inputnumber';
 
 @Component({
   selector: 'app-sales-order-details',
@@ -28,46 +30,51 @@ import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
     TextareaModule,
     RouterLink,
     TableModule,
+    InputNumberModule,
   ],
   template: `<div
-    class="relative w-full flex flex-col gap-3 p-5 pb-24 min-h-[93.9vh]"
+    class="relative w-full flex flex-col gap-4 p-5 pb-24 min-h-[93.9vh] bg-slate-50/50"
   >
-    <div class="flex flex-row items-center gap-1 text-gray-500 tracking-wide">
+    <div
+      class="flex flex-row items-center gap-1.5 text-sm text-gray-500 tracking-wide"
+    >
       <div
         [routerLink]="'/dashboard'"
-        class="cursor-pointer hover:text-gray-600"
+        class="cursor-pointer hover:text-indigo-600 transition-colors"
       >
         Dashboard
       </div>
-      /
+      <span class="text-gray-300">/</span>
       <div
         [routerLink]="'/sales-order'"
-        class="cursor-pointer hover:text-gray-600"
+        class="cursor-pointer hover:text-indigo-600 transition-colors"
       >
         Sales Order
       </div>
-      /
-      <div class="text-gray-700 font-semibold">
+      <span class="text-gray-300">/</span>
+      <div class="text-gray-800 font-semibold">
         {{ soData()?.salesOrderNo }}
       </div>
     </div>
 
     <div
-      class="p-4 bg-white w-full border border-gray-200 shadow-sm rounded flex flex-row justify-between items-center"
+      class="p-4 bg-white w-full border border-gray-200 shadow-xs rounded-xl flex flex-row justify-between items-center"
     >
       <div class="flex flex-col gap-1">
-        <b class="text-xl text-gray-800">Sales Order Verification</b>
-        <div class="flex flex-row items-center gap-2 text-sm">
-          <div class="font-semibold text-gray-600">
-            {{ soData()?.salesOrderNo }}
-          </div>
-          <i class="pi pi-circle-fill text-gray-300 text-[4px]!"></i>
+        <h1 class="text-xl font-bold text-gray-900">
+          Sales Order Verification
+        </h1>
+        <div class="flex flex-row items-center gap-2">
+          <span class="font-mono font-semibold text-gray-500">{{
+            soData()?.salesOrderNo
+          }}</span>
+          <i class="pi pi-circle-fill text-gray-300 text-[6px]!"></i>
           <span
-            class="px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wider"
+            class="px-4 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider"
             [ngClass]="{
-              'bg-amber-100 text-amber-800 border border-amber-200':
+              'bg-amber-100 text-amber-700 border border-amber-200':
                 soData()?.status === 'Draft',
-              'bg-green-100 text-green-800 border border-green-200':
+              'bg-emerald-100 text-emerald-700 border border-emerald-200':
                 soData()?.status === 'Confirmed',
             }"
           >
@@ -75,193 +82,334 @@ import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
           </span>
         </div>
       </div>
-      <div class="text-right flex flex-col gap-1">
-        <div class="text-xs text-gray-500 font-medium uppercase tracking-wider">
-          Total Amount
-        </div>
-        <div class="text-xl font-bold text-gray-900">
-          {{ soData()?.totalAmount | currency: 'MYR' : 'symbol' : '1.2-2' }}
+
+      <div class="text-right flex flex-col gap-0.5">
+        <span
+          class="text-[10px] text-gray-400 font-bold uppercase tracking-wider"
+          >Total Amount</span
+        >
+        <div class="text-xl font-mono font-bold text-indigo-900">
+          {{ soData()?.totalAmount | currency: 'RM  ' : 'symbol' : '1.2-2' }}
         </div>
       </div>
     </div>
 
-    <div class="grid grid-cols-12 gap-4 items-start">
+    <div class="grid grid-cols-12 gap-5 items-start">
       <div
-        class="col-span-12 lg:col-span-6 flex flex-col shadow-sm rounded overflow-hidden border border-gray-200 bg-white"
+        class="col-span-12 lg:col-span-6 flex flex-col shadow-2xs rounded-xl border border-gray-200 bg-white overflow-hidden"
       >
         <div
-          class="text-base bg-gray-50 px-4 py-3 font-semibold text-gray-700 border-b border-gray-200 flex justify-between items-center"
+          class="bg-gray-50 px-4 py-3 font-bold text-gray-700 border-b border-gray-200 flex justify-between items-center"
         >
-          <span>Sales Order Items</span>
+          <span class="flex items-center gap-1.5">
+            <i class="pi pi-list text-indigo-500"></i> Sales Order Items
+          </span>
           <span
-            class="text-sm font-semibold text-gray-500 bg-gray-200 px-2 py-0.5 rounded"
+            class="text-sm font-mono font-semibold text-indigo-600 bg-indigo-50 border border-indigo-100 px-2.5 py-0.5 rounded-lg"
           >
-            Quotation: {{ soData()?.quotation?.quotationNo }}
+            Quote Ref:
+            {{ soData()?.quotation?.quotationNo || 'Direct Assignment' }}
           </span>
         </div>
 
-        <div class="p-4 grid grid-cols-12 gap-4">
-          <div class="col-span-6 flex flex-col gap-1.5">
-            <label
-              class="text-sm font-semibold text-gray-600 uppercase tracking-wide"
-              >PO Number Reference</label
-            >
-            <div
-              class="border p-2 rounded w-full text-gray-700 font-medium bg-gray-50 border-gray-200"
-            >
-              {{ soData()?.clientPONumber || 'N/A' }}
+        <div class="p-4 flex flex-col gap-4">
+          <div class="grid grid-cols-12 gap-3">
+            <div class="col-span-6 flex flex-col gap-1.5">
+              <label
+                class="text-sm font-bold text-gray-400 uppercase tracking-wider"
+                >PO Number Reference</label
+              >
+              <div
+                class="border px-3 py-2 rounded-lg text-lg text-gray-700 font-mono font-semibold bg-gray-50 border-gray-200/80"
+              >
+                {{ soData()?.clientPONumber || 'None Provided' }}
+              </div>
             </div>
-          </div>
-          <div class="col-span-6 flex flex-col gap-1.5">
-            <label
-              class="text-sm font-semibold text-gray-600 uppercase tracking-wide"
-              >PO Date</label
-            >
-            <div
-              class="border p-2 rounded w-full text-gray-700 font-medium bg-gray-50 border-gray-200"
-            >
-              {{ soData()?.clientPODate | date: 'dd/MM/yyyy' }}
+            <div class="col-span-6 flex flex-col gap-1.5">
+              <label
+                class="text-sm font-bold text-gray-400 uppercase tracking-wider"
+                >PO Received Date</label
+              >
+              <div
+                class="border px-3 py-2 rounded-lg text-base text-gray-700 font-semibold bg-gray-50 border-gray-200/80"
+              >
+                {{
+                  soData()?.clientPODate
+                    ? (soData()?.clientPODate | date: 'dd/MM/yyyy')
+                    : '—'
+                }}
+              </div>
             </div>
           </div>
 
-          <div class="col-span-12 mt-2">
+          <div class="w-full mt-2">
             <p-table
-              styleClass="p-datatable-sm"
+              styleClass="p-datatable-sm p-datatable-gridlines"
               [value]="soData()?.salesOrderItems || []"
-              [responsive]="true"
+              [responsiveLayout]="'scroll'"
               [showGridlines]="true"
             >
               <ng-template #header>
-                <tr class="text-sm uppercase border-b border-gray-200">
-                  <th
-                    class="w-12 text-center! text-gray-600 font-bold p-2 bg-gray-100!"
-                  >
+                <tr
+                  class="text-xs uppercase bg-gray-50 text-gray-500 tracking-wider"
+                >
+                  <th class="w-12 text-center p-2 bg-gray-100! font-bold">
                     No
                   </th>
-                  <th
-                    class="text-left! text-gray-600 font-bold p-2 bg-gray-100!"
-                  >
+                  <th class="text-left p-2 font-bold bg-gray-100!">
                     Item Description
                   </th>
-                  <th
-                    class="w-20 text-center! text-gray-600 font-bold p-2 bg-gray-100!"
-                  >
+                  <th class="w-20 text-center p-2 bg-gray-100! font-bold">
                     Qty
                   </th>
-                  <th
-                    class="w-28 text-right! text-gray-600 font-bold p-2 bg-gray-100!"
-                  >
-                    Unit Price (RM)
+                  <th class="w-28 text-right p-2 bg-gray-100! font-bold">
+                    Unit Price
                   </th>
-                  <th
-                    class="w-28 text-right! text-gray-600 font-bold p-2 bg-gray-100!"
-                  >
+                  <th class="w-24 text-right p-2 bg-gray-100! font-bold">
+                    Disc (%)
+                  </th>
+                  <th class="w-20 text-center p-2 bg-gray-100! font-bold">
+                    Tax (%)
+                  </th>
+                  <th class="w-28 text-right p-2 bg-gray-100! font-bold">
                     Total (RM)
                   </th>
                 </tr>
               </ng-template>
+
               <ng-template #body let-item let-rowIndex="rowIndex">
                 <ng-container *ngIf="item.isGroup; else normalRow">
-                  <tr class="bg-gray-100 font-semibold text-gray-800 border-b">
-                    <td class="text-center p-2">
+                  <tr
+                    class="bg-slate-50 font-bold text-gray-800 border-b border-gray-200 text-sm"
+                  >
+                    <td class="text-center! p-2.5 font-mono text-gray-400">
                       {{ rowIndex + 1 }}
                     </td>
-
-                    <td colspan="4" class="p-2">
-                      📦 {{ item.description || item.item }}
+                    <td
+                      colspan="6"
+                      class="p-2.5 pl-3 text-indigo-950 font-bold"
+                    >
+                      📁 {{ item.description || item.item }}
                     </td>
                   </tr>
                 </ng-container>
 
                 <ng-template #normalRow>
-                  <tr class="border-b border-gray-100 hover:bg-gray-50 text-sm">
-                    <td class="text-center text-gray-500 p-2">
+                  <tr
+                    class="border-b border-gray-100 hover:bg-slate-50/50 text-sm"
+                  >
+                    <td class="text-center! text-gray-400 p-2 font-mono">
                       {{ rowIndex + 1 }}
                     </td>
-
                     <td class="p-2">
-                      <div class="font-medium text-gray-800">
+                      <div class="font-semibold text-gray-800">
                         {{ item.item }}
                       </div>
-
                       <div
                         *ngIf="item.description"
                         [innerHTML]="item.description"
-                        class="text-gray-500 text-xs mt-1"
+                        class="text-gray-500 text-sm mt-0.5 prose max-w-none"
                       ></div>
                     </td>
 
-                    <td class="text-center font-medium p-2">
-                      {{ item.quantity }}
-                      <span class="text-gray-400">{{ item.unit }}</span>
+                    <td class="p-1 text-center!">
+                      <p-inputNumber
+                        [(ngModel)]="item.quantity"
+                        (ngModelChange)="calculateTotals()"
+                        [min]="0"
+                        [showButtons]="false"
+                        styleClass="w-full"
+                        inputStyleClass="w-full text-center! border border-gray-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none rounded p-1.5 font-semibold font-mono!"
+                      ></p-inputNumber>
                     </td>
 
-                    <td class="text-right p-2">
-                      {{ item.unitPrice | currency: ' ' : 'symbol' : '1.2-2' }}
+                    <td class="p-1 text-right!">
+                      <p-inputNumber
+                        [(ngModel)]="item.unitPrice"
+                        (ngModelChange)="calculateTotals()"
+                        [min]="0"
+                        mode="decimal"
+                        [minFractionDigits]="2"
+                        [maxFractionDigits]="2"
+                        styleClass="w-full"
+                        inputStyleClass="w-full text-right! border border-gray-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none rounded p-1.5 font-semibold font-mono!"
+                      ></p-inputNumber>
                     </td>
 
-                    <td class="text-right font-semibold p-2">
-                      {{ item.totalPrice | currency: ' ' : 'symbol' : '1.2-2' }}
+                    <td class="p-1 text-right">
+                      <p-inputNumber
+                        [(ngModel)]="item.discount"
+                        (ngModelChange)="calculateTotals()"
+                        [min]="0"
+                        mode="decimal"
+                        [minFractionDigits]="2"
+                        [maxFractionDigits]="2"
+                        placeholder="0.00"
+                        styleClass="w-full"
+                        inputStyleClass="w-full text-right! border border-rose-100 bg-rose-50/20 text-rose-600 focus:border-rose-400 focus:ring-1 focus:ring-rose-400 outline-none rounded p-1.5 font-semibold font-mono!"
+                      ></p-inputNumber>
+                    </td>
+
+                    <td class="p-1 text-center!">
+                      <p-inputNumber
+                        [(ngModel)]="item.taxRate"
+                        (ngModelChange)="calculateTotals()"
+                        [min]="0"
+                        [max]="100"
+                        styleClass="w-full"
+                        [minFractionDigits]="2"
+                        [maxFractionDigits]="2"
+                        mode="decimal"
+                        inputStyleClass="w-full text-center! border border-amber-100 bg-amber-50/20 text-amber-700 focus:border-amber-400 focus:ring-1 focus:ring-amber-400 outline-none rounded p-1.5 font-semibold font-mono!"
+                      ></p-inputNumber>
+                    </td>
+
+                    <td
+                      class="text-right! font-bold p-2 text-gray-700 font-mono text-base vertical-middle"
+                    >
+                      {{
+                        (item.quantity || 0) * (item.unitPrice || 0) -
+                          (item.discount || 0) +
+                          ((item.quantity || 0) * (item.unitPrice || 0) -
+                            (item.discount || 0)) *
+                            ((item.taxRate || 0) / 100) | number: '1.2-2'
+                      }}
                     </td>
                   </tr>
                 </ng-template>
               </ng-template>
+
               <ng-template #emptymessage>
                 <tr>
                   <td
-                    colspan="5"
-                    class="text-center text-gray-400 py-6 text-sm"
+                    colspan="7"
+                    class="text-center text-gray-400 py-8 text-xs italic bg-slate-50/50"
                   >
+                    <i class="pi pi-box block text-xl mb-1 text-gray-300"></i>
                     No line items found for this sales order.
                   </td>
                 </tr>
               </ng-template>
             </p-table>
           </div>
+
+          <div
+            class="mt-2 border-t border-gray-200 pt-4 flex flex-col items-end gap-2.5 text-sm"
+          >
+            <div
+              class="flex justify-between items-center w-[300px] text-gray-500"
+            >
+              <span class="font-medium">SubTotal:</span>
+              <span class="font-mono text-base font-bold text-gray-700">
+                RM {{ subTotal | number: '1.2-2' }}
+              </span>
+            </div>
+
+            <div
+              class="flex justify-between items-center w-[300px] text-gray-600"
+            >
+              <span class="font-bold flex items-center gap-1">
+                <i class="pi pi-minus-circle text-[10px]!"></i> Discount (RM):
+              </span>
+              <p-inputNumber
+                [(ngModel)]="discount"
+                (ngModelChange)="calculateTotals()"
+                [min]="0"
+                mode="decimal"
+                [minFractionDigits]="2"
+                [maxFractionDigits]="2"
+                placeholder="0.00"
+                styleClass="w-32"
+                inputStyleClass="w-full text-right text-base border border-rose-200 bg-rose-50/40 rounded px-2.5 py-1 font-mono font-bold text-rose-600 focus:border-rose-400 focus:ring-1 focus:ring-rose-400 outline-none"
+              ></p-inputNumber>
+            </div>
+
+            <div
+              class="flex justify-between items-center w-[300px] text-gray-600"
+            >
+              <span class="font-bold flex items-center gap-1 text-amber-600">
+                <i class="pi pi-plus-circle text-[10px]!"></i> Tax Amount (RM):
+              </span>
+              <p-inputNumber
+                [(ngModel)]="taxAmount"
+                (ngModelChange)="calculateTotals()"
+                [min]="0"
+                mode="decimal"
+                [minFractionDigits]="2"
+                [maxFractionDigits]="2"
+                placeholder="0.00"
+                styleClass="w-32"
+                inputStyleClass="w-full text-right text-base border border-orange-200 bg-amber-50/40 rounded px-2.5 py-1 font-mono font-bold text-amber-600 focus:border-amber-400 focus:ring-1 focus:ring-amber-400 outline-none"
+              ></p-inputNumber>
+            </div>
+
+            <div
+              class="flex justify-between items-center w-[300px] text-sm font-bold text-gray-800 border-t border-gray-200 pt-3 mt-1"
+            >
+              <span>Total Amount:</span>
+              <span class="font-mono text-lg text-indigo-600">
+                RM {{ totalAmount | number: '1.2-2' }}
+              </span>
+            </div>
+          </div>
         </div>
       </div>
 
       <div
-        class="col-span-12 lg:col-span-6 flex flex-col shadow-sm rounded overflow-hidden border border-gray-200 bg-white"
+        class="col-span-12 lg:col-span-6 flex flex-col shadow-2xs rounded-xl overflow-hidden border border-gray-200 bg-white"
       >
         <div
-          class="text-base bg-gray-50 px-4 py-3 font-semibold text-gray-700 border-b border-gray-200 flex justify-between items-center"
+          class="text-sm bg-gray-50 px-4 py-3 font-bold text-gray-700 border-b border-gray-200 flex justify-between items-center"
         >
-          <span>Client PO Document</span>
+          <span class="flex items-center gap-1.5">
+            <i class="pi pi-file-pdf text-indigo-500"></i> Client PO Document
+          </span>
           <a
             *ngIf="attachmentUrl"
             [href]="attachmentUrl"
             target="_blank"
-            class="text-sm text-blue-600 hover:underline flex items-center gap-1"
+            class="text-sm font-bold text-indigo-600 hover:text-indigo-700 flex items-center gap-1 bg-indigo-50 border border-indigo-100 px-2 py-1 rounded-md transition-colors"
           >
-            <i class="pi pi-external-link text-[10px]"></i> Open in New Tab
+            <i class="pi pi-external-link text-[10px]"></i> Open New Tab
           </a>
         </div>
+
         <div
-          class="bg-gray-100 p-2 flex justify-center items-center min-h-[500px] h-[calc(100vh-340px)]"
+          class="bg-slate-100 p-3 flex justify-center items-center min-h-[520px] h-[calc(100vh-320px)]"
         >
           <ng-container *ngIf="soData()?.clientPOAttachment; else noFile">
             <object
               *ngIf="attachmentUrl"
               [data]="attachmentUrl"
               type="application/pdf"
-              class="w-full h-full rounded border border-gray-300 shadow-inner"
+              class="w-full h-full rounded-xl border border-gray-200 shadow-xs bg-white"
             >
               <iframe
                 *ngIf="attachmentUrl"
                 [src]="attachmentUrl"
-                class="w-full h-full border-none"
+                class="w-full h-full border-none rounded-xl"
               ></iframe>
             </object>
           </ng-container>
+
           <ng-template #noFile>
             <div
-              class="text-center p-6 flex flex-col items-center gap-2 text-gray-400"
+              class="text-center p-6 flex flex-col items-center gap-2.5 text-gray-400"
             >
-              <i class="pi pi-file-pdf text-4xl text-gray-300"></i>
-              <span class="text-sm"
-                >No client attachment path available for verification.</span
+              <div
+                class="p-4 bg-white shadow-xs border border-gray-200 rounded-2xl text-gray-300"
               >
+                <i class="pi pi-file-pdf text-4xl"></i>
+              </div>
+              <div class="flex flex-col gap-0.5 max-w-xs">
+                <span class="text-sm font-semibold text-gray-700"
+                  >No Document File Attached</span
+                >
+                <p class="text-xs text-gray-400 leading-relaxed">
+                  This contract does not reference an uploaded purchase order
+                  artifact for live data review validation.
+                </p>
+              </div>
             </div>
           </ng-template>
         </div>
@@ -269,42 +417,45 @@ import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
     </div>
 
     <div
-      class="absolute bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-6 py-3 shadow-[0_-4px_12px_rgba(0,0,0,0.05)] flex flex-row items-center justify-between z-50"
+      class="absolute bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-6 py-3.5 shadow-[0_-4px_20px_rgba(0,0,0,0.04)] flex flex-row items-center justify-between z-50"
     >
       <div class="flex items-center gap-3 w-1/2 max-w-xl">
-        <span class="p-input-icon-left w-full">
+        <div class="w-full">
           <textarea
             rows="1"
             [(ngModel)]="remarks"
             [ngModelOptions]="{ standalone: true }"
             pInputTextarea
             [autoResize]="true"
-            placeholder="Add internal remarks or reason for rejection..."
-            class="w-full text-sm py-2 border border-gray-300 focus:border-blue-500 rounded px-3"
+            placeholder="Add internal remarks or reason for rejection"
+            class="w-full text-sm py-2 border border-gray-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none rounded-lg px-3 min-h-[38px] transition-all bg-slate-50/50"
           ></textarea>
-        </span>
+        </div>
       </div>
-      <div class="flex flex-row items-center gap-2">
+
+      <div class="flex flex-row items-center gap-2.5">
         <p-button
           label="Cancel"
           [routerLink]="'/sales-order'"
           severity="secondary"
-          styleClass="px-3 border-gray-200!"
+          styleClass="px-4 py-2 border-gray-200! text-xs font-bold text-gray-600 bg-white hover:bg-gray-50 rounded-lg h-10 transition-colors"
         ></p-button>
+
         <button
           pButton
           type="button"
-          label="Reject PO"
+          label="Reject PO Document"
           icon="pi pi-times-circle"
-          class="p-button-outlined p-button-danger text-sm font-semibold h-10 px-4"
+          class="p-button-outlined p-button-danger text-xs font-bold h-10 px-4 rounded-lg border border-red-200 bg-white hover:bg-red-50 text-red-600 transition-colors"
           (click)="updateStatus('Rejected')"
         ></button>
+
         <button
           pButton
           type="button"
-          label="Approve & Confirm"
+          label="Approve & Confirm Order"
           icon="pi pi-check-circle"
-          class="p-button-success text-sm font-semibold h-10 px-4"
+          class="p-button-success text-xs font-bold h-10 px-4 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs transition-colors"
           (click)="updateStatus('Confirmed')"
         ></button>
       </div>
@@ -317,6 +468,7 @@ export class SalesOrderDetails {
   private readonly salesOrderService = inject(SalesOrderService);
   private readonly activatedRoute = inject(ActivatedRoute);
   private readonly loadingService = inject(LoadingService);
+  private readonly messageService = inject(MessageService);
   private readonly router = inject(Router);
   private readonly cdr = inject(ChangeDetectorRef);
   private sanitizer = inject(DomSanitizer);
@@ -328,6 +480,11 @@ export class SalesOrderDetails {
   currentId: string | null = null;
   remarks: string | null = null;
   attachmentUrl: SafeResourceUrl | null = null;
+
+  discount: number = 0;
+  taxAmount: number = 0;
+  subTotal: number = 0;
+  totalAmount: number = 0;
 
   constructor() {
     this.currentId = this.activatedRoute.snapshot.queryParams['id'];
@@ -354,6 +511,12 @@ export class SalesOrderDetails {
           this.loadingService.stop();
           this.soData.set(res);
 
+          if (res) {
+            this.discount = res.discount || 0;
+            this.taxAmount = res.taxAmount || 0;
+            this.calculateTotals();
+          }
+
           if (res?.clientPOAttachment) {
             const fullUrl = `https://localhost:5000/${res.clientPOAttachment}`;
             this.attachmentUrl =
@@ -368,6 +531,43 @@ export class SalesOrderDetails {
       });
   }
 
+  calculateTotals() {
+    const data = this.soData();
+    if (!data || !data.salesOrderItems) return;
+
+    let calculatedSubTotal = 0;
+
+    data.salesOrderItems.forEach((item) => {
+      if (!item.isGroup) {
+        const qty = item.quantity || 0;
+        const price = item.unitPrice || 0;
+        const discountPct = item.discount || 0;
+        const taxRate = item.taxRate || 0;
+
+        const grossAmount = qty * price;
+
+        const lineDiscAmount = grossAmount * (discountPct / 100);
+
+        const baseRowTotal = grossAmount - lineDiscAmount;
+        const rowTaxAmount = baseRowTotal * (taxRate / 100);
+
+        item.totalPrice = baseRowTotal + rowTaxAmount;
+        calculatedSubTotal += item.totalPrice;
+      }
+    });
+
+    this.subTotal = calculatedSubTotal;
+    this.totalAmount =
+      this.subTotal - (this.discount || 0) + (this.taxAmount || 0);
+
+    this.soData.set({
+      ...data,
+      salesOrderItems: data.salesOrderItems,
+    });
+
+    this.cdr.markForCheck();
+  }
+
   getAttachmentUrl(path: string | undefined | null): SafeResourceUrl {
     if (!path) return '';
 
@@ -379,30 +579,54 @@ export class SalesOrderDetails {
     if (!this.currentId) return;
 
     if (newStatus === 'Rejected' && !this.remarks) {
-      alert('Please enter rejection reason');
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Validation',
+        detail: 'Please enter rejection reason',
+      });
       return;
     }
 
     this.loadingService.start();
 
+    const payload = {
+      id: this.currentId,
+      remarks: this.remarks,
+      discount: this.discount,
+      taxAmount: this.taxAmount,
+      subTotal: this.subTotal,
+      totalAmount: this.totalAmount,
+      items: this.soData()?.salesOrderItems,
+    };
+
     const api =
       newStatus === 'Rejected'
-        ? this.salesOrderService.Reject({
-            id: this.currentId,
-            remarks: this.remarks,
-          })
-        : this.salesOrderService.Approve({
-            id: this.currentId,
-            remarks: this.remarks,
-          });
+        ? this.salesOrderService.Reject(payload)
+        : this.salesOrderService.Approve(payload);
 
     api.pipe(takeUntil(this.ngUnsubscribe)).subscribe({
       next: () => {
         this.loadingService.stop();
+        this.messageService.add({
+          severity: 'success',
+          summary: newStatus === 'Rejected' ? 'Rejected' : 'Approved',
+          detail:
+            newStatus === 'Rejected'
+              ? 'Sales Order has been rejected successfully.'
+              : 'Sales Order has been approved and confirmed.',
+        });
+
         this.router.navigate(['/sales-order']);
       },
-      error: () => {
+      error: (err) => {
         this.loadingService.stop();
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Action Failed',
+          detail:
+            err?.error?.error ||
+            'Something went wrong while updating the Sales Order.',
+        });
       },
     });
   }

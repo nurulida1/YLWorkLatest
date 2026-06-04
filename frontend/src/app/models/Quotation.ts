@@ -5,7 +5,6 @@ import { UserDto } from './User';
 
 export interface QuotationDto extends BaseModel {
   quotationNo: string;
-  referenceNo: string;
   quotationDate: Date;
   fromCompanyId: string;
   fromCompany: CompanyDto;
@@ -14,8 +13,14 @@ export interface QuotationDto extends BaseModel {
   projectCode: string;
   project: ProjectDto;
   subject: string;
+  discount: number;
+  subTotal: number;
+  taxAmount: number;
   totalAmount: number;
-  termsAndConditions: string;
+  paymentTerms: string;
+  validityDays: number;
+  deliveryTimeline: string;
+  warrantyTerms: string;
   status: string;
   remarks: string;
   quotationItems: QuotationItems[];
@@ -28,18 +33,11 @@ export interface QuotationStatusHistory extends BaseModel {
   status: string;
   actionAt: Date;
   actionUserId: string;
-  reviewedByUserId: string;
   remarks: string;
   actionUser?: {
     id: string;
     fullName: string;
   };
-
-  reviewedByUser?: {
-    id: string;
-    fullName: string;
-  };
-  signatureImage: string;
 }
 
 export interface QuotationItems extends BaseModel {
@@ -54,6 +52,8 @@ export interface QuotationItems extends BaseModel {
   quantity: number;
   unit: string;
   unitPrice: number;
+  taxRate: number;
+  discount: number;
   totalPrice: number;
   children: QuotationItems[];
 }
@@ -67,6 +67,8 @@ export interface QuotationItemDto {
   unit: string;
   quantity: number;
   unitPrice: number;
+  taxRate: number;
+  discount: number;
   totalPrice: number;
   children: QuotationItemDto[];
 }
@@ -79,6 +81,8 @@ export interface QuotationItemBase {
   quantity: number;
   unit: string;
   unitPrice: number;
+  taxRate: number;
+  discount: number;
   totalPrice: number;
   children: QuotationItemRequest[];
 }
@@ -91,14 +95,19 @@ export interface UpdateQuotationItemRequest extends QuotationItemBase {
 
 export interface CreateQuotationRequest {
   quotationNo: string;
-  referenceNo: string;
   quotationDate: Date;
   fromCompanyId: string;
   clientId: string;
   projectCode: string;
   subject: string;
+  taxAmount: number;
+  discount: number;
+  subTotal: number;
   totalAmount: number;
-  termsAndConditions: string;
+  paymentTerms: string;
+  validityDays: number;
+  deliveryTimeline: string;
+  warrantyTerms: string;
   quotationItems: QuotationItemRequest[];
 }
 

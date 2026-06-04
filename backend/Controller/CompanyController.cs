@@ -159,14 +159,28 @@ namespace YLWorks.Controller
                         ContactNo = c.ContactNo,
                         ContactPerson1 = c.ContactPerson1,
                         ContactPerson2 = c.ContactPerson2,
+                        Email = c.Email,
+                        FaxNo = c.FaxNo,
                         BillingAddress = c.BillingAddress == null ? null : new AddressDto
                         {
-                            Id = c.BillingAddress.Id
+                            Id = c.BillingAddress.Id,
+                            AddressLine1 = c.BillingAddress.AddressLine1,
+                            AddressLine2 = c.BillingAddress.AddressLine2,
+                            City = c.BillingAddress.City,
+                            Poscode = c.BillingAddress.Poscode,
+                            State = c.BillingAddress.State,
+                            Country = c.BillingAddress.Country,
                         },
 
                         DeliveryAddress = c.DeliveryAddress == null ? null : new AddressDto
                         {
-                            Id = c.DeliveryAddress.Id
+                            Id = c.DeliveryAddress.Id,
+                            AddressLine1 = c.DeliveryAddress.AddressLine1,
+                            AddressLine2 = c.DeliveryAddress.AddressLine2,
+                            City = c.DeliveryAddress.City,
+                            Poscode = c.DeliveryAddress.Poscode,
+                            State = c.DeliveryAddress.State,
+                            Country = c.DeliveryAddress.Country,
                         }
                     })
                     .ToListAsync();

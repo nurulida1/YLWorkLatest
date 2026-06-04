@@ -19,9 +19,14 @@ export interface SalesOrderDto extends BaseModel {
   clientPOAttachment: string;
   clientPODate: Date;
   clientPONumber: string;
+  discount: number;
+  subTotal: number;
+  taxAmount: number;
   totalAmount: number;
   notes?: string;
-  terms?: string;
+  paymentTerms?: string;
+  deliveryTimeline: string;
+  warrantyTerms: string;
   remarks?: string;
   salesOrderItems?: SalesOrderItem[];
   salesOrderStatusHistories: SalesOrderStatusHistory[];
@@ -30,25 +35,41 @@ export interface SalesOrderDto extends BaseModel {
 export interface SalesOrderItem extends BaseModel {
   salesOrderId: string;
   salesOrder: SalesOrderDto;
+  parentId: string;
+  sortOrder: number;
+  type: string;
+  isGroup: boolean;
   item?: string;
   description: string;
   quantity: number;
+  quantityDelivered: number;
+  quantityRemaining: number;
   unit: string;
   discount: number;
   unitPrice: number;
+  taxRate: number;
   totalPrice: number;
-  deliveredQuantity: number;
+  children: SalesOrderItem[];
+  includeInDeliveryOrder: boolean;
 }
 
 export interface SOItemBase {
   id: string;
+  sortOrder: number;
+  type: string;
+  isGroup: boolean;
+  parentId: string;
   item: string;
   description: string;
   quantity: number;
   unit: string;
   unitPrice: number;
+  deliveredQuantity: number;
   discount: number;
+  taxRate: number;
   totalPrice: number;
+  children: SOItemBase[];
+  includeInDeliveryOrder: boolean;
 }
 
 export interface CreateSalesOrderRequest {
@@ -58,10 +79,15 @@ export interface CreateSalesOrderRequest {
   projectId: string;
   quotationId: string;
   soDate: Date;
+  taxAmount: number;
+  discount: number;
+  subTotal: number;
   totalAmount: number;
   notes: string;
   remarks: string;
-  terms?: string;
+  paymentTerms?: string;
+  deliveryTimeline: string;
+  warrantyTerms: string;
   clientPOAttachment?: File;
   clientPODate: Date;
   clientPONumber: string;
@@ -75,8 +101,13 @@ export interface UpdateSalesOrderRequest {
   clientId: string;
   projectId: string;
   quotationId: string;
-  terms?: string;
+  paymentTerms?: string;
+  deliveryTimeline: string;
+  warrantyTerms: string;
   soDate: Date;
+  subTotal: number;
+  taxAmount: number;
+  discount: number;
   totalAmount: number;
   notes: string;
   remarks: string;

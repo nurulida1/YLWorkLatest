@@ -427,7 +427,7 @@ namespace YLWorks.Controller
 
         private async Task<string> GeneratePONo()
         {
-            var yearShort = DateTime.UtcNow.Year % 100; // 2026 -> 26
+            var yearShort = DateTime.UtcNow.Year; // 2026 -> 26
 
             var lastPO = await _context.PurchaseOrders
                 .Where(q => q.PurchaseOrderNo.StartsWith($"YL/PO/") && q.PurchaseOrderNo.EndsWith($"/{yearShort}"))
@@ -944,22 +944,36 @@ namespace YLWorks.Controller
                .ToListAsync();
 
                 var suppliers = await _context.Companies
-                    .Where(x => x.Type == CompanyType.Supplier)
+                    .Where(x => x.Type == CompanyType.Supplier).Include(x => x.BillingAddress).Include(x => x.DeliveryAddress)
                     .Select(x => new CompanyDropdownItem
                     {
                         Id = x.Id,
-                        Name = x.Name
+                        Name = x.Name,
+                        ContactPerson1 = x.ContactPerson1,
+                        ContactPerson2 = x.ContactPerson2,
+                        ContactNo = x.ContactNo,
+                        FaxNo = x.FaxNo,
+                        Email = x.Email,
+                        BillingAddress = x.BillingAddress,
+                        DeliveryAddress = x.DeliveryAddress,
                     })
                     .ToListAsync();
 
 
                 var companies = await _context.Companies
-                    .Where(x => x.Type == CompanyType.Own)
+                    .Where(x => x.Type == CompanyType.Own).Include(x => x.BillingAddress).Include(x => x.DeliveryAddress)
                     .OrderBy(x => x.Name)
                     .Select(x => new CompanyDropdownItem
                     {
                         Id = x.Id,
-                        Name = x.Name
+                        Name = x.Name,
+                        ContactPerson1 = x.ContactPerson1,
+                        ContactPerson2 = x.ContactPerson2,
+                        ContactNo = x.ContactNo,
+                        FaxNo = x.FaxNo,
+                        Email = x.Email,
+                        BillingAddress = x.BillingAddress,
+                        DeliveryAddress = x.DeliveryAddress,
                     })
                     .ToListAsync();
 
@@ -993,12 +1007,14 @@ namespace YLWorks.Controller
             }
         }
 
-        [HttpPost("GenerateDOFromPO/{poId}")]
-        public async Task<IActionResult> GenerateDOFromPO(Guid poId)
+        [HttpPost("GenerateGRNFromPO/{poId}")]
+        public async Task<IActionResult> GenerateGRNFromPO(Guid poId)
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userIdClaim))
                 return Unauthorized();
+
+            var userId = Guid.Parse(userIdClaim);
 
             var po = await _context.PurchaseOrders
                 .Include(x => x.PurchaseOrderItems)
@@ -1011,57 +1027,52 @@ namespace YLWorks.Controller
                 return BadRequest("PO already completed");
 
             var remainingItems = po.PurchaseOrderItems
-                .Where(x => (x.Quantity - x.ReceivedQuantity) > 0)
+                .Where(x => (x.Quantity - (x.ReceivedQuantity ?? 0)) > 0)
                 .ToList();
 
             if (!remainingItems.Any())
                 return BadRequest("All items already received");
 
-            var deliveryOrder = new DeliveryOrder
+            var grn = new GoodsReceiving
             {
                 Id = Guid.NewGuid(),
-                DeliveryOrderNo = await GenerateDONo(),
-                Type = "Receipt", 
-
+                GRNNo = await GenerateGRNNo(),
                 PurchaseOrderId = po.Id,
-                ProjectId = po.ProjectId,
-
-                SenderCompanyId = po.SupplierId,
-                ReceiverCompanyId = po.FromCompanyId,
-
+                SupplierId = po.SupplierId ?? Guid.Empty,
+                ReceivedDate = DateTimeHelper.Now(),
                 Status = "Draft",
-                CreatedAt = DateTimeHelper.Now(),
+                CreatedById = userId,
+                Remarks = "Auto generated from PO",
 
-                DeliveryOrderItems = remainingItems.Select(item => new DeliveryOrderItem
+                GoodsReceivingItems = remainingItems.Select(item => new GoodsReceivingItem
                 {
                     Id = Guid.NewGuid(),
-                    Description = item.Description,
-                    QuantityOrdered = item.Quantity,
-                    QuantityDelivered = item.Quantity - item.ReceivedQuantity,
-                    Unit = item.Unit
+                    PurchaseOrderItemId = item.Id,
+                    ReceivedQuantity = item.Quantity - (item.ReceivedQuantity ?? 0),
+                    Remarks = "Auto received from PO"
                 }).ToList()
             };
 
-            _context.DeliveryOrders.Add(deliveryOrder);
+            _context.GoodsReceivings.Add(grn);
 
             await _context.SaveChangesAsync();
 
             return Ok(new
             {
-                message = "DO generated successfully",
-                deliveryOrder.Id,
-                deliveryOrder.DeliveryOrderNo
+                message = "GRN generated successfully",
+                grn.Id,
+                grn.GRNNo
             });
         }
 
-        private async Task<string> GenerateDONo()
+        private async Task<string> GenerateGRNNo()
         {
             var year = DateTime.UtcNow.Year % 100;
 
-            var last = await _context.DeliveryOrders
-                .Where(x => x.DeliveryOrderNo.StartsWith("YL/DO/"))
+            var last = await _context.GoodsReceivings
+                .Where(x => x.GRNNo.StartsWith("YL/GRN/"))
                 .OrderByDescending(x => x.CreatedAt)
-                .Select(x => x.DeliveryOrderNo)
+                .Select(x => x.GRNNo)
                 .FirstOrDefaultAsync();
 
             int next = 1;
@@ -1073,7 +1084,7 @@ namespace YLWorks.Controller
                     next = num + 1;
             }
 
-            return $"YL/DO/{next}/{year}";
+            return $"YL/GRN/{next}/{year}";
         }
 
         private string ConvertAmountToWords(decimal? amount)

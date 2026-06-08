@@ -170,10 +170,33 @@ namespace YLWorks.Controller
                     }
                 }
 
-                var data = await query.FirstOrDefaultAsync();
+                var data = await query
+                    .Include(x => x.SalesOrderItems)
+                    .Include(x => x.Quotation)
+                    .FirstOrDefaultAsync();
 
                 if (data == null)
                     return NotFound();
+
+                var inventories = await _context.Inventories.ToListAsync();
+
+                var poItems = await _context.PurchaseOrderItems
+                    .Include(x => x.PurchaseOrder)
+                    .Where(x => x.SalesOrderItemId != null)
+                    .ToListAsync();
+
+                var poMap = poItems
+                    .GroupBy(x => x.SalesOrderItemId)
+                    .ToDictionary(
+                        g => g.Key,
+                        g => new
+                        {
+                            TotalQty = g.Sum(x => x.Quantity),
+                            PONos = g.Select(x => x.PurchaseOrder.PurchaseOrderNo)
+                                     .Distinct()
+                                     .ToList()
+                        }
+                    );
 
                 var safeResult = new
                 {
@@ -186,34 +209,110 @@ namespace YLWorks.Controller
                     data.TaxAmount,
                     data.TotalAmount,
                     data.ClientId,
+                    data.Client,
                     data.CompanyId,
                     data.QuotationId,
                     data.Remarks,
                     data.Notes,
                     data.ProjectId,
                     data.ClientPONumber,
+                    data.PaymentTerms,
                     data.ClientPODate,
                     data.ClientPOAttachment,
-                    Quotation = data.Quotation == null
-        ? null
-        : new
-        {
-            data.Quotation.Id,
-            data.Quotation.QuotationNo
-        },
+                    data.CreatedAt,
 
-                    SalesOrderItems = data.SalesOrderItems?.Select(i => new
+                    Quotation = data.Quotation == null
+                        ? null
+                        : new
+                        {
+                            data.Quotation.Id,
+                            data.Quotation.QuotationNo
+                        },
+
+                    SalesOrderItems = data.SalesOrderItems?.Select(i =>
                     {
-                        i.Id,
-                        i.SalesOrderId,
-                        i.Item,
-                        i.Description,
-                        i.Quantity,
-                        i.UnitPrice,
-                        i.Unit,
-                        i.Discount,
-                        i.TaxRate,
-                        i.TotalPrice,
+                        var clean = System.Text.RegularExpressions.Regex
+                            .Replace(i.Description ?? "", "<.*?>", "")
+                            .Replace("&nbsp;", " ")
+                            .ToLower();
+
+                        var modelMatch = System.Text.RegularExpressions.Regex
+                            .Match(clean, @"model\s*:\s*([a-z0-9\-]+)");
+
+                        string? model = modelMatch.Success
+                            ? modelMatch.Groups[1].Value.Trim()
+                            : null;
+
+                        Inventory? match = null;
+
+                        if (!string.IsNullOrEmpty(model))
+                        {
+                            match = inventories.FirstOrDefault(inv =>
+                                !string.IsNullOrEmpty(inv.Model) &&
+                                inv.Model.ToLower() == model);
+                        }
+
+                        if (match == null)
+                        {
+                            var tokens = clean
+                                .Split(' ', ',', '.', '\n', '\r')
+                                .Where(x => x.Length >= 3)
+                                .Distinct()
+                                .ToList();
+
+                            match = inventories
+                                .Where(inv =>
+                                    (!string.IsNullOrEmpty(inv.Model) && tokens.Any(t => inv.Model.ToLower().Contains(t))) ||
+                                    (!string.IsNullOrEmpty(inv.ItemName) && tokens.Any(t => inv.ItemName.ToLower().Contains(t))) ||
+                                    (!string.IsNullOrEmpty(inv.Brand) && tokens.Any(t => inv.Brand.ToLower().Contains(t))) ||
+                                    (!string.IsNullOrEmpty(inv.ItemCode) && tokens.Any(t => inv.ItemCode.ToLower().Contains(t)))
+                                )
+                                .OrderByDescending(inv =>
+                                    (inv.Model != null && clean.Contains(inv.Model.ToLower()) ? 5 : 0) +
+                                    (inv.ItemName != null && clean.Contains(inv.ItemName.ToLower()) ? 4 : 0) +
+                                    (inv.Brand != null && clean.Contains(inv.Brand.ToLower()) ? 3 : 0) +
+                                    (inv.ItemCode != null && clean.Contains(inv.ItemCode.ToLower()) ? 2 : 0)
+                                )
+                                .FirstOrDefault();
+                        }
+
+                        var qtyOnHand = match != null
+                            ? Math.Max(0, match.Quantity - (match.ReservedQuantity ?? 0))
+                            : 0;
+
+                        poMap.TryGetValue(i.Id, out var poInfo);
+
+                        var orderedQty = poInfo?.TotalQty ?? 0;
+                        var remainingQty = Math.Max(
+    0m,
+    (i.Quantity ?? 0m) - orderedQty
+);
+                        var isFullyOrdered = remainingQty == 0;
+
+                        return new
+                        {
+                            i.Id,
+                            i.SalesOrderId,
+                            i.Type,
+                            i.ItemType,
+                            i.SortOrder,
+                            i.Item,
+                            i.Description,
+                            i.Quantity,
+                            i.UnitPrice,
+                            i.Unit,
+                            i.Discount,
+                            i.TaxRate,
+                            i.TotalPrice,
+
+                            QtyOnHand = qtyOnHand,
+                            InventoryId = match?.Id,
+
+                            OrderedQuantity = orderedQty,
+                            RemainingQuantity = remainingQty,
+                            IsFullyOrdered = isFullyOrdered,
+                            PurchaseOrderNos = poInfo?.PONos ?? new List<string>()
+                        };
                     })
                 };
 
@@ -318,7 +417,7 @@ namespace YLWorks.Controller
                     Notes = request.Notes,
                     Remarks = request.Remarks,
                     PaymentTerms = request.PaymentTerms,
-                    DeliveryTimeline = request.DeliveryTimeline,
+                    Execution = request.Execution,
                     WarrantyTerms = request.WarrantyTerms,
                     ClientPOAttachment = filePath,
                     Status = "Draft",
@@ -331,7 +430,8 @@ namespace YLWorks.Controller
                     Id = Guid.NewGuid(),
                     SalesOrderId = so.Id,
 
-                    Type = x.Type ?? "Item",      
+                    Type = x.Type ?? "Item",
+                    ItemType = x.ItemType,
                     IsGroup = x.IsGroup,
                     SortOrder = x.SortOrder,
 
@@ -388,7 +488,7 @@ namespace YLWorks.Controller
 
         private async Task<string> GenerateSONo()
         {
-            var yearShort = DateTime.UtcNow.Year % 100; 
+            var yearShort = DateTime.UtcNow.Year % 100;
 
             var lastSO = await _context.SalesOrders
                 .Where(q => q.SalesOrderNo.Contains($"YL/SO/") && q.SalesOrderNo.EndsWith($"/{yearShort}"))
@@ -466,7 +566,7 @@ namespace YLWorks.Controller
                 so.Notes = request.Notes;
                 so.Remarks = request.Remarks;
                 so.PaymentTerms = request.PaymentTerms;
-                so.DeliveryTimeline = request.DeliveryTimeline;
+                so.Execution = request.Execution;
                 so.WarrantyTerms = request.WarrantyTerms;
                 so.ClientPONumber = request.ClientPONumber;
                 so.ClientPODate = request.ClientPODate;
@@ -489,6 +589,7 @@ namespace YLWorks.Controller
                         ParentId = x.ParentId,
                         SortOrder = x.SortOrder,
                         Type = x.Type,
+                        ItemType = x.ItemType,
                         IsGroup = x.IsGroup,
                         Item = x.Item,
                         Description = x.Description,
@@ -585,12 +686,13 @@ namespace YLWorks.Controller
                 q.Notes,
                 q.Status,
                 q.PaymentTerms,
-                q.DeliveryTimeline,
+                q.Execution,
                 q.WarrantyTerms,
                 q.ClientPOAttachment,
                 q.ClientPONumber,
                 q.ClientPODate,
                 q.ClientId,
+                FromCompany = q.Company,
                 Client = q.Client == null ? null : new
                 {
                     Id = q.Client.Id,
@@ -625,6 +727,8 @@ namespace YLWorks.Controller
                 {
                     x.Id,
                     x.Item,
+                    x.ItemType,
+                    x.Type,
                     x.Description,
                     x.Quantity,
                     x.Unit,
@@ -643,6 +747,8 @@ namespace YLWorks.Controller
                 Id = Guid.NewGuid(),
                 SalesOrderId = soId,
                 Item = req.Item,
+                Type = req.Type,
+                ItemType = req.ItemType,
                 Description = req.Description,
                 Quantity = req.Quantity,
                 Unit = req.Unit,
@@ -663,6 +769,7 @@ namespace YLWorks.Controller
 
             request.Status = "Confirmed";
             request.Remarks = string.IsNullOrWhiteSpace(request.Remarks) ? "SO approved" : request.Remarks;
+            await AutoMatchInventoryAsync(request.Id);
 
             return await UpdateStatusInternal(request);
         }
@@ -709,7 +816,7 @@ namespace YLWorks.Controller
                 salesOrder.Discount = request.Discount;
                 salesOrder.TaxAmount = request.TaxAmount;
                 salesOrder.TotalAmount = request.TotalAmount;
-                salesOrder.UpdatedAt = DateTime.UtcNow; 
+                salesOrder.UpdatedAt = DateTime.UtcNow;
 
                 if (request.Items != null && request.Items.Any())
                 {
@@ -721,6 +828,7 @@ namespace YLWorks.Controller
                             existingItem.Quantity = itemDto.Quantity;
                             existingItem.UnitPrice = itemDto.UnitPrice;
                             existingItem.Discount = itemDto.Discount;
+                            existingItem.Unit = itemDto.Unit;
                             existingItem.TaxRate = itemDto.TaxRate;
                             existingItem.TotalPrice = itemDto.TotalPrice;
                         }
@@ -857,7 +965,7 @@ namespace YLWorks.Controller
 
                     Items = MapItems(
                         x.QuotationItems
-                            .Where(i => i.ParentId == null) 
+                            .Where(i => i.ParentId == null)
                             .OrderBy(i => i.SortOrder)
                             .ToList()
                     )
@@ -950,6 +1058,7 @@ namespace YLWorks.Controller
                     Id = i.Id,
                     SortOrder = i.SortOrder,
                     Type = i.Type,
+                    ItemType = i.ItemType,
                     IsGroup = i.IsGroup,
                     Description = i.Description,
                     Unit = i.Unit,
@@ -1086,9 +1195,9 @@ namespace YLWorks.Controller
                 Id = Guid.NewGuid(),
                 DeliveryOrderId = doEntity.Id,
                 Status = "Draft",
-                ActionUserId = actionUserId,  
+                ActionUserId = actionUserId,
                 ActionAt = DateTimeHelper.Now(),
-                Remarks = $"DO Draft initialized from Sales Order {so.SalesOrderNo ?? ""}" 
+                Remarks = $"DO Draft initialized from Sales Order {so.SalesOrderNo ?? ""}"
             };
 
             _context.DeliveryOrderStatusHistories.Add(history);
@@ -1235,7 +1344,7 @@ namespace YLWorks.Controller
                             DeliveryOrderId = doEntity.Id,
                             Description = originalSoItem.Description,
                             QuantityOrdered = itemInput.QuantityToDeliver,
-                            QuantityDelivered = 0,                        
+                            QuantityDelivered = 0,
                             Unit = originalSoItem.Unit,
                             Remarks = $"Scheduled batch via delivery matrix allocation."
                         };
@@ -1277,5 +1386,62 @@ namespace YLWorks.Controller
                 return StatusCode(500, new { error = "An internal processing error occurred while writing bulk shipments to the database." });
             }
         }
+
+
+        private async Task AutoMatchInventoryAsync(Guid salesOrderId)
+        {
+            var so = await _context.SalesOrders
+                .Include(x => x.SalesOrderItems)
+                .FirstOrDefaultAsync(x => x.Id == salesOrderId);
+
+            if (so == null) return;
+
+            foreach (var item in so.SalesOrderItems)
+            {
+                if (item.InventoryId != null) continue;
+
+                var desc = item.Description?.ToLower() ?? "";
+
+                var tokens = desc
+                    .Split(' ', ',', '\n', '\r')
+                    .Where(x => x.Length >= 3)
+                    .Select(x => x.Trim())
+                    .ToList();
+
+                var match = await _context.Inventories
+                    .Where(i =>
+                        (!string.IsNullOrEmpty(i.Model) && tokens.Any(t => i.Model.ToLower().Contains(t))) ||
+                        (!string.IsNullOrEmpty(i.ItemName) && tokens.Any(t => i.ItemName.ToLower().Contains(t))) ||
+                        (!string.IsNullOrEmpty(i.Brand) && tokens.Any(t => i.Brand.ToLower().Contains(t))) ||
+                        (!string.IsNullOrEmpty(i.ItemCode) && tokens.Any(t => i.ItemCode.ToLower().Contains(t)))
+
+                    )
+                    .ToListAsync();
+
+                var bestMatch = match
+                    .OrderByDescending(i =>
+                        (i.Model != null && desc.Contains(i.Model.ToLower()) ? 4 : 0) +
+                        (i.ItemName != null && desc.Contains(i.ItemName.ToLower()) ? 3 : 0) +
+                        (i.Brand != null && desc.Contains(i.Brand.ToLower()) ? 2 : 0) +
+                        (i.ItemCode != null && desc.Contains(i.ItemCode.ToLower()) ? 1 : 0)
+                    )
+                    .FirstOrDefault();
+
+                if (bestMatch != null)
+                {
+                    item.InventoryId = bestMatch.Id;
+                }
+            }
+
+            await _context.SaveChangesAsync();
+        }
+        private decimal GetAvailableStock(Inventory i)
+        {
+            var reserved = i.ReservedQuantity ?? 0;
+            var available = i.Quantity - reserved;
+
+            return available < 0 ? 0 : available;
+        }
+
     }
 }

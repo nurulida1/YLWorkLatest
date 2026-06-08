@@ -20,7 +20,7 @@ namespace YLWorks.Model
         public Guid? ClientId { get; set; }
         public Company? Client { get; set; }
 
-        public string? Terms { get; set; }
+        public string? PaymentTerms { get; set; }
         public Guid? ProjectId { get; set; }
         public Project? Project { get; set; }
 
@@ -75,6 +75,8 @@ namespace YLWorks.Model
         public Guid Id { get; set; }
         public Guid PurchaseOrderId { get; set; }
         public PurchaseOrder PurchaseOrder { get; set; } = null!;
+        public Guid? SalesOrderItemId { get; set; }
+        public SalesOrderItem? SalesOrderItem { get; set; }
         public string? Item { get; set; }
         public string? Description { get; set; }
         public decimal Quantity { get; set; }
@@ -89,6 +91,8 @@ namespace YLWorks.Model
     {
         public Guid Id { get; set; }
         public string? Item { get; set; }
+        public Guid? SalesOrderItemId { get; set; }
+        public SalesOrderItem? SalesOrderItem { get; set; }
         public string Description { get; set; }
         public string? Unit { get; set; }
         public decimal Quantity { get; set; }
@@ -102,6 +106,7 @@ namespace YLWorks.Model
     {
         public Guid? Id { get; set; }
         public Guid? PurchaseOrderId { get; set; }
+        public Guid? SalesOrderItemId { get; set; }
         public string? Item { get; set; }
         public string? Description { get; set; } = string.Empty;
         public decimal Quantity { get; set; }
@@ -127,7 +132,7 @@ namespace YLWorks.Model
         public DateTime? POReceivedDate {  get; set; }
         public Guid? SupplierId { get; set; }
         public Guid? ClientId {  get; set; }
-        public string? Terms { get; set; }
+        public string? PaymentTerms { get; set; }
 
         public Guid? QuotationId { get; set; }
         public Guid? ProjectId { get; set; }
@@ -158,7 +163,7 @@ namespace YLWorks.Model
         public DateTime? POReceivedDate { get; set; }
         public Guid? SupplierId { get; set; }
         public Guid? ClientId { get; set; }
-        public string? Terms { get; set; }
+        public string? PaymentTerms { get; set; }
         public Guid? QuotationId { get; set; }
         public Guid? ProjectId { get; set; }
         public Guid? PurchaseOrderId {  get; set; }

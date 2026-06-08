@@ -22,7 +22,7 @@ namespace YLWorks.Model
 
         public string? PaymentTerms { get; set; }
         public int? ValidityDays {  get; set; }
-        public string? DeliveryTimeline { get; set; }
+        public string? Execution { get; set; }
         public string? WarrantyTerms { get; set; }
 
         public string Status { get; set; } = "Draft"; // Draft, Revised, Approved, Sent, Accepted, Rejected
@@ -55,14 +55,16 @@ namespace YLWorks.Model
         public QuotationItems? Parent { get; set; }
         public int SortOrder { get; set; }
         public string Type { get; set; } // Category @ ITEM
+        public string? ItemType { get; set; } //Product, Service, Notes
+        public string? Item { get; set; }
         public string? Description { get; set; }
         public bool IsGroup { get; set; }
-        public decimal Quantity { get; set; }
-        public string Unit { get; set; } = "Nos";
-        public decimal UnitPrice { get; set; }
+        public decimal? Quantity { get; set; }
+        public string? Unit { get; set; }
+        public decimal? UnitPrice { get; set; }
         public decimal? Discount {  get; set; }
         public decimal? TaxRate {  get; set; }
-        public decimal TotalPrice { get; set; }
+        public decimal? TotalPrice { get; set; }
         public List<QuotationItems> Children { get; set; } = new List<QuotationItems>();
     }
 
@@ -71,14 +73,16 @@ namespace YLWorks.Model
         public Guid Id { get; set; }
         public int SortOrder { get; set; }
         public string Type { get; set; }
+        public string? ItemType { get; set; } //Product, Service, Notes
         public bool IsGroup { get; set; }
+        public string? Item { get; set; }
         public string Description { get; set; }
         public string? Unit { get; set; }
-        public decimal Quantity { get; set; }
-        public decimal UnitPrice { get; set; }
+        public decimal? Quantity { get; set; }
+        public decimal? UnitPrice { get; set; }
         public decimal? Discount { get; set; }
         public decimal? TaxRate { get; set; }
-        public decimal TotalPrice { get; set; }
+        public decimal? TotalPrice { get; set; }
         public List<QuotationItemDto> Children { get; set;} = new List<QuotationItemDto>();
     }
 
@@ -87,15 +91,17 @@ namespace YLWorks.Model
         public Guid? Id { get; set; }
         public int SortOrder { get; set; }
         public string Type { get; set; }
+        public string? ItemType { get; set; } //Product, Service, Notes
         public bool IsGroup { get; set; }
         public Guid? ParentId { get; set; }
+        public string? Item { get; set; }
         public string? Description { get; set; } = string.Empty;
-        public decimal Quantity { get; set; }
-        public string Unit { get; set; } = "Nos";
-        public decimal UnitPrice { get; set; }
+        public decimal? Quantity { get; set; }
+        public string? Unit { get; set; }
+        public decimal? UnitPrice { get; set; }
         public decimal? Discount { get; set; }
         public decimal? TaxRate { get; set; }
-        public decimal TotalPrice { get; set; }
+        public decimal? TotalPrice { get; set; }
         public List<QuotationItemRequest> Children { get; set; } = new();
     }
 
@@ -123,7 +129,7 @@ namespace YLWorks.Model
         public decimal TotalAmount { get; set; }
         public string? PaymentTerms { get; set; }
         public int? ValidityDays { get; set; }
-        public string? DeliveryTimeline { get; set; }
+        public string? Execution { get; set; }
         public string? WarrantyTerms { get; set; }
     }
 
@@ -168,4 +174,6 @@ namespace YLWorks.Model
         public IFormFile? ClientPOAttachment { get; set; }
         public string? Remarks { get; set; }
     }
+
+
 }

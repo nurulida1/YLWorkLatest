@@ -94,10 +94,17 @@ import { DrawerModule } from 'primeng/drawer';
                 class="pi pi-search absolute! top-3! right-2! text-gray-500!"
               ></i>
             </div>
-
+            <p-button
+              label="Export as CSV"
+              (onClick)="exportToExcel()"
+              icon="pi pi-file-export"
+              severity="secondary"
+              [outlined]="true"
+              styleClass="py-2! whitespace-nowrap!"
+            ></p-button>
             <p-button
               *hasPermission="'QUOTATION'; action: 'canCreate'"
-              label="New Quotation"
+              label="Quotation"
               [routerLink]="'/quotations/form'"
               icon="pi pi-plus"
               severity="info"
@@ -125,25 +132,27 @@ import { DrawerModule } from 'primeng/drawer';
             <ng-template #header>
               <tr>
                 <th
-                  class="w-[5%]! bg-gray-100!"
+                  class="w-[2%]! bg-gray-100!"
                   *ngIf="permissions().canUpdate"
                 ></th>
                 <th
                   pSortableColumn="QuotationNo"
-                  class="bg-gray-100! text-center! w-[20%]!"
+                  class="bg-gray-100! text-center! w-[10%]!"
                 >
                   <div class="flex flex-row justify-center items-center gap-2">
                     <div>Quotation No</div>
                     <p-sortIcon field="QuotationNo" />
                   </div>
                 </th>
-                <th class="bg-gray-100! text-center! w-[30%]">Client</th>
+                <th class="bg-gray-100! text-left! w-[30%]">Client</th>
+                <th class="bg-gray-100! text-left! w-[10%]">Quotation By</th>
+
                 <th
                   pSortableColumn="QuotationDate"
-                  class="bg-gray-100! text-center! w-[15%]!"
+                  class="bg-gray-100! text-center! w-[10%]!"
                 >
                   <div class="flex flex-row justify-center items-center gap-2">
-                    <div>Date</div>
+                    <div>Quotation Date</div>
                     <p-sortIcon field="QuotationDate" />
                   </div>
                 </th>
@@ -162,7 +171,7 @@ import { DrawerModule } from 'primeng/drawer';
                     permissions().canUpdateStatus ||
                     permissions().canDelete
                   "
-                  class="bg-gray-100! text-center! w-[10%]"
+                  class="bg-gray-100! text-left! w-[10%]"
                 >
                   Action
                 </th>
@@ -182,6 +191,7 @@ import { DrawerModule } from 'primeng/drawer';
                     (click)="onRowExpand(data, fTable)"
                   >
                     <i
+                      class="text-sm!"
                       [class]="
                         expanded ? 'pi pi-chevron-down' : 'pi pi-chevron-right'
                       "
@@ -191,7 +201,9 @@ import { DrawerModule } from 'primeng/drawer';
                 <td class="text-center! font-semibold!">
                   {{ data.quotationNo }}
                 </td>
-                <td class="text-center!">{{ data.client?.name }}</td>
+                <td class="text-left!">{{ data.client?.name }}</td>
+                <td class="text-left!">{{ data.createdBy?.displayName }}</td>
+
                 <td class="text-center!">
                   {{ data.quotationDate | date: 'dd/MM/yyyy' }}
                 </td>
@@ -210,7 +222,8 @@ import { DrawerModule } from 'primeng/drawer';
                           data.status === 'Accepted',
                         'bg-red-100 text-red-600':
                           data.status === 'Rejected' ||
-                          data.status === 'Cancelled',
+                          data.status === 'Cancelled' ||
+                          data.status == 'Expired',
                       }"
                     >
                       {{ data.status }}
@@ -226,13 +239,26 @@ import { DrawerModule } from 'primeng/drawer';
                   class="text-center!"
                 >
                   <div
-                    class="flex items-center justify-center"
-                    *ngIf="data.status !== 'Cancelled'"
+                    class="flex flex-row items-center gap-6 whitespace-nowrap"
                   >
-                    <i
-                      (click)="onEllipsisClick($event, data, menu)"
-                      class="pi pi-ellipsis-h cursor-pointer"
-                    ></i>
+                    <p-button
+                      label="Convert to SO"
+                      (onClick)="ActionClick(data, 'Convert')"
+                      [severity]="data.status !== 'Sent' ? 'secondary' : 'info'"
+                      [outlined]="true"
+                      size="small"
+                      styleClass="border-2! font-semibold!"
+                      [disabled]="data.status !== 'Sent'"
+                    ></p-button>
+                    <div
+                      class="flex items-center justify-center"
+                      *ngIf="data.status !== 'Cancelled'"
+                    >
+                      <i
+                        (click)="onEllipsisClick($event, data, menu)"
+                        class="pi pi-ellipsis-h cursor-pointer"
+                      ></i>
+                    </div>
                   </div>
                 </td>
               </tr>
@@ -420,168 +446,509 @@ import { DrawerModule } from 'primeng/drawer';
     <p-drawer
       [(visible)]="displayDetailsDrawer"
       position="right"
-      styleClass="w-[60%]!"
+      styleClass="w-[70%]!"
       [modal]="true"
       [showCloseIcon]="false"
       (onHide)="selectedQuotation = null"
-      ><ng-template #header>
-        <div class="flex items-center gap-3 tracking-wide">
-          <span class="text-xl font-semibold text-gray-800"
-            >Quotation Details</span
-          >
+    >
+      <ng-template #header>
+        <div class="flex items-center justify-between w-full pr-4">
+          <div class="flex items-center gap-4">
+            <div
+              class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-lg"
+            >
+              <i class="pi pi-file-edit text-white text-xl"></i>
+            </div>
+            <div>
+              <h2 class="text-2xl font-bold text-slate-900 tracking-tight">
+                Quotation Details
+              </h2>
+              <p class="text-sm text-slate-500 mt-0.5">
+                Complete quotation information and line items
+              </p>
+            </div>
+          </div>
 
-          <div
-            *ngIf="!loadingDetails && selectedQuotation"
-            class="rounded-full px-3 py-0.5 text-xs font-semibold uppercase tracking-wider"
-            [ngClass]="{
-              'bg-blue-100 text-blue-600':
-                selectedQuotation.status === 'Reviewed' ||
-                selectedQuotation.status === 'Sent' ||
-                selectedQuotation.status === 'Approved',
-              'bg-orange-100 text-orange-600':
-                selectedQuotation.status === 'Draft',
-              'bg-green-100 text-green-600':
-                selectedQuotation.status === 'Accepted',
-              'bg-red-100 text-red-600':
-                selectedQuotation.status === 'Rejected' ||
-                selectedQuotation.status === 'Cancelled',
-            }"
-          >
-            {{ selectedQuotation.status }}
+          <div class="flex items-center gap-3">
+            <div
+              *ngIf="!loadingDetails && selectedQuotation"
+              class="rounded-xl px-4 py-2 text-sm font-bold uppercase tracking-wider shadow-sm"
+              [ngClass]="{
+                'bg-gradient-to-r from-blue-100 to-blue-50 text-blue-700 border-2 border-blue-200':
+                  selectedQuotation.status === 'Reviewed' ||
+                  selectedQuotation.status === 'Sent' ||
+                  selectedQuotation.status === 'Approved',
+                'bg-gradient-to-r from-orange-100 to-orange-50 text-orange-700 border-2 border-orange-200':
+                  selectedQuotation.status === 'Draft',
+                'bg-gradient-to-r from-green-100 to-green-50 text-green-700 border-2 border-green-200':
+                  selectedQuotation.status === 'Accepted',
+                'bg-gradient-to-r from-red-100 to-red-50 text-red-700 border-2 border-red-200':
+                  selectedQuotation.status === 'Rejected' ||
+                  selectedQuotation.status === 'Cancelled' ||
+                  selectedQuotation.status === 'Expired',
+              }"
+            >
+              <i
+                class="pi mr-2 mt-1"
+                [ngClass]="{
+                  'pi-eye': selectedQuotation.status === 'Reviewed',
+                  'pi-send': selectedQuotation.status === 'Sent',
+                  'pi-check-circle':
+                    selectedQuotation.status === 'Approved' ||
+                    selectedQuotation.status === 'Accepted',
+                  'pi-file-edit': selectedQuotation.status === 'Draft',
+                  'pi-times-circle':
+                    selectedQuotation.status === 'Rejected' ||
+                    selectedQuotation.status === 'Cancelled' ||
+                    selectedQuotation.status === 'Expired',
+                }"
+              ></i>
+              {{ selectedQuotation.status }}
+            </div>
+
+            <p-button
+              icon="pi pi-times"
+              [rounded]="true"
+              [text]="true"
+              severity="secondary"
+              styleClass="hover:bg-slate-100 text-slate-600"
+              (onClick)="displayDetailsDrawer = false"
+            ></p-button>
           </div>
         </div>
       </ng-template>
+
       <div
         *ngIf="loadingDetails"
-        class="flex flex-col items-center justify-center py-8 gap-2 text-gray-500"
+        class="flex flex-col items-center justify-center py-16 gap-4"
       >
-        <i class="pi pi-spin pi-spinner text-2xl"></i>
-        <span>Loading detailed items...</span>
+        <div
+          class="w-16 h-16 rounded-2xl bg-blue-50 flex items-center justify-center"
+        >
+          <i class="pi pi-spin pi-spinner text-3xl text-blue-600"></i>
+        </div>
+        <div class="text-center">
+          <div class="text-slate-900 font-semibold text-lg">
+            Loading quotation details...
+          </div>
+          <div class="text-slate-500 text-sm mt-1">
+            Please wait while we fetch the information
+          </div>
+        </div>
       </div>
 
       <div
         *ngIf="!loadingDetails && selectedQuotation"
-        class="flex flex-col gap-5 tracking-wide text-gray-700"
+        class="flex flex-col gap-6 p-6 bg-slate-50 min-h-full"
       >
         <div
-          class="bg-gray-50 border border-gray-100 rounded-lg p-4 flex flex-col gap-1.5"
+          *ngIf="selectedQuotation.status === 'Draft'"
+          class="bg-white rounded-xl border-2 border-orange-200 p-4 flex items-center justify-between shadow-sm"
         >
-          <div class="flex justify-between items-center">
-            <span class="text-sm font-bold text-gray-400 uppercase"
-              >Quotation No</span
+          <div class="flex items-center gap-3">
+            <div
+              class="w-10 h-10 rounded-lg bg-orange-100 flex items-center justify-center"
             >
-            <span class="font-semibold text-gray-800">{{
-              selectedQuotation.quotationNo
-            }}</span>
+              <i class="pi pi-exclamation-triangle text-orange-600 text-lg"></i>
+            </div>
+            <div>
+              <div class="font-semibold text-slate-900">
+                This quotation is in
+                <b class="text-orange-400 tracking-wide">Draft</b> status
+              </div>
+              <div class="text-sm text-slate-600 mt-0.5">
+                Review and mark as reviewed, or cancel if needed
+              </div>
+            </div>
           </div>
-          <div class="flex justify-between items-center">
-            <span class="text-sm font-bold text-gray-400 uppercase"
-              >Subject</span
-            >
-            <span class="text-gray-600 truncate max-w-[600px] font-medium">{{
-              selectedQuotation.subject || '-'
-            }}</span>
-          </div>
-          <div class="flex justify-between items-center">
-            <span class="text-sm font-bold text-gray-400 uppercase"
-              >Project Code</span
-            >
-            <span class="text-gray-600 font-mono">{{
-              selectedQuotation.projectCode || '-'
-            }}</span>
+          <div class="flex items-center gap-3">
+            <p-button
+              label="Mark as Reviewed"
+              icon="pi pi-check-circle"
+              severity="success"
+              styleClass="px-5! py-2.5 font-semibold bg-gradient-to-r from-green-600 to-green-500 border-0 shadow-lg shadow-green-500/25 rounded-xl"
+              (onClick)="
+                updateQuotationStatus(selectedQuotation.id, 'Reviewed')
+              "
+            ></p-button>
+            <p-button
+              label="Cancel Quote"
+              icon="pi pi-ban"
+              severity="danger"
+              [outlined]="true"
+              styleClass="px-5! py-2.5 font-semibold border-2 border-red-200 text-red-700 hover:bg-red-50 rounded-xl"
+              (onClick)="
+                updateQuotationStatus(selectedQuotation.id, 'Cancelled')
+              "
+            ></p-button>
           </div>
         </div>
 
-        <div>
-          <h3
-            class="text-sm font-bold text-gray-400 uppercase tracking-wider mb-2"
-          >
-            Terms & Conditions
-          </h3>
-          <div
-            class="grid grid-cols-2 gap-3 bg-white border border-gray-200 rounded-lg p-4"
-          >
-            <div>
-              <label class="text-sm text-gray-400 block">Payment Terms</label>
-              <span class="font-medium text-gray-700">{{
-                selectedQuotation.paymentTerms || '-'
-              }}</span>
+        <div
+          class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden"
+        >
+          <div class="bg-gray-100 px-8 py-3 border-b border-gray-200">
+            <div class="flex items-center justify-between">
+              <div>
+                <div
+                  class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1"
+                >
+                  Quotation Number
+                </div>
+                <div class="text-2xl font-bold tracking-wide">
+                  {{ selectedQuotation.quotationNo }}
+                </div>
+              </div>
+              <div class="text-right">
+                <div
+                  class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1"
+                >
+                  Date
+                </div>
+                <div class="text-lg font-bold">
+                  {{ selectedQuotation.quotationDate | date: 'dd MMM yyyy' }}
+                </div>
+              </div>
             </div>
-            <div>
-              <label class="text-sm text-gray-400 block">Validity period</label>
-              <span class="font-medium text-gray-700">{{
-                selectedQuotation.validityDays
-                  ? selectedQuotation.validityDays +
-                    ' Days (with effect from the date of this quotation)'
-                  : '-'
-              }}</span>
-            </div>
-            <div class="col-span-2 border-t border-gray-100 pt-2">
-              <label class="text-sm text-gray-400 block"
-                >Delivery Timeline</label
+          </div>
+
+          <div class="px-8 py-5 space-y-3">
+            <div class="pb-2 border-b-2 border-slate-100">
+              <div
+                class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2"
               >
-              <span class="font-medium text-gray-700">{{
-                selectedQuotation.deliveryTimeline || '-'
-              }}</span>
+                Subject
+              </div>
+              <div class="text-lg font-semibold text-slate-900 leading-relaxed">
+                {{ selectedQuotation.subject || 'No subject provided' }}
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-6">
+              <div
+                class="bg-gradient-to-br from-blue-50 to-slate-50 rounded-xl border-2 border-blue-100 p-5"
+              >
+                <div
+                  class="flex items-center gap-2 mb-4 pb-3 border-b-2 border-blue-200/50"
+                >
+                  <div
+                    class="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center"
+                  >
+                    <i class="pi pi-building text-white text-sm"></i>
+                  </div>
+                  <span
+                    class="font-bold text-slate-900 uppercase tracking-wider text-sm"
+                    >From</span
+                  >
+                </div>
+                <div
+                  class="space-y-2.5 text-sm"
+                  *ngIf="selectedQuotation.fromCompany"
+                >
+                  <div class="font-bold text-slate-900 text-base">
+                    {{ selectedQuotation.fromCompany?.name }}
+                  </div>
+                  <div class="text-slate-700 leading-relaxed">
+                    <div>
+                      {{
+                        selectedQuotation.fromCompany?.billingAddress
+                          ?.addressLine1
+                      }}
+                    </div>
+                    <div>
+                      {{
+                        selectedQuotation.fromCompany?.billingAddress
+                          ?.addressLine2
+                      }}
+                    </div>
+                    <div>
+                      {{ selectedQuotation.fromCompany?.billingAddress?.city }},
+                      {{ selectedQuotation.fromCompany?.billingAddress?.state }}
+                    </div>
+                    <div>
+                      {{
+                        selectedQuotation.fromCompany?.billingAddress?.poscode
+                      }}
+                    </div>
+                  </div>
+                  <div class="pt-2 mt-2 border-t border-blue-200/50 space-y-1">
+                    <div class="flex items-center gap-2 text-slate-700">
+                      <i class="pi pi-phone text-blue-600 text-xs"></i>
+                      <span>{{
+                        selectedQuotation.fromCompany?.contactNo
+                      }}</span>
+                    </div>
+                    <div class="flex items-center gap-2 text-slate-700">
+                      <i class="pi pi-envelope text-blue-600 text-xs"></i>
+                      <span class="break-all">{{
+                        selectedQuotation.fromCompany?.email
+                      }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div
+                class="bg-gradient-to-br from-emerald-50 to-slate-50 rounded-xl border-2 border-emerald-100 p-5"
+              >
+                <div
+                  class="flex items-center gap-2 mb-4 pb-3 border-b-2 border-emerald-200/50"
+                >
+                  <div
+                    class="w-8 h-8 rounded-lg bg-emerald-600 flex items-center justify-center"
+                  >
+                    <i class="pi pi-user text-white text-sm"></i>
+                  </div>
+                  <span
+                    class="font-bold text-slate-900 uppercase tracking-wider text-sm"
+                    >Bill To</span
+                  >
+                </div>
+                <div
+                  class="space-y-2.5 text-sm"
+                  *ngIf="selectedQuotation.client"
+                >
+                  <div class="font-bold text-slate-900 text-base">
+                    {{ selectedQuotation.client?.name }}
+                  </div>
+                  <div class="text-slate-700 leading-relaxed">
+                    <div>
+                      {{
+                        selectedQuotation.client?.billingAddress?.addressLine1
+                      }}
+                    </div>
+                    <div>
+                      {{
+                        selectedQuotation.client?.billingAddress?.addressLine2
+                      }}
+                    </div>
+                    <div>
+                      {{ selectedQuotation.client?.billingAddress?.city }},
+                      {{ selectedQuotation.client?.billingAddress?.state }}
+                    </div>
+                    <div>
+                      {{ selectedQuotation.client?.billingAddress?.poscode }}
+                    </div>
+                  </div>
+                  <div
+                    class="pt-2 mt-2 border-t border-emerald-200/50 space-y-1"
+                  >
+                    <div class="flex items-center gap-2 text-slate-700">
+                      <i class="pi pi-user text-emerald-600 text-xs"></i>
+                      <span>{{
+                        selectedQuotation.client?.contactPerson1
+                      }}</span>
+                    </div>
+                    <div class="flex items-center gap-2 text-slate-700">
+                      <i class="pi pi-phone text-emerald-600 text-xs"></i>
+                      <span>{{ selectedQuotation.client?.contactNo }}</span>
+                    </div>
+                    <div class="flex items-center gap-2 text-slate-700">
+                      <i class="pi pi-envelope text-emerald-600 text-xs"></i>
+                      <span class="break-all">{{
+                        selectedQuotation.client?.email
+                      }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div
+              *ngIf="selectedQuotation.projectCode"
+              class="bg-slate-50 rounded-xl border border-slate-200 p-4"
+            >
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <i class="pi pi-briefcase text-slate-500"></i>
+                  <span
+                    class="text-sm font-bold text-slate-600 uppercase tracking-wider"
+                    >Project Code</span
+                  >
+                </div>
+                <span class="font-mono font-bold text-slate-900">{{
+                  selectedQuotation.projectCode
+                }}</span>
+              </div>
             </div>
           </div>
         </div>
 
-        <div>
-          <h3
-            class="text-sm font-bold text-gray-400 uppercase tracking-wider mb-2"
-          >
-            Line Summary
-          </h3>
-          <div
-            class="border border-gray-200 rounded-lg overflow-hidden bg-white"
-          >
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200">
+          <div class="px-8 py-5">
+            <div class="flex items-center gap-3">
+              <div
+                class="w-10 h-10 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center"
+              >
+                <i class="pi pi-list text-lg!"></i>
+              </div>
+              <div>
+                <h3 class="text-xl font-bold">Line Items</h3>
+                <p class="text-gray-500 text-sm mt-0.5">
+                  Detailed quotation items and pricing
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="overflow-auto px-2">
             <p-table
-              class="w-full text-left border-collapse"
-              [value]="selectedQuotation.quotationItems || []"
+              [value]="getSortedQuotationItems()"
+              styleClass="border! border-gray-200!"
+              [showGridlines]="true"
             >
               <ng-template #header>
-                <tr
-                  class="bg-gray-50 border-b border-gray-200 text-sm font-semibold text-gray-500"
-                >
-                  <th class="p-2.5 bg-gray-100!">Item Description</th>
-                  <th class="p-2.5 text-center! w-[15%] bg-gray-100!">Qty</th>
-                  <th class="p-2.5 text-right! w-[25%] bg-gray-100!">
-                    Unit Price
+                <tr class="border-b-2 border-slate-200">
+                  <th
+                    class="bg-gray-100! text-center! text-xs font-bold text-slate-700 uppercase tracking-wider w-[5%]!"
+                  >
+                    Item
                   </th>
-                  <th class="p-2.5 text-center! w-[25%] bg-gray-100!">Unit</th>
-
-                  <th class="p-2.5 text-right! w-[25%] bg-gray-100!">Total</th>
+                  <th
+                    class="bg-gray-100! text-left! text-xs font-bold text-slate-700 uppercase tracking-wider w-[35%]!"
+                  >
+                    Description
+                  </th>
+                  <th
+                    class="bg-gray-100! text-center! text-xs font-bold text-slate-700 uppercase tracking-wider w-[5%]!"
+                  >
+                    Unit
+                  </th>
+                  <th
+                    class="bg-gray-100! text-center! text-xs font-bold text-slate-700 uppercase tracking-wider w-[10%]!"
+                  >
+                    Qty
+                  </th>
+                  <th
+                    class="bg-gray-100! text-right! text-xs font-bold text-slate-700 uppercase tracking-wider w-[15%]!"
+                  >
+                    Unit Price (RM)
+                  </th>
+                  <th
+                    class="bg-gray-100! text-right! text-xs font-bold text-slate-700 uppercase tracking-wider w-[25%]!"
+                  >
+                    Total (RM)
+                  </th>
                 </tr>
               </ng-template>
-              <ng-template #body let-item>
-                <tr>
-                  <td class="p-2.5 font-medium text-gray-700 text-sm">
-                    <div [innerHTML]="item.description"></div>
-                  </td>
-                  <td class="p-2.5 text-center! text-gray-600">
-                    {{ item.quantity }}
-                  </td>
-                  <td
-                    class="p-2.5 text-right! text-gray-600 font-mono text-base"
+              <ng-template #body let-item let-i="rowIndex">
+                <ng-container>
+                  <tr
+                    *ngIf="item.type === 'Category'"
+                    class="bg-gray-50 border-y-2 border-gray-200"
                   >
-                    {{ item.unitPrice | currency: 'RM ' : 'symbol' : '1.2-2' }}
-                  </td>
-                  <td class="p-2.5 text-center! text-gray-600 text-sm">
-                    {{ item.unit }}
-                  </td>
-                  <td
-                    class="p-2.5 text-right! text-gray-600 font-mono text-base"
+                    <td colspan="6" class="px-4 py-3">
+                      <div class="flex items-center gap-3">
+                        <span
+                          class="font-bold text-gray-900 text-base"
+                          [innerHTML]="item.description"
+                        ></span>
+                      </div>
+                    </td>
+                  </tr>
+
+                  <tr
+                    *ngIf="item.type === 'Item'"
+                    class="border-b border-slate-100 hover:bg-slate-50/50 transition-colors"
                   >
-                    {{ item.totalPrice | currency: 'RM ' : 'symbol' : '1.2-2' }}
+                    <td class="text-center!">
+                      {{ item.item || '-' }}
+                    </td>
+                    <td class="px-4 py-4">
+                      <div
+                        class="text-sm text-slate-900 leading-relaxed"
+                        [innerHTML]="item.description"
+                      ></div>
+                    </td>
+                    <td class="text-center!">
+                      <span
+                        class="inline-block px-3 py-1 rounded-lg bg-slate-100 text-slate-700 font-medium text-sm"
+                      >
+                        {{ item.unit || '-' }}
+                      </span>
+                    </td>
+                    <td class="text-center! font-semibold text-slate-900">
+                      {{ item.quantity || '-' }}
+                    </td>
+                    <td
+                      class="text-right! font-mono font-semibold text-slate-900"
+                    >
+                      {{
+                        item.unitPrice
+                          ? (item.unitPrice | number: '1.2-2')
+                          : '-'
+                      }}
+                    </td>
+                    <td class="text-right! font-mono font-bold text-slate-900">
+                      {{
+                        item.totalPrice
+                          ? (item.totalPrice | number: '1.2-2')
+                          : '-'
+                      }}
+                    </td>
+                  </tr>
+                </ng-container>
+
+                <tr *ngIf="!selectedQuotation.quotationItems?.length">
+                  <td colspan="6" class="px-4 py-12 text-center">
+                    <div class="flex flex-col items-center gap-3">
+                      <div
+                        class="w-16 h-16 rounded-2xl bg-slate-100 flex items-center justify-center"
+                      >
+                        <i class="pi pi-inbox text-3xl text-slate-300"></i>
+                      </div>
+                      <div class="text-slate-600 font-semibold">
+                        No items found
+                      </div>
+                      <div class="text-sm text-slate-400">
+                        This quotation doesn't have any line items yet
+                      </div>
+                    </div>
                   </td>
                 </tr>
-                <tr *ngIf="!selectedQuotation.quotationItems?.length">
+              </ng-template>
+
+              <ng-template #footer>
+                <tr class="border-slate-200 bg-slate-50/50">
                   <td
-                    colspan="100%"
-                    class="p-4 text-center! text-gray-400 italic"
+                    colspan="5"
+                    class="text-right! font-bold text-slate-700 text-base"
                   >
-                    No items found.
+                    Subtotal
+                  </td>
+                  <td class="text-right! font-mono font-bold text-slate-900">
+                    {{ selectedQuotation.subTotal | number: '1.2-2' }}
+                  </td>
+                </tr>
+
+                <tr *ngIf="selectedQuotation.discount" class="bg-slate-50/30">
+                  <td
+                    colspan="5"
+                    class="text-right! font-bold text-red-600! text-base"
+                  >
+                    Discount
+                  </td>
+                  <td
+                    class="text-right! font-mono font-bold text-red-600! text-base"
+                  >
+                    -{{ selectedQuotation.discount | number: '1.2-2' }}
+                  </td>
+                </tr>
+
+                <tr class=" bg-gray-100">
+                  <td
+                    colspan="5"
+                    class="bg-gray-100! px-4 py-5 text-right! font-bold text-slate-900 text-lg"
+                  >
+                    Total Amount
+                  </td>
+                  <td
+                    class="bg-gray-100! px-4 py-5 text-right! font-mono font-bold text-gray-900 text-xl"
+                  >
+                    {{
+                      selectedQuotation.totalAmount
+                        | currency: 'RM ' : 'symbol' : '1.2-2'
+                    }}
                   </td>
                 </tr>
               </ng-template>
@@ -590,46 +957,103 @@ import { DrawerModule } from 'primeng/drawer';
         </div>
 
         <div
-          class="mt-2 border-t border-gray-200 pt-4 flex flex-col items-end gap-2 text-sm"
+          class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden"
         >
-          <div class="flex justify-between w-[220px] text-gray-500">
-            <span>Subtotal:</span>
-            <span class="font-mono text-base">{{
-              selectedQuotation.subTotal ?? 0
-                | currency: 'RM ' : 'symbol' : '1.2-2'
-            }}</span>
+          <div class="bg-gray-100 px-8 py-5 border-b border-gray-200">
+            <div class="flex items-center gap-3">
+              <div
+                class="w-10 h-10 rounded-lg bg-gray-300 backdrop-blur-sm flex items-center justify-center"
+              >
+                <i class="pi pi-file-edit text-lg!"></i>
+              </div>
+              <div>
+                <h3 class="text-xl font-bold">Terms & Conditions</h3>
+                <p class="text-gray-500 text-sm mt-0.5">
+                  Commercial terms for this quotation
+                </p>
+              </div>
+            </div>
           </div>
-          <div
-            *ngIf="selectedQuotation.discount"
-            class="flex justify-between w-[250px] text-red-500"
-          >
-            <span>Discount:</span>
-            <span class="font-mono text-base"
-              >-{{
-                selectedQuotation.discount ?? 0
-                  | currency: 'RM ' : 'symbol' : '1.2-2'
+
+          <div class="p-8 grid grid-cols-12 gap-3">
+            <div class="col-span-1 font-semibold">Terms</div>
+            <div class="col-span-11">
+              : {{ selectedQuotation.paymentTerms }}
+            </div>
+            <div class="col-span-1 font-semibold">Validity</div>
+            <div class="col-span-11">
+              : {{ selectedQuotation.validityDays }} days (with effect from the
+              date of this quotation)
+            </div>
+            <div class="col-span-1 font-semibold">Execution</div>
+            <div class="col-span-11">: {{ selectedQuotation.execution }}</div>
+            <div class="col-span-1 font-semibold">Warranty</div>
+            <div class="col-span-11">
+              : {{ selectedQuotation.warrantyTerms }}
+            </div>
+
+            <div
+              *ngIf="selectedQuotation.remarks"
+              class="col-span-12 mt-6 bg-yellow-50 rounded-xl border border-yellow-400 p-5"
+            >
+              <div class="flex items-center gap-2 mb-3">
+                <i class="pi pi-comment text-yellow-600"></i>
+                <span
+                  class="text-xs font-bold text-slate-500 uppercase tracking-wider"
+                  >Remarks</span
+                >
+              </div>
+              <div
+                class="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap"
+              >
+                {{ selectedQuotation.remarks }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div
+          class="bg-white rounded-xl border border-slate-200 p-6 flex items-center justify-between shadow-sm sticky bottom-0"
+        >
+          <div class="flex items-center gap-2 text-sm text-slate-600">
+            <i class="pi pi-info-circle"></i>
+            <span
+              >Last updated:
+              {{
+                selectedQuotation.updatedAt
+                  ? (selectedQuotation.updatedAt | date: 'dd MMM yyyy, h:mm a')
+                  : (selectedQuotation.createdAt | date: 'dd MMM yyyy, h:mm a')
               }}</span
             >
           </div>
-          <div class="flex justify-between w-[250px] text-gray-500">
-            <span>Tax Amount:</span>
-            <span class="font-mono text-base">{{
-              selectedQuotation.taxAmount ?? 0
-                | currency: 'RM ' : 'symbol' : '1.2-2'
-            }}</span>
-          </div>
-          <div
-            class="flex justify-between w-[250px] text-lg font-bold text-gray-800 border-t border-gray-100 pt-2"
-          >
-            <span>Total Amount:</span>
-            <span class="font-mono text-blue-600">{{
-              selectedQuotation.totalAmount
-                | currency: 'RM ' : 'symbol' : '1.2-2'
-            }}</span>
+          <div class="flex items-center gap-3">
+            <p-button
+              label="Generate PDF"
+              icon="pi pi-file-pdf"
+              severity="danger"
+              styleClass="px-5 py-2.5 font-semibold border-2 border-slate-200 text-slate-700 hover:bg-slate-50 rounded-xl"
+              (onClick)="generatePDF()"
+            ></p-button>
+            <p-button
+              *ngIf="selectedQuotation.status === 'Draft'"
+              label="Edit Quotation"
+              icon="pi pi-pencil"
+              severity="info"
+              styleClass="px-5 py-2.5 font-semibold bg-gradient-to-r from-blue-600 to-blue-500 border-0 shadow-lg shadow-blue-500/25 rounded-xl"
+              (onClick)="ActionClick(selectedQuotation, 'Update')"
+            ></p-button>
+            <p-button
+              *ngIf="selectedQuotation.status === 'Reviewed'"
+              label="Mark as Sent"
+              icon="pi pi-send"
+              severity="info"
+              styleClass="px-5 py-2.5 font-semibold bg-gradient-to-r from-blue-600 to-blue-500 border-0 shadow-lg shadow-blue-500/25 rounded-xl"
+              (onClick)="updateQuotationStatus(selectedQuotation.id, 'Sent')"
+            ></p-button>
           </div>
         </div>
       </div>
-    </p-drawer>`,
+    </p-drawer> `,
   styleUrl: './quotation.less',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -686,7 +1110,7 @@ export class Quotation implements OnInit, OnDestroy {
     this.Query.OrderBy = 'CreatedAt desc';
     this.Query.Select = null;
     this.Query.Includes =
-      'Client,QuotationStatusHistories,QuotationStatusHistories.ActionUser,QuotationItems,Project';
+      'FromCompany.BillingAddress,Client.BillingAddress,QuotationStatusHistories,QuotationStatusHistories.ActionUser,QuotationItems,Project';
   }
 
   ngOnInit(): void {}
@@ -709,6 +1133,7 @@ export class Quotation implements OnInit, OnDestroy {
             'Accepted',
             'Rejected',
             'Cancelled',
+            'Expired',
           ];
 
           const allHistories = res.data.flatMap(
@@ -836,6 +1261,9 @@ export class Quotation implements OnInit, OnDestroy {
       this.cdr.markForCheck();
     } else if (action === 'Download') {
       this.quotationService.downloadPdf(data.id);
+    } else if (action === 'Reviewed') {
+      this.selectedQuotation = data;
+      this.displayDetailsDrawer = true;
     }
   }
 
@@ -866,39 +1294,49 @@ export class Quotation implements OnInit, OnDestroy {
         this.menuItems.push({
           label: 'Reviewed',
           icon: 'pi pi-file-edit',
-          command: () => this.updateQuotationStatus(quotation.id, 'Reviewed'),
-        });
-      }
-
-      if (status === 'Reviewed') {
-        this.menuItems.push({
-          label: 'Mark As Sent',
-          icon: 'pi pi-send',
-          command: () => this.updateQuotationStatus(quotation.id, 'Sent'),
+          command: () => this.ActionClick(quotation, 'Reviewed'),
         });
       }
 
       if (status === 'Sent') {
         this.menuItems.push(
-          {
-            label: 'Convert to SO',
-            icon: 'pi pi-file',
-            command: () => this.ActionClick(quotation, 'Convert'),
-          },
+          // {
+          //   label: 'Convert to SO',
+          //   icon: 'pi pi-file',
+          //   command: () => this.ActionClick(quotation, 'Convert'),
+          // },
           {
             label: 'Rejected',
             icon: 'pi pi-times-circle',
             command: () => this.updateQuotationStatus(quotation.id, 'Rejected'),
           },
+          {
+            label: 'View Details',
+            icon: 'pi pi-eye',
+            command: () => this.openDetailsDrawer(quotation),
+          },
         );
       }
 
       if (status === 'Reviewed') {
-        this.menuItems.push({
-          label: 'Cancel',
-          icon: 'pi pi-times-circle',
-          command: () => this.updateQuotationStatus(quotation.id, 'Cancelled'),
-        });
+        this.menuItems.push(
+          {
+            label: 'Mark As Sent',
+            icon: 'pi pi-send',
+            command: () => this.updateQuotationStatus(quotation.id, 'Sent'),
+          },
+          {
+            label: 'Cancel',
+            icon: 'pi pi-times-circle',
+            command: () =>
+              this.updateQuotationStatus(quotation.id, 'Cancelled'),
+          },
+          {
+            label: 'View Details',
+            icon: 'pi pi-eye',
+            command: () => this.openDetailsDrawer(quotation),
+          },
+        );
       }
     }
 
@@ -923,7 +1361,10 @@ export class Quotation implements OnInit, OnDestroy {
           command: () => this.ActionClick(quotation, 'Download'),
         },
       );
-    } else if (rights.canRead && status === 'Rejected') {
+    } else if (
+      rights.canRead &&
+      (status === 'Rejected' || status == 'Expired')
+    ) {
       this.menuItems.push({
         label: 'View Details',
         icon: 'pi pi-eye',
@@ -1002,7 +1443,7 @@ export class Quotation implements OnInit, OnDestroy {
             summary: 'Status Updated',
             detail: `Quotation is now ${res.status}`,
           });
-
+          this.displayDetailsDrawer = false;
           this.cdr.markForCheck();
         },
 
@@ -1018,6 +1459,24 @@ export class Quotation implements OnInit, OnDestroy {
       });
   }
 
+  getSortedQuotationItems() {
+    if (!this.selectedQuotation?.quotationItems) {
+      return [];
+    }
+
+    const items = [...this.selectedQuotation.quotationItems];
+
+    items.sort((a, b) => {
+      const orderA = a.sortOrder ?? 999999;
+      const orderB = b.sortOrder ?? 999999;
+      return orderA - orderB;
+    });
+
+    return items;
+  }
+
+  generatePDF() {}
+
   buildTimeline(quotation: QuotationDto): any[] {
     const statusOrder = [
       'Draft',
@@ -1026,6 +1485,7 @@ export class Quotation implements OnInit, OnDestroy {
       'Accepted',
       'Rejected',
       'Cancelled',
+      'Expired',
     ];
 
     const histories = quotation.quotationStatusHistories || [];
@@ -1048,7 +1508,7 @@ export class Quotation implements OnInit, OnDestroy {
       return {
         status,
         actionAt: item?.actionAt ?? null,
-        actionUser: item?.actionUser?.displayName || '-',
+        actionUser: item?.actionUser?.displayName || 'System',
         verified: index <= reachedIndex,
       };
     });
@@ -1235,6 +1695,24 @@ export class Quotation implements OnInit, OnDestroy {
           this.loadingService.stop();
         },
       });
+  }
+
+  exportToExcel() {
+    this.quotationService.ExportToExcel().subscribe({
+      next: (blob) => {
+        const url = window.URL.createObjectURL(blob);
+
+        const link = document.createElement('a');
+        link.href = url;
+
+        const fileName = `Quotation_${new Date().getTime()}.xlsx`;
+
+        link.download = fileName;
+        link.click();
+
+        window.URL.revokeObjectURL(url);
+      },
+    });
   }
 
   ngOnDestroy(): void {

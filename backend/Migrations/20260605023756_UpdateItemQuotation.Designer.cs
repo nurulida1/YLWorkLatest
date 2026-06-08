@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using YLWorks.Data;
 
@@ -11,9 +12,11 @@ using YLWorks.Data;
 namespace YLWorks.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260605023756_UpdateItemQuotation")]
+    partial class UpdateItemQuotation
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -370,18 +373,6 @@ namespace YLWorks.Migrations
                         .HasColumnType("char(36)");
 
                     b.Property<string>("Attachment")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("ContactNo1")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("ContactNo2")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("ContactPerson1")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("ContactPerson2")
                         .HasColumnType("longtext");
 
                     b.Property<DateTime?>("CreatedAt")
@@ -938,9 +929,6 @@ namespace YLWorks.Migrations
                     b.Property<string>("Description")
                         .HasColumnType("longtext");
 
-                    b.Property<string>("ItemCode")
-                        .HasColumnType("longtext");
-
                     b.Property<string>("ItemName")
                         .IsRequired()
                         .HasColumnType("longtext");
@@ -954,8 +942,8 @@ namespace YLWorks.Migrations
                     b.Property<int?>("ParLevel")
                         .HasColumnType("int");
 
-                    b.Property<decimal>("Quantity")
-                        .HasColumnType("decimal(65,30)");
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int");
 
                     b.Property<Guid?>("ReferenceId")
                         .HasColumnType("char(36)");
@@ -965,9 +953,6 @@ namespace YLWorks.Migrations
 
                     b.Property<string>("Remarks")
                         .HasColumnType("longtext");
-
-                    b.Property<decimal?>("ReservedQuantity")
-                        .HasColumnType("decimal(65,30)");
 
                     b.Property<Guid?>("SectionId")
                         .HasColumnType("char(36)");
@@ -1713,9 +1698,6 @@ namespace YLWorks.Migrations
                     b.Property<DateTime?>("POReceivedDate")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<string>("PaymentTerms")
-                        .HasColumnType("longtext");
-
                     b.Property<Guid?>("ProjectId")
                         .HasColumnType("char(36)");
 
@@ -1741,6 +1723,9 @@ namespace YLWorks.Migrations
 
                     b.Property<Guid?>("SupplierId")
                         .HasColumnType("char(36)");
+
+                    b.Property<string>("Terms")
+                        .HasColumnType("longtext");
 
                     b.Property<string>("TermsAndCondition")
                         .HasColumnType("longtext");
@@ -1805,9 +1790,6 @@ namespace YLWorks.Migrations
                     b.Property<decimal?>("ReceivedQuantity")
                         .HasColumnType("decimal(65,30)");
 
-                    b.Property<Guid?>("SalesOrderItemId")
-                        .HasColumnType("char(36)");
-
                     b.Property<decimal>("TotalPrice")
                         .HasColumnType("decimal(65,30)");
 
@@ -1827,8 +1809,6 @@ namespace YLWorks.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("PurchaseOrderId");
-
-                    b.HasIndex("SalesOrderItemId");
 
                     b.ToTable("PurchaseOrderItems");
                 });
@@ -1959,11 +1939,11 @@ namespace YLWorks.Migrations
                     b.Property<Guid>("CreatedById")
                         .HasColumnType("char(36)");
 
+                    b.Property<string>("DeliveryTimeline")
+                        .HasColumnType("longtext");
+
                     b.Property<decimal?>("Discount")
                         .HasColumnType("decimal(65,30)");
-
-                    b.Property<string>("Execution")
-                        .HasColumnType("longtext");
 
                     b.Property<Guid>("FromCompanyId")
                         .HasColumnType("char(36)");
@@ -2051,9 +2031,6 @@ namespace YLWorks.Migrations
                         .HasColumnType("tinyint(1)");
 
                     b.Property<string>("Item")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("ItemType")
                         .HasColumnType("longtext");
 
                     b.Property<Guid?>("ParentId")
@@ -2214,11 +2191,11 @@ namespace YLWorks.Migrations
                     b.Property<Guid?>("CreatedById")
                         .HasColumnType("char(36)");
 
+                    b.Property<string>("DeliveryTimeline")
+                        .HasColumnType("longtext");
+
                     b.Property<decimal?>("Discount")
                         .HasColumnType("decimal(65,30)");
-
-                    b.Property<string>("Execution")
-                        .HasColumnType("longtext");
 
                     b.Property<string>("Notes")
                         .HasColumnType("longtext");
@@ -2292,23 +2269,14 @@ namespace YLWorks.Migrations
                     b.Property<bool>("IncludeInDeliveryOrder")
                         .HasColumnType("tinyint(1)");
 
-                    b.Property<Guid?>("InventoryId")
-                        .HasColumnType("char(36)");
-
                     b.Property<bool>("IsGroup")
                         .HasColumnType("tinyint(1)");
 
                     b.Property<string>("Item")
                         .HasColumnType("longtext");
 
-                    b.Property<string>("ItemType")
-                        .HasColumnType("longtext");
-
                     b.Property<Guid?>("ParentId")
                         .HasColumnType("char(36)");
-
-                    b.Property<decimal?>("QtyOnHand")
-                        .HasColumnType("decimal(65,30)");
 
                     b.Property<decimal?>("Quantity")
                         .HasColumnType("decimal(65,30)");
@@ -2339,14 +2307,13 @@ namespace YLWorks.Migrations
                         .HasColumnType("longtext");
 
                     b.Property<string>("Unit")
+                        .IsRequired()
                         .HasColumnType("longtext");
 
                     b.Property<decimal?>("UnitPrice")
                         .HasColumnType("decimal(65,30)");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("InventoryId");
 
                     b.HasIndex("SalesOrderId");
 
@@ -3218,13 +3185,7 @@ namespace YLWorks.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("YLWorks.Model.SalesOrderItem", "SalesOrderItem")
-                        .WithMany()
-                        .HasForeignKey("SalesOrderItemId");
-
                     b.Navigation("PurchaseOrder");
-
-                    b.Navigation("SalesOrderItem");
                 });
 
             modelBuilder.Entity("YLWorks.Model.PurchaseOrderRMA", b =>
@@ -3375,10 +3336,6 @@ namespace YLWorks.Migrations
 
             modelBuilder.Entity("YLWorks.Model.SalesOrderItem", b =>
                 {
-                    b.HasOne("YLWorks.Model.Inventory", "Inventory")
-                        .WithMany()
-                        .HasForeignKey("InventoryId");
-
                     b.HasOne("YLWorks.Model.SalesOrder", null)
                         .WithMany("SalesOrderItems")
                         .HasForeignKey("SalesOrderId")
@@ -3388,8 +3345,6 @@ namespace YLWorks.Migrations
                     b.HasOne("YLWorks.Model.SalesOrderItem", null)
                         .WithMany("Children")
                         .HasForeignKey("SalesOrderItemId");
-
-                    b.Navigation("Inventory");
                 });
 
             modelBuilder.Entity("YLWorks.Model.SalesOrderStatusHistory", b =>

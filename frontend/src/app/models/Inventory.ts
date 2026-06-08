@@ -3,6 +3,7 @@ import { BaseModel, BaseOption, DropdownDto } from './BaseModel';
 import { UserDto } from './User';
 
 export interface InventoryDto extends BaseModel {
+  itemCode: string;
   itemName: string;
   brand: string;
   model: string;
@@ -11,6 +12,7 @@ export interface InventoryDto extends BaseModel {
   description: string;
   unit: string;
   quantity: number;
+  reservedQuantity: number;
   serialNumber: string;
   referenceType: string;
   referenceId: string;
@@ -29,6 +31,7 @@ export interface InventoryDto extends BaseModel {
 }
 
 export interface CreateInventoryRequest {
+  itemCode: string;
   itemName: string;
   brand: string;
   model: string;

@@ -487,7 +487,7 @@ namespace YLWorks.Controller
         ClientId = x.ClientId,
         ClientName = x.Client != null ? x.Client.Name : null,
         PaymentTerms = x.PaymentTerms,
-        DeliveryTimeline = x.DeliveryTimeline,
+        Execution = x.Execution,
         WarrantyTerms = x.WarrantyTerms,
 
         SalesOrderItems = x.SalesOrderItems.Where(i => i.Type == "Item")
@@ -574,6 +574,98 @@ namespace YLWorks.Controller
 
         }
 
+        [HttpGet("generate-multiple-no")]
+        public async Task<IActionResult> GenerateMultiple(int count)
+        {
+            var result = new List<string>();
 
+            for (int i = 0; i < count; i++)
+            {
+                result.Add(await GenerateDONo());
+            }
+
+            return Ok(result);
+        }
+
+        [HttpPost("CreateBulk")]
+        public async Task<IActionResult> CreateBulk([FromBody] List<CreateDeliveryOrderRequest> requests)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (userId == null) return Unauthorized();
+
+            if (requests == null || !requests.Any())
+                return BadRequest("No delivery orders provided.");
+
+            var createdList = new List<DeliveryOrder>();
+
+            foreach (var request in requests)
+            {
+                var exists = await _context.DeliveryOrders
+                    .AnyAsync(x => x.DeliveryOrderNo == request.DeliveryOrderNo);
+
+                if (exists)
+                    return BadRequest($"DO number already exists: {request.DeliveryOrderNo}");
+
+                var doEntity = new DeliveryOrder
+                {
+                    Id = Guid.NewGuid(),
+                    DeliveryOrderNo = string.IsNullOrEmpty(request.DeliveryOrderNo)
+                        ? await GenerateDONo()
+                        : request.DeliveryOrderNo,
+
+                    ProjectId = request.ProjectId,
+                    SalesOrderId = request.SalesOrderId,
+                    SenderCompanyId = request.SenderCompanyId,
+                    ReceiverCompanyId = request.ReceiverCompanyId,
+                    ContactPerson1  = request.ContactPerson1,
+                    ContactPerson2 = request.ContactPerson2,
+                    ContactNo1 = request.ContactNo1,
+                    ContactNo2 = request.ContactNo2,
+                    DeliveryMethod = request.DeliveryMethod,
+                    Notes = request.Notes,
+                    Remarks = request.Remarks,
+                    PaymentTerms = request.PaymentTerms,
+                    Status = "Draft"
+                };
+
+                doEntity.DeliveryOrderItems = request.DeliveryOrderItems?
+                    .Select(x => new DeliveryOrderItem
+                    {
+                        Id = Guid.NewGuid(),
+                        DeliveryOrderId = doEntity.Id,
+                        Description = x.Description,
+                        SalesOrderItemId = x.SalesOrderItemId,
+                        QuantityOrdered = x.QuantityOrdered,
+                        QuantityDelivered = x.QuantityDelivered,
+                        Unit = x.Unit,
+                        Remarks = x.Remarks
+                    })
+                    .ToList() ?? new List<DeliveryOrderItem>();
+
+                var history = new DeliveryOrderStatusHistory
+                {
+                    Id = Guid.NewGuid(),
+                    DeliveryOrderId = doEntity.Id,
+                    Status = "Draft",
+                    ActionUserId = Guid.Parse(userId),
+                    ActionAt = DateTime.UtcNow,
+                    Remarks = "Bulk Created"
+                };
+
+                _context.DeliveryOrders.Add(doEntity);
+                _context.DeliveryOrderStatusHistories.Add(history);
+
+                createdList.Add(doEntity);
+            }
+
+            await _context.SaveChangesAsync();
+
+            foreach (var item in createdList)
+            {
+                await _hub.Clients.All.SendAsync("DeliveryOrderAdded", MapToDto(item));
+            }
+
+            return Ok(createdList.Select(MapToDto));
+        }
     }
 }

@@ -29,7 +29,7 @@ import { Table, TableLazyLoadEvent, TableModule } from 'primeng/table';
 import { SalesOrderService } from '../../../services/SalesOrderService';
 import { LoadingService } from '../../../services/loading.service';
 import { MenuItem, MessageService } from 'primeng/api';
-import { Subject, takeUntil } from 'rxjs';
+import { forkJoin, Subject, takeUntil } from 'rxjs';
 import {
   BuildFilterText,
   BuildSortText,
@@ -42,6 +42,8 @@ import { DrawerModule } from 'primeng/drawer';
 import { TextareaModule } from 'primeng/textarea';
 import { CheckboxModule } from 'primeng/checkbox';
 import { BulkDORequest } from '../../../models/DeliveryOrder';
+import { DeliveryOrderService } from '../../../services/deliveryOrderService';
+import { AccordionModule } from 'primeng/accordion';
 
 @Component({
   selector: 'app-sales-order',
@@ -62,6 +64,7 @@ import { BulkDORequest } from '../../../models/DeliveryOrder';
     TextareaModule,
     CheckboxModule,
     DatePickerModule,
+    AccordionModule,
   ],
   template: `<div
       class="w-full min-h-[92.9vh] flex flex-col p-6 bg-slate-50/50"
@@ -558,678 +561,6 @@ import { BulkDORequest } from '../../../models/DeliveryOrder';
           ></p-button>
         </div>
       </ng-template>
-    </p-dialog>
-
-    <p-drawer
-      [(visible)]="viewDialog"
-      position="right"
-      styleClass="w-[75%]! bg-slate-50/50 backdrop-blur-xs! p-0 shadow-2xl"
-      [showCloseIcon]="true"
-      [showCloseIcon]="false"
-    >
-      <ng-template #header>
-        <div
-          class="flex flex-row items-center justify-between w-full border-b border-gray-100 pb-4 px-2 bg-white"
-        >
-          <div class="flex flex-col gap-1">
-            <span
-              class="text-xs font-semibold uppercase tracking-wider text-gray-400"
-              >Sales Order</span
-            >
-            <h2 class="text-2xl font-bold">
-              {{ selectedSO.salesOrderNo }}
-            </h2>
-          </div>
-          <div class="flex items-center gap-3">
-            <span
-              class="px-3.5 py-1 text-xs font-semibold tracking-wide rounded-full uppercase border shadow-xs"
-              [ngClass]="{
-                'bg-indigo-50 text-indigo-700 border-indigo-200':
-                  selectedSO.status === 'InProgress',
-                'bg-emerald-50 text-emerald-700 border-emerald-200':
-                  selectedSO.status === 'Completed' ||
-                  selectedSO.status === 'Delivered',
-                'bg-green-50 text-green-700 border-green-200':
-                  selectedSO.status === 'Confirmed',
-                'bg-gray-50 text-gray-600 border-gray-200':
-                  selectedSO.status === 'Draft',
-              }"
-            >
-              {{ selectedSO.status }}
-            </span>
-          </div>
-        </div>
-      </ng-template>
-
-      <div class="grid grid-cols-12 gap-6 p-6" *ngIf="selectedSO">
-        <div class="flex flex-col col-span-12 lg:col-span-8 gap-6">
-          <div class="bg-white border border-gray-200 rounded-xl p-5 shadow-xs">
-            <h3
-              class="font-bold text-gray-800 text-base border-b border-gray-100 pb-2 mb-4 flex items-center gap-2"
-            >
-              <i class="pi pi-info-circle text-indigo-500"></i> Order Details
-            </h3>
-
-            <div class="grid grid-cols-12 gap-y-5 gap-x-6">
-              <div class="col-span-12 sm:col-span-6 flex flex-col gap-1">
-                <span
-                  class="text-xs font-semibold text-gray-400 uppercase tracking-wider"
-                  >Order Date</span
-                >
-                <span class="font-semibold text-gray-800 text-base">
-                  {{ selectedSO.soDate | date: 'dd MMM yyyy' }}
-                </span>
-              </div>
-
-              <div class="col-span-12 sm:col-span-6 flex flex-col gap-1">
-                <span
-                  class="text-xs font-semibold text-gray-400 uppercase tracking-wider"
-                  >Payment Terms</span
-                >
-                <span class="font-semibold text-gray-800 text-base">
-                  {{ selectedSO.paymentTerms || 'N/A' }}
-                </span>
-              </div>
-
-              <div class="col-span-12 flex flex-col gap-1">
-                <span
-                  class="text-xs font-semibold text-gray-400 uppercase tracking-wider"
-                  >Reference Quotation No</span
-                >
-                <span
-                  (click)="downloadAttachment(selectedSO.quotation, 'Q')"
-                  class="font-mono font-bold text-indigo-600 hover:text-indigo-700 hover:underline cursor-pointer text-base flex items-center gap-1.5"
-                >
-                  <i class="pi pi-link text-xs"></i>
-                  {{
-                    selectedSO.quotation?.quotationNo ||
-                      'Direct Order (No Quote)'
-                  }}
-                </span>
-              </div>
-
-              <div class="col-span-12 mt-2 pt-4 border-t border-gray-100">
-                <span
-                  class="text-sm font-bold text-slate-700 uppercase tracking-wide block mb-3"
-                >
-                  Client Purchase Order Info
-                </span>
-
-                <div
-                  *ngIf="!selectedSO.clientPONumber"
-                  class="text-sm text-gray-400 italic bg-gray-50 rounded-lg p-3 border border-gray-100"
-                >
-                  No client Purchase Order attached to this contract.
-                </div>
-
-                <div
-                  *ngIf="selectedSO.clientPONumber"
-                  class="grid grid-cols-12 gap-4 bg-slate-50/60 rounded-xl p-4 border border-slate-100"
-                >
-                  <div class="col-span-12 sm:col-span-4 flex flex-col gap-1">
-                    <span
-                      class="text-[11px] font-medium text-gray-400 uppercase"
-                      >PO Reference No</span
-                    >
-                    <span class="font-semibold text-gray-800 font-mono">{{
-                      selectedSO.clientPONumber
-                    }}</span>
-                  </div>
-
-                  <div class="col-span-12 sm:col-span-4 flex flex-col gap-1">
-                    <span
-                      class="text-[11px] font-medium text-gray-400 uppercase"
-                      >PO Signed Date</span
-                    >
-                    <span class="font-semibold text-gray-800">
-                      {{
-                        selectedSO.clientPODate
-                          ? (selectedSO.clientPODate | date: 'dd MMM yyyy')
-                          : '—'
-                      }}
-                    </span>
-                  </div>
-
-                  <div
-                    class="col-span-12 sm:col-span-4 flex flex-col gap-1 justify-center"
-                  >
-                    <span
-                      class="text-[11px] font-medium text-gray-400 uppercase mb-0.5"
-                      >Attachment</span
-                    >
-                    <div
-                      *ngIf="selectedSO.clientPOAttachment; else noAttachment"
-                    >
-                      <a
-                        (click)="downloadAttachment(selectedSO, 'SO')"
-                        class="inline-flex items-center gap-1.5 text-sm font-bold text-emerald-600 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 rounded-lg px-2.5 py-1 transition-colors cursor-pointer"
-                      >
-                        <i class="pi pi-file-pdf"></i> View Document
-                      </a>
-                    </div>
-                    <ng-template #noAttachment>
-                      <span
-                        class="text-xs text-gray-400 italic flex items-center gap-1"
-                      >
-                        <i class="pi pi-minus-circle text-[10px]"></i> No File
-                        Uploaded
-                      </span>
-                    </ng-template>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div
-            class="bg-white border border-gray-200 rounded-xl p-5 shadow-xs flex flex-col"
-          >
-            <h3
-              class="font-bold text-gray-800 text-base border-b border-gray-100 pb-2 mb-4 flex items-center gap-2"
-            >
-              <i class="pi pi-list text-indigo-500"></i> Line Item Details
-            </h3>
-
-            <div class="overflow-hidden border border-gray-200">
-              <p-table
-                [value]="selectedSO.salesOrderItems || []"
-                [showGridlines]="false"
-                styleClass="p-datatable-sm"
-                [showGridlines]="true"
-              >
-                <ng-template #header>
-                  <tr
-                    class="bg-gray-50/70 text-gray-400 text-xs tracking-wider font-semibold uppercase"
-                  >
-                    <th class="w-[8%]! text-center! py-3 bg-gray-100!">#</th>
-                    <th class="w-[42%]! text-left! bg-gray-100!">
-                      Description Details
-                    </th>
-                    <th class="w-[10%]! text-center! bg-gray-100!">Qty</th>
-                    <th class="w-[10%]! text-center! bg-gray-100!">Unit</th>
-                    <th class="w-[15%]! text-right! bg-gray-100!">
-                      Unit Price (RM)
-                    </th>
-                    <th class="w-[10%]! text-center! bg-gray-100!">Disc (%)</th>
-                    <th class="w-[10%]! text-center! bg-gray-100!">
-                      Tax Rate (%)
-                    </th>
-
-                    <th class="w-[15%]! text-right! pr-4 bg-gray-100!">
-                      Total (RM)
-                    </th>
-                  </tr>
-                </ng-template>
-                <ng-template #body let-data let-i="rowIndex">
-                  <tr
-                    class="border-b border-gray-100 hover:bg-slate-50/50 transition-colors text-gray-700"
-                  >
-                    <td class="text-center! font-medium text-gray-400 py-3">
-                      {{ i + 1 }}
-                    </td>
-                    <td>
-                      <div
-                        class="prose prose-sm font-normal text-gray-800 max-w-none text-sm"
-                        [innerHTML]="data.description"
-                      ></div>
-                    </td>
-                    <td class="text-center! font-semibold">
-                      {{ data.quantity }}
-                    </td>
-                    <td class="text-center! text-gray-500 text-sm">
-                      {{ data.unit }}
-                    </td>
-                    <td class="text-right! font-mono">
-                      {{ data.unitPrice | number: '1.2-2' }}
-                    </td>
-                    <td class="text-center! font-mono">
-                      {{ data.discount | number: '1.2-2' }}
-                    </td>
-                    <td class="text-center! font-mono">
-                      {{ data.taxRate | number: '1.2-2' }}
-                    </td>
-                    <td
-                      class="text-right! font-mono font-extrabold! text-gray-900 pr-4"
-                    >
-                      {{ data.totalPrice | number: '1.2-2' }}
-                    </td>
-                  </tr>
-                </ng-template>
-              </p-table>
-            </div>
-
-            <div class="flex justify-end mt-4">
-              <div
-                class="w-full sm:w-102 flex flex-col gap-2.5 p-3 bg-slate-50/50 rounded-xl border border-gray-100"
-              >
-                <div class="flex justify-between items-center">
-                  <span class="text-gray-500">Subtotal</span>
-                  <span class="font-mono font-medium text-gray-800"
-                    >RM {{ selectedSO.subTotal ?? 0 | number: '1.2-2' }}</span
-                  >
-                </div>
-                <div
-                  class="flex justify-between items-center text-emerald-600"
-                  *ngIf="selectedSO.discount"
-                >
-                  <span>Discount</span>
-                  <span class="font-mono font-medium"
-                    >- RM {{ selectedSO.discount | number: '1.2-2' }}</span
-                  >
-                </div>
-                <div
-                  class="flex justify-between items-center text-gray-500"
-                  *ngIf="selectedSO.taxAmount"
-                >
-                  <span>Estimated Tax</span>
-                  <span class="font-mono font-medium"
-                    >RM {{ selectedSO.taxAmount | number: '1.2-2' }}</span
-                  >
-                </div>
-                <div
-                  class="flex justify-between items-center border-t border-gray-200 pt-2.5 mt-1"
-                >
-                  <span class="font-bold text-gray-900 text-base"
-                    >Total Amount</span
-                  >
-                  <span class="font-mono font-bold text-xl text-indigo-900"
-                    >RM
-                    {{ selectedSO.totalAmount ?? 0 | number: '1.2-2' }}</span
-                  >
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div
-            class="bg-white border border-gray-200 rounded-xl p-5 shadow-xs flex flex-col gap-3"
-          >
-            <label
-              class="font-bold text-gray-800 text-base flex items-center gap-2"
-            >
-              <i class="pi pi-comment text-indigo-500"></i>
-              Remarks
-            </label>
-            <textarea
-              rows="3"
-              pTextarea
-              [autoResize]="true"
-              class="w-full bg-gray-100! cursor-default"
-              placeholder="Append processing updates or client dispatch instructions here..."
-              [(ngModel)]="selectedSO.remarks"
-              readonly
-            ></textarea>
-          </div>
-        </div>
-
-        <div class="flex flex-col col-span-12 lg:col-span-4 gap-6">
-          <div
-            class="bg-white border border-gray-200 rounded-xl p-5 shadow-sm flex flex-col gap-4"
-          >
-            <h3
-              class="font-bold text-gray-800 text-base border-b border-gray-100 pb-2 flex items-center gap-2"
-            >
-              <i class="pi pi-wallet text-indigo-500"></i> Invoices
-            </h3>
-
-            <div
-              *ngIf="!selectedSO.invoices || selectedSO.invoices.length === 0"
-              class="bg-amber-50/40 border border-dashed border-amber-200 rounded-xl p-4 flex flex-col items-center text-center gap-3"
-            >
-              <div
-                class="w-12 h-12 flex items-center justify-center bg-amber-100 rounded-full text-amber-600"
-              >
-                <i class="pi pi-file-excel text-2xl!"></i>
-              </div>
-              <div class="flex flex-col gap-0.5">
-                <div class="font-semibold text-gray-800 text-base">
-                  No Invoice Found
-                </div>
-                <p class="text-sm text-gray-500 max-w-[220px] leading-relaxed">
-                  No financial requests have been issued for this sales order
-                  yet.
-                </p>
-              </div>
-            </div>
-
-            <div
-              *ngIf="selectedSO.invoices && selectedSO.invoices.length > 0"
-              class="flex flex-col gap-3"
-            >
-              <div
-                class="bg-slate-50 border border-slate-100 rounded-xl p-3 text-xs flex flex-col gap-2"
-              >
-                <div class="flex justify-between text-gray-500">
-                  <span>Total Invoiced Summary</span>
-                  <span class="font-semibold text-gray-800">
-                    {{ selectedSO.invoices.length }} Invoice(s)
-                  </span>
-                </div>
-                <div class="w-full bg-gray-200 rounded-full h-1.5 mt-1">
-                  <div
-                    class="bg-indigo-600 h-1.5 rounded-full"
-                    style="width: 65%"
-                  ></div>
-                </div>
-              </div>
-
-              <div
-                class="flex flex-col gap-2 max-h-[280px] overflow-y-auto pr-1"
-              >
-                <div
-                  *ngFor="let inv of selectedSO.invoices"
-                  class="bg-white border border-gray-100 hover:border-gray-200 rounded-xl p-3 shadow-2xs transition-all flex flex-col gap-2"
-                >
-                  <div class="flex items-center justify-between">
-                    <div class="flex flex-col">
-                      <span
-                        class="font-mono font-bold text-sm text-gray-800 hover:text-indigo-600 cursor-pointer flex items-center gap-1"
-                      >
-                        #{{ inv.invoiceNo }}
-                        <i
-                          class="pi pi-external-link text-[10px] text-gray-400"
-                        ></i>
-                      </span>
-                      <span class="text-[10px] text-gray-400">{{
-                        inv.invoiceDate | date: 'dd MMM yyyy'
-                      }}</span>
-                    </div>
-
-                    <span
-                      class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider"
-                      [ngClass]="{
-                        'bg-emerald-50 text-emerald-700 border border-emerald-200':
-                          inv.status === 'Paid',
-                        'bg-amber-50 text-amber-700 border border-amber-200':
-                          inv.status === 'Partially Paid',
-                        'bg-red-50 text-red-700 border border-red-200':
-                          inv.status === 'Unpaid' || inv.status === 'Overdue',
-                      }"
-                    >
-                      {{ inv.status }}
-                    </span>
-                  </div>
-
-                  <div
-                    class="flex justify-between items-center text-xs pt-1 border-t border-gray-50"
-                  >
-                    <div>
-                      <span class="text-gray-400">Paid: </span>
-                      <span class="font-mono font-semibold text-gray-700"
-                        >RM {{ inv.paidAmount || 0 | number: '1.2-2' }}</span
-                      >
-                    </div>
-                    <div class="text-right">
-                      <span class="text-gray-400">Total: </span>
-                      <span class="font-mono font-bold text-gray-900"
-                        >RM {{ inv.totalAmount | number: '1.2-2' }}</span
-                      >
-                    </div>
-                  </div>
-
-                  <div
-                    class="grid grid-cols-2 gap-2 mt-1 pt-2 border-t border-gray-100/60"
-                    *ngIf="inv.status !== 'Paid'"
-                  >
-                    <button
-                      (click)="recordPayment(inv)"
-                      class="text-[11px] font-medium text-emerald-600 bg-emerald-50 hover:bg-emerald-100 py-1 rounded text-center transition-colors"
-                    >
-                      <i class="pi pi-credit-card mr-1 text-[10px]"></i> Record
-                      Pay
-                    </button>
-                    <button
-                      (click)="viewInvoice(inv)"
-                      class="text-[11px] font-medium text-gray-600 bg-gray-50 hover:bg-gray-100 py-1 rounded text-center transition-colors"
-                    >
-                      <i class="pi pi-eye mr-1 text-[10px]"></i> View Details
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div
-            class="bg-white border border-gray-200 rounded-xl p-5 shadow-sm flex flex-col gap-3.5"
-          >
-            <h3
-              class="font-bold text-gray-800 text-base border-b border-gray-100 pb-2 flex items-center gap-2"
-            >
-              <i class="pi pi-user text-indigo-500"></i> Client Profile
-            </h3>
-
-            <div class="flex flex-col gap-1.5">
-              <div class="font-bold text-gray-900 tracking-wide leading-snug">
-                {{ selectedSO.client?.name }}
-              </div>
-            </div>
-
-            <div
-              class="flex flex-col gap-2.5 text-sm text-gray-600 border-t border-gray-50 pt-3"
-            >
-              <div class="flex items-start gap-3">
-                <i class="pi pi-id-card text-gray-400 mt-0.5"></i>
-                <div class="flex flex-col">
-                  <span class="text-gray-400 uppercase font-medium"
-                    >Contact Person</span
-                  >
-                  <span class="font-medium text-gray-800 text-base">{{
-                    selectedSO.client?.contactPerson1 || 'None Registered'
-                  }}</span>
-                </div>
-              </div>
-              <div class="flex items-start gap-3">
-                <i class="pi pi-phone text-gray-400 mt-0.5"></i>
-                <div class="flex flex-col">
-                  <span class="text-gray-400 uppercase font-medium"
-                    >Contact Number</span
-                  >
-                  <span class="font-medium text-gray-800 text-base">{{
-                    selectedSO.client?.contactNo || '—'
-                  }}</span>
-                </div>
-              </div>
-              <div class="flex items-start gap-3">
-                <i class="pi pi-envelope text-gray-400 mt-0.5"></i>
-                <div class="flex flex-col">
-                  <span class="text-gray-400 uppercase font-medium"
-                    >E-Mail Address</span
-                  >
-                  <span
-                    class="font-medium text-indigo-600 font-mono select-all truncate max-w-[300px] text-base"
-                    >{{ selectedSO.client?.email }}</span
-                  >
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div
-            class="bg-white border border-gray-200 rounded-xl p-5 shadow-sm flex flex-col gap-4"
-          >
-            <h3
-              class="font-bold text-gray-800 border-b border-gray-100 pb-2 flex items-center gap-2"
-            >
-              <i class="pi pi-map-marker text-indigo-500"></i> Address
-            </h3>
-
-            <div class="flex flex-col gap-1">
-              <span
-                class="font-bold uppercase tracking-wider text-[10px] text-gray-500 flex items-center gap-1.5"
-              >
-                <span class="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
-                Billing Address
-              </span>
-              <p
-                class="text-gray-400 leading-relaxed pl-3 border-l border-indigo-100 mt-1"
-              >
-                {{
-                  selectedSO.client?.billingAddress?.addressLine1 ||
-                    'No billing address stored.'
-                }}
-              </p>
-            </div>
-
-            <div class="flex flex-col gap-1">
-              <span
-                class="font-bold uppercase tracking-wider text-[10px] text-gray-500 flex items-center gap-1.5"
-              >
-                <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
-                Delivery Address
-              </span>
-              <p
-                class="text-gray-400 leading-relaxed pl-3 border-l border-amber-100 mt-1"
-              >
-                {{
-                  selectedSO.client?.deliveryAddress?.addressLine1 ||
-                    'Identical with Billing Address.'
-                }}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </p-drawer>
-
-    <p-dialog
-      [(visible)]="showDODialog"
-      [modal]="true"
-      header="Configure Delivery Shipments Schedule"
-      [style]="{ width: '75vw' }"
-    >
-      <div
-        class="flex items-center gap-4 mb-4 p-3 bg-gray-50 rounded border border-gray-200"
-      >
-        <label class="font-semibold text-gray-700"
-          >How many shipments/trips are needed?</label
-        >
-        <p-inputNumber
-          [(ngModel)]="totalDeliveryPlanned"
-          (onInput)="onShipmentCountChange()"
-          [min]="1"
-          [max]="5"
-          [showButtons]="true"
-          buttonLayout="horizontal"
-          spinnerMode="horizontal"
-          decrementButtonClass="p-button-secondary"
-          incrementButtonClass="p-button-secondary"
-          incrementButtonIcon="pi pi-plus"
-          decrementButtonIcon="pi pi-minus"
-          inputStyleClass="w-14 text-center p-inputtext-sm"
-          styleClass="w-auto"
-        ></p-inputNumber>
-      </div>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-        <div
-          *ngFor="let shipment of doConfigs; let idx = index"
-          class="p-4 bg-blue-50/50 rounded-lg border border-blue-100"
-        >
-          <div class="font-bold text-blue-800 mb-2 flex justify-between">
-            <span>📦 Delivery Order #{{ idx + 1 }}</span>
-            <span class="text-sm text-blue-600 font-mono"
-              >Draft Reference: {{ shipment.tempNo }}</span
-            >
-          </div>
-
-          <div class="grid grid-cols-2 gap-2">
-            <div>
-              <label class="text-xs font-semibold text-gray-600 block mb-1"
-                >Delivery Method</label
-              >
-              <p-select
-                [options]="deliveryMethods"
-                [(ngModel)]="shipment.deliveryMethod"
-                placeholder="Select Method"
-                styleClass="w-full p-inputtext-sm"
-              ></p-select>
-            </div>
-            <div>
-              <label class="text-xs font-semibold text-gray-600 block mb-1"
-                >Target Delivery Date</label
-              >
-              <p-datepicker
-                [(ngModel)]="shipment.deliveryDate"
-                dateFormat="dd/mm/yy"
-                [showIcon]="true"
-                appendTo="body"
-                styleClass="w-full p-inputtext-sm"
-              ></p-datepicker>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <p-table
-        [value]="selectedSOForDO?.salesOrderItems || []"
-        [showGridlines]="true"
-      >
-        <ng-template #header>
-          <tr>
-            <th class="bg-gray-100!">Description</th>
-            <th class="text-center! bg-gray-100!" style="width: 100px;">
-              Total Ordered
-            </th>
-
-            <th
-              *ngFor="let shipment of doConfigs; let idx = index"
-              class="text-center! bg-blue-100!"
-            >
-              Allocated Qty (DO #{{ idx + 1 }})
-            </th>
-
-            <th class="text-center! bg-gray-100!" style="width: 100px;">
-              Remaining
-            </th>
-          </tr>
-        </ng-template>
-
-        <ng-template #body let-item>
-          <tr>
-            <td><div [innerHTML]="item.description"></div></td>
-            <td class="text-center! font-bold">{{ item.quantity }}</td>
-
-            <td
-              *ngFor="let do of doConfigs; let idx = index"
-              class="text-center!"
-            >
-              <p-inputNumber
-                [ngModel]="item.allocatedQtys ? item.allocatedQtys[idx] : 0"
-                (onInput)="calculateRemainingBalance(item)"
-                [min]="0"
-                [max]="item.quantity"
-                [showButtons]="false"
-                inputStyleClass="w-24 text-center! p-inputtext-sm"
-              ></p-inputNumber>
-            </td>
-
-            <td
-              class="text-center! font-semibold"
-              [ngClass]="
-                item.remainingBalance === 0
-                  ? 'text-green-600'
-                  : 'text-amber-600'
-              "
-            >
-              {{ item.remainingBalance }}
-            </td>
-          </tr>
-        </ng-template>
-      </p-table>
-
-      <ng-template pTemplate="footer">
-        <p-button
-          label="Cancel"
-          severity="secondary"
-          (onClick)="showDODialog = false"
-        ></p-button>
-        <p-button
-          label="Generate Scheduled DOs"
-          icon="pi pi-check-square"
-          (onClick)="submitScheduledDOs()"
-        ></p-button>
-      </ng-template>
     </p-dialog> `,
   styleUrl: './salesOrder.less',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -1238,6 +569,7 @@ export class SalesOrder implements OnInit, OnDestroy {
   @ViewChild('fTable') fTable?: Table;
 
   private readonly salesOrderService = inject(SalesOrderService);
+  private readonly deliveryOrderService = inject(DeliveryOrderService);
   private readonly loadingService = inject(LoadingService);
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly messageService = inject(MessageService);
@@ -1254,21 +586,7 @@ export class SalesOrder implements OnInit, OnDestroy {
   selectedFileUrl: string | null = null;
 
   displayDialog: boolean = false;
-  viewDialog: boolean = false;
-  paymentDialogVisible: boolean = false;
-  showDODialog: boolean = false;
-
-  activeInvoiceForPayment: any = null;
-
-  totalDeliveryPlanned: number = 0;
-  doConfigs: any[] = [];
-
-  deliveryMethods = [
-    { label: 'Company Lorry', value: 'Lorry' },
-    { label: 'Company Van', value: 'Van' },
-    { label: 'Hand Carry / Self Collect', value: 'HandCarry' },
-    { label: 'Courier Service', value: 'Courier' },
-  ];
+  selectAllItems: boolean = false;
 
   FG!: FormGroup;
 
@@ -1279,7 +597,6 @@ export class SalesOrder implements OnInit, OnDestroy {
   clientSelections: any[] = [];
 
   selectedSO: any;
-  selectedSOForDO: SalesOrderDto | null = null;
   selectedDOItems: any[] = [];
 
   paymentForm = {
@@ -1299,10 +616,24 @@ export class SalesOrder implements OnInit, OnDestroy {
     this.Query.OrderBy = 'CreatedAt desc';
     this.Query.Select = null;
     this.Query.Includes =
-      'Client.BillingAddress,Client.DeliveryAddress,SalesOrderItems,SalesOrderStatusHistories,Quotation';
+      'Client.BillingAddress,Client.DeliveryAddress,Company.DeliveryAddress,SalesOrderItems,SalesOrderStatusHistories,Quotation';
   }
 
   ngOnInit(): void {}
+
+  parseDONo(no: string) {
+    const parts = no.split('/');
+
+    return {
+      prefix: `${parts[0]}/${parts[1]}`,
+      number: parseInt(parts[2] || '0', 10),
+      year: parts[3],
+    };
+  }
+
+  buildDONo(prefix: string, number: number, year: string) {
+    return `${prefix}/${number}/${year}`;
+  }
 
   GetData() {
     this.loadingService.start();
@@ -1438,15 +769,16 @@ export class SalesOrder implements OnInit, OnDestroy {
         break;
       case 'Review':
         if (!data) return;
-        this.router.navigate(['/sales-order/details'], {
+        this.router.navigate(['/sales-order/reviews'], {
           queryParams: { id: data.id },
         });
         break;
 
       case 'View':
         if (!data) return;
-        this.selectedSO = data;
-        this.viewDialog = true;
+        this.router.navigate(['/sales-order/details'], {
+          queryParams: { id: data.id },
+        });
         break;
     }
   }
@@ -1586,18 +918,11 @@ export class SalesOrder implements OnInit, OnDestroy {
         },
       );
     } else if (so.status === 'Confirmed') {
-      this.menuItems.push(
-        {
-          label: 'View Details',
-          icon: 'pi pi-eye',
-          command: () => this.ActionClick(so, 'View'),
-        },
-        {
-          label: 'Generate Delivery Order',
-          icon: 'pi pi-truck',
-          command: () => this.generateDO(so),
-        },
-      );
+      this.menuItems.push({
+        label: 'View Details',
+        icon: 'pi pi-eye',
+        command: () => this.ActionClick(so, 'View'),
+      });
     } else if (so.status === 'InProgress') {
       this.menuItems.push({
         label: 'View Details',
@@ -1801,158 +1126,6 @@ export class SalesOrder implements OnInit, OnDestroy {
       });
   }
 
-  openDODialog(salesOrder: any) {
-    this.selectedSOForDO = JSON.parse(JSON.stringify(salesOrder));
-    this.totalDeliveryPlanned = 1;
-
-    this.doConfigs = [
-      {
-        tempNo: 'DO-TEMP-1',
-        deliveryMethod: 'Van',
-        deliveryDate: new Date(),
-      },
-    ];
-
-    this.selectedSOForDO?.salesOrderItems?.forEach((item: any) => {
-      item.allocatedQtys = [item.quantity];
-      item.remainingBalance = 0;
-    });
-
-    this.showDODialog = true;
-  }
-
-  onShipmentCountChange() {
-    if (this.totalDeliveryPlanned < 1) this.totalDeliveryPlanned = 1;
-
-    const currentCount = this.doConfigs.length;
-
-    if (this.totalDeliveryPlanned > currentCount) {
-      for (let i = currentCount; i < this.totalDeliveryPlanned; i++) {
-        this.doConfigs.push({
-          tempNo: `DO-TEMP-${i + 1}`,
-          deliveryMethod: 'Van',
-          deliveryDate: new Date(),
-        });
-      }
-    } else if (this.totalDeliveryPlanned < currentCount) {
-      this.doConfigs = this.doConfigs.slice(0, this.totalDeliveryPlanned);
-    }
-
-    this.selectedSOForDO?.salesOrderItems?.forEach((item: any) => {
-      if (!item.allocatedQtys) {
-        item.allocatedQtys = [];
-      }
-
-      const updatedAllocations = [];
-      for (let i = 0; i < this.totalDeliveryPlanned; i++) {
-        updatedAllocations.push(
-          item.allocatedQtys[i] !== undefined ? item.allocatedQtys[i] : 0,
-        );
-      }
-
-      item.allocatedQtys = updatedAllocations;
-      this.calculateRemainingBalance(item);
-    });
-  }
-
-  calculateRemainingBalance(item: any) {
-    const totalAllocated = item.allocatedQtys.reduce(
-      (sum: number, val: number) => sum + (val || 0),
-      0,
-    );
-    console.log(item, totalAllocated);
-    item.remainingBalance = item.quantity - totalAllocated;
-  }
-
-  generateDO(so: SalesOrderDto) {
-    this.selectedSOForDO = so;
-    this.selectedDOItems = [];
-    this.showDODialog = true;
-  }
-
-  submitScheduledDOs() {
-    if (!this.selectedSOForDO) return;
-
-    this.loadingService.start();
-
-    const shipmentsPayload = this.doConfigs
-      .map((config, doIndex) => {
-        return {
-          salesOrderId: this.selectedSOForDO!.id,
-          deliveryMethod: config.deliveryMethod,
-          estimatedDeliveryDate: config.deliveryDate,
-          items:
-            this.selectedSOForDO!.salesOrderItems?.filter(
-              (item: any) => item.allocatedQtys[doIndex] > 0,
-            ).map((item: any) => ({
-              salesOrderItemId: item.id,
-              quantityToDeliver: item.allocatedQtys[doIndex],
-            })) || [],
-        };
-      })
-      .filter((doGroup) => doGroup.items.length > 0);
-
-    const payload: BulkDORequest = {
-      deliveryOrders: shipmentsPayload,
-    };
-
-    this.salesOrderService.GenerateBulkDOs(payload).subscribe({
-      next: (res) => {
-        this.loadingService.stop();
-
-        this.messageService.add({
-          severity: 'success',
-          summary: 'Success',
-          detail: res?.message || 'Delivery Orders generated successfully',
-        });
-
-        this.showDODialog = false;
-      },
-      error: () => {
-        this.loadingService.stop();
-      },
-    });
-  }
-
-  // generateDO(so: SalesOrderDto) {
-  //   this.loadingService.start();
-
-  //   this.salesOrderService
-  //     .GenerateDO(so.id)
-  //     .pipe(takeUntil(this.ngUnsubscribe))
-  //     .subscribe({
-  //       next: (res: any) => {
-  //         this.loadingService.stop();
-
-  //         const current = this.PagingSignal();
-
-  //         const updatedData = current.data.map((item) => {
-  //           if (item.id === so.id) {
-  //             return {
-  //               ...item,
-  //               status: 'InProgress',
-  //             };
-  //           }
-  //           return item;
-  //         });
-
-  //         this.PagingSignal.set({
-  //           ...current,
-  //           data: updatedData,
-  //         });
-
-  //         this.messageService.add({
-  //           severity: 'success',
-  //           summary: 'Success',
-  //           detail: `Delivery Order generated for ${so.salesOrderNo}`,
-  //         });
-  //       },
-  //       error: () => {
-  //         this.loadingService.stop();
-  //       },
-  //     });
-  // }
-
   getRejectedReason(data: SalesOrderDto): string | null {
     if (!data.salesOrderStatusHistories?.length) return null;
 
@@ -1964,43 +1137,6 @@ export class SalesOrder implements OnInit, OnDestroy {
       )[0];
 
     return rejectedHistory?.remarks || null;
-  }
-
-  viewInvoice(invoice: any): void {
-    if (!invoice || !invoice.id) return;
-
-    console.log(`Navigating to invoice panel context: ${invoice.invoiceNo}`);
-
-    this.router.navigate(['/financials/invoices', invoice.id]);
-  }
-
-  recordPayment(invoice: any): void {
-    if (!invoice) return;
-
-    this.activeInvoiceForPayment = invoice;
-
-    this.paymentForm = {
-      invoiceId: invoice.id,
-      clientId: this.selectedSO.clientId,
-      referenceNo: '',
-      paymentDate: new Date(),
-      paymentMode: 'Bank Transfer',
-
-      amount: (invoice.totalAmount ?? 0) - (invoice.paidAmount ?? 0),
-      notes: `Settlement processing entry for Invoice No: ${invoice.invoiceNo}`,
-    };
-
-    this.paymentDialogVisible = true;
-  }
-
-  submitPaymentReceipt(): void {
-    if (this.paymentForm.amount <= 0) {
-      console.error(
-        'Payment receipt processing demands value amount constraints above zero.',
-      );
-      return;
-    }
-    this.paymentDialogVisible = false;
   }
 
   ngOnDestroy(): void {

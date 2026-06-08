@@ -251,7 +251,7 @@ namespace YLWorks.Controller
                     },
                 
                     data.QuotationId,
-                    data.Terms,
+                    data.PaymentTerms,
                     data.Remarks,
                     data.ProjectId,
                     Project = data.Project == null ? null : new
@@ -266,6 +266,8 @@ namespace YLWorks.Controller
                     {
                         i.Id,
                         i.PurchaseOrderId,
+                        i.SalesOrderItemId,
+                        i.SalesOrderItem,
                         i.Item,
                         i.Description,
                         i.Quantity,
@@ -352,7 +354,7 @@ namespace YLWorks.Controller
                     POReceivedDate = request.POReceivedDate,
                     SupplierId = request.SupplierId,
                     ClientId = request.ClientId,
-                    Terms = request.Terms,
+                    PaymentTerms = request.PaymentTerms,
                     QuotationId = request.QuotationId,
                     ProjectId = request.ProjectId,
                     PurchaseOrderId = request.PurchaseOrderId,
@@ -376,6 +378,7 @@ namespace YLWorks.Controller
                 {
                     Id = Guid.NewGuid(),
                     PurchaseOrderId = po.Id,
+                    SalesOrderItemId = x.SalesOrderItemId,
                     Item = x.Item,
                     Description = x.Description,
                     Quantity = x.Quantity,
@@ -427,7 +430,7 @@ namespace YLWorks.Controller
 
         private async Task<string> GeneratePONo()
         {
-            var yearShort = DateTime.UtcNow.Year; // 2026 -> 26
+            var yearShort = DateTime.UtcNow.Year;
 
             var lastPO = await _context.PurchaseOrders
                 .Where(q => q.PurchaseOrderNo.StartsWith($"YL/PO/") && q.PurchaseOrderNo.EndsWith($"/{yearShort}"))
@@ -516,7 +519,7 @@ namespace YLWorks.Controller
                 po.POReceivedDate = request.POReceivedDate;
                 po.SupplierId = request.SupplierId;
                 po.ClientId = request.ClientId;
-                po.Terms = request.Terms;
+                po.PaymentTerms = request.PaymentTerms;
                 po.QuotationId = request.QuotationId;
                 po.ProjectId = request.ProjectId;
                 po.PurchaseOrderId = request.PurchaseOrderId;
@@ -545,6 +548,7 @@ namespace YLWorks.Controller
                     {
                         Id = x.Id ?? Guid.NewGuid(),
                         PurchaseOrderId = po.Id,
+                        SalesOrderItemId = x.SalesOrderItemId,
                         Item = x.Item,
                         Description = x.Description,
                         Quantity = x.Quantity,
@@ -614,7 +618,7 @@ namespace YLWorks.Controller
                 q.PurchaseOrderNo,
                 q.PODate,
                 q.POReceivedDate,
-                q.Terms,
+                q.PaymentTerms,
                 q.ProjectId,
                 Project = q.Project == null ? null : new
                 {
@@ -719,6 +723,7 @@ namespace YLWorks.Controller
             {
                 Id = Guid.NewGuid(),
                 PurchaseOrderId = poId,
+                SalesOrderItemId = req.SalesOrderItemId,
                 Item = req.Item,
                 Description = req.Description,
                 Quantity = req.Quantity,
@@ -836,7 +841,7 @@ namespace YLWorks.Controller
             {
                 InvoiceNo = GenerateInvoiceNo("PUR"),
                 InvoiceDate = invoiceDate,
-                DueDate = invoiceDate.AddDays(GetTermsDays(po.Terms)),
+                DueDate = invoiceDate.AddDays(GetTermsDays(po.PaymentTerms)),
                 SupplierId = po.SupplierId,
                 PurchaseOrderId = po.Id,
                 Type = "Purchase",

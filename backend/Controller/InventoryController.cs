@@ -141,12 +141,14 @@ namespace YLWorks.Controller
                     .Select(p => new
                     {
                         p.Id,
+                        p.ItemCode,
                         p.ItemName,
                         p.Model,
                         p.Brand,
                         p.Description,
                         p.Unit,
                         p.Quantity,
+                        p.ReservedQuantity,
                         p.SerialNumber,
                         p.ReferenceType,
                         p.ReferenceId,
@@ -202,6 +204,7 @@ namespace YLWorks.Controller
                 var inventory = new Inventory
                 {
                     Id = Guid.NewGuid(),
+                    ItemCode = request.ItemCode,
                     ItemName = request.ItemName,
                     Brand = request.Brand,
                     Model = request.Model,
@@ -209,6 +212,7 @@ namespace YLWorks.Controller
                     Description = request.Description,
                     Unit = request.Unit,
                     Quantity = request.Quantity,
+                    ReservedQuantity = request.ReservedQuantity,
                     SerialNumber = request.SerialNumber,
                     ReferenceType = request.ReferenceType,
                     ReferenceId = request.ReferenceId,
@@ -236,12 +240,14 @@ namespace YLWorks.Controller
     .Select(d => new
     {
         Id = d.Id,
+        ItemCode = d.ItemCode,
         ItemName = d.ItemName,
         Brand = d.Brand,
         Model = d.Model,
         Description = d.Description,
         Unit = d.Unit,
         Quantity = d.Quantity,
+        ReservedQuantity = d.ReservedQuantity,
         SerialNumber = d.SerialNumber,
         ReferenceType = d.ReferenceType,
         ReferenceId = d.ReferenceId,
@@ -295,6 +301,7 @@ namespace YLWorks.Controller
 
             try
             {
+                inventory.ItemCode = request.ItemCode;
                 inventory.ItemName = request.ItemName;
                 inventory.Brand = request.Brand;
                 inventory.Model = request.Model;
@@ -302,6 +309,7 @@ namespace YLWorks.Controller
                 inventory.Description = request.Description;
                 inventory.Unit = request.Unit;
                 inventory.Quantity = request.Quantity;
+                inventory.ReservedQuantity = request.ReservedQuantity;
                 inventory.SerialNumber = request.SerialNumber;
                 inventory.ReferenceType = request.ReferenceType;
                 inventory.ReferenceId = request.ReferenceId;
@@ -325,12 +333,14 @@ namespace YLWorks.Controller
            .Select(d => new
            {
                d.Id,
+               d.ItemCode,
                d.ItemName,
                d.Brand,
                d.Model,
                d.Description,
                d.Unit,
                d.Quantity,
+               d.ReservedQuantity,
                d.SerialNumber,
                d.ReferenceType,
                d.ReferenceId,

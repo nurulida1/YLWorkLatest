@@ -21,7 +21,7 @@ namespace YLWorks.Model
         public Project? Project { get; set; }
 
         public string? PaymentTerms { get; set; }
-        public string? DeliveryTimeline { get; set; }
+        public string? Execution { get; set; }
         public string? WarrantyTerms { get; set; }
 
         public DateTime SODate { get; set; }
@@ -43,6 +43,8 @@ namespace YLWorks.Model
         public ICollection<DeliveryOrder> DeliveryOrders { get; set; }
     = new List<DeliveryOrder>();
         public ICollection<Invoice> Invoices { get; set; } = new List<Invoice>();
+        public ICollection<PurchaseOrder>? PurchaseOrders { get; set; } = new List<PurchaseOrder>();
+
     }
 
     public class SalesOrderItem
@@ -54,6 +56,8 @@ namespace YLWorks.Model
         public int SortOrder { get; set; }
 
         public string Type { get; set; }
+        public string? ItemType { get; set; } //Product, Service, Notes
+
         public bool IsGroup { get; set; }
 
         public string? Item {  get; set; }
@@ -63,11 +67,15 @@ namespace YLWorks.Model
         public decimal QuantityDelivered { get; set; }
         public decimal QuantityRemaining { get; set; }
 
-        public string Unit { get; set; }
+        public string? Unit { get; set; }
         public decimal? UnitPrice { get; set; }
         public decimal? Discount { get; set; }
         public decimal? TaxRate { get; set; }
         public decimal? TotalPrice { get; set; }
+
+        public decimal? QtyOnHand { get; set; }
+        public Guid? InventoryId { get; set; }
+        public Inventory? Inventory { get; set; }
 
         public List<SalesOrderItem> Children { get; set; } = new();
         public bool IncludeInDeliveryOrder { get; set; } = true;
@@ -78,17 +86,22 @@ namespace YLWorks.Model
         public Guid? Id { get; set; }
         public int SortOrder { get; set; }
         public string Type { get; set; }
+        public string? ItemType { get; set; } //Product, Service, Notes
         public bool IsGroup { get; set; }
         public Guid? ParentId { get; set; }
         public string? Item { get; set; }
         public string? Description { get; set; } = string.Empty;
         public decimal? Quantity { get; set; }
-        public string Unit { get; set; } = "Unit";
+        public string? Unit { get; set; }
         public decimal? UnitPrice { get; set; }
         public decimal DeliveredQuantity {  get; set; }
         public decimal? Discount { get; set; }
         public decimal? TaxRate { get; set; }
         public decimal? TotalPrice { get; set; }
+        public decimal? QtyOnHand { get; set; }
+        public Guid? InventoryId { get; set; }
+        public Inventory? Inventory { get; set; }
+
         public List<SOItemRequest> Children { get; set; } = new();
         public bool IncludeInDeliveryOrder { get; set; } = true;
     }
@@ -107,7 +120,7 @@ namespace YLWorks.Model
         public DateTime SODate { get; set; }
 
         public string? PaymentTerms { get; set; }
-        public string? DeliveryTimeline { get; set; }
+        public string? Execution { get; set; }
         public string? WarrantyTerms { get; set; }
 
         public decimal? SubTotal { get; set; }
@@ -139,7 +152,7 @@ namespace YLWorks.Model
         public DateTime SODate { get; set; }
 
         public string? PaymentTerms { get; set; }
-        public string? DeliveryTimeline { get; set; }
+        public string? Execution { get; set; }
         public string? WarrantyTerms { get; set; }
 
         public decimal? SubTotal { get; set; }
@@ -181,9 +194,9 @@ namespace YLWorks.Model
         public string? Remarks { get; set; }
         public string? Status { get; set; } 
 
-        public decimal SubTotal { get; set; }
-        public decimal Discount { get; set; }
-        public decimal TaxAmount { get; set; }
+        public decimal? SubTotal { get; set; }
+        public decimal? Discount { get; set; }
+        public decimal? TaxAmount { get; set; }
         public decimal TotalAmount { get; set; }
 
         public List<SalesOrderItemUpdateRequest> Items { get; set; } = new();
@@ -192,11 +205,12 @@ namespace YLWorks.Model
     public class SalesOrderItemUpdateRequest
     {
         public Guid Id { get; set; }
-        public int Quantity { get; set; }
-        public decimal UnitPrice { get; set; }
-        public decimal Discount { get; set; }
-        public decimal TaxRate { get; set; }
-        public decimal TotalPrice { get; set; }
+        public int? Quantity { get; set; }
+        public decimal? UnitPrice { get; set; }
+        public string? Unit {  get; set; }
+        public decimal? Discount { get; set; }
+        public decimal? TaxRate { get; set; }
+        public decimal? TotalPrice { get; set; }
     }
 
 
@@ -210,7 +224,7 @@ namespace YLWorks.Model
         public Project? Project { get; set; }
         public string? ProjectCode { get; set; }
         public string? PaymentTerms { get; set; }
-        public string? DeliveryTimeline { get; set; }
+        public string? Execution { get; set; }
         public string? WarrantyTerms { get; set; }
         public List<SalesOrderItemDropdownDto> SalesOrderItems { get; set; } = new();
     }
@@ -221,7 +235,7 @@ namespace YLWorks.Model
         public string? Item { get; set; }
         public string? Description { get; set; }
         public decimal? Quantity { get; set; }
-        public string Unit { get; set; }
+        public string? Unit { get; set; }
     }
 
 }

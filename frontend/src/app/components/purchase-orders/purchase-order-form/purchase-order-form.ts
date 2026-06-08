@@ -277,12 +277,12 @@ import { RadioButtonModule } from 'primeng/radiobutton';
             ></p-datepicker>
           </div>
           <div class="col-span-12 lg:col-span-6 flex flex-col gap-2 mt-2">
-            <div>Terms</div>
+            <div>Payment Terms</div>
             <input
               type="text"
               pInputText
               class="w-full"
-              formControlName="terms"
+              formControlName="paymentTerms"
             />
           </div>
           <div class="col-span-12 lg:col-span-6 flex flex-col gap-1">
@@ -1257,7 +1257,7 @@ export class PurchaseOrderForm implements OnInit, OnDestroy {
       poReceivedDate: new FormControl<Date | null>(null),
       supplierId: new FormControl<string | null>(null),
       clientId: new FormControl<string | null>(null),
-      terms: new FormControl<string | null>(null),
+      paymentTerms: new FormControl<string | null>(null),
       projectId: new FormControl<string | null>(null),
       quotationId: new FormControl<string | null>(null),
       gross: new FormControl<number | null>(0),

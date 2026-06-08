@@ -8,6 +8,8 @@ using YLWorks.Data;
 using YLWorks.Hubs;
 using YLWorks.Model;
 using WebApplication1.Helpers;
+using System.Text;
+using ClosedXML.Excel;
 
 namespace YLWorks.Controller
 {
@@ -112,6 +114,39 @@ string? includes = null)
                                        : query.OrderBy(x => EF.Property<object>(x, propertyName));
                 }
 
+                var now = DateTimeHelper.Now();
+
+                var expiredQuotes = query
+                    .Where(q =>
+                        q.Status != "Expired" &&
+q.Status != "Accepted" &&
+q.Status != "Cancelled" &&
+                        q.QuotationDate != null &&
+                        q.ValidityDays != null &&
+                        q.QuotationDate.AddDays((double)q.ValidityDays) < now
+                    )
+                    .ToList();
+
+                if (expiredQuotes.Any())
+                {
+                    foreach (var q in expiredQuotes)
+                    {
+                        q.Status = "Expired";
+
+                        _context.QuotationStatusHistories.Add(new QuotationStatusHistory
+                        {
+                            Id = Guid.NewGuid(),
+                            QuotationId = q.Id,
+                            Status = "Expired",
+                            ActionAt = now,
+                            ActionUserId = null, 
+                            Remarks = "Quotation auto-expired after validity period."
+                        });
+                    }
+
+                    _context.SaveChanges();
+                }
+
                 var totalElements = query.Count();
 
                 var items = query.Skip((page - 1) * pageSize).Take(pageSize).ToList();
@@ -172,13 +207,46 @@ string? includes = null)
         x.PaymentTerms,
         x.WarrantyTerms,
         x.ValidityDays,
-        x.DeliveryTimeline,
+        x.Execution,
         x.Subject,
+        x.Status,
         x.QuotationItems
     })
     .FirstOrDefaultAsync();
 
             if (data == null) return NotFound();
+
+            var now = DateTimeHelper.Now();
+
+            if (data != null)
+            {
+                var expiryDate = data.QuotationDate.AddDays(data.ValidityDays ?? 0);
+
+                if (expiryDate < now &&
+    data.Status != "Expired" &&
+    data.Status != "Accepted" &&
+    data.Status != "Cancelled")
+                {
+                    var quotation = await _context.Quotations.FindAsync(data.Id);
+
+                    if (quotation != null)
+                    {
+                        quotation.Status = "Expired";
+
+                        _context.QuotationStatusHistories.Add(new QuotationStatusHistory
+                        {
+                            Id = Guid.NewGuid(),
+                            QuotationId = quotation.Id,
+                            Status = "Expired",
+                            ActionAt = now,
+                            ActionUserId = null,
+                            Remarks = "Quotation auto-expired after validity period."
+                        });
+
+                        await _context.SaveChangesAsync();
+                    }
+                }
+            }
 
             return Ok(data);
         }
@@ -189,7 +257,9 @@ string? includes = null)
             {
                 Id = item.Id,
                 Type = item.Type,
+                ItemType = item.ItemType,
                 IsGroup = item.IsGroup,
+                Item = item.Item,
                 Description = item.Description,
                 Quantity = item.Quantity,
                 Unit = item.Unit,
@@ -229,7 +299,7 @@ string? includes = null)
                     TotalAmount = request.TotalAmount,
                     PaymentTerms = request.PaymentTerms,
                     ValidityDays = request.ValidityDays,
-                    DeliveryTimeline = request.DeliveryTimeline,
+                    Execution = request.Execution,
                     WarrantyTerms = request.WarrantyTerms,
                     Status = "Draft",
                     CreatedById = Guid.Parse(userIdClaim),
@@ -277,9 +347,11 @@ string? includes = null)
                     ParentId = parentId,
                     IsGroup = req.IsGroup,
                     Type = req.Type,
+                    ItemType = req.ItemType,
+                    Item = req.Item,
                     Description = req.Description,
                     Quantity = req.Quantity,
-                    Unit = req.Unit ?? "Nos",
+                    Unit = req.Unit,
                     UnitPrice = req.UnitPrice,
                     Discount = req.Discount,
                     TaxRate = req.TaxRate,
@@ -320,7 +392,7 @@ string? includes = null)
             quotation.ProjectCode = request.ProjectCode;
             quotation.PaymentTerms = request.PaymentTerms;
             quotation.ValidityDays = request.ValidityDays;
-            quotation.DeliveryTimeline = request.DeliveryTimeline;
+            quotation.Execution = request.Execution;
             quotation.WarrantyTerms = request.WarrantyTerms;
             quotation.UpdatedAt = DateTimeHelper.Now();
 
@@ -338,6 +410,8 @@ string? includes = null)
                         Id = x.Id,
                         IsGroup = x.IsGroup,
                         Type = x.Type,
+                        ItemType = x.ItemType,
+                        Item = x.Item,
                         Description = x.Description,
                         Quantity = x.Quantity,
                         Unit = x.Unit,
@@ -380,7 +454,7 @@ string? includes = null)
                 q.TotalAmount,
                 q.PaymentTerms,
                 q.ValidityDays,
-                q.DeliveryTimeline,
+                q.Execution,
                 q.WarrantyTerms,
                 q.Status,
                 q.Remarks,
@@ -407,7 +481,9 @@ string? includes = null)
             {
                 item.Id,
                 item.Type, 
+                item.ItemType,
                 item.IsGroup,
+                item.Item,
                 item.Description,
                 item.Quantity,
                 item.Unit,
@@ -478,7 +554,7 @@ string? includes = null)
                     TotalAmount = source.TotalAmount,
                     PaymentTerms = source.PaymentTerms,
                     ValidityDays = source.ValidityDays,
-                    DeliveryTimeline = source.DeliveryTimeline,
+                    Execution = source.Execution,
                     WarrantyTerms = source.WarrantyTerms,
                     Remarks = $"Cloned from {source.QuotationNo}",
                     CreatedAt = DateTimeHelper.Now()
@@ -502,7 +578,9 @@ string? includes = null)
                                    ? idMap[oldItem.ParentId.Value]
                                    : null,
                         Type = oldItem.Type,
+                        ItemType = oldItem.ItemType,
                         IsGroup = oldItem.IsGroup,
+                        Item = oldItem.Item,
                         Description = oldItem.Description,
                         Quantity = oldItem.Quantity,
                         Unit = oldItem.Unit,
@@ -729,7 +807,7 @@ string? includes = null)
                     Remarks = request.Remarks,
                     PaymentTerms = quotation.PaymentTerms,
                     WarrantyTerms = quotation.WarrantyTerms,
-                    DeliveryTimeline = quotation.DeliveryTimeline,
+                    Execution = quotation.Execution,
 
                     ClientPONumber = request.ClientPONumber,
                     ClientPODate = request.ClientPODate,
@@ -797,7 +875,7 @@ string? includes = null)
             foreach (var qItem in currentLevelItems)
             {
                 var soItemId = Guid.NewGuid();
-                decimal qty = qItem.Quantity;
+                decimal qty = qItem.Quantity ?? 0m;
 
                 var newSoItem = new SalesOrderItem
                 {
@@ -806,9 +884,11 @@ string? includes = null)
                     ParentId = parentId,
                     SortOrder = qItem.SortOrder,
                     Type = qItem.Type,
+                    ItemType = qItem.ItemType,
                     IsGroup = qItem.IsGroup,
+                    Item = qItem.Item,
                     Description = qItem.Description,
-                    Unit = qItem.Unit ?? "Nos",
+                    Unit = qItem.Unit,
                     Quantity = qItem.Quantity,
 
                     QuantityDelivered = 0,
@@ -859,5 +939,68 @@ string? includes = null)
 
             return $"YL/SO/{nextNumber}/{yearShort}";
         }
+
+        [HttpGet("ExportExcel")]
+        public async Task<IActionResult> ExportExcel()
+        {
+            var data = await _context.Quotations
+                .Include(q => q.Client)
+                .ToListAsync();
+
+            using var wb = new XLWorkbook();
+            var ws = wb.Worksheets.Add("Quotations");
+
+            // HEADER
+            ws.Cell(1, 1).Value = "QuotationNo";
+            ws.Cell(1, 2).Value = "QuotationDate";
+            ws.Cell(1, 3).Value = "Client";
+            ws.Cell(1, 4).Value = "SubTotal";
+            ws.Cell(1, 5).Value = "Discount";
+            ws.Cell(1, 6).Value = "TotalAmount";
+            ws.Cell(1, 7).Value = "Status";
+
+            var headerRange = ws.Range(1, 1, 1, 7);
+            headerRange.Style.Font.Bold = true;
+            headerRange.Style.Border.BottomBorder = XLBorderStyleValues.Thin;
+
+            int row = 2;
+
+            foreach (var q in data)
+            {
+                ws.Cell(row, 1).Value = q.QuotationNo;
+                ws.Cell(row, 2).Value = q.QuotationDate.ToString("yyyy-MM-dd");
+                ws.Cell(row, 3).Value = q.Client?.Name;
+                ws.Cell(row, 4).Value = q.SubTotal ?? 0;
+                ws.Cell(row, 5).Value = q.Discount ?? 0;
+                ws.Cell(row, 6).Value = q.TotalAmount ?? 0;
+                ws.Cell(row, 7).Value = q.Status;
+
+                row++;
+            }
+
+            ws.Columns().AdjustToContents();
+
+            var stream = new MemoryStream();
+
+            wb.SaveAs(stream);
+            stream.Position = 0;
+
+            return File(stream.ToArray(),
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                $"Quotations_{DateTime.Now:yyyyMMddHHmmss}.xlsx");
+        }
+
+        private string Escape(string? value)
+        {
+            if (string.IsNullOrEmpty(value)) return "";
+
+            if (value.Contains(",") || value.Contains("\"") || value.Contains("\n"))
+            {
+                return $"\"{value.Replace("\"", "\"\"")}\"";
+            }
+
+            return value;
+        }
+
     }
 }

@@ -3,6 +3,7 @@ namespace YLWorks.Model
     public class Inventory : BaseEntity
     {
         public Guid Id { get; set; }
+        public string? ItemCode { get; set; }
         public string ItemName { get; set; } = string.Empty;
         public string? Brand { get; set; }
         public string? Model { get; set; }
@@ -10,7 +11,8 @@ namespace YLWorks.Model
         public CategoryInventory? Category { get; set; }
         public string? Description { get; set; }
         public string Unit { get; set; } = string.Empty;
-        public int Quantity { get; set; }
+        public decimal? ReservedQuantity { get; set; } 
+        public decimal Quantity { get; set; }
         public string? SerialNumber { get; set; }
         public string? ReferenceType { get; set; } // MaterialRequest, PurchaseOrder, WorkOrder
         public Guid? ReferenceId { get; set; }
@@ -30,13 +32,15 @@ namespace YLWorks.Model
 
     public class CreateInventoryRequest
     {
+        public string? ItemCode { get; set; }
         public string ItemName { get; set; } = string.Empty;
         public string? Brand { get; set; }
         public string? Model { get; set; }
         public Guid? CategoryId { get; set; }
         public string? Description { get; set; }
         public string Unit { get; set; } = string.Empty;
-        public int Quantity { get; set; }
+        public decimal? ReservedQuantity { get; set; }
+        public decimal Quantity { get; set; }
         public string? SerialNumber { get; set; }
         public string? ReferenceType { get; set; } // MaterialRequest, PurchaseOrder, WorkOrder
         public Guid? ReferenceId { get; set; }
@@ -53,13 +57,15 @@ namespace YLWorks.Model
     public class UpdateInventoryRequest
     {
         public Guid Id { get; set; }
+        public string? ItemCode { get; set; }
         public string ItemName { get; set; } = string.Empty;
         public string? Brand { get; set; }
         public string? Model { get; set; }
         public Guid? CategoryId { get; set; }
         public string? Description { get; set; }
         public string Unit { get; set; } = string.Empty;
-        public int Quantity { get; set; }
+        public decimal? ReservedQuantity { get; set; }
+        public decimal Quantity { get; set; }
         public string? SerialNumber { get; set; }
         public string? ReferenceType { get; set; } // MaterialRequest, PurchaseOrder, WorkOrder
         public Guid? ReferenceId { get; set; }
@@ -105,7 +111,7 @@ namespace YLWorks.Model
     {
         public Guid Id { get; set; }
         public string Name { get; set; } = string.Empty;
-        public int Quantity { get; set; }
+        public decimal Quantity { get; set; }
         public int ParLevel { get; set; }
         public SectionDto Section { get; set; }
         public string Brand { get; set; }

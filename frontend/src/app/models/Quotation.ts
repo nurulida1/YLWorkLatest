@@ -19,7 +19,7 @@ export interface QuotationDto extends BaseModel {
   totalAmount: number;
   paymentTerms: string;
   validityDays: number;
-  deliveryTimeline: string;
+  execution: string;
   warrantyTerms: string;
   status: string;
   remarks: string;
@@ -47,6 +47,8 @@ export interface QuotationItems extends BaseModel {
   parent: QuotationItems;
   sortOrder: number;
   type: string;
+  itemType: string;
+  item: string;
   description: string;
   isGroup: boolean;
   quantity: number;
@@ -62,7 +64,9 @@ export interface QuotationItemDto {
   id: string;
   sortOrder: number;
   type: string;
+  itemType: string;
   isGroup: boolean;
+  item: string;
   description: string;
   unit: string;
   quantity: number;
@@ -76,7 +80,9 @@ export interface QuotationItemDto {
 export interface QuotationItemBase {
   sortOrder: number;
   type: string;
+  itemType: string;
   isGroup: boolean;
+  item: string;
   description: string;
   quantity: number;
   unit: string;
@@ -106,7 +112,7 @@ export interface CreateQuotationRequest {
   totalAmount: number;
   paymentTerms: string;
   validityDays: number;
-  deliveryTimeline: string;
+  execution: string;
   warrantyTerms: string;
   quotationItems: QuotationItemRequest[];
 }

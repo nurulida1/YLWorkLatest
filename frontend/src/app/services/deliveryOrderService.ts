@@ -141,6 +141,22 @@ export class DeliveryOrderService {
     );
   }
 
+  GenerateMultipleNo(count: number): Observable<{ deliveryOrderNo: string }[]> {
+    const params = new HttpParams().set('count', count.toString());
+
+    return this.http
+      .get<
+        { deliveryOrderNo: string }[]
+      >(`${this.url}/generate-multiple-no`, { params })
+      .pipe(retry(1), catchError(this.handleError('GenerateMultipleNo')));
+  }
+
+  CreateBulk(request: any[]): Observable<DeliveryOrderDto[]> {
+    return this.http
+      .post<DeliveryOrderDto[]>(`${this.url}/CreateBulk`, request)
+      .pipe(retry(1), catchError(this.handleError('CreateBulk')));
+  }
+
   private handleError = (context: string) => (error: any) => {
     this.messageService.add({
       severity: 'error',

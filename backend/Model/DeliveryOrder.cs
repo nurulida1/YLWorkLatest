@@ -22,6 +22,11 @@ namespace YLWorks.Model
 
         public DateTime? EstimatedDeliveryDate {  get; set; }
 
+        public string? ContactPerson1 { get; set; }
+        public string? ContactPerson2 { get; set; }
+        public string? ContactNo1 { get; set; }
+        public string? ContactNo2 { get; set; }
+
         public string? Notes { get; set; }
 
         public string? Remarks { get; set; }
@@ -131,6 +136,11 @@ namespace YLWorks.Model
         public Guid? ReceiverCompanyId { get; set; }
 
         public string? DeliveryMethod { get; set; }
+
+        public string? ContactPerson1 { get; set; }
+        public string? ContactPerson2 { get; set; }
+        public string? ContactNo1 { get; set; }
+        public string? ContactNo2 { get; set; }
 
         public string? Remarks { get; set; }
 
@@ -242,5 +252,10 @@ namespace YLWorks.Model
     {
         public Guid SalesOrderItemId { get; set; }
         public int QuantityToDeliver { get; set; }
+    }
+
+    public class BulkCreateDeliveryOrderRequest
+    {
+        public List<CreateDeliveryOrderRequest> Items { get; set; } = new();
     }
 }

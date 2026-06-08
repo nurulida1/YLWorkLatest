@@ -3,7 +3,9 @@ import { CompanyDto } from './Company';
 import { InvoiceDto } from './Invoice';
 import { ProjectDto } from './Project';
 import { QuotationDto } from './Quotation';
+import { SalesOrderItem } from './SalesOrder';
 import { UserDto } from './User';
+import { SalesOrderDto } from './SalesOrder';
 
 export interface PurchaseOrderDto extends BaseModel {
   purchaseOrderNo: string;
@@ -13,11 +15,13 @@ export interface PurchaseOrderDto extends BaseModel {
   poReceivedDate: Date;
   supplierId: string;
   supplier: CompanyDto;
-  terms: string;
+  paymentTerms: string;
   projectId: string;
   project: ProjectDto;
   quotationId?: string;
   quotation?: QuotationDto;
+  salesOrderId: string;
+  salesOrder: SalesOrderDto;
   totalQuantity: number;
   gross: number;
   discount: number;
@@ -49,6 +53,8 @@ export interface PurchaseOrderStatusHistory extends BaseModel {
 export interface PurchaseOrderItem extends BaseModel {
   purchaseOrderId: string;
   purchaseOrder: PurchaseOrderDto;
+  salesOrderItemId: string;
+  salesOrderItem: SalesOrderItem;
   item: string;
   description: string;
   quantity: number;
@@ -60,6 +66,7 @@ export interface PurchaseOrderItem extends BaseModel {
 }
 
 export interface POItemBase {
+  salesOrderItemId: string;
   item: string;
   description: string;
   quantity: number;
@@ -82,8 +89,9 @@ export interface CreatePORequest {
   poDate: Date;
   poReceivedDate: Date;
   supplierId?: string;
-  terms: string;
+  paymentTerms: string;
   quotationId: string;
+  salesOrderId: string;
   projectId: string;
   gross: number;
   discount: number;

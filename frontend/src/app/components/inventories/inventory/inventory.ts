@@ -174,7 +174,7 @@ import {
                   pSortableColumn="ItemName"
                   class="bg-gray-100! text-center! w-[20%]!"
                 >
-                  <div class="flex flex-row items-center justify-center gap-2">
+                  <div class="flex flex-row items-center gap-2">
                     <div>Item</div>
                     <p-sortIcon field="ItemName" />
                   </div>
@@ -183,16 +183,13 @@ import {
                   class="bg-gray-100! text-center! w-[15%]!"
                   pSortableColumn="Brand"
                 >
-                  <div class="flex flex-row items-center justify-center gap-2">
+                  <div class="flex flex-row items-center gap-2">
                     <div>Brand</div>
                     <p-sortIcon field="Brand" />
                   </div>
                 </th>
-                <th
-                  class="bg-gray-100! text-center! w-[10%]!"
-                  pSortableColumn="Model"
-                >
-                  <div class="flex flex-row items-center justify-center gap-2">
+                <th class="bg-gray-100! w-[10%]!" pSortableColumn="Model">
+                  <div class="flex flex-row items-center gap-2">
                     <div>Model</div>
                     <p-sortIcon field="Model" />
                   </div>
@@ -238,13 +235,13 @@ import {
                     ></p-image>
                   </div>
                 </td>
-                <td class="text-center!">
+                <td>
                   {{ data.itemName }}
                 </td>
-                <td class="text-center!">
+                <td>
                   {{ data.brand }}
                 </td>
-                <td class="text-center!">
+                <td>
                   {{ data.model }}
                 </td>
                 <td class="text-center!">
@@ -271,7 +268,8 @@ import {
                     [ngClass]="{
                       'bg-green-200 text-green-700': data.status === 'In Stock',
                       'bg-purple-200 text-purple-700': data.status === 'FOC',
-                      'bg-red-200 text-red-700': data.status === 'Restock',
+                      'bg-red-200 text-red-700':
+                        data.status === 'Restock' || data.status == 'Low Stock',
                       'bg-yellow-100 text-orange-800':
                         data.status === 'Faulty/Repair',
                       'animate-pulse': data.status === 'Restock',
@@ -313,214 +311,319 @@ import {
       [draggable]="false"
       [closable]="true"
       (onHide)="visible = false"
-      styleClass="relative! border-0! bg-white! overflow-y-auto! w-[80%]! lg:w-[50%]!"
+      styleClass="bg-white rounded-xl shadow-xl w-[90%] max-w-4xl border-0 overflow-hidden"
     >
       <ng-template #headless>
-        <div class="p-5 flex flex-col">
-          <div class="font-semibold text-[18px]">{{ title }}</div>
-          <div class="font-normal text-sm tracking-wide text-gray-500">
-            Fill in all required field.
+        <div class="flex flex-col h-full bg-white font-sans text-gray-900">
+          <div class="p-6 border-b border-gray-100 bg-gray-50/30">
+            <h2 class="font-bold text-xl tracking-tight text-gray-900 m-0">
+              {{ title }}
+            </h2>
+            <p class="text-sm text-gray-500 m-0 mt-1">
+              Complete the details below to maintain system inventory
+              specifications.
+            </p>
           </div>
-          <div
-            class="mt-3 grid grid-cols-12 items-center gap-5"
-            [formGroup]="FG"
-          >
-            <div class="col-span-12 flex flex-col gap-1">
-              <div>Item Name <span class="text-red-500">*</span></div>
-              <input
-                type="text"
-                class="w-full"
-                pInputText
-                formControlName="itemName"
-              />
-            </div>
-            <div class="col-span-12 md:col-span-6 flex flex-col gap-1">
-              <div>Brand</div>
-              <input
-                type="text"
-                formControlName="brand"
-                pInputText
-                class="w-full"
-              />
-            </div>
-            <div class="col-span-12 md:col-span-6 flex flex-col gap-1">
-              <div>Model</div>
-              <input
-                type="text"
-                pInputText
-                class="w-full"
-                formControlName="model"
-              />
-            </div>
-            <div class="col-span-12 md:col-span-6 flex flex-col gap-1">
-              <div>Category</div>
-              <p-select
-                [options]="categorySelection || []"
-                appendTo="body"
-                formControlName="categoryId"
-                [filter]="true"
-              ></p-select>
-            </div>
-            <div class="col-span-12 md:col-span-6 flex flex-col gap-1">
-              <div>Location</div>
-              <p-select
-                [options]="locationSelection || []"
-                appendTo="body"
-                formControlName="locationId"
-                [filter]="true"
-              ></p-select>
-            </div>
-            <div class="col-span-12 md:col-span-6 flex flex-col gap-1">
-              <div>Section <span class="text-red-500">*</span></div>
 
-              <p-select
-                [options]="sectionSelection || []"
-                appendTo="body"
-                formControlName="sectionId"
-                [filter]="true"
-              ></p-select>
-            </div>
-            <div class="col-span-12 md:col-span-6 flex flex-col gap-1">
-              <div>Quantity <span class="text-red-500">*</span></div>
-              <p-inputnumber formControlName="quantity"></p-inputnumber>
-            </div>
-            <div class="col-span-12 md:col-span-6 flex flex-col gap-1">
-              <div>Par Level</div>
-              <p-inputnumber formControlName="parLevel"></p-inputnumber>
-            </div>
-            <div class="col-span-12 md:col-span-6 flex flex-col gap-1">
-              <div>Unit</div>
-              <p-select
-                formControlName="unit"
-                appendTo="body"
-                [options]="[
-                  { label: 'Pcs', value: 'Pcs' },
-                  { label: 'Box', value: 'Box' },
-                  { label: 'Set', value: 'Set' },
-                  { label: 'Pair', value: 'Pair' },
-                  { label: 'Unit', value: 'Unit' },
-                ]"
-              ></p-select>
-            </div>
-            <div class="col-span-12 md:col-span-6 flex flex-col gap-1">
-              <div>Status</div>
-              <p-select
-                formControlName="status"
-                appendTo="body"
-                [options]="[
-                  {
-                    label: 'All Status',
-                    value: 'All',
-                  },
-                  {
-                    label: 'In Stock',
-                    value: 'In Stock',
-                  },
-                  {
-                    label: 'Low Stock',
-                    value: 'Low Stock',
-                  },
-                  {
-                    label: 'Restock',
-                    value: 'Restock',
-                  },
-                  {
-                    label: 'FOC',
-                    value: 'FOC',
-                  },
-                  {
-                    label: 'Faulty',
-                    value: 'Faulty',
-                  },
-                  {
-                    label: 'Under Repair',
-                    value: 'Under Repair',
-                  },
-                ]"
-              ></p-select>
-            </div>
-            <div class="col-span-12 md:col-span-6 flex flex-col gap-1">
-              <div>Cost (RM)</div>
-              <p-inputnumber
-                formControlName="costs"
-                mode="decimal"
-                [minFractionDigits]="2"
-                [maxFractionDigits]="5"
-              ></p-inputnumber>
-            </div>
-            <div class="col-span-12 flex flex-col gap-1">
-              <div>Remark</div>
-              <textarea
-                name=""
-                id=""
-                pTextarea
-                formControlName="remarks"
-                [cols]="30"
-                [rows]="3"
-              ></textarea>
-            </div>
-            <div class="col-span-12 flex flex-col gap-1">
-              <div>Attachment</div>
-              <div
-                class="flex flex-col gap-3"
-                *ngIf="FG.get('attachment')?.value"
-              >
-                <div class="border w-[180px] h-[150px] border-gray-100">
-                  <img
-                    [src]="FG.get('attachment')?.value"
-                    alt=""
-                    class="w-full h-full object-contain"
-                  />
+          <div class="p-8 overflow-y-auto max-h-[70vh]">
+            <div class="flex flex-col gap-8" [formGroup]="FG">
+              <div class="flex flex-col gap-4">
+                <div class="border-b border-gray-100 pb-2">
+                  <h3
+                    class="text-sm font-bold uppercase tracking-wider text-gray-400 m-0"
+                  >
+                    Product Identification
+                  </h3>
                 </div>
-                <div class="flex flex-row items-center gap-2">
-                  <p-button
-                    label="Reupload"
-                    icon="pi pi-upload"
-                    size="small"
-                    severity="secondary"
-                    styleClass="border-gray-200!"
-                    (onClick)="file.click()"
-                  ></p-button>
-                  <p-button
-                    label="Delete"
-                    size="small"
-                    severity="danger"
-                    styleClass="py-1.5!"
-                    (onClick)="removeAttachment()"
-                  ></p-button>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <div class="flex flex-col gap-1.5">
+                    <label class="text-sm font-semibold text-gray-700"
+                      >Item Code</label
+                    >
+                    <input
+                      type="text"
+                      pInputText
+                      class="w-full h-10 px-3 border border-gray-200 rounded-md bg-gray-50/50 focus:bg-white transition-all"
+                      formControlName="itemCode"
+                      placeholder="e.g., HW-CAM-01"
+                    />
+                  </div>
+
+                  <div class="flex flex-col gap-1.5">
+                    <label class="text-sm font-semibold text-gray-700"
+                      >Brand</label
+                    >
+                    <input
+                      type="text"
+                      pInputText
+                      class="w-full h-10 px-3 border border-gray-200 rounded-md focus:bg-white transition-all"
+                      formControlName="brand"
+                      placeholder="e.g., Hanwha Vision"
+                    />
+                  </div>
+
+                  <div class="md:col-span-2 flex flex-col gap-1.5">
+                    <label
+                      class="text-sm font-semibold text-gray-700 flex items-center gap-1"
+                    >
+                      Item Name <span class="text-rose-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      pInputText
+                      class="w-full h-10 px-3 border border-gray-200 rounded-md focus:bg-white transition-all"
+                      formControlName="itemName"
+                      placeholder="e.g., Hanwha Dome Camera 1080P WDR IP Dome IR"
+                    />
+                  </div>
+
+                  <div class="flex flex-col gap-1.5">
+                    <label class="text-sm font-semibold text-gray-700"
+                      >Model</label
+                    >
+                    <input
+                      type="text"
+                      pInputText
+                      class="w-full h-10 px-3 border border-gray-200 rounded-md focus:bg-white transition-all"
+                      formControlName="model"
+                      placeholder="e.g., QND-6012RP"
+                    />
+                  </div>
+
+                  <div class="flex flex-col gap-1.5">
+                    <label class="text-sm font-semibold text-gray-700"
+                      >Category</label
+                    >
+                    <p-select
+                      [options]="categorySelection || []"
+                      appendTo="body"
+                      formControlName="categoryId"
+                      [filter]="true"
+                      styleClass="w-full h-10 border border-gray-200 rounded-md flex items-center bg-white"
+                      placeholder="Select Category"
+                    ></p-select>
+                  </div>
                 </div>
               </div>
-              <p-button
-                *ngIf="!FG.get('attachment')?.value"
-                label="Upload"
-                severity="secondary"
-                icon="pi pi-upload"
-                size="small"
-                styleClass="border-gray-200!"
-                (onClick)="file.click()"
-              ></p-button>
-              <input
-                type="file"
-                #file
-                hidden
-                accept="image/*"
-                (change)="onFileSelected($event)"
-              />
+
+              <div class="flex flex-col gap-4">
+                <div class="border-b border-gray-100 pb-2">
+                  <h3
+                    class="text-sm font-bold uppercase tracking-wider text-gray-400 m-0"
+                  >
+                    Logistics & Stock Levels
+                  </h3>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <div class="flex flex-col gap-1.5">
+                    <label class="text-sm font-semibold text-gray-700"
+                      >Storage Location</label
+                    >
+                    <p-select
+                      [options]="locationSelection || []"
+                      appendTo="body"
+                      formControlName="locationId"
+                      [filter]="true"
+                      styleClass="w-full h-10 border border-gray-200 rounded-md flex items-center bg-white"
+                      placeholder="Select Location"
+                    ></p-select>
+                  </div>
+
+                  <div class="flex flex-col gap-1.5">
+                    <label
+                      class="text-sm font-semibold text-gray-700 flex items-center gap-1"
+                    >
+                      Section / Rack <span class="text-rose-500">*</span>
+                    </label>
+                    <p-select
+                      [options]="sectionSelection || []"
+                      appendTo="body"
+                      formControlName="sectionId"
+                      [filter]="true"
+                      styleClass="w-full h-10 border border-gray-200 rounded-md flex items-center bg-white"
+                      placeholder="Select Rack / Shelf Slot"
+                    ></p-select>
+                  </div>
+
+                  <div class="flex flex-col gap-1.5">
+                    <label
+                      class="text-sm font-semibold text-gray-700 flex items-center gap-1"
+                    >
+                      Current Quantity <span class="text-rose-500">*</span>
+                    </label>
+                    <p-inputnumber
+                      formControlName="quantity"
+                      mode="decimal"
+                      [minFractionDigits]="2"
+                      [maxFractionDigits]="4"
+                      styleClass="w-full"
+                      inputStyleClass="w-full h-10 border border-gray-200 rounded-md text-right px-3 bg-white"
+                    ></p-inputnumber>
+                  </div>
+
+                  <div class="flex flex-col gap-1.5">
+                    <label class="text-sm font-semibold text-gray-700"
+                      >Minimum Par Level</label
+                    >
+                    <p-inputnumber
+                      formControlName="parLevel"
+                      mode="decimal"
+                      [minFractionDigits]="2"
+                      [maxFractionDigits]="4"
+                      styleClass="w-full"
+                      inputStyleClass="w-full h-10 border border-gray-200 rounded-md text-right px-3 bg-white"
+                    ></p-inputnumber>
+                  </div>
+
+                  <div class="flex flex-col gap-1.5">
+                    <label class="text-sm font-semibold text-gray-700"
+                      >Unit of Measure (UOM)</label
+                    >
+                    <p-select
+                      formControlName="unit"
+                      appendTo="body"
+                      styleClass="w-full h-10 border border-gray-200 rounded-md flex items-center bg-white"
+                      placeholder="Select Unit Type"
+                      [options]="[
+                        { label: 'Pcs', value: 'Pcs' },
+                        { label: 'Box', value: 'Box' },
+                        { label: 'Set', value: 'Set' },
+                        { label: 'Pair', value: 'Pair' },
+                        { label: 'Unit', value: 'Unit' },
+                      ]"
+                    ></p-select>
+                  </div>
+
+                  <div class="flex flex-col gap-1.5">
+                    <label class="text-sm font-semibold text-gray-700"
+                      >Inventory Status</label
+                    >
+                    <p-select
+                      formControlName="status"
+                      appendTo="body"
+                      styleClass="w-full h-10 border border-gray-200 rounded-md flex items-center bg-white"
+                      [options]="[
+                        { label: 'All Status', value: 'All' },
+                        { label: 'In Stock', value: 'In Stock' },
+                        { label: 'Low Stock', value: 'Low Stock' },
+                        { label: 'Restock', value: 'Restock' },
+                        { label: 'FOC', value: 'FOC' },
+                        { label: 'Faulty', value: 'Faulty' },
+                        { label: 'Under Repair', value: 'Under Repair' },
+                      ]"
+                    ></p-select>
+                  </div>
+                </div>
+              </div>
+
+              <div class="flex flex-col gap-4">
+                <div class="border-b border-gray-100 pb-2">
+                  <h3
+                    class="text-sm font-bold uppercase tracking-wider text-gray-400 m-0"
+                  >
+                    Documentation
+                  </h3>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <div class="md:col-span-2 flex flex-col gap-1.5">
+                    <label class="text-sm font-semibold text-gray-700"
+                      >Internal Operational Remarks</label
+                    >
+                    <textarea
+                      pTextarea
+                      formControlName="remarks"
+                      [rows]="3"
+                      class="w-full border border-gray-200 rounded-md p-3 focus:border-blue-500 resize-none line-height-relaxed bg-white"
+                      placeholder="Enter context, project constraints or supplier notes..."
+                    ></textarea>
+                  </div>
+
+                  <div class="md:col-span-2 flex flex-col gap-2 mt-1">
+                    <label class="text-sm font-semibold text-gray-700"
+                      >Product Image Document</label
+                    >
+
+                    <div
+                      class="flex flex-row items-center gap-4 p-4 border border-gray-200 rounded-lg bg-gray-50/50 max-w-xl"
+                      *ngIf="FG.get('attachment')?.value"
+                    >
+                      <div
+                        class="w-16 h-16 bg-white border border-gray-200 rounded flex items-center justify-center overflow-hidden flex-shrink-0"
+                      >
+                        <img
+                          [src]="FG.get('attachment')?.value"
+                          alt="Preview"
+                          class="w-full h-full object-contain"
+                        />
+                      </div>
+                      <div class="flex flex-col gap-1">
+                        <span
+                          class="text-sm font-medium text-gray-900 font-mono"
+                          >Attachment Loaded</span
+                        >
+                        <div class="flex items-center gap-2">
+                          <button
+                            type="button"
+                            class="text-sm font-bold text-gray-600 underline hover:text-gray-900"
+                            (click)="file.click()"
+                          >
+                            Replace File
+                          </button>
+                          <span class="text-gray-300 text-xs">|</span>
+                          <button
+                            type="button"
+                            class="text-sm font-bold text-rose-600 underline hover:text-rose-800"
+                            (click)="removeAttachment()"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      *ngIf="!FG.get('attachment')?.value"
+                      class="w-full max-w-xs h-10 flex items-center justify-center gap-2 border border-gray-200 border-dashed rounded-md bg-white hover:bg-gray-50 text-sm font-semibold text-gray-700 transition-colors"
+                      (click)="file.click()"
+                    >
+                      <i class="pi pi-upload text-gray-400"></i>
+                      Upload File
+                    </button>
+
+                    <input
+                      type="file"
+                      #file
+                      hidden
+                      accept="image/*"
+                      (change)="onFileSelected($event)"
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
-          <div class="border-b border-gray-200 mt-3"></div>
-          <div class="flex flex-row items-center justify-end gap-2 mt-5">
-            <p-button
-              label="Discard"
-              severity="secondary"
-              [outlined]="true"
-              (onClick)="visible = false"
-            ></p-button>
-            <p-button
-              [label]="isUpdate ? 'Save Changes' : 'Save'"
-              severity="info"
-              (onClick)="SaveInventory()"
-            ></p-button>
+
+          <div
+            class="p-4 bg-gray-50 border-t border-gray-100 flex items-center justify-end gap-3"
+          >
+            <button
+              type="button"
+              class="px-5 h-10 text-sm font-semibold text-gray-700 bg-white border border-gray-200 rounded-md hover:bg-gray-100 transition-all"
+              (click)="visible = false"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              class="px-6 h-10 text-sm font-semibold text-white bg-gray-900 border border-transparent rounded-md hover:bg-gray-800 transition-all shadow-sm"
+              (click)="SaveInventory()"
+            >
+              {{ isUpdate ? 'Save Changes' : 'Register Item' }}
+            </button>
           </div>
         </div>
       </ng-template>
@@ -595,22 +698,18 @@ export class Inventory implements OnInit, OnDestroy {
   buildFilters(): string {
     const filters: string[] = [];
 
-    // search (LIKE behavior)
     if (this.search?.trim()) {
       filters.push(`ItemName=${this.search.trim()}`);
     }
 
-    // section
     if (this.selectedSectionId && this.selectedSectionId !== 'All') {
       filters.push(`SectionId=${this.selectedSectionId}`);
     }
 
-    // category
     if (this.selectedCategoryId && this.selectedCategoryId !== 'All') {
       filters.push(`CategoryId=${this.selectedCategoryId}`);
     }
 
-    // status
     if (this.selectedStatus && this.selectedStatus !== 'All') {
       filters.push(`Status=${this.selectedStatus}`);
     }
@@ -676,6 +775,7 @@ export class Inventory implements OnInit, OnDestroy {
   initForm() {
     this.FG = new FormGroup({
       id: new FormControl<string | null>({ value: null, disabled: true }),
+      itemCode: new FormControl<string | null>(null),
       itemName: new FormControl<string | null>(null, Validators.required),
       brand: new FormControl<string | null>(null),
       model: new FormControl<string | null>(null),
@@ -683,6 +783,7 @@ export class Inventory implements OnInit, OnDestroy {
       description: new FormControl<string | null>(null),
       unit: new FormControl<string | null>(null, Validators.required),
       quantity: new FormControl<number | null>(null, Validators.required),
+      reservedQuantity: new FormControl<number | null>(0),
       serialNumber: new FormControl<string | null>(null),
       referenceType: new FormControl<string | null>(null),
       referenceId: new FormControl<string | null>(null),
@@ -790,6 +891,8 @@ export class Inventory implements OnInit, OnDestroy {
     };
 
     reader.readAsDataURL(file);
+
+    this.cdr.markForCheck();
   }
 
   removeAttachment() {

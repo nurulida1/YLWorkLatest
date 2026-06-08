@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using YLWorks.Data;
 
@@ -11,9 +12,11 @@ using YLWorks.Data;
 namespace YLWorks.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260608061859_AddSOItemIdInPO")]
+    partial class AddSOItemIdInPO
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1713,9 +1716,6 @@ namespace YLWorks.Migrations
                     b.Property<DateTime?>("POReceivedDate")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<string>("PaymentTerms")
-                        .HasColumnType("longtext");
-
                     b.Property<Guid?>("ProjectId")
                         .HasColumnType("char(36)");
 
@@ -1741,6 +1741,9 @@ namespace YLWorks.Migrations
 
                     b.Property<Guid?>("SupplierId")
                         .HasColumnType("char(36)");
+
+                    b.Property<string>("Terms")
+                        .HasColumnType("longtext");
 
                     b.Property<string>("TermsAndCondition")
                         .HasColumnType("longtext");

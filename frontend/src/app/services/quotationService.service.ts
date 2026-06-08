@@ -149,14 +149,6 @@ export class QuotationService {
       .pipe(retry(1), catchError(this.handleError('GetDashboardCount')));
   }
 
-  ExportExcel(query: GridifyQueryExtend): Observable<Blob> {
-    const params = this.buildParams(query);
-    return this.http.get(`${this.url}/ExportExcel`, {
-      params,
-      responseType: 'blob',
-    });
-  }
-
   downloadPdf(id: string) {
     const url = `${environment.ApiBaseUrl}/Quotation/DownloadPdf/${id}`;
     return this.http.get(url, { responseType: 'blob' });
@@ -172,6 +164,12 @@ export class QuotationService {
     return this.http
       .delete<BaseResponse>(`${this.url}/Delete`, { params })
       .pipe(retry(1), catchError(this.handleError('Delete')));
+  }
+
+  ExportToExcel(): Observable<Blob> {
+    return this.http.get(`${this.url}/ExportExcel`, {
+      responseType: 'blob',
+    });
   }
 
   private handleError = (context: string) => (error: any) => {

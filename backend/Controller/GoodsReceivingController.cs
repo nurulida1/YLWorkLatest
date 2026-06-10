@@ -181,7 +181,9 @@ string? includes = null)
                     data.PurchaseOrderId,
                     PurchaseOrder = data.PurchaseOrder == null ? null : new
                     {
-                        PurchaseOrderNo = data.PurchaseOrder.PurchaseOrderNo
+                        PurchaseOrderNo = data.PurchaseOrder.PurchaseOrderNo,
+                        Supplier = data.PurchaseOrder.Supplier,
+                        PurchaseOrderItems = data.PurchaseOrder.PurchaseOrderItems
                     },
                     data.SupplierId,
                     data.ReceivedDate,
@@ -190,6 +192,9 @@ string? includes = null)
                     data.SupplierDOAttachment,
                     data.Status,
                     data.Remarks,
+                    data.Gross,
+                    data.Discount,
+                    data.TotalAmount,
                     data.CreatedById,
                     Supplier = data.Supplier == null ? null : new
                     {
@@ -227,7 +232,12 @@ string? includes = null)
                         i.Id,
                         i.GoodsReceivingId,
                         i.PurchaseOrderItemId,
+                        i.PurchaseOrderItem,
                         i.ReceivedQuantity,
+                        i.TotalPrice,
+                        i.UnitPrice,
+                        i.Unit,
+                        i.Discount,
                         i.Remarks
                     })
                 };
@@ -254,8 +264,13 @@ string? includes = null)
             var itemsJson = Request.Form["goodsReceivingItems"].FirstOrDefault();
 
             var items = string.IsNullOrWhiteSpace(itemsJson)
-                ? new List<GoodsReceivingItemRequest>()
-                : JsonSerializer.Deserialize<List<GoodsReceivingItemRequest>>(itemsJson);
+    ? new List<GoodsReceivingItemRequest>()
+    : JsonSerializer.Deserialize<List<GoodsReceivingItemRequest>>(
+        itemsJson,
+        new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true
+        });
 
             var exists = await _context.GoodsReceivings
                 .AnyAsync(x => x.GRNNo == request.GRNNo);
@@ -292,6 +307,9 @@ string? includes = null)
                 SupplierDODate = request.SupplierDODate,
                 SupplierDOAttachment = filePath,
                 Remarks = request.Remarks,
+                Gross = request.Gross,
+                Discount = request.Discount,
+                TotalAmount = request.TotalAmount,
                 Status = "Draft",
                 CreatedById = Guid.Parse(userId),
                 CreatedAt = DateTimeHelper.Now()
@@ -303,13 +321,15 @@ string? includes = null)
                 GoodsReceivingId = grn.Id,
                 PurchaseOrderItemId = x.PurchaseOrderItemId,
                 ReceivedQuantity = x.ReceivedQuantity,
+                UnitPrice = x.UnitPrice,
+                Unit = x.Unit,
+                Discount = x.Discount,
+                TotalPrice = x.TotalPrice,
                 Remarks = x.Remarks
             }).ToList();
 
             _context.GoodsReceivings.Add(grn);
             await _context.SaveChangesAsync();
-
-            await UpdatePOAndInventory(grn);
 
             await _hub.Clients.All.SendAsync("GRNCreated", grn.Id);
 
@@ -328,8 +348,13 @@ string? includes = null)
             var itemsJson = Request.Form["goodsReceivingItems"].FirstOrDefault();
 
             var items = string.IsNullOrWhiteSpace(itemsJson)
-                ? new List<GoodsReceivingItemRequest>()
-                : JsonSerializer.Deserialize<List<GoodsReceivingItemRequest>>(itemsJson);
+    ? new List<GoodsReceivingItemRequest>()
+    : JsonSerializer.Deserialize<List<GoodsReceivingItemRequest>>(
+        itemsJson,
+        new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true
+        });
 
             grn.GRNNo = request.GRNNo;
             grn.PurchaseOrderId = request.PurchaseOrderId;
@@ -337,6 +362,9 @@ string? includes = null)
             grn.ReceivedDate = request.ReceivedDate;
             grn.SupplierDONo = request.SupplierDONo;
             grn.SupplierDODate = request.SupplierDODate;
+            grn.Gross = request.Gross;
+            grn.Discount = request.Discount;
+            grn.TotalAmount = request.TotalAmount;
             grn.Remarks = request.Remarks;
             grn.UpdatedAt = DateTimeHelper.Now();
 
@@ -348,12 +376,14 @@ string? includes = null)
                 GoodsReceivingId = grn.Id,
                 PurchaseOrderItemId = x.PurchaseOrderItemId,
                 ReceivedQuantity = x.ReceivedQuantity,
+                UnitPrice = x.UnitPrice,
+                Unit = x.Unit,
+                Discount = x.Discount,
+                TotalPrice = x.TotalPrice,
                 Remarks = x.Remarks
             }).ToList();
 
             await _context.SaveChangesAsync();
-
-            await UpdatePOAndInventory(grn);
 
             await _hub.Clients.All.SendAsync("GRNUpdated", grn.Id);
 
@@ -417,11 +447,25 @@ string? includes = null)
                 if (poItem == null) continue;
 
                 poItem.ReceivedQuantity += item.ReceivedQuantity;
+
+                var inventory = await _context.Inventories
+                    .FirstOrDefaultAsync(x => x.Id == poItem.InventoryId);
+
+                if (inventory != null)
+                {
+                    inventory.Quantity += item.ReceivedQuantity;
+                }
             }
 
-            po.Status = po.PurchaseOrderItems.All(x => x.ReceivedQuantity >= x.Quantity)
-                ? "Completed"
-                : "PartiallyReceived";
+            var totalOrdered = po.PurchaseOrderItems.Sum(x => x.Quantity);
+            var totalReceived = po.PurchaseOrderItems.Sum(x => x.ReceivedQuantity);
+
+            if (totalReceived == 0)
+                po.Status = po.Status;
+            else if (totalReceived >= totalOrdered)
+                po.Status = "Completed";
+            else
+                po.Status = "PartiallyReceived";
 
             await _context.SaveChangesAsync();
         }
@@ -438,15 +482,68 @@ string? includes = null)
                 x.SupplierDONo,
                 x.SupplierDODate,
                 x.Status,
+                x.Gross,
+                x.Discount,
+                x.TotalAmount,
                 x.Remarks,
-                Items = x.GoodsReceivingItems?.Select(i => new
+                GoodsReceivingItems = x.GoodsReceivingItems?.Select(i => new
                 {
                     i.Id,
                     i.PurchaseOrderItemId,
                     i.ReceivedQuantity,
+                    i.Unit,
+                    i.UnitPrice,
+                    i.Discount,
+                    i.TotalPrice,
                     i.Remarks
                 })
             };
+        }
+
+        [HttpGet("generate-no")]
+        public async Task<IActionResult> GenerateGoodsReceivingEndPoint()
+        {
+            var grnNo = await GenerateGRNNo();
+            return Ok(new { grnNo });
+
+        }
+
+        [HttpPut("UpdateStatus")]
+        public async Task<IActionResult> UpdateStatus(Guid id, string status)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (userId == null) return Unauthorized();
+
+            var grn = await _context.GoodsReceivings
+                .Include(x => x.GoodsReceivingItems)
+                .FirstOrDefaultAsync(x => x.Id == id);
+
+            if (grn == null)
+                return NotFound();
+
+            var previousStatus = grn.Status;
+
+            grn.Status = status;
+            grn.UpdatedAt = DateTimeHelper.Now();
+
+            if (previousStatus == "Draft" && status == "Confirmed")
+            {
+                await UpdatePOAndInventory(grn);
+            }
+
+            await _context.SaveChangesAsync();
+
+            await _hub.Clients.All.SendAsync("GRNStatusUpdated", new
+            {
+                grn.Id,
+                grn.Status
+            });
+
+            return Ok(new
+            {
+                grn.Id,
+                grn.Status
+            });
         }
     }
 }

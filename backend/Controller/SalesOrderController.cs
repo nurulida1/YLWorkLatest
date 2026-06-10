@@ -9,6 +9,7 @@ using YLWorks.Hubs;
 using YLWorks.Model;
 using System.Text.Json;
 using WebApplication1.Helpers;
+using ClosedXML.Excel;
 
 namespace YLWorks.Controller
 {
@@ -182,20 +183,37 @@ namespace YLWorks.Controller
 
                 var poItems = await _context.PurchaseOrderItems
                     .Include(x => x.PurchaseOrder)
-                    .Where(x => x.SalesOrderItemId != null)
+                    .Where(x =>
+                        x.SalesOrderItemId != null &&
+                        x.PurchaseOrder.Status != "Rejected" &&
+                        x.PurchaseOrder.Status != "Cancelled"
+                    )
                     .ToListAsync();
 
                 var poMap = poItems
                     .GroupBy(x => x.SalesOrderItemId)
                     .ToDictionary(
-                        g => g.Key,
+                        g => g.Key!,
                         g => new
                         {
-                            TotalQty = g.Sum(x => x.Quantity),
+                            OrderedQty = g.Sum(x => x.Quantity),
                             PONos = g.Select(x => x.PurchaseOrder.PurchaseOrderNo)
                                      .Distinct()
                                      .ToList()
                         }
+                    );
+
+                var grnItems = await _context.GoodsReceivingItems
+                    .Include(x => x.PurchaseOrderItem)
+                    .Where(x => x.PurchaseOrderItemId != null)
+                    .ToListAsync();
+
+                var receivedMap = grnItems
+                    .Where(x => x.PurchaseOrderItem?.SalesOrderItemId != null)
+                    .GroupBy(x => x.PurchaseOrderItem!.SalesOrderItemId)
+                    .ToDictionary(
+                        g => g.Key!,
+                        g => g.Sum(x => x.ReceivedQuantity)
                     );
 
                 var safeResult = new
@@ -221,13 +239,11 @@ namespace YLWorks.Controller
                     data.ClientPOAttachment,
                     data.CreatedAt,
 
-                    Quotation = data.Quotation == null
-                        ? null
-                        : new
-                        {
-                            data.Quotation.Id,
-                            data.Quotation.QuotationNo
-                        },
+                    Quotation = data.Quotation == null ? null : new
+                    {
+                        data.Quotation.Id,
+                        data.Quotation.QuotationNo
+                    },
 
                     SalesOrderItems = data.SalesOrderItems?.Select(i =>
                     {
@@ -236,58 +252,24 @@ namespace YLWorks.Controller
                             .Replace("&nbsp;", " ")
                             .ToLower();
 
-                        var modelMatch = System.Text.RegularExpressions.Regex
-                            .Match(clean, @"model\s*:\s*([a-z0-9\-]+)");
-
-                        string? model = modelMatch.Success
-                            ? modelMatch.Groups[1].Value.Trim()
-                            : null;
-
-                        Inventory? match = null;
-
-                        if (!string.IsNullOrEmpty(model))
-                        {
-                            match = inventories.FirstOrDefault(inv =>
-                                !string.IsNullOrEmpty(inv.Model) &&
-                                inv.Model.ToLower() == model);
-                        }
-
-                        if (match == null)
-                        {
-                            var tokens = clean
-                                .Split(' ', ',', '.', '\n', '\r')
-                                .Where(x => x.Length >= 3)
-                                .Distinct()
-                                .ToList();
-
-                            match = inventories
-                                .Where(inv =>
-                                    (!string.IsNullOrEmpty(inv.Model) && tokens.Any(t => inv.Model.ToLower().Contains(t))) ||
-                                    (!string.IsNullOrEmpty(inv.ItemName) && tokens.Any(t => inv.ItemName.ToLower().Contains(t))) ||
-                                    (!string.IsNullOrEmpty(inv.Brand) && tokens.Any(t => inv.Brand.ToLower().Contains(t))) ||
-                                    (!string.IsNullOrEmpty(inv.ItemCode) && tokens.Any(t => inv.ItemCode.ToLower().Contains(t)))
-                                )
-                                .OrderByDescending(inv =>
-                                    (inv.Model != null && clean.Contains(inv.Model.ToLower()) ? 5 : 0) +
-                                    (inv.ItemName != null && clean.Contains(inv.ItemName.ToLower()) ? 4 : 0) +
-                                    (inv.Brand != null && clean.Contains(inv.Brand.ToLower()) ? 3 : 0) +
-                                    (inv.ItemCode != null && clean.Contains(inv.ItemCode.ToLower()) ? 2 : 0)
-                                )
-                                .FirstOrDefault();
-                        }
+                        var match = inventories.FirstOrDefault(inv =>
+                            (!string.IsNullOrEmpty(inv.Model) && clean.Contains(inv.Model.ToLower())) ||
+                            (!string.IsNullOrEmpty(inv.ItemName) && clean.Contains(inv.ItemName.ToLower())) ||
+                            (!string.IsNullOrEmpty(inv.Brand) && clean.Contains(inv.Brand.ToLower())) ||
+                            (!string.IsNullOrEmpty(inv.ItemCode) && clean.Contains(inv.ItemCode.ToLower()))
+                        );
 
                         var qtyOnHand = match != null
                             ? Math.Max(0, match.Quantity - (match.ReservedQuantity ?? 0))
                             : 0;
 
                         poMap.TryGetValue(i.Id, out var poInfo);
+                        receivedMap.TryGetValue(i.Id, out decimal receivedQty);
 
-                        var orderedQty = poInfo?.TotalQty ?? 0;
-                        var remainingQty = Math.Max(
-    0m,
-    (i.Quantity ?? 0m) - orderedQty
-);
-                        var isFullyOrdered = remainingQty == 0;
+                        var requiredQty = i.Quantity ?? 0m;      
+                        var remainingQty = Math.Max(0m, requiredQty - receivedQty);
+
+                        var isFullyReceived = remainingQty == 0;
 
                         return new
                         {
@@ -304,13 +286,16 @@ namespace YLWorks.Controller
                             i.Discount,
                             i.TaxRate,
                             i.TotalPrice,
+                            i.QuantityOrdered,
 
                             QtyOnHand = qtyOnHand,
                             InventoryId = match?.Id,
 
-                            OrderedQuantity = orderedQty,
+                            RequiredQuantity = requiredQty,
+                            ReceivedQuantity = receivedQty,
                             RemainingQuantity = remainingQty,
-                            IsFullyOrdered = isFullyOrdered,
+                            IsFullyReceived = isFullyReceived,
+
                             PurchaseOrderNos = poInfo?.PONos ?? new List<string>()
                         };
                     })
@@ -327,7 +312,6 @@ namespace YLWorks.Controller
                 });
             }
         }
-
         [HttpPost("Create")]
         public async Task<ActionResult<object>> Create([FromForm] CreateSalesOrderRequest request)
         {
@@ -1443,5 +1427,71 @@ namespace YLWorks.Controller
             return available < 0 ? 0 : available;
         }
 
+        [HttpGet("ExportExcel")]
+        public async Task<IActionResult> ExportExcel()
+        {
+            var data = await _context.SalesOrders
+                .Include(q => q.Client)
+                .ToListAsync();
+
+            using var wb = new XLWorkbook();
+            var ws = wb.Worksheets.Add("SalesOrders");
+
+            ws.Cell(1, 1).Value = "Sales Order No";
+            ws.Cell(1, 2).Value = "SO Date";
+            ws.Cell(1, 3).Value = "Client PO";
+            ws.Cell(1, 4).Value = "PO Date";
+            ws.Cell(1, 5).Value = "Client";
+            ws.Cell(1, 6).Value = "SubTotal";
+            ws.Cell(1, 7).Value = "Discount";
+            ws.Cell(1, 8).Value = "TotalAmount";
+            ws.Cell(1, 9).Value = "Status";
+
+            var headerRange = ws.Range(1, 1, 1, 9);
+            headerRange.Style.Font.Bold = true;
+            headerRange.Style.Border.BottomBorder = XLBorderStyleValues.Thin;
+
+            int row = 2;
+
+            foreach (var q in data)
+            {
+                ws.Cell(row, 1).Value = q.SalesOrderNo;
+
+                if (q.SODate != default)
+                {
+                    ws.Cell(row, 2).Value = q.SODate;
+                    ws.Cell(row, 2).Style.DateFormat.Format = "yyyy-MM-dd";
+                }
+
+                ws.Cell(row, 3).Value = q.ClientPONumber;
+
+                if (q.ClientPODate.HasValue)
+                {
+                    ws.Cell(row, 4).Value = q.ClientPODate.Value;
+                    ws.Cell(row, 4).Style.DateFormat.Format = "yyyy-MM-dd";
+                }
+
+                ws.Cell(row, 5).Value = q.Client?.Name ?? "";
+
+                ws.Cell(row, 6).Value = q.SubTotal ?? 0;
+                ws.Cell(row, 7).Value = q.Discount ?? 0;
+                ws.Cell(row, 8).Value = q.TotalAmount; 
+                ws.Cell(row, 9).Value = q.Status;
+
+                row++;
+            }
+
+            ws.Columns().AdjustToContents();
+
+            var stream = new MemoryStream();
+            wb.SaveAs(stream);
+            stream.Position = 0;
+
+            return File(
+                stream.ToArray(),
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                $"SalesOrders_{DateTime.Now:yyyyMMddHHmmss}.xlsx"
+            );
+        }
     }
 }

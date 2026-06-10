@@ -79,11 +79,11 @@ import { CheckboxModule } from 'primeng/checkbox';
 
         <p-tabpanels class="p-6">
           <p-tabpanel value="0">
-            <div class="grid grid-cols-12 gap-y-5 gap-x-6 items-center">
-              <div class="col-span-12 md:col-span-3 font-medium text-gray-700">
-                Company Logo
-              </div>
-              <div class="col-span-12 md:col-span-9">
+            <div class="grid grid-cols-12 gap-5">
+              <div class="col-span-12 flex flex-col gap-2 mb-2">
+                <label class="text-sm font-medium text-gray-700"
+                  >Company Logo</label
+                >
                 <div class="flex items-center gap-4">
                   <div
                     *ngIf="FG.get('logoImage')?.value"
@@ -125,10 +125,10 @@ import { CheckboxModule } from 'primeng/checkbox';
                 </div>
               </div>
 
-              <div class="col-span-12 md:col-span-3 font-medium text-gray-700">
-                Company Name <span class="text-red-500">*</span>
-              </div>
-              <div class="col-span-12 md:col-span-9">
+              <div class="col-span-12 md:col-span-6 flex flex-col gap-1.5">
+                <label class="text-sm font-medium text-gray-700"
+                  >Company Name <span class="text-red-500">*</span></label
+                >
                 <input
                   type="text"
                   pInputText
@@ -141,16 +141,16 @@ import { CheckboxModule } from 'primeng/checkbox';
                     FG.get('name')?.errors?.['required'] &&
                     FG.get('name')?.touched
                   "
-                  class="text-red-500 text-sm mt-1"
+                  class="text-red-500 text-sm mt-0.5"
                 >
                   Name is required.
                 </div>
               </div>
 
-              <div class="col-span-12 md:col-span-3 font-medium text-gray-700">
-                Company Email
-              </div>
-              <div class="col-span-12 md:col-span-9">
+              <div class="col-span-12 md:col-span-6 flex flex-col gap-1.5">
+                <label class="text-sm font-medium text-gray-700"
+                  >Company Email</label
+                >
                 <input
                   type="email"
                   pInputText
@@ -163,91 +163,120 @@ import { CheckboxModule } from 'primeng/checkbox';
                     FG.get('email')?.errors?.['email'] &&
                     FG.get('email')?.touched
                   "
-                  class="text-red-500 text-sm mt-1"
+                  class="text-red-500 text-sm mt-0.5"
                 >
                   Please provide a valid email address.
                 </div>
               </div>
 
-              <div class="col-span-12 md:col-span-3 font-medium text-gray-700">
-                Contact / Fax No
-              </div>
-              <div
-                class="col-span-12 md:col-span-9 grid grid-cols-1 md:grid-cols-2 gap-4"
-              >
+              <div class="col-span-12 md:col-span-6 flex flex-col gap-1.5">
+                <label class="text-sm font-medium text-gray-700"
+                  >Contact Number</label
+                >
                 <input
                   type="text"
                   pInputText
                   class="w-full"
                   formControlName="contactNo"
-                  placeholder="Contact number"
+                  placeholder="Enter contact number"
                 />
+              </div>
+
+              <div class="col-span-12 md:col-span-6 flex flex-col gap-1.5">
+                <label class="text-sm font-medium text-gray-700"
+                  >Fax Number</label
+                >
                 <input
                   type="text"
                   pInputText
                   class="w-full"
                   formControlName="faxNo"
-                  placeholder="Fax number"
+                  placeholder="Enter fax number"
                 />
               </div>
 
-              <div class="col-span-12 md:col-span-3 font-medium text-gray-700">
-                Contact Persons
-              </div>
-              <div
-                class="col-span-12 md:col-span-9 grid grid-cols-1 md:grid-cols-2 gap-4"
-              >
+              <div class="col-span-12 md:col-span-6 flex flex-col gap-1.5">
+                <label class="text-sm font-medium text-gray-700"
+                  >Primary Contact Person</label
+                >
                 <input
                   type="text"
                   pInputText
                   class="w-full"
                   formControlName="contactPerson1"
-                  placeholder="Primary Contact Person"
+                  placeholder="Enter primary contact name"
                 />
+              </div>
+
+              <div class="col-span-12 md:col-span-6 flex flex-col gap-1.5">
+                <label class="text-sm font-medium text-gray-700"
+                  >Secondary Contact Person</label
+                >
                 <input
                   type="text"
                   pInputText
                   class="w-full"
                   formControlName="contactPerson2"
-                  placeholder="Secondary Contact Person"
+                  placeholder="Enter secondary contact name"
                 />
               </div>
 
-              <div class="col-span-12 md:col-span-3 font-medium text-gray-700">
-                A/C & TIN No
-              </div>
-              <div
-                class="col-span-12 md:col-span-9 grid grid-cols-1 md:grid-cols-2 gap-4"
-              >
+              <div class="col-span-12 md:col-span-6 flex flex-col gap-1.5">
+                <label class="text-sm font-medium text-gray-700"
+                  >Account Number (A/C No)</label
+                >
                 <input
                   type="text"
                   pInputText
                   class="w-full"
                   formControlName="acNo"
-                  placeholder="Account Number"
+                  placeholder="Enter account number"
                 />
+              </div>
+
+              <div class="col-span-12 md:col-span-6 flex flex-col gap-1.5">
+                <label class="text-sm font-medium text-gray-700"
+                  >Tax Identification Number (TIN)</label
+                >
                 <input
                   type="text"
                   pInputText
                   class="w-full"
                   formControlName="tinNo"
-                  placeholder="Tax Identification Number"
+                  placeholder="Enter TIN number"
                 />
               </div>
 
-              <div class="col-span-12 md:col-span-3 font-medium text-gray-700">
-                SST Reg & Website
+              <div class="col-span-12 md:col-span-4 flex flex-col gap-1.5">
+                <label class="text-sm font-medium text-gray-700"
+                  >SSM Registration No</label
+                >
+                <input
+                  type="text"
+                  pInputText
+                  class="w-full"
+                  formControlName="ssmRegNo"
+                  placeholder="Enter SSM number"
+                />
               </div>
-              <div
-                class="col-span-12 md:col-span-9 grid grid-cols-1 md:grid-cols-2 gap-4"
-              >
+
+              <div class="col-span-12 md:col-span-4 flex flex-col gap-1.5">
+                <label class="text-sm font-medium text-gray-700"
+                  >SST Registration No</label
+                >
                 <input
                   type="text"
                   pInputText
                   class="w-full"
                   formControlName="sstRegNo"
-                  placeholder="SST Registration Number"
+                  placeholder="Enter SST number"
                 />
+              </div>
+
+              <div class="col-span-12 md:col-span-4 flex flex-col gap-1.5">
+                <label class="text-sm font-medium text-gray-700"
+                  >Website URL</label
+                >
                 <input
                   type="text"
                   pInputText
@@ -261,13 +290,13 @@ import { CheckboxModule } from 'primeng/checkbox';
 
           <p-tabpanel value="1">
             <div
-              class="grid grid-cols-12 gap-y-4 gap-x-6 items-center pt-2"
+              class="grid grid-cols-12 gap-4 pt-2"
               formGroupName="billingAddress"
             >
-              <div class="col-span-12 md:col-span-3 font-medium text-gray-700">
-                Address Line 1
-              </div>
-              <div class="col-span-12 md:col-span-9">
+              <div class="col-span-12 flex flex-col gap-1.5">
+                <label class="text-sm font-medium text-gray-700"
+                  >Address Line 1</label
+                >
                 <input
                   type="text"
                   pInputText
@@ -277,10 +306,10 @@ import { CheckboxModule } from 'primeng/checkbox';
                 />
               </div>
 
-              <div class="col-span-12 md:col-span-3 font-medium text-gray-700">
-                Address Line 2
-              </div>
-              <div class="col-span-12 md:col-span-9">
+              <div class="col-span-12 flex flex-col gap-1.5">
+                <label class="text-sm font-medium text-gray-700"
+                  >Address Line 2</label
+                >
                 <input
                   type="text"
                   pInputText
@@ -290,10 +319,8 @@ import { CheckboxModule } from 'primeng/checkbox';
                 />
               </div>
 
-              <div class="col-span-12 md:col-span-3 font-medium text-gray-700">
-                City & Postcode
-              </div>
-              <div class="col-span-12 md:col-span-9 grid grid-cols-2 gap-4">
+              <div class="col-span-12 md:col-span-6 flex flex-col gap-1.5">
+                <label class="text-sm font-medium text-gray-700">City</label>
                 <input
                   type="text"
                   pInputText
@@ -301,6 +328,12 @@ import { CheckboxModule } from 'primeng/checkbox';
                   formControlName="city"
                   placeholder="City"
                 />
+              </div>
+
+              <div class="col-span-12 md:col-span-6 flex flex-col gap-1.5">
+                <label class="text-sm font-medium text-gray-700"
+                  >Postcode</label
+                >
                 <input
                   type="text"
                   pInputText
@@ -310,10 +343,8 @@ import { CheckboxModule } from 'primeng/checkbox';
                 />
               </div>
 
-              <div class="col-span-12 md:col-span-3 font-medium text-gray-700">
-                State & Country
-              </div>
-              <div class="col-span-12 md:col-span-9 grid grid-cols-2 gap-4">
+              <div class="col-span-12 md:col-span-6 flex flex-col gap-1.5">
+                <label class="text-sm font-medium text-gray-700">State</label>
                 <input
                   type="text"
                   pInputText
@@ -321,6 +352,10 @@ import { CheckboxModule } from 'primeng/checkbox';
                   formControlName="state"
                   placeholder="State"
                 />
+              </div>
+
+              <div class="col-span-12 md:col-span-6 flex flex-col gap-1.5">
+                <label class="text-sm font-medium text-gray-700">Country</label>
                 <input
                   type="text"
                   pInputText
@@ -333,7 +368,7 @@ import { CheckboxModule } from 'primeng/checkbox';
           </p-tabpanel>
 
           <p-tabpanel value="2">
-            <div class="flex flex-col gap-4 pt-2">
+            <div class="flex flex-col gap-5 pt-2">
               <div
                 class="flex flex-row items-center gap-2 bg-blue-50/50 border border-blue-100 rounded-lg p-3"
               >
@@ -352,15 +387,13 @@ import { CheckboxModule } from 'primeng/checkbox';
               </div>
 
               <div
-                class="grid grid-cols-12 gap-y-4 gap-x-6 items-center mt-2"
+                class="grid grid-cols-12 gap-4"
                 formGroupName="deliveryAddress"
               >
-                <div
-                  class="col-span-12 md:col-span-3 font-medium text-gray-700"
-                >
-                  Address Line 1
-                </div>
-                <div class="col-span-12 md:col-span-9">
+                <div class="col-span-12 flex flex-col gap-1.5">
+                  <label class="text-sm font-medium text-gray-700"
+                    >Address Line 1</label
+                  >
                   <input
                     type="text"
                     pInputText
@@ -370,12 +403,10 @@ import { CheckboxModule } from 'primeng/checkbox';
                   />
                 </div>
 
-                <div
-                  class="col-span-12 md:col-span-3 font-medium text-gray-700"
-                >
-                  Address Line 2
-                </div>
-                <div class="col-span-12 md:col-span-9">
+                <div class="col-span-12 flex flex-col gap-1.5">
+                  <label class="text-sm font-medium text-gray-700"
+                    >Address Line 2</label
+                  >
                   <input
                     type="text"
                     pInputText
@@ -385,12 +416,8 @@ import { CheckboxModule } from 'primeng/checkbox';
                   />
                 </div>
 
-                <div
-                  class="col-span-12 md:col-span-3 font-medium text-gray-700"
-                >
-                  City & Postcode
-                </div>
-                <div class="col-span-12 md:col-span-9 grid grid-cols-2 gap-4">
+                <div class="col-span-12 md:col-span-6 flex flex-col gap-1.5">
+                  <label class="text-sm font-medium text-gray-700">City</label>
                   <input
                     type="text"
                     pInputText
@@ -398,6 +425,12 @@ import { CheckboxModule } from 'primeng/checkbox';
                     formControlName="city"
                     placeholder="City"
                   />
+                </div>
+
+                <div class="col-span-12 md:col-span-6 flex flex-col gap-1.5">
+                  <label class="text-sm font-medium text-gray-700"
+                    >Postcode</label
+                  >
                   <input
                     type="text"
                     pInputText
@@ -407,12 +440,8 @@ import { CheckboxModule } from 'primeng/checkbox';
                   />
                 </div>
 
-                <div
-                  class="col-span-12 md:col-span-3 font-medium text-gray-700"
-                >
-                  State & Country
-                </div>
-                <div class="col-span-12 md:col-span-9 grid grid-cols-2 gap-4">
+                <div class="col-span-12 md:col-span-6 flex flex-col gap-1.5">
+                  <label class="text-sm font-medium text-gray-700">State</label>
                   <input
                     type="text"
                     pInputText
@@ -420,6 +449,12 @@ import { CheckboxModule } from 'primeng/checkbox';
                     formControlName="state"
                     placeholder="State"
                   />
+                </div>
+
+                <div class="col-span-12 md:col-span-6 flex flex-col gap-1.5">
+                  <label class="text-sm font-medium text-gray-700"
+                    >Country</label
+                  >
                   <input
                     type="text"
                     pInputText
@@ -484,6 +519,7 @@ export class CompanyForm implements OnInit, OnDestroy {
       type: new FormControl<CompanyType | null>(CompanyType.Own),
       tinNo: new FormControl<string | null>(null),
       sstRegNo: new FormControl<string | null>(null),
+      ssmRegNo: new FormControl<string | null>(null),
       sameAsBillingAddress: new FormControl<boolean>(false),
       billingAddress: this.createAddressGroup(),
       deliveryAddress: this.createAddressGroup(),
@@ -557,13 +593,11 @@ export class CompanyForm implements OnInit, OnDestroy {
           if (res) {
             this.FG.patchValue(res);
 
-            // Explicit safety patch if backend nests address properties differently
             if (res.billingAddress)
               this.FG.get('billingAddress')?.patchValue(res.billingAddress);
             if (res.deliveryAddress)
               this.FG.get('deliveryAddress')?.patchValue(res.deliveryAddress);
 
-            // Re-run checkbox check explicitly once data populates
             if (this.FG.get('sameAsBillingAddress')?.value) {
               this.FG.get('deliveryAddress')?.disable();
             }

@@ -4,7 +4,7 @@ import { CompanyDto } from './Company';
 import { PurchaseOrderDto, PurchaseOrderItem } from './PurchaseOrder';
 import { UserDto } from './User';
 
-export interface GoodsReceiving extends BaseModel {
+export interface GoodsReceivingDto extends BaseModel {
   grnNo: string;
   purchaseOrderId: string;
   purchaseOrder: PurchaseOrderDto;
@@ -13,9 +13,12 @@ export interface GoodsReceiving extends BaseModel {
   receivedDate: Date;
   supplierDONo: string;
   supplierDODate: Date;
-  supplierDOAttachmet: string;
+  supplierDOAttachment: string;
   status: string;
   remarks: string;
+  gross: number;
+  discount: number;
+  totalAmount: number;
   createdById: string;
   createdBy: UserDto;
   goodsReceivingItems: GoodsReceivingItem[];
@@ -23,16 +26,24 @@ export interface GoodsReceiving extends BaseModel {
 
 export interface GoodsReceivingItem extends BaseModel {
   goodsReceivingId: string;
-  goodsReceiving: GoodsReceiving;
+  goodsReceiving: GoodsReceivingDto;
   purchaseOrderItemId: string;
   purchaseOrderItem: PurchaseOrderItem;
   receivedQuantity: number;
+  unitPrice: number;
+  unit: string;
+  discount: number;
+  totalPrice: number;
   remarks: string;
 }
 
 export interface GoodsReceivingItemRequest {
   purchaseOrderItemId: string;
   receivedQuantity: number;
+  unit: string;
+  unitPrice: number;
+  discount: number;
+  totalPrice: number;
   remarks: string;
 }
 
@@ -45,6 +56,9 @@ export interface CreateGoodsReceivingRequest {
   supplierDODate: Date;
   supplierDOAttachment: string;
   remarks: string;
+  gross: number;
+  discount: number;
+  totalAmount: number;
   goodsReceivingItems: GoodsReceivingItemRequest[];
 }
 
@@ -52,6 +66,10 @@ export interface UpdateGoodsReceivingItemRequest {
   id: string;
   purchaseOrderItemId: string;
   receivedQuantity: number;
+  unit: string;
+  unitPrice: number;
+  discount: number;
+  totalPrice: number;
   remarks: string;
 }
 
@@ -65,6 +83,9 @@ export interface UpdateGoodsReceivingRequest {
   supplierDODate: Date;
   supplierDOAttachment: string;
   remarks: string;
+  gross: number;
+  discount: number;
+  totalAmount: number;
   goodsReceivingItems: UpdateGoodsReceivingItemRequest[];
 }
 

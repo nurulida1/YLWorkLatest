@@ -63,7 +63,6 @@ import { MessageService } from 'primeng/api';
       class="bg-white rounded-2xl border border-gray-200 p-16 text-center"
     >
       <i class="pi pi-spin pi-spinner text-3xl text-primary mb-3"></i>
-
       <div class="text-gray-500">Loading purchase order...</div>
     </div>
 
@@ -84,7 +83,7 @@ import { MessageService } from 'primeng/api';
                 styleClass="text-xs px-3 py-1 font-semibold uppercase"
               ></p-tag>
             </div>
-            <div *ngIf="poData()?.projectId" class=" text-gray-500">
+            <div *ngIf="poData()?.projectId" class="text-gray-500">
               Project:
               <span class="font-bold text-gray-800">
                 {{ poData()?.project?.projectCode }} -
@@ -96,7 +95,6 @@ import { MessageService } from 'primeng/api';
           <div class="grid grid-cols-2 gap-4 min-w-[260px]">
             <div class="bg-gray-50 rounded-xl p-4 border border-gray-100">
               <div class="text-xs text-gray-400 uppercase mb-1">PO Date</div>
-
               <div class="font-semibold text-gray-800">
                 {{ poData()?.poDate | date: 'dd MMM yyyy' }}
               </div>
@@ -104,9 +102,8 @@ import { MessageService } from 'primeng/api';
 
             <div class="bg-gray-50 rounded-xl p-4 border border-gray-100">
               <div class="text-xs text-gray-400 uppercase mb-1">Terms</div>
-
               <div class="font-semibold text-gray-800">
-                {{ poData()?.terms || '-' }}
+                {{ poData()?.paymentTerms || '-' }}
               </div>
             </div>
           </div>
@@ -116,7 +113,6 @@ import { MessageService } from 'primeng/api';
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div class="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
           <div class="text-xs uppercase text-gray-400 mb-3">From Company</div>
-
           <div class="space-y-2">
             <div class="text-lg font-semibold text-gray-900">
               {{ poData()?.fromCompany?.name || '-' }}
@@ -144,29 +140,20 @@ import { MessageService } from 'primeng/api';
                   {{ poData()?.fromCompany?.contactPerson1 }}
                 </div>
               </div>
-
               <div class="flex">
                 <div class="w-20">TEL</div>
                 <div class="w-3 text-center">:</div>
-                <div class="flex-1">
-                  {{ poData()?.fromCompany?.contactNo }}
-                </div>
+                <div class="flex-1">{{ poData()?.fromCompany?.contactNo }}</div>
               </div>
-
               <div class="flex">
                 <div class="w-20">FAX</div>
                 <div class="w-3 text-center">:</div>
-                <div class="flex-1">
-                  {{ poData()?.fromCompany?.faxNo }}
-                </div>
+                <div class="flex-1">{{ poData()?.fromCompany?.faxNo }}</div>
               </div>
-
               <div class="flex">
                 <div class="w-20">A/C NO.</div>
                 <div class="w-3 text-center">:</div>
-                <div class="flex-1">
-                  {{ poData()?.fromCompany?.acNo }}
-                </div>
+                <div class="flex-1">{{ poData()?.fromCompany?.acNo }}</div>
               </div>
             </div>
           </div>
@@ -174,19 +161,13 @@ import { MessageService } from 'primeng/api';
 
         <div class="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
           <div class="text-xs uppercase text-gray-400 mb-3">Supplier</div>
-
           <div class="space-y-2">
             <div class="text-lg font-semibold text-gray-900">
               {{ poData()?.supplier?.name || '-' }}
             </div>
-
             <div class="flex flex-col text-gray-500">
-              <div>
-                {{ poData()?.supplier?.billingAddress?.addressLine1 }}
-              </div>
-              <div>
-                {{ poData()?.supplier?.billingAddress?.addressLine2 }}
-              </div>
+              <div>{{ poData()?.supplier?.billingAddress?.addressLine1 }}</div>
+              <div>{{ poData()?.supplier?.billingAddress?.addressLine2 }}</div>
               <div>
                 {{ poData()?.supplier?.billingAddress?.poscode }},
                 {{ poData()?.supplier?.billingAddress?.city }}
@@ -203,29 +184,20 @@ import { MessageService } from 'primeng/api';
                   {{ poData()?.supplier?.contactPerson1 }}
                 </div>
               </div>
-
               <div class="flex">
                 <div class="w-20">TEL</div>
                 <div class="w-3 text-center">:</div>
-                <div class="flex-1">
-                  {{ poData()?.supplier?.contactNo }}
-                </div>
+                <div class="flex-1">{{ poData()?.supplier?.contactNo }}</div>
               </div>
-
               <div class="flex">
                 <div class="w-20">FAX</div>
                 <div class="w-3 text-center">:</div>
-                <div class="flex-1">
-                  {{ poData()?.supplier?.faxNo }}
-                </div>
+                <div class="flex-1">{{ poData()?.supplier?.faxNo }}</div>
               </div>
-
               <div class="flex">
                 <div class="w-20">A/C NO.</div>
                 <div class="w-3 text-center">:</div>
-                <div class="flex-1">
-                  {{ poData()?.supplier?.acNo }}
-                </div>
+                <div class="flex-1">{{ poData()?.supplier?.acNo }}</div>
               </div>
             </div>
           </div>
@@ -235,72 +207,67 @@ import { MessageService } from 'primeng/api';
       <div
         class="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden"
       >
-        <div class="px-6 py-5 border-b border-gray-100">
+        <div class="flex flex-col gap-3 px-6 py-5 border-b border-gray-100">
           <h2 class="text-lg font-semibold text-gray-900">
             Purchase Order Items
           </h2>
+          <p-table
+            [value]="poData()?.purchaseOrderItems || []"
+            responsiveLayout="scroll"
+            styleClass="p-datatable-sm"
+            [showGridlines]="true"
+          >
+            <ng-template #header>
+              <tr class="text-sm">
+                <th class="w-[5%] bg-gray-100! text-center!">#</th>
+                <th class="w-[15%] bg-gray-100!">Item</th>
+                <th class="w-[35%] bg-gray-100!">Description</th>
+                <th class="w-[10%] text-center! bg-gray-100!">Qty</th>
+                <th class="w-[10%] bg-gray-100! text-right!">
+                  Unit Price (RM)
+                </th>
+                <th class="w-[10%] bg-gray-100! text-right!">Discount (%)</th>
+                <th class="w-[10%] bg-gray-100! text-right!">Total (RM)</th>
+                <th
+                  class="w-[10%] bg-gray-100! text-right!"
+                  *ngIf="poData()?.status !== 'Draft'"
+                >
+                  Received
+                </th>
+              </tr>
+            </ng-template>
+
+            <ng-template #body let-item let-rowIndex="rowIndex">
+              <tr class="text-sm">
+                <td class="text-gray-400 text-center!">{{ rowIndex + 1 }}</td>
+                <td class="font-semibold">{{ item.item }}</td>
+                <td>
+                  <div
+                    *ngIf="item.description"
+                    class="text-sm text-gray-500 mt-1"
+                    [innerHTML]="item.description"
+                  ></div>
+                </td>
+                <td class="text-center!">{{ item.quantity }}</td>
+                <td class="text-right!">
+                  {{ item.unitPrice | number: '1.2-2' }}
+                </td>
+                <td class="text-right! text-red-500">
+                  {{ item.discount || 0 | number: '1.2-2' }}
+                </td>
+                <td class="text-right! font-semibold">
+                  {{ item.totalPrice | number: '1.2-2' }}
+                </td>
+                <td
+                  class="text-right! text-blue-500 font-semibold"
+                  *ngIf="poData()?.status !== 'Draft'"
+                >
+                  {{ item.receivedQuantity || 0 }} / {{ item.quantity }}
+                </td>
+              </tr>
+            </ng-template>
+          </p-table>
         </div>
-
-        <p-table
-          [value]="poData()?.purchaseOrderItems || []"
-          responsiveLayout="scroll"
-          styleClass="p-datatable-sm"
-          [showGridlines]="true"
-        >
-          <ng-template #header>
-            <tr class="text-sm">
-              <th class="w-[5%] bg-gray-100! text-center!">#</th>
-              <th class="w-[35%] bg-gray-100!">Description</th>
-              <th class="w-[10%] text-center! bg-gray-100!">Qty</th>
-              <th class="w-[10%] bg-gray-100! text-right!">Unit Price (RM)</th>
-              <th class="w-[10%] bg-gray-100! text-right!" s>Discount (%)</th>
-              <th class="w-[10%] bg-gray-100! text-right!">Total (RM)</th>
-              <th class="w-[10%] bg-gray-100! text-right!">Received</th>
-            </tr>
-          </ng-template>
-
-          <ng-template #body let-item let-rowIndex="rowIndex">
-            <tr class="text-sm">
-              <td class="text-gray-400 text-center!">
-                {{ rowIndex + 1 }}
-              </td>
-
-              <td>
-                <div class="font-medium text-gray-900">
-                  {{ item.item }}
-                </div>
-
-                <div
-                  *ngIf="item.description"
-                  class="text-sm text-gray-400 mt-1"
-                  [innerHTML]="item.description"
-                ></div>
-              </td>
-
-              <td class="text-center!">
-                {{ item.quantity }}
-              </td>
-
-              <td class="text-right!">
-                {{ item.unitPrice | number: '1.2-2' }}
-              </td>
-
-              <td class="text-right! text-red-500">
-                {{ item.discount || 0 | number: '1.2-2' }}
-              </td>
-
-              <td class="text-right! font-semibold">
-                {{ item.totalPrice | number: '1.2-2' }}
-              </td>
-
-              <td class="text-right! text-gray-500">
-                {{ item.receivedQuantity || 0 }}
-                /
-                {{ item.quantity }}
-              </td>
-            </tr>
-          </ng-template>
-        </p-table>
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -308,7 +275,6 @@ import { MessageService } from 'primeng/api';
           class="lg:col-span-2 bg-white border border-gray-200 rounded-2xl p-6 shadow-sm"
         >
           <div class="text-xs uppercase text-gray-400 mb-3">Remarks</div>
-
           <div class="text-gray-600 leading-relaxed">
             {{ poData()?.remarks || 'No notes available.' }}
           </div>
@@ -316,30 +282,33 @@ import { MessageService } from 'primeng/api';
 
         <div class="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
           <div class="space-y-4">
-            <div class="flex items-center justify-between text-sm">
-              <span class="text-gray-500"> Gross (RM) </span>
+            <div
+              class="flex items-center justify-between text-sm border-b border-gray-200 pb-2"
+            >
+              <span class="text-gray-500">Total Quantity</span>
+              <span class="font-semibold text-gray-800">
+                {{ poData()?.totalQuantity }}
+              </span>
+            </div>
 
+            <div class="flex items-center justify-between text-sm">
+              <span class="text-gray-500">Gross (RM)</span>
               <span class="font-medium">
                 {{ poData()?.gross || 0 | number: '1.2-2' }}
               </span>
             </div>
 
             <div class="flex items-center justify-between text-sm">
-              <span class="text-gray-500"> Discount </span>
-
+              <span class="text-gray-500">Discount</span>
               <span class="text-red-500 font-medium">
-                -
-                {{ poData()?.discount || 0 | number: '1.2-2' }}
+                - {{ poData()?.discount || 0 | number: '1.2-2' }}
               </span>
             </div>
 
             <div
-              class="border-t border-gray-100 pt-4 flex items-center justify-between"
+              class="border-t border-gray-200 pt-4 flex items-center justify-between"
             >
-              <span class="font-semibold text-gray-800">
-                Total Amount (RM)</span
-              >
-
+              <span class="font-semibold text-gray-800">Total Amount (RM)</span>
               <span class="text-xl font-bold text-primary">
                 {{ poData()?.totalAmount || 0 | number: '1.2-2' }}
               </span>
@@ -350,6 +319,7 @@ import { MessageService } from 'primeng/api';
     </div>
 
     <div
+      *ngIf="poData()?.status === 'Draft'"
       class="absolute bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 md:px-6 py-4 shadow-lg z-50"
     >
       <div class="flex flex-col lg:flex-row gap-4 items-center justify-between">
@@ -407,11 +377,13 @@ export class PurchaseOrderDetails implements OnInit, OnDestroy {
 
   remarks: string | null = null;
   currentId: string | null = null;
+  poNo: string | null = null;
 
   poData = signal<PurchaseOrderDto | null>({} as PurchaseOrderDto);
 
   constructor() {
     this.currentId = this.activatedRoute.snapshot.queryParams['id'];
+    this.poNo = this.activatedRoute.snapshot.queryParams['poNo'];
   }
 
   ngOnInit(): void {
@@ -428,13 +400,18 @@ export class PurchaseOrderDetails implements OnInit, OnDestroy {
         Select: null,
         Includes:
           'PurchaseOrderItems,Supplier.BillingAddress,Supplier.DeliveryAddress,FromCompany.BillingAddress,FromCompany.DeliveryAddress,Project',
-        Filter: `Id=${this.currentId}`,
+        Filter: this.poNo
+          ? `PurchaseOrderNo=${this.poNo}`
+          : `Id=${this.currentId}`,
       })
       .pipe(takeUntil(this.ngUnsubscribe))
       .subscribe({
         next: (res) => {
           this.loadingService.stop();
           this.poData.set(res);
+          if (!this.currentId && res) {
+            this.currentId = res.id;
+          }
           this.cdr.markForCheck();
         },
         error: (err) => {
@@ -480,7 +457,7 @@ export class PurchaseOrderDetails implements OnInit, OnDestroy {
   ): 'success' | 'info' | 'warning' | 'danger' | 'secondary' {
     switch (status?.toLowerCase()) {
       case 'confirmed':
-      case 'accepted':
+      case 'approved':
       case 'completed':
         return 'success';
       case 'sent':

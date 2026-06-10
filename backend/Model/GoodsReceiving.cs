@@ -16,6 +16,9 @@ namespace YLWorks.Model
 
         public string Status { get; set; } = "Draft"; //Draft, Partial, Completed
         public string? Remarks { get; set; }
+        public decimal? Gross { get; set; }
+        public decimal? Discount { get; set; }
+        public decimal? TotalAmount { get; set; }
         public Guid? CreatedById { get; set; }
         public User? CreatedBy { get; set; }
         public ICollection<GoodsReceivingItem> GoodsReceivingItems { get; set; } = new List<GoodsReceivingItem>();
@@ -30,6 +33,10 @@ namespace YLWorks.Model
         public PurchaseOrderItem? PurchaseOrderItem { get; set; } = null!;
 
         public decimal ReceivedQuantity { get; set; }
+        public decimal? UnitPrice { get; set; }
+        public decimal? Discount { get; set; }
+        public string? Unit { get; set; }
+        public decimal? TotalPrice { get; set; }
         public string? Remarks { get; set; }
     }
 
@@ -37,6 +44,10 @@ namespace YLWorks.Model
     {
         public Guid? PurchaseOrderItemId { get; set; }
         public decimal ReceivedQuantity { get; set; }
+        public decimal? UnitPrice { get; set; }
+        public decimal? Discount { get; set; }
+        public string? Unit { get; set; }
+        public decimal? TotalPrice { get; set; }
         public string? Remarks { get; set; }
     }
 
@@ -54,6 +65,9 @@ namespace YLWorks.Model
         public IFormFile? SupplierDOAttachment { get; set; }
 
         public string? Remarks { get; set; }
+        public decimal? Gross { get; set; }
+        public decimal? Discount { get; set; }
+        public decimal? TotalAmount { get; set; }
 
         public List<GoodsReceivingItemRequest> GoodsReceivingItems { get; set; } = new();
     }
@@ -64,6 +78,10 @@ namespace YLWorks.Model
 
         public Guid? PurchaseOrderItemId { get; set; }
         public decimal ReceivedQuantity { get; set; }
+        public decimal? UnitPrice { get; set; }
+        public decimal? Discount { get; set; }
+        public string? Unit { get; set; }
+        public decimal? TotalPrice { get; set; }
         public string? Remarks { get; set; }
     }
 
@@ -83,6 +101,10 @@ namespace YLWorks.Model
         public IFormFile? SupplierDOAttachment { get; set; }
 
         public string? Remarks { get; set; }
+
+        public decimal? Gross { get; set; }
+        public decimal? Discount { get; set; }
+        public decimal? TotalAmount { get; set; }
 
         public List<UpdateGoodsReceivingItemRequest> GoodsReceivingItems { get; set; } = new();
     }

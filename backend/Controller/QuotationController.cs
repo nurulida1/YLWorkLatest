@@ -990,17 +990,5 @@ q.Status != "Cancelled" &&
                 $"Quotations_{DateTime.Now:yyyyMMddHHmmss}.xlsx");
         }
 
-        private string Escape(string? value)
-        {
-            if (string.IsNullOrEmpty(value)) return "";
-
-            if (value.Contains(",") || value.Contains("\"") || value.Contains("\n"))
-            {
-                return $"\"{value.Replace("\"", "\"\"")}\"";
-            }
-
-            return value;
-        }
-
     }
 }

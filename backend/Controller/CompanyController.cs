@@ -238,9 +238,6 @@ namespace YLWorks.Controller
 
             try
             {
-                // =========================
-                // CREATE ADDRESSES
-                // =========================
                 Address? billingAddress = null;
                 Address? deliveryAddress = null;
 
@@ -277,10 +274,6 @@ namespace YLWorks.Controller
 
                     _context.Addresses.Add(deliveryAddress);
                 }
-
-                // =========================
-                // CREATE COMPANY
-                // =========================
                 var comp = new Company
                 {
                     Id = Guid.NewGuid(),
@@ -298,6 +291,7 @@ namespace YLWorks.Controller
                     LogoImage = request.LogoImage,
                     TINNo = request.TINNo,
                     SSTRegNo = request.SSTRegNo,
+                    SSMRegNo = request.SSMRegNo,
                     IsActive = true,
                     SameAsBillingAddress = request.SameAsBillingAddress,
                     CreatedAt = DateTime.Now
@@ -306,9 +300,6 @@ namespace YLWorks.Controller
                 _context.Companies.Add(comp);
                 await _context.SaveChangesAsync();
 
-                // =========================
-                // RESPONSE DTO
-                // =========================
                 var result = new CompanyDto
                 {
                     Id = comp.Id,
@@ -371,12 +362,10 @@ namespace YLWorks.Controller
                 comp.LogoImage = request.LogoImage;
                 comp.TINNo = request.TINNo;
                 comp.SSTRegNo = request.SSTRegNo;
+                comp.SSMRegNo = request.SSMRegNo;
                 comp.SameAsBillingAddress = request.SameAsBillingAddress;
                 comp.UpdatedAt = DateTime.Now;
 
-                // =========================
-                // UPDATE / CREATE BILLING
-                // =========================
                 if (request.BillingAddress != null)
                 {
                     if (comp.BillingAddress != null)
@@ -404,9 +393,6 @@ namespace YLWorks.Controller
                     }
                 }
 
-                // =========================
-                // UPDATE / CREATE DELIVERY
-                // =========================
                 if (request.DeliveryAddress != null)
                 {
                     if (comp.DeliveryAddress != null)

@@ -160,13 +160,20 @@ namespace YLWorks.Controller
 
                 if (!string.IsNullOrEmpty(filter))
                 {
-                    var filterValue = filter.Contains('=')
-                        ? filter.Split('=')[1].Trim()
-                        : filter.Trim();
-
-                    if (Guid.TryParse(filterValue, out Guid guidId))
+                    if (filter.Contains('='))
                     {
-                        query = query.Where(x => x.Id == guidId);
+                        var parts = filter.Split('=');
+                        var key = parts[0].Trim();
+                        var value = parts[1].Trim();
+
+                        if (key == "Id" && Guid.TryParse(value, out var guidId))
+                        {
+                            query = query.Where(x => x.Id == guidId);
+                        }
+                        else if (key == "PurchaseOrderNo")
+                        {
+                            query = query.Where(x => x.PurchaseOrderNo == value);
+                        }
                     }
                 }
 
@@ -187,6 +194,7 @@ namespace YLWorks.Controller
                     data.TotalAmount,
                     data.TotalInWords,
                     data.SupplierId,
+                    data.TotalQuantity,
                     Supplier = data.Supplier == null ? null : new
                     {
                       Name = data.Supplier.Name,
@@ -271,6 +279,7 @@ namespace YLWorks.Controller
                         i.Item,
                         i.Description,
                         i.Quantity,
+                        i.ReceivedQuantity,
                         i.UnitPrice,
                         i.Unit,
                         i.TotalPrice,
@@ -379,6 +388,7 @@ namespace YLWorks.Controller
                     Id = Guid.NewGuid(),
                     PurchaseOrderId = po.Id,
                     SalesOrderItemId = x.SalesOrderItemId,
+                    InventoryId = x.InventoryId,
                     Item = x.Item,
                     Description = x.Description,
                     Quantity = x.Quantity,
@@ -549,6 +559,7 @@ namespace YLWorks.Controller
                         Id = x.Id ?? Guid.NewGuid(),
                         PurchaseOrderId = po.Id,
                         SalesOrderItemId = x.SalesOrderItemId,
+                        InventoryId = x.InventoryId,
                         Item = x.Item,
                         Description = x.Description,
                         Quantity = x.Quantity,
@@ -585,25 +596,38 @@ namespace YLWorks.Controller
         }
 
         [HttpDelete("Delete")]
-        public async Task<ActionResult> DeletePurchaseOrder([FromQuery] Guid id)
+        public async Task<IActionResult> Delete(Guid id)
         {
-            var po = await _context.PurchaseOrders.FindAsync(id);
+            var po = await _context.PurchaseOrders
+                .Include(x => x.PurchaseOrderItems)
+                .FirstOrDefaultAsync(x => x.Id == id);
+
             if (po == null)
-                return NotFound(new { Error = "Purchase Order not found." });
+                return NotFound();
 
-            try
+            foreach (var poItem in po.PurchaseOrderItems ?? new List<PurchaseOrderItem>())
             {
-                _context.PurchaseOrders.Remove(po);
-                await _context.SaveChangesAsync();
+                if (poItem.SalesOrderItemId != null)
+                {
+                    var soItem = await _context.SalesOrderItems
+                        .FirstOrDefaultAsync(x => x.Id == poItem.SalesOrderItemId);
 
-                await _hub.Clients.All.SendAsync("PurchaseOrderDeleted", id);
+                    if (soItem != null)
+                    {
+                        soItem.QuantityRemaining += poItem.Quantity;
 
-                return Ok(new { Message = "Purchase order deleted successfully." });
+                        if (soItem.QuantityRemaining > soItem.Quantity)
+                            soItem.QuantityRemaining = soItem.Quantity.Value;
+                    }
+                }
             }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { Error = "Failed to delete purchase order." });
-            }
+
+            _context.PurchaseOrderItems.RemoveRange(po.PurchaseOrderItems);
+            _context.PurchaseOrders.Remove(po);
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "PO deleted and SO quantities restored." });
         }
 
 
@@ -736,6 +760,67 @@ namespace YLWorks.Controller
             return entity;
         }
 
+        //[HttpPut("UpdateStatus")]
+        //public async Task<IActionResult> UpdateStatus(Guid id, string status, string? remarks = null)
+        //{
+        //    var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        //    if (string.IsNullOrEmpty(userIdClaim))
+        //        return Unauthorized(new { Error = "Invalid token." });
+
+        //    var actionUserId = Guid.Parse(userIdClaim);
+
+        //    var userName = await _context.Users
+        //        .Where(x => x.Id == actionUserId)
+        //        .Select(x => x.FullName)
+        //        .FirstOrDefaultAsync();
+
+        //    var po = await _context.PurchaseOrders
+        //        .FirstOrDefaultAsync(x => x.Id == id);
+
+        //    if (po == null)
+        //        return NotFound();
+
+        //    po.Status = status;
+
+        //    var finalRemark = !string.IsNullOrWhiteSpace(remarks)
+        //        ? remarks
+        //        : GenerateStatusRemark(status, userName ?? "System");
+
+        //    var history = new PurchaseOrderStatusHistory
+        //    {
+        //        Id = Guid.NewGuid(),
+        //        PurchaseOrderId = id,
+        //        Status = po.Status,
+        //        ActionUserId = actionUserId,
+        //        ActionAt = DateTimeHelper.Now(),
+        //        Remarks = finalRemark
+        //    };
+
+        //    _context.PurchaseOrderStatusHistories.Add(history);
+
+        //    await _context.SaveChangesAsync();
+
+        //    var result = await _context.PurchaseOrderStatusHistories
+        //        .Where(x => x.Id == history.Id)
+        //        .Include(x => x.ActionUser)
+        //        .Select(x => new
+        //        {
+        //            x.Id,
+        //            x.Status,
+        //            x.ActionAt,
+        //            x.Remarks,
+        //            ActionUser = x.ActionUser == null ? null : new
+        //            {
+        //                x.ActionUser.Id,
+        //                x.ActionUser.FullName,
+        //                x.ActionUser.DisplayName
+        //            }
+        //        })
+        //        .FirstOrDefaultAsync();
+
+        //    return Ok(result);
+        //}
+
         [HttpPut("UpdateStatus")]
         public async Task<IActionResult> UpdateStatus(Guid id, string status, string? remarks = null)
         {
@@ -751,16 +836,25 @@ namespace YLWorks.Controller
                 .FirstOrDefaultAsync();
 
             var po = await _context.PurchaseOrders
+                .Include(x => x.PurchaseOrderItems)
                 .FirstOrDefaultAsync(x => x.Id == id);
 
             if (po == null)
                 return NotFound();
 
-            po.Status = status;
+            var previousStatus = po.Status;
 
-            var finalRemark = !string.IsNullOrWhiteSpace(remarks)
-                ? remarks
-                : GenerateStatusRemark(status, userName ?? "System");
+            if (previousStatus == "Sent" && status != "Sent")
+            {
+                await AdjustSoAllocation(po, subtract: true);
+            }
+
+            if (previousStatus != "Sent" && status == "Sent")
+            {
+                await AdjustSoAllocation(po, subtract: false);
+            }
+
+            po.Status = status;
 
             var history = new PurchaseOrderStatusHistory
             {
@@ -769,32 +863,57 @@ namespace YLWorks.Controller
                 Status = po.Status,
                 ActionUserId = actionUserId,
                 ActionAt = DateTimeHelper.Now(),
-                Remarks = finalRemark
+                Remarks = remarks ?? GenerateStatusRemark(status, userName ?? "System")
             };
 
             _context.PurchaseOrderStatusHistories.Add(history);
 
             await _context.SaveChangesAsync();
 
-            var result = await _context.PurchaseOrderStatusHistories
-                .Where(x => x.Id == history.Id)
-                .Include(x => x.ActionUser)
-                .Select(x => new
-                {
-                    x.Id,
-                    x.Status,
-                    x.ActionAt,
-                    x.Remarks,
-                    ActionUser = x.ActionUser == null ? null : new
-                    {
-                        x.ActionUser.Id,
-                        x.ActionUser.FullName,
-                        x.ActionUser.DisplayName
-                    }
-                })
-                .FirstOrDefaultAsync();
+            return Ok(history);
+        }
 
-            return Ok(result);
+        private async Task RevertSalesOrderAllocation(PurchaseOrder po)
+        {
+            var poItems = po.PurchaseOrderItems;
+
+            foreach (var poItem in poItems)
+            {
+                if (poItem.SalesOrderItemId == null) continue;
+
+                var soItem = await _context.SalesOrderItems
+                    .FirstOrDefaultAsync(x => x.Id == poItem.SalesOrderItemId);
+
+                if (soItem == null) continue;
+
+                var allocatedQty = poItem.Quantity;
+
+                soItem.QuantityRemaining += allocatedQty;
+
+                // Optional: if you're tracking ordered quantity
+                //soItem.OrderedQuantity -= allocatedQty;
+            }
+        }
+
+        private async Task AdjustSoAllocation(PurchaseOrder po, bool subtract)
+        {
+            foreach (var poItem in po.PurchaseOrderItems)
+            {
+                if (poItem.SalesOrderItemId == null) continue;
+
+                var soItem = await _context.SalesOrderItems
+                    .FirstOrDefaultAsync(x => x.Id == poItem.SalesOrderItemId);
+
+                if (soItem == null) continue;
+
+                var qty = poItem.Quantity;
+
+                soItem.QuantityOrdered = (soItem.QuantityOrdered ?? 0m) +
+                                         (subtract ? -qty : qty);
+
+                if (soItem.QuantityOrdered < 0)
+                    soItem.QuantityOrdered = 0;
+            }
         }
 
         private string GenerateStatusRemark(string status, string userName)

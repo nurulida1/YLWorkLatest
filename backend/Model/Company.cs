@@ -28,6 +28,7 @@ namespace YLWorks.Model
         public string? WebsiteUrl { get; set; }
         public string? TINNo { get; set; }
         public string? SSTRegNo { get; set; }
+        public string? SSMRegNo { get; set; }
         public CompanyType Type { get; set; }
         public decimal BalancePayment { get; set; } = 0;
         public bool SameAsBillingAddress { get; set; }
@@ -53,6 +54,7 @@ namespace YLWorks.Model
         public string? WebsiteUrl { get; set; }
         public string? TINNo { get; set; }
         public string? SSTRegNo { get; set; }
+        public string? SSMRegNo { get; set; }
         public CompanyType Type { get; set; }
         public bool SameAsBillingAddress { get; set; }
 
@@ -81,6 +83,7 @@ namespace YLWorks.Model
         public string LogoImage { get; set; }
         public string TINNo { get; set; }
         public string SSTRegNo { get; set; }
+        public string? SSMRegNo { get; set; }
         public bool SameAsBillingAddress { get; set; }
 
         public AddressDto? BillingAddress { get; set; }

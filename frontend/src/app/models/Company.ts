@@ -21,6 +21,7 @@ export interface CompanyDto extends BaseModel {
   logoImage: string;
   tinNo: string;
   sstRegNo: string;
+  ssmRegNo: string;
   sameAsBillingAddress: boolean;
 }
 
@@ -39,6 +40,7 @@ export interface CreateCompanyRequest {
   logoImage?: string;
   tinNo: string;
   sstRegNo: string;
+  ssmRegNo: string;
   sameAsBillingAddress: boolean;
 }
 

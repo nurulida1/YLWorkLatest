@@ -110,7 +110,14 @@ import { AccordionModule } from 'primeng/accordion';
                 class="pi pi-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"
               ></i> -->
             </div>
-
+            <p-button
+              label="Export as Excel"
+              (onClick)="exportToExcel()"
+              icon="pi pi-file-export"
+              severity="secondary"
+              [outlined]="true"
+              styleClass="py-2! whitespace-nowrap!"
+            ></p-button>
             <p-button
               label="Create Sales Order"
               (onClick)="ActionClick(null, 'Create')"
@@ -199,7 +206,7 @@ import { AccordionModule } from 'primeng/accordion';
               <tr
                 class="hover:bg-slate-50/80 border-b border-gray-100 transition-colors"
               >
-                <td class="py-3 px-4 font-semibold text-blue-600">
+                <td class="py-3 px-4 font-bold">
                   {{ data.salesOrderNo }}
                 </td>
                 <td class="py-3 px-4 text-gray-700 font-medium">
@@ -1137,6 +1144,24 @@ export class SalesOrder implements OnInit, OnDestroy {
       )[0];
 
     return rejectedHistory?.remarks || null;
+  }
+
+  exportToExcel() {
+    this.salesOrderService.ExportToExcel().subscribe({
+      next: (blob) => {
+        const url = window.URL.createObjectURL(blob);
+
+        const link = document.createElement('a');
+        link.href = url;
+
+        const fileName = `SO_${new Date().getTime()}.xlsx`;
+
+        link.download = fileName;
+        link.click();
+
+        window.URL.revokeObjectURL(url);
+      },
+    });
   }
 
   ngOnDestroy(): void {

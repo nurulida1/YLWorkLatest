@@ -64,6 +64,7 @@ namespace YLWorks.Model
         public string? Description { get; set; }
 
         public decimal? Quantity { get; set; }
+        public decimal? QuantityOrdered { get; set; }
         public decimal QuantityDelivered { get; set; }
         public decimal QuantityRemaining { get; set; }
 
@@ -94,6 +95,7 @@ namespace YLWorks.Model
         public decimal? Quantity { get; set; }
         public string? Unit { get; set; }
         public decimal? UnitPrice { get; set; }
+        public decimal? QuantityOrdered { get; set; }
         public decimal DeliveredQuantity {  get; set; }
         public decimal? Discount { get; set; }
         public decimal? TaxRate { get; set; }

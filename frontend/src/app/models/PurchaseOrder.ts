@@ -6,6 +6,7 @@ import { QuotationDto } from './Quotation';
 import { SalesOrderItem } from './SalesOrder';
 import { UserDto } from './User';
 import { SalesOrderDto } from './SalesOrder';
+import { InventoryDto } from './Inventory';
 
 export interface PurchaseOrderDto extends BaseModel {
   purchaseOrderNo: string;
@@ -55,6 +56,8 @@ export interface PurchaseOrderItem extends BaseModel {
   purchaseOrder: PurchaseOrderDto;
   salesOrderItemId: string;
   salesOrderItem: SalesOrderItem;
+  inventoryId: string;
+  inventory: InventoryDto;
   item: string;
   description: string;
   quantity: number;
@@ -67,6 +70,7 @@ export interface PurchaseOrderItem extends BaseModel {
 
 export interface POItemBase {
   salesOrderItemId: string;
+  inventoryId: string;
   item: string;
   description: string;
   quantity: number;

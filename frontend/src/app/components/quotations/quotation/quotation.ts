@@ -95,7 +95,7 @@ import { DrawerModule } from 'primeng/drawer';
               ></i>
             </div>
             <p-button
-              label="Export as CSV"
+              label="Export as Excel"
               (onClick)="exportToExcel()"
               icon="pi pi-file-export"
               severity="secondary"

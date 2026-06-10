@@ -243,7 +243,19 @@ export const routes: Routes = [
       },
     ],
   },
-
+  {
+    path: 'goods-receiving',
+    component: WebLayout,
+    children: [
+      {
+        path: '',
+        loadChildren: () =>
+          import('./components/goods-receiving/goods-receiving-routing.module').then(
+            (m) => m.GoodsReceivingRoutingModule,
+          ),
+      },
+    ],
+  },
   {
     path: 'purchase-orders',
     canActivate: [authGuard],

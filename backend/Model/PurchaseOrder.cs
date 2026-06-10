@@ -77,6 +77,8 @@ namespace YLWorks.Model
         public PurchaseOrder PurchaseOrder { get; set; } = null!;
         public Guid? SalesOrderItemId { get; set; }
         public SalesOrderItem? SalesOrderItem { get; set; }
+        public Guid? InventoryId { get; set; }
+        public Inventory? Inventory { get; set; }
         public string? Item { get; set; }
         public string? Description { get; set; }
         public decimal Quantity { get; set; }
@@ -93,6 +95,8 @@ namespace YLWorks.Model
         public string? Item { get; set; }
         public Guid? SalesOrderItemId { get; set; }
         public SalesOrderItem? SalesOrderItem { get; set; }
+        public Guid? InventoryId { get; set; }
+        public Inventory? Inventory { get; set; }
         public string Description { get; set; }
         public string? Unit { get; set; }
         public decimal Quantity { get; set; }
@@ -107,6 +111,7 @@ namespace YLWorks.Model
         public Guid? Id { get; set; }
         public Guid? PurchaseOrderId { get; set; }
         public Guid? SalesOrderItemId { get; set; }
+        public Guid? InventoryId { get; set; }
         public string? Item { get; set; }
         public string? Description { get; set; } = string.Empty;
         public decimal Quantity { get; set; }

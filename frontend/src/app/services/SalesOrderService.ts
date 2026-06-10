@@ -141,6 +141,12 @@ export class SalesOrderService {
       .pipe(retry(1), catchError(this.handleError('GenerateBulkDOs')));
   }
 
+  ExportToExcel(): Observable<Blob> {
+    return this.http.get(`${this.url}/ExportExcel`, {
+      responseType: 'blob',
+    });
+  }
+
   private handleError = (context: string) => (error: any) => {
     this.messageService.add({
       severity: 'error',

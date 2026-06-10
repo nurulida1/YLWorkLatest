@@ -379,11 +379,11 @@ import { TabsModule } from 'primeng/tabs';
                     <div
                       class="font-bold tracking-wider uppercase text-indigo-600 text-sm flex items-center gap-2"
                     >
-                      <i class="pi pi-sliders-h"></i> Batch Operations Hub
+                      <i class="pi pi-sliders-h"></i> Order Fulfillment Actions
                     </div>
                     <p class="text-sm text-slate-500 leading-normal">
-                      Execute actions immediately alongside line selections to
-                      maximize dispatch processing speed.
+                      Quickly process selected items for delivery or
+                      procurement.
                     </p>
                   </div>
 
@@ -537,8 +537,12 @@ import { TabsModule } from 'primeng/tabs';
                               <span
                                 *ngFor="let po of item.purchaseOrderNos"
                                 class="inline-flex items-center px-2 py-0.5 rounded font-mono font-bold text-[11px] bg-white text-slate-700 border border-slate-200 shadow-3xs hover:border-indigo-300 hover:text-indigo-600 transition-colors cursor-pointer"
-                              >
-                                {{ po }}
+                                ><a
+                                  class="cursor-pointer"
+                                  [routerLink]="'/purchase-orders/details'"
+                                  [queryParams]="{ poNo: po }"
+                                  >{{ po }}</a
+                                >
                               </span>
                             </div>
                           </td>
@@ -614,25 +618,74 @@ import { TabsModule } from 'primeng/tabs';
                               <div
                                 *ngIf="
                                   item.itemType === 'Product' &&
-                                  item.orderedQuantity > 0
+                                  item.quantityOrdered > 0
                                 "
                                 class="w-full text-center"
                               >
                                 <span
-                                  class="inline-block w-full py-0.5 rounded text-[9px] font-extrabold tracking-wide uppercase border shadow-3xs"
+                                  class="flex flex-col inline-block w-full py-0.5 rounded text-[9px] font-extrabold tracking-wide uppercase border shadow-3xs"
                                   [ngClass]="{
                                     'bg-blue-50 text-blue-700 border-blue-200':
-                                      item.orderedQuantity < item.quantity,
+                                      item.quantityOrdered < item.quantity,
                                     'bg-indigo-50 text-indigo-700 border-indigo-200':
-                                      item.orderedQuantity >= item.quantity,
+                                      item.quantityOrdered >= item.quantity,
                                   }"
                                 >
-                                  Ordered: {{ item.orderedQuantity }} /
-                                  {{ item.quantity - item.qtyOnHand }}
+                                  <span>
+                                    Ordered: {{ item.quantityOrdered }}</span
+                                  >
+                                  <span>
+                                    Received:
+                                    {{ item.receivedQuantity || 0 }}
+                                  </span>
                                 </span>
                               </div>
                             </div>
                           </td>
+                        </tr>
+                      </ng-template>
+                      <ng-template #footer>
+                        <tr>
+                          <td colspan="7" class="text-right! text-sm">
+                            SubTotal
+                          </td>
+                          <td
+                            colspan="1"
+                            class="text-right! font-semibold! font-mono"
+                          >
+                            {{ soData().subTotal | number: '1.2' }}
+                          </td>
+                          <td></td>
+                        </tr>
+                        <tr>
+                          <td
+                            colspan="7"
+                            class="text-right! text-sm text-red-500!"
+                          >
+                            Discount
+                          </td>
+                          <td
+                            colspan="1"
+                            class="text-right! font-semibold! font-mono text-red-500!"
+                          >
+                            - {{ soData().discount | number: '1.2' }}
+                          </td>
+                          <td></td>
+                        </tr>
+                        <tr>
+                          <td
+                            colspan="7"
+                            class="text-right! text-sm bg-gray-50! font-bold!"
+                          >
+                            Total Amount
+                          </td>
+                          <td
+                            colspan="1"
+                            class="text-right! font-bold! font-mono text-lg! bg-gray-50!"
+                          >
+                            {{ soData().totalAmount | number: '1.2' }}
+                          </td>
+                          <td class="bg-gray-50!"></td>
                         </tr>
                       </ng-template>
                     </ng-template>
@@ -962,27 +1015,28 @@ import { TabsModule } from 'primeng/tabs';
               [showGridlines]="true"
               [value]="items.controls"
               [tableStyle]="{ 'min-width': '60rem', 'table-layout': 'fixed' }"
+              styleClass="p-datatable-sm align-middle-cells"
             >
               <ng-template #header>
                 <tr>
-                  <th class="p-3.5 w-[25%] text-slate-600 bg-gray-100!">
+                  <th class="p-3 w-[25%] text-slate-600 bg-gray-50!">
                     Item Code
                   </th>
-                  <th class="p-3.5 w-[35%] text-slate-600 bg-gray-100!">
+                  <th class="p-3 w-[30%] text-slate-600 bg-gray-50!">
                     Description
                   </th>
                   <th
-                    class="p-3.5 w-[12%] text-center! text-slate-600 bg-gray-100!"
+                    class="p-3 w-[15%] text-center! text-slate-600 bg-gray-50!"
                   >
                     Quantity
                   </th>
                   <th
-                    class="p-3.5 w-[13%] text-right! text-slate-600 bg-gray-100!"
+                    class="p-3 w-[15%] text-center! text-slate-600 bg-gray-50!"
                   >
                     Unit Price
                   </th>
                   <th
-                    class="p-3.5 w-[15%] text-right! text-slate-600 bg-gray-100!"
+                    class="p-3 w-[15%] text-right! text-slate-600 bg-gray-50!"
                   >
                     Total Amount
                   </th>
@@ -990,20 +1044,23 @@ import { TabsModule } from 'primeng/tabs';
               </ng-template>
 
               <ng-template #body let-row let-i="rowIndex">
-                <tr [formGroup]="getRowGroup(i)" class="hover:bg-slate-50/30">
-                  <td class="p-3.5 align-middle">
+                <tr
+                  [formGroup]="getRowGroup(i)"
+                  class="hover:bg-slate-50/30 transition-colors"
+                >
+                  <td class="p-3">
                     <input
                       type="text"
                       pInputText
                       formControlName="item"
-                      class="w-full text-sm!"
+                      class="w-full p-inputtext-sm"
                       placeholder="Enter variant ID..."
                     />
                   </td>
 
-                  <td class="p-3.5 align-middle">
+                  <td class="p-3">
                     <p-editor
-                      [style]="{ height: '100px' }"
+                      [style]="{ height: '80px' }"
                       formControlName="description"
                     >
                       <ng-template #header>
@@ -1016,28 +1073,55 @@ import { TabsModule } from 'primeng/tabs';
                     </p-editor>
                   </td>
 
-                  <td class="p-3.5 text-center! font-semibold">
-                    {{ items.at(i).get('quantity')?.value || 0 }}
-                    <span class="text-[10px] ml-1 text-slate-400 uppercase">
-                      {{ items.at(i).get('unit')?.value || 'units' }}
-                    </span>
+                  <td class="p-3 text-center!">
+                    <div class="flex flex-col items-center gap-1">
+                      <p-inputNumber
+                        formControlName="quantity"
+                        mode="decimal"
+                        [minFractionDigits]="2"
+                        [maxFractionDigits]="4"
+                        [min]="0"
+                        placeholder="0.00"
+                        (onInput)="calculateRowTotal(i)"
+                        inputStyleClass="text-center font-semibold w-full max-w-[110px] h-8 text-xs rounded-lg text-gray-900 border-gray-200"
+                      ></p-inputNumber>
+                      <span
+                        class="text-[10px] tracking-wider text-slate-400 uppercase font-medium"
+                      >
+                        {{ items.at(i).get('unit')?.value || 'units' }}
+                      </span>
+                    </div>
                   </td>
 
-                  <td class="p-3.5 text-right!">
-                    RM
-                    {{ items.at(i).get('unitPrice')?.value | number: '1.2-2' }}
+                  <td class="p-3 text-center!">
+                    <div class="flex flex-col items-center gap-1">
+                      <p-inputNumber
+                        formControlName="unitPrice"
+                        mode="currency"
+                        currency="MYR"
+                        locale="en-MY"
+                        [min]="0"
+                        placeholder="RM 0.00"
+                        (onInput)="calculateRowTotal(i)"
+                        inputStyleClass="text-center font-semibold w-full max-w-[120px] h-8 text-xs rounded-lg text-gray-900 border-gray-200"
+                      ></p-inputNumber>
+                    </div>
                   </td>
 
-                  <td class="p-3.5 text-right! font-bold">
+                  <td
+                    class="p-3 text-right! font-bold text-gray-900 bg-gray-50/30"
+                  >
                     RM
-                    {{ items.at(i).get('totalPrice')?.value | number: '1.2-2' }}
+                    {{
+                      items.at(i).get('totalPrice')?.value || 0
+                        | number: '1.2-2'
+                    }}
                   </td>
                 </tr>
               </ng-template>
             </p-table>
           </div>
         </div>
-
         <div class="grid grid-cols-1 md:grid-cols-12 gap-8 items-start pt-2">
           <div class="md:col-span-7 flex flex-col gap-2">
             <label
@@ -1558,7 +1642,7 @@ export class SalesOrderDetails {
         PageSize: 1,
         OrderBy: null,
         Includes:
-          'Client.BillingAddress,Client.DeliveryAddress, SalesOrderItems, Quotation',
+          'Client.BillingAddress,Client.DeliveryAddress, SalesOrderItems, Quotation, PurchaseOrders',
         Filter: `Id=${this.currentId}`,
         Select: null,
       })
@@ -1811,11 +1895,14 @@ export class SalesOrderDetails {
       return;
     }
 
+    console.log(selectedItems);
+
     const poItems = selectedItems.map((x: any) => ({
       salesOrderItemId: x.id,
+      inventoryId: x.inventoryId,
       item: x.item,
       description: x.description,
-      quantity: x.quantity - (x.qtyOnHand || 0),
+      quantity: x.quantity - (x.orderedQuantity || 0) - (x.qtyOnHand || 0),
       unit: x.unit,
       unitPrice: x.unitPrice,
     }));
@@ -1828,9 +1915,11 @@ export class SalesOrderDetails {
       formArray.push(
         new FormGroup({
           salesOrderItemId: new FormControl(item.salesOrderItemId),
+          inventoryId: new FormControl(item.inventoryId),
           item: new FormControl(item.item),
           quantity: new FormControl(item.quantity),
           unitPrice: new FormControl(item.unitPrice),
+          unit: new FormControl(item.unit),
           description: new FormControl(item.description),
           totalPrice: new FormControl(item.quantity * item.unitPrice),
         }),
@@ -2019,7 +2108,7 @@ export class SalesOrderDetails {
       return {
         ...item,
         qtyOrdered: (item.qtyOrdered || 0) + match.quantity,
-        selected: false, // optional reset checkbox
+        selected: false,
       };
     });
 
@@ -2142,6 +2231,26 @@ export class SalesOrderDetails {
           this.cdr.markForCheck();
         },
       });
+  }
+
+  calculateRowTotal(index: number) {
+    const rowGroup = this.getRowGroup(index);
+    if (!rowGroup) return;
+
+    const quantity = Number(rowGroup.get('quantity')?.value) || 0;
+    const unitPrice = Number(rowGroup.get('unitPrice')?.value) || 0;
+    const discount = Number(rowGroup.get('discount')?.value) || 0;
+
+    const totalAmount = quantity * unitPrice - discount;
+
+    rowGroup.patchValue(
+      {
+        totalPrice: totalAmount,
+      },
+      { emitEvent: false },
+    );
+
+    this.recalculatePOTotals();
   }
 
   ngOnDestroy(): void {

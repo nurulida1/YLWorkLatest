@@ -1581,6 +1581,7 @@ export class PurchaseOrderForm implements OnInit, OnDestroy {
       contactPerson2: new FormControl<string | null>(null),
       acNo: new FormControl<string | null>(null),
       type: new FormControl<CompanyType>(type),
+      ssmRegNo: new FormControl<string | null>(null),
       sameAsBilling: new FormControl(false),
 
       billingAddress: new FormGroup({

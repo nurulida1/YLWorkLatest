@@ -8,7 +8,14 @@ import {
   signal,
   ViewChild,
 } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import {
+  FormArray,
+  FormControl,
+  FormGroup,
+  FormsModule,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { MessageService, MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -29,7 +36,10 @@ import {
   GridifyQueryExtend,
   BuildSortText,
   BuildFilterText,
+  ValidateAllFormFields,
 } from '../../../shared/helpers/helpers';
+import { GoodsReceivingService } from '../../../services/goodsReceivingService';
+import { DatePickerModule } from 'primeng/datepicker';
 
 @Component({
   selector: 'app-purchase-order',
@@ -45,6 +55,8 @@ import {
     SelectModule,
     InputNumberModule,
     TimelineModule,
+    ReactiveFormsModule,
+    DatePickerModule,
   ],
   template: `<div class="w-full min-h-[92.9vh] flex flex-col p-5">
       <div class="flex flex-row items-center gap-1 text-gray-500 tracking-wide">
@@ -400,19 +412,20 @@ import {
           ></p-button>
         </div>
       </ng-template>
-    </p-dialog>`,
+    </p-dialog> `,
   styleUrl: './purchaseOrder.less',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PurchaseOrder implements OnDestroy {
   @ViewChild('fTable') fTable?: Table;
 
+  private readonly goodsReceivingService = inject(GoodsReceivingService);
   private readonly purchaseOrderService = inject(PurchaseOrderService);
   private readonly loadingService = inject(LoadingService);
-  private readonly cdr = inject(ChangeDetectorRef);
   private readonly messageService = inject(MessageService);
-  private readonly router = inject(Router);
   private readonly userService = inject(UserService);
+  private readonly cdr = inject(ChangeDetectorRef);
+  private readonly router = inject(Router);
   protected ngUnsubscribe: Subject<void> = new Subject<void>();
 
   PagingSignal = signal<PagingContent<PurchaseOrderDto>>(
@@ -423,13 +436,17 @@ export class PurchaseOrder implements OnDestroy {
   search: string = '';
 
   displayInvoiceDialog: boolean = false;
+  receiveDialog: boolean = false;
 
   menuItems: MenuItem[] = [];
+
   currentUser = this.userService.currentUser;
   timelineMap: { [key: string]: any[] } = {};
 
   selectedPO: any;
   events: any[] = [];
+
+  receiveForm!: FormGroup;
 
   invoiceAmount: number = 0;
   poTotalAmount: number = 0;
@@ -442,7 +459,7 @@ export class PurchaseOrder implements OnDestroy {
     this.Query.OrderBy = 'CreatedAt desc';
     this.Query.Select = null;
     this.Query.Includes =
-      'Supplier.BillingAddress,Supplier.DeliveryAddress,PurchaseOrderStatusHistories.ActionUser';
+      'Supplier.BillingAddress,Supplier.DeliveryAddress,PurchaseOrderStatusHistories.ActionUser,PurchaseOrderItems';
   }
 
   GetData() {
@@ -780,32 +797,62 @@ export class PurchaseOrder implements OnDestroy {
         icon: 'pi pi-send',
         command: () => this.updateStatus(po.id, 'Sent'),
       });
+      add({
+        label: 'View Details',
+        icon: 'pi pi-eye',
+        command: () =>
+          this.router.navigate(['/purchase-orders/details'], {
+            queryParams: { id: po.id },
+          }),
+      });
     }
 
     if (status === 'Sent' && this.isPurchasing()) {
       add({
-        label: 'Partially Received',
+        label: 'Record Received Items',
         icon: 'pi pi-box',
-        command: () => this.updateStatus(po.id, 'PartiallyReceived'),
+        command: () =>
+          this.router.navigate(['/goods-receiving/form'], {
+            queryParams: { poId: po.id },
+          }),
+      });
+      add({
+        label: 'View Details',
+        icon: 'pi pi-eye',
+        command: () =>
+          this.router.navigate(['/purchase-orders/details'], {
+            queryParams: { id: po.id },
+          }),
       });
     }
 
-    if (inStatus('Sent', 'PartiallyReceived') && this.isPurchasing()) {
+    if (inStatus('PartiallyReceived')) {
       add({
-        label: 'Fully Received',
+        label: 'Record Received Items',
         icon: 'pi pi-box',
-        command: () => this.updateStatus(po.id, 'Completed'),
+        command: () =>
+          this.router.navigate(['/goods-receiving/form'], {
+            queryParams: { poId: po.id },
+          }),
+      });
+      add({
+        label: 'View Details',
+        icon: 'pi pi-eye',
+        command: () =>
+          this.router.navigate(['/purchase-orders/details'], {
+            queryParams: { id: po.id },
+          }),
       });
     }
 
-    if (
-      inStatus('PartiallyReceived', 'Received', 'PartiallyInvoiced') &&
-      this.isAccounting()
-    ) {
+    if (inStatus('Completed', 'PartiallyInvoiced')) {
       add({
-        label: 'Create Invoice',
-        icon: 'pi pi-receipt',
-        command: () => this.ActionClick(po, 'GenerateInvoice'),
+        label: 'View Details',
+        icon: 'pi pi-eye',
+        command: () =>
+          this.router.navigate(['/purchase-orders/details'], {
+            queryParams: { id: po.id },
+          }),
       });
     }
 
@@ -936,6 +983,263 @@ export class PurchaseOrder implements OnDestroy {
 
   isAccounting(): boolean {
     return this.currentUser?.jobTitle === 'Admin and Account Executive';
+  }
+
+  openReceiveModal(data: PurchaseOrderDto) {
+    this.selectedPO = data;
+    this.initReceiveForm();
+    this.generateGRNNo();
+    this.receiveDialog = true;
+  }
+
+  generateGRNNo() {
+    this.goodsReceivingService
+      .GenerateNo()
+      .pipe(takeUntil(this.ngUnsubscribe))
+      .subscribe({
+        next: (res) => {
+          this.receiveForm.get('grnNo')?.patchValue(res.grnNo);
+        },
+      });
+  }
+
+  initReceiveForm() {
+    const itemsFormArray = new FormArray<FormGroup>([]);
+
+    this.receiveForm = new FormGroup({
+      id: new FormControl<string | null>({ value: null, disabled: true }),
+      grnNo: new FormControl<string | null>(null),
+      purchaseOrderId: new FormControl<string | null>(
+        this.selectedPO?.id || null,
+      ),
+      supplierId: new FormControl<string | null>(
+        this.selectedPO?.supplierId || null,
+      ),
+      receivedDate: new FormControl<Date | null>(
+        new Date(),
+        Validators.required,
+      ),
+      supplierDONo: new FormControl<string | null>(null),
+      supplierDODate: new FormControl<Date | null>(null),
+      supplierDOAttachment: new FormControl<File | null>(null),
+      remarks: new FormControl<string | null>(null),
+      gross: new FormControl<number | null>(null),
+      discount: new FormControl<number | null>(null),
+      totalAmount: new FormControl<number | null>(null),
+      goodsReceivingItems: itemsFormArray,
+    });
+
+    if (this.selectedPO?.purchaseOrderItems) {
+      this.selectedPO.purchaseOrderItems.forEach((item: any) => {
+        const previouslyReceived = item.receivedQuantity || 0;
+        const remainingBalance = item.quantity - previouslyReceived;
+
+        itemsFormArray.push(
+          new FormGroup({
+            purchaseOrderItemId: new FormControl(item.id),
+            itemName: new FormControl({ value: item.item, disabled: true }),
+            orderedQty: new FormControl({
+              value: item.quantity,
+              disabled: true,
+            }),
+            previouslyReceived: new FormControl({
+              value: previouslyReceived,
+              disabled: true,
+            }),
+            receivingQty: new FormControl(
+              remainingBalance > 0 ? remainingBalance : 0,
+              [Validators.required, Validators.min(0)],
+            ),
+            unit: new FormControl({ value: item.unit, disabled: true }),
+            unitPrice: new FormControl({
+              value: item.unitPrice,
+              disabled: true,
+            }),
+            discount: new FormControl(item.discount),
+            totalPrice: new FormControl({
+              value: item.totalPrice,
+              disabled: true,
+            }),
+            remarks: new FormControl(null),
+          }),
+        );
+      });
+    }
+
+    this.receiveForm.get('goodsReceivingItems')?.valueChanges.subscribe(() => {
+      this.calculateTotals();
+    });
+  }
+
+  calculateTotals() {
+    let gross = 0;
+    let discount = 0;
+
+    this.items.controls.forEach((group: any) => {
+      const qty = group.get('receivingQty')?.value || 0;
+      const price = group.get('unitPrice')?.value || 0;
+      const disc = group.get('discount')?.value || 0;
+
+      gross += qty * price;
+      discount += disc;
+    });
+
+    const total = gross - discount;
+
+    this.receiveForm.patchValue({
+      gross,
+      discount,
+      totalAmount: total,
+    });
+  }
+
+  get items(): FormArray {
+    return this.receiveForm.get('goodsReceivingItems') as FormArray;
+  }
+
+  onFileSelect(event: Event) {
+    const inputNode = event.target as HTMLInputElement;
+
+    if (inputNode.files && inputNode.files.length > 0) {
+      const targetFile = inputNode.files[0];
+
+      this.receiveForm.patchValue({
+        supplierDOAttachment: targetFile,
+      });
+
+      this.receiveForm.get('supplierDOAttachment')?.updateValueAndValidity();
+    }
+  }
+
+  submitReceipt() {
+    if (this.receiveForm.invalid) {
+      ValidateAllFormFields(this.receiveForm);
+      return;
+    }
+
+    const formValues = this.receiveForm.getRawValue();
+    const formData = new FormData();
+
+    formData.append('purchaseOrderId', formValues.purchaseOrderId || '');
+    formData.append('supplierId', formValues.supplierId || '');
+    formData.append('grnNo', formValues.grnNo || '');
+    formData.append('receivedDate', new Date().toISOString());
+    formData.append('supplierDONo', formValues.supplierDONo || '');
+    formData.append('remarks', formValues.remarks || '');
+
+    if (formValues.supplierDODate) {
+      formData.append(
+        'supplierDODate',
+        new Date(formValues.supplierDODate).toISOString(),
+      );
+    }
+
+    if (formValues.supplierDOAttachment) {
+      formData.append(
+        'supplierDOAttachment',
+        formValues.supplierDOAttachment,
+        formValues.supplierDOAttachment.name,
+      );
+    }
+
+    formData.append(
+      'goodsReceivingItemsJson',
+      JSON.stringify(formValues.goodsReceivingItems || []),
+    );
+
+    this.loadingService.start();
+
+    this.goodsReceivingService
+      .Create(formData)
+      .pipe(takeUntil(this.ngUnsubscribe))
+      .subscribe({
+        next: (res) => {
+          this.loadingService.stop();
+
+          this.messageService.add({
+            severity: 'success',
+            summary: 'Success',
+            detail: 'Goods Received Note created successfully',
+          });
+
+          const state = this.PagingSignal();
+
+          const updatedData = state.data.map((po) => {
+            if (po.id !== this.receiveForm.value.purchaseOrderId) {
+              return po;
+            }
+
+            const formItems =
+              this.receiveForm.getRawValue().goodsReceivingItems || [];
+
+            const receivedNow = formItems.reduce(
+              (sum: number, x: any) => sum + (x.receivingQty || 0),
+              0,
+            );
+
+            const previousReceived =
+              po.purchaseOrderItems?.reduce(
+                (sum: number, x: any) => sum + (x.receivedQuantity || 0),
+                0,
+              ) || 0;
+
+            const totalReceived = previousReceived + receivedNow;
+
+            const orderedQty =
+              po.purchaseOrderItems?.reduce(
+                (sum: number, x: any) => sum + (x.quantity || 0),
+                0,
+              ) || 0;
+
+            const newStatus =
+              totalReceived >= orderedQty
+                ? 'Completed'
+                : totalReceived > 0
+                  ? 'PartiallyReceived'
+                  : po.status;
+
+            const updatedItems = po.purchaseOrderItems?.map((item) => {
+              const formItem = formItems.find(
+                (x: any) => x.purchaseOrderItemId === item.id,
+              );
+
+              if (!formItem) return item;
+
+              return {
+                ...item,
+                receivedQuantity:
+                  (item.receivedQuantity || 0) + (formItem.receivingQty || 0),
+              };
+            });
+
+            return {
+              ...po,
+              status: newStatus,
+              purchaseOrderItems: updatedItems,
+            };
+          });
+
+          this.PagingSignal.set({
+            ...state,
+            data: updatedData,
+          });
+
+          this.receiveDialog = false;
+          this.cdr.markForCheck();
+        },
+
+        error: (err) => {
+          this.loadingService.stop();
+
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: err?.error?.message || 'Failed to create GRN',
+          });
+
+          this.cdr.markForCheck();
+        },
+      });
   }
 
   ngOnDestroy(): void {

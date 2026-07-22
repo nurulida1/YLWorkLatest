@@ -40,5 +40,85 @@ namespace YLWorks.Services
 
             smtp.Send(mail);
         }
+
+        public void SendApprovalEmail(string toEmail, string fullName)
+        {
+            var smtpServer = _config["EmailSettings:SmtpServer"];
+            var port = int.Parse(_config["EmailSettings:Port"]);
+            var senderEmail = _config["EmailSettings:SenderEmail"];
+            var username = _config["EmailSettings:Username"];
+            var password = _config["EmailSettings:Password"];
+            var senderName = _config["EmailSettings:SenderName"];
+
+            using var smtp = new SmtpClient(smtpServer)
+            {
+                Port = port,
+                Credentials = new NetworkCredential(username, password),
+                EnableSsl = true
+            };
+
+            var mail = new MailMessage
+            {
+                From = new MailAddress(senderEmail, senderName),
+                Subject = "Account Approved",
+                Body =
+                $"""
+        Hello {fullName},
+
+        Your account has been approved by the administrator.
+
+        You can now login to the system using your registered email.
+
+        Thank you.
+        """,
+                IsBodyHtml = false
+            };
+
+            mail.To.Add(toEmail);
+
+            smtp.Send(mail);
+        }
+
+
+        public void SendRejectionEmail(string toEmail, string fullName, string reason)
+        {
+            var smtpServer = _config["EmailSettings:SmtpServer"];
+            var port = int.Parse(_config["EmailSettings:Port"]);
+            var senderEmail = _config["EmailSettings:SenderEmail"];
+            var username = _config["EmailSettings:Username"];
+            var password = _config["EmailSettings:Password"];
+            var senderName = _config["EmailSettings:SenderName"];
+
+            using var smtp = new SmtpClient(smtpServer)
+            {
+                Port = port,
+                Credentials = new NetworkCredential(username, password),
+                EnableSsl = true
+            };
+
+            var mail = new MailMessage
+            {
+                From = new MailAddress(senderEmail, senderName),
+                Subject = "Account Registration Rejected",
+                Body =
+                $"""
+        Hello {fullName},
+
+        Unfortunately, your account registration has been rejected.
+
+        Reason:
+        {reason}
+
+        If you believe this was a mistake, please contact the administrator.
+
+        Thank you.
+        """,
+                IsBodyHtml = false
+            };
+
+            mail.To.Add(toEmail);
+
+            smtp.Send(mail);
+        }
     }
 }

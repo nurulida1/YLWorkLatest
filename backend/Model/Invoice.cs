@@ -12,17 +12,20 @@
         public Company? Client { get; set; }
         public Guid? SupplierId { get; set; }
         public Company? Supplier { get; set; }
+
         public Guid? ProjectId { get; set; }
         public Project? Project { get; set; }
         public Guid? PurchaseOrderId { get; set; }
         public PurchaseOrder? PurchaseOrder { get; set; }
         public Guid? SalesOrderId {  get; set; }
         public SalesOrder? SalesOrder {  get; set; }
+        public Guid? GoodsReceivingId { get; set; }
+        public GoodsReceiving? GoodsReceiving { get; set; }
         public Guid? QuotationId { get; set; }
         public Quotation? Quotation { get; set; }
 
         public DateTime InvoiceDate {  get; set; }
-        public DateTime DueDate { get; set; }
+        public DateTime? DueDate { get; set; }
 
         public string? Type { get; set; } // Sales, Purchase
 
@@ -32,8 +35,11 @@
 
         public decimal? Discount { get; set; }
         public decimal? Gross { get; set; }
-        public decimal? TotalAmount { get; set; }
+        public decimal TotalAmount { get; set; }
         public decimal? PaidAmount { get; set; }
+
+        public bool IsPaid => PaidAmount >= TotalAmount;
+        public bool IsOverdue => DueDate < DateTime.UtcNow && PaidAmount < TotalAmount;
 
         public string? Notes { get; set; }
         public string? TermsAndConditions { get; set; }
@@ -52,17 +58,23 @@
         public Guid InvoiceId { get; set; }
         public Invoice Invoice { get; set; }
 
+        public Guid? GoodsReceivingItemId { get; set; }
+        public GoodsReceivingItem? GoodsReceivingItem { get; set; }
+
         public string Item { get; set; }
         public string Description { get; set; } = string.Empty;
         public decimal Quantity { get; set; }
         public string? Unit { get; set; } = "Unit";
         public decimal? UnitPrice { get; set; }
-        public decimal? Discount { get; set; } // Percentage
+        public decimal? Discount { get; set; } 
         public decimal? Amount { get; set; }
+
     }
 
     public class InvoiceItemBase
     {
+        public Guid? GoodsReceivingItemId { get; set; }
+
         public string Item { get; set; }
         public string Description { get; set; } = string.Empty;
         public int Quantity { get; set; }
@@ -88,13 +100,14 @@
         public Guid? SupplierId { get; set; }
         public Guid? ProjectId { get; set; }
         public Guid? SalesOrderId { get; set; }
+        public Guid? GoodsReceivingId { get; set; }
         public Guid? PurchaseOrderId { get; set; }
         public Guid? QuotationId { get; set; }
         public DateTime InvoiceDate { get; set; }
         public DateTime DueDate { get; set; }
         public decimal? Gross { get; set; }
         public decimal? Discount { get; set; }
-        public decimal? TotalAmount { get; set; }
+        public decimal TotalAmount { get; set; }
         public string? PaymentTerms { get; set; }
         public string? Type { get; set; } // Sales, Purchase
         public string? TermsAndConditions { get; set; }
@@ -116,13 +129,14 @@
         public Guid? SupplierId { get; set; }
         public Guid? ProjectId { get; set; }
         public Guid? SalesOrderId { get; set; }
+        public Guid? GoodsReceivingId { get; set; }
         public Guid? PurchaseOrderId { get; set; }
         public Guid? QuotationId { get; set; }
         public DateTime InvoiceDate { get; set; }
         public DateTime DueDate { get; set; }
         public decimal? Gross { get; set; }
         public decimal? Discount { get; set; }
-        public decimal? TotalAmount { get; set; }
+        public decimal TotalAmount { get; set; }
         public string? PaymentTerms { get; set; }
         public string? Type { get; set; }
         public string? TermsAndConditions { get; set; }

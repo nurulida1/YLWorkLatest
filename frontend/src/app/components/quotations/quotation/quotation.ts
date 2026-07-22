@@ -103,12 +103,11 @@ import { DrawerModule } from 'primeng/drawer';
               styleClass="py-2! whitespace-nowrap!"
             ></p-button>
             <p-button
-              *hasPermission="'QUOTATION'; action: 'canCreate'"
               label="Quotation"
               [routerLink]="'/quotations/form'"
               icon="pi pi-plus"
               severity="info"
-              styleClass="py-2! whitespace-nowrap!"
+              styleClass="py-2! whitespace-nowrap! bg-blue-600! border-none!"
             ></p-button>
           </div>
         </div>
@@ -131,10 +130,7 @@ import { DrawerModule } from 'primeng/drawer';
           >
             <ng-template #header>
               <tr>
-                <th
-                  class="w-[2%]! bg-gray-100!"
-                  *ngIf="permissions().canUpdate"
-                ></th>
+                <th class="w-[2%]! bg-gray-100!"></th>
                 <th
                   pSortableColumn="QuotationNo"
                   class="bg-gray-100! text-center! w-[10%]!"
@@ -157,6 +153,15 @@ import { DrawerModule } from 'primeng/drawer';
                   </div>
                 </th>
                 <th
+                  pSortableColumn="DueDate"
+                  class="bg-gray-100! text-center! w-[10%]!"
+                >
+                  <div class="flex flex-row justify-center items-center gap-2">
+                    <div>Due Date</div>
+                    <p-sortIcon field="DueDate" />
+                  </div>
+                </th>
+                <th
                   pSortableColumn="Status"
                   class="bg-gray-100! text-center! w-[10%]!"
                 >
@@ -165,16 +170,7 @@ import { DrawerModule } from 'primeng/drawer';
                     <p-sortIcon field="Status" />
                   </div>
                 </th>
-                <th
-                  *ngIf="
-                    permissions().canUpdate ||
-                    permissions().canUpdateStatus ||
-                    permissions().canDelete
-                  "
-                  class="bg-gray-100! text-left! w-[10%]"
-                >
-                  Action
-                </th>
+                <th class="bg-gray-100! text-left! w-[10%]">Action</th>
               </tr>
             </ng-template>
 
@@ -185,7 +181,7 @@ import { DrawerModule } from 'primeng/drawer';
               let-expanded="expanded"
             >
               <tr>
-                <td *ngIf="permissions().canUpdate">
+                <td>
                   <div
                     class="flex items-center justify-center cursor-pointer"
                     (click)="onRowExpand(data, fTable)"
@@ -206,6 +202,9 @@ import { DrawerModule } from 'primeng/drawer';
 
                 <td class="text-center!">
                   {{ data.quotationDate | date: 'dd/MM/yyyy' }}
+                </td>
+                <td class="text-center!">
+                  {{ data.dueDate | date: 'dd/MM/yyyy' }}
                 </td>
                 <td class="text-center!">
                   <div class="flex justify-center">
@@ -230,14 +229,7 @@ import { DrawerModule } from 'primeng/drawer';
                     </div>
                   </div>
                 </td>
-                <td
-                  *ngIf="
-                    permissions().canUpdate ||
-                    permissions().canUpdateStatus ||
-                    permissions().canDelete
-                  "
-                  class="text-center!"
-                >
+                <td class="text-center!">
                   <div
                     class="flex flex-row items-center gap-6 whitespace-nowrap"
                   >
@@ -982,8 +974,9 @@ import { DrawerModule } from 'primeng/drawer';
             </div>
             <div class="col-span-1 font-semibold">Validity</div>
             <div class="col-span-11">
-              : {{ selectedQuotation.validityDays }} days (with effect from the
-              date of this quotation)
+              : {{ selectedQuotation.validity }}
+              {{ selectedQuotation.validityType }} (with effect from the date of
+              this quotation)
             </div>
             <div class="col-span-1 font-semibold">Execution</div>
             <div class="col-span-11">: {{ selectedQuotation.execution }}</div>
@@ -1093,7 +1086,6 @@ export class Quotation implements OnInit, OnDestroy {
   isAdmin: boolean = false;
 
   timelineMap: { [key: string]: any[] } = {};
-  permissions = this.permissionService.getModuleRights('QUOTATION');
 
   soForm = {
     quotationData: null as any,
@@ -1128,7 +1120,7 @@ export class Quotation implements OnInit, OnDestroy {
 
           const statusOrder = [
             'Draft',
-            'Reviewed',
+            'Approved',
             'Sent',
             'Accepted',
             'Rejected',
@@ -1186,10 +1178,7 @@ export class Quotation implements OnInit, OnDestroy {
     const sortText = BuildSortText(event);
     this.Query.OrderBy = sortText ? sortText : 'CreatedAt desc';
 
-    this.Query.Filter =
-      !this.permissions().canUpdate && !this.permissions().canCreate
-        ? `${BuildFilterText(event)},Status=Accepted`
-        : BuildFilterText(event);
+    this.Query.Filter = BuildFilterText(event);
 
     this.GetData();
   }
@@ -1241,10 +1230,7 @@ export class Quotation implements OnInit, OnDestroy {
       this.fTable.saveState();
     }
 
-    this.Query.Filter =
-      !this.permissions().canUpdate && !this.permissions().canCreate
-        ? 'Status=Accepted'
-        : null;
+    this.Query.Filter = null;
     this.GetData();
   }
 
@@ -1277,70 +1263,74 @@ export class Quotation implements OnInit, OnDestroy {
 
   onEllipsisClick(event: any, quotation: QuotationDto, menu: any) {
     const status = quotation.status;
-    const rights = this.permissions();
 
     this.menuItems = [];
 
-    if (rights.canUpdate && status === 'Draft') {
-      this.menuItems.push({
-        label: 'Edit',
-        icon: 'pi pi-pencil',
-        command: () => this.ActionClick(quotation, 'Update'),
-      });
-    }
-
-    if (rights.canUpdateStatus) {
-      if (status === 'Draft') {
-        this.menuItems.push({
-          label: 'Reviewed',
+    if (status === 'Draft') {
+      this.menuItems.push(
+        {
+          label: 'Edit',
+          icon: 'pi pi-pencil',
+          command: () => this.ActionClick(quotation, 'Update'),
+        },
+        {
+          label: 'Review',
           icon: 'pi pi-file-edit',
-          command: () => this.ActionClick(quotation, 'Reviewed'),
-        });
-      }
-
-      if (status === 'Sent') {
-        this.menuItems.push(
-          // {
-          //   label: 'Convert to SO',
-          //   icon: 'pi pi-file',
-          //   command: () => this.ActionClick(quotation, 'Convert'),
-          // },
-          {
-            label: 'Rejected',
-            icon: 'pi pi-times-circle',
-            command: () => this.updateQuotationStatus(quotation.id, 'Rejected'),
-          },
-          {
-            label: 'View Details',
-            icon: 'pi pi-eye',
-            command: () => this.openDetailsDrawer(quotation),
-          },
-        );
-      }
-
-      if (status === 'Reviewed') {
-        this.menuItems.push(
-          {
-            label: 'Mark As Sent',
-            icon: 'pi pi-send',
-            command: () => this.updateQuotationStatus(quotation.id, 'Sent'),
-          },
-          {
-            label: 'Cancel',
-            icon: 'pi pi-times-circle',
-            command: () =>
-              this.updateQuotationStatus(quotation.id, 'Cancelled'),
-          },
-          {
-            label: 'View Details',
-            icon: 'pi pi-eye',
-            command: () => this.openDetailsDrawer(quotation),
-          },
-        );
-      }
+          command: () =>
+            this.router.navigate(['/quotations/details'], {
+              queryParams: { id: quotation.id },
+            }),
+        },
+      );
     }
 
-    if (rights.canDelete && status === 'Draft') {
+    if (status === 'Sent') {
+      this.menuItems.push(
+        // {
+        //   label: 'Convert to SO',
+        //   icon: 'pi pi-file',
+        //   command: () => this.ActionClick(quotation, 'Convert'),
+        // },
+        {
+          label: 'Rejected',
+          icon: 'pi pi-times-circle',
+          command: () => this.updateQuotationStatus(quotation.id, 'Rejected'),
+        },
+        {
+          label: 'View Details',
+          icon: 'pi pi-eye',
+          command: () =>
+            this.router.navigate(['/quotations/details'], {
+              queryParams: { id: quotation.id },
+            }),
+        },
+      );
+    }
+
+    if (status === 'Approved') {
+      this.menuItems.push(
+        {
+          label: 'Mark As Sent',
+          icon: 'pi pi-send',
+          command: () => this.updateQuotationStatus(quotation.id, 'Sent'),
+        },
+        {
+          label: 'Cancel',
+          icon: 'pi pi-times-circle',
+          command: () => this.updateQuotationStatus(quotation.id, 'Cancelled'),
+        },
+        {
+          label: 'View Details',
+          icon: 'pi pi-eye',
+          command: () =>
+            this.router.navigate(['/quotations/details'], {
+              queryParams: { id: quotation.id },
+            }),
+        },
+      );
+    }
+
+    if (status === 'Draft') {
       this.menuItems.push({
         label: 'Delete',
         icon: 'pi pi-trash',
@@ -1348,27 +1338,46 @@ export class Quotation implements OnInit, OnDestroy {
       });
     }
 
-    if (rights.canRead && status === 'Accepted') {
+    if (status === 'Accepted') {
       this.menuItems.push(
         {
           label: 'View Details',
           icon: 'pi pi-eye',
-          command: () => this.openDetailsDrawer(quotation),
+          command: () =>
+            this.router.navigate(['/quotations/details'], {
+              queryParams: { id: quotation.id },
+            }),
         },
         {
-          label: 'Download File',
-          icon: 'pi pi-file',
+          label: 'Download as PDF',
+          icon: 'pi pi-file-pdf',
           command: () => this.ActionClick(quotation, 'Download'),
         },
+        // { separator: true },
+        // {
+        //   label: 'Attach PO',
+        //   icon: 'pi pi-paperclip',
+        //   command: () => this.ActionClick(quotation, 'PO'),
+        // },
+        // {
+        //   label: 'Attach Work Order',
+        //   icon: 'pi pi-paperclip',
+        //   command: () => this.ActionClick(quotation, 'WO'),
+        // },
+        // {
+        //   label: 'Attach Bill',
+        //   icon: 'pi pi-paperclip',
+        //   command: () => this.ActionClick(quotation, 'Bill'),
+        // },
       );
-    } else if (
-      rights.canRead &&
-      (status === 'Rejected' || status == 'Expired')
-    ) {
+    } else if (status === 'Rejected' || status == 'Expired') {
       this.menuItems.push({
         label: 'View Details',
         icon: 'pi pi-eye',
-        command: () => this.openDetailsDrawer(quotation),
+        command: () =>
+          this.router.navigate(['/quotations/details'], {
+            queryParams: { id: quotation.id },
+          }),
       });
     }
 
@@ -1480,7 +1489,7 @@ export class Quotation implements OnInit, OnDestroy {
   buildTimeline(quotation: QuotationDto): any[] {
     const statusOrder = [
       'Draft',
-      'Reviewed',
+      'Approved',
       'Sent',
       'Accepted',
       'Rejected',

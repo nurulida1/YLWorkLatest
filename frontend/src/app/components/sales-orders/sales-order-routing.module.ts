@@ -9,17 +9,14 @@ const routes: Routes = [
   {
     path: '',
     component: SalesOrder,
-    canActivate: [permissionGuard('SALES_ORDER', 'canRead')],
   },
   {
     path: 'details',
     component: SalesOrderDetails,
-    canActivate: [permissionGuard('SALES_ORDER', 'canUpdateStatus')],
   },
   {
     path: 'reviews',
     component: SalesOrderReview,
-    canActivate: [permissionGuard('SALES_ORDER', 'canUpdateStatus')],
   },
 ];
 

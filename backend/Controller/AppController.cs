@@ -60,23 +60,26 @@ namespace YLWorks.Controller
                 // RESTOCK ALERT
                 // =====================
                 RestockAlerts = lowStock
-                    .Select(i => new InventoryRestockDto
-                    {
-                        Id = i.Id,
-                        Name = i.ItemName,
-                        Quantity = i.Quantity,
-                        ParLevel = i.ParLevel ?? 0,
-                        Section = i.Section == null
+    .Select(i => new InventoryRestockDto
+    {
+        Id = i.Id,
+        Name = i.ItemName,
+
+        Quantity = i.Quantity ?? 0m,   
+        ParLevel = i.ParLevel ?? 0,
+
+        Section = i.Section == null
             ? null
             : new SectionDto
             {
                 Name = i.Section.Name
             },
-                        Brand = i.Brand
-                    })
-                    .OrderBy(i => i.Quantity)
-                    .Take(5)
-                    .ToList(),
+
+        Brand = i.Brand
+    })
+    .OrderBy(i => i.Quantity)
+    .Take(5)
+    .ToList(),
 
                 // =====================
                 // CATEGORY CHART
@@ -93,6 +96,78 @@ namespace YLWorks.Controller
             };
 
             return Ok(result);
+        }
+
+        [HttpGet("GetSuperAdminDashboard")]
+        public async Task<IActionResult> GetSuperAdminDashboard()
+        {
+            var users = await _context.Users
+                .Include(x => x.Departments)
+                .ToListAsync();
+
+            var inventories = await _context.Inventories.ToListAsync();
+
+            var dashboard = new SuperAdminDashboardDto
+            {
+                TotalUsers = users.Count,
+
+                ActiveUsers = users.Count(x => x.IsActive),
+
+                InactiveUsers = users.Count(x => !x.IsActive),
+
+                PendingApprovals = users.Count(x => x.Status == "Pending"),
+
+                TotalDepartments = await _context.Departments.CountAsync(),
+
+                TotalInventoryItems = inventories.Count,
+
+                LowStockItems = inventories.Count(x =>
+                    x.Status == "In Stock"
+                    && x.ParLevel.HasValue
+                    && x.Quantity < x.ParLevel),
+
+                FaultyItems = inventories.Count(x =>
+                    x.Status == "Faulty"
+                    || x.Status == "Under Repair"),
+
+                PendingUsers = users
+                    .Where(x => x.Status == "Pending")
+                    .OrderByDescending(x => x.CreatedAt)
+                    .Take(5)
+                    .Select(x => new PendingUserDto
+                    {
+                        Id = x.Id,
+                        FullName = x.FullName,
+                        JobTitle = x.JobTitle ?? "-",
+                        Department = x.Departments
+                            .Select(d => d.Name)
+                            .FirstOrDefault() ?? "-",
+                        CreatedAt = x.CreatedAt
+                    })
+                    .ToList()
+            };
+
+            dashboard.Activities = await GetRecentActivities();
+
+            return Ok(dashboard);
+        }
+
+        private async Task<List<ActivityLogDto>> GetRecentActivities()
+        {
+            return await _context.ActivityLogs
+                .Include(x => x.User)
+                .OrderByDescending(x => x.CreatedAt)
+                .Take(10)
+                .Select(x => new ActivityLogDto
+                {
+                    Title = x.Action,
+                    Description = x.Description,
+                    User = x.User == null ? "System" : x.User.FullName,
+                    Date = x.CreatedAt,
+                    Icon = x.Icon,
+                    Color = x.Color
+                })
+                .ToListAsync();
         }
 
     }

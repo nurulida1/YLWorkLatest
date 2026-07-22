@@ -260,6 +260,7 @@ namespace YLWorks.Controller
                 
                     data.QuotationId,
                     data.PaymentTerms,
+                    data.PaymentTermType,
                     data.Remarks,
                     data.ProjectId,
                     Project = data.Project == null ? null : new
@@ -364,9 +365,9 @@ namespace YLWorks.Controller
                     SupplierId = request.SupplierId,
                     ClientId = request.ClientId,
                     PaymentTerms = request.PaymentTerms,
+                    PaymentTermType = request.PaymentTermType,
                     QuotationId = request.QuotationId,
                     ProjectId = request.ProjectId,
-                    PurchaseOrderId = request.PurchaseOrderId,
                     SalesOrderId = request.SalesOrderId,
                     Gross = request.Gross,
                     Discount = request.Discount,
@@ -388,7 +389,6 @@ namespace YLWorks.Controller
                     Id = Guid.NewGuid(),
                     PurchaseOrderId = po.Id,
                     SalesOrderItemId = x.SalesOrderItemId,
-                    InventoryId = x.InventoryId,
                     Item = x.Item,
                     Description = x.Description,
                     Quantity = x.Quantity,
@@ -530,9 +530,9 @@ namespace YLWorks.Controller
                 po.SupplierId = request.SupplierId;
                 po.ClientId = request.ClientId;
                 po.PaymentTerms = request.PaymentTerms;
+                po.PaymentTermType = request.PaymentTermType;
                 po.QuotationId = request.QuotationId;
                 po.ProjectId = request.ProjectId;
-                po.PurchaseOrderId = request.PurchaseOrderId;
                 po.SalesOrderId = request.SalesOrderId;
                 po.Gross = request.Gross;
                 po.Discount = request.Discount;
@@ -559,7 +559,6 @@ namespace YLWorks.Controller
                         Id = x.Id ?? Guid.NewGuid(),
                         PurchaseOrderId = po.Id,
                         SalesOrderItemId = x.SalesOrderItemId,
-                        InventoryId = x.InventoryId,
                         Item = x.Item,
                         Description = x.Description,
                         Quantity = x.Quantity,
@@ -598,39 +597,50 @@ namespace YLWorks.Controller
         [HttpDelete("Delete")]
         public async Task<IActionResult> Delete(Guid id)
         {
-            var po = await _context.PurchaseOrders
-                .Include(x => x.PurchaseOrderItems)
-                .FirstOrDefaultAsync(x => x.Id == id);
+            using var transaction = await _context.Database.BeginTransactionAsync();
 
-            if (po == null)
-                return NotFound();
-
-            foreach (var poItem in po.PurchaseOrderItems ?? new List<PurchaseOrderItem>())
+            try
             {
-                if (poItem.SalesOrderItemId != null)
+                var po = await _context.PurchaseOrders
+                    .Include(x => x.PurchaseOrderItems)
+                    .FirstOrDefaultAsync(x => x.Id == id);
+
+                if (po == null)
+                    return NotFound();
+
+                foreach (var poItem in po.PurchaseOrderItems ?? new List<PurchaseOrderItem>())
                 {
+                    if (poItem.SalesOrderItemId == null)
+                        continue;
+
                     var soItem = await _context.SalesOrderItems
                         .FirstOrDefaultAsync(x => x.Id == poItem.SalesOrderItemId);
 
-                    if (soItem != null)
-                    {
-                        soItem.QuantityRemaining += poItem.Quantity;
+                    if (soItem == null)
+                        continue;
 
-                        if (soItem.QuantityRemaining > soItem.Quantity)
-                            soItem.QuantityRemaining = soItem.Quantity.Value;
-                    }
+                    var qty = poItem.Quantity;
+
+                    soItem.QuantityAllocated = Math.Max(
+                        0,
+                        soItem.QuantityAllocated - qty
+                    );
                 }
+
+                _context.PurchaseOrderItems.RemoveRange(po.PurchaseOrderItems);
+                _context.PurchaseOrders.Remove(po);
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                return Ok(new { message = "PO deleted and SO allocation restored." });
             }
-
-            _context.PurchaseOrderItems.RemoveRange(po.PurchaseOrderItems);
-            _context.PurchaseOrders.Remove(po);
-
-            await _context.SaveChangesAsync();
-
-            return Ok(new { message = "PO deleted and SO quantities restored." });
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                return StatusCode(500, new { error = ex.Message });
+            }
         }
-
-
 
         private object MapToDto(PurchaseOrder q)
         {
@@ -643,6 +653,7 @@ namespace YLWorks.Controller
                 q.PODate,
                 q.POReceivedDate,
                 q.PaymentTerms,
+                q.PaymentTermType,
                 q.ProjectId,
                 Project = q.Project == null ? null : new
                 {
@@ -662,7 +673,6 @@ namespace YLWorks.Controller
                 q.TotalInWords,
                 q.Remarks,
                 q.Notes,
-                q.PurchaseOrderId,
                 q.SalesOrderId,
                 q.Status,
                 q.TermsAndCondition,
@@ -737,7 +747,16 @@ namespace YLWorks.Controller
                     }
                 },
 
-                PurchaseOrderItems = items.ToList()
+                PurchaseOrderItems = items.Select(i => new
+                {
+                    i.Id,
+                    i.Item,
+                    i.Description,
+                    i.Quantity,
+                    i.Unit,
+                    i.UnitPrice,
+                    i.TotalPrice
+                })
             };
         }
 
@@ -759,67 +778,6 @@ namespace YLWorks.Controller
 
             return entity;
         }
-
-        //[HttpPut("UpdateStatus")]
-        //public async Task<IActionResult> UpdateStatus(Guid id, string status, string? remarks = null)
-        //{
-        //    var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        //    if (string.IsNullOrEmpty(userIdClaim))
-        //        return Unauthorized(new { Error = "Invalid token." });
-
-        //    var actionUserId = Guid.Parse(userIdClaim);
-
-        //    var userName = await _context.Users
-        //        .Where(x => x.Id == actionUserId)
-        //        .Select(x => x.FullName)
-        //        .FirstOrDefaultAsync();
-
-        //    var po = await _context.PurchaseOrders
-        //        .FirstOrDefaultAsync(x => x.Id == id);
-
-        //    if (po == null)
-        //        return NotFound();
-
-        //    po.Status = status;
-
-        //    var finalRemark = !string.IsNullOrWhiteSpace(remarks)
-        //        ? remarks
-        //        : GenerateStatusRemark(status, userName ?? "System");
-
-        //    var history = new PurchaseOrderStatusHistory
-        //    {
-        //        Id = Guid.NewGuid(),
-        //        PurchaseOrderId = id,
-        //        Status = po.Status,
-        //        ActionUserId = actionUserId,
-        //        ActionAt = DateTimeHelper.Now(),
-        //        Remarks = finalRemark
-        //    };
-
-        //    _context.PurchaseOrderStatusHistories.Add(history);
-
-        //    await _context.SaveChangesAsync();
-
-        //    var result = await _context.PurchaseOrderStatusHistories
-        //        .Where(x => x.Id == history.Id)
-        //        .Include(x => x.ActionUser)
-        //        .Select(x => new
-        //        {
-        //            x.Id,
-        //            x.Status,
-        //            x.ActionAt,
-        //            x.Remarks,
-        //            ActionUser = x.ActionUser == null ? null : new
-        //            {
-        //                x.ActionUser.Id,
-        //                x.ActionUser.FullName,
-        //                x.ActionUser.DisplayName
-        //            }
-        //        })
-        //        .FirstOrDefaultAsync();
-
-        //    return Ok(result);
-        //}
 
         [HttpPut("UpdateStatus")]
         public async Task<IActionResult> UpdateStatus(Guid id, string status, string? remarks = null)
@@ -860,7 +818,7 @@ namespace YLWorks.Controller
             {
                 Id = Guid.NewGuid(),
                 PurchaseOrderId = id,
-                Status = po.Status,
+                Status = status,
                 ActionUserId = actionUserId,
                 ActionAt = DateTimeHelper.Now(),
                 Remarks = remarks ?? GenerateStatusRemark(status, userName ?? "System")
@@ -888,32 +846,44 @@ namespace YLWorks.Controller
 
                 var allocatedQty = poItem.Quantity;
 
-                soItem.QuantityRemaining += allocatedQty;
-
-                // Optional: if you're tracking ordered quantity
-                //soItem.OrderedQuantity -= allocatedQty;
+                soItem.QuantityAllocated = Math.Max(0, soItem.QuantityAllocated - allocatedQty);
             }
+
+            await _context.SaveChangesAsync();
         }
 
         private async Task AdjustSoAllocation(PurchaseOrder po, bool subtract)
         {
-            foreach (var poItem in po.PurchaseOrderItems)
+            if (po?.PurchaseOrderItems == null || !po.PurchaseOrderItems.Any())
+                return;
+
+            var grouped = po.PurchaseOrderItems
+                .Where(x => x.SalesOrderItemId != null)
+                .GroupBy(x => x.SalesOrderItemId);
+
+            foreach (var group in grouped)
             {
-                if (poItem.SalesOrderItemId == null) continue;
+                var soItemId = group.Key;
 
                 var soItem = await _context.SalesOrderItems
-                    .FirstOrDefaultAsync(x => x.Id == poItem.SalesOrderItemId);
+                    .FirstOrDefaultAsync(x => x.Id == soItemId);
 
-                if (soItem == null) continue;
+                if (soItem == null)
+                    continue;
 
-                var qty = poItem.Quantity;
+                var totalQty = group.Sum(x => x.Quantity);
 
-                soItem.QuantityOrdered = (soItem.QuantityOrdered ?? 0m) +
-                                         (subtract ? -qty : qty);
-
-                if (soItem.QuantityOrdered < 0)
-                    soItem.QuantityOrdered = 0;
+                if (subtract)
+                {
+                    soItem.QuantityAllocated = Math.Max(0, soItem.QuantityAllocated - totalQty);
+                }
+                else
+                {
+                    soItem.QuantityAllocated += totalQty;
+                }
             }
+
+            await _context.SaveChangesAsync();
         }
 
         private string GenerateStatusRemark(string status, string userName)
@@ -960,7 +930,11 @@ namespace YLWorks.Controller
             {
                 InvoiceNo = GenerateInvoiceNo("PUR"),
                 InvoiceDate = invoiceDate,
-                DueDate = invoiceDate.AddDays(GetTermsDays(po.PaymentTerms)),
+                DueDate = CalculateDueDate(
+    invoiceDate,
+    po.PaymentTerms,
+    po.PaymentTermType
+),
                 SupplierId = po.SupplierId,
                 PurchaseOrderId = po.Id,
                 Type = "Purchase",
@@ -991,6 +965,9 @@ namespace YLWorks.Controller
                 "FullyInvoiced";
 
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim))
+                return Unauthorized();
+
             var actionUserId = Guid.Parse(userIdClaim);
 
             _context.PurchaseOrderStatusHistories.Add(new PurchaseOrderStatusHistory
@@ -1014,19 +991,45 @@ namespace YLWorks.Controller
             });
         }
 
-        private int GetTermsDays(string? terms) => int.TryParse(terms, out int days) ? days : 30;
+        private DateTime? CalculateDueDate(DateTime? baseDate, int? terms, string? type)
+        {
+            if (baseDate == null || terms == null) return null;
+
+            return (type?.ToLower()) switch
+            {
+                "days" => baseDate.Value.AddDays(terms.Value),
+                "months" => baseDate.Value.AddMonths(terms.Value),
+                "years" => baseDate.Value.AddYears(terms.Value),
+                _ => baseDate.Value.AddDays(terms.Value) 
+            };
+        }
 
         private string GenerateInvoiceNo(string prefix)
         {
-            var datePart = DateTime.UtcNow.ToString("yyyyMMdd");
+            var today = DateTime.UtcNow.Date;
+            var tomorrow = today.AddDays(1);
 
-            var startOfDay = DateTime.UtcNow.Date;
-            var endOfDay = startOfDay.AddDays(1);
+            var lastNumber = _context.Invoices
+                .Where(x => x.CreatedAt >= today && x.CreatedAt < tomorrow)
+                .OrderByDescending(x => x.CreatedAt)
+                .Select(x => x.InvoiceNo)
+                .FirstOrDefault();
 
-            var countToday = _context.Invoices
-                .Count(x => x.CreatedAt >= startOfDay && x.CreatedAt < endOfDay);
+            int next = 1;
 
-            return $"{prefix}-{datePart}-{(countToday + 1):D4}";
+            if (!string.IsNullOrEmpty(lastNumber))
+            {
+                var parts = lastNumber.Split('-');
+
+                if (parts.Length == 3 && int.TryParse(parts[2], out int num))
+                {
+                    next = num + 1;
+                }
+            }
+
+            var datePart = today.ToString("yyyyMMdd");
+
+            return $"{prefix}-{datePart}-{next:D4}";
         }
 
         [HttpGet("GetDropdown")]
@@ -1151,7 +1154,7 @@ namespace YLWorks.Controller
                 return BadRequest("PO already completed");
 
             var remainingItems = po.PurchaseOrderItems
-                .Where(x => (x.Quantity - (x.ReceivedQuantity ?? 0)) > 0)
+                .Where(x => (x.Quantity - (x.ReceivedQuantity)) > 0)
                 .ToList();
 
             if (!remainingItems.Any())
@@ -1172,7 +1175,7 @@ namespace YLWorks.Controller
                 {
                     Id = Guid.NewGuid(),
                     PurchaseOrderItemId = item.Id,
-                    ReceivedQuantity = item.Quantity - (item.ReceivedQuantity ?? 0),
+                    ReceivedQuantity = item.Quantity - (item.ReceivedQuantity),
                     Remarks = "Auto received from PO"
                 }).ToList()
             };
@@ -1191,7 +1194,7 @@ namespace YLWorks.Controller
 
         private async Task<string> GenerateGRNNo()
         {
-            var year = DateTime.UtcNow.Year % 100;
+            var year = DateTime.UtcNow.Year;
 
             var last = await _context.GoodsReceivings
                 .Where(x => x.GRNNo.StartsWith("YL/GRN/"))
@@ -1268,6 +1271,26 @@ namespace YLWorks.Controller
             }
 
             return words.Trim();
+        }
+
+        private async Task RecalculateSoAllocation(Guid salesOrderItemId)
+        {
+            var totalAllocated = await _context.PurchaseOrderItems
+                .Where(x => x.SalesOrderItemId == salesOrderItemId)
+                .Join(_context.PurchaseOrders,
+                    poi => poi.PurchaseOrderId,
+                    po => po.Id,
+                    (poi, po) => new { poi, po })
+                .Where(x => x.po.Status == "Sent")
+                .SumAsync(x => x.poi.Quantity);
+
+            var soItem = await _context.SalesOrderItems
+                .FirstOrDefaultAsync(x => x.Id == salesOrderItemId);
+
+            if (soItem != null)
+            {
+                soItem.QuantityAllocated = totalAllocated;
+            }
         }
     }
 }

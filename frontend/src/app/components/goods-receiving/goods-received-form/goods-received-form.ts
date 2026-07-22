@@ -595,7 +595,7 @@ import { TextareaModule } from 'primeng/textarea';
           (onClick)="CancelClick()"
         ></p-button>
         <p-button
-          label="Submit GRN"
+          [label]="currentId ? 'Update GRN' : 'Submit GRN'"
           severity="info"
           icon="pi pi-check-circle"
           styleClass="px-4!"
@@ -633,6 +633,7 @@ export class GoodsReceivedForm implements OnInit, OnDestroy {
       grnNo: new FormControl<string | null>(null),
       purchaseOrderId: new FormControl<string | null>(null),
       supplierId: new FormControl<string | null>(null),
+      companyId: new FormControl<string | null>(null),
       receivedDate: new FormControl<Date | null>(null),
       supplierDONo: new FormControl<string | null>(null),
       supplierDODate: new FormControl<Date | null>(null),
@@ -689,6 +690,9 @@ export class GoodsReceivedForm implements OnInit, OnDestroy {
           const attachmentUrl = res.supplierDOAttachment
             ? res.supplierDOAttachment.replace(/\\/g, '/')
             : null;
+
+          this.receiveForm.get('id')?.enable();
+          this.receiveForm.get('id')?.patchValue(this.currentId);
 
           this.receiveForm.patchValue({
             ...res,
@@ -929,6 +933,9 @@ export class GoodsReceivedForm implements OnInit, OnDestroy {
     const formValues = this.receiveForm.getRawValue();
     const formData = new FormData();
 
+    if (this.currentId) {
+      formData.append('id', this.currentId);
+    }
     formData.append('purchaseOrderId', formValues.purchaseOrderId || '');
     formData.append('supplierId', formValues.supplierId || '');
     formData.append('grnNo', formValues.grnNo || '');
@@ -961,34 +968,43 @@ export class GoodsReceivedForm implements OnInit, OnDestroy {
 
     this.loadingService.start();
 
-    this.goodsReceivingService
-      .Create(formData)
-      .pipe(takeUntil(this.ngUnsubscribe))
-      .subscribe({
-        next: (res) => {
-          this.loadingService.stop();
+    const $request = this.currentId
+      ? this.goodsReceivingService.Update(formData)
+      : this.goodsReceivingService.Create(formData);
 
-          this.messageService.add({
-            severity: 'success',
-            summary: 'Success',
-            detail: 'Goods Received Note created successfully',
-          });
+    $request.pipe(takeUntil(this.ngUnsubscribe)).subscribe({
+      next: (res) => {
+        this.loadingService.stop();
 
-          this.CancelClick();
-        },
+        const isUpdate = !!this.currentId;
 
-        error: (err) => {
-          this.loadingService.stop();
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Success',
+          detail: isUpdate
+            ? `${res.grnNo} updated successfully`
+            : `Goods Received Note: ${res.grnNo} created successfully`,
+        });
 
-          this.messageService.add({
-            severity: 'error',
-            summary: 'Error',
-            detail: err?.error?.message || 'Failed to create GRN',
-          });
+        this.CancelClick();
+      },
 
-          this.cdr.markForCheck();
-        },
-      });
+      error: (err) => {
+        this.loadingService.stop();
+
+        const isUpdate = !!this.currentId;
+
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Error',
+          detail:
+            err?.error?.message ||
+            (isUpdate ? 'Failed to update GRN' : 'Failed to create GRN'),
+        });
+
+        this.cdr.markForCheck();
+      },
+    });
   }
 
   getRowGroup(index: number): FormGroup {

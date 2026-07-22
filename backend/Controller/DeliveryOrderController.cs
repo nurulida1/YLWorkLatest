@@ -202,7 +202,10 @@ namespace YLWorks.Controller
                   
                 };
 
-                return Ok(result);
+                if (data == null)
+                    return NotFound();
+
+                return Ok(MapToDto(data));
             }
             catch (Exception ex)
             {
@@ -286,7 +289,7 @@ namespace YLWorks.Controller
                 DeliveryOrderId = doEntity.Id,
                 Status = "Draft",
                 ActionUserId = Guid.Parse(userId),
-                ActionAt = DateTime.UtcNow,
+                ActionAt = DateTimeHelper.Now(),
                 Remarks = "Created"
             };
 
@@ -364,6 +367,7 @@ namespace YLWorks.Controller
 
             var entity = await _context.DeliveryOrders
                 .Include(x => x.DeliveryOrderItems)
+                .Include(x => x.DeliveryOrderStatusHistories)
                 .FirstOrDefaultAsync(x => x.Id == request.Id);
 
             if (entity == null)
@@ -376,30 +380,41 @@ namespace YLWorks.Controller
                 entity.DeliveredAt = DateTime.UtcNow;
             }
 
+            var history = new DeliveryOrderStatusHistory
+            {
+                Id = Guid.NewGuid(),
+                DeliveryOrderId = entity.Id,
+                Status = request.Status,
+                ActionUserId = userId,
+                Remarks = request.Remarks,
+                ActionAt = DateTimeHelper.Now()
+            };
+
+            _context.DeliveryOrderStatusHistories.Add(history);
+
             if (request.ProofImages?.Count > 0)
             {
                 var folder = Path.Combine("Uploads/DO/Proof");
-                if (!Directory.Exists(folder)) Directory.CreateDirectory(folder);
+                if (!Directory.Exists(folder))
+                    Directory.CreateDirectory(folder);
 
                 foreach (var file in request.ProofImages)
                 {
-                    var name = $"{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
-                    var path = Path.Combine(folder, name);
+                    var fileName = $"{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
+                    var fullPath = Path.Combine(folder, fileName);
 
-                    using var stream = new FileStream(path, FileMode.Create);
-                    await file.CopyToAsync(stream);
-
-                    var history = new DeliveryOrderStatusHistory
+                    using (var stream = new FileStream(fullPath, FileMode.Create))
                     {
-                        Id = Guid.NewGuid(),
-                        DeliveryOrderId = entity.Id,
-                        Status = request.Status,
-                        ActionUserId = userId,
-                        Remarks = request.Remarks,
-                        ActionAt = DateTime.UtcNow
-                    };
+                        await file.CopyToAsync(stream);
+                    }
 
-                    _context.DeliveryOrderStatusHistories.Add(history);
+                    //_context.DeliveryOrderProofImages.Add(new DeliveryOrderProofImage
+                    //{
+                    //    Id = Guid.NewGuid(),
+                    //    DeliveryOrderStatusHistoryId = history.Id,
+                    //    ImageUrl = $"Uploads/DO/Proof/{fileName}",
+                    //    Remarks = request.Remarks
+                    //});
                 }
             }
 
@@ -487,10 +502,8 @@ namespace YLWorks.Controller
         ClientId = x.ClientId,
         ClientName = x.Client != null ? x.Client.Name : null,
         PaymentTerms = x.PaymentTerms,
-        Execution = x.Execution,
-        WarrantyTerms = x.WarrantyTerms,
 
-        SalesOrderItems = x.SalesOrderItems.Where(i => i.Type == "Item")
+        SalesOrderItems = x.SalesOrderItems.Where(i => i.RowType == "LineItem")
             .Select(i => new SalesOrderItemDropdownDto
             {
                 Id = i.Id,
@@ -546,10 +559,10 @@ namespace YLWorks.Controller
         {
             var yearShort = DateTime.UtcNow.Year % 100; // 2026 -> 26
 
-            var lastDO = await _context.PurchaseOrders
-                .Where(q => q.PurchaseOrderNo.StartsWith($"YL/DO/") && q.PurchaseOrderNo.EndsWith($"/{yearShort}"))
+            var lastDO = await _context.DeliveryOrders
+                .Where(q => q.DeliveryOrderNo.StartsWith($"YL/DO/") && q.DeliveryOrderNo.EndsWith($"/{yearShort}"))
                 .OrderByDescending(q => q.CreatedAt)
-                .Select(q => q.PurchaseOrderNo)
+                .Select(q => q.DeliveryOrderNo)
                 .FirstOrDefaultAsync();
 
             int nextNumber = 1;
@@ -557,7 +570,7 @@ namespace YLWorks.Controller
             if (!string.IsNullOrEmpty(lastDO))
             {
                 var parts = lastDO.Split('/');
-                if (parts.Length >= 3 && int.TryParse(parts[2], out int lastNumber))
+                if (parts.Length == 4 && int.TryParse(parts[2], out int lastNumber))
                 {
                     nextNumber = lastNumber + 1;
                 }
@@ -648,7 +661,7 @@ namespace YLWorks.Controller
                     DeliveryOrderId = doEntity.Id,
                     Status = "Draft",
                     ActionUserId = Guid.Parse(userId),
-                    ActionAt = DateTime.UtcNow,
+                    ActionAt = DateTimeHelper.Now(),
                     Remarks = "Bulk Created"
                 };
 

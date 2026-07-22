@@ -10,6 +10,10 @@ using YLWorks.Model;
 using WebApplication1.Helpers;
 using System.Text;
 using ClosedXML.Excel;
+using System.Text.RegularExpressions;
+using GemBox.Pdf;
+using GemBox.Pdf.Html;
+using DocumentFormat.OpenXml.Vml.Spreadsheet;
 
 namespace YLWorks.Controller
 {
@@ -31,12 +35,12 @@ namespace YLWorks.Controller
 
         [HttpGet("GetMany")]
         public ActionResult<object> GetMany(
-int page = 1,
-int pageSize = 10,
-string? filter = null,
-string? orderBy = null,
-string? select = null,
-string? includes = null)
+    int page = 1,
+    int pageSize = 10,
+    string? filter = null,
+    string? orderBy = null,
+    string? select = null,
+    string? includes = null)
         {
             try
             {
@@ -45,9 +49,7 @@ string? includes = null)
                 if (!string.IsNullOrWhiteSpace(includes))
                 {
                     foreach (var include in includes.Split(',', StringSplitOptions.RemoveEmptyEntries))
-                    {
                         query = query.Include(include.Trim());
-                    }
                 }
 
                 if (!string.IsNullOrEmpty(filter))
@@ -56,6 +58,7 @@ string? includes = null)
                     Expression? finalExpression = null;
 
                     var orParts = filter.Split('|');
+
                     foreach (var orPart in orParts)
                     {
                         Expression? orExpression = null;
@@ -72,6 +75,7 @@ string? includes = null)
                             var propertyAccess = Expression.PropertyOrField(parameter, propertyName);
 
                             Expression condition;
+
                             if (propertyAccess.Type == typeof(string))
                             {
                                 var method = typeof(string).GetMethod("Contains", new[] { typeof(string) });
@@ -86,17 +90,25 @@ string? includes = null)
                             else if (propertyAccess.Type.IsEnum)
                             {
                                 var enumValue = Enum.Parse(propertyAccess.Type, valueStr);
-                                condition = Expression.Equal(propertyAccess, Expression.Constant(enumValue));
+                                condition = Expression.Equal(propertyAccess, Expression.Constant(enumValue, propertyAccess.Type));
                             }
                             else
                             {
-                                var convertedValue = Convert.ChangeType(valueStr, Nullable.GetUnderlyingType(propertyAccess.Type) ?? propertyAccess.Type);
-                                condition = Expression.Equal(propertyAccess, Expression.Constant(convertedValue, propertyAccess.Type));
+                                var convertedValue = Convert.ChangeType(valueStr,
+                                    Nullable.GetUnderlyingType(propertyAccess.Type) ?? propertyAccess.Type);
+
+                                condition = Expression.Equal(propertyAccess,
+                                    Expression.Constant(convertedValue, propertyAccess.Type));
                             }
 
-                            orExpression = orExpression == null ? condition : Expression.AndAlso(orExpression, condition);
+                            orExpression = orExpression == null
+                                ? condition
+                                : Expression.AndAlso(orExpression, condition);
                         }
-                        finalExpression = finalExpression == null ? orExpression : Expression.OrElse(finalExpression, orExpression);
+
+                        finalExpression = finalExpression == null
+                            ? orExpression
+                            : Expression.OrElse(finalExpression, orExpression);
                     }
 
                     if (finalExpression != null)
@@ -108,22 +120,24 @@ string? includes = null)
 
                 if (!string.IsNullOrEmpty(orderBy))
                 {
-                    bool descending = orderBy.EndsWith(" desc", StringComparison.OrdinalIgnoreCase);
-                    var propertyName = orderBy.Replace(" desc", "", StringComparison.OrdinalIgnoreCase).Trim();
-                    query = descending ? query.OrderByDescending(x => EF.Property<object>(x, propertyName))
-                                       : query.OrderBy(x => EF.Property<object>(x, propertyName));
+                    bool desc = orderBy.EndsWith(" desc", StringComparison.OrdinalIgnoreCase);
+                    var property = orderBy.Replace(" desc", "", StringComparison.OrdinalIgnoreCase).Trim();
+
+                    query = desc
+                        ? query.OrderByDescending(x => EF.Property<object>(x, property))
+                        : query.OrderBy(x => EF.Property<object>(x, property));
                 }
 
                 var now = DateTimeHelper.Now();
 
                 var expiredQuotes = query
+                    .AsEnumerable()
                     .Where(q =>
                         q.Status != "Expired" &&
-q.Status != "Accepted" &&
-q.Status != "Cancelled" &&
-                        q.QuotationDate != null &&
-                        q.ValidityDays != null &&
-                        q.QuotationDate.AddDays((double)q.ValidityDays) < now
+                        q.Status != "Accepted" &&
+                        q.Status != "Cancelled" &&
+                        q.DueDate.HasValue &&
+                        q.DueDate.Value < now
                     )
                     .ToList();
 
@@ -139,8 +153,7 @@ q.Status != "Cancelled" &&
                             QuotationId = q.Id,
                             Status = "Expired",
                             ActionAt = now,
-                            ActionUserId = null, 
-                            Remarks = "Quotation auto-expired after validity period."
+                            Remarks = "Quotation auto-expired based on due date."
                         });
                     }
 
@@ -149,28 +162,32 @@ q.Status != "Cancelled" &&
 
                 var totalElements = query.Count();
 
-                var items = query.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+                var items = query
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToList();
 
                 if (!string.IsNullOrEmpty(select))
                 {
-                    var selectedFields = select.Split(',').Select(f => f.Trim()).ToList();
+                    var fields = select.Split(',').Select(f => f.Trim()).ToList();
+
                     var projected = items.Select(item =>
                     {
                         var dict = new Dictionary<string, object?>();
-                        foreach (var field in selectedFields)
+
+                        foreach (var field in fields)
                         {
                             var prop = item.GetType().GetProperty(field);
                             dict[field] = prop?.GetValue(item);
                         }
+
                         return dict;
                     });
 
                     return Ok(new { Data = projected, TotalElements = totalElements });
                 }
 
-                var dtoItems = items.Select(item => item).ToList();
-
-                return Ok(new { Data = dtoItems, TotalElements = totalElements });
+                return Ok(new { Data = items, TotalElements = totalElements });
             }
             catch (Exception ex)
             {
@@ -178,74 +195,73 @@ q.Status != "Cancelled" &&
             }
         }
 
-
         [HttpGet("GetOne")]
         public async Task<IActionResult> GetOne(string? filter = null)
         {
             var query = _context.Quotations
                 .Include(x => x.QuotationItems)
+                .Include(x => x.QuotationStatusHistories)
+                .Include(x => x.FromCompany).ThenInclude(x => x.BillingAddress)
+                .Include(x => x.FromCompany).ThenInclude(x => x.DeliveryAddress)
+                .Include(x => x.Client).ThenInclude(x => x.BillingAddress)
+                .Include(x => x.Client).ThenInclude(x => x.DeliveryAddress)
+                .Include(x => x.TermsAndConditions).ThenInclude(t => t.TermsAndCondition)
+                .Include(x => x.QuotationOtherInformations)
+                .Include(x => x.CreatedBy)
                 .AsQueryable();
 
-            var filterValue = filter?.Split('=')[1];
+            if (string.IsNullOrWhiteSpace(filter))
+                return BadRequest("Filter is required");
 
-            if (!Guid.TryParse(filterValue, out Guid id))
-                return BadRequest("Invalid Id");
+            var parts = filter.Split('=', 2);
 
-            var data = await query
-    .Where(x => x.Id == id)
-    .Select(x => new
-    {
-        x.Id,
-        x.QuotationNo,
-        x.QuotationDate,
-        x.FromCompanyId,
-        x.ClientId,
-        x.SubTotal,
-        x.Discount,
-        x.TaxAmount,
-        x.TotalAmount,
-        x.PaymentTerms,
-        x.WarrantyTerms,
-        x.ValidityDays,
-        x.Execution,
-        x.Subject,
-        x.Status,
-        x.QuotationItems
-    })
-    .FirstOrDefaultAsync();
+            if (parts.Length != 2)
+                return BadRequest("Invalid filter format");
 
-            if (data == null) return NotFound();
+            var key = parts[0];
+            var value = parts[1];
+
+            Quotation? data;
+
+            if (key.Equals("Id", StringComparison.OrdinalIgnoreCase))
+            {
+                if (!Guid.TryParse(value, out Guid id))
+                    return BadRequest("Invalid Id");
+
+                data = await query.FirstOrDefaultAsync(x => x.Id == id);
+            }
+            else if (key.Equals("QuotationNo", StringComparison.OrdinalIgnoreCase))
+            {
+                data = await query.FirstOrDefaultAsync(x => x.QuotationNo == value);
+            }
+            else
+            {
+                return BadRequest("Unsupported filter type");
+            }
+
+            if (data == null)
+                return NotFound();
 
             var now = DateTimeHelper.Now();
 
-            if (data != null)
+            if (data.DueDate.HasValue &&
+                data.DueDate.Value < now &&
+                data.Status != "Expired" &&
+                data.Status != "Accepted" &&
+                data.Status != "Cancelled")
             {
-                var expiryDate = data.QuotationDate.AddDays(data.ValidityDays ?? 0);
+                data.Status = "Expired";
 
-                if (expiryDate < now &&
-    data.Status != "Expired" &&
-    data.Status != "Accepted" &&
-    data.Status != "Cancelled")
+                _context.QuotationStatusHistories.Add(new QuotationStatusHistory
                 {
-                    var quotation = await _context.Quotations.FindAsync(data.Id);
+                    Id = Guid.NewGuid(),
+                    QuotationId = data.Id,
+                    Status = "Expired",
+                    ActionAt = now,
+                    Remarks = "Quotation auto-expired based on due date."
+                });
 
-                    if (quotation != null)
-                    {
-                        quotation.Status = "Expired";
-
-                        _context.QuotationStatusHistories.Add(new QuotationStatusHistory
-                        {
-                            Id = Guid.NewGuid(),
-                            QuotationId = quotation.Id,
-                            Status = "Expired",
-                            ActionAt = now,
-                            ActionUserId = null,
-                            Remarks = "Quotation auto-expired after validity period."
-                        });
-
-                        await _context.SaveChangesAsync();
-                    }
-                }
+                await _context.SaveChangesAsync();
             }
 
             return Ok(data);
@@ -256,23 +272,16 @@ q.Status != "Cancelled" &&
             return new QuotationItemDto
             {
                 Id = item.Id,
-                Type = item.Type,
-                ItemType = item.ItemType,
-                IsGroup = item.IsGroup,
+                RowType = item.RowType,
+                ProductServiceId = item.ProductServiceId,
                 Item = item.Item,
                 Description = item.Description,
                 Quantity = item.Quantity,
                 Unit = item.Unit,
                 UnitPrice = item.UnitPrice,
                 Discount = item.Discount,
-                TaxRate = item.TaxRate,
                 TotalPrice = item.TotalPrice,
-                SortOrder = item.SortOrder,
-                Children = allItems
-                    .Where(child => child.ParentId == item.Id)
-                    .OrderBy(child => child.SortOrder)
-                    .Select(child => MapToItemDto(child, allItems))
-                    .ToList()
+                SortOrder = item.SortOrder
             };
         }
 
@@ -280,13 +289,18 @@ q.Status != "Cancelled" &&
         public async Task<ActionResult<object>> Create([FromBody] CreateQuotationRequest request)
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(userIdClaim)) return Unauthorized(new { Error = "Invalid token." });
+            if (string.IsNullOrEmpty(userIdClaim))
+                return Unauthorized(new { Error = "Invalid token." });
 
             try
             {
+                var userId = Guid.Parse(userIdClaim);
+
+                var quotationId = Guid.NewGuid();
+
                 var quotation = new Quotation
                 {
-                    Id = Guid.NewGuid(),
+                    Id = quotationId,
                     QuotationNo = request.QuotationNo ?? await GenerateQuotationNo(),
                     QuotationDate = request.QuotationDate,
                     FromCompanyId = request.FromCompanyId,
@@ -298,39 +312,158 @@ q.Status != "Cancelled" &&
                     TaxAmount = request.TaxAmount,
                     TotalAmount = request.TotalAmount,
                     PaymentTerms = request.PaymentTerms,
-                    ValidityDays = request.ValidityDays,
-                    Execution = request.Execution,
-                    WarrantyTerms = request.WarrantyTerms,
+                    Validity = request.Validity,
+                    ValidityType = request.ValidityType,
+                    DueDate = CalculateDueDate(request.QuotationDate, request.Validity, request.ValidityType),
                     Status = "Draft",
-                    CreatedById = Guid.Parse(userIdClaim),
+                    CreatedById = userId,
                     CreatedAt = DateTimeHelper.Now()
                 };
 
-                quotation.QuotationItems = ProcessRequestItems(request.QuotationItems, quotation.Id, null);
+                var items = new List<QuotationItems>();
 
-                var statusHistory = new QuotationStatusHistory
+                foreach (var x in request.QuotationItems ?? new())
+                {
+                    Guid? productId = x.ProductServiceId;
+
+                    if (!productId.HasValue && !string.IsNullOrWhiteSpace(x.Item))
+                    {
+                        var existingProduct = await _context.ProductServices
+                            .FirstOrDefaultAsync(p =>
+                                p.ItemCode.ToLower() == x.Item.ToLower());
+
+                        if (existingProduct != null)
+                        {
+                            productId = existingProduct.Id;
+                        }
+                        else
+                        {
+                            var newProduct = new ProductService
+                            {
+                                Id = Guid.NewGuid(),
+                                ItemCode = x.Item,
+                                Description = x.Description,
+                                Unit = x.Unit,
+                                Price = x.UnitPrice,
+                                Type = x.RowType,
+                            };
+
+                            _context.ProductServices.Add(newProduct);
+                            productId = newProduct.Id;
+                        }
+                    }
+
+                    items.Add(new QuotationItems
+                    {
+                        Id = Guid.NewGuid(),
+                        QuotationId = quotationId,
+                        ProductServiceId = productId,
+                        RowType = x.RowType,
+                        Item = x.Item,
+                        Description = x.Description,
+                        Quantity = x.Quantity,
+                        Unit = x.Unit,
+                        UnitPrice = x.UnitPrice,
+                        Discount = x.Discount,
+                        TotalPrice = x.TotalPrice,
+                        SortOrder = x.SortOrder
+                    });
+                }
+
+                quotation.QuotationItems = items;
+
+                _context.QuotationStatusHistories.Add(new QuotationStatusHistory
                 {
                     Id = Guid.NewGuid(),
-                    QuotationId = quotation.Id,
+                    QuotationId = quotationId,
                     Status = "Draft",
                     ActionAt = DateTimeHelper.Now(),
-                    ActionUserId = Guid.Parse(userIdClaim),
-                    Remarks = "Quotation created",
-                };
+                    ActionUserId = userId,
+                    Remarks = "Quotation created"
+                });
 
                 _context.Quotations.Add(quotation);
-                _context.QuotationStatusHistories.Add(statusHistory);
+
+                if (request.TermsAndConditions?.Any() == true)
+                {
+                    var quotationTerms = new List<QuotationTermsAndCondition>();
+
+                    foreach (var x in request.TermsAndConditions.OrderBy(t => t.SortOrder))
+                    {
+                        Guid termId;
+
+                        if (x.Id.HasValue)
+                        {
+                            termId = x.Id.Value;
+                        }
+                        else
+                        {
+                            if (string.IsNullOrWhiteSpace(x.Title))
+                                continue;
+
+                            var existingTerm = await _context.TermsAndConditions
+                                .FirstOrDefaultAsync(t =>
+                                    t.Title.Trim().ToLower() == x.Title.Trim().ToLower());
+
+                            if (existingTerm != null)
+                            {
+                                termId = existingTerm.Id;
+                            }
+                            else
+                            {
+                                var newTerm = new TermsAndCondition
+                                {
+                                    Id = Guid.NewGuid(),
+                                    Title = x.Title.Trim(),
+                                    Description = x.Description ?? ""
+                                };
+
+                                _context.TermsAndConditions.Add(newTerm);
+                                termId = newTerm.Id;
+                            }
+                        }
+
+                        quotationTerms.Add(new QuotationTermsAndCondition
+                        {
+                            Id = Guid.NewGuid(),
+                            QuotationId = quotationId,
+                            TermsAndConditionId = termId,
+                            SortOrder = x.SortOrder
+                        });
+                    }
+
+                    _context.QuotationTermsAndConditions.AddRange(quotationTerms);
+                }
+
+                if (request.QuotationOtherInformations?.Any() == true)
+                {
+                    _context.QuotationOtherInformations.AddRange(
+                        request.QuotationOtherInformations.Select((x, index) => new QuotationOtherInformation
+                        {
+                            Id = Guid.NewGuid(),
+                            QuotationId = quotationId,
+                            Key = x.Key,
+                            Value = x.Value,
+                            SortOrder = index + 1
+                        })
+                    );
+                }
 
                 await _context.SaveChangesAsync();
 
-                var result = MapToDto(quotation); 
+                var result = MapToDto(quotation);
+
                 await _hub.Clients.All.SendAsync("QuotationAdded", result);
 
                 return Ok(result);
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { Error = "Failed to create.", Details = ex.Message });
+                return StatusCode(500, new
+                {
+                    Error = "Failed to create.",
+                    Details = ex.Message
+                });
             }
         }
 
@@ -344,26 +477,18 @@ q.Status != "Cancelled" &&
                 {
                     Id = itemId,
                     QuotationId = quotationId,
-                    ParentId = parentId,
-                    IsGroup = req.IsGroup,
-                    Type = req.Type,
-                    ItemType = req.ItemType,
+                    ProductServiceId = req.ProductServiceId,
+                    RowType = req.RowType,
                     Item = req.Item,
                     Description = req.Description,
                     Quantity = req.Quantity,
                     Unit = req.Unit,
                     UnitPrice = req.UnitPrice,
                     Discount = req.Discount,
-                    TaxRate = req.TaxRate,
                     TotalPrice = req.TotalPrice,
                     SortOrder = req.SortOrder,
                     CreatedAt = DateTimeHelper.Now()
                 };
-
-                if (req.Children?.Any() == true)
-                {
-                    newItem.Children = ProcessRequestItems(req.Children, quotationId, itemId);
-                }
 
                 items.Add(newItem);
             }
@@ -375,6 +500,8 @@ q.Status != "Cancelled" &&
         {
             var quotation = await _context.Quotations
                 .Include(q => q.QuotationItems)
+                .Include(q => q.TermsAndConditions)
+                .Include(q => q.QuotationOtherInformations)
                 .FirstOrDefaultAsync(q => q.Id == request.Id);
 
             if (quotation == null)
@@ -391,9 +518,9 @@ q.Status != "Cancelled" &&
             quotation.FromCompanyId = request.FromCompanyId;
             quotation.ProjectCode = request.ProjectCode;
             quotation.PaymentTerms = request.PaymentTerms;
-            quotation.ValidityDays = request.ValidityDays;
-            quotation.Execution = request.Execution;
-            quotation.WarrantyTerms = request.WarrantyTerms;
+            quotation.Validity = request.Validity;
+            quotation.ValidityType = request.ValidityType;
+            quotation.DueDate = CalculateDueDate(request.QuotationDate, request.Validity, request.ValidityType);
             quotation.UpdatedAt = DateTimeHelper.Now();
 
             var existingItems = _context.QuotationItems
@@ -401,38 +528,140 @@ q.Status != "Cancelled" &&
 
             _context.QuotationItems.RemoveRange(existingItems);
 
-            await _context.SaveChangesAsync();
+            var newItems = new List<QuotationItems>();
 
-            var newItems = ProcessRequestItems(
-                request.QuotationItems?
-                    .Select(x => new QuotationItemRequest
+            foreach (var x in request.QuotationItems ?? new())
+            {
+                Guid? productId = x.ProductServiceId;
+
+                if (!productId.HasValue && !string.IsNullOrWhiteSpace(x.Item))
+                {
+                    var itemName = x.Item.Trim();
+
+                    var existingProduct = await _context.ProductServices
+                        .FirstOrDefaultAsync(p => p.ItemCode == itemName);
+
+                    if (existingProduct != null)
                     {
-                        Id = x.Id,
-                        IsGroup = x.IsGroup,
-                        Type = x.Type,
-                        ItemType = x.ItemType,
-                        Item = x.Item,
-                        Description = x.Description,
-                        Quantity = x.Quantity,
-                        Unit = x.Unit,
-                        UnitPrice = x.UnitPrice,
-                        Discount = x.Discount,
-                        TaxRate = x.TaxRate,
-                        TotalPrice = x.TotalPrice,
-                        SortOrder = x.SortOrder,
-                        ParentId = x.ParentId,
-                        Children = x.Children
-                    })
-                    .ToList() ?? new List<QuotationItemRequest>(),
-                quotation.Id,
-                null
-            );
+                        productId = existingProduct.Id;
+                    }
+                    else
+                    {
+                        var newProduct = new ProductService
+                        {
+                            Id = Guid.NewGuid(),
+                            ItemCode = itemName,
+                            Description = x.Description,
+                            Unit = x.Unit,
+                            Price = x.UnitPrice,
+                            Type = x.RowType,
+                        };
+
+                        await _context.ProductServices.AddAsync(newProduct);
+                        await _context.SaveChangesAsync(); 
+
+                        productId = newProduct.Id;
+                    }
+                }
+            
+
+                newItems.Add(new QuotationItems
+                {
+                    Id = Guid.NewGuid(),
+                    QuotationId = quotation.Id,
+                    ProductServiceId = productId,
+                    RowType = x.RowType,
+                    Item = x.Item,
+                    Description = x.Description,
+                    Quantity = x.Quantity,
+                    Unit = x.Unit,
+                    UnitPrice = x.UnitPrice,
+                    Discount = x.Discount,
+                    TotalPrice = x.TotalPrice,
+                    SortOrder = x.SortOrder
+                });
+            }
 
             _context.QuotationItems.AddRange(newItems);
 
+            var existingTerms = _context.QuotationTermsAndConditions
+                .Where(x => x.QuotationId == quotation.Id);
+
+            _context.QuotationTermsAndConditions.RemoveRange(existingTerms);
+
+            if (request.TermsAndConditions?.Any() == true)
+            {
+                var quotationTerms = new List<QuotationTermsAndCondition>();
+
+                foreach (var x in request.TermsAndConditions.OrderBy(t => t.SortOrder))
+                {
+                    Guid termId;
+
+                    if (x.Id.HasValue)
+                        termId = x.Id.Value;
+                    else
+                    {
+                        var existingTerm = await _context.TermsAndConditions
+                            .FirstOrDefaultAsync(t =>
+                                t.Title.Trim().ToLower() == x.Title.Trim().ToLower());
+
+                        if (existingTerm != null)
+                            termId = existingTerm.Id;
+                        else
+                        {
+                            var newTerm = new TermsAndCondition
+                            {
+                                Id = Guid.NewGuid(),
+                                Title = x.Title.Trim(),
+                                Description = x.Description ?? ""
+                            };
+
+                            _context.TermsAndConditions.Add(newTerm);
+                            termId = newTerm.Id;
+                        }
+                    }
+
+                    quotationTerms.Add(new QuotationTermsAndCondition
+                    {
+                        Id = Guid.NewGuid(),
+                        QuotationId = quotation.Id,
+                        TermsAndConditionId = termId,
+                        SortOrder = x.SortOrder
+                    });
+                }
+
+                _context.QuotationTermsAndConditions.AddRange(quotationTerms);
+            }
+
+            var existingInfos = _context.QuotationOtherInformations
+                .Where(x => x.QuotationId == quotation.Id);
+
+            _context.QuotationOtherInformations.RemoveRange(existingInfos);
+
+            if (request.QuotationOtherInformations?.Any() == true)
+            {
+                _context.QuotationOtherInformations.AddRange(
+                    request.QuotationOtherInformations.Select((x, index) => new QuotationOtherInformation
+                    {
+                        Id = Guid.NewGuid(),
+                        QuotationId = quotation.Id,
+                        Key = x.Key,
+                        Value = x.Value,
+                        SortOrder = index + 1
+                    })
+                );
+            }
+
             await _context.SaveChangesAsync();
 
-            return Ok(MapToDto(quotation));
+            var updatedQuotation = await _context.Quotations
+                .Include(q => q.QuotationItems)
+                .Include(q => q.TermsAndConditions)
+                    .ThenInclude(t => t.TermsAndCondition)
+                .Include(q => q.QuotationOtherInformations)
+                .FirstOrDefaultAsync(q => q.Id == quotation.Id);
+
+            return Ok(MapToDto(updatedQuotation));
         }
 
         private object MapToDto(Quotation q)
@@ -453,11 +682,33 @@ q.Status != "Cancelled" &&
                 q.Discount,
                 q.TotalAmount,
                 q.PaymentTerms,
-                q.ValidityDays,
-                q.Execution,
-                q.WarrantyTerms,
+                q.Validity,
+                q.ValidityType,
                 q.Status,
                 q.Remarks,
+                TermsAndConditions = q.TermsAndConditions?
+    .Where(t => t.TermsAndCondition != null)
+    .OrderBy(t => t.SortOrder)
+    .Select(t => new
+    {
+        t.TermsAndCondition.Id,
+        t.TermsAndCondition.Title,
+        t.TermsAndCondition.Description,
+        t.SortOrder
+    })
+    .ToList(),
+
+                QuotationOtherInformations = q.QuotationOtherInformations?
+    .OrderBy(x => x.SortOrder)
+    .Select(o => new
+    {
+        o.Id,
+        o.Key,
+        o.Value,
+        o.SortOrder
+    })
+    .ToList(),
+
                 QuotationStatusHistories = q.QuotationStatusHistories.OrderByDescending(h => h.ActionAt).Select(i => new
                 {
                     i.Id,
@@ -468,7 +719,6 @@ q.Status != "Cancelled" &&
                     i.SignatureImage
                 }),
                 QuotationItems = q.QuotationItems
-                    .Where(i => i.ParentId == null || i.ParentId == Guid.Empty)
                     .OrderBy(i => i.SortOrder)
                     .Select(i => MapItemRecursive(i, q.QuotationItems))
                     .ToList()
@@ -480,23 +730,15 @@ q.Status != "Cancelled" &&
             return new
             {
                 item.Id,
-                item.Type, 
-                item.ItemType,
-                item.IsGroup,
+                item.RowType,
                 item.Item,
                 item.Description,
                 item.Quantity,
                 item.Unit,
                 item.UnitPrice,
                 item.Discount,
-                item.TaxRate,
                 item.TotalPrice,
-                item.SortOrder,
-                Children = allItems
-                    .Where(c => c.ParentId == item.Id)
-                    .OrderBy(c => c.SortOrder)
-                    .Select(c => MapItemRecursive(c, allItems))
-                    .ToList()
+                item.SortOrder
             };
         }
 
@@ -553,9 +795,8 @@ q.Status != "Cancelled" &&
                     Discount = source.Discount,
                     TotalAmount = source.TotalAmount,
                     PaymentTerms = source.PaymentTerms,
-                    ValidityDays = source.ValidityDays,
-                    Execution = source.Execution,
-                    WarrantyTerms = source.WarrantyTerms,
+                    Validity = source.Validity,
+                    ValidityType = source.ValidityType,
                     Remarks = $"Cloned from {source.QuotationNo}",
                     CreatedAt = DateTimeHelper.Now()
                 };
@@ -574,19 +815,13 @@ q.Status != "Cancelled" &&
                     {
                         Id = idMap[oldItem.Id],
                         QuotationId = clonedQuotation.Id,
-                        ParentId = oldItem.ParentId.HasValue && idMap.ContainsKey(oldItem.ParentId.Value)
-                                   ? idMap[oldItem.ParentId.Value]
-                                   : null,
-                        Type = oldItem.Type,
-                        ItemType = oldItem.ItemType,
-                        IsGroup = oldItem.IsGroup,
+                        RowType = oldItem.RowType,
                         Item = oldItem.Item,
                         Description = oldItem.Description,
                         Quantity = oldItem.Quantity,
                         Unit = oldItem.Unit,
                         UnitPrice = oldItem.UnitPrice,
                         Discount = oldItem.Discount,
-                        TaxRate = oldItem.TaxRate,
                         TotalPrice = oldItem.TotalPrice,
                         SortOrder = oldItem.SortOrder,
                         CreatedAt = DateTimeHelper.Now()
@@ -621,7 +856,7 @@ q.Status != "Cancelled" &&
                 return StatusCode(500, new { Error = "Cloning failed", Details = ex.Message });
             }
         }
-        
+
         private async Task<string> GenerateQuotationNo()
         {
             var yearShort = DateTime.UtcNow.Year % 100; // 2026 -> 26
@@ -651,7 +886,7 @@ q.Status != "Cancelled" &&
         {
             var quotationNo = await GenerateQuotationNo();
             return Ok(new { quotationNo });
-        
+
         }
 
         [HttpDelete("Delete")]
@@ -796,7 +1031,7 @@ q.Status != "Cancelled" &&
                     SalesOrderNo = await GenerateSalesOrderNo(),
                     QuotationId = quotation.Id,
                     ClientId = quotation.ClientId,
-                    CompanyId = quotation.FromCompanyId, 
+                    CompanyId = quotation.FromCompanyId,
                     SODate = DateTimeHelper.Now(),
                     Status = "Draft",
                     SubTotal = quotation.SubTotal,
@@ -806,8 +1041,6 @@ q.Status != "Cancelled" &&
                     Notes = $"Converted from Quotation {quotation.QuotationNo}.",
                     Remarks = request.Remarks,
                     PaymentTerms = quotation.PaymentTerms,
-                    WarrantyTerms = quotation.WarrantyTerms,
-                    Execution = quotation.Execution,
 
                     ClientPONumber = request.ClientPONumber,
                     ClientPODate = request.ClientPODate,
@@ -818,7 +1051,6 @@ q.Status != "Cancelled" &&
                 };
 
                 var oldRootItems = quotation.QuotationItems
-                    .Where(i => i.ParentId == null || i.ParentId == Guid.Empty)
                     .OrderBy(i => i.SortOrder)
                     .ToList();
 
@@ -837,7 +1069,7 @@ q.Status != "Cancelled" &&
                 quotation.Status = "Accepted";
                 quotation.Remarks = $"Converted into Sales Order {salesOrder.SalesOrderNo}";
 
-                var quotationHistory = new QuotationStatusHistory 
+                var quotationHistory = new QuotationStatusHistory
                 {
                     Id = Guid.NewGuid(),
                     QuotationId = quotation.Id,
@@ -865,50 +1097,39 @@ q.Status != "Cancelled" &&
         }
 
         private List<SalesOrderItem> ProcessConvertedItems(
-            IEnumerable<QuotationItems> currentLevelItems,
-            IEnumerable<QuotationItems> allSourceItems,
-            Guid salesOrderId,
-            Guid? parentId)
+     IEnumerable<QuotationItems> currentLevelItems,
+     IEnumerable<QuotationItems> allSourceItems,
+     Guid salesOrderId,
+     Guid? parentId)
         {
             var convertedList = new List<SalesOrderItem>();
 
             foreach (var qItem in currentLevelItems)
             {
                 var soItemId = Guid.NewGuid();
-                decimal qty = qItem.Quantity ?? 0m;
+
+                var qty = qItem.Quantity ?? 0m;
 
                 var newSoItem = new SalesOrderItem
                 {
                     Id = soItemId,
                     SalesOrderId = salesOrderId,
-                    ParentId = parentId,
-                    SortOrder = qItem.SortOrder,
-                    Type = qItem.Type,
-                    ItemType = qItem.ItemType,
-                    IsGroup = qItem.IsGroup,
+                    ProductServiceId = qItem.ProductServiceId,
+                    RowType = qItem.RowType,
                     Item = qItem.Item,
                     Description = qItem.Description,
-                    Unit = qItem.Unit,
                     Quantity = qItem.Quantity,
-
-                    QuantityDelivered = 0,
-                    QuantityRemaining = qty,
-
+                    Unit = qItem.Unit,
                     UnitPrice = qItem.UnitPrice,
                     Discount = qItem.Discount,
-                    TaxRate = qItem.TaxRate,
+                    TaxRate = 0,
                     TotalPrice = qItem.TotalPrice,
+
+                    SortOrder = qItem.SortOrder,
+
+                    QuantityDelivered = 0m
+
                 };
-
-                var targetChildren = allSourceItems
-                    .Where(c => c.ParentId == qItem.Id)
-                    .OrderBy(c => c.SortOrder)
-                    .ToList();
-
-                if (targetChildren.Any())
-                {
-                    newSoItem.Children = ProcessConvertedItems(targetChildren, allSourceItems, salesOrderId, soItemId);
-                }
 
                 convertedList.Add(newSoItem);
             }
@@ -918,7 +1139,7 @@ q.Status != "Cancelled" &&
 
         private async Task<string> GenerateSalesOrderNo()
         {
-            var yearShort = DateTime.UtcNow.Year % 100; 
+            var yearShort = DateTime.UtcNow.Year % 100;
 
             var lastSO = await _context.SalesOrders
                 .Where(so => so.SalesOrderNo.Contains("YL/SO/") && so.SalesOrderNo.EndsWith($"/{yearShort}"))
@@ -988,6 +1209,115 @@ q.Status != "Cancelled" &&
             return File(stream.ToArray(),
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 $"Quotations_{DateTime.Now:yyyyMMddHHmmss}.xlsx");
+        }
+
+
+        [HttpGet("GetDropdown")]
+        public async Task<IActionResult> GetQuoteDropdown(CancellationToken cancellationToken)
+        {
+            try
+            {
+                var companies = await _context.Companies
+                    .AsNoTracking()
+                    .Where(x => x.Type == CompanyType.Own || x.Type == CompanyType.Client)
+                    .OrderByDescending(x => x.Name)
+                    .Select(x => new
+                    {
+                        x.Id,
+                        x.Name,
+                        x.Type,
+                        x.BillingAddress,
+                        x.DeliveryAddress
+                    })
+                    .ToListAsync(cancellationToken);
+
+                var ownCompanies = companies
+                    .Where(x => x.Type == CompanyType.Own)
+                    .Select(x => new CompanyDropdownItem
+                    {
+                        Id = x.Id,
+                        Name = x.Name,
+                        BillingAddress = x.BillingAddress,
+                        DeliveryAddress = x.DeliveryAddress
+                    })
+                    .ToList();
+
+                var clients = companies
+                    .Where(x => x.Type == CompanyType.Client)
+                    .Select(x => new CompanyDropdownItem
+                    {
+                        Id = x.Id,
+                        Name = x.Name,
+                        BillingAddress = x.BillingAddress,
+                        DeliveryAddress = x.DeliveryAddress
+                    })
+                    .ToList();
+
+                var terms = await _context.TermsAndConditions
+                    .AsNoTracking()
+                    .OrderByDescending(x => x.Title)
+                    .Select(x => new TermsAndConditionOrderDto
+                    {
+                        Id = x.Id,
+                        Title = x.Title
+                    })
+                    .ToListAsync(cancellationToken);
+
+                var inventories = await _context.Inventories
+                    .AsNoTracking()
+                    .OrderBy(x => x.ItemName)
+                    .Select(x => new Inventory
+                    {
+                        Id = x.Id,
+                        ItemCode = x.ItemCode,
+                        ItemName = x.ItemName
+                    })
+                    .ToListAsync(cancellationToken);
+
+                var productServices = await _context.ProductServices
+                    .AsNoTracking()
+                    .OrderBy(x => x.Type)
+                    .ThenBy(x => x.ItemCode)
+                    .Select(x => new ProductService
+                    {
+                        Id = x.Id,
+                        ItemCode = x.ItemCode,
+                        Description = x.Description,
+                        Type = x.Type
+                    })
+                    .ToListAsync(cancellationToken);
+
+                return Ok(new
+                {
+                    Companies = ownCompanies,
+                    Clients = clients,
+                    TermsAndConditions = terms,
+                    Inventories = inventories,
+                    ProductAndServices = productServices
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    Error = "Failed to load dropdown",
+                    Details = ex.Message
+                });
+            }
+        }
+
+        private DateTime? CalculateDueDate(DateTime date, int? validity, string? validityType)
+        {
+            if (!validity.HasValue || validity <= 0 || string.IsNullOrWhiteSpace(validityType))
+                return null;
+
+            return validityType.ToLower() switch
+            {
+                "day" or "days" => date.AddDays(validity.Value),
+                "month" or "months" => date.AddMonths(validity.Value),
+                "year" or "years" => date.AddYears(validity.Value),
+                _ => null
+            };
         }
 
     }

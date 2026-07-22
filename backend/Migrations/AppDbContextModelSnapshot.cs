@@ -64,6 +64,54 @@ namespace YLWorks.Migrations
                     b.ToTable("AccessPermissions");
                 });
 
+            modelBuilder.Entity("YLWorks.Model.ActivityLog", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Color")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Icon")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Module")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("char(36)");
+
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("char(36)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("ActivityLogs");
+                });
+
             modelBuilder.Entity("YLWorks.Model.Address", b =>
                 {
                     b.Property<Guid>("Id")
@@ -331,7 +379,7 @@ namespace YLWorks.Migrations
 
                     b.HasIndex("DeliveryOrderRMAId");
 
-                    b.ToTable("DORMAProofImage");
+                    b.ToTable("DORMAProofImages");
                 });
 
             modelBuilder.Entity("YLWorks.Model.DORMAStatusHistory", b =>
@@ -512,44 +560,6 @@ namespace YLWorks.Migrations
                     b.HasIndex("SalesOrderItemId");
 
                     b.ToTable("DeliveryOrderItems");
-                });
-
-            modelBuilder.Entity("YLWorks.Model.DeliveryOrderProofImage", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("char(36)");
-
-                    b.Property<DateTime?>("CreatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<Guid?>("CreatedById")
-                        .HasColumnType("char(36)");
-
-                    b.Property<Guid>("DeliveryOrderStatusHistoryId")
-                        .HasColumnType("char(36)");
-
-                    b.Property<string>("ImageUrl")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("Remarks")
-                        .HasColumnType("longtext");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<Guid?>("UpdatedById")
-                        .HasColumnType("char(36)");
-
-                    b.Property<DateTime>("UploadedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("DeliveryOrderStatusHistoryId");
-
-                    b.ToTable("DeliveryOrderProofImage");
                 });
 
             modelBuilder.Entity("YLWorks.Model.DeliveryOrderRMA", b =>
@@ -769,6 +779,9 @@ namespace YLWorks.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("char(36)");
 
+                    b.Property<Guid?>("CompanyId")
+                        .HasColumnType("char(36)");
+
                     b.Property<DateTime?>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
@@ -784,6 +797,9 @@ namespace YLWorks.Migrations
 
                     b.Property<decimal?>("Gross")
                         .HasColumnType("decimal(65,30)");
+
+                    b.Property<bool>("IsPostedToInventory")
+                        .HasColumnType("tinyint(1)");
 
                     b.Property<Guid>("PurchaseOrderId")
                         .HasColumnType("char(36)");
@@ -821,6 +837,8 @@ namespace YLWorks.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CompanyId");
+
                     b.HasIndex("CreatedById");
 
                     b.HasIndex("PurchaseOrderId");
@@ -847,6 +865,9 @@ namespace YLWorks.Migrations
 
                     b.Property<Guid>("GoodsReceivingId")
                         .HasColumnType("char(36)");
+
+                    b.Property<decimal?>("InvoiceQuantity")
+                        .HasColumnType("decimal(65,30)");
 
                     b.Property<Guid?>("PurchaseOrderItemId")
                         .HasColumnType("char(36)");
@@ -947,8 +968,8 @@ namespace YLWorks.Migrations
                     b.Property<Guid?>("CategoryId")
                         .HasColumnType("char(36)");
 
-                    b.Property<double?>("Costs")
-                        .HasColumnType("double");
+                    b.Property<decimal?>("Costs")
+                        .HasColumnType("decimal(65,30)");
 
                     b.Property<DateTime?>("CreatedAt")
                         .HasColumnType("datetime(6)");
@@ -978,14 +999,11 @@ namespace YLWorks.Migrations
                     b.Property<int?>("ParLevel")
                         .HasColumnType("int");
 
-                    b.Property<decimal>("Quantity")
-                        .HasColumnType("decimal(65,30)");
-
-                    b.Property<Guid?>("ReferenceId")
+                    b.Property<Guid?>("ProductServiceId")
                         .HasColumnType("char(36)");
 
-                    b.Property<string>("ReferenceType")
-                        .HasColumnType("longtext");
+                    b.Property<decimal?>("Quantity")
+                        .HasColumnType("decimal(65,30)");
 
                     b.Property<string>("Remarks")
                         .HasColumnType("longtext");
@@ -1000,6 +1018,10 @@ namespace YLWorks.Migrations
                         .HasColumnType("longtext");
 
                     b.Property<string>("Status")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("StockType")
+                        .IsRequired()
                         .HasColumnType("longtext");
 
                     b.Property<string>("Unit")
@@ -1019,6 +1041,8 @@ namespace YLWorks.Migrations
                     b.HasIndex("CreatedById");
 
                     b.HasIndex("LocationId");
+
+                    b.HasIndex("ProductServiceId");
 
                     b.HasIndex("SectionId");
 
@@ -1055,8 +1079,11 @@ namespace YLWorks.Migrations
                     b.Property<decimal?>("Discount")
                         .HasColumnType("decimal(65,30)");
 
-                    b.Property<DateTime>("DueDate")
+                    b.Property<DateTime?>("DueDate")
                         .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("GoodsReceivingId")
+                        .HasColumnType("char(36)");
 
                     b.Property<decimal?>("Gross")
                         .HasColumnType("decimal(65,30)");
@@ -1103,7 +1130,7 @@ namespace YLWorks.Migrations
                     b.Property<string>("TermsAndConditions")
                         .HasColumnType("longtext");
 
-                    b.Property<decimal?>("TotalAmount")
+                    b.Property<decimal>("TotalAmount")
                         .HasColumnType("decimal(65,30)");
 
                     b.Property<string>("Type")
@@ -1124,6 +1151,8 @@ namespace YLWorks.Migrations
                     b.HasIndex("CreatedById");
 
                     b.HasIndex("DeliveryOrderId");
+
+                    b.HasIndex("GoodsReceivingId");
 
                     b.HasIndex("ProjectId");
 
@@ -1160,6 +1189,9 @@ namespace YLWorks.Migrations
                     b.Property<decimal?>("Discount")
                         .HasColumnType("decimal(65,30)");
 
+                    b.Property<Guid?>("GoodsReceivingItemId")
+                        .HasColumnType("char(36)");
+
                     b.Property<Guid>("InvoiceId")
                         .HasColumnType("char(36)");
 
@@ -1183,6 +1215,8 @@ namespace YLWorks.Migrations
                         .HasColumnType("char(36)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("GoodsReceivingItemId");
 
                     b.HasIndex("InvoiceId");
 
@@ -1526,6 +1560,32 @@ namespace YLWorks.Migrations
                     b.ToTable("PasswordResetTokens");
                 });
 
+            modelBuilder.Entity("YLWorks.Model.PaymentTerm", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("Name")
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("char(36)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("PaymentTerms");
+                });
+
             modelBuilder.Entity("YLWorks.Model.Payments", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1593,6 +1653,53 @@ namespace YLWorks.Migrations
                     b.HasIndex("SupplierId");
 
                     b.ToTable("Payments");
+                });
+
+            modelBuilder.Entity("YLWorks.Model.ProductService", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("longtext");
+
+                    b.Property<Guid?>("InventoryId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<Guid?>("InventoryId1")
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("ItemCode")
+                        .HasColumnType("longtext");
+
+                    b.Property<decimal?>("Price")
+                        .HasColumnType("decimal(65,30)");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Unit")
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("char(36)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("InventoryId1");
+
+                    b.ToTable("ProductServices");
                 });
 
             modelBuilder.Entity("YLWorks.Model.Project", b =>
@@ -1692,6 +1799,196 @@ namespace YLWorks.Migrations
                     b.ToTable("ProjectMembers");
                 });
 
+            modelBuilder.Entity("YLWorks.Model.ProjectTask", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime?>("ActualStartDate")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Category")
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime?>("CompletedDate")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime?>("DueDate")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime?>("EstimatedEndDate")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime?>("EstimatedStartDate")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Priority")
+                        .HasColumnType("longtext");
+
+                    b.Property<int?>("Progress")
+                        .HasColumnType("int");
+
+                    b.Property<Guid?>("ProjectId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("Remarks")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Status")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("TaskCode")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("char(36)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProjectId");
+
+                    b.ToTable("ProjectTasks");
+                });
+
+            modelBuilder.Entity("YLWorks.Model.ProjectTaskAssignment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime?>("AssignedDate")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("char(36)");
+
+                    b.Property<Guid>("ProjectTaskId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("char(36)");
+
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("char(36)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProjectTaskId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("ProjectTaskAssignments");
+                });
+
+            modelBuilder.Entity("YLWorks.Model.ProjectTaskAttachment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("FilePath")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("FileType")
+                        .HasColumnType("longtext");
+
+                    b.Property<Guid>("ProjectTaskId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("char(36)");
+
+                    b.Property<Guid?>("UploadedById")
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime>("UploadedDate")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProjectTaskId");
+
+                    b.HasIndex("UploadedById");
+
+                    b.ToTable("ProjectTaskAttachments");
+                });
+
+            modelBuilder.Entity("YLWorks.Model.ProjectTaskChecklist", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime?>("CompletedDate")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("char(36)");
+
+                    b.Property<bool>("IsCompleted")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<Guid>("ProjectTaskId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("char(36)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProjectTaskId");
+
+                    b.ToTable("ProjectTaskChecklists");
+                });
+
             modelBuilder.Entity("YLWorks.Model.PurchaseOrder", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1737,13 +2034,13 @@ namespace YLWorks.Migrations
                     b.Property<DateTime?>("POReceivedDate")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<string>("PaymentTerms")
+                    b.Property<string>("PaymentTermType")
                         .HasColumnType("longtext");
 
-                    b.Property<Guid?>("ProjectId")
-                        .HasColumnType("char(36)");
+                    b.Property<int?>("PaymentTerms")
+                        .HasColumnType("int");
 
-                    b.Property<Guid?>("PurchaseOrderId")
+                    b.Property<Guid?>("ProjectId")
                         .HasColumnType("char(36)");
 
                     b.Property<string>("PurchaseOrderNo")
@@ -1775,8 +2072,8 @@ namespace YLWorks.Migrations
                     b.Property<string>("TotalInWords")
                         .HasColumnType("longtext");
 
-                    b.Property<int?>("TotalQuantity")
-                        .HasColumnType("int");
+                    b.Property<decimal?>("TotalQuantity")
+                        .HasColumnType("decimal(65,30)");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime(6)");
@@ -1819,11 +2116,11 @@ namespace YLWorks.Migrations
                     b.Property<decimal>("Discount")
                         .HasColumnType("decimal(65,30)");
 
-                    b.Property<Guid?>("InventoryId")
-                        .HasColumnType("char(36)");
-
                     b.Property<string>("Item")
                         .HasColumnType("longtext");
+
+                    b.Property<Guid?>("ProductServiceId")
+                        .HasColumnType("char(36)");
 
                     b.Property<Guid>("PurchaseOrderId")
                         .HasColumnType("char(36)");
@@ -1831,7 +2128,7 @@ namespace YLWorks.Migrations
                     b.Property<decimal>("Quantity")
                         .HasColumnType("decimal(65,30)");
 
-                    b.Property<decimal?>("ReceivedQuantity")
+                    b.Property<decimal>("ReceivedQuantity")
                         .HasColumnType("decimal(65,30)");
 
                     b.Property<Guid?>("SalesOrderItemId")
@@ -1855,7 +2152,7 @@ namespace YLWorks.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("InventoryId");
+                    b.HasIndex("ProductServiceId");
 
                     b.HasIndex("PurchaseOrderId");
 
@@ -1993,8 +2290,8 @@ namespace YLWorks.Migrations
                     b.Property<decimal?>("Discount")
                         .HasColumnType("decimal(65,30)");
 
-                    b.Property<string>("Execution")
-                        .HasColumnType("longtext");
+                    b.Property<DateTime?>("DueDate")
+                        .HasColumnType("datetime(6)");
 
                     b.Property<Guid>("FromCompanyId")
                         .HasColumnType("char(36)");
@@ -2041,10 +2338,10 @@ namespace YLWorks.Migrations
                     b.Property<Guid?>("UpdatedById")
                         .HasColumnType("char(36)");
 
-                    b.Property<int?>("ValidityDays")
+                    b.Property<int?>("Validity")
                         .HasColumnType("int");
 
-                    b.Property<string>("WarrantyTerms")
+                    b.Property<string>("ValidityType")
                         .HasColumnType("longtext");
 
                     b.HasKey("Id");
@@ -2078,16 +2375,10 @@ namespace YLWorks.Migrations
                     b.Property<decimal?>("Discount")
                         .HasColumnType("decimal(65,30)");
 
-                    b.Property<bool>("IsGroup")
-                        .HasColumnType("tinyint(1)");
-
                     b.Property<string>("Item")
                         .HasColumnType("longtext");
 
-                    b.Property<string>("ItemType")
-                        .HasColumnType("longtext");
-
-                    b.Property<Guid?>("ParentId")
+                    b.Property<Guid?>("ProductServiceId")
                         .HasColumnType("char(36)");
 
                     b.Property<decimal?>("Quantity")
@@ -2096,19 +2387,15 @@ namespace YLWorks.Migrations
                     b.Property<Guid>("QuotationId")
                         .HasColumnType("char(36)");
 
+                    b.Property<string>("RowType")
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
                     b.Property<int>("SortOrder")
                         .HasColumnType("int");
 
-                    b.Property<decimal?>("TaxRate")
-                        .HasColumnType("decimal(65,30)");
-
                     b.Property<decimal?>("TotalPrice")
                         .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("Type")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("varchar(20)");
 
                     b.Property<string>("Unit")
                         .HasColumnType("longtext");
@@ -2124,11 +2411,38 @@ namespace YLWorks.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ParentId");
+                    b.HasIndex("ProductServiceId");
 
                     b.HasIndex("QuotationId");
 
                     b.ToTable("QuotationItems");
+                });
+
+            modelBuilder.Entity("YLWorks.Model.QuotationOtherInformation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("Key")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<Guid>("QuotationId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Value")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("QuotationId");
+
+                    b.ToTable("QuotationOtherInformations");
                 });
 
             modelBuilder.Entity("YLWorks.Model.QuotationStatusHistory", b =>
@@ -2163,6 +2477,30 @@ namespace YLWorks.Migrations
                     b.HasIndex("QuotationId");
 
                     b.ToTable("QuotationStatusHistories");
+                });
+
+            modelBuilder.Entity("YLWorks.Model.QuotationTermsAndCondition", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<Guid>("QuotationId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("TermsAndConditionId")
+                        .HasColumnType("char(36)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("QuotationId");
+
+                    b.HasIndex("TermsAndConditionId");
+
+                    b.ToTable("QuotationTermsAndConditions");
                 });
 
             modelBuilder.Entity("YLWorks.Model.RolePermission", b =>
@@ -2248,9 +2586,6 @@ namespace YLWorks.Migrations
                     b.Property<decimal?>("Discount")
                         .HasColumnType("decimal(65,30)");
 
-                    b.Property<string>("Execution")
-                        .HasColumnType("longtext");
-
                     b.Property<string>("Notes")
                         .HasColumnType("longtext");
 
@@ -2283,7 +2618,7 @@ namespace YLWorks.Migrations
                     b.Property<decimal?>("TaxAmount")
                         .HasColumnType("decimal(65,30)");
 
-                    b.Property<decimal>("TotalAmount")
+                    b.Property<decimal?>("TotalAmount")
                         .HasColumnType("decimal(65,30)");
 
                     b.Property<DateTime?>("UpdatedAt")
@@ -2291,9 +2626,6 @@ namespace YLWorks.Migrations
 
                     b.Property<Guid?>("UpdatedById")
                         .HasColumnType("char(36)");
-
-                    b.Property<string>("WarrantyTerms")
-                        .HasColumnType("longtext");
 
                     b.HasKey("Id");
 
@@ -2320,43 +2652,25 @@ namespace YLWorks.Migrations
                     b.Property<decimal?>("Discount")
                         .HasColumnType("decimal(65,30)");
 
-                    b.Property<bool>("IncludeInDeliveryOrder")
-                        .HasColumnType("tinyint(1)");
-
-                    b.Property<Guid?>("InventoryId")
-                        .HasColumnType("char(36)");
-
-                    b.Property<bool>("IsGroup")
-                        .HasColumnType("tinyint(1)");
-
                     b.Property<string>("Item")
                         .HasColumnType("longtext");
 
-                    b.Property<string>("ItemType")
-                        .HasColumnType("longtext");
-
-                    b.Property<Guid?>("ParentId")
+                    b.Property<Guid?>("ProductServiceId")
                         .HasColumnType("char(36)");
 
-                    b.Property<decimal?>("QtyOnHand")
+                    b.Property<decimal?>("Quantity")
                         .HasColumnType("decimal(65,30)");
 
-                    b.Property<decimal?>("Quantity")
+                    b.Property<decimal>("QuantityAllocated")
                         .HasColumnType("decimal(65,30)");
 
                     b.Property<decimal>("QuantityDelivered")
                         .HasColumnType("decimal(65,30)");
 
-                    b.Property<decimal?>("QuantityOrdered")
-                        .HasColumnType("decimal(65,30)");
-
-                    b.Property<decimal>("QuantityRemaining")
-                        .HasColumnType("decimal(65,30)");
+                    b.Property<string>("RowType")
+                        .HasColumnType("longtext");
 
                     b.Property<Guid>("SalesOrderId")
-                        .HasColumnType("char(36)");
-
-                    b.Property<Guid?>("SalesOrderItemId")
                         .HasColumnType("char(36)");
 
                     b.Property<int>("SortOrder")
@@ -2368,10 +2682,6 @@ namespace YLWorks.Migrations
                     b.Property<decimal?>("TotalPrice")
                         .HasColumnType("decimal(65,30)");
 
-                    b.Property<string>("Type")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
                     b.Property<string>("Unit")
                         .HasColumnType("longtext");
 
@@ -2380,11 +2690,9 @@ namespace YLWorks.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("InventoryId");
+                    b.HasIndex("ProductServiceId");
 
                     b.HasIndex("SalesOrderId");
-
-                    b.HasIndex("SalesOrderItemId");
 
                     b.ToTable("SalesOrderItems");
                 });
@@ -2447,6 +2755,37 @@ namespace YLWorks.Migrations
                     b.ToTable("SectionInventories");
                 });
 
+            modelBuilder.Entity("YLWorks.Model.StockTransaction", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid>("InventoryId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<decimal>("Quantity")
+                        .HasColumnType("decimal(65,30)");
+
+                    b.Property<Guid>("ReferenceId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("ReferenceType")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("StockTransactions");
+                });
+
             modelBuilder.Entity("YLWorks.Model.SystemModule", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2478,6 +2817,35 @@ namespace YLWorks.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("SystemModules");
+                });
+
+            modelBuilder.Entity("YLWorks.Model.TermsAndCondition", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Title")
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("char(36)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("TermsAndConditions");
                 });
 
             modelBuilder.Entity("YLWorks.Model.User", b =>
@@ -2540,6 +2908,13 @@ namespace YLWorks.Migrations
 
                     b.Property<DateTime?>("RefreshTokenExpiryTime")
                         .HasColumnType("datetime(6)");
+
+                    b.Property<string>("RejectReason")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("longtext");
 
                     b.Property<string>("SystemRole")
                         .IsRequired()
@@ -2733,6 +3108,15 @@ namespace YLWorks.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("YLWorks.Model.ActivityLog", b =>
+                {
+                    b.HasOne("YLWorks.Model.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("YLWorks.Model.AttachmentDto", b =>
                 {
                     b.HasOne("YLWorks.Model.User", "UploadedBy")
@@ -2834,17 +3218,6 @@ namespace YLWorks.Migrations
                     b.Navigation("SalesOrderItem");
                 });
 
-            modelBuilder.Entity("YLWorks.Model.DeliveryOrderProofImage", b =>
-                {
-                    b.HasOne("YLWorks.Model.DeliveryOrderStatusHistory", "DeliveryOrderStatusHistory")
-                        .WithMany("ProofImages")
-                        .HasForeignKey("DeliveryOrderStatusHistoryId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("DeliveryOrderStatusHistory");
-                });
-
             modelBuilder.Entity("YLWorks.Model.DeliveryOrderRMA", b =>
                 {
                     b.HasOne("YLWorks.Model.Company", "ReceiverCompany")
@@ -2898,6 +3271,10 @@ namespace YLWorks.Migrations
 
             modelBuilder.Entity("YLWorks.Model.GoodsReceiving", b =>
                 {
+                    b.HasOne("YLWorks.Model.Company", "Company")
+                        .WithMany()
+                        .HasForeignKey("CompanyId");
+
                     b.HasOne("YLWorks.Model.User", "CreatedBy")
                         .WithMany()
                         .HasForeignKey("CreatedById");
@@ -2913,6 +3290,8 @@ namespace YLWorks.Migrations
                         .HasForeignKey("SupplierId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Company");
 
                     b.Navigation("CreatedBy");
 
@@ -2961,6 +3340,11 @@ namespace YLWorks.Migrations
                         .WithMany()
                         .HasForeignKey("LocationId");
 
+                    b.HasOne("YLWorks.Model.ProductService", "ProductService")
+                        .WithMany("Inventories")
+                        .HasForeignKey("ProductServiceId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("YLWorks.Model.SectionInventory", "Section")
                         .WithMany()
                         .HasForeignKey("SectionId");
@@ -2970,6 +3354,8 @@ namespace YLWorks.Migrations
                     b.Navigation("CreatedBy");
 
                     b.Navigation("Location");
+
+                    b.Navigation("ProductService");
 
                     b.Navigation("Section");
                 });
@@ -2991,6 +3377,10 @@ namespace YLWorks.Migrations
                     b.HasOne("YLWorks.Model.DeliveryOrder", "DeliveryOrder")
                         .WithMany()
                         .HasForeignKey("DeliveryOrderId");
+
+                    b.HasOne("YLWorks.Model.GoodsReceiving", "GoodsReceiving")
+                        .WithMany()
+                        .HasForeignKey("GoodsReceivingId");
 
                     b.HasOne("YLWorks.Model.Project", "Project")
                         .WithMany()
@@ -3020,6 +3410,8 @@ namespace YLWorks.Migrations
 
                     b.Navigation("DeliveryOrder");
 
+                    b.Navigation("GoodsReceiving");
+
                     b.Navigation("Project");
 
                     b.Navigation("PurchaseOrder");
@@ -3033,11 +3425,17 @@ namespace YLWorks.Migrations
 
             modelBuilder.Entity("YLWorks.Model.InvoiceItem", b =>
                 {
+                    b.HasOne("YLWorks.Model.GoodsReceivingItem", "GoodsReceivingItem")
+                        .WithMany()
+                        .HasForeignKey("GoodsReceivingItemId");
+
                     b.HasOne("YLWorks.Model.Invoice", "Invoice")
                         .WithMany("InvoiceItems")
                         .HasForeignKey("InvoiceId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("GoodsReceivingItem");
 
                     b.Navigation("Invoice");
                 });
@@ -3165,6 +3563,15 @@ namespace YLWorks.Migrations
                     b.Navigation("Supplier");
                 });
 
+            modelBuilder.Entity("YLWorks.Model.ProductService", b =>
+                {
+                    b.HasOne("YLWorks.Model.Inventory", "Inventory")
+                        .WithMany()
+                        .HasForeignKey("InventoryId1");
+
+                    b.Navigation("Inventory");
+                });
+
             modelBuilder.Entity("YLWorks.Model.Project", b =>
                 {
                     b.HasOne("YLWorks.Model.Company", "Client")
@@ -3211,6 +3618,61 @@ namespace YLWorks.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("YLWorks.Model.ProjectTask", b =>
+                {
+                    b.HasOne("YLWorks.Model.Project", "Project")
+                        .WithMany("ProjectTasks")
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Project");
+                });
+
+            modelBuilder.Entity("YLWorks.Model.ProjectTaskAssignment", b =>
+                {
+                    b.HasOne("YLWorks.Model.ProjectTask", "ProjectTask")
+                        .WithMany("AssignedTaskMembers")
+                        .HasForeignKey("ProjectTaskId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("YLWorks.Model.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId");
+
+                    b.Navigation("ProjectTask");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("YLWorks.Model.ProjectTaskAttachment", b =>
+                {
+                    b.HasOne("YLWorks.Model.ProjectTask", "ProjectTask")
+                        .WithMany("TaskAttachments")
+                        .HasForeignKey("ProjectTaskId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("YLWorks.Model.User", "UploadedBy")
+                        .WithMany()
+                        .HasForeignKey("UploadedById");
+
+                    b.Navigation("ProjectTask");
+
+                    b.Navigation("UploadedBy");
+                });
+
+            modelBuilder.Entity("YLWorks.Model.ProjectTaskChecklist", b =>
+                {
+                    b.HasOne("YLWorks.Model.ProjectTask", "ProjectTask")
+                        .WithMany("Checklists")
+                        .HasForeignKey("ProjectTaskId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ProjectTask");
+                });
+
             modelBuilder.Entity("YLWorks.Model.PurchaseOrder", b =>
                 {
                     b.HasOne("YLWorks.Model.Company", "Client")
@@ -3250,9 +3712,9 @@ namespace YLWorks.Migrations
 
             modelBuilder.Entity("YLWorks.Model.PurchaseOrderItem", b =>
                 {
-                    b.HasOne("YLWorks.Model.Inventory", "Inventory")
+                    b.HasOne("YLWorks.Model.ProductService", "ProductService")
                         .WithMany()
-                        .HasForeignKey("InventoryId");
+                        .HasForeignKey("ProductServiceId");
 
                     b.HasOne("YLWorks.Model.PurchaseOrder", "PurchaseOrder")
                         .WithMany("PurchaseOrderItems")
@@ -3264,7 +3726,7 @@ namespace YLWorks.Migrations
                         .WithMany()
                         .HasForeignKey("SalesOrderItemId");
 
-                    b.Navigation("Inventory");
+                    b.Navigation("ProductService");
 
                     b.Navigation("PurchaseOrder");
 
@@ -3338,10 +3800,9 @@ namespace YLWorks.Migrations
 
             modelBuilder.Entity("YLWorks.Model.QuotationItems", b =>
                 {
-                    b.HasOne("YLWorks.Model.QuotationItems", "Parent")
-                        .WithMany("Children")
-                        .HasForeignKey("ParentId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                    b.HasOne("YLWorks.Model.ProductService", "ProductService")
+                        .WithMany("QuotationItems")
+                        .HasForeignKey("ProductServiceId");
 
                     b.HasOne("YLWorks.Model.Quotation", "Quotation")
                         .WithMany("QuotationItems")
@@ -3349,7 +3810,18 @@ namespace YLWorks.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("Parent");
+                    b.Navigation("ProductService");
+
+                    b.Navigation("Quotation");
+                });
+
+            modelBuilder.Entity("YLWorks.Model.QuotationOtherInformation", b =>
+                {
+                    b.HasOne("YLWorks.Model.Quotation", "Quotation")
+                        .WithMany("QuotationOtherInformations")
+                        .HasForeignKey("QuotationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Quotation");
                 });
@@ -3369,6 +3841,25 @@ namespace YLWorks.Migrations
                     b.Navigation("ActionUser");
 
                     b.Navigation("Quotation");
+                });
+
+            modelBuilder.Entity("YLWorks.Model.QuotationTermsAndCondition", b =>
+                {
+                    b.HasOne("YLWorks.Model.Quotation", "Quotation")
+                        .WithMany("TermsAndConditions")
+                        .HasForeignKey("QuotationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("YLWorks.Model.TermsAndCondition", "TermsAndCondition")
+                        .WithMany()
+                        .HasForeignKey("TermsAndConditionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Quotation");
+
+                    b.Navigation("TermsAndCondition");
                 });
 
             modelBuilder.Entity("YLWorks.Model.RolePermission", b =>
@@ -3419,21 +3910,19 @@ namespace YLWorks.Migrations
 
             modelBuilder.Entity("YLWorks.Model.SalesOrderItem", b =>
                 {
-                    b.HasOne("YLWorks.Model.Inventory", "Inventory")
+                    b.HasOne("YLWorks.Model.ProductService", "ProductService")
                         .WithMany()
-                        .HasForeignKey("InventoryId");
+                        .HasForeignKey("ProductServiceId");
 
-                    b.HasOne("YLWorks.Model.SalesOrder", null)
+                    b.HasOne("YLWorks.Model.SalesOrder", "SalesOrder")
                         .WithMany("SalesOrderItems")
                         .HasForeignKey("SalesOrderId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("YLWorks.Model.SalesOrderItem", null)
-                        .WithMany("Children")
-                        .HasForeignKey("SalesOrderItemId");
+                    b.Navigation("ProductService");
 
-                    b.Navigation("Inventory");
+                    b.Navigation("SalesOrder");
                 });
 
             modelBuilder.Entity("YLWorks.Model.SalesOrderStatusHistory", b =>
@@ -3531,11 +4020,6 @@ namespace YLWorks.Migrations
                     b.Navigation("DORMAStatusHistories");
                 });
 
-            modelBuilder.Entity("YLWorks.Model.DeliveryOrderStatusHistory", b =>
-                {
-                    b.Navigation("ProofImages");
-                });
-
             modelBuilder.Entity("YLWorks.Model.GoodsReceiving", b =>
                 {
                     b.Navigation("GoodsReceivingItems");
@@ -3555,17 +4039,35 @@ namespace YLWorks.Migrations
                     b.Navigation("MaterialRequestStatusHistories");
                 });
 
+            modelBuilder.Entity("YLWorks.Model.ProductService", b =>
+                {
+                    b.Navigation("Inventories");
+
+                    b.Navigation("QuotationItems");
+                });
+
             modelBuilder.Entity("YLWorks.Model.Project", b =>
                 {
                     b.Navigation("MaterialRequest");
 
                     b.Navigation("ProjectMembers");
 
+                    b.Navigation("ProjectTasks");
+
                     b.Navigation("PurchaseOrders");
 
                     b.Navigation("Quotations");
 
                     b.Navigation("WorkOrders");
+                });
+
+            modelBuilder.Entity("YLWorks.Model.ProjectTask", b =>
+                {
+                    b.Navigation("AssignedTaskMembers");
+
+                    b.Navigation("Checklists");
+
+                    b.Navigation("TaskAttachments");
                 });
 
             modelBuilder.Entity("YLWorks.Model.PurchaseOrder", b =>
@@ -3588,12 +4090,11 @@ namespace YLWorks.Migrations
                 {
                     b.Navigation("QuotationItems");
 
-                    b.Navigation("QuotationStatusHistories");
-                });
+                    b.Navigation("QuotationOtherInformations");
 
-            modelBuilder.Entity("YLWorks.Model.QuotationItems", b =>
-                {
-                    b.Navigation("Children");
+                    b.Navigation("QuotationStatusHistories");
+
+                    b.Navigation("TermsAndConditions");
                 });
 
             modelBuilder.Entity("YLWorks.Model.SalesOrder", b =>
@@ -3607,11 +4108,6 @@ namespace YLWorks.Migrations
                     b.Navigation("SalesOrderItems");
 
                     b.Navigation("SalesOrderStatusHistories");
-                });
-
-            modelBuilder.Entity("YLWorks.Model.SalesOrderItem", b =>
-                {
-                    b.Navigation("Children");
                 });
 
             modelBuilder.Entity("YLWorks.Model.WorkOrder", b =>

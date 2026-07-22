@@ -21,10 +21,14 @@ namespace YLWorks.Model
         public bool IsActive { get; set; } = true;
         public Guid? HodId { get; set; }
         public User? Hod { get; set; }
+        public string Status { get; set; } = "Pending";
+        public string? RejectReason { get; set; }
 
         // Refresh token support
         public string? RefreshToken { get; set; }
         public DateTime? RefreshTokenExpiryTime { get; set; }
+        public ICollection<Notification> Notifications { get; set; }
+        = new List<Notification>();
     }
 
     public class LoginRequest
@@ -60,6 +64,7 @@ namespace YLWorks.Model
         public string? SystemRole { get; set; } = string.Empty;
         public string? Gender { get; set; } = string.Empty;
         public DateTime? JoinedDate { get; set; }
+        public string Status { get; set; } = "Approved";
         public Guid? HodId { get; set; }
         public List<Guid> DepartmentIds { get; set; } = new List<Guid>();
 
@@ -173,6 +178,39 @@ namespace YLWorks.Model
         public List<Guid>? DepartmentIds { get; set; }
         public string SystemRole { get; set; } = "Staff"; // e.g., SuperAdmin, Management, HOD, Executive, Support, Staff
         public string? Gender { get; set; }
+    }
+
+    public class StaffDashboardDto
+    {
+        public int TotalStaff { get; set; }
+
+        public int ActiveNow { get; set; }
+
+        public int Inactive { get; set; }
+
+        public List<DepartmentDistributionDto> DepartmentDistribution { get; set; } = [];
+    }
+
+    public class DepartmentDistributionDto
+    {
+        public Guid DepartmentId { get; set; }
+
+        public string Department { get; set; } = string.Empty;
+
+        public int Count { get; set; }
+    }
+
+    public class ApproveUserRequest
+    {
+        public Guid UserId { get; set; }
+        public List<Guid> DepartmentIds { get; set; } = new();
+        public string SystemRole { get; set; }
+    }
+
+    public class RejectUserRequest
+    {
+        public Guid UserId { get; set; }
+        public string? Reason { get; set; }
     }
 
 }

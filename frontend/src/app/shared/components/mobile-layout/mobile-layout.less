@@ -1,0 +1,29 @@
+@reference "tailwindcss";
+
+:host {
+  display: block;
+}
+
+.nav-item {
+  @apply flex flex-col items-center justify-center gap-1 text-gray-300 transition-all duration-200;
+}
+
+.nav-item i {
+  @apply text-2xl;
+}
+
+.nav-item span {
+  @apply text-xs;
+}
+
+.nav-item.active {
+  @apply text-blue-600 scale-105;
+}
+
+.nav-item.active i {
+  @apply text-blue-600;
+}
+
+.nav-item.active span {
+  @apply font-semibold;
+}

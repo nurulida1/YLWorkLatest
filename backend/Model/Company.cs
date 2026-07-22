@@ -30,7 +30,7 @@ namespace YLWorks.Model
         public string? SSTRegNo { get; set; }
         public string? SSMRegNo { get; set; }
         public CompanyType Type { get; set; }
-        public decimal BalancePayment { get; set; } = 0;
+        public decimal BalancePayment { get; set; } = 0m;
         public bool SameAsBillingAddress { get; set; }
 
         public bool IsActive { get; set; } = true;

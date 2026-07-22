@@ -22,6 +22,22 @@ namespace WebApplication1.Controllers
             _hub = hub;
         }
 
+        [HttpGet]
+        public async Task<IActionResult> GetNotifications()
+        {
+            var userId = int.Parse(
+                User.FindFirstValue(ClaimTypes.NameIdentifier)!
+            );
+
+
+            var notifications = await _context.Notifications
+                .Where(x => x.UserId == userId)
+                .OrderByDescending(x => x.CreatedAt)
+                .ToListAsync();
+
+
+            return Ok(notifications);
+        }
 
         [HttpGet("GetAll")]
         public async Task<IActionResult> GetNotifications([FromQuery] Guid userId, [FromQuery] bool unreadOnly = false)

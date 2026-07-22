@@ -94,3 +94,16 @@ export interface UpdateUserRequest {
 
   departmentIds?: string[];
 }
+
+export interface StaffDashboard {
+  totalStaff: number;
+  activeNow: number;
+  inactive: number;
+  departmentDistribution: DepartmentDistribution[];
+}
+
+export interface DepartmentDistribution {
+  departmentId: string;
+  department: string;
+  count: number;
+}

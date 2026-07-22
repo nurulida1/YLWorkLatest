@@ -10,6 +10,8 @@ export interface GoodsReceivingDto extends BaseModel {
   purchaseOrder: PurchaseOrderDto;
   supplierId?: string;
   supplier?: Supplier;
+  companyId?: string;
+  company?: CompanyDto;
   receivedDate: Date;
   supplierDONo: string;
   supplierDODate: Date;
@@ -21,6 +23,7 @@ export interface GoodsReceivingDto extends BaseModel {
   totalAmount: number;
   createdById: string;
   createdBy: UserDto;
+  isPostedToInventory: boolean;
   goodsReceivingItems: GoodsReceivingItem[];
 }
 
@@ -32,9 +35,9 @@ export interface GoodsReceivingItem extends BaseModel {
   receivedQuantity: number;
   unitPrice: number;
   unit: string;
-  discount: number;
   totalPrice: number;
   remarks: string;
+  invoiceQuantity: number;
 }
 
 export interface GoodsReceivingItemRequest {
@@ -51,6 +54,8 @@ export interface CreateGoodsReceivingRequest {
   grnNo: string;
   purchaseOrderId: string;
   supplierId: string;
+  companyId?: string;
+
   receivedDate: Date;
   supplierDONo: string;
   supplierDODate: Date;
@@ -78,6 +83,8 @@ export interface UpdateGoodsReceivingRequest {
   grnNo: string;
   purchaseOrderId: string;
   supplierId: string;
+  companyId?: string;
+
   receivedDate: Date;
   supplierDONo: string;
   supplierDODate: Date;
@@ -93,4 +100,14 @@ export interface GRNDropdownDto {
   purchaseOrders: PurchaseOrderDto[];
   suppliers: CompanyDto[];
   companies: CompanyDto[];
+}
+
+export interface CreateInvoiceFromGRNItemsRequest {
+  supplierId: string;
+  items: CreateInvoiceItemFromGRN[];
+}
+
+export interface CreateInvoiceItemFromGRN {
+  goodsReceivingItemId: string;
+  quantity: number;
 }

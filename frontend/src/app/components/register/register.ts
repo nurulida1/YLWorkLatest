@@ -41,17 +41,21 @@ import { DialogModule } from 'primeng/dialog';
     DialogModule,
   ],
   template: `<div
-      class="py-5 min-h-screen w-full flex flex-col justify-between items-center bg-[#F2F4F8]"
+      class="py-5 min-h-screen w-full flex flex-col justify-center items-center bg-[#F2F4F8]"
     >
-      <div class="flex flex-col justify-center items-center w-full">
+      @if (!successRegistered) {
         <div
-          class="w-[50%] xl:w-[32%] p-8 shadow-sm bg-white border border-gray-200 rounded-2xl flex flex-col"
+          class="w-[90%] xl:max-w-[32%] p-8 shadow-sm bg-white border border-gray-200 rounded-2xl flex flex-col"
         >
           <div class="flex flex-col items-center">
             <div
-              class="bg-[#202838] shadow-md rounded-md w-14 h-14 flex justify-center items-center p-2"
+              class="w-16 h-16 flex items-center justify-center p-3 rounded-2xl bg-sky-950 shadow-lg mb-2"
             >
-              <img src="assets/logo.png" alt="" class="w-full" />
+              <img
+                src="assets/yl-works-logo.png"
+                alt="YL Works Icon"
+                class="w-full h-full object-contain"
+              />
             </div>
             <div class="font-semibold tracking-widest text-xl pt-2">
               YL Works
@@ -70,22 +74,23 @@ import { DialogModule } from 'primeng/dialog';
             <div class="col-span-12 lg:col-span-6">
               <div class="flex flex-col gap-1">
                 <label for="" class="text-sm text-gray-600 tracking-wide"
-                  >First Name</label
+                  >Full Name</label
                 >
                 <input
                   type="text"
                   pInputText
                   class="w-full !py-2.5 !text-sm"
-                  formControlName="firstName"
+                  placeholder="Ahmad bin Abu"
+                  formControlName="fullName"
                 />
                 <div
                   *ngIf="
-                    FG.get('firstName')?.touched && FG.get('firstName')?.invalid
+                    FG.get('fullName')?.touched && FG.get('fullName')?.invalid
                   "
                   class="text-red-500 text-xs"
                 >
-                  <div *ngIf="FG.get('firstName')?.errors?.['required']">
-                    First Name is required.
+                  <div *ngIf="FG.get('fullName')?.errors?.['required']">
+                    Full Name is required.
                   </div>
                 </div>
               </div>
@@ -93,22 +98,24 @@ import { DialogModule } from 'primeng/dialog';
             <div class="col-span-12 lg:col-span-6">
               <div class="flex flex-col gap-1">
                 <label for="" class="text-sm text-gray-600 tracking-wide"
-                  >Last Name</label
+                  >Display Name</label
                 >
                 <input
                   type="text"
                   pInputText
+                  placeholder="Ahmad"
                   class="w-full !py-2.5 !text-sm"
-                  formControlName="lastName"
+                  formControlName="displayName"
                 />
                 <div
                   *ngIf="
-                    FG.get('lastName')?.touched && FG.get('lastName')?.invalid
+                    FG.get('displayName')?.touched &&
+                    FG.get('displayName')?.invalid
                   "
                   class="text-red-500 text-xs"
                 >
-                  <div *ngIf="FG.get('lastName')?.errors?.['required']">
-                    Last Name is required.
+                  <div *ngIf="FG.get('displayName')?.errors?.['required']">
+                    Display Name is required.
                   </div>
                 </div>
               </div>
@@ -121,6 +128,7 @@ import { DialogModule } from 'primeng/dialog';
                 <input
                   type="text"
                   pInputText
+                  placeholder="ahmad@ylsystems.com"
                   class="w-full !py-2.5 !text-sm"
                   formControlName="email"
                 />
@@ -140,19 +148,15 @@ import { DialogModule } from 'primeng/dialog';
             <div class="col-span-12">
               <div class="flex flex-col gap-1">
                 <label for="" class="text-sm text-gray-600 tracking-wide"
-                  >Role</label
+                  >Job Title</label
                 >
-                <p-select
-                  styleClass="!w-full !py-0.5 !text-sm"
-                  [options]="[
-                    { label: 'Director', value: 'Director' },
-                    { label: 'Manager', value: 'Manager' },
-                    { label: 'Admin', value: 'Admin' },
-                    { label: 'HR', value: 'HR' },
-                    { label: 'Staff', value: 'Staff' },
-                  ]"
-                  formControlName="role"
-                ></p-select>
+                <input
+                  type="text"
+                  pInputText
+                  formControlName="jobTitle"
+                  placeholder="Technical Support"
+                  class="w-full! text-sm! py-2.5!"
+                />
               </div>
             </div>
             <div class="col-span-12">
@@ -163,6 +167,7 @@ import { DialogModule } from 'primeng/dialog';
                 <p-password
                   [toggleMask]="true"
                   styleClass="!w-full"
+                  placeholder="●●●●●●●●"
                   inputStyleClass="!w-full !py-2.5 !text-sm"
                   formControlName="password"
                 ></p-password>
@@ -189,6 +194,7 @@ import { DialogModule } from 'primeng/dialog';
                 <p-password
                   [toggleMask]="true"
                   styleClass="!w-full"
+                  placeholder="●●●●●●●●"
                   inputStyleClass="!w-full !py-2.5 !text-sm"
                   formControlName="confirmPassword"
                 ></p-password>
@@ -209,19 +215,20 @@ import { DialogModule } from 'primeng/dialog';
                       formControlName="isAgree"
                       [binary]="true"
                     ></p-checkbox>
-                    <div class="text-sm text-gray-500">
+                    <div class="text-sm text-gray-500 mt-1">
                       I agree to the
                       <span
-                        class="text-[#4D46F7] cursor-pointer hover:underline"
+                        class="text-sky-800 font-semibold cursor-pointer hover:underline"
                         (click)="tncVisible = true"
                         >Terms and Conditions</span
                       >
                       and
                       <span
-                        class="text-[#4D46F7] cursor-pointer hover:underline"
+                        class="text-sky-800 font-semibold cursor-pointer hover:underline"
                         (click)="ppVisible = true"
                         >Privacy Policy</span
                       >
+                      of YL Systems Sdn Bhd.
                     </div>
                   </div>
                 </div>
@@ -234,21 +241,65 @@ import { DialogModule } from 'primeng/dialog';
               [disabled]="!FG.get('isAgree')?.value"
               (onClick)="Register()"
               label="Create Account"
-              styleClass="!bg-[#4D46F7] !w-full !border-none !py-3 !tracking-wide"
+              styleClass="!bg-sky-800 !w-full !border-none !py-3 !tracking-wide"
             ></p-button>
           </div>
           <div class="text-center pt-3 text-gray-500 text-sm">
             Already have an account?
             <b
-              class="text-[#4D46F7] cursor-pointer hover:underline !tracking-wide"
+              class="text-sky-800 cursor-pointer hover:underline !tracking-wide"
               [routerLink]="'/login'"
               >Sign In</b
             >
           </div>
         </div>
-      </div>
+      } @else {
+        <div
+          class="w-[90%] xl:max-w-[32%] shadow-sm bg-white border border-gray-200 rounded-2xl flex flex-col"
+        >
+          <div class="flex flex-col shadow-lg rounded-xl">
+            <div class="w-full h-80">
+              <img
+                src="assets/register-bg.png"
+                alt=""
+                class="w-full h-full object-cover rounded-t-xl"
+              />
+            </div>
+            <div
+              class="w-full p-10 border-t border-gray-200 flex flex-col gap-3 items-center justify-center"
+            >
+              <div class="font-extrabold text-gray-800 text-3xl">
+                Registration Received
+              </div>
+              <span class="text-gray-500 text-center max-w-sm"
+                >Your account has been created successfully. Please wait while
+                an administrator reviews and approves your access.</span
+              >
+              <span class="text-gray-400 italic text-center max-w-sm"
+                >You will receive an email notification once your account is
+                active.</span
+              >
+
+              <p-button
+                [routerLink]="'/login'"
+                class="w-sm!"
+                styleClass="w-full! bg-sky-900! border-none! py-3! shadow-lg! hover:scale-101!"
+                label="Return to Login"
+                icon="pi pi-sign-in"
+              ></p-button>
+
+              <span
+                class="mt-2 flex flex-row justify-center items-center gap-2 text-gray-500 font-semibold"
+              >
+                <i class="pi pi-question-circle text-gray-500!"></i>
+                <span>Need assistance? Contact IT Support</span>
+              </span>
+            </div>
+          </div>
+        </div>
+      }
       <div class="pt-3 text-gray-500 text-sm w-full text-center">
-        © 2025 YL Systems Sdn Bhd. All rights reserved.
+        © 2026 YL Systems Sdn Bhd. All rights reserved.
       </div>
     </div>
 
@@ -532,36 +583,6 @@ import { DialogModule } from 'primeng/dialog';
             label="Accept"
           ></p-button></div
       ></ng-template>
-    </p-dialog>
-
-    <!-- successPopup -->
-    <p-dialog
-      [(visible)]="successPopup"
-      (onHide)="successPopup = false"
-      [modal]="true"
-      [draggable]="false"
-      [resizable]="false"
-      [dismissableMask]="true"
-      styleClass="!w-[40%]"
-    >
-      <ng-template #headless>
-        <div class="p-8 flex flex-col justify-center items-center w-full gap-5">
-          <img src="assets/check.png" alt="" class="w-[50px]" />
-          <div class="font-bold text-xl text-center tracking-wide">
-            Registration Successful!
-          </div>
-          <div class="text-center text-gray-700">
-            Your account has been created successfully. You can now log in using
-            your credentials.
-          </div>
-          <div class="w-full">
-            <p-button
-              [routerLink]="'/login'"
-              styleClass="!w-full !border-none !bg-black !py-3 !tracking-wide"
-              label="Proceed to Login"
-            ></p-button>
-          </div></div
-      ></ng-template>
     </p-dialog> `,
   styleUrl: './register.less',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -574,7 +595,7 @@ export class Register implements OnDestroy {
   protected ngUnsubscribe: Subject<void> = new Subject<void>();
 
   FG!: FormGroup;
-  successPopup: boolean = false;
+  successRegistered: boolean = false;
   tncVisible: boolean = false;
   ppVisible: boolean = false;
   isMobile = window.innerWidth < 770;
@@ -586,8 +607,8 @@ export class Register implements OnDestroy {
 
   constructor() {
     this.FG = new FormGroup({
-      firstName: new FormControl<string | null>(null, Validators.required),
-      lastName: new FormControl<string | null>(null, Validators.required),
+      fullName: new FormControl<string | null>(null, Validators.required),
+      displayName: new FormControl<string | null>(null, Validators.required),
       email: new FormControl<string | null>(null, [
         Validators.required,
         Validators.email,
@@ -598,7 +619,7 @@ export class Register implements OnDestroy {
         Validators.required,
       ),
       contactNo: new FormControl<string | null>(null),
-      role: new FormControl<UserRole>(UserRole.Staff),
+      jobTitle: new FormControl<string | null>(null),
       isAgree: new FormControl<boolean>(false),
     });
   }
@@ -614,7 +635,7 @@ export class Register implements OnDestroy {
             if (res) {
               setTimeout(() => {
                 this.loadingService.stop();
-                this.successPopup = true;
+                this.successRegistered = true;
                 this.cdr.detectChanges();
               }, 1500);
             } else {

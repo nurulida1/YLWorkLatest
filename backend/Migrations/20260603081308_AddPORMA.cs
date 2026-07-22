@@ -308,9 +308,9 @@ namespace YLWorks.Migrations
                 name: "ReturnQuantity",
                 table: "DeliveryOrderRMAs");
 
-            migrationBuilder.RenameTable(
-                name: "DeliveryOrderProofImage",
-                newName: "DeliveryOrderProofImages");
+            // migrationBuilder.RenameTable(
+            //     name: "DeliveryOrderProofImage",
+            //     newName: "DeliveryOrderProofImages");
 
             migrationBuilder.RenameColumn(
                 name: "DeliveryOrderRMANo",

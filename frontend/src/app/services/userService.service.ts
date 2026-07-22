@@ -5,6 +5,7 @@ import {
   LoginResponse,
   RegisterRequest,
   ResetPasswordRequest,
+  StaffDashboard,
   UpdateUserRequest,
   UserDto,
 } from '../models/User';
@@ -158,15 +159,17 @@ export class UserService {
 
   GetDashboardCounts(): Observable<{
     totalUsers: number;
-    activeUsers: number;
-    inactiveUsers: number;
+    activeNow: number;
+    inactive: number;
+    departmentDistribution: any[];
   }> {
     return this.http
       .get<{
         totalUsers: number;
-        activeUsers: number;
-        inactiveUsers: number;
-      }>(`${this.url}/DashboardCounts`)
+        activeNow: number;
+        inactive: number;
+        departmentDistribution: any[];
+      }>(`${this.url}/GetStaffDashboardCount`)
       .pipe(retry(1), catchError(this.handleError('GetDashboardCounts')));
   }
 
@@ -184,4 +187,17 @@ export class UserService {
     });
     return throwError(() => error);
   };
+
+  GetDashboard(): Observable<StaffDashboard | null> {
+    return this.http.get<StaffDashboard>(`${this.url}/GetDashboard`).pipe(
+      retry(1),
+      catchError((error) => {
+        if (error.status === 404) {
+          return of(null);
+        } else {
+          return this.handleError('GetDashboard')(error);
+        }
+      }),
+    );
+  }
 }

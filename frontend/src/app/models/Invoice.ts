@@ -2,6 +2,7 @@ import { AttachmentDto } from './AttachmentDto';
 import { BaseModel } from './BaseModel';
 import { CompanyDto } from './Company';
 import { DeliveryOrderDto } from './DeliveryOrder';
+import { GoodsReceivingDto, GoodsReceivingItem } from './GoodsReceiving';
 import { PaymentDto } from './Payments';
 import { ProjectDto } from './Project';
 import { PurchaseOrderDto } from './PurchaseOrder';
@@ -26,6 +27,8 @@ export interface InvoiceDto extends BaseModel {
   purchaseOrder: PurchaseOrderDto;
   salesOrderId?: string;
   salesOrder?: SalesOrderDto;
+  goodsReceivingId?: string;
+  goodsReceiving?: GoodsReceivingDto;
   quotationId: string;
   quotation: QuotationDto;
   invoiceDate: Date;
@@ -52,6 +55,8 @@ export interface InvoiceDto extends BaseModel {
 export interface InvoiceItem extends BaseModel {
   invoiceId: string;
   invoice: InvoiceDto;
+  goodsReceivingItemId?: string;
+  goodsReceivingItem?: GoodsReceivingItem;
   item: string;
   description: string;
   quantity: number;
@@ -71,6 +76,7 @@ export interface CreateInvoiceRequest {
   projectId: string;
   purchaseOrderId: string;
   salesOrderId: string;
+  goodsReceivingId?: string;
   quotationId: string;
   type: string;
   invoiceDate: Date;
@@ -88,6 +94,7 @@ export interface CreateInvoiceRequest {
 }
 
 export interface InvoiceItemRequest {
+  goodsReceivingItemId?: string;
   item: string;
   description: string;
   quantity: number;
@@ -107,6 +114,7 @@ export interface UpdateInvoiceRequest {
   projectId: string;
   purchaseOrderId: string;
   salesOrderId: string;
+  goodsReceivingId?: string;
   quotationId: string;
   invoiceDate: Date;
   dueDate: Date;

@@ -300,3 +300,36 @@ export function denormalizeHtml(html: string): string {
     .replace(/<i>/g, '<em>')
     .replace(/<\/i>/g, '</em>');
 }
+
+export function buildFormData(form: FormGroup): FormData {
+  const formData = new FormData();
+
+  Object.keys(form.controls).forEach((key) => {
+    const control = form.get(key);
+    let value = control?.value;
+
+    if (value === null || value === undefined) return;
+
+    // Date
+    if (value instanceof Date) {
+      formData.append(key, value.toISOString());
+      return;
+    }
+
+    // File
+    if (value instanceof File) {
+      formData.append(key, value, value.name);
+      return;
+    }
+
+    // FormArray (IMPORTANT)
+    if (Array.isArray(value)) {
+      formData.append(key, JSON.stringify(value));
+      return;
+    }
+
+    formData.append(key, value);
+  });
+
+  return formData;
+}

@@ -45,7 +45,7 @@ import { ButtonModule } from 'primeng/button';
           <ng-container *ngFor="let item of mainMenu">
             <div
               *ngIf="
-                item.roles.includes(currentUser?.systemRole) &&
+                item.roles?.includes(currentUser?.systemRole) &&
                 (!item.items || hasVisibleSubItems(item))
               "
               class="flex flex-row lg:pl-2 xl:pl-4 py-2 items-center justify-center lg:justify-start gap-3 px-2 text-[14px]"
@@ -164,21 +164,6 @@ export class Sidemenu {
       label: 'Dashboard',
       route: '/dashboard',
       icon: 'pi-home',
-      roles: [
-        'SuperAdmin',
-        'Admin',
-        'Staff',
-        'HR',
-        'Manager',
-        'Sales Director',
-        'Sales Support',
-        'Sales Executive',
-        'Logistic Assistant',
-        'Project Manager',
-        'System & Intelligence Manager',
-        'Account & Admin Manager',
-        'Purchasing Executive',
-      ],
     },
     // {
     //   label: 'Apply Leave',
@@ -207,6 +192,11 @@ export class Sidemenu {
       icon: 'pi-file',
     },
     {
+      label: 'Products Services',
+      icon: 'pi-list',
+      route: '/products-services',
+    },
+    {
       label: 'Sales Order',
       icon: 'pi-money-bill',
       route: '/sales-order',
@@ -222,6 +212,7 @@ export class Sidemenu {
       icon: 'pi-shopping-cart',
       route: '/purchase-orders',
     },
+
     {
       label: 'Goods Receiving',
       icon: 'pi-clipboard',

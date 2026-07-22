@@ -1,7 +1,8 @@
 import { BaseModel } from './BaseModel';
 import { CompanyDto } from './Company';
-import { InventoryDto } from './Inventory';
+import { DeliveryOrderDto } from './DeliveryOrder';
 import { InvoiceDto } from './Invoice';
+import { ProductServiceDto } from './ProductService';
 import { ProjectDto } from './Project';
 import { PurchaseOrderDto } from './PurchaseOrder';
 import { QuotationDto } from './Quotation';
@@ -28,11 +29,10 @@ export interface SalesOrderDto extends BaseModel {
   totalAmount: number;
   notes?: string;
   paymentTerms?: string;
-  execution: string;
-  warrantyTerms: string;
   remarks?: string;
   salesOrderItems?: SalesOrderItem[];
   salesOrderStatusHistories: SalesOrderStatusHistory[];
+  deliveryOrders: DeliveryOrderDto[];
   invoices: InvoiceDto[];
   purchaseOrders: PurchaseOrderDto[];
 }
@@ -40,46 +40,37 @@ export interface SalesOrderDto extends BaseModel {
 export interface SalesOrderItem extends BaseModel {
   salesOrderId: string;
   salesOrder: SalesOrderDto;
-  parentId: string;
-  sortOrder: number;
-  type: string;
-  itemType: string;
-  isGroup: boolean;
-  item?: string;
+  productServiceId: string;
+  productService: ProductServiceDto;
+  rowType: string;
+  item: string;
   description: string;
   quantity: number;
   quantityDelivered: number;
+  quantityAllocated: number;
   quantityRemaining: number;
   unit: string;
-  discount: number;
   unitPrice: number;
+  discount: number;
   taxRate: number;
   totalPrice: number;
-  inventoryId?: string;
-  inventory?: InventoryDto;
-  children: SalesOrderItem[];
-  includeInDeliveryOrder: boolean;
+  sortOrder: number;
 }
 
 export interface SOItemBase {
   id: string;
-  sortOrder: number;
-  type: string;
-  itemType: string;
-  isGroup: boolean;
-  parentId: string;
+  salesOrderId: string;
+  productServiceId: string;
   item: string;
+  rowType: string;
   description: string;
   quantity: number;
   unit: string;
   unitPrice: number;
-  deliveredQuantity: number;
   discount: number;
   taxRate: number;
   totalPrice: number;
-  inventoryId?: string;
-  children: SOItemBase[];
-  includeInDeliveryOrder: boolean;
+  sortOrder: number;
 }
 
 export interface CreateSalesOrderRequest {
@@ -96,8 +87,6 @@ export interface CreateSalesOrderRequest {
   notes: string;
   remarks: string;
   paymentTerms?: string;
-  execution: string;
-  warrantyTerms: string;
   clientPOAttachment?: File;
   clientPODate: Date;
   clientPONumber: string;
@@ -112,8 +101,6 @@ export interface UpdateSalesOrderRequest {
   projectId: string;
   quotationId: string;
   paymentTerms?: string;
-  execution: string;
-  warrantyTerms: string;
   soDate: Date;
   subTotal: number;
   taxAmount: number;

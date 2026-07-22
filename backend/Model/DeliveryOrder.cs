@@ -79,25 +79,25 @@ namespace YLWorks.Model
 
         public string? Remarks { get; set; }
 
-        public ICollection<DeliveryOrderProofImage>
-            ProofImages
-        { get; set; } = new List<DeliveryOrderProofImage>();
+        //public ICollection<DeliveryOrderProofImage>
+        //    ProofImages
+        //{ get; set; } = new List<DeliveryOrderProofImage>();
     }
 
-    public class DeliveryOrderProofImage : BaseEntity
-    {
-        public Guid Id { get; set; }
+    //public class DeliveryOrderProofImage : BaseEntity
+    //{
+    //    public Guid Id { get; set; }
 
-        public Guid DeliveryOrderStatusHistoryId { get; set; }
+    //    public Guid DeliveryOrderStatusHistoryId { get; set; }
 
-        public DeliveryOrderStatusHistory DeliveryOrderStatusHistory { get; set; } = null!;
+    //    public DeliveryOrderStatusHistory DeliveryOrderStatusHistory { get; set; } = null!;
 
-        public string ImageUrl { get; set; } = string.Empty;
+    //    public string ImageUrl { get; set; } = string.Empty;
 
-        public string? Remarks { get; set; }
+    //    public string? Remarks { get; set; }
 
-        public DateTime UploadedAt { get; set; } = DateTime.UtcNow;
-    }
+    //    public DateTime UploadedAt { get; set; } = DateTime.UtcNow;
+    //}
 
     public class DeliveryOrderItem : BaseEntity
     {

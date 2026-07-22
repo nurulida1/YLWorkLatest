@@ -2,7 +2,11 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { MessageService } from 'primeng/api';
 import { environment } from '../../environments/environment.development';
-import { DashboardCount, DashboardSummary } from '../models/AppModels';
+import {
+  DashboardCount,
+  DashboardSummary,
+  SuperAdminDashboardDto,
+} from '../models/AppModels';
 import { Observable, retry, catchError, throwError } from 'rxjs';
 import { InventoryDashboardResponseDto } from '../models/Inventory';
 export type DataType = 'PO' | 'Quotation' | 'Invoice' | null;
@@ -40,6 +44,12 @@ export class AppService {
   clear() {
     this.data = null;
     this.dataType = null;
+  }
+
+  GetSuperAdminDashboard(): Observable<SuperAdminDashboardDto> {
+    return this.http
+      .get<SuperAdminDashboardDto>(`${this.url}/GetSuperAdminDashboard`)
+      .pipe(retry(1), catchError(this.handleError('GetSuperAdminDashboard')));
   }
 
   private handleError = (context: string) => (error: any) => {

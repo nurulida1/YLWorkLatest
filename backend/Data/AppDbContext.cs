@@ -17,12 +17,19 @@ namespace YLWorks.Data
         public DbSet<AccessPermission> AccessPermissions { get; set; }
         public DbSet<SystemModule> SystemModules { get; set; }
 
+        public DbSet<ActivityLog> ActivityLogs { get; set; }
+
         // =======================
         // ORGANIZATION
         // =======================
         public DbSet<Department> Departments { get; set; }
         public DbSet<Project> Projects { get; set; }
         public DbSet<ProjectMember> ProjectMembers { get; set; }
+
+        public DbSet<ProjectTask> ProjectTasks { get; set; }
+        public DbSet<ProjectTaskAssignment> ProjectTaskAssignments { get; set; }
+        public DbSet<ProjectTaskAttachment> ProjectTaskAttachments { get; set; }
+        public DbSet<ProjectTaskChecklist> ProjectTaskChecklists { get; set; }
 
         public DbSet<WorkOrder> WorkOrders { get; set; }
         public DbSet<WorkOrderTask> WorkOrderTasks { get; set; }
@@ -31,12 +38,12 @@ namespace YLWorks.Data
         public DbSet<DeliveryOrder> DeliveryOrders { get; set; }
         public DbSet<DeliveryOrderItem> DeliveryOrderItems { get; set; }
         public DbSet<DeliveryOrderStatusHistory> DeliveryOrderStatusHistories { get; set; }
+        //public DbSet<DeliveryOrderProofImage> DeliveryOrderProofImages { get; set; }
         public DbSet<DORMAProofImage> DORMAProofImages { get; set; }
         public DbSet<DORMAStatusHistory> DORMAStatusHistories { get; set; }
 
         public DbSet<DeliveryOrderRMA> DeliveryOrderRMAs { get; set; }
         public DbSet<DORMAItem> DORMAItems { get; set; }
-        public DbSet<DORMAProofImage> DOProofImages { get; set; }
 
         public DbSet<PurchaseOrderRMA> PurchaseOrderRMAs { get; set; }
         public DbSet<PORMAItem> PORMAItems { get; set; }
@@ -59,6 +66,8 @@ namespace YLWorks.Data
         public DbSet<Quotation> Quotations { get; set; }
         public DbSet<QuotationItems> QuotationItems { get; set; }
         public DbSet<QuotationStatusHistory> QuotationStatusHistories { get; set; }
+        public DbSet<QuotationTermsAndCondition> QuotationTermsAndConditions { get; set; }
+        public DbSet<QuotationOtherInformation> QuotationOtherInformations { get; set; }
 
         public DbSet<PurchaseOrder> PurchaseOrders { get; set; }
         public DbSet<PurchaseOrderItem> PurchaseOrderItems { get; set; }
@@ -86,6 +95,12 @@ namespace YLWorks.Data
         public DbSet<Payments> Payments { get; set; }
         public DbSet<Income> Incomes { get; set; }
         public DbSet<Expense> Expenses { get; set; }
+
+        //Setting
+        public DbSet<TermsAndCondition> TermsAndConditions { get; set; }
+        public DbSet<PaymentTerm> PaymentTerms { get; set; }
+        public DbSet<ProductService> ProductServices { get; set; }
+        public DbSet<StockTransaction> StockTransactions { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -139,6 +154,12 @@ namespace YLWorks.Data
             {
                 entity.HasKey(pm => new { pm.ProjectCode, pm.UserId });
             });
+
+            modelBuilder.Entity<ProjectTask>()
+    .HasOne(t => t.Project)
+    .WithMany(p => p.ProjectTasks)
+    .HasForeignKey(t => t.ProjectId)
+    .OnDelete(DeleteBehavior.Restrict);
 
             // =======================
             // WORK ORDER
@@ -270,18 +291,12 @@ namespace YLWorks.Data
             {
                 entity.HasKey(e => e.Id);
 
-                // Fix: Configure Self-Referencing relationship for Categories
-                entity.HasOne(qi => qi.Parent)
-                      .WithMany(qi => qi.Children)
-                      .HasForeignKey(qi => qi.ParentId)
-                      .OnDelete(DeleteBehavior.Restrict); // Prevent accidental cascade loops
-
                 // Fix: Column precision for financial data
                 entity.Property(e => e.Quantity).HasColumnType("decimal(18,2)");
                 entity.Property(e => e.UnitPrice).HasColumnType("decimal(18,2)");
                 entity.Property(e => e.TotalPrice).HasColumnType("decimal(18,2)");
 
-                entity.Property(e => e.Type).HasMaxLength(20);
+                entity.Property(e => e.RowType).HasMaxLength(20);
             });
 
             modelBuilder.Entity<QuotationStatusHistory>(entity =>
@@ -292,6 +307,18 @@ namespace YLWorks.Data
                       .WithMany(q => q.QuotationStatusHistories)
                       .HasForeignKey(sh => sh.QuotationId);
             });
+
+            modelBuilder.Entity<ProductService>(entity =>
+            {
+                entity.HasKey(x => x.Id);
+
+                entity.HasMany(x => x.Inventories)
+                      .WithOne(x => x.ProductService)
+                      .HasForeignKey(x => x.ProductServiceId)
+                      .OnDelete(DeleteBehavior.SetNull);
+            });
         }
+
+        
     }
 }

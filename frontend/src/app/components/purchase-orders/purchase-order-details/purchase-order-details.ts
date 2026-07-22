@@ -104,6 +104,7 @@ import { MessageService } from 'primeng/api';
               <div class="text-xs text-gray-400 uppercase mb-1">Terms</div>
               <div class="font-semibold text-gray-800">
                 {{ poData()?.paymentTerms || '-' }}
+                {{ poData()?.paymentTermType || '-' }}
               </div>
             </div>
           </div>

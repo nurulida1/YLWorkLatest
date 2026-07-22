@@ -7,6 +7,7 @@ using YLWorks.Hubs;
 using YLWorks.Model;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
+using WebApplication1.Helpers;
 
 namespace YLWorks.Controller
 {
@@ -150,8 +151,6 @@ namespace YLWorks.Controller
                         p.Quantity,
                         p.ReservedQuantity,
                         p.SerialNumber,
-                        p.ReferenceType,
-                        p.ReferenceId,
                         p.LocationId,
                         p.SectionId,
                         p.CategoryId,
@@ -161,6 +160,8 @@ namespace YLWorks.Controller
                         p.Remarks,
                         p.Costs,
                         p.Attachment,
+                        AvailableQuantity = p.Quantity - (p.ReservedQuantity),
+                        IsLowStock = p.ParLevel.HasValue && (p.Quantity - p.ReservedQuantity) <= p.ParLevel.Value,
                         Category = p.Category == null ? null : new
                         {
                             Name = p.Category.Name
@@ -212,10 +213,8 @@ namespace YLWorks.Controller
                     Description = request.Description,
                     Unit = request.Unit,
                     Quantity = request.Quantity,
-                    ReservedQuantity = request.ReservedQuantity,
+                    ReservedQuantity = request.ReservedQuantity ?? 0m,
                     SerialNumber = request.SerialNumber,
-                    ReferenceType = request.ReferenceType,
-                    ReferenceId = request.ReferenceId,
                     LocationId = request.LocationId,
                     SectionId = request.SectionId,
                     ParLevel = request.ParLevel,
@@ -224,10 +223,10 @@ namespace YLWorks.Controller
                     Remarks = request.Remarks,
                     Costs = request.Costs,
                     Attachment = request.Attachment,
+                    ProductServiceId = request.ProductServiceId, 
                     CreatedById = Guid.Parse(userIdClaim),
+                    CreatedAt = DateTimeHelper.Now()
                 };
-
-                inventory.CreatedAt = DateTime.Now;
 
                 _context.Inventories.Add(inventory);
                 await _context.SaveChangesAsync();
@@ -249,8 +248,6 @@ namespace YLWorks.Controller
         Quantity = d.Quantity,
         ReservedQuantity = d.ReservedQuantity,
         SerialNumber = d.SerialNumber,
-        ReferenceType = d.ReferenceType,
-        ReferenceId = d.ReferenceId,
         LocationId = d.LocationId,
         SectionId = d.SectionId,
         CategoryId = d.CategoryId,
@@ -278,8 +275,14 @@ namespace YLWorks.Controller
     })
     .FirstAsync();
 
-                // Optional: Notify via SignalR
-                await _hub.Clients.All.SendAsync("InventoryAdded", inventory);
+                await _hub.Clients.All.SendAsync("InventoryAdded", new
+                {
+                    inventory.Id,
+                    inventory.ItemName,
+                    inventory.Quantity,
+                    inventory.ReservedQuantity,
+                    AvailableQuantity = inventory.Quantity - inventory.ReservedQuantity
+                });
 
                 return Ok(result);
             }
@@ -290,12 +293,14 @@ namespace YLWorks.Controller
         }
 
         [HttpPut("Update")]
-        public async Task<ActionResult<Inventory>> UpdateInventory([FromBody] UpdateInventoryRequest request)
+        public async Task<ActionResult> UpdateInventory([FromBody] UpdateInventoryRequest request)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            var inventory = await _context.Inventories.FindAsync(request.Id);
+            var inventory = await _context.Inventories
+                .FirstOrDefaultAsync(x => x.Id == request.Id);
+
             if (inventory == null)
                 return NotFound(new { Error = "Inventory not found." });
 
@@ -308,11 +313,10 @@ namespace YLWorks.Controller
                 inventory.CategoryId = request.CategoryId;
                 inventory.Description = request.Description;
                 inventory.Unit = request.Unit;
+
                 inventory.Quantity = request.Quantity;
-                inventory.ReservedQuantity = request.ReservedQuantity;
+
                 inventory.SerialNumber = request.SerialNumber;
-                inventory.ReferenceType = request.ReferenceType;
-                inventory.ReferenceId = request.ReferenceId;
                 inventory.LocationId = request.LocationId;
                 inventory.SectionId = request.SectionId;
                 inventory.ParLevel = request.ParLevel;
@@ -321,56 +325,58 @@ namespace YLWorks.Controller
                 inventory.Remarks = request.Remarks;
                 inventory.Costs = request.Costs;
                 inventory.Attachment = request.Attachment;
-                inventory.UpdatedAt = DateTime.Now;
+
+                inventory.UpdatedAt = DateTime.UtcNow;
 
                 await _context.SaveChangesAsync();
 
-                // Optional: Notify via SignalR
-                var result = await _context.Inventories.Include(x => x.Category)
-    .Include(x => x.Location)
-    .Include(x => x.Section)
-           .Where(d => d.Id == inventory.Id)
-           .Select(d => new
-           {
-               d.Id,
-               d.ItemCode,
-               d.ItemName,
-               d.Brand,
-               d.Model,
-               d.Description,
-               d.Unit,
-               d.Quantity,
-               d.ReservedQuantity,
-               d.SerialNumber,
-               d.ReferenceType,
-               d.ReferenceId,
-               d.LocationId,
-               d.SectionId,
-               d.CategoryId,
-               d.ParLevel,
-               d.Date,
-               d.Status,
-               d.Remarks,
-               d.Costs,
-               d.Attachment,
-               Category = d.Category == null ? null : new 
-               {
-                   Name = d.Category.Name
-               },
-               Location = d.Location == null ? null : new 
-               {
-                   Name = d.Location.Name
-               },
-               Section = d.Section == null ? null : new 
-               {
-                   Name = d.Section.Name
-               }
-           })
-           .FirstAsync();
+                var result = await _context.Inventories
+                    .Where(d => d.Id == inventory.Id)
+                    .Select(d => new
+                    {
+                        d.Id,
+                        d.ItemCode,
+                        d.ItemName,
+                        d.Brand,
+                        d.Model,
+                        d.Description,
+                        d.Unit,
+                        d.Quantity,
+                        d.ReservedQuantity,
+
+                        AvailableQuantity = d.Quantity - d.ReservedQuantity,
+
+                        d.SerialNumber,
+                        d.LocationId,
+                        d.SectionId,
+                        d.CategoryId,
+                        d.ParLevel,
+                        d.Date,
+                        d.Status,
+                        d.Remarks,
+                        d.Costs,
+                        d.Attachment,
+
+                        Category = d.Category == null ? null : new
+                        {
+                            d.Category.Name
+                        },
+                        Location = d.Location == null ? null : new
+                        {
+                            d.Location.Name
+                        },
+                        Section = d.Section == null ? null : new
+                        {
+                            d.Section.Name
+                        }
+                    })
+                    .FirstAsync();
+
                 await _hub.Clients.All.SendAsync("InventoryUpdated", result);
+
                 return Ok(result);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return StatusCode(500, new { Error = "Failed to update inventory." });
             }

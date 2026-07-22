@@ -171,24 +171,62 @@ namespace YLWorks.Controller
                     }
                 }
 
-                var data = await query
-                    .Include(x => x.SalesOrderItems)
-                    .Include(x => x.Quotation)
-                    .FirstOrDefaultAsync();
+                SalesOrder? data;
+
+                try
+                {
+                    data = await query
+                        .Include(x => x.SalesOrderItems)
+                        .Include(x => x.Quotation)
+                        .FirstOrDefaultAsync();
+                }
+                catch (Exception ex)
+                {
+                    return StatusCode(500, new
+                    {
+                        Error = "Failed loading SalesOrder",
+                        Details = ex.ToString()
+                    });
+                }
 
                 if (data == null)
                     return NotFound();
 
-                var inventories = await _context.Inventories.ToListAsync();
+                List<Inventory> inventories;
 
-                var poItems = await _context.PurchaseOrderItems
-                    .Include(x => x.PurchaseOrder)
-                    .Where(x =>
-                        x.SalesOrderItemId != null &&
-                        x.PurchaseOrder.Status != "Rejected" &&
-                        x.PurchaseOrder.Status != "Cancelled"
-                    )
-                    .ToListAsync();
+                try
+                {
+                    inventories = await _context.Inventories.AsNoTracking().ToListAsync();
+                }
+                catch (Exception ex)
+                {
+                    return StatusCode(500, new
+                    {
+                        Error = "Failed loading Inventories",
+                        Details = ex.ToString()
+                    });
+                }
+
+                List<PurchaseOrderItem> poItems;
+
+                try
+                {
+                    poItems = await _context.PurchaseOrderItems
+                        .Include(x => x.PurchaseOrder)
+                        .Where(x =>
+                            x.SalesOrderItemId != null &&
+                            x.PurchaseOrder.Status != "Rejected" &&
+                            x.PurchaseOrder.Status != "Cancelled")
+                        .ToListAsync();
+                }
+                catch (Exception ex)
+                {
+                    return StatusCode(500, new
+                    {
+                        Error = "Failed loading PurchaseOrderItems",
+                        Details = ex.ToString()
+                    });
+                }
 
                 var poMap = poItems
                     .GroupBy(x => x.SalesOrderItemId)
@@ -200,23 +238,34 @@ namespace YLWorks.Controller
                             PONos = g.Select(x => x.PurchaseOrder.PurchaseOrderNo)
                                      .Distinct()
                                      .ToList()
-                        }
-                    );
+                        });
 
-                var grnItems = await _context.GoodsReceivingItems
-                    .Include(x => x.PurchaseOrderItem)
-                    .Where(x => x.PurchaseOrderItemId != null)
-                    .ToListAsync();
+                List<GoodsReceivingItem> grnItems;
+
+                try
+                {
+                    grnItems = await _context.GoodsReceivingItems
+                        .Include(x => x.PurchaseOrderItem)
+                        .Where(x => x.PurchaseOrderItemId != null)
+                        .ToListAsync();
+                }
+                catch (Exception ex)
+                {
+                    return StatusCode(500, new
+                    {
+                        Error = "Failed loading GoodsReceivingItems",
+                        Details = ex.ToString()
+                    });
+                }
 
                 var receivedMap = grnItems
                     .Where(x => x.PurchaseOrderItem?.SalesOrderItemId != null)
                     .GroupBy(x => x.PurchaseOrderItem!.SalesOrderItemId)
                     .ToDictionary(
                         g => g.Key!,
-                        g => g.Sum(x => x.ReceivedQuantity)
-                    );
+                        g => g.Sum(x => x.ReceivedQuantity));
 
-                var safeResult = new
+                var result = new
                 {
                     data.Id,
                     data.SalesOrderNo,
@@ -226,92 +275,48 @@ namespace YLWorks.Controller
                     data.Discount,
                     data.TaxAmount,
                     data.TotalAmount,
-                    data.ClientId,
-                    data.Client,
-                    data.CompanyId,
-                    data.QuotationId,
-                    data.Remarks,
-                    data.Notes,
-                    data.ProjectId,
-                    data.ClientPONumber,
-                    data.PaymentTerms,
                     data.ClientPODate,
+                    data.ClientPONumber,
                     data.ClientPOAttachment,
                     data.CreatedAt,
-
-                    Quotation = data.Quotation == null ? null : new
+                    data.ClientId,
+                    Client = data.Client == null ? null : new CompanyDto
                     {
-                        data.Quotation.Id,
-                        data.Quotation.QuotationNo
+                        Name = data.Client.Name
                     },
+                    data.QuotationId,
+                    Quotation = data.Quotation == null ? null : new Quotation{
+                        QuotationNo = data.Quotation.QuotationNo,
+                },
 
-                    SalesOrderItems = data.SalesOrderItems?.Select(i =>
+                    SalesOrderItems = data.SalesOrderItems.Select(i => new
                     {
-                        var clean = System.Text.RegularExpressions.Regex
-                            .Replace(i.Description ?? "", "<.*?>", "")
-                            .Replace("&nbsp;", " ")
-                            .ToLower();
-
-                        var match = inventories.FirstOrDefault(inv =>
-                            (!string.IsNullOrEmpty(inv.Model) && clean.Contains(inv.Model.ToLower())) ||
-                            (!string.IsNullOrEmpty(inv.ItemName) && clean.Contains(inv.ItemName.ToLower())) ||
-                            (!string.IsNullOrEmpty(inv.Brand) && clean.Contains(inv.Brand.ToLower())) ||
-                            (!string.IsNullOrEmpty(inv.ItemCode) && clean.Contains(inv.ItemCode.ToLower()))
-                        );
-
-                        var qtyOnHand = match != null
-                            ? Math.Max(0, match.Quantity - (match.ReservedQuantity ?? 0))
-                            : 0;
-
-                        poMap.TryGetValue(i.Id, out var poInfo);
-                        receivedMap.TryGetValue(i.Id, out decimal receivedQty);
-
-                        var requiredQty = i.Quantity ?? 0m;      
-                        var remainingQty = Math.Max(0m, requiredQty - receivedQty);
-
-                        var isFullyReceived = remainingQty == 0;
-
-                        return new
-                        {
-                            i.Id,
-                            i.SalesOrderId,
-                            i.Type,
-                            i.ItemType,
-                            i.SortOrder,
-                            i.Item,
-                            i.Description,
-                            i.Quantity,
-                            i.UnitPrice,
-                            i.Unit,
-                            i.Discount,
-                            i.TaxRate,
-                            i.TotalPrice,
-                            i.QuantityOrdered,
-
-                            QtyOnHand = qtyOnHand,
-                            InventoryId = match?.Id,
-
-                            RequiredQuantity = requiredQty,
-                            ReceivedQuantity = receivedQty,
-                            RemainingQuantity = remainingQty,
-                            IsFullyReceived = isFullyReceived,
-
-                            PurchaseOrderNos = poInfo?.PONos ?? new List<string>()
-                        };
+                        i.Id,
+                        i.Description,
+                        i.Quantity,
+                        i.UnitPrice,
+                        i.Unit,
+                        i.TotalPrice,
+                        i.Discount,
+                        i.TaxRate,
+                        i.Item,
+                        i.SortOrder,
+                        i.RowType
                     })
                 };
 
-                return Ok(safeResult);
+                return Ok(result);
             }
             catch (Exception ex)
             {
                 return StatusCode(500, new
                 {
-                    Error = "GetOne failed.",
-                    Details = ex.Message
+                    Error = "GetOne failed",
+                    Details = ex.ToString()
                 });
             }
         }
+
         [HttpPost("Create")]
         public async Task<ActionResult<object>> Create([FromForm] CreateSalesOrderRequest request)
         {
@@ -401,8 +406,6 @@ namespace YLWorks.Controller
                     Notes = request.Notes,
                     Remarks = request.Remarks,
                     PaymentTerms = request.PaymentTerms,
-                    Execution = request.Execution,
-                    WarrantyTerms = request.WarrantyTerms,
                     ClientPOAttachment = filePath,
                     Status = "Draft",
                     CreatedById = Guid.Parse(userIdClaim),
@@ -414,11 +417,9 @@ namespace YLWorks.Controller
                     Id = Guid.NewGuid(),
                     SalesOrderId = so.Id,
 
-                    Type = x.Type ?? "Item",
-                    ItemType = x.ItemType,
-                    IsGroup = x.IsGroup,
+                    RowType = x.RowType ?? "LineItem",
                     SortOrder = x.SortOrder,
-
+                    Item = x.Item,
                     Description = x.Description,
                     Quantity = x.Quantity,
                     Unit = x.Unit ?? "Unit",
@@ -426,7 +427,6 @@ namespace YLWorks.Controller
                     Discount = x.Discount,
                     TaxRate = x.TaxRate,
                     TotalPrice = x.TotalPrice,
-                    IncludeInDeliveryOrder = x.IncludeInDeliveryOrder
                 }).ToList() ?? new List<SalesOrderItem>();
 
                 var statusHistory = new SalesOrderStatusHistory
@@ -550,8 +550,6 @@ namespace YLWorks.Controller
                 so.Notes = request.Notes;
                 so.Remarks = request.Remarks;
                 so.PaymentTerms = request.PaymentTerms;
-                so.Execution = request.Execution;
-                so.WarrantyTerms = request.WarrantyTerms;
                 so.ClientPONumber = request.ClientPONumber;
                 so.ClientPODate = request.ClientPODate;
                 so.UpdatedAt = DateTimeHelper.Now();
@@ -570,11 +568,8 @@ namespace YLWorks.Controller
                     {
                         Id = Guid.NewGuid(),
                         SalesOrderId = so.Id,
-                        ParentId = x.ParentId,
                         SortOrder = x.SortOrder,
-                        Type = x.Type,
-                        ItemType = x.ItemType,
-                        IsGroup = x.IsGroup,
+                        RowType = x.RowType,
                         Item = x.Item,
                         Description = x.Description,
                         Quantity = x.Quantity ?? 0,
@@ -583,7 +578,6 @@ namespace YLWorks.Controller
                         Discount = x.Discount ?? 0,
                         TaxRate = x.TaxRate ?? 0,
                         TotalPrice = x.TotalPrice ?? 0,
-                        IncludeInDeliveryOrder = x.IncludeInDeliveryOrder,
                     })
                     .ToList() ?? new();
 
@@ -670,8 +664,6 @@ namespace YLWorks.Controller
                 q.Notes,
                 q.Status,
                 q.PaymentTerms,
-                q.Execution,
-                q.WarrantyTerms,
                 q.ClientPOAttachment,
                 q.ClientPONumber,
                 q.ClientPODate,
@@ -711,8 +703,7 @@ namespace YLWorks.Controller
                 {
                     x.Id,
                     x.Item,
-                    x.ItemType,
-                    x.Type,
+                    x.RowType,
                     x.Description,
                     x.Quantity,
                     x.Unit,
@@ -731,8 +722,7 @@ namespace YLWorks.Controller
                 Id = Guid.NewGuid(),
                 SalesOrderId = soId,
                 Item = req.Item,
-                Type = req.Type,
-                ItemType = req.ItemType,
+                RowType = req.RowType,
                 Description = req.Description,
                 Quantity = req.Quantity,
                 Unit = req.Unit,
@@ -752,8 +742,9 @@ namespace YLWorks.Controller
                 return BadRequest(new { Error = "Invalid request payload." });
 
             request.Status = "Confirmed";
-            request.Remarks = string.IsNullOrWhiteSpace(request.Remarks) ? "SO approved" : request.Remarks;
-            await AutoMatchInventoryAsync(request.Id);
+            request.Remarks = string.IsNullOrWhiteSpace(request.Remarks)
+                ? "SO approved"
+                : request.Remarks;
 
             return await UpdateStatusInternal(request);
         }
@@ -768,6 +759,7 @@ namespace YLWorks.Controller
                 return BadRequest(new { Error = "Rejection reason is required." });
 
             request.Status = "Rejected";
+            request.Remarks = request.Remarks.Trim();
 
             return await UpdateStatusInternal(request);
         }
@@ -784,8 +776,8 @@ namespace YLWorks.Controller
 
                 var userName = await _context.Users
                     .Where(x => x.Id == actionUserId)
-                    .Select(x => x.DisplayName ?? "System")
-                    .FirstOrDefaultAsync();
+                    .Select(x => x.DisplayName)
+                    .FirstOrDefaultAsync() ?? "System";
 
                 var salesOrder = await _context.SalesOrders
                     .Include(so => so.SalesOrderItems)
@@ -794,55 +786,78 @@ namespace YLWorks.Controller
                 if (salesOrder == null)
                     return NotFound(new { Error = "Sales Order not found." });
 
+                // =========================
+                // HEADER UPDATE
+                // =========================
                 salesOrder.Status = request.Status;
-                salesOrder.Remarks = request.Remarks;
-                salesOrder.SubTotal = request.SubTotal;
-                salesOrder.Discount = request.Discount;
-                salesOrder.TaxAmount = request.TaxAmount;
-                salesOrder.TotalAmount = request.TotalAmount;
+                salesOrder.Remarks = request.Remarks?.Trim();
+                salesOrder.SubTotal = request.SubTotal ?? 0m;
+                salesOrder.Discount = request.Discount ?? 0m;
+                salesOrder.TaxAmount = request.TaxAmount ?? 0m;
+                salesOrder.TotalAmount = request.TotalAmount ?? 0m;
                 salesOrder.UpdatedAt = DateTime.UtcNow;
 
-                if (request.Items != null && request.Items.Any())
+                // =========================
+                // ITEMS UPDATE (SAFE NULL HANDLING)
+                // =========================
+                if (request.Items?.Any() == true)
                 {
                     foreach (var itemDto in request.Items)
                     {
-                        var existingItem = salesOrder.SalesOrderItems.FirstOrDefault(i => i.Id == itemDto.Id);
-                        if (existingItem != null)
-                        {
-                            existingItem.Quantity = itemDto.Quantity;
-                            existingItem.UnitPrice = itemDto.UnitPrice;
-                            existingItem.Discount = itemDto.Discount;
-                            existingItem.Unit = itemDto.Unit;
-                            existingItem.TaxRate = itemDto.TaxRate;
-                            existingItem.TotalPrice = itemDto.TotalPrice;
-                        }
+                        var existingItem = salesOrder.SalesOrderItems
+                            .FirstOrDefault(i => i.Id == itemDto.Id);
+
+                        if (existingItem == null)
+                            continue;
+
+                        existingItem.Quantity = itemDto.Quantity;
+                        existingItem.UnitPrice = itemDto.UnitPrice ?? 0m;
+                        existingItem.Discount = itemDto.Discount ?? 0m;
+                        existingItem.Unit = itemDto.Unit;
+                        existingItem.TaxRate = itemDto.TaxRate ?? 0m;
+                        existingItem.TotalPrice = itemDto.TotalPrice ?? 0m;
                     }
                 }
 
-
+                // =========================
+                // HISTORY
+                // =========================
                 var history = new SalesOrderStatusHistory
                 {
                     Id = Guid.NewGuid(),
                     SalesOrderId = request.Id,
                     Status = request.Status,
                     ActionUserId = actionUserId,
-                    ActionAt = DateTimeHelper.Now(),
-                    Remarks = request.Remarks ?? GenerateStatusRemark(request.Status, userName ?? "System")
+                    ActionAt = DateTime.UtcNow,
+                    Remarks =
+                        request.Remarks ??
+                        GenerateStatusRemark(request.Status, userName)
                 };
 
                 _context.SalesOrderStatusHistories.Add(history);
 
                 await _context.SaveChangesAsync();
 
-                return Ok(new { Message = $"Sales order status updated to {request.Status} successfully." });
+                return Ok(new
+                {
+                    Message = $"Sales order status updated to {request.Status} successfully."
+                });
             }
             catch (DbUpdateException ex)
             {
-                return StatusCode(500, new { Error = "A database error occurred while updating the order data." });
+                return StatusCode(500, new
+                {
+                    Error = "Database error occurred while updating order.",
+                    Details = ex.Message
+                });
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { Error = "An unexpected error occurred processing your validation routing." });
+                return StatusCode(500, new
+                {
+                    Error = "Unexpected error occurred.",
+                    Details = ex.Message
+                });
             }
         }
 
@@ -932,7 +947,6 @@ namespace YLWorks.Controller
                     .Include(x => x.Client)
                     .Include(x => x.Project)
                     .Include(x => x.QuotationItems)
-                        .ThenInclude(x => x.Children)
                     .Where(x => x.Status == "Accepted")
                     .OrderByDescending(x => x.CreatedAt)
                     .ToListAsync();
@@ -949,7 +963,6 @@ namespace YLWorks.Controller
 
                     Items = MapItems(
                         x.QuotationItems
-                            .Where(i => i.ParentId == null)
                             .OrderBy(i => i.SortOrder)
                             .ToList()
                     )
@@ -1040,21 +1053,15 @@ namespace YLWorks.Controller
                 .Select(i => new QuotationItemDto
                 {
                     Id = i.Id,
-                    SortOrder = i.SortOrder,
-                    Type = i.Type,
-                    ItemType = i.ItemType,
-                    IsGroup = i.IsGroup,
+                    RowType = i.RowType,
+                    Item = i.Item,
                     Description = i.Description,
-                    Unit = i.Unit,
                     Quantity = i.Quantity,
+                    Unit = i.Unit,
                     UnitPrice = i.UnitPrice,
-                    TaxRate = i.TaxRate,
                     Discount = i.Discount,
                     TotalPrice = i.TotalPrice,
-
-                    Children = MapItems(
-                        i.Children?.ToList() ?? new List<QuotationItems>()
-                    )
+                    SortOrder = i.SortOrder
                 })
                 .ToList();
         }
@@ -1105,7 +1112,7 @@ namespace YLWorks.Controller
             }
             else
             {
-                bool allDelivered = items.All(x => x.QuantityDelivered >= x.Quantity);
+                bool allDelivered = items.All(x => x.QuantityDelivered >= (x.Quantity ?? 0));
                 bool partiallyDelivered = items.Any(x => x.QuantityDelivered > 0);
 
                 so.Status =
@@ -1382,49 +1389,52 @@ namespace YLWorks.Controller
 
             foreach (var item in so.SalesOrderItems)
             {
-                if (item.InventoryId != null) continue;
+                //if (item.InventoryId != null) continue;
 
-                var desc = item.Description?.ToLower() ?? "";
+                //var desc = item.Description?.ToLower() ?? "";
 
-                var tokens = desc
-                    .Split(' ', ',', '\n', '\r')
-                    .Where(x => x.Length >= 3)
-                    .Select(x => x.Trim())
-                    .ToList();
+                //var tokens = desc
+                //    .Split(' ', ',', '\n', '\r')
+                //    .Where(x => x.Length >= 3)
+                //    .Select(x => x.Trim())
+                //    .ToList();
 
-                var match = await _context.Inventories
-                    .Where(i =>
-                        (!string.IsNullOrEmpty(i.Model) && tokens.Any(t => i.Model.ToLower().Contains(t))) ||
-                        (!string.IsNullOrEmpty(i.ItemName) && tokens.Any(t => i.ItemName.ToLower().Contains(t))) ||
-                        (!string.IsNullOrEmpty(i.Brand) && tokens.Any(t => i.Brand.ToLower().Contains(t))) ||
-                        (!string.IsNullOrEmpty(i.ItemCode) && tokens.Any(t => i.ItemCode.ToLower().Contains(t)))
+                //var match = await _context.Inventories
+                //    .Where(i =>
+                //        (!string.IsNullOrEmpty(i.Model) && tokens.Any(t => i.Model.ToLower().Contains(t))) ||
+                //        (!string.IsNullOrEmpty(i.ItemName) && tokens.Any(t => i.ItemName.ToLower().Contains(t))) ||
+                //        (!string.IsNullOrEmpty(i.Brand) && tokens.Any(t => i.Brand.ToLower().Contains(t))) ||
+                //        (!string.IsNullOrEmpty(i.ItemCode) && tokens.Any(t => i.ItemCode.ToLower().Contains(t)))
 
-                    )
-                    .ToListAsync();
+                //    )
+                //    .ToListAsync();
 
-                var bestMatch = match
-                    .OrderByDescending(i =>
-                        (i.Model != null && desc.Contains(i.Model.ToLower()) ? 4 : 0) +
-                        (i.ItemName != null && desc.Contains(i.ItemName.ToLower()) ? 3 : 0) +
-                        (i.Brand != null && desc.Contains(i.Brand.ToLower()) ? 2 : 0) +
-                        (i.ItemCode != null && desc.Contains(i.ItemCode.ToLower()) ? 1 : 0)
-                    )
-                    .FirstOrDefault();
+                //var bestMatch = match
+                //    .OrderByDescending(i =>
+                //        (i.Model != null && desc.Contains(i.Model.ToLower()) ? 4 : 0) +
+                //        (i.ItemName != null && desc.Contains(i.ItemName.ToLower()) ? 3 : 0) +
+                //        (i.Brand != null && desc.Contains(i.Brand.ToLower()) ? 2 : 0) +
+                //        (i.ItemCode != null && desc.Contains(i.ItemCode.ToLower()) ? 1 : 0)
+                //    )
+                //    .FirstOrDefault();
 
-                if (bestMatch != null)
-                {
-                    item.InventoryId = bestMatch.Id;
-                }
+                //if (bestMatch != null)
+                //{
+                //    item.InventoryId = bestMatch.Id;
+                //}
             }
 
             await _context.SaveChangesAsync();
         }
+
         private decimal GetAvailableStock(Inventory i)
         {
-            var reserved = i.ReservedQuantity ?? 0;
-            var available = i.Quantity - reserved;
+            var reserved = i.ReservedQuantity ?? 0m;
+            var quantity = i.Quantity ?? 0m;
 
-            return available < 0 ? 0 : available;
+            var available = quantity - reserved;
+
+            return available < 0 ? 0m : available;
         }
 
         [HttpGet("ExportExcel")]

@@ -190,10 +190,12 @@ string? includes = null)
                     data.ProjectId,
                     data.DeliveryOrderId,
                     data.SalesOrderId,
+                    data.GoodsReceivingId,
                     InvoiceItems = data.InvoiceItems?.Select(i => new
                     {
                         i.Id,
                         i.InvoiceId,
+                        i.GoodsReceivingItemId,
                         i.Item,
                         i.Description,
                         i.Quantity,
@@ -226,32 +228,51 @@ string? includes = null)
 
             try
             {
-                if (!string.IsNullOrEmpty(Request.Form["invoiceItems"]))
+                var itemsJson = Request.Form["invoiceItems"].FirstOrDefault();
+
+                if (!string.IsNullOrWhiteSpace(itemsJson))
                 {
-                    request.InvoiceItems =
-                        JsonSerializer.Deserialize<List<InvoiceItemRequest>>(
-                            Request.Form["invoiceItems"],
-                            new JsonSerializerOptions
-                            {
-                                PropertyNameCaseInsensitive = true
-                            }
-                        );
+                    try
+                    {
+                        request.InvoiceItems =
+                            JsonSerializer.Deserialize<List<InvoiceItemRequest>>(
+                                itemsJson,
+                                new JsonSerializerOptions
+                                {
+                                    PropertyNameCaseInsensitive = true
+                                }
+                            );
+                    }
+                    catch (Exception ex)
+                    {
+                        return BadRequest(new
+                        {
+                            Error = "Invalid invoiceItems JSON",
+                            RawValue = itemsJson,
+                            Details = ex.Message
+                        });
+                    }
                 }
+
 
                 string? filePath = null;
 
                 if (request.Attachment != null)
                 {
-                    var folder = Path.Combine(Directory.GetCurrentDirectory(), "Uploads", "Invoice");
-                    if (!Directory.Exists(folder)) Directory.CreateDirectory(folder);
+                    var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "Uploads", "INV");
+
+                    if (!Directory.Exists(uploadsFolder))
+                        Directory.CreateDirectory(uploadsFolder);
 
                     var fileName = $"{Guid.NewGuid()}{Path.GetExtension(request.Attachment.FileName)}";
-                    var fullPath = Path.Combine(folder, fileName);
+                    var fullPath = Path.Combine(uploadsFolder, fileName);
 
-                    using var stream = new FileStream(fullPath, FileMode.Create);
-                    await request.Attachment.CopyToAsync(stream);
+                    using (var stream = new FileStream(fullPath, FileMode.Create))
+                    {
+                        await request.Attachment.CopyToAsync(stream);
+                    }
 
-                    filePath = $"Uploads/Invoice/{fileName}";
+                    filePath = $"Uploads/INV/{fileName}";
                 }
 
                 var invoice = new Invoice
@@ -267,21 +288,27 @@ string? includes = null)
                     SupplierId = request.SupplierId,
                     ProjectId = request.ProjectId,
                     SalesOrderId = request.SalesOrderId,
+                    GoodsReceivingId = request.GoodsReceivingId,
                     PurchaseOrderId = request.PurchaseOrderId,
                     QuotationId = request.QuotationId,
+
                     InvoiceDate = request.InvoiceDate,
                     DueDate = request.DueDate,
+
                     Gross = request.Gross,
                     Discount = request.Discount,
                     TotalAmount = request.TotalAmount,
+
                     Type = request.Type,
                     PaymentTerms = request.PaymentTerms,
                     Remarks = request.Remarks,
                     Notes = request.Notes,
                     BankDetails = request.BankDetails,
+
                     Attachment = filePath,
                     CreatedById = Guid.Parse(userIdClaim),
-                    Status = request.Type == "Purchase" ? "Received" : "Draft"
+
+                    Status = "Draft"
                 };
 
                 invoice.InvoiceItems = request.InvoiceItems?
@@ -289,6 +316,7 @@ string? includes = null)
                     {
                         Id = Guid.NewGuid(),
                         InvoiceId = invoice.Id,
+                        GoodsReceivingItemId = x.GoodsReceivingItemId,
                         Item = x.Item,
                         Description = x.Description,
                         Quantity = x.Quantity,
@@ -297,8 +325,7 @@ string? includes = null)
                         Discount = x.Discount,
                         Amount = x.Amount
                     })
-                    .ToList()
-                    ?? new List<InvoiceItem>();
+                    .ToList() ?? new List<InvoiceItem>();
 
                 _context.Invoices.Add(invoice);
                 await _context.SaveChangesAsync();
@@ -341,23 +368,27 @@ string? includes = null)
 
                 if (request.Attachment != null)
                 {
-                    var folder = Path.Combine(Directory.GetCurrentDirectory(), "Uploads", "Invoice");
-                    if (!Directory.Exists(folder)) Directory.CreateDirectory(folder);
+                    var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "Uploads", "INV");
+
+                    if (!Directory.Exists(uploadsFolder))
+                        Directory.CreateDirectory(uploadsFolder);
 
                     var fileName = $"{Guid.NewGuid()}{Path.GetExtension(request.Attachment.FileName)}";
-                    var fullPath = Path.Combine(folder, fileName);
+                    var fullPath = Path.Combine(uploadsFolder, fileName);
 
-                    using var stream = new FileStream(fullPath, FileMode.Create);
-                    await request.Attachment.CopyToAsync(stream);
+                    using (var stream = new FileStream(fullPath, FileMode.Create))
+                    {
+                        await request.Attachment.CopyToAsync(stream);
+                    }
 
-                    filePath = $"Uploads/Invoice/{fileName}";
+                    filePath = $"Uploads/INV/{fileName}";
                 }
-
 
                 invoice.InvoiceNo = request.InvoiceNo;
                 invoice.CompanyId = request.CompanyId;
                 invoice.SupplierId = request.SupplierId;
                 invoice.SalesOrderId = request.SalesOrderId;
+                invoice.GoodsReceivingId = request.GoodsReceivingId;
                 invoice.PurchaseOrderId = request.PurchaseOrderId;
                 invoice.ClientId = request.ClientId;
                 invoice.InvoiceDate = request.InvoiceDate;
@@ -383,6 +414,7 @@ string? includes = null)
                     {
                         Id = Guid.NewGuid(),
                         InvoiceId = invoice.Id,
+                        GoodsReceivingItemId = x.GoodsReceivingItemId,
                         Item = x.Item,
                         Description = x.Description,
                         Quantity = x.Quantity,
@@ -434,10 +466,11 @@ string? includes = null)
             var status = i.Status;
 
             if (
-                i.DueDate.Date < DateTime.UtcNow.Date &&
-                status != "Paid" &&
-                status != "Cancelled"
-            )
+    i.DueDate.HasValue &&
+    i.DueDate.Value.Date < DateTime.UtcNow.Date &&
+    status != "Paid" &&
+    status != "Cancelled"
+)
             {
                 status = "Overdue";
             }
@@ -458,6 +491,7 @@ string? includes = null)
                 i.QuotationId,
                 i.DeliveryOrderId,
                 i.SalesOrderId,
+                i.GoodsReceivingId,
                 i.CompanyId,
                 i.PaymentTerms,
                 i.Remarks,
@@ -477,6 +511,7 @@ string? includes = null)
                 InvoiceItems = i.InvoiceItems.Select(x => new
                 {
                     x.Id,
+                    x.GoodsReceivingItemId,
                     x.Item,
                     x.Description,
                     x.Quantity,
@@ -630,7 +665,7 @@ string? includes = null)
             var userId = Guid.Parse(userIdClaim);
 
             var invoice = await _context.Invoices
-                .FirstOrDefaultAsync(x => x.Id == request.InvoiceId);
+     .FirstOrDefaultAsync(x => x.Id == request.InvoiceId);
 
             if (invoice == null)
                 return NotFound();
@@ -713,8 +748,8 @@ string? includes = null)
             }
 
             var totalPaid = await _context.Payments
-                .Where(x => x.InvoiceId == request.InvoiceId)
-                .SumAsync(x => (decimal?)x.Amount) ?? 0m;
+    .Where(x => x.InvoiceId == request.InvoiceId)
+    .SumAsync(x => (decimal?)x.Amount) ?? 0m;
 
             invoice.PaidAmount = totalPaid;
 
@@ -722,6 +757,19 @@ string? includes = null)
                 invoice.PaidAmount >= invoice.TotalAmount
                     ? "Paid"
                     : "PartiallyPaid";
+
+            if (invoice.Type == "Sales")
+            {
+                var client = await _context.Companies.FirstOrDefaultAsync(x => x.Id == invoice.ClientId);
+                if (client != null)
+                    client.BalancePayment += invoice.TotalAmount;
+            }
+            else if (invoice.Type == "Purchase")
+            {
+                var supplier = await _context.Companies.FirstOrDefaultAsync(x => x.Id == invoice.SupplierId);
+                if (supplier != null)
+                    supplier.BalancePayment += invoice.TotalAmount;
+            }
 
             await _context.SaveChangesAsync();
 
@@ -766,8 +814,14 @@ string? includes = null)
         {
             var date = DateTime.Now.ToString("yyyyMMdd");
 
+            var today = DateTime.Today;
+
+            var start = today.Date;
+            var end = start.AddDays(1);
+
             var count = _context.Payments.Count(x =>
-                x.CreatedAt == DateTime.Today);
+                x.CreatedAt >= start &&
+                x.CreatedAt < end);
 
             return $"PAY-{date}-{(count + 1).ToString("0000")}";
         }
@@ -794,6 +848,100 @@ string? includes = null)
             var nextNumber = lastNumber + 1;
 
             return $"{prefix}-{nextNumber:D4}";
+        }
+
+        [HttpPut("PostInvoice")]
+        public async Task<IActionResult> PostInvoice(Guid id)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim))
+                return Unauthorized();
+
+            var invoice = await _context.Invoices
+                .Include(x => x.InvoiceItems)
+                .FirstOrDefaultAsync(x => x.Id == id);
+
+            if (invoice == null)
+                return NotFound();
+
+            if (invoice.Status == "Posted")
+                return BadRequest("Invoice already posted.");
+
+            try
+            {
+                invoice.Status = "Posted";
+
+                if (invoice.Type == "Sales")
+                {
+                    var client = await _context.Companies
+                        .FirstOrDefaultAsync(x => x.Id == invoice.ClientId);
+
+                    if (client != null)
+                    {
+                        client.BalancePayment += invoice.TotalAmount;
+                    }
+                }
+                else if (invoice.Type == "Purchase")
+                {
+                    var supplier = await _context.Companies
+                        .FirstOrDefaultAsync(x => x.Id == invoice.SupplierId);
+
+                    if (supplier != null)
+                    {
+                        supplier.BalancePayment += invoice.TotalAmount;
+                    }
+                }
+
+                await _context.SaveChangesAsync();
+
+                await _hub.Clients.All.SendAsync("InvoicePosted", invoice.Id);
+
+                return Ok(new
+                {
+                    message = "Invoice posted successfully",
+                    invoice.Id,
+                    invoice.Status
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Error = ex.Message });
+            }
+        }
+
+        [HttpPut("CancelInvoice")]
+        public async Task<IActionResult> CancelInvoice(Guid id)
+        {
+            var invoice = await _context.Invoices.FirstOrDefaultAsync(x => x.Id == id);
+
+            if (invoice == null)
+                return NotFound();
+
+            if (invoice.Status == "Cancelled")
+                return BadRequest("Already cancelled");
+
+            // reverse balance if it was posted
+            if (invoice.Status == "Posted")
+            {
+                if (invoice.Type == "Sales")
+                {
+                    var client = await _context.Companies.FirstOrDefaultAsync(x => x.Id == invoice.ClientId);
+                    if (client != null)
+                        client.BalancePayment -= invoice.TotalAmount;
+                }
+                else if (invoice.Type == "Purchase")
+                {
+                    var supplier = await _context.Companies.FirstOrDefaultAsync(x => x.Id == invoice.SupplierId);
+                    if (supplier != null)
+                        supplier.BalancePayment -= invoice.TotalAmount;
+                }
+            }
+
+            invoice.Status = "Cancelled";
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Invoice cancelled", invoice.Id });
         }
     }
 }

@@ -100,9 +100,7 @@ import { TabsModule } from 'primeng/tabs';
             >
               Sales Order
             </span>
-            <span
-              class="text-sm text-slate-400 font-mono flex items-center gap-1.5"
-            >
+            <span class="text-sm text-slate-400 flex items-center gap-1.5">
               <i class="pi pi-calendar-plus text-slate-300"></i>
               {{ soData().createdAt | date: 'mediumDate' }}
             </span>
@@ -240,7 +238,7 @@ import { TabsModule } from 'primeng/tabs';
                       >
                       <span
                         (click)="downloadAttachment(soData().quotation, 'Q')"
-                        class="font-mono font-bold text-indigo-600 hover:text-indigo-700 hover:underline cursor-pointer text-base flex items-center gap-2 max-w-max"
+                        class="font-bold text-indigo-600 hover:text-indigo-700 hover:underline cursor-pointer text-base flex items-center gap-2 max-w-max"
                       >
                         <i class="pi pi-link text-sm"></i>
                         {{
@@ -294,7 +292,7 @@ import { TabsModule } from 'primeng/tabs';
                         <span class="font-bold text-slate-400 uppercase text-sm"
                           >PO Reference:</span
                         >
-                        <span class="font-mono font-bold text-slate-800">{{
+                        <span class="font-bold text-slate-800">{{
                           soData().clientPONumber
                         }}</span>
                       </div>
@@ -332,26 +330,24 @@ import { TabsModule } from 'primeng/tabs';
                       class="flex justify-between items-center text-sm text-gray-500"
                     >
                       <span>SubTotal</span>
-                      <span class="font-mono font-semibold text-gray-600"
+                      <span class="font-semibold text-gray-600"
                         >RM {{ soData().subTotal ?? 0 | number: '1.2-2' }}</span
                       >
                     </div>
                     <div
                       class="flex justify-between items-center text-sm text-emerald-600 font-medium"
-                      *ngIf="soData().discount"
                     >
                       <span>Discount</span>
-                      <span class="font-mono font-bold"
-                        >- RM {{ soData().discount | number: '1.2-2' }}</span
+                      <span class="font-bold"
+                        >- RM {{ soData()?.discount | number: '1.2-2' }}</span
                       >
                     </div>
                     <div
                       class="flex justify-between items-center text-sm text-slate-600 font-medium"
-                      *ngIf="soData().taxAmount"
                     >
                       <span>Estimated Service Tax</span>
-                      <span class="font-mono font-semibold text-slate-200"
-                        >RM {{ soData().taxAmount | number: '1.2-2' }}</span
+                      <span class="font-semibold text-slate-600"
+                        >RM {{ soData()?.taxAmount | number: '1.2-2' }}</span
                       >
                     </div>
                     <div
@@ -360,7 +356,7 @@ import { TabsModule } from 'primeng/tabs';
                       <span class="font-bold text-sm uppercase tracking-wider"
                         >Total Statement Balance</span
                       >
-                      <span class="font-mono font-black text-2xl tracking-wide"
+                      <span class="font-black text-2xl tracking-wide"
                         >RM
                         {{ soData().totalAmount ?? 0 | number: '1.2-2' }}</span
                       >
@@ -449,12 +445,7 @@ import { TabsModule } from 'primeng/tabs';
                     </ng-template>
 
                     <ng-template #body let-item let-rowIndex="rowIndex">
-                      <ng-container
-                        *ngIf="
-                          item.type === 'Category' || item.isGroup;
-                          else normalRow
-                        "
-                      >
+                      <ng-container *ngIf="item.rowType === 'CategoryHeader'">
                         <tr
                           class="bg-slate-100/70 border-y border-slate-200/80"
                         >
@@ -471,7 +462,23 @@ import { TabsModule } from 'primeng/tabs';
                         </tr>
                       </ng-container>
 
-                      <ng-template #normalRow>
+                      <ng-container *ngIf="item.rowType === 'NoteRow'">
+                        <tr
+                          class="bg-slate-100/70 border-y border-slate-200/80"
+                        >
+                          <td class="text-center! text-sm"></td>
+
+                          <td class="text-center! text-sm">{{ item.item }}</td>
+                          <td
+                            class="text-left text-slate-700 text-sm"
+                            colspan="7"
+                          >
+                            {{ item.description }}
+                          </td>
+                        </tr>
+                      </ng-container>
+
+                      <ng-container *ngIf="item.rowType === 'LineItem'">
                         <tr
                           class="border-b border-slate-100 hover:bg-indigo-50/20 transition-colors"
                           [ngClass]="{
@@ -486,13 +493,12 @@ import { TabsModule } from 'primeng/tabs';
                                 *ngIf="item.itemType === 'Product'"
                                 [binary]="true"
                                 [(ngModel)]="item.selected"
-                                [disabled]="item.qtyOnHand >= item.quantity"
                               ></p-checkbox>
                             </div>
                           </td>
 
                           <td
-                            class="p-3 !text-center text-slate-500 font-mono font-medium"
+                            class="p-3 !text-center text-slate-500 font-medium"
                           >
                             {{ item.item || '-' }}
                           </td>
@@ -536,7 +542,7 @@ import { TabsModule } from 'primeng/tabs';
 
                               <span
                                 *ngFor="let po of item.purchaseOrderNos"
-                                class="inline-flex items-center px-2 py-0.5 rounded font-mono font-bold text-[11px] bg-white text-slate-700 border border-slate-200 shadow-3xs hover:border-indigo-300 hover:text-indigo-600 transition-colors cursor-pointer"
+                                class="inline-flex items-center px-2 py-0.5 rounded font-bold text-[11px] bg-white text-slate-700 border border-slate-200 shadow-3xs hover:border-indigo-300 hover:text-indigo-600 transition-colors cursor-pointer"
                                 ><a
                                   class="cursor-pointer"
                                   [routerLink]="'/purchase-orders/details'"
@@ -643,7 +649,7 @@ import { TabsModule } from 'primeng/tabs';
                             </div>
                           </td>
                         </tr>
-                      </ng-template>
+                      </ng-container>
                       <ng-template #footer>
                         <tr>
                           <td colspan="7" class="text-right! text-sm">
@@ -662,11 +668,11 @@ import { TabsModule } from 'primeng/tabs';
                             colspan="7"
                             class="text-right! text-sm text-red-500!"
                           >
-                            Discount
+                            Discount (RM)
                           </td>
                           <td
                             colspan="1"
-                            class="text-right! font-semibold! font-mono text-red-500!"
+                            class="text-right! font-semibold! text-red-500!"
                           >
                             - {{ soData().discount | number: '1.2' }}
                           </td>
@@ -681,7 +687,7 @@ import { TabsModule } from 'primeng/tabs';
                           </td>
                           <td
                             colspan="1"
-                            class="text-right! font-bold! font-mono text-lg! bg-gray-50!"
+                            class="text-right! font-bold! text-lg! bg-gray-50!"
                           >
                             {{ soData().totalAmount | number: '1.2' }}
                           </td>
@@ -759,7 +765,7 @@ import { TabsModule } from 'primeng/tabs';
                         <div class="flex items-center justify-between">
                           <div class="flex flex-col gap-0.5">
                             <span
-                              class="font-mono font-bold text-sm text-slate-900 hover:text-indigo-600 cursor-pointer flex items-center gap-1.5"
+                              class="font-bold text-sm text-slate-900 hover:text-indigo-600 cursor-pointer flex items-center gap-1.5"
                             >
                               #{{ inv.invoiceNo }}
                               <i
@@ -792,15 +798,14 @@ import { TabsModule } from 'primeng/tabs';
                         >
                           <div>
                             <span class="text-slate-400">Paid: </span>
-                            <span class="font-mono font-bold text-slate-700"
+                            <span class="font-bold text-slate-700"
                               >RM
                               {{ inv.paidAmount || 0 | number: '1.2-2' }}</span
                             >
                           </div>
                           <div class="text-right">
                             <span class="text-slate-400">Valuation: </span>
-                            <span
-                              class="font-mono font-extrabold text-slate-900"
+                            <span class="font-extrabold text-slate-900"
                               >RM {{ inv.totalAmount | number: '1.2-2' }}</span
                             >
                           </div>
@@ -848,10 +853,9 @@ import { TabsModule } from 'primeng/tabs';
                           class="text-sm font-bold text-slate-400 uppercase tracking-wider"
                           >Contact Phone Number</span
                         >
-                        <span
-                          class="font-mono font-semibold text-slate-800 text-base"
-                          >{{ soData().client?.contactNo || '—' }}</span
-                        >
+                        <span class="font-semibold text-slate-800 text-base">{{
+                          soData().client?.contactNo || '—'
+                        }}</span>
                       </div>
                     </div>
 
@@ -865,7 +869,7 @@ import { TabsModule } from 'primeng/tabs';
                           >E-Mail</span
                         >
                         <span
-                          class="font-semibold text-indigo-600 font-mono select-all truncate max-w-xs text-base"
+                          class="font-semibold text-indigo-600 select-all truncate max-w-xs text-base"
                           title="{{ soData().client?.email }}"
                         >
                           {{ soData().client?.email }}
@@ -1815,12 +1819,12 @@ export class SalesOrderDetails {
     const items = this.getSortedSalesOrderItems();
 
     let itemCount = 0;
-    for (let i = 0; i <= rowIndex; i++) {
-      const item = items[i];
-      if (item && item.type !== 'Category' && !item.isGroup) {
-        itemCount++;
-      }
-    }
+    // for (let i = 0; i <= rowIndex; i++) {
+    //   const item = items[i];
+    //   if (item && item.type !== 'Category' && !item.isGroup) {
+    //     itemCount++;
+    //   }
+    // }
 
     return itemCount;
   }

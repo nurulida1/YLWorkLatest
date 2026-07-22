@@ -17,7 +17,7 @@ import { BaseResponse } from '../shared/helpers/helpers';
 import { MessageService } from 'primeng/api';
 
 @Injectable({
-  providedIn: 'root', // singleton
+  providedIn: 'root',
 })
 export class NotificationService {
   private hubConnection!: signalR.HubConnection;
@@ -30,13 +30,12 @@ export class NotificationService {
 
   private isConnected: boolean = false;
 
-  /** ✅ Notification caching */
   private notificationsLoaded = false;
   private _notifications$ = new BehaviorSubject<NotificationDto[]>([]);
   public notifications$ = this._notifications$.asObservable();
 
   url = environment.ApiBaseUrl + '/Notification';
-  private readonly baseUrl = 'https://localhost:5000/hubs/notifications';
+  private readonly baseUrl = 'http://192.168.1.75:5000/hubs/notifications';
 
   constructor(
     private zone: NgZone,
@@ -44,7 +43,6 @@ export class NotificationService {
     private messageService: MessageService,
   ) {}
 
-  /** Starts SignalR connection only once */
   startConnection() {
     if (this.isConnected) return;
 
@@ -66,7 +64,6 @@ export class NotificationService {
       .catch((err) => console.error('❌ SignalR Connection Error:', err));
   }
 
-  /** Stop connection when user logs out */
   stopConnection() {
     if (this.hubConnection && this.isConnected) {
       this.hubConnection.stop().then(() => {
@@ -76,14 +73,12 @@ export class NotificationService {
     }
   }
 
-  /** Handle incoming notifications from SignalR */
   private listenForUpdates() {
     this.hubConnection.on('ReceiveUpdate', (message: string) => {
       this.zone.run(() => {
         console.log('📢 Received:', message);
         this.messageSource.next(message);
 
-        // Optionally update unread count on each new message
         this.refreshUnreadCount();
       });
     });
@@ -96,11 +91,10 @@ export class NotificationService {
     this.http
       .get<{ unreadCount: number }>(`${this.url}/UnreadCount`, { params })
       .subscribe((res) => {
-        this._unreadCount$.next(res.unreadCount); // emits value immediately
+        this._unreadCount$.next(res.unreadCount);
       });
   }
 
-  /** Refresh unread count dynamically */
   refreshUnreadCount(userId?: string) {
     this.UnreadCount(userId)
       .pipe(take(1))
@@ -111,10 +105,8 @@ export class NotificationService {
       });
   }
 
-  /** API Calls */
   GetNotifications(userId: string): Observable<NotificationDto[]> {
     if (this.notificationsLoaded && this._notifications$.value.length > 0) {
-      // 🟢 Return cached data
       return of(this._notifications$.value);
     }
 
@@ -132,7 +124,6 @@ export class NotificationService {
       );
   }
 
-  /** ✅ Manually refresh (optional) */
   RefreshNotifications(userId: number): void {
     const params = new HttpParams().set('userId', userId.toString());
 
@@ -168,9 +159,9 @@ export class NotificationService {
   }
 
   MarkRead(id: string): Observable<BaseResponse> {
-    const params = new HttpParams().set('id', id); // lowercase 'id'
+    const params = new HttpParams().set('id', id);
     return this.http
-      .put<BaseResponse>(`${this.url}/MarkRead`, {}, { params }) // empty body required for PUT
+      .put<BaseResponse>(`${this.url}/MarkRead`, {}, { params })
       .pipe(retry(1), catchError(this.handleError('MarkRead')));
   }
 

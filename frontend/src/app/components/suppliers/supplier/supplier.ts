@@ -112,6 +112,9 @@ import { ImageModule } from 'primeng/image';
                 <th class="bg-gray-100! text-center! w-[15%]!">
                   Contact Person
                 </th>
+                <th class="bg-gray-100! text-center! w-[15%]!">
+                  Balance Payment (RM)
+                </th>
 
                 <th class="bg-gray-100! text-center! w-[5%]!">Action</th>
               </tr>
@@ -155,6 +158,10 @@ import { ImageModule } from 'primeng/image';
                       Alt: {{ data.contactPerson2 }}
                     </span>
                   </div>
+                </td>
+
+                <td class="text-center!">
+                  {{ data.balancePayment | number: '1.2' }}
                 </td>
 
                 <td class="text-center!">

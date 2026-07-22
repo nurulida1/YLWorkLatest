@@ -44,9 +44,9 @@ import { AvatarModule } from 'primeng/avatar';
 import { TooltipModule } from 'primeng/tooltip';
 import { FullCalendarModule } from '@fullcalendar/angular';
 import { CalendarOptions } from '@fullcalendar/core/index.js';
-import dayGridPlugin from '@fullcalendar/daygrid/index.js';
-import timeGridPlugin from '@fullcalendar/timegrid/index.js';
-import interactionPlugin from '@fullcalendar/interaction/index.js';
+import dayGridPlugin from '@fullcalendar/daygrid';
+import timeGridPlugin from '@fullcalendar/timegrid';
+import interactionPlugin from '@fullcalendar/interaction';
 import { ClientService } from '../../../services/ClientService';
 import { CompanyType } from '../../../shared/enum/enum';
 import { TabsModule } from 'primeng/tabs';
@@ -104,7 +104,7 @@ import { CheckboxModule } from 'primeng/checkbox';
             icon="pi pi-plus-circle"
             severity="info"
             styleClass="tracking-wide!"
-            (onClick)="ActionClick(null, 'add')"
+            [routerLink]="'/projects/form'"
           ></p-button>
         </div>
         <div class="flex flex-row items-center gap-2 mt-3">
@@ -113,12 +113,12 @@ import { CheckboxModule } from 'primeng/checkbox';
               type="text"
               pInputText
               [(ngModel)]="search"
-              class="w-full!"
+              class="pl-8! w-full!"
               placeholder="Search by project code, or name ..."
               (keyup)="onKeyDown($event)"
             />
             <i
-              class="pi pi-search absolute! top-3! right-2! text-gray-500!"
+              class="pi pi-search absolute! top-3.5! left-2! text-gray-500!"
             ></i>
           </div>
         </div>
@@ -149,7 +149,7 @@ import { CheckboxModule } from 'primeng/checkbox';
                   pSortableColumn="ProjectTitle"
                   class="bg-gray-100! text-center! w-[30%]!"
                 >
-                  <div class="flex flex-row items-center justify-center gap-2">
+                  <div class="flex flex-row items-center gap-2">
                     <div>Project Title</div>
                     <p-sortIcon field="ProjectTitle"></p-sortIcon>
                   </div>
@@ -163,7 +163,7 @@ import { CheckboxModule } from 'primeng/checkbox';
                     <p-sortIcon field="Priority"></p-sortIcon>
                   </div>
                 </th>
-                <th class="bg-gray-100! text-center! w-[25%]!">Client</th>
+                <th class="bg-gray-100! w-[25%]!">Client</th>
                 <th
                   pSortableColumn="DueDate"
                   class="bg-gray-100! text-center! w-[15%]!"
@@ -196,7 +196,7 @@ import { CheckboxModule } from 'primeng/checkbox';
                     >{{ data.projectCode }}</a
                   >
                 </td>
-                <td class="text-center! bg-white!">
+                <td class="bg-white!">
                   {{ data.projectTitle }}
                 </td>
                 <td class="text-center! bg-white!">
@@ -213,7 +213,7 @@ import { CheckboxModule } from 'primeng/checkbox';
                     {{ data.priority }}
                   </div>
                 </td>
-                <td class="text-center! bg-white!">
+                <td class="bg-white!">
                   {{ data.client.name }}
                 </td>
                 <td class="text-center! bg-white!">
@@ -1196,10 +1196,10 @@ export class Project implements OnInit, OnDestroy {
   }
 
   getInitials(name: string | undefined | null) {
-    if (!name) return ''; // return empty string if name is missing
+    if (!name) return '';
     return name
       .split(' ')
-      .filter((n) => n) // remove empty parts
+      .filter((n) => n)
       .map((n) => n[0])
       .join('')
       .toUpperCase();

@@ -19,6 +19,7 @@
         public ICollection<Quotation> Quotations { get; set; }
         public ICollection<PurchaseOrder> PurchaseOrders { get; set; }
         public ICollection<MaterialRequest> MaterialRequest { get; set; }
+        public ICollection<ProjectTask> ProjectTasks { get; set; } = new List<ProjectTask>();
     }
 
     public class ProjectMember: BaseEntity

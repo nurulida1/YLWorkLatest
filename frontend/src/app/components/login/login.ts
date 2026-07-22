@@ -157,6 +157,15 @@ import { MessageService } from 'primeng/api';
                 severity="contrast"
                 (onClick)="onLogin()"
               ></p-button>
+
+              <div class="text-center mt-4 text-sm">
+                Don't have an account?
+                <strong
+                  class="hover:underline cursor-pointer hover:scale-101"
+                  [routerLink]="'/register'"
+                  >Create an account</strong
+                >
+              </div>
             </div>
           </form>
 

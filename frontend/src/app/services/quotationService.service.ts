@@ -172,6 +172,12 @@ export class QuotationService {
     });
   }
 
+  GetDropdown(): Observable<any> {
+    return this.http
+      .get<any>(`${this.url}/GetDropdown`)
+      .pipe(retry(1), catchError(this.handleError('GetDropdown')));
+  }
+
   private handleError = (context: string) => (error: any) => {
     this.messageService.add({
       severity: 'error',

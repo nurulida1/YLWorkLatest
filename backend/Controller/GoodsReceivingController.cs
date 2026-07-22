@@ -343,18 +343,19 @@ string? includes = null)
                 .Include(x => x.GoodsReceivingItems)
                 .FirstOrDefaultAsync(x => x.Id == request.Id);
 
-            if (grn == null) return NotFound();
+            if (grn == null)
+                return NotFound();
 
             var itemsJson = Request.Form["goodsReceivingItems"].FirstOrDefault();
 
             var items = string.IsNullOrWhiteSpace(itemsJson)
-    ? new List<GoodsReceivingItemRequest>()
-    : JsonSerializer.Deserialize<List<GoodsReceivingItemRequest>>(
-        itemsJson,
-        new JsonSerializerOptions
-        {
-            PropertyNameCaseInsensitive = true
-        });
+                ? new List<GoodsReceivingItemRequest>()
+                : JsonSerializer.Deserialize<List<GoodsReceivingItemRequest>>(
+                    itemsJson,
+                    new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
 
             grn.GRNNo = request.GRNNo;
             grn.PurchaseOrderId = request.PurchaseOrderId;
@@ -368,9 +369,24 @@ string? includes = null)
             grn.Remarks = request.Remarks;
             grn.UpdatedAt = DateTimeHelper.Now();
 
+            if (request.SupplierDOAttachment != null)
+            {
+                var file = request.SupplierDOAttachment;
+
+                var fileName = $"{Guid.NewGuid()}_{file.FileName}";
+                var filePath = Path.Combine("Uploads/GRN", fileName);
+
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await file.CopyToAsync(stream);
+                }
+
+                grn.SupplierDOAttachment = filePath;
+            }
+
             _context.GoodsReceivingItems.RemoveRange(grn.GoodsReceivingItems);
 
-            grn.GoodsReceivingItems = items.Select(x => new GoodsReceivingItem
+            var newItems = items.Select(x => new GoodsReceivingItem
             {
                 Id = Guid.NewGuid(),
                 GoodsReceivingId = grn.Id,
@@ -382,6 +398,8 @@ string? includes = null)
                 TotalPrice = x.TotalPrice,
                 Remarks = x.Remarks
             }).ToList();
+
+            await _context.GoodsReceivingItems.AddRangeAsync(newItems);
 
             await _context.SaveChangesAsync();
 
@@ -412,7 +430,7 @@ string? includes = null)
 
         private async Task<string> GenerateGRNNo()
         {
-            var year = DateTime.UtcNow.Year % 100;
+            var year = DateTimeHelper.Now().Year % 100;
 
             var last = await _context.GoodsReceivings
                 .OrderByDescending(x => x.CreatedAt)
@@ -435,6 +453,7 @@ string? includes = null)
         {
             var po = await _context.PurchaseOrders
                 .Include(x => x.PurchaseOrderItems)
+                .ThenInclude(x => x.ProductService)
                 .FirstOrDefaultAsync(x => x.Id == grn.PurchaseOrderId);
 
             if (po == null) return;
@@ -448,24 +467,39 @@ string? includes = null)
 
                 poItem.ReceivedQuantity += item.ReceivedQuantity;
 
-                var inventory = await _context.Inventories
-                    .FirstOrDefaultAsync(x => x.Id == poItem.InventoryId);
+                var inventoryId = poItem.ProductService?.InventoryId;
 
-                if (inventory != null)
+                if (inventoryId == null)
+                    continue;
+
+                var inventory = await _context.Inventories
+                    .FirstOrDefaultAsync(x => x.Id == inventoryId);
+
+                if (inventory == null)
+                    continue;
+
+                inventory.Quantity += item.ReceivedQuantity;
+                inventory.Date = DateTime.UtcNow;
+
+                _context.StockTransactions.Add(new StockTransaction
                 {
-                    inventory.Quantity += item.ReceivedQuantity;
-                }
+                    Id = Guid.NewGuid(),
+                    InventoryId = inventory.Id,
+                    Type = "IN",
+                    Quantity = item.ReceivedQuantity,
+                    ReferenceType = "GRN",
+                    ReferenceId = grn.Id,
+                    CreatedAt = DateTime.UtcNow
+                });
             }
 
             var totalOrdered = po.PurchaseOrderItems.Sum(x => x.Quantity);
             var totalReceived = po.PurchaseOrderItems.Sum(x => x.ReceivedQuantity);
 
-            if (totalReceived == 0)
-                po.Status = po.Status;
-            else if (totalReceived >= totalOrdered)
-                po.Status = "Completed";
-            else
-                po.Status = "PartiallyReceived";
+            po.Status =
+                totalReceived <= 0 ? po.Status :
+                totalReceived >= totalOrdered ? "Completed" :
+                "PartiallyReceived";
 
             await _context.SaveChangesAsync();
         }
@@ -478,6 +512,7 @@ string? includes = null)
                 x.GRNNo,
                 x.PurchaseOrderId,
                 x.SupplierId,
+                x.CompanyId,
                 x.ReceivedDate,
                 x.SupplierDONo,
                 x.SupplierDODate,
@@ -523,13 +558,17 @@ string? includes = null)
 
             var previousStatus = grn.Status;
 
+            if (previousStatus != "Confirmed" && status == "Confirmed")
+            {
+                if (!grn.IsPostedToInventory)
+                {
+                    await UpdatePOAndInventory(grn);
+                    grn.IsPostedToInventory = true;
+                }
+            }
+
             grn.Status = status;
             grn.UpdatedAt = DateTimeHelper.Now();
-
-            if (previousStatus == "Draft" && status == "Confirmed")
-            {
-                await UpdatePOAndInventory(grn);
-            }
 
             await _context.SaveChangesAsync();
 
@@ -544,6 +583,80 @@ string? includes = null)
                 grn.Id,
                 grn.Status
             });
+        }
+
+        [HttpPost("CreateFromGRNItems")]
+        public async Task<IActionResult> CreateFromGRNItems([FromBody] CreateInvoiceFromGRNItemsRequest request)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized();
+
+            using var transaction = await _context.Database.BeginTransactionAsync();
+
+            var invoice = new Invoice
+            {
+                Id = Guid.NewGuid(),
+                InvoiceNo = GenerateInvoiceNo("Purchase"),
+                Type = "Purchase",
+                InvoiceDate = DateTimeHelper.Now(),
+                DueDate = DateTimeHelper.Now().AddDays(30),
+                Status = "Draft",
+                SupplierId = request.SupplierId,
+                CreatedById = Guid.Parse(userId),
+                InvoiceItems = new List<InvoiceItem>()
+            };
+
+            foreach (var item in request.Items)
+            {
+                var grnItem = await _context.GoodsReceivingItems
+                    .FirstOrDefaultAsync(x => x.Id == item.GoodsReceivingItemId);
+
+                if (grnItem == null)
+                    return BadRequest("Invalid GRN item");
+
+                var invoicedQty = grnItem.InvoiceQuantity ?? 0m;
+                var remainingQty = grnItem.ReceivedQuantity - invoicedQty;
+
+                if (item.Quantity > remainingQty)
+                    return BadRequest("Not enough remaining quantity");
+
+                invoice.InvoiceItems.Add(new InvoiceItem
+                {
+                    Id = Guid.NewGuid(),
+                    InvoiceId = invoice.Id,
+                    GoodsReceivingItemId = grnItem.Id,
+                    Quantity = item.Quantity,
+                    Unit = grnItem.Unit,
+                    UnitPrice = grnItem.UnitPrice ?? 0,
+                    Discount = grnItem.Discount ?? 0,
+                    Amount = item.Quantity * (grnItem.UnitPrice ?? 0)
+                });
+
+                grnItem.InvoiceQuantity = invoicedQty + item.Quantity;
+            }
+
+            invoice.TotalAmount = invoice.InvoiceItems.Sum(x => x.Amount.GetValueOrDefault());
+
+            _context.Invoices.Add(invoice);
+
+            await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
+
+            return Ok(new
+            {
+                invoice.Id,
+                invoice.InvoiceNo
+            });
+        }
+
+        private string GenerateInvoiceNo(string type)
+        {
+            var prefix = type == "Purchase" ? "PI" : "SI";
+            var datePart = DateTime.Now.ToString("yyyyMMdd");
+            var randomPart = new Random().Next(1000, 9999);
+
+            return $"{prefix}-{datePart}-{randomPart}";
         }
     }
 }

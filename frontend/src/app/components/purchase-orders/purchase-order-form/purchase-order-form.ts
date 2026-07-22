@@ -39,7 +39,6 @@ import {
 import { UserService } from '../../../services/userService.service';
 import { ProjectService } from '../../../services/ProjectService';
 import { ProjectDto } from '../../../models/Project';
-import { SupplierService } from '../../../services/SupplierService';
 import { CompanyService } from '../../../services/companyService';
 import { CompanyType } from '../../../shared/enum/enum';
 import { MultiSelectModule } from 'primeng/multiselect';
@@ -278,12 +277,26 @@ import { RadioButtonModule } from 'primeng/radiobutton';
           </div>
           <div class="col-span-12 lg:col-span-6 flex flex-col gap-2 mt-2">
             <div>Payment Terms</div>
-            <input
-              type="text"
-              pInputText
-              class="w-full"
-              formControlName="paymentTerms"
-            />
+            <div class="grid grid-cols-12 gap-1">
+              <p-inputNumber
+                formControlName="paymentTerms"
+                class="col-span-2"
+                inputStyleClass="w-full! text-right!"
+                styleClass="w-full!"
+                placeholder="e.g. 30"
+              />
+              <p-select
+                formControlName="paymentTermType"
+                appendTo="body"
+                [options]="[
+                  { label: 'days', value: 'days' },
+                  { label: 'months', value: 'months' },
+                  { label: 'years', value: 'years' },
+                ]"
+                inputStyleClass="w-full!"
+                class="col-span-10"
+              ></p-select>
+            </div>
           </div>
           <div class="col-span-12 lg:col-span-6 flex flex-col gap-1">
             <div class="flex flex-row items-center justify-between">
@@ -1257,7 +1270,8 @@ export class PurchaseOrderForm implements OnInit, OnDestroy {
       poReceivedDate: new FormControl<Date | null>(null),
       supplierId: new FormControl<string | null>(null),
       clientId: new FormControl<string | null>(null),
-      paymentTerms: new FormControl<string | null>(null),
+      paymentTerms: new FormControl<number | null>(null),
+      paymentTermType: new FormControl<string>('days'),
       projectId: new FormControl<string | null>(null),
       quotationId: new FormControl<string | null>(null),
       gross: new FormControl<number | null>(0),

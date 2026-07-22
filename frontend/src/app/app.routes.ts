@@ -2,23 +2,37 @@ import { Routes } from '@angular/router';
 import { Unauthorized } from './common/components/unauthorized/unauthorized';
 import { authGuard } from './common/auth.guard';
 import { WebLayout } from './shared/components/web-layout/web-layout';
+import { SplashScreen } from './components/splash-screen/splash-screen';
+import { deviceRedirectGuard } from './common/device-redirect.guard';
 
 export const routes: Routes = [
-  { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
+  {
+    path: '',
+    pathMatch: 'full',
+    canMatch: [deviceRedirectGuard],
+    component: SplashScreen,
+  },
   {
     path: 'dashboard',
     canActivate: [authGuard],
     loadComponent: () =>
-      import('./shared/components/web-layout/web-layout').then(
-        (m) => m.WebLayout,
+      import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
+        (m) => m.ResponsiveLayout,
       ),
     children: [
       {
         path: '',
-        loadComponent: () =>
-          import('./components/main-dashboard/dashboard/dashboard').then(
-            (m) => m.Dashboard,
-          ),
+        loadComponent: () => {
+          const isMobile = window.innerWidth < 768;
+
+          return isMobile
+            ? import('./components/main-dashboard/mobile-dashboard/mobile-dashboard').then(
+                (m) => m.MobileDashboard,
+              )
+            : import('./components/main-dashboard/dashboard/dashboard').then(
+                (m) => m.Dashboard,
+              );
+        },
       },
     ],
   },
@@ -72,8 +86,8 @@ export const routes: Routes = [
     path: 'settings',
     canActivate: [authGuard],
     loadComponent: () =>
-      import('./shared/components/web-layout/web-layout').then(
-        (m) => m.WebLayout,
+      import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
+        (m) => m.ResponsiveLayout,
       ),
 
     children: [
@@ -90,8 +104,8 @@ export const routes: Routes = [
     path: 'clients',
     canActivate: [authGuard],
     loadComponent: () =>
-      import('./shared/components/web-layout/web-layout').then(
-        (m) => m.WebLayout,
+      import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
+        (m) => m.ResponsiveLayout,
       ),
     children: [
       {
@@ -107,8 +121,8 @@ export const routes: Routes = [
     path: 'incomes',
     canActivate: [authGuard],
     loadComponent: () =>
-      import('./shared/components/web-layout/web-layout').then(
-        (m) => m.WebLayout,
+      import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
+        (m) => m.ResponsiveLayout,
       ),
     children: [
       {
@@ -122,8 +136,8 @@ export const routes: Routes = [
     path: 'expenses',
     canActivate: [authGuard],
     loadComponent: () =>
-      import('./shared/components/web-layout/web-layout').then(
-        (m) => m.WebLayout,
+      import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
+        (m) => m.ResponsiveLayout,
       ),
     children: [
       {
@@ -137,8 +151,8 @@ export const routes: Routes = [
     path: 'supplier-payments',
     canActivate: [authGuard],
     loadComponent: () =>
-      import('./shared/components/web-layout/web-layout').then(
-        (m) => m.WebLayout,
+      import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
+        (m) => m.ResponsiveLayout,
       ),
     children: [
       {
@@ -154,8 +168,8 @@ export const routes: Routes = [
     path: 'projects',
     canActivate: [authGuard],
     loadComponent: () =>
-      import('./shared/components/web-layout/web-layout').then(
-        (m) => m.WebLayout,
+      import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
+        (m) => m.ResponsiveLayout,
       ),
     children: [
       {
@@ -169,7 +183,10 @@ export const routes: Routes = [
   },
   {
     path: 'material-requests',
-    component: WebLayout,
+    loadComponent: () =>
+      import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
+        (m) => m.ResponsiveLayout,
+      ),
     children: [
       {
         path: '',
@@ -185,8 +202,8 @@ export const routes: Routes = [
     path: 'supplier',
     canActivate: [authGuard],
     loadComponent: () =>
-      import('./shared/components/web-layout/web-layout').then(
-        (m) => m.WebLayout,
+      import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
+        (m) => m.ResponsiveLayout,
       ),
     children: [
       {
@@ -202,8 +219,8 @@ export const routes: Routes = [
     path: 'payments',
     canActivate: [authGuard],
     loadComponent: () =>
-      import('./shared/components/web-layout/web-layout').then(
-        (m) => m.WebLayout,
+      import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
+        (m) => m.ResponsiveLayout,
       ),
     children: [
       {
@@ -217,8 +234,8 @@ export const routes: Routes = [
     path: 'user-management',
     canActivate: [authGuard],
     loadComponent: () =>
-      import('./shared/components/web-layout/web-layout').then(
-        (m) => m.WebLayout,
+      import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
+        (m) => m.ResponsiveLayout,
       ),
     children: [
       {
@@ -232,7 +249,10 @@ export const routes: Routes = [
   },
   {
     path: 'quotations',
-    component: WebLayout,
+    loadComponent: () =>
+      import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
+        (m) => m.ResponsiveLayout,
+      ),
     children: [
       {
         path: '',
@@ -245,7 +265,10 @@ export const routes: Routes = [
   },
   {
     path: 'goods-receiving',
-    component: WebLayout,
+    loadComponent: () =>
+      import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
+        (m) => m.ResponsiveLayout,
+      ),
     children: [
       {
         path: '',
@@ -260,8 +283,8 @@ export const routes: Routes = [
     path: 'purchase-orders',
     canActivate: [authGuard],
     loadComponent: () =>
-      import('./shared/components/web-layout/web-layout').then(
-        (m) => m.WebLayout,
+      import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
+        (m) => m.ResponsiveLayout,
       ),
     children: [
       {
@@ -278,8 +301,8 @@ export const routes: Routes = [
     path: 'sales-order',
     canActivate: [authGuard],
     loadComponent: () =>
-      import('./shared/components/web-layout/web-layout').then(
-        (m) => m.WebLayout,
+      import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
+        (m) => m.ResponsiveLayout,
       ),
     children: [
       {
@@ -294,7 +317,10 @@ export const routes: Routes = [
 
   {
     path: 'delivery-orders',
-    component: WebLayout,
+    loadComponent: () =>
+      import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
+        (m) => m.ResponsiveLayout,
+      ),
     children: [
       {
         path: '',
@@ -308,7 +334,10 @@ export const routes: Routes = [
 
   {
     path: 'do-rma',
-    component: WebLayout,
+    loadComponent: () =>
+      import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
+        (m) => m.ResponsiveLayout,
+      ),
     children: [
       {
         path: '',
@@ -322,7 +351,10 @@ export const routes: Routes = [
 
   {
     path: 'invoices',
-    component: WebLayout,
+    loadComponent: () =>
+      import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
+        (m) => m.ResponsiveLayout,
+      ),
     children: [
       {
         path: '',
@@ -335,7 +367,10 @@ export const routes: Routes = [
   },
   {
     path: 'department',
-    component: WebLayout,
+    loadComponent: () =>
+      import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
+        (m) => m.ResponsiveLayout,
+      ),
     children: [
       {
         path: '',
@@ -348,7 +383,10 @@ export const routes: Routes = [
   },
   {
     path: 'access-permission',
-    component: WebLayout,
+    loadComponent: () =>
+      import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
+        (m) => m.ResponsiveLayout,
+      ),
     children: [
       {
         path: '',
@@ -361,7 +399,10 @@ export const routes: Routes = [
   },
   {
     path: 'company',
-    component: WebLayout,
+    loadComponent: () =>
+      import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
+        (m) => m.ResponsiveLayout,
+      ),
     children: [
       {
         path: '',
@@ -376,13 +417,152 @@ export const routes: Routes = [
   //Logistic
   {
     path: 'inventory',
-    component: WebLayout,
+    loadComponent: () =>
+      import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
+        (m) => m.ResponsiveLayout,
+      ),
     children: [
       {
         path: '',
         loadChildren: () =>
           import('./components/inventories/inventory-routing.module').then(
             (m) => m.InventoryRoutingModule,
+          ),
+      },
+    ],
+  },
+  {
+    path: 'products-services',
+    loadComponent: () =>
+      import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
+        (m) => m.ResponsiveLayout,
+      ),
+    children: [
+      {
+        path: '',
+        loadComponent: () =>
+          import('./components/ProductsServices/ProductsServices').then(
+            (m) => m.ProductsServices,
+          ),
+      },
+    ],
+  },
+  //mobile highlight
+  {
+    path: 'splash-screen',
+    component: SplashScreen,
+  },
+  {
+    path: 'profile-settings',
+    loadComponent: () =>
+      import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
+        (m) => m.ResponsiveLayout,
+      ),
+    children: [
+      {
+        path: '',
+        loadComponent: () =>
+          import('./components/mobile-settings/mobile-settings').then(
+            (m) => m.MobileSettings,
+          ),
+      },
+    ],
+  },
+  {
+    path: 'tasks',
+    loadComponent: () =>
+      import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
+        (m) => m.ResponsiveLayout,
+      ),
+    children: [
+      {
+        path: '',
+        loadChildren: () =>
+          import('./components/tasks/tasks-routing.module').then(
+            (m) => m.TasksRoutingModule,
+          ),
+      },
+    ],
+  },
+
+  {
+    path: 'schedule',
+    loadComponent: () =>
+      import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
+        (m) => m.ResponsiveLayout,
+      ),
+    children: [
+      {
+        path: '',
+        loadComponent: () =>
+          import('./components/schedule/schedule').then((m) => m.Schedule),
+      },
+    ],
+  },
+
+  {
+    path: 'leave',
+    loadComponent: () =>
+      import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
+        (m) => m.ResponsiveLayout,
+      ),
+    children: [
+      {
+        path: '',
+        loadChildren: () =>
+          import('./components/leave/leave-routing.module').then(
+            (m) => m.LeaveRoutingModule,
+          ),
+      },
+    ],
+  },
+
+  {
+    path: 'claims',
+    loadComponent: () =>
+      import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
+        (m) => m.ResponsiveLayout,
+      ),
+    children: [
+      {
+        path: '',
+        loadChildren: () =>
+          import('./components/claims/claims-routing.module').then(
+            (m) => m.ClaimsRoutingModule,
+          ),
+      },
+    ],
+  },
+
+  {
+    path: 'meeting-room',
+    loadComponent: () =>
+      import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
+        (m) => m.ResponsiveLayout,
+      ),
+    children: [
+      {
+        path: '',
+        loadChildren: () =>
+          import('./components/meeting-room/meeting-room-routing.module').then(
+            (m) => m.MeetingRoomRoutingModule,
+          ),
+      },
+    ],
+  },
+
+  {
+    path: 'profile-settings/personal-info',
+    loadComponent: () =>
+      import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
+        (m) => m.ResponsiveLayout,
+      ),
+    children: [
+      {
+        path: '',
+        loadComponent: () =>
+          import('./components/personal-info/personal-info').then(
+            (m) => m.PersonalInfo,
           ),
       },
     ],

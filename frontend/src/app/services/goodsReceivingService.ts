@@ -8,7 +8,10 @@ import {
   PagingContent,
   BaseResponse,
 } from '../shared/helpers/helpers';
-import { GoodsReceivingDto } from '../models/GoodsReceiving';
+import {
+  CreateInvoiceFromGRNItemsRequest,
+  GoodsReceivingDto,
+} from '../models/GoodsReceiving';
 
 @Injectable({
   providedIn: 'root',
@@ -100,9 +103,13 @@ export class GoodsReceivingService {
       .pipe(retry(1), catchError(this.handleError('Delete')));
   }
 
-  UpdateStatus(payload: { id: string; status: string }): Observable<any> {
+  UpdateStatus(id: string, status: string): Observable<any> {
+    const params: any = {
+      id,
+      status,
+    };
     return this.http
-      .put<any>(`${this.url}/UpdateStatus`, payload)
+      .put<any>(`${this.url}/UpdateStatus`, null, { params })
       .pipe(retry(1), catchError(this.handleError('UpdateStatus')));
   }
 
@@ -114,6 +121,17 @@ export class GoodsReceivingService {
 
   GenerateNo() {
     return this.http.get<{ grnNo: string }>(`${this.url}/generate-no`);
+  }
+
+  CreateInvoiceFromGRNItems(
+    request: CreateInvoiceFromGRNItemsRequest,
+  ): Observable<any> {
+    return this.http
+      .post<any>(`${this.url}/CreateFromGRNItems`, request)
+      .pipe(
+        retry(1),
+        catchError(this.handleError('CreateInvoiceFromGRNItems')),
+      );
   }
 
   private handleError = (context: string) => (error: any) => {

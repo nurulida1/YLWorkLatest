@@ -7,6 +7,7 @@ using YLWorks.Model;
 using YLWorks.Data;
 using YLWorks.Services;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.EntityFrameworkCore;
 
 namespace YLWorks.Controllers
 {
@@ -17,12 +18,15 @@ namespace YLWorks.Controllers
         private readonly IConfiguration _config;
         private readonly IAuthService authService;
         private readonly JwtService _jwtService;
+        private readonly AppDbContext _context;
 
         public AuthController(IConfiguration config, AppDbContext context, IAuthService authService, JwtService jwtService)
         {
             _config = config;
             _jwtService = jwtService;
             this.authService = authService;
+            _context = context;
+
         }
 
         [AllowAnonymous]
@@ -33,14 +37,20 @@ namespace YLWorks.Controllers
             return Ok(result);
         }
 
+        [AllowAnonymous]
         [HttpPost("register")]
-        public async Task<ActionResult<User>> Register(UserDto request)
+        public async Task<ActionResult<User>> RegisterUser(RegisterRequest request)
         {
             var user = await authService.RegisterAsync(request);
+
             if (user == null)
                 return BadRequest("Email already exists.");
 
-            return Ok(user);
+            return Ok(new
+            {
+                message = "Registration submitted. Waiting for admin approval.",
+                userId = user.Id
+            });
         }
 
         //[HttpPost("login")]
@@ -78,5 +88,74 @@ namespace YLWorks.Controllers
             return Ok("You are authenticated!");
         }
 
-       }
+       
+
+        [AllowAnonymous]
+        [HttpPost("register")]
+        public async Task<IActionResult> Register(RegisterRequest request)
+        {
+            var user = await authService.RegisterAsync(request);
+
+            if (user == null)
+                return BadRequest("Email already exists.");
+
+            return Ok(new
+            {
+                message = "Registration submitted successfully. Please wait for administrator approval."
+            });
+        }
+
+        [Authorize(Roles = "Admin")]
+        [HttpPost("approve")]
+        public async Task<IActionResult> Approve(ApproveUserRequest request)
+        {
+            var user = await _context.Users
+                .Include(x => x.Departments)
+                .FirstOrDefaultAsync(x => x.Id == request.UserId);
+
+            if (user == null)
+                return NotFound("User not found.");
+
+            var departments = await _context.Departments
+                .Where(x => request.DepartmentIds.Contains(x.Id))
+                .ToListAsync();
+
+            if (departments.Count != request.DepartmentIds.Count)
+            {
+                return BadRequest("One or more departments not found.");
+            }
+
+            user.Departments = departments;
+            user.SystemRole = request.SystemRole;
+            user.Status = "Approved";
+            user.IsActive = true;
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new
+            {
+                message = "User approved successfully."
+            });
+        }
+
+        [Authorize(Roles = "Admin")]
+        [HttpPost("reject")]
+        public async Task<IActionResult> Reject(RejectUserRequest request)
+        {
+            var user = await _context.Users.FindAsync(request.UserId);
+
+            if (user == null)
+                return NotFound();
+
+            user.Status = "Rejected";
+            user.RejectReason = request.Reason;
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new
+            {
+                message = "User rejected."
+            });
+        }
+    }
 }

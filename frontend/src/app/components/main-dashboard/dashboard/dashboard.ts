@@ -6,14 +6,13 @@ import {
   OnDestroy,
   OnInit,
 } from '@angular/core';
-import { LogisticDashboard } from '../logistic-dashboard/logistic-dashboard';
 import { UserService } from '../../../services/userService.service';
 import { RouterLink } from '@angular/router';
 import { DepartmentDto } from '../../../models/Department';
 
 @Component({
   selector: 'app-dashboard',
-  imports: [CommonModule, LogisticDashboard, RouterLink],
+  imports: [CommonModule, RouterLink],
   template: `<div class="p-6 bg-gray-50 min-h-screen">
     <div
       class="bg-white rounded-xl p-6 border border-gray-100 shadow-sm flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6"
@@ -30,7 +29,6 @@ import { DepartmentDto } from '../../../models/Department';
 
       <div class="flex flex-wrap items-center gap-3">
         <button
-          *ngIf="hasDepartment('Sales') || isManagementOrAdmin"
           [routerLink]="'/quotations/form'"
           class="cursor-pointer hover:scale-102 flex flex-row items-center py-2.5 px-5 gap-2 border rounded-lg border-gray-300 font-medium text-gray-700 bg-white hover:bg-gray-50 transition-all shadow-sm"
         >
@@ -38,11 +36,6 @@ import { DepartmentDto } from '../../../models/Department';
           <span>New Quotation</span>
         </button>
         <button
-          *ngIf="
-            hasDepartment('Project') ||
-            hasDepartment('Technical') ||
-            isManagementOrAdmin
-          "
           [routerLink]="'/material-requests/form'"
           class="cursor-pointer hover:scale-102 flex flex-row items-center py-2.5 px-5 gap-2 border rounded-lg bg-blue-800 font-medium text-white hover:bg-blue-700 transition-all shadow-sm"
         >
@@ -54,11 +47,6 @@ import { DepartmentDto } from '../../../models/Department';
 
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-6">
       <div
-        *ngIf="
-          hasDepartment('Project') ||
-          hasDepartment('Technical') ||
-          isManagementOrAdmin
-        "
         class="bg-white rounded-xl p-5 border border-gray-100 shadow-sm flex flex-col justify-between h-36"
       >
         <div class="flex flex-row justify-between items-start">
@@ -96,7 +84,6 @@ import { DepartmentDto } from '../../../models/Department';
       </div>
 
       <div
-        *ngIf="hasDepartment('Admin, Account and HR') || isManagementOrAdmin"
         class="bg-white rounded-xl p-5 border border-gray-100 shadow-sm flex flex-col justify-between h-36"
       >
         <div class="flex flex-row justify-between items-start">
@@ -115,11 +102,6 @@ import { DepartmentDto } from '../../../models/Department';
       </div>
 
       <div
-        *ngIf="
-          hasDepartment('Technical') ||
-          hasDepartment('Project') ||
-          isManagementOrAdmin
-        "
         class="bg-white rounded-xl p-5 border border-gray-100 shadow-sm flex flex-col justify-between h-36"
       >
         <div class="flex flex-row justify-between items-start">
@@ -142,7 +124,6 @@ import { DepartmentDto } from '../../../models/Department';
 
     <div class="grid grid-cols-12 gap-6">
       <div
-        *ngIf="hasDepartment('Sales') || isManagementOrAdmin"
         class="col-span-12 md:col-span-6 xl:col-span-4 p-5 rounded-xl border border-gray-100 bg-white shadow-sm flex flex-col h-80 justify-between"
       >
         <div class="flex justify-between items-start">
@@ -181,7 +162,6 @@ import { DepartmentDto } from '../../../models/Department';
       </div>
 
       <div
-        *ngIf="hasDepartment('Purchasing & Logistic') || isManagementOrAdmin"
         class="col-span-12 md:col-span-6 xl:col-span-4 p-5 rounded-xl border border-gray-100 bg-white shadow-sm flex flex-col h-80 justify-between"
       >
         <div class="flex justify-between items-start">
@@ -238,7 +218,6 @@ import { DepartmentDto } from '../../../models/Department';
       </div>
 
       <div
-        *ngIf="hasDepartment('Admin, Account and HR') || isManagementOrAdmin"
         class="col-span-12 md:col-span-6 xl:col-span-4 p-5 rounded-xl border border-gray-100 bg-white shadow-sm flex flex-col h-80 justify-between"
       >
         <div>
@@ -276,11 +255,6 @@ import { DepartmentDto } from '../../../models/Department';
       </div>
 
       <div
-        *ngIf="
-          hasDepartment('Purchasing & Logistic') ||
-          hasDepartment('Technical') ||
-          isManagementOrAdmin
-        "
         class="col-span-12 md:col-span-6 p-5 rounded-xl border border-gray-100 bg-white shadow-sm flex flex-col justify-between h-80"
       >
         <div>
@@ -327,7 +301,6 @@ import { DepartmentDto } from '../../../models/Department';
       </div>
 
       <div
-        *ngIf="hasDepartment('Purchasing & Logistic') || isManagementOrAdmin"
         class="col-span-12 md:col-span-6 p-5 rounded-xl border border-gray-100 bg-white shadow-sm flex flex-col justify-between h-80"
       >
         <div>
@@ -387,18 +360,6 @@ import { DepartmentDto } from '../../../models/Department';
         </div>
       </div>
     </div>
-
-    <div
-      *ngIf="hasDepartment('Purchasing & Logistic') && isExecutiveOrSupport"
-      class="mt-6"
-    >
-      <div class="border-t border-gray-200 my-6 pt-4">
-        <h2 class="text-xl font-bold text-gray-900 mb-4">
-          Dedicated Logistic Workdesk
-        </h2>
-        <app-logistic-dashboard></app-logistic-dashboard>
-      </div>
-    </div>
   </div>`,
   styleUrl: './dashboard.less',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -422,11 +383,4 @@ export class Dashboard implements OnInit, OnDestroy {
   ngOnInit(): void {}
 
   ngOnDestroy(): void {}
-
-  hasDepartment(deptName: string): boolean {
-    if (this.systemRole === 'SuperAdmin') return true;
-    return this.departments.some((d) =>
-      d.name.toLowerCase().includes(deptName.toLowerCase()),
-    );
-  }
 }

@@ -20,14 +20,17 @@ namespace YLWorks.Model
         public Guid? ClientId { get; set; }
         public Company? Client { get; set; }
 
-        public string? PaymentTerms { get; set; }
+        public int? PaymentTerms { get; set; }
+        public string? PaymentTermType { get; set; }
         public Guid? ProjectId { get; set; }
         public Project? Project { get; set; }
 
         public Guid? QuotationId { get; set; }
         public Quotation? Quotation { get; set; }
 
-        public int? TotalQuantity { get; set; }
+        public decimal? TotalQuantity { get; set; }
+        public decimal RemainingQuantity =>
+            PurchaseOrderItems?.Sum(x => x.Quantity - x.ReceivedQuantity) ?? 0m;
         public decimal? Gross { get; set; }
         public decimal? Discount { get; set; }
         public decimal? TotalAmount { get; set; }
@@ -36,7 +39,6 @@ namespace YLWorks.Model
         public string? Remarks { get; set; }
         public string? Notes { get; set; }
 
-        public Guid? PurchaseOrderId { get; set; }
         public Guid? SalesOrderId { get; set; }
 
         public string Status { get; set; } = "Draft"; // Draft, Sent, Accepted, PartiallyReceived, Completed, Cancelled
@@ -77,16 +79,16 @@ namespace YLWorks.Model
         public PurchaseOrder PurchaseOrder { get; set; } = null!;
         public Guid? SalesOrderItemId { get; set; }
         public SalesOrderItem? SalesOrderItem { get; set; }
-        public Guid? InventoryId { get; set; }
-        public Inventory? Inventory { get; set; }
         public string? Item { get; set; }
         public string? Description { get; set; }
+        public Guid? ProductServiceId { get; set; }
+        public ProductService? ProductService { get; set; }
         public decimal Quantity { get; set; }
         public string Unit { get; set; } = "Nos";
         public decimal UnitPrice { get; set; }
         public decimal Discount { get; set; }
         public decimal TotalPrice { get; set; }
-        public decimal? ReceivedQuantity { get; set; } = 0;
+        public decimal ReceivedQuantity { get; set; } = 0;
     }
 
     public class POItemDto
@@ -95,15 +97,13 @@ namespace YLWorks.Model
         public string? Item { get; set; }
         public Guid? SalesOrderItemId { get; set; }
         public SalesOrderItem? SalesOrderItem { get; set; }
-        public Guid? InventoryId { get; set; }
-        public Inventory? Inventory { get; set; }
         public string Description { get; set; }
         public string? Unit { get; set; }
         public decimal Quantity { get; set; }
         public decimal UnitPrice { get; set; }
         public decimal Discount { get; set; }
         public decimal TotalPrice { get; set; }
-        public decimal? ReceivedQuantity { get; set; } = 0;
+        public decimal ReceivedQuantity { get; set; } = 0;
     }
 
     public class POItemBase
@@ -137,7 +137,8 @@ namespace YLWorks.Model
         public DateTime? POReceivedDate {  get; set; }
         public Guid? SupplierId { get; set; }
         public Guid? ClientId {  get; set; }
-        public string? PaymentTerms { get; set; }
+        public int? PaymentTerms { get; set; }
+        public string? PaymentTermType { get; set; }
 
         public Guid? QuotationId { get; set; }
         public Guid? ProjectId { get; set; }
@@ -153,7 +154,7 @@ namespace YLWorks.Model
         public string? Remarks { get; set; }
         public string? TermsAndConditions { get; set; }
         public string? BankDetails { get; set; }
-        public int? TotalQuantity { get; set; }
+        public decimal? TotalQuantity { get; set; }
         public IFormFile? Attachment { get; set; }
 
         public List<POItemRequest> PurchaseOrderItems { get; set; } = new();
@@ -168,7 +169,9 @@ namespace YLWorks.Model
         public DateTime? POReceivedDate { get; set; }
         public Guid? SupplierId { get; set; }
         public Guid? ClientId { get; set; }
-        public string? PaymentTerms { get; set; }
+        public int? PaymentTerms { get; set; }
+        public string? PaymentTermType { get; set; }
+
         public Guid? QuotationId { get; set; }
         public Guid? ProjectId { get; set; }
         public Guid? PurchaseOrderId {  get; set; }
@@ -180,7 +183,7 @@ namespace YLWorks.Model
         public string? Remarks { get; set; }
         public string? TermsAndConditions { get; set; }
         public string? BankDetails { get; set; }
-        public int? TotalQuantity { get; set; }
+        public decimal? TotalQuantity { get; set; }
         public IFormFile? Attachment { get; set; }
 
         public List<UpdatePOItemRequest> PurchaseOrderItems { get; set; } = new();
@@ -203,7 +206,7 @@ namespace YLWorks.Model
         public List<PurchaseOrder> PurchaseOrders { get; set; } = new();
         public List<DODropdownDto> DeliveryOrders { get; set; } = new();
         public List<Project> Projects { get; set; } = new();
-        public List<SalesOrderDropdownDto> SalesOrders { get; set; }
+        public List<SalesOrderDropdownDto> SalesOrders { get; set; } = new();
     }
 
     public class ConvertPOToInvoiceRequest

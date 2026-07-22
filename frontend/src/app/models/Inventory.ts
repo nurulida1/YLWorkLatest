@@ -1,5 +1,6 @@
 import { SectionInventory } from '../components/inventories/sectionInventory/sectionInventory';
 import { BaseModel, BaseOption, DropdownDto } from './BaseModel';
+import { ProductServiceDto } from './ProductService';
 import { UserDto } from './User';
 
 export interface InventoryDto extends BaseModel {
@@ -7,15 +8,16 @@ export interface InventoryDto extends BaseModel {
   itemName: string;
   brand: string;
   model: string;
+  availableQuantity: number;
   categoryId: string;
   category: BaseOption;
+  productServiceId: string;
+  productService: ProductServiceDto;
   description: string;
   unit: string;
   quantity: number;
   reservedQuantity: number;
   serialNumber: string;
-  referenceType: string;
-  referenceId: string;
   locationId: string;
   location: BaseOption;
   sectionId: string;
@@ -28,6 +30,7 @@ export interface InventoryDto extends BaseModel {
   attachment: string;
   createdById: string;
   createdBy: UserDto;
+  stockType: string;
 }
 
 export interface CreateInventoryRequest {
@@ -40,8 +43,6 @@ export interface CreateInventoryRequest {
   unit: string;
   quantity: number;
   serialNumber: string;
-  referenceType: string;
-  referenceId: string;
   locationId: string;
   sectionId: string;
   parLevel: string;
@@ -50,6 +51,8 @@ export interface CreateInventoryRequest {
   remarks: string;
   costs: number;
   attachment: string;
+  reservedQuantity: number;
+  productServiceId: string;
 }
 
 export interface UpdateInventoryRequest extends CreateInventoryRequest {
@@ -83,4 +86,14 @@ export interface InventoryRestockDto {
   parLevel: number;
   brand: string;
   section: SectionInventory;
+}
+
+export interface StockTransaction {
+  id: string;
+  inventoryId: string;
+  type: string;
+  quantity: number;
+  referenceType: string;
+  referenceId: string;
+  createdAt: Date;
 }

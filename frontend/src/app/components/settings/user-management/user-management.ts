@@ -43,6 +43,7 @@ import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { DatePickerModule } from 'primeng/datepicker';
 import { PasswordModule } from 'primeng/password';
 import { DepartmentService } from '../../../services/departmentService';
+import { ChartModule } from 'primeng/chart';
 
 @Component({
   selector: 'app-user-management',
@@ -56,17 +57,18 @@ import { DepartmentService } from '../../../services/departmentService';
     DialogModule,
     ReactiveFormsModule,
     SelectModule,
-    MultiSelectModule, // Register MultiSelect component
+    MultiSelectModule,
     MenuModule,
     InputNumberModule,
     KeyFilterModule,
     ToggleSwitchModule,
     DatePickerModule,
     PasswordModule,
+    ChartModule,
   ],
   template: `<div class="w-full min-h-[92.9vh] flex flex-col p-6 bg-gray-50/50">
       <div
-        class="flex flex-row items-center gap-2 text-xs text-gray-500 tracking-wide font-medium mb-4"
+        class="flex flex-row items-center gap-2 text-gray-500 tracking-wide font-medium mb-4"
       >
         <div
           [routerLink]="'/dashboard'"
@@ -78,47 +80,74 @@ import { DepartmentService } from '../../../services/departmentService';
         <div class="text-gray-700 font-semibold">User Management</div>
       </div>
 
-      <div
-        class="border border-gray-200/80 rounded-xl tracking-wide bg-white shadow-sm flex flex-col overflow-hidden"
-      >
+      <div class="flex flex-row items-center justify-between">
+        <div class="flex flex-col gap-0.5">
+          <h1 class="text-2xl text-gray-800 font-bold m-0 tracking-wide">
+            User Management
+          </h1>
+          <p class="text-gray-500 m-0">
+            Create, edit, and configure systemic permission roles for user
+            accounts.
+          </p>
+        </div>
+        <p-button
+          label="Add New User"
+          (onClick)="ActionClick(null, 'add')"
+          icon="pi pi-user-plus"
+          severity="info"
+          styleClass="!bg-blue-900 hover:!bg-blue-700 !border-none !py-2 !px-4 rounded-sm! !text-sm whitespace-nowrap font-medium rounded-lg shadow-sm transition-all"
+        ></p-button>
+      </div>
+
+      <div class="grid grid-cols-12 gap-4 my-3">
         <div
-          class="p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-gray-100"
+          class="col-span-3 p-6 border border-gray-300 bg-white flex flex-col gap-3"
         >
-          <div class="flex flex-col gap-0.5">
-            <h1 class="text-xl text-gray-800 font-bold m-0 tracking-tight">
-              User Management
-            </h1>
-            <p class="text-sm text-gray-500 m-0">
-              Create, edit, and configure systemic permission roles for user
-              accounts.
-            </p>
+          <div class="uppercase text-gray-500 tracking-wide text-sm">
+            Total Staff
           </div>
-
-          <div
-            class="flex flex-col md:flex-row items-stretch md:items-center gap-3"
-          >
-            <span class="relative min-w-full md:min-w-[320px]">
-              <i
-                class="pi pi-search absolute top-1/2 -translate-y-1/2 left-3 text-gray-400 text-sm"
-              ></i>
-              <input
-                type="text"
-                pInputText
-                [(ngModel)]="search"
-                class="w-full pl-9! pr-4! py-2! text-sm border border-gray-300 rounded-lg focus:border-blue-500 text-gray-800 placeholder:text-gray-400 shadow-inner/5"
-                placeholder="Search users by name..."
-                (keyup)="onKeyDown($event)"
-              />
-            </span>
-
-            <p-button
-              label="Add User"
-              (onClick)="ActionClick(null, 'add')"
-              icon="pi pi-plus"
-              severity="info"
-              styleClass="!bg-blue-600 hover:!bg-blue-700 !border-blue-600 !py-2 !px-4 !text-sm whitespace-nowrap font-medium rounded-lg shadow-sm transition-all"
-            ></p-button>
+          <div class="font-extrabold text-5xl text-gray-700">
+            {{ dashboardCount?.totalStaff }}
           </div>
+        </div>
+        <div
+          class="col-span-3 p-6 border border-gray-300 bg-white flex flex-col gap-3"
+        >
+          <div class="uppercase text-gray-500 tracking-wide text-sm">
+            Active Now
+          </div>
+          <div class="font-extrabold text-5xl text-gray-700">
+            {{ dashboardCount?.activeNow }}
+          </div>
+        </div>
+        <div
+          class="col-span-6 p-6 border border-gray-300 bg-white flex flex-col gap-3"
+        >
+          <div class="uppercase text-gray-500 tracking-wide text-sm">
+            User Status Summary
+          </div>
+          <div class="font-extrabold text-5xl text-gray-700">
+            <!-- bar-chart -->
+          </div>
+        </div>
+      </div>
+      <div
+        class="border border-gray-200/80 rounded-xl tracking-wide bg-white shadow-sm flex flex-col overflow-hidden mt-2"
+      >
+        <div class="px-6 py-4 flex justify-end gap-4 border-b border-gray-100">
+          <span class="relative min-w-full md:min-w-[320px]">
+            <i
+              class="pi pi-search absolute top-1/2 -translate-y-1/2 left-3 text-gray-400 text-sm"
+            ></i>
+            <input
+              type="text"
+              pInputText
+              [(ngModel)]="search"
+              class="w-full pl-9! pr-4! py-2! text-sm border border-gray-300 rounded-lg focus:border-blue-500 text-gray-800 placeholder:text-gray-400 shadow-inner/5"
+              placeholder="Search users by name..."
+              (keyup)="onKeyDown($event)"
+            />
+          </span>
         </div>
 
         <div class="p-0 overflow-x-auto">
@@ -134,42 +163,46 @@ import { DepartmentService } from '../../../services/departmentService';
             [showGridlines]="false"
             [lazy]="true"
             (onLazyLoad)="NextPage($event)"
-            styleClass="p-datatable-sm"
+            styleClass="p-datatable-sm border border-gray-300!"
           >
             <ng-template #header>
-              <tr class="border-b border-gray-200">
+              <tr class="border border-gray-200">
                 <th
-                  class="bg-gray-50/70! text-gray-600! font-semibold! text-xs! uppercase tracking-wider py-3 px-5 w-[25%]!"
+                  pSortableColumn="FullName"
+                  class="border-b! border-gray-300! bg-gray-200! text-gray-600! font-semibold! text-xs! uppercase tracking-wider py-3 px-5 w-[25%]!"
                 >
-                  Identity Profile
+                  <div class="flex flex-row items-center gap-2">
+                    <div>Name</div>
+                    <p-sortIcon field="FullName" class="mt-1" />
+                  </div>
                 </th>
                 <th
-                  class="bg-gray-50/70! text-gray-600! font-semibold! text-xs! uppercase tracking-wider py-3 px-4 w-[18%]"
+                  class="border-b! border-gray-300! bg-gray-200! text-gray-600! font-semibold! text-xs! uppercase tracking-wider py-3 px-4 w-[18%]"
                 >
                   Job Title
                 </th>
                 <th
-                  class="bg-gray-50/70! text-gray-600! font-semibold! text-xs! uppercase tracking-wider py-3 px-4 w-[20%]"
+                  class="border-b! border-gray-300! bg-gray-200! text-gray-600! font-semibold! text-xs! uppercase tracking-wider py-3 px-4 w-[20%]"
                 >
                   Departments
                 </th>
                 <th
-                  class="bg-gray-50/70! text-gray-600! font-semibold! text-xs! uppercase tracking-wider py-3 px-4 text-center! w-[14%]"
+                  class="border-b! border-gray-300! bg-gray-200! text-gray-600! font-semibold! text-xs! uppercase tracking-wider py-3 px-4 text-center! w-[14%]"
                 >
                   Last Active
                 </th>
                 <th
-                  class="bg-gray-50/70! text-gray-600! font-semibold! text-xs! uppercase tracking-wider py-3 px-4 text-center! w-[13%]"
+                  class="border-b! border-gray-300! bg-gray-200! text-gray-600! font-semibold! text-xs! uppercase tracking-wider py-3 px-4 text-center! w-[13%]"
                 >
                   Created Date
                 </th>
                 <th
-                  class="bg-gray-50/70! text-gray-600! font-semibold! text-xs! uppercase tracking-wider py-3 px-4 text-center! w-[5%]"
+                  class="border-b! border-gray-300! bg-gray-200! text-gray-600! font-semibold! text-xs! uppercase tracking-wider py-3 px-4 text-center! w-[5%]"
                 >
                   Status
                 </th>
                 <th
-                  class="bg-gray-50/70! text-gray-600! font-semibold! text-xs! uppercase tracking-wider py-3 px-4 text-center! w-[5%]"
+                  class="border-b! border-gray-300! bg-gray-200! text-gray-600! font-semibold! text-xs! uppercase tracking-wider py-3 px-4 text-center! w-[5%]"
                 >
                   Action
                 </th>
@@ -588,6 +621,8 @@ export class UserManagement implements OnInit, OnDestroy {
   isUpdate: boolean = false;
   now: Date = new Date();
 
+  dashboardCount: any;
+
   departmentSelection: any[] = [];
 
   search: string = '';
@@ -606,7 +641,24 @@ export class UserManagement implements OnInit, OnDestroy {
     this.Query.Includes = null;
   }
 
-  ngOnInit(): void {}
+  ngOnInit(): void {
+    this.GetCount();
+  }
+
+  GetCount() {
+    this.userService
+      .GetDashboardCounts()
+      .pipe(takeUntil(this.ngUnsubscribe))
+      .subscribe({
+        next: (res) => {
+          this.dashboardCount = res;
+          this.cdr.markForCheck();
+        },
+        error: (err) => {
+          console.error(err);
+        },
+      });
+  }
 
   GetData() {
     this.loadingService.start();

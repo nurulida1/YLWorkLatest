@@ -11,9 +11,6 @@ export interface DeliveryOrderDto extends BaseModel {
   projectId?: string;
   project?: ProjectDto;
 
-  purchaseOrderId?: string;
-  purchaseOrder?: PurchaseOrderDto;
-
   salesOrderId?: string;
   salesOrder?: SalesOrderDto;
 
@@ -24,6 +21,13 @@ export interface DeliveryOrderDto extends BaseModel {
   receiverCompany?: CompanyDto;
 
   deliveryMethod?: string;
+  estimatedDeliveryDate: Date;
+
+  contactPerson1: string;
+  contactPerson2: string;
+  contactNo1: string;
+  contactNo2: string;
+
   notes?: string;
   remarks?: string;
 
@@ -89,6 +93,11 @@ export interface CreateDeliveryOrderRequest {
 
   deliveryMethod?: string;
 
+  contactPerson1: string;
+  contactPerson2: string;
+  contactNo1: string;
+  contactNo2: string;
+
   remarks?: string;
   paymentTerms?: string;
 
@@ -98,8 +107,6 @@ export interface CreateDeliveryOrderRequest {
 }
 
 export interface CreateDeliveryOrderItemRequest {
-  deliveryOrderId?: string;
-
   description?: string;
 
   salesOrderItemId?: string;

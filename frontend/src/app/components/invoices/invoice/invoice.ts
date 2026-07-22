@@ -807,7 +807,6 @@ export class Invoice implements OnInit, OnDestroy {
         .pipe(takeUntil(this.ngUnsubscribe))
         .subscribe({
           next: (res) => {
-            // Remove the deleted item from the current PagingSignal data
             const currentPaging = this.PagingSignal();
             const updatedData = currentPaging.data.filter(
               (item) => item.id !== data.id,
@@ -816,7 +815,7 @@ export class Invoice implements OnInit, OnDestroy {
             this.PagingSignal.set({
               ...currentPaging,
               data: updatedData,
-              totalElements: currentPaging.totalElements - 1, // Update total count
+              totalElements: currentPaging.totalElements - 1,
             });
             this.cdr.markForCheck();
             this.messageService.add({
@@ -846,7 +845,6 @@ export class Invoice implements OnInit, OnDestroy {
           next: (clonedInvoice) => {
             const currentPaging = this.PagingSignal();
 
-            // Add cloned item to top of list
             const updatedData = [clonedInvoice, ...currentPaging.data];
 
             this.PagingSignal.set({
@@ -938,8 +936,7 @@ export class Invoice implements OnInit, OnDestroy {
       },
       {
         label: 'Add Payment',
-        icon: 'pi pi-money-bill', // or 'pi pi-wallet'
-        // Only show if the invoice actually needs a payment
+        icon: 'pi pi-money-bill',
         visible:
           invoice.status === 'Unpaid' || invoice.status === 'PartiallyPaid',
         command: () => this.ActionClick(invoice, 'AddPayment'),
@@ -959,7 +956,7 @@ export class Invoice implements OnInit, OnDestroy {
         label: 'Delete',
         icon: 'pi pi-trash',
         visible: invoice.status === 'Unpaid' || invoice.status === 'Draft',
-        styleClass: 'p-menuitem-text-danger', // PrimeNG's standard way to color text red
+        styleClass: 'p-menuitem-text-danger',
         command: () => this.ActionClick(invoice, 'Delete'),
       },
     ];
@@ -970,11 +967,9 @@ export class Invoice implements OnInit, OnDestroy {
     if (this.paymentForm.valid) {
       this.loadingService.start();
 
-      // Capture form values before reset
       const formValue = this.paymentForm.getRawValue();
       const invoiceId = formValue.invoiceId;
-      const paymentAmount = formValue.amount; // The amount being paid now
-
+      const paymentAmount = formValue.amount;
       this.paymentService
         .Create(formValue)
         .pipe(takeUntil(this.ngUnsubscribe))
@@ -984,7 +979,6 @@ export class Invoice implements OnInit, OnDestroy {
 
             this.PagingSignal.update((state) => ({
               ...state,
-              // Ensure property name matches your state (Data vs data)
               data: state.data.map((item: any) => {
                 if (item.id === invoiceId) {
                   const updatedPaidAmount =
@@ -1001,15 +995,12 @@ export class Invoice implements OnInit, OnDestroy {
               }),
             }));
 
-            // 2. Update dashboardCount locally
             if (this.dashboardCount && this.selectedInvoice) {
-              // Safe date conversion
               const dueDate = this.selectedInvoice.dueDate;
               const isOverdue = dueDate
                 ? new Date(dueDate) < new Date()
                 : false;
 
-              // Capture payment amount from form
               const amountPaidNow = paymentAmount || 0;
 
               this.dashboardCount = {
@@ -1017,7 +1008,6 @@ export class Invoice implements OnInit, OnDestroy {
                 paidAmount:
                   (this.dashboardCount.paidAmount || 0) + amountPaidNow,
 
-                // Logic to subtract from the correct bucket
                 pendingAmount: !isOverdue
                   ? Math.max(
                       0,
@@ -1034,7 +1024,6 @@ export class Invoice implements OnInit, OnDestroy {
               };
             }
 
-            // Define this at the top of your next() block
             const paidAmt = this.paymentForm.get('amount')?.value;
             const formattedAmount = new Intl.NumberFormat('en-MY', {
               style: 'currency',
@@ -1083,12 +1072,10 @@ export class Invoice implements OnInit, OnDestroy {
   isImage(value: string | null): boolean {
     if (!value) return false;
 
-    // Check if it's a Base64 image
     if (value.startsWith('data:image/')) return true;
 
-    // Check if it's a URL ending in common image extensions
     const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'];
-    const urlPart = value.split('?')[0].toLowerCase(); // Remove query params if any
+    const urlPart = value.split('?')[0].toLowerCase();
     return imageExtensions.some((ext) => urlPart.endsWith('.' + ext));
   }
 
@@ -1096,7 +1083,7 @@ export class Invoice implements OnInit, OnDestroy {
     if (!data?.dueDate || data?.status === 'Paid') return false;
 
     const today = new Date();
-    today.setHours(0, 0, 0, 0); // Reset time to compare dates only
+    today.setHours(0, 0, 0, 0);
 
     const dateToCheck = new Date(data?.dueDate);
     return dateToCheck < today;

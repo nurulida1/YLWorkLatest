@@ -12,9 +12,12 @@
     {
         public Guid Id { get; set; }
         public string Name { get; set; } = string.Empty;
+        public string? DisplayName { get; set; }
         public string? ProjectTitle { get; set; }
         public string? ProjectCode { get; set; }
         public Guid? ClientId { get; set; }
+        public string? JobTitle { get; set; }
+        public string? Email { get; set; }
     }
 
     public class PagedResponse<T>

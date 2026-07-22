@@ -469,28 +469,44 @@ namespace WebApplication1.Controllers
                     HodId = request.HodId,
                     Gender = request.Gender,
                     IsActive = true,
+                    Status = "Pending", // optional if registrations require approval
                     CreatedAt = DateTimeHelper.Now()
                 };
 
-                if (request.DepartmentIds != null && request.DepartmentIds.Any())
+                if (request.DepartmentIds?.Any() == true)
                 {
-                    var dbDepartments = await _context.Departments
+                    var departments = await _context.Departments
                         .Where(d => request.DepartmentIds.Contains(d.Id))
                         .ToListAsync();
-                    newUser.Departments = dbDepartments;
+
+                    newUser.Departments = departments;
                 }
 
                 var passwordHasher = new PasswordHasher<User>();
                 newUser.Password = passwordHasher.HashPassword(newUser, request.Password);
 
                 _context.Users.Add(newUser);
+
+                // Activity Log
+                _context.ActivityLogs.Add(new ActivityLog
+                {
+                    Id = Guid.NewGuid(),
+                    UserId = newUser.Id, // or null since this is anonymous
+                    Module = "User",
+                    Action = "Register",
+                    Description = $"{newUser.FullName} registered a new account.",
+                    Icon = "pi pi-user-plus",
+                    Color = "blue",
+                    CreatedAt = DateTimeHelper.Now()
+                });
+
                 await _context.SaveChangesAsync();
 
                 // SignalR notification
                 await _hub.Clients.All.SendAsync("ReceiveNotification", new
                 {
-                    Title = "New User Registered",
-                    Message = $"{newUser.FullName} has joined as {newUser.JobTitle}.",
+                    Title = "New User Registration",
+                    Message = $"{newUser.FullName} has registered as {newUser.JobTitle}.",
                     Type = "info",
                     Time = DateTimeHelper.Now()
                 });
@@ -504,7 +520,13 @@ namespace WebApplication1.Controllers
             catch (Exception ex)
             {
                 Console.WriteLine(ex);
-                return StatusCode(500, new { Error = "Registration failed.", Details = ex.Message });
+
+                return StatusCode(500, new
+                {
+                    Success = false,
+                    Error = "Registration failed.",
+                    Details = ex.Message
+                });
             }
         }
 
@@ -536,6 +558,7 @@ namespace WebApplication1.Controllers
             try
             {
                 var user = await _context.Users.FindAsync(request.UserId);
+
                 if (user == null)
                     return NotFound(new { Success = false, Message = "User not found." });
 
@@ -544,9 +567,23 @@ namespace WebApplication1.Controllers
 
                 user.Password = HashPassword(request.NewPassword);
                 user.UpdatedAt = DateTimeHelper.Now();
+
+                // Activity Log
+                _context.ActivityLogs.Add(new ActivityLog
+                {
+                    Id = Guid.NewGuid(),
+                    UserId = user.Id,
+                    Module = "User",
+                    Action = "Change Password",
+                    Description = $"{user.FullName} changed their password.",
+                    Icon = "pi pi-key",
+                    Color = "orange",
+                    CreatedAt = DateTimeHelper.Now()
+                });
+
                 await _context.SaveChangesAsync();
 
-                // 🔔 Notify via SignalR
+                // SignalR Notification
                 await _hub.Clients.All.SendAsync("ReceiveNotification", new
                 {
                     Title = "Password Changed",
@@ -555,12 +592,22 @@ namespace WebApplication1.Controllers
                     Time = DateTimeHelper.Now()
                 });
 
-                return Ok(new { Success = true, Message = "Password changed successfully." });
+                return Ok(new
+                {
+                    Success = true,
+                    Message = "Password changed successfully."
+                });
             }
             catch (Exception ex)
             {
                 Console.WriteLine(ex);
-                return StatusCode(500, new { Success = false, Error = "Failed to change password.", Details = ex.Message });
+
+                return StatusCode(500, new
+                {
+                    Success = false,
+                    Error = "Failed to change password.",
+                    Details = ex.Message
+                });
             }
         }
 
@@ -578,35 +625,61 @@ namespace WebApplication1.Controllers
                     .FirstOrDefaultAsync(t => t.Token == request.Token);
 
                 if (resetToken == null || resetToken.ExpiryTime < DateTime.UtcNow)
-                    return Ok(new { Success = false, Message = "Invalid or expired token." });
+                    return Ok(new
+                    {
+                        Success = false,
+                        Message = "Invalid or expired token."
+                    });
 
                 // Update password
                 resetToken.User.Password = HashPassword(request.NewPassword);
                 resetToken.User.UpdatedAt = DateTimeHelper.Now();
 
+                // Activity Log
+                _context.ActivityLogs.Add(new ActivityLog
+                {
+                    Id = Guid.NewGuid(),
+                    UserId = resetToken.User.Id,
+                    Module = "User",
+                    Action = "Reset Password",
+                    Description = $"Password was reset for {resetToken.User.FullName}.",
+                    Icon = "pi pi-refresh",
+                    Color = "blue",
+                    CreatedAt = DateTimeHelper.Now()
+                });
+
                 // Remove used token
                 _context.PasswordResetTokens.Remove(resetToken);
+
                 await _context.SaveChangesAsync();
 
-                // Send notification via SignalR
+                // SignalR Notification
                 await _hub.Clients.All.SendAsync("ReceiveNotification", new
                 {
                     Title = "Password Reset",
-                    Message = $"Password for user {resetToken.User.Email} has been successfully reset.",
+                    Message = $"Password for {resetToken.User.Email} has been successfully reset.",
                     Type = "info",
                     Time = DateTimeHelper.Now()
                 });
 
-                return Ok(new { Success = true, Message = "Password has been reset successfully." });
+                return Ok(new
+                {
+                    Success = true,
+                    Message = "Password has been reset successfully."
+                });
             }
             catch (Exception ex)
             {
                 Console.WriteLine(ex);
-                return StatusCode(500, new { Error = "Failed to reset password.", Details = ex.Message });
+
+                return StatusCode(500, new
+                {
+                    Success = false,
+                    Error = "Failed to reset password.",
+                    Details = ex.Message
+                });
             }
         }
-
-
 
         //profile
         [HttpGet("Profile")]
@@ -722,23 +795,72 @@ namespace WebApplication1.Controllers
 
             try
             {
+                // Get logged-in user from JWT
+                var currentUserIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                Guid? currentUserId = null;
+
+                if (Guid.TryParse(currentUserIdClaim, out var parsedId))
+                    currentUserId = parsedId;
+
+                var actorName = User.FindFirst(ClaimTypes.Name)?.Value ?? "System";
+
                 var user = await _context.Users
                     .Include(u => u.Departments)
                     .FirstOrDefaultAsync(u => u.Id == id);
 
                 if (user == null)
-                    return NotFound(new { Success = false, Message = "User not found." });
+                    return NotFound(new
+                    {
+                        Success = false,
+                        Message = "User not found."
+                    });
 
-                if (!string.IsNullOrEmpty(request.FullName)) user.FullName = request.FullName;
-                if (!string.IsNullOrEmpty(request.DisplayName)) user.DisplayName = request.DisplayName;
-                if (!string.IsNullOrEmpty(request.ContactNo)) user.ContactNo = request.ContactNo;
-                if (!string.IsNullOrEmpty(request.Email)) user.Email = request.Email;
-                if (!string.IsNullOrEmpty(request.JobTitle)) user.JobTitle = request.JobTitle;
-                user.SystemRole = request.SystemRole;
-                if (request.JoinedDate.HasValue) user.JoinedDate = request.JoinedDate.Value;
-                if (!string.IsNullOrEmpty(request.Gender)) user.Gender = request.Gender;
-                if (request.HodId.HasValue) user.HodId = request.HodId.Value;
+                // Prevent duplicate email
+                if (!string.IsNullOrWhiteSpace(request.Email) &&
+                    request.Email != user.Email)
+                {
+                    bool emailExists = await _context.Users
+                        .AnyAsync(x => x.Email == request.Email && x.Id != id);
 
+                    if (emailExists)
+                    {
+                        return Ok(new
+                        {
+                            Success = false,
+                            Message = "Email already in use."
+                        });
+                    }
+                }
+
+                // Update user fields
+                if (!string.IsNullOrWhiteSpace(request.FullName))
+                    user.FullName = request.FullName;
+
+                if (!string.IsNullOrWhiteSpace(request.DisplayName))
+                    user.DisplayName = request.DisplayName;
+
+                if (!string.IsNullOrWhiteSpace(request.ContactNo))
+                    user.ContactNo = request.ContactNo;
+
+                if (!string.IsNullOrWhiteSpace(request.Email))
+                    user.Email = request.Email;
+
+                if (!string.IsNullOrWhiteSpace(request.JobTitle))
+                    user.JobTitle = request.JobTitle;
+
+                if (!string.IsNullOrWhiteSpace(request.SystemRole))
+                    user.SystemRole = request.SystemRole;
+
+                if (request.JoinedDate.HasValue)
+                    user.JoinedDate = request.JoinedDate.Value;
+
+                if (!string.IsNullOrWhiteSpace(request.Gender))
+                    user.Gender = request.Gender;
+
+                if (request.HodId.HasValue)
+                    user.HodId = request.HodId;
+
+                // Update departments
                 if (request.DepartmentIds != null)
                 {
                     user.Departments ??= new List<Department>();
@@ -746,13 +868,13 @@ namespace WebApplication1.Controllers
 
                     if (request.DepartmentIds.Any())
                     {
-                        var targetDepts = await _context.Departments
+                        var departments = await _context.Departments
                             .Where(d => request.DepartmentIds.Contains(d.Id))
                             .ToListAsync();
 
-                        foreach (var dept in targetDepts)
+                        foreach (var department in departments)
                         {
-                            user.Departments.Add(dept);
+                            user.Departments.Add(department);
                         }
                     }
                 }
@@ -760,12 +882,27 @@ namespace WebApplication1.Controllers
                 user.UpdatedAt = DateTimeHelper.Now();
 
                 _context.Users.Update(user);
+
+                // Activity Log
+                _context.ActivityLogs.Add(new ActivityLog
+                {
+                    Id = Guid.NewGuid(),
+                    UserId = currentUserId,
+                    Module = "User",
+                    Action = "Update",
+                    Description = $"{actorName} updated the profile of {user.FullName} ({user.EmployeeNo}).",
+                    Icon = "pi pi-user-edit",
+                    Color = "orange",
+                    CreatedAt = DateTimeHelper.Now()
+                });
+
                 await _context.SaveChangesAsync();
 
+                // SignalR Notification
                 await _hub.Clients.All.SendAsync("ReceiveNotification", new
                 {
                     Title = "User Updated",
-                    Message = $"Profile for {user.FullName} has been updated.",
+                    Message = $"{user.FullName}'s profile has been updated.",
                     Type = "success",
                     Time = DateTimeHelper.Now()
                 });
@@ -792,7 +929,63 @@ namespace WebApplication1.Controllers
                     UpdatedAt = user.UpdatedAt,
                     CreatedAt = user.CreatedAt,
                     LastLoginAt = user.LastLoginAt,
-                    IsActive = user.IsActive,
+                    IsActive = user.IsActive
+                };
+
+                return Ok(new
+                {
+                    Success = true,
+                    User = result
+                });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+
+                return StatusCode(500, new
+                {
+                    Success = false,
+                    Error = "Failed to update user.",
+                    Details = ex.Message
+                });
+            }
+        }
+
+        [Authorize]
+        [HttpGet("GetStaffDashboardCount")]
+        public async Task<IActionResult> GetStaffDashboardCount()
+        {
+            try
+            {
+                var totalStaff = await _context.Users.CountAsync();
+
+                var activeNow = await _context.Users
+                    .CountAsync(x => x.IsActive);
+
+                var inactive = totalStaff - activeNow;
+
+                var departmentDistribution = await _context.Users
+                    .SelectMany(x => x.Departments)
+                    .GroupBy(d => new
+                    {
+                        d.Id,
+                        d.Name
+                    })
+                    .Select(g => new DepartmentDistributionDto
+                    {
+                        DepartmentId = g.Key.Id,
+                        Department = g.Key.Name,
+                        Count = g.Count()
+                    })
+                    .OrderByDescending(x => x.Count)
+                    .ToListAsync();
+
+                var result = new StaffDashboardDto
+                {
+                    TotalStaff = totalStaff,
+                    ActiveNow = activeNow,
+                    Inactive = inactive,
+                    DepartmentDistribution = departmentDistribution
                 };
 
                 return Ok(result);
@@ -800,7 +993,12 @@ namespace WebApplication1.Controllers
             catch (Exception ex)
             {
                 Console.WriteLine(ex);
-                return StatusCode(500, new { Success = false, Error = "Failed to update user.", Details = ex.Message });
+
+                return StatusCode(500, new
+                {
+                    Error = "Failed to get staff dashboard count.",
+                    Details = ex.Message
+                });
             }
         }
     }

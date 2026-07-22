@@ -1,0 +1,39 @@
+:host {
+  display: block;
+
+  .priority-selected {
+    animation: priorityPop 250ms ease;
+  }
+
+  @keyframes priorityPop {
+    0% {
+      transform: scale(0.9);
+    }
+
+    60% {
+      transform: scale(1.08);
+    }
+
+    100% {
+      transform: scale(1.05);
+    }
+  }
+
+  .cdk-drag-preview {
+    box-sizing: border-box;
+    border-radius: 8px;
+    opacity: 0.8;
+  }
+
+  .cdk-drag-placeholder {
+    opacity: 0;
+  }
+
+  .cdk-drag-animating {
+    transition: transform 250ms ease;
+  }
+
+  .cdk-drop-list-dragging .cdk-drag {
+    transition: transform 250ms ease;
+  }
+}

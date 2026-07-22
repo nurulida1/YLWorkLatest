@@ -50,3 +50,36 @@ export interface DashboardCount {
   };
   workOrders: number;
 }
+
+export interface SuperAdminDashboardDto {
+  totalUsers: number;
+  activeUsers: number;
+  inactiveUsers: number;
+  pendingApprovals: number;
+
+  totalDepartments: number;
+
+  totalInventoryItems: number;
+  lowStockItems: number;
+  faultyItems: number;
+
+  pendingUsers: PendingUserDto[];
+  activities: ActivityLogDto[];
+}
+
+export interface PendingUserDto {
+  id: string;
+  fullName: string;
+  jobTitle: string;
+  department: string;
+  createdAt: string;
+}
+
+export interface ActivityLogDto {
+  title: string;
+  description: string;
+  user: string;
+  date: string;
+  icon: string;
+  color: string;
+}

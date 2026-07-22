@@ -7,10 +7,10 @@ using YLWorks.Data;
 using YLWorks.Hubs;
 using YLWorks.Model;
 using System.Security.Claims;
+using WebApplication1.Helpers;
 
 namespace YLWorks.Controller
 {
-    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class ProjectController : ControllerBase
@@ -237,7 +237,7 @@ namespace YLWorks.Controller
 
 
         [HttpPost("Create")]
-        public async Task<ActionResult<Project>> AddDepartment([FromBody] CreateProjectRequest request)
+        public async Task<ActionResult<Project>> AddProject([FromBody] CreateProjectRequest request)
         {
             if (string.IsNullOrWhiteSpace(request.ProjectCode))
                 return BadRequest(new { Error = "Project Code is required." });
@@ -261,7 +261,7 @@ namespace YLWorks.Controller
 
                 };
                 project.Status = "Planning";
-                project.CreatedAt = DateTime.Now;
+                project.CreatedAt = DateTimeHelper.Now();
 
                 _context.Projects.Add(project);
                 await _context.SaveChangesAsync();
@@ -273,7 +273,7 @@ namespace YLWorks.Controller
                         ProjectId = project.Id,
                         ProjectCode = project.ProjectCode,
                         UserId = Guid.Parse(id),
-                        AssignedAt = DateTime.Now,
+                        AssignedAt = DateTimeHelper.Now(),
                         AssignedById = Guid.Parse(userIdClaim)
                     });
 
@@ -344,7 +344,7 @@ namespace YLWorks.Controller
                 project.StartDate = request.StartDate;
                 project.DueDate = request.DueDate;
                 project.ClientId = request.ClientId;
-                project.UpdatedAt = DateTime.Now;
+                project.UpdatedAt = DateTimeHelper.Now();
 
                 var existingMembers = _context.ProjectMembers.Where(x => x.ProjectCode == project.ProjectCode);
                 _context.ProjectMembers.RemoveRange(existingMembers);
@@ -357,7 +357,7 @@ namespace YLWorks.Controller
                         ProjectId = project.Id,
                         ProjectCode = project.ProjectCode,
                         UserId = Guid.Parse(id),
-                        AssignedAt = DateTime.Now,
+                        AssignedAt = DateTimeHelper.Now(),
                         AssignedById = Guid.Parse(userIdClaim)
                     });
 
@@ -448,7 +448,9 @@ namespace YLWorks.Controller
                     .Select(u => new DropdownDto
                     {
                         Id = u.Id,
-                        Name = u.FullName
+                        Name = u.FullName,
+                        DisplayName = u.DisplayName,
+                        JobTitle = u.JobTitle,
                     })
                     .ToListAsync();
 
@@ -487,7 +489,7 @@ namespace YLWorks.Controller
                     return NotFound(new { Error = "Project not found." });
 
                 project.Status = request.Status;
-                project.UpdatedAt = DateTime.Now;
+                project.UpdatedAt = DateTimeHelper.Now();
 
                 await _context.SaveChangesAsync();
 

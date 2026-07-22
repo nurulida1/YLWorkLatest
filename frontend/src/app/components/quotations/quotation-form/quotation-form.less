@@ -1,5 +1,15 @@
 :host {
   display: block;
+
+  ::ng-deep {
+    .p-orderlist-controls {
+      display: none !important;
+    }
+    .p-listbox {
+      border: none !important;
+      width: 100% !important;
+    }
+  }
 }
 @keyframes fadeIn {
   from {

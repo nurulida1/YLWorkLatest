@@ -7,6 +7,7 @@ import { SalesOrderItem } from './SalesOrder';
 import { UserDto } from './User';
 import { SalesOrderDto } from './SalesOrder';
 import { InventoryDto } from './Inventory';
+import { ProductServiceDto } from './ProductService';
 
 export interface PurchaseOrderDto extends BaseModel {
   purchaseOrderNo: string;
@@ -16,7 +17,8 @@ export interface PurchaseOrderDto extends BaseModel {
   poReceivedDate: Date;
   supplierId: string;
   supplier: CompanyDto;
-  paymentTerms: string;
+  paymentTerms: number;
+  paymentTermType: string;
   projectId: string;
   project: ProjectDto;
   quotationId?: string;
@@ -27,14 +29,18 @@ export interface PurchaseOrderDto extends BaseModel {
   gross: number;
   discount: number;
   totalAmount: number;
+  totalInWords: string;
   remarks: string;
   notes: string;
   poClientNo: string;
   soClientNo: string;
   status: string;
-  termsAndConditions: string;
+  termsAndCondition: string;
   bankDetails: string;
   attachment: string;
+  remainingQuantity: number;
+  invoicedAmount: number;
+  invoiceStatus: string;
   purchaseOrderStatusHistories: PurchaseOrderStatusHistory[];
   purchaseOrderItems: PurchaseOrderItem[];
   invoices: InvoiceDto[];
@@ -56,10 +62,10 @@ export interface PurchaseOrderItem extends BaseModel {
   purchaseOrder: PurchaseOrderDto;
   salesOrderItemId: string;
   salesOrderItem: SalesOrderItem;
-  inventoryId: string;
-  inventory: InventoryDto;
   item: string;
   description: string;
+  productServiceId: string;
+  productService: ProductServiceDto;
   quantity: number;
   unit: string;
   unitPrice: number;
@@ -78,7 +84,6 @@ export interface POItemBase {
   unitPrice: number;
   discount: number;
   totalPrice: number;
-  receivedQuantity: number;
 }
 
 export interface POItemRequest extends POItemBase {}
@@ -93,7 +98,8 @@ export interface CreatePORequest {
   poDate: Date;
   poReceivedDate: Date;
   supplierId?: string;
-  paymentTerms: string;
+  paymentTerms: number;
+  paymentTermType: string;
   quotationId: string;
   salesOrderId: string;
   projectId: string;

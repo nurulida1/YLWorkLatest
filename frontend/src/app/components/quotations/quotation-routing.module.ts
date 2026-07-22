@@ -3,18 +3,22 @@ import { Routes, RouterModule } from '@angular/router';
 import { Quotation } from './quotation/quotation';
 import { QuotationForm } from './quotation-form/quotation-form';
 import { permissionGuard } from '../../common/permission.guard';
+import { ViewDetails } from './view-details/view-details';
 
 const routes: Routes = [
   {
     path: '',
     component: Quotation,
-    canActivate: [permissionGuard('QUOTATION', 'canRead')],
   },
 
   {
     path: 'form',
     component: QuotationForm,
-    canActivate: [permissionGuard('QUOTATION', ['canCreate', 'canUpdate'])],
+  },
+
+  {
+    path: 'details',
+    component: ViewDetails,
   },
 ];
 

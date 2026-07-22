@@ -21,9 +21,10 @@ namespace YLWorks.Model
         public decimal? TotalAmount { get; set; }
 
         public string? PaymentTerms { get; set; }
-        public int? ValidityDays {  get; set; }
-        public string? Execution { get; set; }
-        public string? WarrantyTerms { get; set; }
+        public int? Validity { get; set; }
+        public string? ValidityType { get; set; }
+
+        public DateTime? DueDate { get; set; }
 
         public string Status { get; set; } = "Draft"; // Draft, Revised, Approved, Sent, Accepted, Rejected
         public string? Remarks { get; set; }
@@ -31,6 +32,10 @@ namespace YLWorks.Model
         public User CreatedBy { get; set; } = null!;
         public ICollection<QuotationStatusHistory> QuotationStatusHistories { get; set; } = new List<QuotationStatusHistory>();
         public ICollection<QuotationItems> QuotationItems { get; set; } = new List<QuotationItems>();
+        public ICollection<QuotationTermsAndCondition> TermsAndConditions { get; set; }
+    = new List<QuotationTermsAndCondition>();
+        public ICollection<QuotationOtherInformation> QuotationOtherInformations { get; set; }
+    = new List<QuotationOtherInformation>();
     }
 
     public class QuotationStatusHistory
@@ -51,63 +56,68 @@ namespace YLWorks.Model
         public Guid Id { get; set; }
         public Guid QuotationId { get; set; }
         public Quotation Quotation { get; set; } = null!;
-        public Guid? ParentId { get; set; }
-        public QuotationItems? Parent { get; set; }
-        public int SortOrder { get; set; }
-        public string Type { get; set; } // Category @ ITEM
-        public string? ItemType { get; set; } //Product, Service, Notes
+        
+        public Guid? ProductServiceId { get; set; }
+        public ProductService? ProductService { get; set; }
+
+        public string? RowType { get; set; } // CategoryHeader, LineItem, NoteRow
         public string? Item { get; set; }
         public string? Description { get; set; }
-        public bool IsGroup { get; set; }
         public decimal? Quantity { get; set; }
         public string? Unit { get; set; }
         public decimal? UnitPrice { get; set; }
         public decimal? Discount {  get; set; }
-        public decimal? TaxRate {  get; set; }
         public decimal? TotalPrice { get; set; }
-        public List<QuotationItems> Children { get; set; } = new List<QuotationItems>();
+        public int SortOrder { get; set; }
+    }
+
+    public class QuotationTermsAndCondition
+    {
+        public Guid Id { get; set; }
+        public Guid QuotationId { get; set; }
+        public Quotation Quotation { get; set; }
+        public Guid TermsAndConditionId { get; set; }
+        public TermsAndCondition TermsAndCondition { get; set; }
+        public int SortOrder { get; set; }
     }
 
     public class QuotationItemDto
     {
         public Guid Id { get; set; }
-        public int SortOrder { get; set; }
-        public string Type { get; set; }
-        public string? ItemType { get; set; } //Product, Service, Notes
-        public bool IsGroup { get; set; }
+        public Guid QuotationId { get; set; }
+        public Guid? ProductServiceId { get; set; }
+        public string? RowType { get; set; } = "LineItem";
         public string? Item { get; set; }
-        public string Description { get; set; }
-        public string? Unit { get; set; }
+        public string? Description { get; set; }
         public decimal? Quantity { get; set; }
+        public string? Unit { get; set; }
         public decimal? UnitPrice { get; set; }
         public decimal? Discount { get; set; }
-        public decimal? TaxRate { get; set; }
         public decimal? TotalPrice { get; set; }
-        public List<QuotationItemDto> Children { get; set;} = new List<QuotationItemDto>();
+        public int SortOrder { get; set; }
     }
 
     public class QuotationItemBase
     {
         public Guid? Id { get; set; }
-        public int SortOrder { get; set; }
-        public string Type { get; set; }
-        public string? ItemType { get; set; } //Product, Service, Notes
-        public bool IsGroup { get; set; }
-        public Guid? ParentId { get; set; }
+        public Guid QuotationId { get; set; }
+
+        public Guid? ProductServiceId { get; set; } 
+
+        public string? RowType { get; set; } = "LineItem";
         public string? Item { get; set; }
-        public string? Description { get; set; } = string.Empty;
+        public string? Description { get; set; }
         public decimal? Quantity { get; set; }
         public string? Unit { get; set; }
         public decimal? UnitPrice { get; set; }
         public decimal? Discount { get; set; }
-        public decimal? TaxRate { get; set; }
         public decimal? TotalPrice { get; set; }
-        public List<QuotationItemRequest> Children { get; set; } = new();
+        public int SortOrder { get; set; }
     }
 
     public class QuotationItemRequest : QuotationItemBase 
-    { 
-        public List<QuotationItemRequest> Children { get; set; } = new(); 
+    {
+        public List<QuotationItemRequest> Children { get; set; } = new();
     }
 
     public class UpdateQuotationItemRequest : QuotationItemBase
@@ -128,9 +138,11 @@ namespace YLWorks.Model
         public decimal? TaxAmount { get; set; }
         public decimal TotalAmount { get; set; }
         public string? PaymentTerms { get; set; }
-        public int? ValidityDays { get; set; }
-        public string? Execution { get; set; }
-        public string? WarrantyTerms { get; set; }
+        public int? Validity { get; set; }
+        public string? ValidityType { get; set; }
+        public List<TermsAndConditionOrderDto> TermsAndConditions { get; set; } = new();
+        public List<QuotationOtherInfoRequest> QuotationOtherInformations { get; set; }
+        = new();
     }
 
     public class CreateQuotationRequest : BaseQuotationRequest
@@ -175,5 +187,31 @@ namespace YLWorks.Model
         public string? Remarks { get; set; }
     }
 
+    public class QuotationOtherInformation
+    {
+        public Guid Id { get; set; }
+
+        public Guid QuotationId { get; set; }
+        public Quotation Quotation { get; set; } = null!;
+
+        public string Key { get; set; } = string.Empty;     
+        public string Value { get; set; } = string.Empty;   
+
+        public int SortOrder { get; set; }
+    }
+
+    public class QuotationOtherInfoRequest
+    {
+        public string Key { get; set; } = string.Empty;
+        public string Value { get; set; } = string.Empty;
+    }
+
+    public class TermsAndConditionOrderDto
+    {
+        public Guid? Id { get; set; } 
+        public string? Title { get; set; }             
+        public string? Description { get; set; }      
+        public int SortOrder { get; set; }
+    }
 
 }

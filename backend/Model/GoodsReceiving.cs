@@ -6,8 +6,13 @@ namespace YLWorks.Model
         public string GRNNo { get; set; } = string.Empty;
         public Guid PurchaseOrderId { get; set; }
         public PurchaseOrder PurchaseOrder { get; set; } = null!;
+
+        public Guid? CompanyId { get; set; }
+        public Company? Company { get; set; }
+
         public Guid SupplierId { get; set; }
         public Company Supplier { get; set; }
+
         public DateTime ReceivedDate { get; set; }
 
         public string? SupplierDONo { get; set; }
@@ -21,6 +26,7 @@ namespace YLWorks.Model
         public decimal? TotalAmount { get; set; }
         public Guid? CreatedById { get; set; }
         public User? CreatedBy { get; set; }
+        public bool IsPostedToInventory { get; set; }
         public ICollection<GoodsReceivingItem> GoodsReceivingItems { get; set; } = new List<GoodsReceivingItem>();
     }
 
@@ -38,6 +44,10 @@ namespace YLWorks.Model
         public string? Unit { get; set; }
         public decimal? TotalPrice { get; set; }
         public string? Remarks { get; set; }
+
+        //Invoice Ref
+        public decimal? InvoiceQuantity { get; set; }
+
     }
 
     public class GoodsReceivingItemRequest
@@ -57,6 +67,7 @@ namespace YLWorks.Model
 
         public Guid PurchaseOrderId { get; set; }
         public Guid SupplierId { get; set; }
+        public Guid? CompanyId { get; set; }
 
         public DateTime ReceivedDate { get; set; }
 
@@ -93,6 +104,7 @@ namespace YLWorks.Model
 
         public Guid PurchaseOrderId { get; set; }
         public Guid SupplierId { get; set; }
+        public Guid? CompanyId { get; set; }
 
         public DateTime ReceivedDate { get; set; }
 
@@ -115,5 +127,17 @@ namespace YLWorks.Model
         public List<Company> Suppliers { get; set; } = new();
         public List<Company> Companies { get; set; } = new();
 
+    }
+
+    public class CreateInvoiceFromGRNItemsRequest
+    {
+        public Guid SupplierId { get; set; }
+        public List<CreateInvoiceItemFromGRN> Items { get; set; } = new();
+    }
+
+    public class CreateInvoiceItemFromGRN
+    {
+        public Guid GoodsReceivingItemId { get; set; }
+        public decimal Quantity { get; set; }
     }
 }

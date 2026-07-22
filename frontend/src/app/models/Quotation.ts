@@ -1,6 +1,8 @@
 import { BaseModel } from './BaseModel';
 import { CompanyDto } from './Company';
+import { ProductServiceDto } from './ProductService';
 import { ProjectDto } from './Project';
+import { TermsAndConditionDto } from './TermsAndCondition';
 import { UserDto } from './User';
 
 export interface QuotationDto extends BaseModel {
@@ -18,13 +20,15 @@ export interface QuotationDto extends BaseModel {
   taxAmount: number;
   totalAmount: number;
   paymentTerms: string;
-  validityDays: number;
-  execution: string;
-  warrantyTerms: string;
+  validity: number;
+  validityType: string;
   status: string;
   remarks: string;
   quotationItems: QuotationItems[];
   quotationStatusHistories: QuotationStatusHistory[];
+  termsAndConditions: QuotationTermsAndCondition[];
+  otherInformations: QuotationOtherInformation[];
+  createdBy: UserDto;
 }
 
 export interface QuotationStatusHistory extends BaseModel {
@@ -42,55 +46,57 @@ export interface QuotationStatusHistory extends BaseModel {
 
 export interface QuotationItems extends BaseModel {
   quotationId: string;
-  quotation: QuotationDto;
-  parentId: string;
-  parent: QuotationItems;
-  sortOrder: number;
-  type: string;
-  itemType: string;
+  productServiceId?: string;
+  productService?: ProductServiceDto;
+  rowType: string;
   item: string;
   description: string;
-  isGroup: boolean;
   quantity: number;
   unit: string;
   unitPrice: number;
-  taxRate: number;
   discount: number;
   totalPrice: number;
-  children: QuotationItems[];
+  sortOrder: number;
+}
+
+export interface QuotationTermsAndCondition {
+  id: string;
+  quotationId: string;
+  termsAndConditionId: string;
+  termsAndCondition: TermsAndConditionDto;
+  sortOrder: number;
 }
 
 export interface QuotationItemDto {
   id: string;
-  sortOrder: number;
-  type: string;
-  itemType: string;
-  isGroup: boolean;
+  quotationId: string;
+  productServiceId?: string;
+  rowType: string;
   item: string;
   description: string;
-  unit: string;
   quantity: number;
+  unit: string;
   unitPrice: number;
-  taxRate: number;
   discount: number;
   totalPrice: number;
-  children: QuotationItemDto[];
+  sortOrder: number;
 }
 
 export interface QuotationItemBase {
-  sortOrder: number;
-  type: string;
-  itemType: string;
-  isGroup: boolean;
+  id?: string | null;
+  quotationId?: string;
+
+  productServiceId?: string | null;
+
+  rowType: string;
   item: string;
   description: string;
   quantity: number;
   unit: string;
   unitPrice: number;
-  taxRate: number;
   discount: number;
   totalPrice: number;
-  children: QuotationItemRequest[];
+  sortOrder: number;
 }
 
 export interface QuotationItemRequest extends QuotationItemBase {}
@@ -106,24 +112,45 @@ export interface CreateQuotationRequest {
   clientId: string;
   projectCode: string;
   subject: string;
+
   taxAmount: number;
   discount: number;
   subTotal: number;
   totalAmount: number;
+
   paymentTerms: string;
-  validityDays: number;
-  execution: string;
-  warrantyTerms: string;
+  validity: number;
+  validityType: string;
+
   quotationItems: QuotationItemRequest[];
+
+  termsAndConditions: TermsAndConditionOrderDto[];
+
+  otherInformations: QuotationOtherInformation[];
 }
 
 export interface UpdateQuotationRequest extends CreateQuotationRequest {
   id: string;
-  items: UpdateQuotationItemRequest[];
+  quotationItems: UpdateQuotationItemRequest[];
 }
 
 export interface UpdateQuotationStatusRequest {
   id: string;
   status: string;
   signatureImage: string;
+}
+
+export interface QuotationOtherInformation {
+  id?: string;
+  quotationId?: string;
+  key: string;
+  value: string;
+  sortOrder?: number;
+}
+
+export interface TermsAndConditionOrderDto {
+  termsAndConditionId?: string | null;
+  title?: string;
+  description?: string;
+  sortOrder: number;
 }

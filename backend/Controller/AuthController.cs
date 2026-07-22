@@ -39,7 +39,7 @@ namespace YLWorks.Controllers
 
         [AllowAnonymous]
         [HttpPost("register")]
-        public async Task<ActionResult<User>> RegisterUser(RegisterRequest request)
+        public async Task<ActionResult<User>> Register(RegisterRequest request)
         {
             var user = await authService.RegisterAsync(request);
 
@@ -52,16 +52,6 @@ namespace YLWorks.Controllers
                 userId = user.Id
             });
         }
-
-        //[HttpPost("login")]
-        //public async Task<ActionResult<TokenResponseDto>> Login(UserDto request)
-        //{
-        //    var result = await authService.LoginAsync(request);
-        //    if (result is null)
-        //        return BadRequest("Invalid email or password.");
-
-        //    return Ok(result);
-        //}
 
         [AllowAnonymous]
         [HttpPost("login")]
@@ -80,29 +70,11 @@ namespace YLWorks.Controllers
             });
         }
 
-
         [Authorize]
         [HttpGet("IsAuthenticated")]
         public IActionResult AuthenticatedOnlyEndPoint()
         {
             return Ok("You are authenticated!");
-        }
-
-       
-
-        [AllowAnonymous]
-        [HttpPost("register")]
-        public async Task<IActionResult> Register(RegisterRequest request)
-        {
-            var user = await authService.RegisterAsync(request);
-
-            if (user == null)
-                return BadRequest("Email already exists.");
-
-            return Ok(new
-            {
-                message = "Registration submitted successfully. Please wait for administrator approval."
-            });
         }
 
         [Authorize(Roles = "Admin")]

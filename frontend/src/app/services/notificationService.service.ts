@@ -35,7 +35,7 @@ export class NotificationService {
   public notifications$ = this._notifications$.asObservable();
 
   url = environment.ApiBaseUrl + '/Notification';
-  private readonly baseUrl = 'http://192.168.1.75:5000/hubs/notifications';
+  private readonly baseUrl = 'http://192.168.1.68:5000/hubs/notifications';
 
   constructor(
     private zone: NgZone,

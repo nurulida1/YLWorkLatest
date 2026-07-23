@@ -1,5 +1,6 @@
 using YLWorks.Data;
 using YLWorks.Model;
+using WebApplication1.Helpers;
 
 namespace YLWorks.Services
 {
@@ -14,7 +15,7 @@ namespace YLWorks.Services
 
 
         public async Task CreateAsync(
-            int userId,
+            Guid userId,
             string title,
             string message,
             string type)
@@ -26,7 +27,7 @@ namespace YLWorks.Services
                 Message = message,
                 Type = type,
                 IsRead = false,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTimeHelper.Now()
             };
 
 

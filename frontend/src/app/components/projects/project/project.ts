@@ -87,7 +87,7 @@ import { CheckboxModule } from 'primeng/checkbox';
           >
             Dashboard
           </div>
-          /
+          <i class="pi pi-chevron-right text-[8px]! text-gray-500!"></i>
           <div class="text-gray-700 font-semibold">Projects</div>
         </div>
       </div>
@@ -97,13 +97,15 @@ import { CheckboxModule } from 'primeng/checkbox';
         <div class="flex flex-row items-center justify-between">
           <div class="flex flex-col">
             <div class="text-[20px] text-gray-700 font-semibold">Projects</div>
-            <div class="text-gray-500">Manage and track projects</div>
+            <div class="text-gray-500">
+              Manage and monitor precision engineering project lifecycles.
+            </div>
           </div>
           <p-button
             label="New Project"
-            icon="pi pi-plus-circle"
+            icon="pi pi-plus"
             severity="info"
-            styleClass="tracking-wide!"
+            styleClass="tracking-wide! bg-blue-700! border-none! rounded-none! py-2! px-5!"
             [routerLink]="'/projects/form'"
           ></p-button>
         </div>
@@ -129,7 +131,7 @@ import { CheckboxModule } from 'primeng/checkbox';
             [paginator]="true"
             [rows]="Query.PageSize"
             [totalRecords]="PagingSignal().totalElements"
-            tableStyleClass="min-w-[70rem] 3xl:min-w-[80rem]"
+            [tableStyle]="{ 'min-width': '80rem' }"
             [rowsPerPageOptions]="[10, 20, 30, 50]"
             [showGridlines]="true"
             [lazy]="true"
@@ -138,7 +140,7 @@ import { CheckboxModule } from 'primeng/checkbox';
               <tr>
                 <th
                   pSortableColumn="ProjectCode"
-                  class="bg-gray-100! text-center! w-[10%]!"
+                  class="bg-gray-100! text-center! w-[15%]!"
                 >
                   <div class="flex flex-row items-center justify-center gap-2">
                     <div>Project Code</div>
@@ -164,15 +166,7 @@ import { CheckboxModule } from 'primeng/checkbox';
                   </div>
                 </th>
                 <th class="bg-gray-100! w-[25%]!">Client</th>
-                <th
-                  pSortableColumn="DueDate"
-                  class="bg-gray-100! text-center! w-[15%]!"
-                >
-                  <div class="flex flex-row items-center justify-center gap-2">
-                    <div>Due Date</div>
-                    <p-sortIcon field="DueDate"></p-sortIcon>
-                  </div>
-                </th>
+                <th class="bg-gray-100! text-center! w-[15%]!">Timeline</th>
 
                 <th
                   pSortableColumn="Status"
@@ -593,13 +587,13 @@ import { CheckboxModule } from 'primeng/checkbox';
                       formControlName="city"
                     />
                   </div>
-                  <div class="col-span-4">Poscode</div>
+                  <div class="col-span-4">Postcode</div>
                   <div class="col-span-8">
                     <input
                       type="text"
                       pInputText
                       class="w-full"
-                      formControlName="poscode"
+                      formControlName="postcode"
                     />
                   </div>
                   <div class="col-span-4">State</div>
@@ -666,13 +660,13 @@ import { CheckboxModule } from 'primeng/checkbox';
                       formControlName="city"
                     />
                   </div>
-                  <div class="col-span-4">Poscode</div>
+                  <div class="col-span-4">postcode</div>
                   <div class="col-span-8">
                     <input
                       type="text"
                       pInputText
                       class="w-full"
-                      formControlName="poscode"
+                      formControlName="postcode"
                     />
                   </div>
                   <div class="col-span-4">State</div>
@@ -1000,7 +994,7 @@ export class Project implements OnInit, OnDestroy {
       city: new FormControl(null),
       state: new FormControl(null),
       country: new FormControl(null),
-      poscode: new FormControl(null),
+      postcode: new FormControl(null),
     });
   }
 

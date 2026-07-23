@@ -172,6 +172,7 @@ namespace WebApplication1.Controllers
           u.CreatedAt,
           u.JoinedDate,
           u.HodId,
+          u.Status,
           DepartmentIds = u.Departments.Select(d => d.Id).ToList(),
           Departments = u.Departments.Select(d => new { d.Id, d.Name }).ToList()
       })
@@ -464,12 +465,12 @@ namespace WebApplication1.Controllers
                     Email = request.Email,
                     ContactNo = request.ContactNo,
                     JobTitle = request.JobTitle,
-                    SystemRole = request.SystemRole ?? "Support",
+                    SystemRole = "Staff",
                     JoinedDate = request.JoinedDate,
                     HodId = request.HodId,
                     Gender = request.Gender,
-                    IsActive = true,
-                    Status = "Pending", // optional if registrations require approval
+                    IsActive = false,
+                    Status = "Pending",
                     CreatedAt = DateTimeHelper.Now()
                 };
 
@@ -528,6 +529,103 @@ namespace WebApplication1.Controllers
                     Details = ex.Message
                 });
             }
+        }
+
+        [Authorize(Roles = "SuperAdmin")]
+        [HttpPost("AdminCreate")]
+        public async Task<IActionResult> AdminCreate([FromBody] RegisterRequest request)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+
+            if (await _context.Users.AnyAsync(x => x.Email == request.Email))
+            {
+                return Ok(new
+                {
+                    Success = false,
+                    Message = "Email already exists."
+                });
+            }
+
+
+            var user = new User
+            {
+                Id = Guid.NewGuid(),
+
+                EmployeeNo = GenerateEmployeeNo(),
+
+                FullName = request.FullName,
+                DisplayName = request.DisplayName,
+                Email = request.Email,
+                ContactNo = request.ContactNo,
+                JobTitle = request.JobTitle,
+
+                SystemRole = request.SystemRole ?? "Staff",
+
+                JoinedDate = request.JoinedDate,
+                HodId = request.HodId,
+                Gender = request.Gender,
+
+
+                // Admin created
+                Status = "Approved",
+                IsActive = true,
+
+                CreatedAt = DateTimeHelper.Now()
+            };
+
+
+            // Department assignment
+            if (request.DepartmentIds?.Any() == true)
+            {
+                var departments = await _context.Departments
+                    .Where(x => request.DepartmentIds.Contains(x.Id))
+                    .ToListAsync();
+
+                user.Departments = departments;
+            }
+
+            var passwordHasher = new PasswordHasher<User>();
+
+            var plainPassword = request.Password;
+
+            user.Password = passwordHasher.HashPassword(
+                user,
+                request.Password
+            );
+
+
+            _context.Users.Add(user);
+
+
+            _context.ActivityLogs.Add(new ActivityLog
+            {
+                Id = Guid.NewGuid(),
+                UserId = user.Id,
+                Module = "User",
+                Action = "Create",
+                Description = $"Admin created account for {user.FullName}",
+                Icon = "pi pi-user-plus",
+                Color = "green",
+                CreatedAt = DateTimeHelper.Now()
+            });
+
+
+            await _context.SaveChangesAsync();
+
+            _emailService.SendAccountCreatedEmail(
+       user.Email,
+       user.FullName,
+       request.Password
+   );
+
+            return Ok(new
+            {
+                Success = true,
+                Message = "User created successfully.",
+                User = user
+            });
         }
 
         private string GenerateEmployeeNo()
@@ -769,20 +867,33 @@ namespace WebApplication1.Controllers
             try
             {
                 var totalUsers = _context.Users.Count();
-                var activeUsers = _context.Users.Count(u => u.IsActive);
-                var inactiveUsers = _context.Users.Count(u => !u.IsActive);
+
+                var activeUsers = _context.Users
+                    .Count(u => u.IsActive);
+
+                var inactiveUsers = _context.Users
+                    .Count(u => !u.IsActive);
+
+                var pendingUsers = _context.Users
+                    .Count(u => u.Status == "Pending");
 
                 return Ok(new
                 {
                     TotalUsers = totalUsers,
                     ActiveUsers = activeUsers,
-                    InactiveUsers = inactiveUsers
+                    InactiveUsers = inactiveUsers,
+                    PendingUsers = pendingUsers
                 });
             }
             catch (Exception ex)
             {
                 Console.WriteLine(ex);
-                return StatusCode(500, new { Error = "Failed to get dashboard counts.", Details = ex.Message });
+
+                return StatusCode(500, new
+                {
+                    Error = "Failed to get dashboard counts.",
+                    Details = ex.Message
+                });
             }
         }
 
@@ -951,55 +1062,53 @@ namespace WebApplication1.Controllers
             }
         }
 
-        [Authorize]
-        [HttpGet("GetStaffDashboardCount")]
-        public async Task<IActionResult> GetStaffDashboardCount()
+        [HttpPut("Approval/{id}")]
+        public IActionResult Approval(Guid id, ApprovalRequest request)
         {
-            try
+            var user = _context.Users.FirstOrDefault(x => x.Id == id);
+
+            if (user == null)
+                return NotFound();
+
+
+            user.Status = request.Status;
+
+
+            if (request.Status == "Approved")
             {
-                var totalStaff = await _context.Users.CountAsync();
+                user.SystemRole = request.SystemRole;
 
-                var activeNow = await _context.Users
-                    .CountAsync(x => x.IsActive);
+                user.IsActive = true;
 
-                var inactive = totalStaff - activeNow;
+                user.Departments = _context.Departments
+                    .Where(x => request.DepartmentIds.Contains(x.Id))
+                    .ToList();
 
-                var departmentDistribution = await _context.Users
-                    .SelectMany(x => x.Departments)
-                    .GroupBy(d => new
-                    {
-                        d.Id,
-                        d.Name
-                    })
-                    .Select(g => new DepartmentDistributionDto
-                    {
-                        DepartmentId = g.Key.Id,
-                        Department = g.Key.Name,
-                        Count = g.Count()
-                    })
-                    .OrderByDescending(x => x.Count)
-                    .ToListAsync();
-
-                var result = new StaffDashboardDto
-                {
-                    TotalStaff = totalStaff,
-                    ActiveNow = activeNow,
-                    Inactive = inactive,
-                    DepartmentDistribution = departmentDistribution
-                };
-
-                return Ok(result);
+                _emailService.SendApprovalEmail(
+         user.Email,
+         user.FullName);
             }
-            catch (Exception ex)
+
+
+            if (request.Status == "Rejected")
             {
-                Console.WriteLine(ex);
-
-                return StatusCode(500, new
-                {
-                    Error = "Failed to get staff dashboard count.",
-                    Details = ex.Message
-                });
+                user.RejectReason = request.Reason;
+                
+                _emailService.SendRejectionEmail(
+            user.Email,
+            user.FullName,
+            request.Reason
+        );
             }
+
+
+            _context.SaveChanges();
+
+
+            return Ok(new
+            {
+                success = true
+            });
         }
     }
 }

@@ -7,7 +7,7 @@ export interface AddressDto extends BaseModel {
   country: string;
   state: string;
   city: string;
-  poscode: string;
+  postcode: string;
 }
 
 export interface AddressRequest {
@@ -17,5 +17,5 @@ export interface AddressRequest {
   country: string;
   state: string;
   city: string;
-  poscode: string;
+  postcode: string;
 }

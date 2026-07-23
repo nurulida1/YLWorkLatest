@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using YLWorks.Data;
 
@@ -11,9 +12,11 @@ using YLWorks.Data;
 namespace YLWorks.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260723021413_AddNotificationsTable2")]
+    partial class AddNotificationsTable2
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -139,7 +142,7 @@ namespace YLWorks.Migrations
                     b.Property<Guid?>("CreatedById")
                         .HasColumnType("char(36)");
 
-                    b.Property<int>("Postcode")
+                    b.Property<int>("Poscode")
                         .HasColumnType("int");
 
                     b.Property<string>("State")
@@ -260,6 +263,12 @@ namespace YLWorks.Migrations
                     b.Property<string>("ContactNo")
                         .HasColumnType("longtext");
 
+                    b.Property<string>("ContactPerson1")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("ContactPerson2")
+                        .HasColumnType("longtext");
+
                     b.Property<DateTime?>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
@@ -286,18 +295,6 @@ namespace YLWorks.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("varchar(200)");
 
-                    b.Property<string>("PrimaryContactNo")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("PrimaryContactPerson")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("PrimaryEmail")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("RegistrationNo")
-                        .HasColumnType("longtext");
-
                     b.Property<string>("SSMRegNo")
                         .HasColumnType("longtext");
 
@@ -306,15 +303,6 @@ namespace YLWorks.Migrations
 
                     b.Property<bool>("SameAsBillingAddress")
                         .HasColumnType("tinyint(1)");
-
-                    b.Property<string>("SecondaryContactNo")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("SecondaryContactPerson")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("SecondaryEmail")
-                        .HasColumnType("longtext");
 
                     b.Property<string>("TINNo")
                         .HasColumnType("longtext");
@@ -1735,18 +1723,6 @@ namespace YLWorks.Migrations
 
                     b.Property<DateTime?>("DueDate")
                         .HasColumnType("datetime(6)");
-
-                    b.Property<DateTime?>("EndDate")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<double?>("EstimatedBudget")
-                        .HasColumnType("double");
-
-                    b.Property<DateTime?>("EstimatedCompletedDate")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<string>("Location")
-                        .HasColumnType("longtext");
 
                     b.Property<string>("Priority")
                         .HasColumnType("longtext");

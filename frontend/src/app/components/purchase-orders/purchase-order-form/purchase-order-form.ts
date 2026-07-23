@@ -780,7 +780,7 @@ import { RadioButtonModule } from 'primeng/radiobutton';
                 <label class="font-medium text-gray-500">Postcode / ZIP</label>
                 <input
                   pInputText
-                  formControlName="poscode"
+                  formControlName="postcode"
                   class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                 />
               </div>
@@ -864,7 +864,7 @@ import { RadioButtonModule } from 'primeng/radiobutton';
                 <label class="font-medium text-gray-500">Postcode / ZIP</label>
                 <input
                   pInputText
-                  formControlName="poscode"
+                  formControlName="postcode"
                   class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                 />
               </div>
@@ -1604,7 +1604,7 @@ export class PurchaseOrderForm implements OnInit, OnDestroy {
         addressLine2: new FormControl(null),
         city: new FormControl(null, Validators.required),
         state: new FormControl(null, Validators.required),
-        poscode: new FormControl(null, Validators.required),
+        postcode: new FormControl(null, Validators.required),
         country: new FormControl('Malaysia', Validators.required),
       }),
 
@@ -1614,7 +1614,7 @@ export class PurchaseOrderForm implements OnInit, OnDestroy {
         addressLine2: new FormControl(null),
         city: new FormControl(null, Validators.required),
         state: new FormControl(null, Validators.required),
-        poscode: new FormControl(null, Validators.required),
+        postcode: new FormControl(null, Validators.required),
         country: new FormControl('Malaysia', Validators.required),
       }),
     });
@@ -1659,7 +1659,7 @@ export class PurchaseOrderForm implements OnInit, OnDestroy {
               addressLine1: activeAddress.addressLine1,
               addressLine2: activeAddress.addressLine2,
               city: activeAddress.city,
-              poscode: activeAddress.poscode,
+              postcode: activeAddress.postcode,
               state: activeAddress.state,
               country: activeAddress.country,
             },

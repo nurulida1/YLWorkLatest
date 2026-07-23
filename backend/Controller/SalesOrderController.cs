@@ -675,7 +675,8 @@ namespace YLWorks.Controller
                     q.Client.Name,
                     q.Client.ContactNo,
                     q.Client.Email,
-                    q.Client.ContactPerson1,
+                    q.Client.PrimaryContactPerson,
+                    q.Client.SecondaryContactPerson,
 
                     BillingAddress = q.Client.BillingAddress == null ? null : new Address
                     {
@@ -685,7 +686,7 @@ namespace YLWorks.Controller
                         City = q.Client.BillingAddress.City,
                         State = q.Client.BillingAddress.State,
                         Country = q.Client.BillingAddress.Country,
-                        Poscode = q.Client.BillingAddress.Poscode
+                        Postcode = q.Client.BillingAddress.Postcode
                     },
 
                     DeliveryAddress = q.Client.DeliveryAddress == null ? null : new Address
@@ -696,7 +697,7 @@ namespace YLWorks.Controller
                         City = q.Client.DeliveryAddress.City,
                         State = q.Client.DeliveryAddress.State,
                         Country = q.Client.DeliveryAddress.Country,
-                        Poscode = q.Client.DeliveryAddress.Poscode
+                        Postcode = q.Client.DeliveryAddress.Postcode
                     }
                 },
                 SalesOrderItems = items.Select(x => new

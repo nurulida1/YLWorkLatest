@@ -200,8 +200,8 @@ string? includes = null)
                     {
                         Name = data.Supplier.Name,
                         FaxNo = data.Supplier.FaxNo,
-                        ContactPerson1 = data.Supplier.ContactPerson1,
-                        ContactPerson2 = data.Supplier.ContactPerson2,
+                        PrimaryContactPerson = data.Supplier.PrimaryContactPerson,
+                        SecondaryContactPerson = data.Supplier.SecondaryContactPerson,
                         ContactNo = data.Supplier.ContactNo,
                         ACNo = data.Supplier.ACNo,
                         BillingAddress = data.Supplier.BillingAddress == null ? null : new Address
@@ -212,7 +212,7 @@ string? includes = null)
                             City = data.Supplier.BillingAddress.City,
                             State = data.Supplier.BillingAddress.State,
                             Country = data.Supplier.BillingAddress.Country,
-                            Poscode = data.Supplier.BillingAddress.Poscode
+                            Postcode = data.Supplier.BillingAddress.Postcode
                         },
 
                         DeliveryAddress = data.Supplier.DeliveryAddress == null ? null : new Address
@@ -223,7 +223,7 @@ string? includes = null)
                             City = data.Supplier.DeliveryAddress.City,
                             State = data.Supplier.DeliveryAddress.State,
                             Country = data.Supplier.DeliveryAddress.Country,
-                            Poscode = data.Supplier.DeliveryAddress.Poscode
+                            Postcode = data.Supplier.DeliveryAddress.Postcode
                         }
 
                     },

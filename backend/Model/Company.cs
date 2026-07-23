@@ -19,13 +19,20 @@ namespace YLWorks.Model
         public Address? DeliveryAddress { get; set; }
 
         public string? ContactNo { get; set; }
-        public string? ContactPerson1 { get; set; }
-        public string? ContactPerson2 { get; set; }
         public string? Email { get; set; }
+
+        public string? PrimaryContactPerson { get; set; }
+        public string? PrimaryContactNo { get; set; }
+        public string? PrimaryEmail { get; set; }
+
+        public string? SecondaryContactPerson { get; set; }
+        public string? SecondaryContactNo { get; set; }
+        public string? SecondaryEmail { get; set; }
 
         public string? FaxNo { get; set; }
         public string? ACNo { get; set; }
         public string? WebsiteUrl { get; set; }
+        public string? RegistrationNo { get; set; }
         public string? TINNo { get; set; }
         public string? SSTRegNo { get; set; }
         public string? SSMRegNo { get; set; }
@@ -46,12 +53,20 @@ namespace YLWorks.Model
         public AddressRequest? DeliveryAddress { get; set; }
 
         public string? ContactNo { get; set; }
-        public string? ContactPerson1 { get; set; }
-        public string? ContactPerson2 { get; set; }
+
+        public string? PrimaryContactPerson { get; set; }
+        public string? PrimaryContactNo { get; set; }
+        public string? PrimaryEmail { get; set; }
+
+        public string? SecondaryContactPerson { get; set; }
+        public string? SecondaryContactNo { get; set; }
+        public string? SecondaryEmail { get; set; }
+
         public string? FaxNo { get; set; }
         public string? ACNo { get; set; }
         public string? Email { get; set; }
         public string? WebsiteUrl { get; set; }
+        public string? RegistrationNo { get; set; }
         public string? TINNo { get; set; }
         public string? SSTRegNo { get; set; }
         public string? SSMRegNo { get; set; }
@@ -72,10 +87,19 @@ namespace YLWorks.Model
         public Guid Id { get; set; }
         public string Name { get; set; }
         public string ContactNo { get; set; }
-        public string ContactPerson1 { get; set; }
-        public string ContactPerson2 { get; set; }
+
+        public string? PrimaryContactPerson { get; set; }
+        public string? PrimaryContactNo { get; set; }
+        public string? PrimaryEmail { get; set; }
+
+        public string? SecondaryContactPerson { get; set; }
+        public string? SecondaryContactNo { get; set; }
+        public string? SecondaryEmail { get; set; }
+
+        public string? RegistrationNo { get; set; }
         public string FaxNo { get; set; }
         public string ACNo { get; set; }
+        public decimal? BalancePayment { get; set; }
         public string Email { get; set; }
         public string WebsiteUrl { get; set; }
         public CompanyType Type { get; set; }
@@ -97,8 +121,8 @@ namespace YLWorks.Model
         public string Name { get; set; } = string.Empty;
         public Address? DeliveryAddress { get; set; }
         public Address? BillingAddress { get; set; }
-        public string? ContactPerson1 { get; set; }
-        public string? ContactPerson2 { get; set; }
+        public string? PrimaryContactPerson { get; set; }
+        public string? SecondaryContactPerson { get; set; }
         public string? Email { get; set; }
         public string? FaxNo { get; set; }
         public string? ContactNo { get; set; }

@@ -751,7 +751,8 @@ namespace YLWorks.Controller
                 c.Name,
                 c.ContactNo,
                 c.Email,
-                c.ContactPerson1,
+                c.PrimaryContactPerson,
+                c.SecondaryContactPerson,
                 c.FaxNo,
                 BillingAddress = MapAddress(c.BillingAddress),
                 DeliveryAddress = MapAddress(c.DeliveryAddress)
@@ -761,7 +762,7 @@ namespace YLWorks.Controller
         private object? MapAddress(Address? a)
         {
             if (a == null) return null;
-            return new { a.Id, a.AddressLine1, a.AddressLine2, a.City, a.State, a.Country, a.Poscode };
+            return new { a.Id, a.AddressLine1, a.AddressLine2, a.City, a.State, a.Country, a.Postcode };
         }
 
         [HttpPost("Clone/{id}")]

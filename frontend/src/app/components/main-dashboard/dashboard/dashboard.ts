@@ -9,12 +9,36 @@ import {
 import { UserService } from '../../../services/userService.service';
 import { RouterLink } from '@angular/router';
 import { DepartmentDto } from '../../../models/Department';
+import { ButtonModule } from 'primeng/button';
 
 @Component({
   selector: 'app-dashboard',
-  imports: [CommonModule, RouterLink],
-  template: `<div class="p-6 bg-gray-50 min-h-screen">
+  imports: [CommonModule, RouterLink, ButtonModule],
+  template: `<div class="p-10 bg-gray-50 min-h-[85vh]">
     <div
+      class="flex flex-row item-center justify-between border-l-4 pl-4 border-blue-600 rounded-sm"
+    >
+      <div class="flex flex-col tracking-wide">
+        <div class="font-bold text-2xl">System Overview</div>
+        <span class="text-gray-500"
+          >Unified performance metrics and real-time operational data</span
+        >
+      </div>
+      <div class="flex flex-row items-center gap-3">
+        <div
+          class="px-3 py-1 text-center bg-blue-100 text-blue-600 font-bold text-sm rounded-full"
+        >
+          Updated 2m ago
+        </div>
+        <p-button
+          label="New Quotation"
+          severity="contrast"
+          size="small"
+          styleClass="py-2! px-5!"
+        ></p-button>
+      </div>
+    </div>
+    <!-- <div
       class="bg-white rounded-xl p-6 border border-gray-100 shadow-sm flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6"
     >
       <div class="flex flex-col justify-between">
@@ -359,7 +383,7 @@ import { DepartmentDto } from '../../../models/Department';
           </div>
         </div>
       </div>
-    </div>
+    </div> -->
   </div>`,
   styleUrl: './dashboard.less',
   changeDetection: ChangeDetectionStrategy.OnPush,

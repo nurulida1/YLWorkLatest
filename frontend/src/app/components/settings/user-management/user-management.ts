@@ -44,6 +44,7 @@ import { DatePickerModule } from 'primeng/datepicker';
 import { PasswordModule } from 'primeng/password';
 import { DepartmentService } from '../../../services/departmentService';
 import { ChartModule } from 'primeng/chart';
+import { Textarea } from 'primeng/textarea';
 
 @Component({
   selector: 'app-user-management',
@@ -65,6 +66,7 @@ import { ChartModule } from 'primeng/chart';
     DatePickerModule,
     PasswordModule,
     ChartModule,
+    Textarea,
   ],
   template: `<div class="w-full min-h-[92.9vh] flex flex-col p-6 bg-gray-50/50">
       <div
@@ -76,7 +78,7 @@ import { ChartModule } from 'primeng/chart';
         >
           Dashboard
         </div>
-        <span class="text-gray-300 text-[10px]">/</span>
+        <i class="pi pi-chevron-right text-gray-500! text-[8px]! mt-1!"></i>
         <div class="text-gray-700 font-semibold">User Management</div>
       </div>
 
@@ -91,48 +93,70 @@ import { ChartModule } from 'primeng/chart';
           </p>
         </div>
         <p-button
-          label="Add New User"
+          label="Add User"
           (onClick)="ActionClick(null, 'add')"
           icon="pi pi-user-plus"
           severity="info"
-          styleClass="!bg-blue-900 hover:!bg-blue-700 !border-none !py-2 !px-4 rounded-sm! !text-sm whitespace-nowrap font-medium rounded-lg shadow-sm transition-all"
+          styleClass="!bg-blue-700 hover:!bg-blue-600 !border-none !py-2 !px-6 rounded-sm! !text-sm whitespace-nowrap font-medium rounded-lg shadow-sm transition-all"
         ></p-button>
       </div>
 
       <div class="grid grid-cols-12 gap-4 my-3">
         <div
-          class="col-span-3 p-6 border border-gray-300 bg-white flex flex-col gap-3"
+          class="col-span-4 p-6 border border-gray-300 bg-white flex flex-row gap-5"
         >
-          <div class="uppercase text-gray-500 tracking-wide text-sm">
-            Total Staff
+          <div
+            class="w-16 h-16 bg-blue-100 rounded-lg flex items-center justify-center"
+          >
+            <i class="pi pi-users text-4xl! text-blue-700!"></i>
           </div>
-          <div class="font-extrabold text-5xl text-gray-700">
-            {{ dashboardCount?.totalStaff }}
+          <div class="flex flex-col">
+            <div class="uppercase text-gray-500 tracking-wide text-sm">
+              Total Users
+            </div>
+            <div class="font-extrabold text-5xl text-gray-700">
+              {{ dashboardCount?.totalUsers }}
+            </div>
           </div>
         </div>
         <div
-          class="col-span-3 p-6 border border-gray-300 bg-white flex flex-col gap-3"
+          class="col-span-4 p-6 border border-gray-300 bg-white flex flex-row gap-5"
         >
-          <div class="uppercase text-gray-500 tracking-wide text-sm">
-            Active Now
+          <div
+            class="w-16 h-16 bg-red-100 rounded-lg flex items-center justify-center"
+          >
+            <i class="pi pi-calendar-clock text-4xl! text-red-700!"></i>
           </div>
-          <div class="font-extrabold text-5xl text-gray-700">
-            {{ dashboardCount?.activeNow }}
+          <div class="flex flex-col">
+            <div class="uppercase text-gray-500 tracking-wide text-sm">
+              Pending Approvals
+            </div>
+            <div class="font-extrabold text-5xl text-gray-700">
+              {{ dashboardCount?.pendingUsers }}
+            </div>
           </div>
         </div>
+
         <div
-          class="col-span-6 p-6 border border-gray-300 bg-white flex flex-col gap-3"
+          class="col-span-4 p-6 border border-gray-300 bg-white flex flex-row gap-5"
         >
-          <div class="uppercase text-gray-500 tracking-wide text-sm">
-            User Status Summary
+          <div
+            class="w-16 h-16 bg-sky-100 rounded-lg flex items-center justify-center"
+          >
+            <i class="pi pi-check-circle text-4xl! text-sky-700!"></i>
           </div>
-          <div class="font-extrabold text-5xl text-gray-700">
-            <!-- bar-chart -->
+          <div class="flex flex-col">
+            <div class="uppercase text-gray-500 tracking-wide text-sm">
+              Active Staff
+            </div>
+            <div class="font-extrabold text-5xl text-gray-700">
+              {{ dashboardCount?.activeUsers }}
+            </div>
           </div>
         </div>
       </div>
       <div
-        class="border border-gray-200/80 rounded-xl tracking-wide bg-white shadow-sm flex flex-col overflow-hidden mt-2"
+        class="border border-gray-200 tracking-wide bg-white shadow-sm flex flex-col overflow-hidden mt-2"
       >
         <div class="px-6 py-4 flex justify-end gap-4 border-b border-gray-100">
           <span class="relative min-w-full md:min-w-[320px]">
@@ -143,7 +167,7 @@ import { ChartModule } from 'primeng/chart';
               type="text"
               pInputText
               [(ngModel)]="search"
-              class="w-full pl-9! pr-4! py-2! text-sm border border-gray-300 rounded-lg focus:border-blue-500 text-gray-800 placeholder:text-gray-400 shadow-inner/5"
+              class="w-full pl-9! pr-4! py-2! text-sm border border-gray-300 rounded-none! focus:border-blue-500 text-gray-800 placeholder:text-gray-400 shadow-inner/5"
               placeholder="Search users by name..."
               (keyup)="onKeyDown($event)"
             />
@@ -159,17 +183,16 @@ import { ChartModule } from 'primeng/chart';
             [totalRecords]="PagingSignal().totalElements"
             [tableStyle]="{ 'min-width': '60rem' }"
             [rowsPerPageOptions]="[10, 20, 30, 50]"
-            [stripedRows]="false"
-            [showGridlines]="false"
+            [showGridlines]="true"
             [lazy]="true"
             (onLazyLoad)="NextPage($event)"
-            styleClass="p-datatable-sm border border-gray-300!"
+            styleClass="p-datatable-sm"
           >
             <ng-template #header>
               <tr class="border border-gray-200">
                 <th
                   pSortableColumn="FullName"
-                  class="border-b! border-gray-300! bg-gray-200! text-gray-600! font-semibold! text-xs! uppercase tracking-wider py-3 px-5 w-[25%]!"
+                  class="border-b! border-gray-300! bg-gray-200! text-gray-600! font-semibold! text-xs! uppercase tracking-wider py-3 px-5 w-[20%]!"
                 >
                   <div class="flex flex-row items-center gap-2">
                     <div>Name</div>
@@ -177,22 +200,22 @@ import { ChartModule } from 'primeng/chart';
                   </div>
                 </th>
                 <th
-                  class="border-b! border-gray-300! bg-gray-200! text-gray-600! font-semibold! text-xs! uppercase tracking-wider py-3 px-4 w-[18%]"
+                  class="border-b! border-gray-300! bg-gray-200! text-gray-600! font-semibold! text-xs! uppercase tracking-wider py-3 px-4 w-[15%]"
                 >
                   Job Title
                 </th>
                 <th
-                  class="border-b! border-gray-300! bg-gray-200! text-gray-600! font-semibold! text-xs! uppercase tracking-wider py-3 px-4 w-[20%]"
+                  class="border-b! border-gray-300! bg-gray-200! text-gray-600! font-semibold! text-xs! uppercase tracking-wider py-3 px-4 w-[15%]"
                 >
                   Departments
                 </th>
                 <th
-                  class="border-b! border-gray-300! bg-gray-200! text-gray-600! font-semibold! text-xs! uppercase tracking-wider py-3 px-4 text-center! w-[14%]"
+                  class="border-b! border-gray-300! bg-gray-200! text-gray-600! font-semibold! text-xs! uppercase tracking-wider py-3 px-4 text-center! w-[10%]"
                 >
                   Last Active
                 </th>
                 <th
-                  class="border-b! border-gray-300! bg-gray-200! text-gray-600! font-semibold! text-xs! uppercase tracking-wider py-3 px-4 text-center! w-[13%]"
+                  class="border-b! border-gray-300! bg-gray-200! text-gray-600! font-semibold! text-xs! uppercase tracking-wider py-3 px-4 text-center! w-[10%]"
                 >
                   Created Date
                 </th>
@@ -200,6 +223,11 @@ import { ChartModule } from 'primeng/chart';
                   class="border-b! border-gray-300! bg-gray-200! text-gray-600! font-semibold! text-xs! uppercase tracking-wider py-3 px-4 text-center! w-[5%]"
                 >
                   Status
+                </th>
+                <th
+                  class="border-b! border-gray-300! bg-gray-200! text-gray-600! font-semibold! text-xs! uppercase tracking-wider py-3 px-4 text-center! w-[5%]"
+                >
+                  Is Active
                 </th>
                 <th
                   class="border-b! border-gray-300! bg-gray-200! text-gray-600! font-semibold! text-xs! uppercase tracking-wider py-3 px-4 text-center! w-[5%]"
@@ -267,6 +295,23 @@ import { ChartModule } from 'primeng/chart';
                   {{ data.createdAt | date: 'dd MMM yyyy' }}
                 </td>
 
+                <td class="py-3 px-4 text-center! text-gray-600 text-xs">
+                  <div class="flex items-center justify-center">
+                    <div
+                      class="px-5 py-1 rounded-full font-semibold"
+                      [ngClass]="{
+                        'bg-amber-100 text-amber-700':
+                          data.status === 'Pending',
+                        'bg-green-100 text-green-700':
+                          data.status === 'Approved',
+                        'bg-red-100 text-red-700': data.status === 'Rejected',
+                      }"
+                    >
+                      {{ data.status }}
+                    </div>
+                  </div>
+                </td>
+
                 <td class="py-3 px-4 text-center!">
                   <div class="flex items-center justify-center">
                     <p-toggleswitch
@@ -292,7 +337,7 @@ import { ChartModule } from 'primeng/chart';
 
             <ng-template #emptymessage>
               <tr>
-                <td colspan="7" class="py-8 bg-gray-50/20">
+                <td colspan="100%" class="py-8 bg-gray-50/20">
                   <div
                     class="flex flex-col items-center justify-center gap-2 py-4"
                   >
@@ -522,13 +567,7 @@ import { ChartModule } from 'primeng/chart';
               appendTo="body"
               styleClass="w-full! border border-gray-300 rounded-md text-gray-800 h-[38px] flex items-center"
               placeholder="Assign standard permission level"
-              [options]="[
-                { label: 'Management', value: 'Management' },
-                { label: 'Executive', value: 'Executive' },
-                { label: 'HOD', value: 'HOD' },
-                { label: 'Support', value: 'Support' },
-                { label: 'SuperAdmin', value: 'SuperAdmin' },
-              ]"
+              [options]="systemRoles"
               formControlName="systemRole"
             ></p-select>
           </div>
@@ -600,7 +639,85 @@ import { ChartModule } from 'primeng/chart';
           ></p-button>
         </div>
       </ng-template>
-    </p-dialog>`,
+    </p-dialog>
+
+    <p-dialog
+      [(visible)]="approvalVisible"
+      header="Approve User"
+      [modal]="true"
+      styleClass="w-[400px]"
+    >
+      <div [formGroup]="approvalForm" class="flex flex-col gap-4">
+        <label>System Role *</label>
+
+        <p-select
+          appendTo="body"
+          class="w-full"
+          [options]="systemRoles"
+          optionLabel="label"
+          optionValue="value"
+          formControlName="systemRole"
+          placeholder="Select role"
+        />
+
+        <label>Departments (Optional)</label>
+
+        <p-multiSelect
+          appendTo="body"
+          class="w-full"
+          [options]="departmentSelection"
+          optionLabel="label"
+          optionValue="value"
+          formControlName="departmentIds"
+          display="chip"
+        />
+      </div>
+
+      <ng-template pTemplate="footer">
+        <p-button
+          label="Cancel"
+          severity="secondary"
+          (click)="approvalVisible = false"
+        />
+
+        <p-button
+          label="Approve"
+          severity="success"
+          styleClass="bg-green-600!"
+          (click)="ApproveUser()"
+        />
+      </ng-template>
+    </p-dialog>
+
+    <p-dialog
+      [(visible)]="rejectVisible"
+      header="Reject User"
+      [modal]="true"
+      styleClass="w-[400px]"
+    >
+      <div [formGroup]="rejectForm">
+        <label> Reason * </label>
+
+        <textarea
+          pTextarea
+          rows="5"
+          class="w-full"
+          [autoResize]="true"
+          formControlName="reason"
+          placeholder="Enter rejection reason"
+        ></textarea>
+      </div>
+
+      <ng-template pTemplate="footer">
+        <p-button
+          label="Cancel"
+          severity="secondary"
+          (click)="rejectVisible = false"
+        />
+
+        <p-button label="Reject" severity="danger" (click)="RejectUser()" />
+      </ng-template>
+    </p-dialog> `,
   styleUrl: './user-management.less',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -619,6 +736,21 @@ export class UserManagement implements OnInit, OnDestroy {
 
   visible: boolean = false;
   isUpdate: boolean = false;
+
+  approvalVisible: boolean = false;
+  rejectVisible: boolean = false;
+
+  selectedUser: any = null;
+
+  approvalForm = new FormGroup({
+    systemRole: new FormControl<string | null>(null, Validators.required),
+    departmentIds: new FormControl<string[]>([]),
+  });
+
+  rejectForm = new FormGroup({
+    reason: new FormControl(null, Validators.required),
+  });
+
   now: Date = new Date();
 
   dashboardCount: any;
@@ -631,6 +763,15 @@ export class UserManagement implements OnInit, OnDestroy {
   menuItems: MenuItem[] = [];
 
   hodSelection: { label: string; value: string }[] = [];
+
+  systemRoles = [
+    { label: 'Super Administrator', value: 'SuperAdmin' },
+    { label: 'Management (Director / GM)', value: 'Management' },
+    { label: 'Head of Department (HOD)', value: 'HOD' },
+    { label: 'Human Resources', value: 'HR' },
+    { label: 'Staff / Engineer / Executive', value: 'Staff' },
+    { label: 'Technical & System Support', value: 'Support' },
+  ];
 
   constructor() {
     this.Query.Page = 1;
@@ -647,7 +788,7 @@ export class UserManagement implements OnInit, OnDestroy {
 
   GetCount() {
     this.userService
-      .GetDashboardCounts()
+      .GetDashboard()
       .pipe(takeUntil(this.ngUnsubscribe))
       .subscribe({
         next: (res) => {
@@ -778,7 +919,6 @@ export class UserManagement implements OnInit, OnDestroy {
         ),
         hodId: new FormControl<string | null>(data?.hodId || null),
 
-        // UPDATED: Initialized form value field to hold an array tracking matching backend properties
         departmentIds: new FormControl<string[] | null>(
           data?.departmentIds || [],
         ),
@@ -809,7 +949,45 @@ export class UserManagement implements OnInit, OnDestroy {
       },
     ];
 
+    if (client.status === 'Pending') {
+      this.menuItems.push(
+        {
+          label: 'Approve',
+          icon: 'pi pi-check-circle',
+          command: () => this.OpenApprove(client),
+        },
+        {
+          label: 'Reject',
+          icon: 'pi pi-times-circle',
+          command: () => this.OpenReject(client),
+        },
+      );
+    }
+
     menu.toggle(event);
+  }
+
+  OpenApprove(user: any) {
+    this.selectedUser = user;
+
+    this.approvalForm.reset({
+      systemRole: null,
+      departmentIds: [],
+    });
+
+    this.approvalVisible = true;
+
+    this.GetDepartmentSelection();
+  }
+
+  OpenReject(user: any) {
+    this.selectedUser = user;
+
+    this.rejectForm.reset({
+      reason: null,
+    });
+
+    this.rejectVisible = true;
   }
 
   GetHodSelection() {
@@ -914,7 +1092,7 @@ export class UserManagement implements OnInit, OnDestroy {
 
     const request$: Observable<any> = this.isUpdate
       ? this.userService.UpdateUser(payload)
-      : this.userService.Register(payload);
+      : this.userService.AdminCreate(payload);
 
     request$.pipe(takeUntil(this.ngUnsubscribe)).subscribe({
       next: (res: any) => {
@@ -931,7 +1109,9 @@ export class UserManagement implements OnInit, OnDestroy {
           if (this.isUpdate) {
             this.PagingSignal.update((state) => ({
               ...state,
-              data: state.data.map((u: any) => (u.id === res.id ? res : u)),
+              data: state.data.map((u: any) =>
+                u.id === res.user.id ? res.user : u,
+              ),
             }));
           } else {
             this.PagingSignal.update((state) => ({
@@ -959,6 +1139,85 @@ export class UserManagement implements OnInit, OnDestroy {
             err.error?.Message ||
             'Something went wrong. Please try again.',
         });
+      },
+    });
+  }
+
+  ApproveUser() {
+    if (this.approvalForm.invalid) return;
+
+    const payload = {
+      id: this.selectedUser.id,
+      status: 'Approved',
+      systemRole: this.approvalForm.value.systemRole,
+      departmentIds: this.approvalForm.value.departmentIds,
+    };
+
+    this.userService.UpdateApproval(payload).subscribe({
+      next: (res) => {
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Approved',
+          detail: 'User approved successfully',
+        });
+
+        this.PagingSignal.update((state) => ({
+          ...state,
+          data: state.data.map((user: any) =>
+            user.id === this.selectedUser.id
+              ? {
+                  ...user,
+                  status: 'Approved',
+                  systemRole: payload.systemRole,
+                  departments: this.departmentSelection
+                    .filter((d) => payload.departmentIds?.includes(d.value))
+                    .map((d) => ({
+                      id: d.value,
+                      name: d.label,
+                    })),
+                }
+              : user,
+          ),
+        }));
+
+        this.approvalVisible = false;
+        this.GetCount();
+      },
+    });
+  }
+
+  RejectUser() {
+    if (this.rejectForm.invalid) return;
+
+    const payload = {
+      id: this.selectedUser.id,
+      status: 'Rejected',
+      reason: this.rejectForm.value.reason,
+    };
+
+    this.userService.UpdateApproval(payload).subscribe({
+      next: (res) => {
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Rejected',
+          detail: 'User rejected successfully',
+        });
+
+        this.PagingSignal.update((state) => ({
+          ...state,
+          data: state.data.map((user: any) =>
+            user.id === this.selectedUser.id
+              ? {
+                  ...user,
+                  status: 'Rejected',
+                  rejectionReason: payload.reason,
+                }
+              : user,
+          ),
+        }));
+
+        this.rejectVisible = false;
+        this.GetCount();
       },
     });
   }

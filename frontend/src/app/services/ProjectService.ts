@@ -116,6 +116,12 @@ export class ProjectService {
       .pipe(retry(1), catchError(this.handleError('UpdateStatus')));
   }
 
+  GetNextProjectCode(): Observable<{ projectCode: string }> {
+    return this.http
+      .get<{ projectCode: string }>(`${this.url}/GetNextProjectCode`)
+      .pipe(retry(1), catchError(this.handleError('GetNextProjectCode')));
+  }
+
   private handleError = (context: string) => (error: any) => {
     this.messageService.add({
       severity: 'error',

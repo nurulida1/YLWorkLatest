@@ -192,7 +192,7 @@ import { OrderListModule } from 'primeng/orderlist';
                     , {{ selectedCompany.billingAddress?.addressLine2 }}
                   </span>
                   <br />
-                  {{ selectedCompany.billingAddress?.poscode }}
+                  {{ selectedCompany.billingAddress?.postcode }}
                   {{ selectedCompany.billingAddress?.city }},
                   {{ selectedCompany.billingAddress?.state }}
                 </p>
@@ -208,7 +208,7 @@ import { OrderListModule } from 'primeng/orderlist';
                     , {{ selectedCompany.deliveryAddress?.addressLine2 }}
                   </span>
                   <br />
-                  {{ selectedCompany.deliveryAddress?.poscode }}
+                  {{ selectedCompany.deliveryAddress?.postcode }}
                   {{ selectedCompany.deliveryAddress?.city }},
                   {{ selectedCompany.deliveryAddress?.state }}
                 </p>
@@ -261,7 +261,7 @@ import { OrderListModule } from 'primeng/orderlist';
                     , {{ selectedClient.billingAddress?.addressLine2 }}
                   </span>
                   <br />
-                  {{ selectedClient.billingAddress?.poscode }}
+                  {{ selectedClient.billingAddress?.postcode }}
                   {{ selectedClient.billingAddress?.city }},
                   {{ selectedClient.billingAddress?.state }}
                 </p>
@@ -277,7 +277,7 @@ import { OrderListModule } from 'primeng/orderlist';
                     , {{ selectedClient.deliveryAddress?.addressLine2 }}
                   </span>
                   <br />
-                  {{ selectedClient.deliveryAddress?.poscode }}
+                  {{ selectedClient.deliveryAddress?.postcode }}
                   {{ selectedClient.deliveryAddress?.city }},
                   {{ selectedClient.deliveryAddress?.state }}
                 </p>
@@ -1017,7 +1017,7 @@ import { OrderListModule } from 'primeng/orderlist';
                       >
                       <input
                         pInputText
-                        formControlName="poscode"
+                        formControlName="postcode"
                         class="w-full px-4 py-3 border-2 border-slate-200 focus:border-blue-500 rounded-xl transition-all duration-200"
                       />
                     </div>
@@ -1121,7 +1121,7 @@ import { OrderListModule } from 'primeng/orderlist';
                       >
                       <input
                         pInputText
-                        formControlName="poscode"
+                        formControlName="postcode"
                         class="w-full px-4 py-3 border-2 border-slate-200 focus:border-blue-500 rounded-xl transition-all duration-200"
                       />
                     </div>
@@ -1714,7 +1714,7 @@ export class QuotationForm implements OnInit, OnDestroy {
         addressLine2: new FormControl(null),
         city: new FormControl(null, Validators.required),
         state: new FormControl(null, Validators.required),
-        poscode: new FormControl(null, Validators.required),
+        postcode: new FormControl(null, Validators.required),
         country: new FormControl('Malaysia', Validators.required),
       }),
 
@@ -1724,7 +1724,7 @@ export class QuotationForm implements OnInit, OnDestroy {
         addressLine2: new FormControl(null),
         city: new FormControl(null, Validators.required),
         state: new FormControl(null, Validators.required),
-        poscode: new FormControl(null, Validators.required),
+        postcode: new FormControl(null, Validators.required),
         country: new FormControl('Malaysia', Validators.required),
       }),
     });
@@ -1756,7 +1756,7 @@ export class QuotationForm implements OnInit, OnDestroy {
       city: new FormControl(null),
       state: new FormControl(null),
       country: new FormControl(null),
-      poscode: new FormControl(null),
+      postcode: new FormControl(null),
     });
   }
 

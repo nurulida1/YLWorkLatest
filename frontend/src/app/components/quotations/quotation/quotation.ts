@@ -656,7 +656,7 @@ import { DrawerModule } from 'primeng/drawer';
                     </div>
                     <div>
                       {{
-                        selectedQuotation.fromCompany?.billingAddress?.poscode
+                        selectedQuotation.fromCompany?.billingAddress?.postcode
                       }}
                     </div>
                   </div>
@@ -716,7 +716,7 @@ import { DrawerModule } from 'primeng/drawer';
                       {{ selectedQuotation.client?.billingAddress?.state }}
                     </div>
                     <div>
-                      {{ selectedQuotation.client?.billingAddress?.poscode }}
+                      {{ selectedQuotation.client?.billingAddress?.postcode }}
                     </div>
                   </div>
                   <div

@@ -161,13 +161,13 @@ import { ProjectService } from '../../../services/ProjectService';
                 </div>
                 <div
                   *ngIf="
-                    selectedSenderAddress?.poscode ||
+                    selectedSenderAddress?.postcode ||
                     selectedSenderAddress?.city
                   "
                 >
-                  {{ selectedSenderAddress.poscode
+                  {{ selectedSenderAddress.postcode
                   }}{{
-                    selectedSenderAddress.poscode && selectedSenderAddress.city
+                    selectedSenderAddress.postcode && selectedSenderAddress.city
                       ? ' '
                       : ''
                   }}{{ selectedSenderAddress.city }}
@@ -230,13 +230,13 @@ import { ProjectService } from '../../../services/ProjectService';
                 </div>
                 <div
                   *ngIf="
-                    selectedReceiverAddress?.poscode ||
+                    selectedReceiverAddress?.postcode ||
                     selectedReceiverAddress?.city
                   "
                 >
-                  {{ selectedReceiverAddress.poscode
+                  {{ selectedReceiverAddress.postcode
                   }}{{
-                    selectedReceiverAddress.poscode &&
+                    selectedReceiverAddress.postcode &&
                     selectedReceiverAddress.city
                       ? ' '
                       : ''
@@ -677,13 +677,13 @@ export class DeliveryOrderForm implements OnInit, OnDestroy {
 
       let legacyFullAddress = '';
       if (company.deliveryAddress) {
-        const { addressLine1, addressLine2, poscode, city, state, country } =
+        const { addressLine1, addressLine2, postcode, city, state, country } =
           company.deliveryAddress;
 
         legacyFullAddress = [
           addressLine1,
           addressLine2,
-          `${poscode || ''} ${city || ''}`.trim(),
+          `${postcode || ''} ${city || ''}`.trim(),
           state,
           country,
         ]

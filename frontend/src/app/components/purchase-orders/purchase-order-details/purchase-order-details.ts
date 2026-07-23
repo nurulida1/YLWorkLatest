@@ -126,7 +126,7 @@ import { MessageService } from 'primeng/api';
                 {{ poData()?.fromCompany?.billingAddress?.addressLine2 }}
               </div>
               <div>
-                {{ poData()?.fromCompany?.billingAddress?.poscode }},
+                {{ poData()?.fromCompany?.billingAddress?.postcode }},
                 {{ poData()?.fromCompany?.billingAddress?.city }}
               </div>
               {{ poData()?.fromCompany?.billingAddress?.state }},
@@ -138,7 +138,7 @@ import { MessageService } from 'primeng/api';
                 <div class="w-20">Attn</div>
                 <div class="w-3 text-center">:</div>
                 <div class="flex-1">
-                  {{ poData()?.fromCompany?.contactPerson1 }}
+                  {{ poData()?.fromCompany?.primaryContactPerson }}
                 </div>
               </div>
               <div class="flex">
@@ -170,7 +170,7 @@ import { MessageService } from 'primeng/api';
               <div>{{ poData()?.supplier?.billingAddress?.addressLine1 }}</div>
               <div>{{ poData()?.supplier?.billingAddress?.addressLine2 }}</div>
               <div>
-                {{ poData()?.supplier?.billingAddress?.poscode }},
+                {{ poData()?.supplier?.billingAddress?.postcode }},
                 {{ poData()?.supplier?.billingAddress?.city }}
               </div>
               {{ poData()?.supplier?.billingAddress?.state }},
@@ -182,7 +182,7 @@ import { MessageService } from 'primeng/api';
                 <div class="w-20">Attn</div>
                 <div class="w-3 text-center">:</div>
                 <div class="flex-1">
-                  {{ poData()?.supplier?.contactPerson1 }}
+                  {{ poData()?.supplier?.primaryContactPerson }}
                 </div>
               </div>
               <div class="flex">

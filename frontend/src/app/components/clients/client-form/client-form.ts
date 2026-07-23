@@ -47,434 +47,335 @@ import { LoadingService } from '../../../services/loading.service';
   template: `
     <div class="w-full flex flex-col p-6 bg-gray-50 min-h-screen">
       <div
-        class="flex flex-row items-center gap-2 text-gray-500 tracking-wide mb-4"
+        class="text-sm flex flex-row items-center gap-2 text-gray-500 tracking-wide mb-4"
       >
         <span
           class="cursor-pointer hover:text-primary transition-colors"
           [routerLink]="'/dashboard'"
           >Dashboard</span
         >
-        <span class="text-gray-400">/</span>
+        <i class="pi pi-chevron-right text-[8px]! text-gray-500!"></i>
         <span
           class="cursor-pointer hover:text-primary transition-colors"
           [routerLink]="'/clients'"
           >Clients</span
         >
-        <span class="text-gray-400">/</span>
-        <span class="text-gray-800 font-semibold">
+        <i class="pi pi-chevron-right text-[8px]! text-gray-500!"></i>
+        <span class="text-blue-700 font-semibold">
           {{
             currentId ? 'Update ' + (FG.get('name')?.value || '') : 'New Client'
           }}
         </span>
       </div>
 
-      <div
-        class="border border-gray-200 rounded-xl bg-white shadow-sm overflow-hidden"
-        [formGroup]="FG"
-      >
-        <p-tabs value="0">
-          <p-tablist class="bg-gray-50 border-b border-gray-200">
-            <p-tab value="0" class="font-medium">Details</p-tab>
-            <p-tab value="1" class="font-medium">Billing Address</p-tab>
-            <p-tab value="2" class="font-medium">Delivery Address</p-tab>
-          </p-tablist>
+      <div class="flex flex-row items-center justify-between mb-4">
+        <div class="flex flex-col">
+          <div class="text-3xl font-bold text-gray-800">
+            {{
+              currentId ? 'Update Client Profile' : 'Create New Client Profile'
+            }}
+          </div>
+          <span class="text-gray-500 tracking-wide"
+            >{{ currentId ? 'Update' : 'Register a new' }} corporate entity into
+            the YL Works</span
+          >
+        </div>
 
-          <p-tabpanels class="p-6">
-            <p-tabpanel value="0">
-              <div class="grid grid-cols-12 gap-y-5 gap-x-6 items-center">
-                <div
-                  class="col-span-12 md:col-span-3 font-medium text-gray-700"
-                >
-                  Client Logo
-                </div>
-                <div class="col-span-12 md:col-span-9">
-                  <div class="flex items-center gap-4">
-                    <div
-                      *ngIf="FG.get('logoImage')?.value"
-                      class="relative group"
-                    >
-                      <img
-                        [src]="FG.get('logoImage')?.value"
-                        class="w-28 h-28 object-contain border border-gray-200 rounded-lg p-1 bg-gray-50"
-                        alt="Client Logo"
-                      />
-                    </div>
-                    <input
-                      #file
-                      type="file"
-                      accept="image/*"
-                      (change)="onFileSelected($event)"
-                      hidden
-                    />
-                    <div class="flex gap-2">
-                      <p-button
-                        [label]="
-                          FG.get('logoImage')?.value
-                            ? 'Reupload'
-                            : 'Upload Logo'
-                        "
-                        severity="secondary"
-                        icon="pi pi-upload"
-                        size="small"
-                        (onClick)="file.click()"
-                      ></p-button>
-                      <p-button
-                        *ngIf="FG.get('logoImage')?.value"
-                        label="Remove"
-                        severity="danger"
-                        icon="pi pi-trash"
-                        size="small"
-                        outlined="true"
-                        (onClick)="removeImage(file, $event)"
-                      ></p-button>
-                    </div>
-                  </div>
-                </div>
-
-                <div
-                  class="col-span-12 md:col-span-3 font-medium text-gray-700"
-                >
-                  Client Name <span class="text-red-500">*</span>
-                </div>
-                <div class="col-span-12 md:col-span-9">
-                  <input
-                    type="text"
-                    pInputText
-                    class="w-full"
-                    formControlName="name"
-                    placeholder="Enter company name"
-                  />
-                  <div
-                    *ngIf="
-                      FG.get('name')?.errors?.['required'] &&
-                      FG.get('name')?.touched
-                    "
-                    class="text-red-500 text-sm mt-1"
-                  >
-                    Name is required.
-                  </div>
-                </div>
-
-                <div
-                  class="col-span-12 md:col-span-3 font-medium text-gray-700"
-                >
-                  Client Email
-                </div>
-                <div class="col-span-12 md:col-span-9">
-                  <input
-                    type="email"
-                    pInputText
-                    class="w-full"
-                    formControlName="email"
-                    placeholder="example@domain.com"
-                  />
-                  <div
-                    *ngIf="
-                      FG.get('email')?.errors?.['email'] &&
-                      FG.get('email')?.touched
-                    "
-                    class="text-red-500 text-sm mt-1"
-                  >
-                    Please provide a valid email address.
-                  </div>
-                </div>
-
-                <div
-                  class="col-span-12 md:col-span-3 font-medium text-gray-700"
-                >
-                  Contact / Fax No
-                </div>
-                <div
-                  class="col-span-12 md:col-span-9 grid grid-cols-1 md:grid-cols-2 gap-4"
-                >
-                  <input
-                    type="text"
-                    pInputText
-                    class="w-full"
-                    formControlName="contactNo"
-                    placeholder="Contact number"
-                  />
-                  <input
-                    type="text"
-                    pInputText
-                    class="w-full"
-                    formControlName="faxNo"
-                    placeholder="Fax number"
-                  />
-                </div>
-
-                <div
-                  class="col-span-12 md:col-span-3 font-medium text-gray-700"
-                >
-                  Contact Persons
-                </div>
-                <div
-                  class="col-span-12 md:col-span-9 grid grid-cols-1 md:grid-cols-2 gap-4"
-                >
-                  <input
-                    type="text"
-                    pInputText
-                    class="w-full"
-                    formControlName="contactPerson1"
-                    placeholder="Primary Contact Person (e.g. Mrs. Aina / Address if applicable)"
-                  />
-                  <input
-                    type="text"
-                    pInputText
-                    class="w-full"
-                    formControlName="contactPerson2"
-                    placeholder="Secondary Contact Person (e.g. Mr. John / Address if applicable)"
-                  />
-                </div>
-
-                <div
-                  class="col-span-12 md:col-span-3 font-medium text-gray-700"
-                >
-                  A/C & TIN No
-                </div>
-                <div
-                  class="col-span-12 md:col-span-9 grid grid-cols-1 md:grid-cols-2 gap-4"
-                >
-                  <input
-                    type="text"
-                    pInputText
-                    class="w-full"
-                    formControlName="acNo"
-                    placeholder="Account Number"
-                  />
-                  <input
-                    type="text"
-                    pInputText
-                    class="w-full"
-                    formControlName="tinNo"
-                    placeholder="Tax Identification Number"
-                  />
-                </div>
-
-                <div
-                  class="col-span-12 md:col-span-3 font-medium text-gray-700"
-                >
-                  SST Reg & Website
-                </div>
-                <div
-                  class="col-span-12 md:col-span-9 grid grid-cols-1 md:grid-cols-2 gap-4"
-                >
-                  <input
-                    type="text"
-                    pInputText
-                    class="w-full"
-                    formControlName="sstRegNo"
-                    placeholder="SST Registration Number"
-                  />
-                  <input
-                    type="text"
-                    pInputText
-                    class="w-full"
-                    formControlName="websiteUrl"
-                    placeholder="https://example.com"
-                  />
-                </div>
-              </div>
-            </p-tabpanel>
-
-            <p-tabpanel value="1">
-              <div
-                class="grid grid-cols-12 gap-y-4 gap-x-6 items-center pt-2"
-                formGroupName="billingAddress"
-              >
-                <div
-                  class="col-span-12 md:col-span-3 font-medium text-gray-700"
-                >
-                  Address Line 1
-                </div>
-                <div class="col-span-12 md:col-span-9">
-                  <input
-                    type="text"
-                    pInputText
-                    class="w-full"
-                    formControlName="addressLine1"
-                    placeholder="Street address, P.O. box"
-                  />
-                </div>
-
-                <div
-                  class="col-span-12 md:col-span-3 font-medium text-gray-700"
-                >
-                  Address Line 2
-                </div>
-                <div class="col-span-12 md:col-span-9">
-                  <input
-                    type="text"
-                    pInputText
-                    class="w-full"
-                    formControlName="addressLine2"
-                    placeholder="Apartment, suite, unit, building"
-                  />
-                </div>
-
-                <div
-                  class="col-span-12 md:col-span-3 font-medium text-gray-700"
-                >
-                  City & Postcode
-                </div>
-                <div class="col-span-12 md:col-span-9 grid grid-cols-2 gap-4">
-                  <input
-                    type="text"
-                    pInputText
-                    class="w-full"
-                    formControlName="city"
-                    placeholder="City"
-                  />
-                  <input
-                    type="text"
-                    pInputText
-                    class="w-full"
-                    formControlName="poscode"
-                    placeholder="Postcode"
-                  />
-                </div>
-
-                <div
-                  class="col-span-12 md:col-span-3 font-medium text-gray-700"
-                >
-                  State & Country
-                </div>
-                <div class="col-span-12 md:col-span-9 grid grid-cols-2 gap-4">
-                  <input
-                    type="text"
-                    pInputText
-                    class="w-full"
-                    formControlName="state"
-                    placeholder="State"
-                  />
-                  <input
-                    type="text"
-                    pInputText
-                    class="w-full"
-                    formControlName="country"
-                    placeholder="Country"
-                  />
-                </div>
-              </div>
-            </p-tabpanel>
-
-            <p-tabpanel value="2">
-              <div class="flex flex-col gap-4 pt-2">
-                <div
-                  class="flex flex-row items-center gap-2 bg-blue-50/50 border border-blue-100 rounded-lg p-3"
-                >
-                  <p-checkbox
-                    formControlName="sameAsBillingAddress"
-                    [binary]="true"
-                    inputId="syncAddress"
-                  ></p-checkbox>
-                  <label
-                    class="text-sm font-medium text-blue-800 cursor-pointer select-none"
-                    for="syncAddress"
-                  >
-                    Link Addresses (Changes made to either Billing or Delivery
-                    will sync automatically)
-                  </label>
-                </div>
-
-                <div
-                  class="grid grid-cols-12 gap-y-4 gap-x-6 items-center mt-2"
-                  formGroupName="deliveryAddress"
-                >
-                  <div
-                    class="col-span-12 md:col-span-3 font-medium text-gray-700"
-                  >
-                    Address Line 1
-                  </div>
-                  <div class="col-span-12 md:col-span-9">
-                    <input
-                      type="text"
-                      pInputText
-                      class="w-full"
-                      formControlName="addressLine1"
-                      placeholder="Street address, P.O. box"
-                    />
-                  </div>
-
-                  <div
-                    class="col-span-12 md:col-span-3 font-medium text-gray-700"
-                  >
-                    Address Line 2
-                  </div>
-                  <div class="col-span-12 md:col-span-9">
-                    <input
-                      type="text"
-                      pInputText
-                      class="w-full"
-                      formControlName="addressLine2"
-                      placeholder="Apartment, suite, unit, building"
-                    />
-                  </div>
-
-                  <div
-                    class="col-span-12 md:col-span-3 font-medium text-gray-700"
-                  >
-                    City & Postcode
-                  </div>
-                  <div class="col-span-12 md:col-span-9 grid grid-cols-2 gap-4">
-                    <input
-                      type="text"
-                      pInputText
-                      class="w-full"
-                      formControlName="city"
-                      placeholder="City"
-                    />
-                    <input
-                      type="text"
-                      pInputText
-                      class="w-full"
-                      formControlName="poscode"
-                      placeholder="Postcode"
-                    />
-                  </div>
-
-                  <div
-                    class="col-span-12 md:col-span-3 font-medium text-gray-700"
-                  >
-                    State & Country
-                  </div>
-                  <div class="col-span-12 md:col-span-9 grid grid-cols-2 gap-4">
-                    <input
-                      type="text"
-                      pInputText
-                      class="w-full"
-                      formControlName="state"
-                      placeholder="State"
-                    />
-                    <input
-                      type="text"
-                      pInputText
-                      class="w-full"
-                      formControlName="country"
-                      placeholder="Country"
-                    />
-                  </div>
-                </div>
-              </div>
-            </p-tabpanel>
-          </p-tabpanels>
-        </p-tabs>
+        <div class="flex flex-row items-center gap-2">
+          <p-button
+            [routerLink]="'/clients'"
+            label="Discard"
+            severity="secondary"
+            [outlined]="true"
+            size="small"
+            styleClass="px-5! py-2! border-gray-400! rounded-none!"
+          ></p-button>
+          <p-button
+            (onClick)="SaveClient()"
+            [label]="currentId ? 'Save Changes' : 'Create Client'"
+            severity="info"
+            size="small"
+            [icon]="currentId ? '' : 'pi pi-plus'"
+            styleClass="px-5! py-2.5! bg-blue-600! border-none! rounded-none!"
+          ></p-button>
+        </div>
       </div>
 
-      <div
-        class="mt-4 border border-gray-200 rounded-xl bg-white p-4 flex flex-row items-center justify-end gap-3 shadow-sm"
-      >
-        <p-button
-          label="Discard"
-          severity="secondary"
-          outlined="true"
-          [routerLink]="'/clients'"
-        ></p-button>
-        <p-button
-          [label]="currentId ? 'Save Changes' : 'Create Client'"
-          severity="primary"
-          (onClick)="SaveClient()"
-        ></p-button>
+      <div class="flex flex-col gap-5">
+        <div class="bg-white border border-gray-200 p-4 flex flex-col gap-4">
+          <div class="flex flex-row items-center gap-2">
+            <i class="pi pi-building text-blue-600! text-lg!"></i>
+            <div class="font-bold tracking-wider text-lg">
+              Company Information
+            </div>
+          </div>
+
+          <div class="grid grid-cols-12 gap-4" [formGroup]="FG">
+            <div class="col-span-12 flex flex-col gap-1">
+              <div class="font-semibold text-gray-800">Legal Company Name</div>
+              <input
+                type="text"
+                pInputText
+                class="w-full rounded-none!"
+                placeholder="e.g. Acme Precision Components Sdn Bhd"
+                formControlName="name"
+              />
+            </div>
+
+            <div class="col-span-6 flex flex-col gap-1">
+              <div class="font-semibold text-gray-800">Registration Number</div>
+              <input
+                type="text"
+                pInputText
+                class="w-full rounded-none!"
+                placeholder="e.g. 202301012345 (1234567-X)"
+                formControlName="registrationNo"
+              />
+            </div>
+
+            <div class="col-span-6 flex flex-col gap-1">
+              <div class="font-semibold text-gray-800">Email</div>
+              <input
+                type="text"
+                pInputText
+                class="w-full rounded-none!"
+                placeholder="e.g. example@example.com"
+                formControlName="email"
+              />
+            </div>
+
+            <div class="col-span-6 flex flex-col gap-1">
+              <div class="font-semibold text-gray-800">Fax No</div>
+              <input
+                type="text"
+                pInputText
+                class="w-full rounded-none!"
+                placeholder="e.g. 03-12345678"
+                formControlName="faxNo"
+              />
+            </div>
+
+            <div class="col-span-6 flex flex-col gap-1">
+              <div class="font-semibold text-gray-800">Contact No</div>
+              <input
+                type="text"
+                pInputText
+                class="w-full rounded-none!"
+                placeholder="e.g. 03-12345678"
+                formControlName="contactNo"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white border border-gray-200 p-4 flex flex-col gap-4">
+          <div class="flex flex-row items-center gap-2">
+            <i class="pi pi-address-book text-blue-600! text-lg!"></i>
+            <div class="font-bold tracking-wider text-lg">Contact Details</div>
+          </div>
+
+          <div class="grid grid-cols-12 gap-4" [formGroup]="FG">
+            <div class="col-span-12 flex flex-col gap-1">
+              <div class="font-semibold text-gray-800">
+                Primary Contact Person
+              </div>
+              <input
+                type="text"
+                pInputText
+                class="w-full rounded-none!"
+                placeholder="e.g. Ahmad"
+                formControlName="primaryContactPerson"
+              />
+            </div>
+
+            <div class="col-span-6 flex flex-col gap-1">
+              <div class="font-semibold text-gray-800">Primary Email</div>
+              <input
+                type="text"
+                pInputText
+                class="w-full rounded-none!"
+                placeholder="e.g. example@example.com"
+                formControlName="primaryEmail"
+              />
+            </div>
+
+            <div class="col-span-6 flex flex-col gap-1">
+              <div class="font-semibold text-gray-800">Primary Contact No</div>
+              <input
+                type="text"
+                pInputText
+                class="w-full rounded-none!"
+                placeholder="e.g. 011-12345678"
+                formControlName="primaryContactNo"
+              />
+            </div>
+
+            <div class="col-span-12 border-b border-gray-200"></div>
+            <div class="col-span-12 flex flex-col gap-1">
+              <div class="font-semibold text-gray-800">
+                Secondary Contact Person
+              </div>
+              <input
+                type="text"
+                pInputText
+                class="w-full rounded-none!"
+                placeholder="e.g. Ahmad"
+                formControlName="secondaryContactPerson"
+              />
+            </div>
+
+            <div class="col-span-6 flex flex-col gap-1">
+              <div class="font-semibold text-gray-800">Secondary Email</div>
+              <input
+                type="text"
+                pInputText
+                class="w-full rounded-none!"
+                placeholder="e.g. example@example.com"
+                formControlName="secondaryEmail"
+              />
+            </div>
+
+            <div class="col-span-6 flex flex-col gap-1">
+              <div class="font-semibold text-gray-800">
+                Secondary Contact No
+              </div>
+              <input
+                type="text"
+                pInputText
+                class="w-full rounded-none!"
+                placeholder="e.g. 011-12345678"
+                formControlName="secondaryContactNo"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div
+          class="bg-white border border-gray-200 p-4 flex flex-col gap-4"
+          [formGroup]="FG"
+        >
+          <div class="flex flex-row items-center gap-2">
+            <i class="pi pi-map-marker text-blue-600! text-lg!"></i>
+            <div class="font-bold tracking-wider text-lg">Billing Address</div>
+          </div>
+
+          <div class="grid grid-cols-12 gap-4" formGroupName="billingAddress">
+            <div class="col-span-12 flex flex-col gap-1">
+              <div class="font-semibold text-gray-800">Street Address</div>
+              <input
+                type="text"
+                pInputText
+                class="w-full rounded-none!"
+                placeholder="e.g. 123 Block D"
+                formControlName="addressLine1"
+              />
+            </div>
+
+            <div class="col-span-4 flex flex-col gap-1">
+              <div class="font-semibold text-gray-800">City</div>
+              <input
+                type="text"
+                pInputText
+                class="w-full rounded-none!"
+                placeholder="City"
+                formControlName="city"
+              />
+            </div>
+
+            <div class="col-span-4 flex flex-col gap-1">
+              <div class="font-semibold text-gray-800">State</div>
+              <p-select
+                appendTo="body"
+                panelStyleClass="rounded-none!"
+                styleClass="rounded-none!"
+                [filter]="true"
+                [options]="MALAYSIA_STATES"
+                formControlName="state"
+              ></p-select>
+            </div>
+
+            <div class="col-span-4 flex flex-col gap-1">
+              <div class="font-semibold text-gray-800">Postcode</div>
+              <input
+                type="text"
+                pInputText
+                class="w-full rounded-none!"
+                placeholder="e.g. 50000"
+                formControlName="postcode"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div
+          class="bg-white border border-gray-200 p-4 flex flex-col gap-4"
+          [formGroup]="FG"
+        >
+          <div class="flex flex-row items-center justify-between">
+            <div class="flex flex-row items-center gap-2">
+              <i class="pi pi-truck text-blue-600! text-lg!"></i>
+              <div class="font-bold tracking-wider text-lg">
+                Delivery Address
+              </div>
+            </div>
+            <div class="flex flex-row items-center gap-2">
+              <p-checkbox
+                [binary]="true"
+                formControlName="sameAsBillingAddress"
+              ></p-checkbox>
+              <div class="text-sm text-gray-700 mt-1">
+                Same as Billing Address
+              </div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-12 gap-4" formGroupName="deliveryAddress">
+            <div class="col-span-12 flex flex-col gap-1">
+              <div class="font-semibold text-gray-800">Street Address</div>
+              <input
+                type="text"
+                pInputText
+                class="w-full rounded-none!"
+                placeholder="e.g. Ahmad"
+                formControlName="addressLine1"
+              />
+            </div>
+
+            <div class="col-span-4 flex flex-col gap-1">
+              <div class="font-semibold text-gray-800">City</div>
+              <input
+                type="text"
+                pInputText
+                class="w-full rounded-none!"
+                placeholder="City"
+                formControlName="city"
+              />
+            </div>
+
+            <div class="col-span-4 flex flex-col gap-1">
+              <div class="font-semibold text-gray-800">State</div>
+              <p-select
+                formControlName="state"
+                appendTo="body"
+                panelStyleClass="rounded-none!"
+                styleClass="rounded-none!"
+                [filter]="true"
+                [options]="MALAYSIA_STATES"
+              ></p-select>
+            </div>
+
+            <div class="col-span-4 flex flex-col gap-1">
+              <div class="font-semibold text-gray-800">Postcode</div>
+              <input
+                type="text"
+                pInputText
+                class="w-full rounded-none!"
+                placeholder="e.g. 50000"
+                formControlName="postcode"
+              />
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   `,
@@ -497,6 +398,25 @@ export class ClientForm implements OnInit, OnDestroy {
   currentId: string | null = null;
   FG!: FormGroup;
 
+  MALAYSIA_STATES = [
+    { label: 'Johor', value: 'Johor' },
+    { label: 'Kedah', value: 'Kedah' },
+    { label: 'Kelantan', value: 'Kelantan' },
+    { label: 'Melaka', value: 'Melaka' },
+    { label: 'Negeri Sembilan', value: 'Negeri Sembilan' },
+    { label: 'Pahang', value: 'Pahang' },
+    { label: 'Perak', value: 'Perak' },
+    { label: 'Perlis', value: 'Perlis' },
+    { label: 'Pulau Pinang', value: 'Pulau Pinang' },
+    { label: 'Sabah', value: 'Sabah' },
+    { label: 'Sarawak', value: 'Sarawak' },
+    { label: 'Selangor', value: 'Selangor' },
+    { label: 'Terengganu', value: 'Terengganu' },
+    { label: 'W.P. Kuala Lumpur', value: 'Kuala Lumpur' },
+    { label: 'W.P. Labuan', value: 'Labuan' },
+    { label: 'W.P. Putrajaya', value: 'Putrajaya' },
+  ];
+
   constructor() {}
 
   initForm() {
@@ -505,10 +425,15 @@ export class ClientForm implements OnInit, OnDestroy {
       name: new FormControl<string | null>(null, Validators.required),
       logoImage: new FormControl<string | null>(null),
       contactNo: new FormControl<string | null>(null),
-      contactPerson1: new FormControl<string | null>(null),
-      contactPerson2: new FormControl<string | null>(null),
+      primaryContactPerson: new FormControl<string | null>(null),
+      primaryContactNo: new FormControl<string | null>(null),
+      primaryEmail: new FormControl<string | null>(null),
+      secondaryContactPerson: new FormControl<string | null>(null),
+      secondaryContactNo: new FormControl<string | null>(null),
+      secondaryEmail: new FormControl<string | null>(null),
       faxNo: new FormControl<string | null>(null),
       acNo: new FormControl<string | null>(null),
+      registrationNo: new FormControl<string | null>(null),
       email: new FormControl<string | null>(null, Validators.email),
       websiteUrl: new FormControl<string | null>(null),
       type: new FormControl<CompanyType | null>(CompanyType.Client),
@@ -526,8 +451,8 @@ export class ClientForm implements OnInit, OnDestroy {
       addressLine2: new FormControl(null),
       city: new FormControl(null),
       state: new FormControl(null),
-      country: new FormControl(null),
-      poscode: new FormControl(null),
+      country: new FormControl('Malaysia'),
+      postcode: new FormControl(null),
     });
   }
 

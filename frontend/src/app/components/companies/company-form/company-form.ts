@@ -338,7 +338,7 @@ import { CheckboxModule } from 'primeng/checkbox';
                   type="text"
                   pInputText
                   class="w-full"
-                  formControlName="poscode"
+                  formControlName="postcode"
                   placeholder="Postcode"
                 />
               </div>
@@ -435,7 +435,7 @@ import { CheckboxModule } from 'primeng/checkbox';
                     type="text"
                     pInputText
                     class="w-full"
-                    formControlName="poscode"
+                    formControlName="postcode"
                     placeholder="Postcode"
                   />
                 </div>
@@ -533,7 +533,7 @@ export class CompanyForm implements OnInit, OnDestroy {
       city: new FormControl<string | null>(null),
       state: new FormControl<string | null>(null),
       country: new FormControl<string | null>(null),
-      poscode: new FormControl<string | null>(null),
+      postcode: new FormControl<string | null>(null),
     });
   }
 

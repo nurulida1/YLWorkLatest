@@ -94,6 +94,12 @@ export class ClientService {
       .pipe(retry(1), catchError(this.handleError('Delete')));
   }
 
+  ExportCsv(): Observable<Blob> {
+    return this.http.get(`${this.url}/ExportCsv`, {
+      responseType: 'blob',
+    });
+  }
+
   private handleError = (context: string) => (error: any) => {
     this.messageService.add({
       severity: 'error',

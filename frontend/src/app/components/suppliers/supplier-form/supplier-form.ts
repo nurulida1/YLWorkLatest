@@ -331,7 +331,7 @@ import {
                     type="text"
                     pInputText
                     class="w-full"
-                    formControlName="poscode"
+                    formControlName="postcode"
                     placeholder="Postcode"
                   />
                 </div>
@@ -430,7 +430,7 @@ import {
                       type="text"
                       pInputText
                       class="w-full"
-                      formControlName="poscode"
+                      formControlName="postcode"
                       placeholder="Postcode"
                     />
                   </div>
@@ -529,7 +529,7 @@ export class SupplierForm implements OnInit, OnDestroy {
       city: new FormControl(null),
       state: new FormControl(null),
       country: new FormControl(null),
-      poscode: new FormControl(null),
+      postcode: new FormControl(null),
     });
   }
 

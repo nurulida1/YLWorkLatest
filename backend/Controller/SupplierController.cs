@@ -156,8 +156,12 @@ namespace YLWorks.Controller
                         Name = x.Name,
                         Email = x.Email,
                         ContactNo = x.ContactNo,
-                        ContactPerson1 = x.ContactPerson1,
-                        ContactPerson2 = x.ContactPerson2,
+                        PrimaryContactPerson = x.PrimaryContactPerson,
+                        PrimaryContactNo = x.PrimaryContactNo,
+                        PrimaryEmail = x.PrimaryEmail,
+                        SecondaryContactPerson = x.SecondaryContactPerson,
+                        SecondaryContactNo = x.SecondaryContactNo,
+                        SecondaryEmail = x.SecondaryEmail,
                         IsActive = x.IsActive,
                         Type = x.Type,
                         LogoImage = x.LogoImage,
@@ -249,7 +253,7 @@ namespace YLWorks.Controller
                         City = request.BillingAddress.City,
                         State = request.BillingAddress.State,
                         Country = request.BillingAddress.Country,
-                        Poscode = request.BillingAddress.Poscode,
+                        Postcode = request.BillingAddress.Postcode,
                         CreatedAt = DateTime.Now
                     };
 
@@ -266,7 +270,7 @@ namespace YLWorks.Controller
                         City = request.DeliveryAddress.City,
                         State = request.DeliveryAddress.State,
                         Country = request.DeliveryAddress.Country,
-                        Poscode = request.DeliveryAddress.Poscode,
+                        Postcode = request.DeliveryAddress.Postcode,
                         CreatedAt = DateTime.Now
                     };
 
@@ -283,8 +287,12 @@ namespace YLWorks.Controller
                     BillingAddressId = billingAddress?.Id,
                     DeliveryAddressId = deliveryAddress?.Id,
                     ContactNo = request.ContactNo,
-                    ContactPerson1 = request.ContactPerson1,
-                    ContactPerson2 = request.ContactPerson2,
+                    PrimaryContactPerson = request.PrimaryContactPerson,
+                    PrimaryContactNo = request.PrimaryContactNo,
+                    PrimaryEmail = request.PrimaryEmail,
+                    SecondaryContactPerson = request.SecondaryContactPerson,
+                    SecondaryContactNo = request.SecondaryContactNo,
+                    SecondaryEmail = request.SecondaryEmail,
                     FaxNo = request.FaxNo,
                     ACNo = request.ACNo,
                     Email = request.Email,
@@ -359,8 +367,12 @@ namespace YLWorks.Controller
             {
                 comp.Name = request.Name ?? comp.Name;
                 comp.ContactNo = request.ContactNo;
-                comp.ContactPerson1 = request.ContactPerson1;
-                comp.ContactPerson2 = request.ContactPerson2;
+                comp.PrimaryContactPerson = request.PrimaryContactPerson;
+                comp.PrimaryContactNo = request.PrimaryContactNo;
+                comp.PrimaryEmail = request.PrimaryEmail;
+                comp.SecondaryContactPerson = request.PrimaryContactPerson;
+                comp.SecondaryContactNo = request.SecondaryContactNo;
+                comp.SecondaryEmail = request.SecondaryEmail;
                 comp.FaxNo = request.FaxNo;
                 comp.ACNo = request.ACNo;
                 comp.Email = request.Email;
@@ -383,7 +395,7 @@ namespace YLWorks.Controller
                         comp.BillingAddress.City = request.BillingAddress.City;
                         comp.BillingAddress.State = request.BillingAddress.State;
                         comp.BillingAddress.Country = request.BillingAddress.Country;
-                        comp.BillingAddress.Poscode = request.BillingAddress.Poscode;
+                        comp.BillingAddress.Postcode = request.BillingAddress.Postcode;
                     }
                     else
                     {
@@ -394,7 +406,7 @@ namespace YLWorks.Controller
                             City = request.BillingAddress.City,
                             State = request.BillingAddress.State,
                             Country = request.BillingAddress.Country,
-                            Poscode = request.BillingAddress.Poscode
+                            Postcode = request.BillingAddress.Postcode
                         };
 
                         _context.Addresses.Add(billing);
@@ -413,7 +425,7 @@ namespace YLWorks.Controller
                         comp.DeliveryAddress.City = request.DeliveryAddress.City;
                         comp.DeliveryAddress.State = request.DeliveryAddress.State;
                         comp.DeliveryAddress.Country = request.DeliveryAddress.Country;
-                        comp.DeliveryAddress.Poscode = request.DeliveryAddress.Poscode;
+                        comp.DeliveryAddress.Postcode = request.DeliveryAddress.Postcode;
                     }
                     else
                     {
@@ -424,7 +436,7 @@ namespace YLWorks.Controller
                             City = request.DeliveryAddress.City,
                             State = request.DeliveryAddress.State,
                             Country = request.DeliveryAddress.Country,
-                            Poscode = request.DeliveryAddress.Poscode
+                            Postcode = request.DeliveryAddress.Postcode
                         };
 
                         _context.Addresses.Add(delivery);

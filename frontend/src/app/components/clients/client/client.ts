@@ -42,52 +42,61 @@ import { PermissionContextService } from '../../../services/permission-context.s
     FormsModule,
     MenuModule,
     ImageModule,
-    HasPermissionActionDirective,
   ],
   template: `<div class="w-full flex flex-col p-5">
-      <div class="flex flex-row items-center gap-1 text-gray-500 tracking-wide">
+      <div
+        class="flex flex-row items-center gap-1 text-gray-500 tracking-wide text-sm"
+      >
         <div
           class="cursor-pointer hover:text-gray-600"
           [routerLink]="'/dashboard'"
         >
           Dashboard
         </div>
-        /
+        <i class="pi pi-chevron-right text-[8px]! text-gray-500!"></i>
         <div class="text-gray-700 font-semibold">Client</div>
+      </div>
+      <div class="flex flex-row items-center justify-between my-4">
+        <div class="flex flex-col">
+          <div class="font-bold text-3xl text-gray-800">Client Directory</div>
+          <span class="text-gray-500"
+            >Manage client information and maintain your company's client
+            records.</span
+          >
+        </div>
+        <div class="flex flex-row items-center gap-2">
+          <p-button
+            (onClick)="exportCsv()"
+            label="Export CSV"
+            icon="pi pi-download"
+            severity="secondary"
+            [outlined]="true"
+            size="small"
+            styleClass="rounded-none! px-5! py-2! border! border-gray-400!"
+          ></p-button>
+          <p-button
+            (onClick)="ActionClick(null, 'add')"
+            label="Add Client"
+            icon="pi pi-user-plus"
+            severity="info"
+            size="small"
+            styleClass="rounded-none! px-5! py-2.5! border-none! bg-blue-600!"
+          ></p-button>
+        </div>
       </div>
       <div
         class="mt-3 border border-gray-200 rounded-md tracking-wide bg-white p-5 flex flex-col"
       >
-        <div class="flex flex-row items-center justify-between">
-          <div class="flex flex-col">
-            <div class="text-[20px] text-gray-700 font-semibold">Client</div>
-            <div class="text-gray-500">
-              Manage client profiles and information
-            </div>
-          </div>
-          <div class="flex flex-row items-center gap-2">
-            <div class="min-w-[300px] relative">
-              <input
-                type="text"
-                pInputText
-                class="w-full!"
-                placeholder="Search by name"
-                [(ngModel)]="search"
-                (keyup)="onKeyDown($event)"
-              />
-              <i
-                class="pi pi-search absolute! top-3! right-2! text-gray-500!"
-              ></i>
-            </div>
-            <p-button
-              *hasPermissionAction="'canCreate'"
-              label="New Client"
-              (onClick)="ActionClick(null, 'add')"
-              icon="pi pi-plus-circle"
-              severity="info"
-              styleClass="py-2! whitespace-nowrap!"
-            ></p-button>
-          </div>
+        <div class="w-[70%] relative">
+          <input
+            type="text"
+            pInputText
+            class="w-full! pl-8! rounded-none!"
+            placeholder="Search by name"
+            [(ngModel)]="search"
+            (keyup)="onKeyDown($event)"
+          />
+          <i class="pi pi-search absolute! top-3.5! left-2! text-gray-500!"></i>
         </div>
         <div class="mt-3">
           <p-table
@@ -98,28 +107,37 @@ import { PermissionContextService } from '../../../services/permission-context.s
             [totalRecords]="PagingSignal().totalElements"
             [tableStyle]="{ 'min-width': '80rem' }"
             [rowsPerPageOptions]="[10, 20, 30, 50]"
-            [stripedRows]="true"
             [showGridlines]="true"
             [lazy]="true"
             (onLazyLoad)="NextPage($event)"
             ><ng-template #header>
               <tr>
-                <th class="bg-gray-100! text-center! w-[5%]!"></th>
                 <th pSortableColumn="Name" class="bg-gray-100! w-[35%]!">
                   <div class="flex flex-row items-center gap-2">
-                    <div>Name</div>
+                    <div class="uppercase text-sm">Client Name</div>
                     <p-sortIcon field="Name" class="mt-1" />
                   </div>
                 </th>
-                <th class="bg-gray-100! text-center! w-[20%]!">Email</th>
-                <th class="bg-gray-100! text-center! w-[15%]!">Contact No</th>
-                <th class="bg-gray-100! text-center! w-[15%]!">
-                  Contact Person
+                <th
+                  class="bg-gray-100! text-left! w-[20%]! text-sm! uppercase!"
+                >
+                  Company Contact
+                </th>
+                <th
+                  class="bg-gray-100! text-left! w-[15%]! uppercase! text-sm!"
+                >
+                  Primary Contact
+                </th>
+
+                <th
+                  class="bg-gray-100! text-left! w-[15%]! uppercase! text-sm!"
+                >
+                  Balance Payment
                 </th>
 
                 <th
                   *ngIf="rights().canUpdate || rights().canDelete"
-                  class="bg-gray-100! text-center! w-[10%]!"
+                  class="bg-gray-100! text-center! w-[10%]! text-sm! uppercase!"
                 >
                   Action
                 </th>
@@ -127,43 +145,31 @@ import { PermissionContextService } from '../../../services/permission-context.s
             </ng-template>
             <ng-template #body let-data>
               <tr>
-                <td class="text-center! font-semibold!">
-                  <div class="flex items-center justify-center">
-                    <div
-                      class="w-[80px] flex items-center justify-center"
-                      *ngIf="!data.logoImage"
-                    >
-                      <i class="pi pi-building text-[25px]!"></i>
-                    </div>
-                    <p-image
-                      *ngIf="data.logoImage"
-                      [src]="data.logoImage"
-                      width="100px"
-                    ></p-image>
-                  </div>
-                </td>
                 <td class="font-semibold!">
                   {{ data.name }}
                 </td>
-                <td class="text-center!">
-                  {{ data.email }}
-                </td>
-                <td class="text-center!">
-                  {{ data.contactNo }}
-                </td>
-                <td class="text-center!">
-                  <div class="flex flex-col items-center justify-center gap-1">
-                    <span class="font-medium text-gray-800">{{
-                      data.contactPerson1
-                    }}</span>
-
-                    <span
-                      *ngIf="data.contactPerson2"
-                      class="text-xs text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded"
-                    >
-                      Alt: {{ data.contactPerson2 }}
-                    </span>
+                <td class="text-left!">
+                  <div class="flex flex-col">
+                    <div class="font-semibold">{{ data.email }}</div>
+                    <div class="text-sm text-gray-500">
+                      {{ data.contactNo }}
+                    </div>
                   </div>
+                </td>
+                <td class="text-left!">
+                  <div class="flex flex-col">
+                    <div class="font-semibold">
+                      {{ data.primaryContactPerson }}
+                    </div>
+                    <div class="text-sm text-gray-500">
+                      {{ data.primaryEmail }}
+                    </div>
+                  </div>
+                </td>
+                <td class="text-left!">
+                  {{
+                    data.balancePayment | currency: 'RM ' : 'symbol' : '1.2-2'
+                  }}
                 </td>
 
                 <td
@@ -374,6 +380,19 @@ export class Client implements OnInit, OnDestroy {
     }
 
     menu.toggle(event);
+  }
+
+  exportCsv() {
+    this.clientService.ExportCsv().subscribe((blob) => {
+      const url = window.URL.createObjectURL(blob);
+
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'clients.csv';
+      a.click();
+
+      window.URL.revokeObjectURL(url);
+    });
   }
 
   ngOnDestroy(): void {

@@ -357,8 +357,7 @@ import { TabsModule } from 'primeng/tabs';
                         >Total Statement Balance</span
                       >
                       <span class="font-black text-2xl tracking-wide"
-                        >RM
-                        {{ soData().totalAmount | number: '1.2-2' }}</span
+                        >RM {{ soData().totalAmount | number: '1.2-2' }}</span
                       >
                     </div>
                   </div>
@@ -841,7 +840,8 @@ import { TabsModule } from 'primeng/tabs';
                           >Primary Contact Person</span
                         >
                         <span class="font-semibold text-slate-800 text-base">{{
-                          soData().client.contactPerson1 || 'None Registered'
+                          soData().client.primaryContactPerson ||
+                            'None Registered'
                         }}</span>
                       </div>
                     </div>
@@ -1452,7 +1452,7 @@ import { TabsModule } from 'primeng/tabs';
                 <label class="font-medium text-gray-500">Postcode / ZIP</label>
                 <input
                   pInputText
-                  formControlName="poscode"
+                  formControlName="postcode"
                   class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                 />
               </div>
@@ -1536,7 +1536,7 @@ import { TabsModule } from 'primeng/tabs';
                 <label class="font-medium text-gray-500">Postcode / ZIP</label>
                 <input
                   pInputText
-                  formControlName="poscode"
+                  formControlName="postcode"
                   class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                 />
               </div>
@@ -2142,7 +2142,7 @@ export class SalesOrderDetails {
         addressLine2: new FormControl(null),
         city: new FormControl(null, Validators.required),
         state: new FormControl(null, Validators.required),
-        poscode: new FormControl(null, Validators.required),
+        postcode: new FormControl(null, Validators.required),
         country: new FormControl('Malaysia', Validators.required),
       }),
 
@@ -2152,7 +2152,7 @@ export class SalesOrderDetails {
         addressLine2: new FormControl(null),
         city: new FormControl(null, Validators.required),
         state: new FormControl(null, Validators.required),
-        poscode: new FormControl(null, Validators.required),
+        postcode: new FormControl(null, Validators.required),
         country: new FormControl('Malaysia', Validators.required),
       }),
     });
@@ -2199,7 +2199,7 @@ export class SalesOrderDetails {
               addressLine1: activeAddress.addressLine1,
               addressLine2: activeAddress.addressLine2,
               city: activeAddress.city,
-              poscode: activeAddress.poscode,
+              postcode: activeAddress.postcode,
               state: activeAddress.state,
               country: activeAddress.country,
             },

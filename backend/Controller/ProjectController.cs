@@ -148,7 +148,8 @@ namespace YLWorks.Controller
                         p.ProjectTitle,
                         p.Priority,
                         p.StartDate,
-                        p.DueDate,
+                        p.EstimatedCompletedDate,
+                        p.EndDate,
                         p.Status,
                         p.ClientId,
                         Client = p.Client == null ? null : new
@@ -195,6 +196,9 @@ namespace YLWorks.Controller
         x.ProjectCode,
         x.ProjectTitle,
         x.StartDate,
+        x.EstimatedCompletedDate,
+        x.Location,
+        x.EstimatedBudget,
         x.DueDate,
         x.Description,
         x.Priority,
@@ -255,12 +259,14 @@ namespace YLWorks.Controller
                     ClientId = request.ClientId,
                     Description = request.Description,
                     StartDate = request.StartDate,
-                    DueDate = request.DueDate,
+                    EstimatedCompletedDate = request.EstimatedCompletedDate,
+                    EstimatedBudget = request.EstimatedBudget,
+                    Location = request.Location,
                     Priority = request.Priority,
+                    Status = string.IsNullOrWhiteSpace(request.Status) ? "Planning" : request.Status,
                     CreatedById = Guid.Parse(userIdClaim),
 
                 };
-                project.Status = "Planning";
                 project.CreatedAt = DateTimeHelper.Now();
 
                 _context.Projects.Add(project);
@@ -292,7 +298,9 @@ namespace YLWorks.Controller
                         Description = d.Description,
                         Priority = d.Priority,
                         StartDate = d.StartDate,
-                        DueDate = d.DueDate,
+                        EstimatedCompletedDate = d.EstimatedCompletedDate,
+                        EstimatedBudget = d.EstimatedBudget,
+                        Location = d.Location,
                         Status = d.Status,
                         ClientId = d.ClientId,
                         Client = d.Client == null ? null : new Company
@@ -342,8 +350,11 @@ namespace YLWorks.Controller
                 project.Description = request.Description;
                 project.Priority = request.Priority;
                 project.StartDate = request.StartDate;
-                project.DueDate = request.DueDate;
+                project.EstimatedCompletedDate = request.EstimatedCompletedDate;
+                project.EstimatedBudget = request.EstimatedBudget;
+                project.Location = request.Location;
                 project.ClientId = request.ClientId;
+                project.Status = request.Status ?? project.Status;
                 project.UpdatedAt = DateTimeHelper.Now();
 
                 var existingMembers = _context.ProjectMembers.Where(x => x.ProjectCode == project.ProjectCode);
@@ -379,7 +390,9 @@ namespace YLWorks.Controller
                Description = d.Description,
                Priority = d.Priority,
                StartDate = d.StartDate,
-               DueDate = d.DueDate,
+               EstimatedCompletedDate = d.EstimatedCompletedDate,
+               EstimatedBudget = d.EstimatedBudget,
+               Location = d.Location,
                Status = d.Status,
                ClientId = d.ClientId,
                Client = d.Client == null ? null : new Company
@@ -506,7 +519,8 @@ namespace YLWorks.Controller
                         Description = d.Description,
                         Priority = d.Priority,
                         StartDate = d.StartDate,
-                        DueDate = d.DueDate,
+                        EstimatedCompletedDate = d.EstimatedCompletedDate,
+                        EndDate = d.EndDate,
                         Status = d.Status,
                         ClientId = d.ClientId,
                         Client = d.Client == null ? null : new Company
@@ -531,6 +545,41 @@ namespace YLWorks.Controller
             catch (Exception)
             {
                 return StatusCode(500, new { Error = "Failed to update status." });
+            }
+        }
+
+        [HttpGet("GetNextProjectCode")]
+        public async Task<IActionResult> GetNextProjectCode()
+        {
+            try
+            {
+                var latestProject = await _context.Projects
+                    .OrderByDescending(x => x.CreatedAt)
+                    .FirstOrDefaultAsync();
+
+                string nextCode = "PRJ-0001";
+
+                if (latestProject != null && !string.IsNullOrWhiteSpace(latestProject.ProjectCode))
+                {
+                    var parts = latestProject.ProjectCode.Split('-');
+
+                    if (parts.Length == 2 && int.TryParse(parts[1], out int number))
+                    {
+                        nextCode = $"PRJ-{(number + 1):D4}";
+                    }
+                }
+
+                return Ok(new
+                {
+                    ProjectCode = nextCode
+                });
+            }
+            catch
+            {
+                return StatusCode(500, new
+                {
+                    Error = "Failed to generate project code."
+                });
             }
         }
     }

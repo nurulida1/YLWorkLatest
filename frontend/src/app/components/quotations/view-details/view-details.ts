@@ -153,7 +153,7 @@ import { DatePickerModule } from 'primeng/datepicker';
                     }}
                   </span>
                   <br />
-                  {{ quotationData()?.fromCompany?.billingAddress?.poscode }}
+                  {{ quotationData()?.fromCompany?.billingAddress?.postcode }}
                   {{ quotationData()?.fromCompany?.billingAddress?.city }},
                   {{ quotationData()?.fromCompany?.billingAddress?.state }}
                 </p>
@@ -179,7 +179,7 @@ import { DatePickerModule } from 'primeng/datepicker';
                     }}
                   </span>
                   <br />
-                  {{ quotationData()?.fromCompany?.deliveryAddress?.poscode }}
+                  {{ quotationData()?.fromCompany?.deliveryAddress?.postcode }}
                   {{ quotationData()?.fromCompany?.deliveryAddress?.city }},
                   {{ quotationData()?.fromCompany?.deliveryAddress?.state }}
                 </p>
@@ -214,7 +214,7 @@ import { DatePickerModule } from 'primeng/datepicker';
                     {{ quotationData()?.client?.billingAddress?.addressLine2 }}
                   </span>
                   <br />
-                  {{ quotationData()?.client?.billingAddress?.poscode }}
+                  {{ quotationData()?.client?.billingAddress?.postcode }}
                   {{ quotationData()?.client?.billingAddress?.city }},
                   {{ quotationData()?.client?.billingAddress?.state }}
                 </p>
@@ -235,7 +235,7 @@ import { DatePickerModule } from 'primeng/datepicker';
                     {{ quotationData()?.client?.deliveryAddress?.addressLine2 }}
                   </span>
                   <br />
-                  {{ quotationData()?.client?.deliveryAddress?.poscode }}
+                  {{ quotationData()?.client?.deliveryAddress?.postcode }}
                   {{ quotationData()?.client?.deliveryAddress?.city }},
                   {{ quotationData()?.client?.deliveryAddress?.state }}
                 </p>
@@ -247,9 +247,9 @@ import { DatePickerModule } from 'primeng/datepicker';
         <hr class="border-slate-100 my-6" />
 
         <div class="col-span-12 flex flex-row gap-2 text-black font-bold mb-3">
-          Attention : {{ quotationData()?.client?.contactPerson1 }}
-          <span *ngIf="quotationData()?.client?.contactPerson2"
-            >/ {{ quotationData()?.client?.contactPerson2 }}</span
+          Attention : {{ quotationData()?.client?.primaryContactPerson }}
+          <span *ngIf="quotationData()?.client?.secondaryContactPerson"
+            >/ {{ quotationData()?.client?.secondaryContactPerson }}</span
           >
         </div>
 

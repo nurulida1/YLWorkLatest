@@ -8,7 +8,7 @@
         public string Country { get; set; } = string.Empty;
         public string State { get; set; } = string.Empty;
         public string City { get; set; } = string.Empty;
-        public int Poscode { get; set; }
+        public int Postcode { get; set; }
 
     }
 
@@ -19,7 +19,7 @@
         public string Country { get; set; }
         public string State { get; set; }
         public string City { get; set; } = string.Empty;
-        public int Poscode { get; set; }
+        public int Postcode { get; set; }
     }
 
     public class AddressDto
@@ -30,7 +30,7 @@
         public string Country { get; set; }
         public string State { get; set; }
         public string City { get; set; }
-        public int Poscode { get; set; }
+        public int Postcode { get; set; }
     }
 
 }

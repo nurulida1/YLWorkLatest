@@ -213,4 +213,17 @@ namespace YLWorks.Model
         public string? Reason { get; set; }
     }
 
+    public class ApprovalRequest
+    {
+        public string Status { get; set; } = string.Empty;
+
+        // For Approved
+        public string? SystemRole { get; set; }
+
+        public List<Guid>? DepartmentIds { get; set; }
+
+
+        // For Rejected
+        public string? Reason { get; set; }
+    }
 }

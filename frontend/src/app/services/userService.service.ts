@@ -114,6 +114,14 @@ export class UserService {
     );
   }
 
+  AdminCreate(request: RegisterRequest): Observable<UserDto> {
+    return this.http.post<any>(`${this.url}/AdminCreate`, request).pipe(
+      map((res) => res.user),
+      retry(1),
+      catchError(this.handleError('AdminCreate')),
+    );
+  }
+
   UpdateUser(
     request: UpdateUserRequest,
   ): Observable<{ success: boolean; message: string; user?: UserDto }> {
@@ -157,22 +165,6 @@ export class UserService {
       .pipe(retry(1), catchError(this.handleError('isActive')));
   }
 
-  GetDashboardCounts(): Observable<{
-    totalUsers: number;
-    activeNow: number;
-    inactive: number;
-    departmentDistribution: any[];
-  }> {
-    return this.http
-      .get<{
-        totalUsers: number;
-        activeNow: number;
-        inactive: number;
-        departmentDistribution: any[];
-      }>(`${this.url}/GetStaffDashboardCount`)
-      .pipe(retry(1), catchError(this.handleError('GetDashboardCounts')));
-  }
-
   logout(): void {
     this.setCurrentUser(null);
     this.router.navigate(['/login']);
@@ -188,8 +180,14 @@ export class UserService {
     return throwError(() => error);
   };
 
+  UpdateApproval(payload: any): Observable<BaseResponse> {
+    return this.http
+      .put<BaseResponse>(`${this.url}/Approval/${payload.id}`, payload)
+      .pipe(retry(1), catchError(this.handleError('UpdateApproval')));
+  }
+
   GetDashboard(): Observable<StaffDashboard | null> {
-    return this.http.get<StaffDashboard>(`${this.url}/GetDashboard`).pipe(
+    return this.http.get<StaffDashboard>(`${this.url}/DashboardCounts`).pipe(
       retry(1),
       catchError((error) => {
         if (error.status === 404) {

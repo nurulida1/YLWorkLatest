@@ -16,7 +16,7 @@ export const routes: Routes = [
   },
   {
     path: 'dashboard',
-    canActivate: [...protectedGuards],
+    // canActivate: [...protectedGuards],
     data: { moduleKey: 'dashboard' },
     loadComponent: () =>
       import('./common/components/ResponsiveLayout/ResponsiveLayout').then(

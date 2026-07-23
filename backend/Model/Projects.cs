@@ -9,6 +9,10 @@
         public Company Client { get; set; } = null!;
         public string Status { get; set; } = string.Empty; // Planning, InProgress, OnHold, Completed
         public DateTime? StartDate { get; set; }
+        public DateTime? EndDate { get; set; }
+        public string? Location { get; set; }
+        public DateTime? EstimatedCompletedDate { get; set; }
+        public double? EstimatedBudget { get; set; }
         public DateTime? DueDate { get; set; }
         public Guid CreatedById { get; set; }
         public User CreatedBy { get; set; }
@@ -44,6 +48,10 @@
         public DateTime? DueDate { get; set; }
         public string? Description { get; set; } = string.Empty;
         public string? Priority { get; set; }
+        public string? Location { get; set; }
+        public DateTime? EstimatedCompletedDate { get; set; }
+        public double? EstimatedBudget { get; set; }
+        public string? Status { get; set; }
         public List<string>? ProjectMembers { get; set; }
     }
 
@@ -69,7 +77,11 @@
         public string ProjectTitle { get; set; } = string.Empty;
         public string? Description { get; set; }
         public DateTime? StartDate { get; set; }
+        public DateTime? EndDate { get; set; }
         public DateTime? DueDate { get; set; }
+        public DateTime? EstimatedCompletedDate { get; set; }
+        public double? EstimatedBudget { get; set; }
+        public string? Location { get; set; }
         public string? Priority { get; set; }
         public Guid? ClientId { get; set; }
         public Company? Client { get; set; }

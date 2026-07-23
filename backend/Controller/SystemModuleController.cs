@@ -151,6 +151,7 @@ namespace YLWorks.Controller
           u.Id,
           u.Name,
           u.Code,
+          u.RoutePrefix,
       })
       .ToList();
 
@@ -190,6 +191,24 @@ namespace YLWorks.Controller
 
         }
 
+        [HttpGet("route-registry")]
+        public async Task<ActionResult<IEnumerable<object>>> GetRouteRegistry()
+        {
+            var items = await _context.SystemModules
+                .AsNoTracking()
+                .OrderBy(m => m.Name)
+                .Select(m => new
+                {
+                    m.Id,
+                    m.Name,
+                    m.Code,
+                    RoutePrefix = m.RoutePrefix ?? m.Code,
+                })
+                .ToListAsync();
+
+            return Ok(items);
+        }
+
         [HttpPost("Create")]
         public async Task<ActionResult<SystemModule>> AddSystemModule([FromBody] CreateSystemModuleRequest request)
         {
@@ -203,6 +222,9 @@ namespace YLWorks.Controller
                     Id = Guid.NewGuid(),
                     Name = request.Name,
                     Code = request.Code,
+                    RoutePrefix = string.IsNullOrWhiteSpace(request.RoutePrefix)
+                        ? request.Code
+                        : request.RoutePrefix.Trim(),
                 };
 
                 systemModule.CreatedAt = DateTimeHelper.Now();
@@ -217,7 +239,8 @@ namespace YLWorks.Controller
                     {
                         Id = d.Id,
                         Name = d.Name,
-                        Code = d.Code
+                        Code = d.Code,
+                        RoutePrefix = d.RoutePrefix,
                     })
                     .FirstAsync();
 
@@ -246,6 +269,12 @@ namespace YLWorks.Controller
             {
                 module.Name = request.Name ?? module.Name;
                 module.Code = request.Code;
+                if (request.RoutePrefix != null)
+                {
+                    module.RoutePrefix = string.IsNullOrWhiteSpace(request.RoutePrefix)
+                        ? request.Code
+                        : request.RoutePrefix.Trim();
+                }
                 module.UpdatedAt = DateTime.Now;
 
                 _context.SystemModules.Update(module);
@@ -258,7 +287,8 @@ namespace YLWorks.Controller
            {
                Id = d.Id,
                Name = d.Name,
-               Code = d.Code
+               Code = d.Code,
+               RoutePrefix = d.RoutePrefix,
            })
            .FirstAsync();
                 await _hub.Clients.All.SendAsync("SystemModuleUpdated", module);

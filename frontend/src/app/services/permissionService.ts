@@ -1,14 +1,10 @@
 import { Injectable, inject, signal, computed } from '@angular/core';
-
 import { HttpClient } from '@angular/common/http';
-
 import { catchError, tap } from 'rxjs/operators';
-
 import { of } from 'rxjs';
-
 import { UserService } from './userService.service';
-
 import { ModuleRights, RolePermissionDto } from '../models/RolePermission';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root',
@@ -18,9 +14,28 @@ export class PermissionService {
   private readonly userService = inject(UserService);
   private readonly _matrix = signal<RolePermissionDto[]>([]);
   public readonly matrix = this._matrix.asReadonly();
+  private cachedUserId: string | null = null;
+
+  constructor() {
+    this.userService.currentUser$.subscribe((user) => {
+      if (!user) {
+        this.clearCache();
+        this.cachedUserId = null;
+        return;
+      }
+      if (this.cachedUserId !== user.userId) {
+        this.clearCache();
+        this.cachedUserId = user.userId;
+      }
+    });
+  }
 
   get currentUser() {
     return this.userService.currentUser;
+  }
+
+  clearCache(): void {
+    this._matrix.set([]);
   }
 
   loadPermissions() {
@@ -35,7 +50,7 @@ export class PermissionService {
 
     const departmentIds = user.departmentIds ?? [];
 
-    let url = `https://localhost:5000/api/RolePermission/by-matrix?systemRole=${encodeURIComponent(role)}`;
+    let url = `${environment.ApiBaseUrl}/RolePermission/by-matrix?systemRole=${encodeURIComponent(role)}`;
 
     if (departmentIds.length > 0) {
       departmentIds.forEach((id: string) => {
@@ -74,7 +89,10 @@ export class PermissionService {
         };
       }
 
-      const matches = allPerms.filter((p) => p.moduleKey === moduleKey);
+      const keyLower = moduleKey.toLowerCase();
+      const matches = allPerms.filter(
+        (p) => (p.moduleKey ?? '').toLowerCase() === keyLower,
+      );
 
       if (!matches.length) {
         return {

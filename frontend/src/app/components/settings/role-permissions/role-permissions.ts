@@ -10,7 +10,6 @@ import {
   ViewChild,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
 import { DialogModule } from 'primeng/dialog';
@@ -38,7 +37,6 @@ import { SystemModuleService } from '../../../services/SystemModuleService';
     ButtonModule,
     InputTextModule,
     FormsModule,
-    RouterLink,
     TableModule,
     SelectModule,
     DialogModule,

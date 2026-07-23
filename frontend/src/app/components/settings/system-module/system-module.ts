@@ -18,6 +18,7 @@ import { MenuModule } from 'primeng/menu';
 import { SelectModule } from 'primeng/select';
 import { Table, TableLazyLoadEvent, TableModule } from 'primeng/table';
 import { SystemModuleService } from '../../../services/SystemModuleService';
+import { ModuleRegistryService } from '../../../services/module-registry.service';
 import { SystemModuleDto } from '../../../models/SystemModule';
 import { MessageService, MenuItem } from 'primeng/api';
 import { Subject, takeUntil, Observable } from 'rxjs';
@@ -220,6 +221,20 @@ import {
               [(ngModel)]="code"
             />
           </div>
+
+          <div class="flex flex-col gap-1.5">
+            <label
+              class="text-xs font-bold text-gray-700 uppercase tracking-wider"
+              >URL route prefix</label
+            >
+            <input
+              type="text"
+              pInputText
+              class="w-full !py-2 !px-3 !text-sm !border-gray-300 !rounded-lg focus:!border-blue-500 font-mono"
+              placeholder="e.g., purchase-order (defaults to code if empty) app route"
+              [(ngModel)]="routePrefix"
+            />
+          </div>
         </div>
 
         <div
@@ -249,6 +264,7 @@ export class SystemModule implements OnInit, OnDestroy {
   private readonly loadingService = inject(LoadingService);
   private readonly messageService = inject(MessageService);
   private readonly systemModuleService = inject(SystemModuleService);
+  private readonly moduleRegistry = inject(ModuleRegistryService);
   private readonly cdr = inject(ChangeDetectorRef);
   protected ngUnsubscribe: Subject<void> = new Subject<void>();
 
@@ -264,6 +280,8 @@ export class SystemModule implements OnInit, OnDestroy {
   title: string = 'Add New System Module';
   moduleName: string | null = null;
   code: string | null = null;
+  routePrefix: string | null = null;
+  moduleId: string | null = null;
   menuItems: MenuItem[] = [];
 
   hodSelection: { label: string; value: string }[] = [];
@@ -404,12 +422,16 @@ export class SystemModule implements OnInit, OnDestroy {
         ? 'Edit System Module'
         : 'Add New System Module';
 
-      if (this.isUpdate) {
-        this.moduleName = data?.name || null;
-        this.code = data?.code || null;
+      if (this.isUpdate && data) {
+        this.moduleId = data.id;
+        this.moduleName = data.name || null;
+        this.code = data.code || null;
+        this.routePrefix = data.routePrefix ?? data.code ?? null;
       } else {
+        this.moduleId = null;
         this.moduleName = null;
         this.code = null;
+        this.routePrefix = null;
       }
       this.visible = true;
       this.cdr.detectChanges();
@@ -442,15 +464,33 @@ export class SystemModule implements OnInit, OnDestroy {
       });
     }
 
+    if (this.isUpdate && !this.moduleId) {
+      return this.messageService.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: 'Module id is missing. Please close and edit again.',
+      });
+    }
+
+    if (!this.code?.trim()) {
+      return this.messageService.add({
+        severity: 'error',
+        summary: 'System Route Code Key is required',
+        detail: '',
+      });
+    }
+
     const request$: Observable<any> = this.isUpdate
       ? this.systemModuleService.Update({
-          id: this.code!,
+          id: this.moduleId!,
           name: this.moduleName,
-          code: '',
+          code: this.code.trim(),
+          routePrefix: this.routePrefix?.trim() || this.code.trim(),
         })
       : this.systemModuleService.Create({
           name: this.moduleName,
-          code: this.code,
+          code: this.code.trim(),
+          routePrefix: this.routePrefix?.trim() || this.code.trim(),
         });
 
     request$.pipe(takeUntil(this.ngUnsubscribe)).subscribe({
@@ -465,6 +505,7 @@ export class SystemModule implements OnInit, OnDestroy {
           });
 
           this.visible = false;
+          this.moduleRegistry.invalidate();
 
           if (this.isUpdate) {
             this.PagingSignal.update((state) => ({

@@ -44,11 +44,7 @@ import { ButtonModule } from 'primeng/button';
         <div class="flex flex-col gap-2 w-full">
           <ng-container *ngFor="let item of mainMenu">
             <div
-              *ngIf="
-                item.roles?.includes(currentUser?.systemRole) &&
-                (!item.items || hasVisibleSubItems(item))
-              "
-              class="flex flex-row lg:pl-2 xl:pl-4 py-2 items-center justify-center lg:justify-start gap-3 px-2 text-[14px]"
+              class="flex flex-row lg:pl-4 py-2 items-center justify-center lg:justify-start gap-3 px-2 text-[14px]"
               [routerLink]="item.route"
               [ngClass]="{
                 'rounded-lg bg-blue-500 text-white': isActive(item.route),
@@ -165,24 +161,6 @@ export class Sidemenu {
       route: '/dashboard',
       icon: 'pi-home',
     },
-    // {
-    //   label: 'Apply Leave',
-    //   icon: 'pi pi-calendar',
-    //   route: '/apply-leave',
-    //   roles: ['SuperAdmin', 'Admin', 'HR', 'Manager', 'Staff'],
-    // },
-    // {
-    //   label: 'Payslips',
-    //   icon: 'pi pi-dollar',
-    //   route: '/my-payslips',
-    //   roles: ['SuperAdmin', 'Admin', 'HR', 'Manager', 'Staff', 'Director'],
-    // },
-    // {
-    //   label: 'Employees',
-    //   icon: 'pi pi-users',
-    //   route: '/employees',
-    //   roles: ['SuperAdmin', 'Admin', 'HR', 'Manager', 'Staff', 'Director'],
-    // },
   ];
 
   management: any[] = [
@@ -350,13 +328,15 @@ export class Sidemenu {
   constructor() {
     this.currentUser = this.userService.currentUser;
 
-    this.router.events.subscribe(() => {
+    this.currentUrl = this.router.url;
+
+    this.syncOpenMenuWithRoute();
+
+    this.router.events.subscribe((event) => {
       this.currentUrl = this.router.url;
       this.syncOpenMenuWithRoute();
       this.cdr.markForCheck();
     });
-
-    this.syncOpenMenuWithRoute();
   }
 
   syncOpenMenuWithRoute() {

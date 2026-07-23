@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using YLWorks.Data;
 using YLWorks.Hubs;
 using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 
 namespace WebApplication1.Controllers
 {
@@ -25,10 +26,7 @@ namespace WebApplication1.Controllers
         [HttpGet]
         public async Task<IActionResult> GetNotifications()
         {
-            var userId = int.Parse(
-                User.FindFirstValue(ClaimTypes.NameIdentifier)!
-            );
-
+            var userId = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
 
             var notifications = await _context.Notifications
                 .Where(x => x.UserId == userId)

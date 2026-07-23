@@ -1,9 +1,11 @@
 import { Routes } from '@angular/router';
 import { Unauthorized } from './common/components/unauthorized/unauthorized';
 import { authGuard } from './common/auth.guard';
-import { WebLayout } from './shared/components/web-layout/web-layout';
+import { modulePermissionGuard } from './common/permission/module-permission.guard';
 import { SplashScreen } from './components/splash-screen/splash-screen';
 import { deviceRedirectGuard } from './common/device-redirect.guard';
+
+const protectedGuards = [authGuard, modulePermissionGuard] as const;
 
 export const routes: Routes = [
   {
@@ -14,7 +16,8 @@ export const routes: Routes = [
   },
   {
     path: 'dashboard',
-    canActivate: [authGuard],
+    canActivate: [...protectedGuards],
+    data: { moduleKey: 'dashboard' },
     loadComponent: () =>
       import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
         (m) => m.ResponsiveLayout,
@@ -22,6 +25,7 @@ export const routes: Routes = [
     children: [
       {
         path: '',
+        data: { moduleKey: 'dashboard' },
         loadComponent: () => {
           const isMobile = window.innerWidth < 768;
 
@@ -38,7 +42,8 @@ export const routes: Routes = [
   },
   {
     path: 'notifications',
-    canActivate: [authGuard],
+    canActivate: [...protectedGuards],
+    data: { moduleKey: 'notifications' },
     loadComponent: () =>
       import('./components/notifications/notifications').then(
         (m) => m.Notifications,
@@ -84,12 +89,11 @@ export const routes: Routes = [
   },
   {
     path: 'settings',
-    canActivate: [authGuard],
+    canActivate: [...protectedGuards],
     loadComponent: () =>
       import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
         (m) => m.ResponsiveLayout,
       ),
-
     children: [
       {
         path: '',
@@ -102,7 +106,8 @@ export const routes: Routes = [
   },
   {
     path: 'clients',
-    canActivate: [authGuard],
+    canActivate: [...protectedGuards],
+    data: { moduleKey: 'clients' },
     loadComponent: () =>
       import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
         (m) => m.ResponsiveLayout,
@@ -119,7 +124,8 @@ export const routes: Routes = [
   },
   {
     path: 'incomes',
-    canActivate: [authGuard],
+    canActivate: [...protectedGuards],
+    data: { moduleKey: 'incomes' },
     loadComponent: () =>
       import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
         (m) => m.ResponsiveLayout,
@@ -127,6 +133,7 @@ export const routes: Routes = [
     children: [
       {
         path: '',
+        data: { moduleKey: 'incomes' },
         loadComponent: () =>
           import('./components/income/income').then((m) => m.Income),
       },
@@ -134,7 +141,8 @@ export const routes: Routes = [
   },
   {
     path: 'expenses',
-    canActivate: [authGuard],
+    canActivate: [...protectedGuards],
+    data: { moduleKey: 'expenses' },
     loadComponent: () =>
       import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
         (m) => m.ResponsiveLayout,
@@ -142,6 +150,7 @@ export const routes: Routes = [
     children: [
       {
         path: '',
+        data: { moduleKey: 'expenses' },
         loadComponent: () =>
           import('./components/expense/expense').then((m) => m.Expense),
       },
@@ -149,7 +158,8 @@ export const routes: Routes = [
   },
   {
     path: 'supplier-payments',
-    canActivate: [authGuard],
+    canActivate: [...protectedGuards],
+    data: { moduleKey: 'supplier-payments' },
     loadComponent: () =>
       import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
         (m) => m.ResponsiveLayout,
@@ -157,6 +167,7 @@ export const routes: Routes = [
     children: [
       {
         path: '',
+        data: { moduleKey: 'supplier-payments' },
         loadComponent: () =>
           import('./components/supplier-payment/supplier-payment').then(
             (m) => m.SupplierPayment,
@@ -166,7 +177,8 @@ export const routes: Routes = [
   },
   {
     path: 'projects',
-    canActivate: [authGuard],
+    canActivate: [...protectedGuards],
+    data: { moduleKey: 'projects' },
     loadComponent: () =>
       import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
         (m) => m.ResponsiveLayout,
@@ -183,6 +195,8 @@ export const routes: Routes = [
   },
   {
     path: 'material-requests',
+    canActivate: [...protectedGuards],
+    data: { moduleKey: 'material-requests' },
     loadComponent: () =>
       import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
         (m) => m.ResponsiveLayout,
@@ -197,10 +211,10 @@ export const routes: Routes = [
       },
     ],
   },
-
   {
     path: 'supplier',
-    canActivate: [authGuard],
+    canActivate: [...protectedGuards],
+    data: { moduleKey: 'supplier' },
     loadComponent: () =>
       import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
         (m) => m.ResponsiveLayout,
@@ -217,7 +231,8 @@ export const routes: Routes = [
   },
   {
     path: 'payments',
-    canActivate: [authGuard],
+    canActivate: [...protectedGuards],
+    data: { moduleKey: 'payments' },
     loadComponent: () =>
       import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
         (m) => m.ResponsiveLayout,
@@ -225,6 +240,7 @@ export const routes: Routes = [
     children: [
       {
         path: '',
+        data: { moduleKey: 'payments' },
         loadComponent: () =>
           import('./components/payments/payments').then((m) => m.Payments),
       },
@@ -232,7 +248,8 @@ export const routes: Routes = [
   },
   {
     path: 'user-management',
-    canActivate: [authGuard],
+    canActivate: [...protectedGuards],
+    data: { moduleKey: 'user-management' },
     loadComponent: () =>
       import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
         (m) => m.ResponsiveLayout,
@@ -240,6 +257,7 @@ export const routes: Routes = [
     children: [
       {
         path: '',
+        data: { moduleKey: 'user-management' },
         loadComponent: () =>
           import('./components/settings/user-management/user-management').then(
             (m) => m.UserManagement,
@@ -249,6 +267,8 @@ export const routes: Routes = [
   },
   {
     path: 'quotations',
+    canActivate: [...protectedGuards],
+    data: { moduleKey: 'quotations' },
     loadComponent: () =>
       import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
         (m) => m.ResponsiveLayout,
@@ -265,6 +285,8 @@ export const routes: Routes = [
   },
   {
     path: 'goods-receiving',
+    canActivate: [...protectedGuards],
+    data: { moduleKey: 'goods-receiving' },
     loadComponent: () =>
       import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
         (m) => m.ResponsiveLayout,
@@ -281,7 +303,7 @@ export const routes: Routes = [
   },
   {
     path: 'purchase-orders',
-    canActivate: [authGuard],
+    canActivate: [...protectedGuards],
     loadComponent: () =>
       import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
         (m) => m.ResponsiveLayout,
@@ -296,10 +318,10 @@ export const routes: Routes = [
       },
     ],
   },
-
   {
     path: 'sales-order',
-    canActivate: [authGuard],
+    canActivate: [...protectedGuards],
+    data: { moduleKey: 'sales-order' },
     loadComponent: () =>
       import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
         (m) => m.ResponsiveLayout,
@@ -314,9 +336,9 @@ export const routes: Routes = [
       },
     ],
   },
-
   {
     path: 'delivery-orders',
+    canActivate: [...protectedGuards],
     loadComponent: () =>
       import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
         (m) => m.ResponsiveLayout,
@@ -331,9 +353,10 @@ export const routes: Routes = [
       },
     ],
   },
-
   {
     path: 'do-rma',
+    canActivate: [...protectedGuards],
+    data: { moduleKey: 'do-rma' },
     loadComponent: () =>
       import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
         (m) => m.ResponsiveLayout,
@@ -348,9 +371,9 @@ export const routes: Routes = [
       },
     ],
   },
-
   {
     path: 'invoices',
+    canActivate: [...protectedGuards],
     loadComponent: () =>
       import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
         (m) => m.ResponsiveLayout,
@@ -367,6 +390,8 @@ export const routes: Routes = [
   },
   {
     path: 'department',
+    canActivate: [...protectedGuards],
+    data: { moduleKey: 'department' },
     loadComponent: () =>
       import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
         (m) => m.ResponsiveLayout,
@@ -374,6 +399,7 @@ export const routes: Routes = [
     children: [
       {
         path: '',
+        data: { moduleKey: 'department' },
         loadComponent: () =>
           import('./components/department/department').then(
             (m) => m.Department,
@@ -383,6 +409,8 @@ export const routes: Routes = [
   },
   {
     path: 'access-permission',
+    canActivate: [...protectedGuards],
+    data: { moduleKey: 'access-permission' },
     loadComponent: () =>
       import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
         (m) => m.ResponsiveLayout,
@@ -390,6 +418,7 @@ export const routes: Routes = [
     children: [
       {
         path: '',
+        data: { moduleKey: 'access-permission' },
         loadComponent: () =>
           import('./components/accessPermission/accessPermission').then(
             (m) => m.AccessPermission,
@@ -399,6 +428,8 @@ export const routes: Routes = [
   },
   {
     path: 'company',
+    canActivate: [...protectedGuards],
+    data: { moduleKey: 'company' },
     loadComponent: () =>
       import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
         (m) => m.ResponsiveLayout,
@@ -413,10 +444,9 @@ export const routes: Routes = [
       },
     ],
   },
-
-  //Logistic
   {
     path: 'inventory',
+    canActivate: [...protectedGuards],
     loadComponent: () =>
       import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
         (m) => m.ResponsiveLayout,
@@ -433,6 +463,8 @@ export const routes: Routes = [
   },
   {
     path: 'products-services',
+    canActivate: [...protectedGuards],
+    data: { moduleKey: 'products-services' },
     loadComponent: () =>
       import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
         (m) => m.ResponsiveLayout,
@@ -440,6 +472,7 @@ export const routes: Routes = [
     children: [
       {
         path: '',
+        data: { moduleKey: 'products-services' },
         loadComponent: () =>
           import('./components/ProductsServices/ProductsServices').then(
             (m) => m.ProductsServices,
@@ -447,13 +480,14 @@ export const routes: Routes = [
       },
     ],
   },
-  //mobile highlight
   {
     path: 'splash-screen',
     component: SplashScreen,
   },
   {
     path: 'profile-settings',
+    canActivate: [...protectedGuards],
+    data: { moduleKey: 'profile-settings' },
     loadComponent: () =>
       import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
         (m) => m.ResponsiveLayout,
@@ -461,6 +495,7 @@ export const routes: Routes = [
     children: [
       {
         path: '',
+        data: { moduleKey: 'profile-settings' },
         loadComponent: () =>
           import('./components/mobile-settings/mobile-settings').then(
             (m) => m.MobileSettings,
@@ -470,6 +505,8 @@ export const routes: Routes = [
   },
   {
     path: 'tasks',
+    canActivate: [...protectedGuards],
+    data: { moduleKey: 'tasks' },
     loadComponent: () =>
       import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
         (m) => m.ResponsiveLayout,
@@ -484,9 +521,10 @@ export const routes: Routes = [
       },
     ],
   },
-
   {
     path: 'schedule',
+    canActivate: [...protectedGuards],
+    data: { moduleKey: 'schedule' },
     loadComponent: () =>
       import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
         (m) => m.ResponsiveLayout,
@@ -494,14 +532,15 @@ export const routes: Routes = [
     children: [
       {
         path: '',
+        data: { moduleKey: 'schedule' },
         loadComponent: () =>
           import('./components/schedule/schedule').then((m) => m.Schedule),
       },
     ],
   },
-
   {
     path: 'leave',
+    canActivate: [...protectedGuards],
     loadComponent: () =>
       import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
         (m) => m.ResponsiveLayout,
@@ -516,9 +555,10 @@ export const routes: Routes = [
       },
     ],
   },
-
   {
     path: 'claims',
+    canActivate: [...protectedGuards],
+    data: { moduleKey: 'claims' },
     loadComponent: () =>
       import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
         (m) => m.ResponsiveLayout,
@@ -533,9 +573,10 @@ export const routes: Routes = [
       },
     ],
   },
-
   {
     path: 'meeting-room',
+    canActivate: [...protectedGuards],
+    data: { moduleKey: 'meeting-room' },
     loadComponent: () =>
       import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
         (m) => m.ResponsiveLayout,
@@ -550,9 +591,10 @@ export const routes: Routes = [
       },
     ],
   },
-
   {
     path: 'profile-settings/personal-info',
+    canActivate: [...protectedGuards],
+    data: { moduleKey: 'profile-settings' },
     loadComponent: () =>
       import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
         (m) => m.ResponsiveLayout,
@@ -560,6 +602,7 @@ export const routes: Routes = [
     children: [
       {
         path: '',
+        data: { moduleKey: 'profile-settings' },
         loadComponent: () =>
           import('./components/personal-info/personal-info').then(
             (m) => m.PersonalInfo,

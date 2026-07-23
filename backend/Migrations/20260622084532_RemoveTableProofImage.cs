@@ -11,8 +11,7 @@ namespace YLWorks.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropTable(
-                name: "DeliveryOrderProofImages");
+            // DeliveryOrderProofImages was never created in this database (singular table name in use).
         }
 
         /// <inheritdoc />

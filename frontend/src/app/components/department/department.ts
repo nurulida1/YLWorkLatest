@@ -29,6 +29,8 @@ import {
 } from '../../shared/helpers/helpers';
 import { DepartmentDto } from '../../models/Department';
 import { DialogModule } from 'primeng/dialog';
+import { HasPermissionActionDirective } from '../../common/directives/hasPermission.directive';
+import { PermissionContextService } from '../../services/permission-context.service';
 
 @Component({
   selector: 'app-department',
@@ -42,6 +44,7 @@ import { DialogModule } from 'primeng/dialog';
     SelectModule,
     MenuModule,
     DialogModule,
+    HasPermissionActionDirective,
   ],
   template: `<div class="w-full flex flex-col p-6">
       <div
@@ -90,6 +93,7 @@ import { DialogModule } from 'primeng/dialog';
             </div>
 
             <p-button
+              *hasPermissionAction="'canCreate'" 
               label="New Department"
               (onClick)="ActionClick(null, 'add')"
               icon="pi pi-plus-circle"
@@ -124,7 +128,10 @@ import { DialogModule } from 'primeng/dialog';
                 <th class="bg-gray-50/70 py-3.5 px-5 text-left w-[40%]">
                   Head of Department (HOD)
                 </th>
-                <th class="bg-gray-50/70 py-3.5 px-5 text-center w-[15%]">
+                <th
+                  *ngIf="rights().canUpdate || rights().canDelete"
+                  class="bg-gray-50/70 py-3.5 px-5 text-center w-[15%]"
+                >
                   Actions
                 </th>
               </tr>
@@ -154,7 +161,10 @@ import { DialogModule } from 'primeng/dialog';
                     >
                   </ng-template>
                 </td>
-                <td class="py-3 px-5 text-center">
+                <td
+                  *ngIf="rights().canUpdate || rights().canDelete"
+                  class="py-3 px-5 text-center"
+                >
                   <button
                     class="p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-md transition-all inline-flex items-center justify-center"
                     (click)="onEllipsisClick($event, data, menu)"
@@ -273,6 +283,8 @@ export class Department implements OnInit, OnDestroy {
   private readonly departmentService = inject(DepartmentService);
   private readonly userService = inject(UserService);
   private readonly cdr = inject(ChangeDetectorRef);
+  private readonly permissionContext = inject(PermissionContextService);
+  readonly rights = this.permissionContext.rights;
   protected ngUnsubscribe: Subject<void> = new Subject<void>();
 
   PagingSignal = signal<PagingContent<DepartmentDto>>(
@@ -442,18 +454,23 @@ export class Department implements OnInit, OnDestroy {
   }
 
   onEllipsisClick(event: any, client: any, menu: any) {
-    this.menuItems = [
-      {
+    this.menuItems = [];
+
+    if (this.rights().canUpdate) {
+      this.menuItems.push({
         label: 'Edit',
         icon: 'pi pi-pencil',
         command: () => this.ActionClick(client, 'Update'),
-      },
-      {
+      });
+    }
+
+    if (this.rights().canDelete) {
+      this.menuItems.push({
         label: 'Delete',
         icon: 'pi pi-trash',
         command: () => this.ActionClick(client, 'Delete'),
-      },
-    ];
+      });
+    }
 
     menu.toggle(event);
   }

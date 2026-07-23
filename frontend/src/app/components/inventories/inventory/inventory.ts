@@ -38,6 +38,8 @@ import {
   BuildSortText,
   BuildFilterText,
 } from '../../../shared/helpers/helpers';
+import { HasPermissionActionDirective } from '../../../common/directives/hasPermission.directive';
+import { PermissionContextService } from '../../../services/permission-context.service';
 
 @Component({
   selector: 'app-inventory',
@@ -56,6 +58,7 @@ import {
     MenuModule,
     DialogModule,
     ImageModule,
+    HasPermissionActionDirective,
   ],
   template: `<div class="w-full flex flex-col p-5">
       <div class="flex flex-row items-center gap-1 text-gray-500 tracking-wide">
@@ -77,6 +80,7 @@ import {
             <div class="text-gray-500">Manage and track stock items</div>
           </div>
           <p-button
+            *hasPermissionAction="'canCreate'"
             label="New Inventory"
             severity="info"
             icon="pi pi-plus-circle"
@@ -606,24 +610,20 @@ import {
               </div>
             </div>
           </div>
-
-          <div
-            class="p-4 bg-gray-50 border-t border-gray-100 flex items-center justify-end gap-3"
-          >
-            <button
-              type="button"
-              class="px-5 h-10 text-sm font-semibold text-gray-700 bg-white border border-gray-200 rounded-md hover:bg-gray-100 transition-all"
-              (click)="visible = false"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              class="px-6 h-10 text-sm font-semibold text-white bg-gray-900 border border-transparent rounded-md hover:bg-gray-800 transition-all shadow-sm"
-              (click)="SaveInventory()"
-            >
-              {{ isUpdate ? 'Save Changes' : 'Register Item' }}
-            </button>
+          <div class="border-b border-gray-200 mt-3"></div>
+          <div class="flex flex-row items-center justify-end gap-2 mt-5">
+            <p-button
+              label="Discard"
+              severity="secondary"
+              [outlined]="true"
+              (onClick)="visible = false"
+            ></p-button>
+            <p-button
+              *ngIf="rights().canCreate || rights().canUpdate"
+              [label]="isUpdate ? 'Save Changes' : 'Save'"
+              severity="info"
+              (onClick)="SaveInventory()"
+            ></p-button>
           </div>
         </div>
       </ng-template>
@@ -638,6 +638,8 @@ export class Inventory implements OnInit, OnDestroy {
   private readonly loadingService = inject(LoadingService);
   private readonly messageService = inject(MessageService);
   private readonly inventoryService = inject(InventoryService);
+  private readonly permissionContext = inject(PermissionContextService);
+  readonly rights = this.permissionContext.rights;
 
   protected ngUnsubscribe: Subject<void> = new Subject<void>();
 
@@ -799,18 +801,23 @@ export class Inventory implements OnInit, OnDestroy {
   }
 
   onEllipsisClick(event: any, client: any, menu: any) {
-    this.menuItems = [
-      {
+    this.menuItems = [];
+
+    if (this.rights().canUpdate) {
+      this.menuItems.push({
         label: 'Edit',
         icon: 'pi pi-pencil',
         command: () => this.ActionClick(client, 'Update'),
-      },
-      {
+      });
+    }
+
+    if (this.rights().canDelete) {
+      this.menuItems.push({
         label: 'Delete',
         icon: 'pi pi-trash',
         command: () => this.ActionClick(client, 'Delete'),
-      },
-    ];
+      });
+    }
 
     menu.toggle(event);
   }

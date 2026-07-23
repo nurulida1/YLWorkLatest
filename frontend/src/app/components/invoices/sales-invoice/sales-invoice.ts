@@ -39,6 +39,8 @@ import {
 import { InvoiceDto } from '../../../models/Invoice';
 import { TextareaModule } from 'primeng/textarea';
 import { DatePickerModule } from 'primeng/datepicker';
+import { HasPermissionActionDirective } from '../../../common/directives/hasPermission.directive';
+import { PermissionContextService } from '../../../services/permission-context.service';
 
 @Component({
   selector: 'app-sales-invoice',
@@ -56,6 +58,7 @@ import { DatePickerModule } from 'primeng/datepicker';
     TextareaModule,
     ReactiveFormsModule,
     DatePickerModule,
+    HasPermissionActionDirective,
   ],
   template: `<div class="w-full min-h-[92.9vh] flex flex-col p-5">
       <div class="flex flex-row items-center gap-1 text-gray-500 tracking-wide">
@@ -98,6 +101,7 @@ import { DatePickerModule } from 'primeng/datepicker';
             </div>
 
             <p-button
+              *hasPermissionAction="'canCreate'"
               label="Generate Sales Invoice"
               [routerLink]="'/invoices/sales/form'"
               icon="pi pi-file-pdf"
@@ -388,6 +392,8 @@ export class SalesInvoice implements OnInit, OnDestroy {
   private readonly messageService = inject(MessageService);
   private readonly router = inject(Router);
   private readonly userService = inject(UserService);
+  private readonly permissionContext = inject(PermissionContextService);
+  readonly rights = this.permissionContext.rights;
   protected ngUnsubscribe: Subject<void> = new Subject<void>();
 
   PagingSignal = signal<PagingContent<InvoiceDto>>(

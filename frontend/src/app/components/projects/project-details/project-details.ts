@@ -75,7 +75,7 @@ import { TableModule } from 'primeng/table';
         <div class="text-gray-600">Client</div>
         <div class="text-gray-600">:</div>
         <div class="font-semibold">
-          {{ PagingSignal().client?.name || 'N/A' }}
+          {{ PagingSignal().client.name || 'N/A' }}
         </div>
 
         <div class="text-gray-600">Priority</div>

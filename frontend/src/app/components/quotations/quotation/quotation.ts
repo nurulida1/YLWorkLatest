@@ -33,8 +33,6 @@ import {
 } from '../../../models/Quotation';
 import { UserService } from '../../../services/userService.service';
 import { TimelineModule } from 'primeng/timeline';
-import { HasPermissionDirective } from '../../../common/directives/hasPermission.directive';
-import { PermissionService } from '../../../services/permissionService';
 import { DatePickerModule } from 'primeng/datepicker';
 import { DrawerModule } from 'primeng/drawer';
 
@@ -51,7 +49,6 @@ import { DrawerModule } from 'primeng/drawer';
     MenuModule,
     SelectModule,
     TimelineModule,
-    HasPermissionDirective,
     DatePickerModule,
     DrawerModule,
   ],
@@ -1060,7 +1057,6 @@ export class Quotation implements OnInit, OnDestroy {
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly router = inject(Router);
   protected ngUnsubscribe: Subject<void> = new Subject<void>();
-  private readonly permissionService = inject(PermissionService);
 
   PagingSignal = signal<PagingContent<QuotationDto>>(
     {} as PagingContent<QuotationDto>,

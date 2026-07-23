@@ -30,6 +30,8 @@ import { DialogModule } from 'primeng/dialog';
 import { SelectModule } from 'primeng/select';
 import { UserService } from '../../../services/userService.service';
 import { TextareaModule } from 'primeng/textarea';
+import { HasPermissionActionDirective } from '../../../common/directives/hasPermission.directive';
+import { PermissionContextService } from '../../../services/permission-context.service';
 
 @Component({
   selector: 'app-material-requests',
@@ -44,6 +46,7 @@ import { TextareaModule } from 'primeng/textarea';
     DialogModule,
     SelectModule,
     TextareaModule,
+    HasPermissionActionDirective,
   ],
   template: `
     <div class="w-full min-screen flex flex-col p-5">
@@ -88,6 +91,7 @@ import { TextareaModule } from 'primeng/textarea';
               ></i>
             </div>
             <p-button
+              *hasPermissionAction="'canCreate'"
               label="New Material Request"
               [routerLink]="'/material-requests/form'"
               icon="pi pi-plus-circle"
@@ -139,7 +143,16 @@ import { TextareaModule } from 'primeng/textarea';
                     <p-sortIcon field="Status" />
                   </div>
                 </th>
-                <th class="bg-gray-100! text-center! w-[10%]">Action</th>
+                <th
+                  *ngIf="
+                    rights().canUpdate ||
+                    rights().canDelete ||
+                    rights().canUpdateStatus
+                  "
+                  class="bg-gray-100! text-center! w-[10%]"
+                >
+                  Action
+                </th>
               </tr>
             </ng-template>
             <ng-template #body let-data>
@@ -177,7 +190,14 @@ import { TextareaModule } from 'primeng/textarea';
                     </div>
                   </div>
                 </td>
-                <td class="text-center!">
+                <td
+                  *ngIf="
+                    rights().canUpdate ||
+                    rights().canDelete ||
+                    rights().canUpdateStatus
+                  "
+                  class="text-center!"
+                >
                   <i
                     *ngIf="
                       data.status !== 'Rejected' && data.status !== 'Completed'
@@ -320,6 +340,8 @@ export class MaterialRequests implements OnInit, OnDestroy {
   private readonly messageService = inject(MessageService);
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly router = inject(Router);
+  private readonly permissionContext = inject(PermissionContextService);
+  readonly rights = this.permissionContext.rights;
   protected ngUnsubscribe: Subject<void> = new Subject<void>();
 
   PagingSignal = signal<PagingContent<MaterialRequestDto>>(
@@ -499,25 +521,30 @@ export class MaterialRequests implements OnInit, OnDestroy {
   onEllipsisClick(event: any, material: MaterialRequestDto, menu: any) {
     this.menuItems = [];
 
-    // Always allow edit if still Requested
     if (material.status === 'Draft') {
-      this.menuItems.push(
-        {
+      if (this.rights().canUpdate) {
+        this.menuItems.push({
           label: 'Edit',
           icon: 'pi pi-pencil',
           command: () => this.ActionClick(material, 'Update'),
-        },
-        {
+        });
+      }
+
+      if (this.rights().canUpdateStatus) {
+        this.menuItems.push({
           label: 'Request Approval',
           icon: 'pi pi-send',
           command: () => this.ActionClick(material, 'RequestApproval'),
-        },
-        {
+        });
+      }
+
+      if (this.rights().canDelete) {
+        this.menuItems.push({
           label: 'Delete',
           icon: 'pi pi-trash',
           command: () => this.ActionClick(material, 'Delete'),
-        },
-      );
+        });
+      }
     }
 
     // // If pending approval → management can approve/reject

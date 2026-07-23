@@ -132,3 +132,19 @@ export interface PurchaseOrderDropdownDto {
   suppliers: CompanyDto[];
   quotations: QuotationDto[];
 }
+
+export interface PurchaseOrderReportParams {
+  purchaseOrderId: string;
+  fromCompanyId?: string;
+  supplierId?: string;
+  companyLogoB64?: string;
+}
+
+export interface PurchaseOrderPreviewDraft {
+  id: string;
+  purchaseOrderNo: string;
+  fromCompanyId?: string;
+  supplierId?: string;
+  success?: boolean;
+  message?: string;
+}

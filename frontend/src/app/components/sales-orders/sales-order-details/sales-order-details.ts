@@ -114,7 +114,7 @@ import { TabsModule } from 'primeng/tabs';
               class="text-sm font-semibold text-slate-500 flex items-center gap-1.5"
             >
               <i class="pi pi-building text-slate-400"></i>
-              {{ soData().client?.name }}
+              {{ soData().client.name }}
             </p>
           </div>
         </div>
@@ -331,7 +331,7 @@ import { TabsModule } from 'primeng/tabs';
                     >
                       <span>SubTotal</span>
                       <span class="font-semibold text-gray-600"
-                        >RM {{ soData().subTotal ?? 0 | number: '1.2-2' }}</span
+                        >RM {{ soData().subTotal | number: '1.2-2' }}</span
                       >
                     </div>
                     <div
@@ -339,7 +339,7 @@ import { TabsModule } from 'primeng/tabs';
                     >
                       <span>Discount</span>
                       <span class="font-bold"
-                        >- RM {{ soData()?.discount | number: '1.2-2' }}</span
+                        >- RM {{ soData().discount | number: '1.2-2' }}</span
                       >
                     </div>
                     <div
@@ -347,7 +347,7 @@ import { TabsModule } from 'primeng/tabs';
                     >
                       <span>Estimated Service Tax</span>
                       <span class="font-semibold text-slate-600"
-                        >RM {{ soData()?.taxAmount | number: '1.2-2' }}</span
+                        >RM {{ soData().taxAmount | number: '1.2-2' }}</span
                       >
                     </div>
                     <div
@@ -358,7 +358,7 @@ import { TabsModule } from 'primeng/tabs';
                       >
                       <span class="font-black text-2xl tracking-wide"
                         >RM
-                        {{ soData().totalAmount ?? 0 | number: '1.2-2' }}</span
+                        {{ soData().totalAmount | number: '1.2-2' }}</span
                       >
                     </div>
                   </div>
@@ -827,7 +827,7 @@ import { TabsModule } from 'primeng/tabs';
                   <div
                     class="font-black text-slate-900 text-lg tracking-wide pb-3 border-b border-slate-100"
                   >
-                    {{ soData().client?.name }}
+                    {{ soData().client.name }}
                   </div>
 
                   <div class="flex flex-col gap-4 text-xs text-slate-600">
@@ -841,7 +841,7 @@ import { TabsModule } from 'primeng/tabs';
                           >Primary Contact Person</span
                         >
                         <span class="font-semibold text-slate-800 text-base">{{
-                          soData().client?.contactPerson1 || 'None Registered'
+                          soData().client.contactPerson1 || 'None Registered'
                         }}</span>
                       </div>
                     </div>
@@ -854,7 +854,7 @@ import { TabsModule } from 'primeng/tabs';
                           >Contact Phone Number</span
                         >
                         <span class="font-semibold text-slate-800 text-base">{{
-                          soData().client?.contactNo || '—'
+                          soData().client.contactNo || '—'
                         }}</span>
                       </div>
                     </div>
@@ -870,9 +870,9 @@ import { TabsModule } from 'primeng/tabs';
                         >
                         <span
                           class="font-semibold text-indigo-600 select-all truncate max-w-xs text-base"
-                          title="{{ soData().client?.email }}"
+                          title="{{ soData().client.email }}"
                         >
-                          {{ soData().client?.email }}
+                          {{ soData().client.email }}
                         </span>
                       </div>
                     </div>
@@ -893,7 +893,7 @@ import { TabsModule } from 'primeng/tabs';
                           class="text-sm text-slate-500 font-medium leading-relaxed mt-1 bg-slate-50 p-2.5 rounded-lg border border-slate-100 min-h-[50px]"
                         >
                           {{
-                            soData().client?.billingAddress?.addressLine1 ||
+                            soData().client.billingAddress?.addressLine1 ||
                               'No corporate billing address setup configured.'
                           }}
                         </p>
@@ -911,7 +911,7 @@ import { TabsModule } from 'primeng/tabs';
                           class="text-sm text-slate-500 font-medium leading-relaxed mt-1 bg-slate-50 p-2.5 rounded-lg border border-slate-100 min-h-[50px]"
                         >
                           {{
-                            soData().client?.deliveryAddress?.addressLine1 ||
+                            soData().client.deliveryAddress?.addressLine1 ||
                               'Identical with assigned billing configuration address.'
                           }}
                         </p>

@@ -27,6 +27,8 @@ import {
   PagingContent,
 } from '../../../shared/helpers/helpers';
 import { BaseOption } from '../../../models/BaseModel';
+import { HasPermissionActionDirective } from '../../../common/directives/hasPermission.directive';
+import { PermissionContextService } from '../../../services/permission-context.service';
 
 @Component({
   selector: 'app-section-inventory',
@@ -39,6 +41,7 @@ import { BaseOption } from '../../../models/BaseModel';
     TableModule,
     MenuModule,
     DialogModule,
+    HasPermissionActionDirective,
   ],
   template: `<div class="w-full flex flex-col p-5">
       <div class="flex flex-row items-center gap-1 text-gray-500 tracking-wide">
@@ -76,6 +79,7 @@ import { BaseOption } from '../../../models/BaseModel';
               ></i>
             </div>
             <p-button
+              *hasPermissionAction="'canCreate'"
               label="Add Section"
               icon="pi pi-plus-circle"
               (onClick)="ActionClick(null, 'add')"
@@ -169,6 +173,7 @@ import { BaseOption } from '../../../models/BaseModel';
               styleClass="border-gray-200! py-1.5! px-4!"
             ></p-button>
             <p-button
+              *ngIf="rights().canCreate || rights().canUpdate"
               (onClick)="SaveSection()"
               [label]="isUpdate ? 'Save Changes' : 'Add'"
               severity="info"
@@ -188,6 +193,8 @@ export class SectionInventory implements OnInit, OnDestroy {
   private readonly loadingService = inject(LoadingService);
   private readonly messageService = inject(MessageService);
   private readonly sectionInventoryService = inject(SectionInventoryService);
+  private readonly permissionContext = inject(PermissionContextService);
+  readonly rights = this.permissionContext.rights;
 
   protected ngUnsubscribe: Subject<void> = new Subject<void>();
 
@@ -351,18 +358,23 @@ export class SectionInventory implements OnInit, OnDestroy {
   }
 
   onEllipsisClick(event: any, client: any, menu: any) {
-    this.menuItems = [
-      {
+    this.menuItems = [];
+
+    if (this.rights().canUpdate) {
+      this.menuItems.push({
         label: 'Edit',
         icon: 'pi pi-pencil',
         command: () => this.ActionClick(client, 'Update'),
-      },
-      {
+      });
+    }
+
+    if (this.rights().canDelete) {
+      this.menuItems.push({
         label: 'Delete',
         icon: 'pi pi-trash',
         command: () => this.ActionClick(client, 'Delete'),
-      },
-    ];
+      });
+    }
 
     menu.toggle(event);
   }

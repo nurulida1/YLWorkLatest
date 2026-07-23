@@ -262,7 +262,7 @@ import { TooltipModule } from 'primeng/tooltip';
         <div class="space-y-2">
           <button
             *ngFor="let action of taskActions"
-            (click)="action.command?.()"
+            (click)="action.command()"
             class="w-full flex items-center gap-4 p-4 rounded-2xl hover:bg-gray-50 transition"
             [ngClass]="{
               'text-red-600': action.danger,

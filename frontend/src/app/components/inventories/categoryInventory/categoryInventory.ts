@@ -27,6 +27,8 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { MenuModule } from 'primeng/menu';
 import { DialogModule } from 'primeng/dialog';
+import { HasPermissionActionDirective } from '../../../common/directives/hasPermission.directive';
+import { PermissionContextService } from '../../../services/permission-context.service';
 
 @Component({
   selector: 'app-category-inventory',
@@ -39,6 +41,7 @@ import { DialogModule } from 'primeng/dialog';
     TableModule,
     MenuModule,
     DialogModule,
+    HasPermissionActionDirective,
   ],
   template: `<div class="w-full flex flex-col p-5">
       <div class="flex flex-row items-center gap-1 text-gray-500 tracking-wide">
@@ -76,6 +79,7 @@ import { DialogModule } from 'primeng/dialog';
               ></i>
             </div>
             <p-button
+              *hasPermissionAction="'canCreate'"
               label="Add Category"
               icon="pi pi-plus-circle"
               (onClick)="ActionClick(null, 'add')"
@@ -169,6 +173,7 @@ import { DialogModule } from 'primeng/dialog';
               styleClass="border-gray-200! py-1.5! px-4!"
             ></p-button>
             <p-button
+              *ngIf="rights().canCreate || rights().canUpdate"
               (onClick)="SaveCategory()"
               [label]="isUpdate ? 'Save Changes' : 'Add'"
               severity="info"
@@ -188,6 +193,8 @@ export class CategoryInventory implements OnInit, OnDestroy {
   private readonly loadingService = inject(LoadingService);
   private readonly messageService = inject(MessageService);
   private readonly categoryInventoryService = inject(CategoryInventoryService);
+  private readonly permissionContext = inject(PermissionContextService);
+  readonly rights = this.permissionContext.rights;
 
   protected ngUnsubscribe: Subject<void> = new Subject<void>();
 
@@ -351,18 +358,23 @@ export class CategoryInventory implements OnInit, OnDestroy {
   }
 
   onEllipsisClick(event: any, client: any, menu: any) {
-    this.menuItems = [
-      {
+    this.menuItems = [];
+
+    if (this.rights().canUpdate) {
+      this.menuItems.push({
         label: 'Edit',
         icon: 'pi pi-pencil',
         command: () => this.ActionClick(client, 'Update'),
-      },
-      {
+      });
+    }
+
+    if (this.rights().canDelete) {
+      this.menuItems.push({
         label: 'Delete',
         icon: 'pi pi-trash',
         command: () => this.ActionClick(client, 'Delete'),
-      },
-    ];
+      });
+    }
 
     menu.toggle(event);
   }

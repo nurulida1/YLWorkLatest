@@ -27,6 +27,8 @@ import {
 import { CompanyDto } from '../../../models/Company';
 import { ImageModule } from 'primeng/image';
 import { ClientService } from '../../../services/ClientService';
+import { HasPermissionActionDirective } from '../../../common/directives/hasPermission.directive';
+import { PermissionContextService } from '../../../services/permission-context.service';
 
 @Component({
   selector: 'app-client',
@@ -40,6 +42,7 @@ import { ClientService } from '../../../services/ClientService';
     FormsModule,
     MenuModule,
     ImageModule,
+    HasPermissionActionDirective,
   ],
   template: `<div class="w-full flex flex-col p-5">
       <div class="flex flex-row items-center gap-1 text-gray-500 tracking-wide">
@@ -77,6 +80,7 @@ import { ClientService } from '../../../services/ClientService';
               ></i>
             </div>
             <p-button
+              *hasPermissionAction="'canCreate'"
               label="New Client"
               (onClick)="ActionClick(null, 'add')"
               icon="pi pi-plus-circle"
@@ -113,7 +117,12 @@ import { ClientService } from '../../../services/ClientService';
                   Contact Person
                 </th>
 
-                <th class="bg-gray-100! text-center! w-[10%]!">Action</th>
+                <th
+                  *ngIf="rights().canUpdate || rights().canDelete"
+                  class="bg-gray-100! text-center! w-[10%]!"
+                >
+                  Action
+                </th>
               </tr>
             </ng-template>
             <ng-template #body let-data>
@@ -157,7 +166,10 @@ import { ClientService } from '../../../services/ClientService';
                   </div>
                 </td>
 
-                <td class="text-center!">
+                <td
+                  *ngIf="rights().canUpdate || rights().canDelete"
+                  class="text-center!"
+                >
                   <div class="flex items-center justify-center">
                     <i
                       class="pi pi-ellipsis-h cursor-pointer"
@@ -191,6 +203,8 @@ export class Client implements OnInit, OnDestroy {
   private readonly clientService = inject(ClientService);
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly router = inject(Router);
+  private readonly permissionContext = inject(PermissionContextService);
+  readonly rights = this.permissionContext.rights;
   protected ngUnsubscribe: Subject<void> = new Subject<void>();
 
   PagingSignal = signal<PagingContent<CompanyDto>>(
@@ -341,18 +355,23 @@ export class Client implements OnInit, OnDestroy {
   }
 
   onEllipsisClick(event: any, client: any, menu: any) {
-    this.menuItems = [
-      {
+    this.menuItems = [];
+
+    if (this.rights().canUpdate) {
+      this.menuItems.push({
         label: 'Edit',
         icon: 'pi pi-pencil',
         command: () => this.ActionClick(client, 'Update'),
-      },
-      {
+      });
+    }
+
+    if (this.rights().canDelete) {
+      this.menuItems.push({
         label: 'Delete',
         icon: 'pi pi-trash',
         command: () => this.ActionClick(client, 'Delete'),
-      },
-    ];
+      });
+    }
 
     menu.toggle(event);
   }

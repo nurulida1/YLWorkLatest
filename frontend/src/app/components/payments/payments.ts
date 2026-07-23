@@ -38,6 +38,8 @@ import { RouterLink } from '@angular/router';
 import { DatePickerModule } from 'primeng/datepicker';
 import { MenuModule } from 'primeng/menu';
 import { TagModule } from 'primeng/tag';
+import { HasPermissionActionDirective } from '../../common/directives/hasPermission.directive';
+import { PermissionContextService } from '../../services/permission-context.service';
 
 @Component({
   selector: 'app-payments',
@@ -55,6 +57,7 @@ import { TagModule } from 'primeng/tag';
     DatePickerModule,
     TagModule,
     MenuModule,
+    HasPermissionActionDirective,
   ],
   template: `<div class="w-full min-h-[92.9vh] flex flex-col p-5">
       <div class="flex flex-row items-center gap-1 text-gray-500 tracking-wide">
@@ -92,6 +95,7 @@ import { TagModule } from 'primeng/tag';
               ></i>
             </div>
             <p-button
+              *hasPermissionAction="'canCreate'"
               label="Add New Payment"
               (onClick)="ActionClick(null, 'add')"
               icon="pi pi-plus-circle"
@@ -125,7 +129,12 @@ import { TagModule } from 'primeng/tag';
                   Payment Method
                 </th>
 
-                <th class="bg-gray-100! text-center! w-[10%]">Action</th>
+                <th
+                  *ngIf="rights().canUpdate || rights().canDelete"
+                  class="bg-gray-100! text-center! w-[10%]"
+                >
+                  Action
+                </th>
               </tr>
             </ng-template>
             <ng-template #body let-data>
@@ -151,7 +160,10 @@ import { TagModule } from 'primeng/tag';
                 <td class="text-center!">
                   {{ data.paymentMode }}
                 </td>
-                <td class="text-center!">
+                <td
+                  *ngIf="rights().canUpdate || rights().canDelete"
+                  class="text-center!"
+                >
                   <div class="flex items-center justify-center">
                     <i
                       (click)="onEllipsisClick($event, data, menu)"
@@ -402,6 +414,8 @@ export class Payments implements OnInit, OnDestroy {
   private readonly paymentService = inject(PaymentService);
   private readonly messageService = inject(MessageService);
   private readonly cdr = inject(ChangeDetectorRef);
+  private readonly permissionContext = inject(PermissionContextService);
+  readonly rights = this.permissionContext.rights;
   protected ngUnsubscribe: Subject<void> = new Subject<void>();
 
   PagingSignal = signal<PagingContent<PaymentDto>>(
@@ -620,20 +634,25 @@ export class Payments implements OnInit, OnDestroy {
   }
 
   onEllipsisClick(event: any, client: any, menu: any) {
-    this.menuItems = [
-      {
+    this.menuItems = [];
+
+    if (this.rights().canUpdate) {
+      this.menuItems.push({
         label: 'Edit',
         icon: 'pi pi-pencil',
         command: () => this.ActionClick(client, 'Update'),
-      },
-      {
+      });
+    }
+
+    if (this.rights().canDelete) {
+      this.menuItems.push({
         label: 'Delete',
         icon: 'pi pi-trash',
         command: () => this.ActionClick(client, 'Delete'),
-      },
-    ];
+      });
+    }
 
-    menu.toggle(event); // toggle the popup menu
+    menu.toggle(event);
   }
 
   onFileSelected(event: any) {

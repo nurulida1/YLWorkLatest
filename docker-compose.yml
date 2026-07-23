@@ -1,0 +1,48 @@
+# JasperReports Server + MySQL (repo only) — local development.
+# YL Work app data (yl_works) stays on HOST MySQL (appsettings DefaultConnection).
+#
+# Start: docker compose up -d
+# UI:    http://localhost:8080/jasperserver — jasperadmin / jasperadmin
+# Repo DB is inside Docker (mysql service). Report JDBC → host yl_works via host.docker.internal (see docs/jasper-setup.md).
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: ylwork-jasper-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: jasperdev
+    ports:
+      - "3307:3306"
+    volumes:
+      - ylwork_jasper_mysql_data:/var/lib/mysql
+      - ./docker/mysql-init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-pjasperdev"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 40s
+
+  jasperserver:
+    image: judahpaul/jasperserver:latest
+    container_name: ylwork-jasperserver
+    depends_on:
+      mysql:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    environment:
+      DB_TYPE: mysql
+      DB_HOST: mysql
+      DB_PORT: "3306"
+      DB_USER: root
+      DB_PASSWORD: jasperdev
+    volumes:
+      - ylwork_jasper_keystore:/root
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+
+volumes:
+  ylwork_jasper_mysql_data:
+  ylwork_jasper_keystore:

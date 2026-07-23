@@ -1,5 +1,10 @@
 import { Injectable } from '@angular/core';
-import { CreatePORequest, PurchaseOrderDto } from '../models/PurchaseOrder';
+import {
+  CreatePORequest,
+  PurchaseOrderDto,
+  PurchaseOrderPreviewDraft,
+  PurchaseOrderReportParams,
+} from '../models/PurchaseOrder';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { MessageService } from 'primeng/api';
 import { Observable, retry, catchError, of, throwError } from 'rxjs';
@@ -160,6 +165,30 @@ export class PurchaseOrderService {
     return this.http.get<{ purchaseOrderNo: string }>(
       `${this.url}/generate-no`,
     );
+  }
+
+  GetReportParams(id: string): Observable<PurchaseOrderReportParams> {
+    return this.http
+      .get<PurchaseOrderReportParams>(`${this.url}/GetReportParams/${id}`)
+      .pipe(retry(1), catchError(this.handleError('GetReportParams')));
+  }
+
+  PreviewCreate(request: FormData): Observable<PurchaseOrderPreviewDraft> {
+    return this.http
+      .post<PurchaseOrderPreviewDraft>(`${this.url}/PreviewCreate`, request)
+      .pipe(retry(1), catchError(this.handleError('PreviewCreate')));
+  }
+
+  Confirm(draftId: string): Observable<PurchaseOrderDto> {
+    return this.http
+      .post<PurchaseOrderDto>(`${this.url}/Confirm/${draftId}`, {})
+      .pipe(retry(1), catchError(this.handleError('Confirm')));
+  }
+
+  CancelPreview(draftId: string): Observable<BaseResponse> {
+    return this.http
+      .delete<BaseResponse>(`${this.url}/CancelPreview/${draftId}`)
+      .pipe(retry(1), catchError(this.handleError('CancelPreview')));
   }
 
   private handleError = (context: string) => (error: any) => {

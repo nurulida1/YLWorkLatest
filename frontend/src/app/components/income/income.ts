@@ -38,6 +38,8 @@ import {
 } from '../../shared/helpers/helpers';
 import { IncomeDto } from '../../models/Income';
 import { TextareaModule } from 'primeng/textarea';
+import { HasPermissionActionDirective } from '../../common/directives/hasPermission.directive';
+import { PermissionContextService } from '../../services/permission-context.service';
 
 @Component({
   selector: 'app-income',
@@ -55,6 +57,7 @@ import { TextareaModule } from 'primeng/textarea';
     DatePickerModule,
     MenuModule,
     TextareaModule,
+    HasPermissionActionDirective,
   ],
   template: `<div class="w-full min-h-screen flex flex-col p-5">
       <div class="flex flex-row items-center gap-1 text-gray-500 tracking-wide">
@@ -92,6 +95,7 @@ import { TextareaModule } from 'primeng/textarea';
               ></i>
             </div>
             <p-button
+              *hasPermissionAction="'canCreate'"
               label="Add New Income"
               (onClick)="ActionClick(null, 'Create')"
               icon="pi pi-plus-circle"
@@ -121,7 +125,12 @@ import { TextareaModule } from 'primeng/textarea';
                 <th class="bg-gray-100! text-center! w-[15%]!">Amount</th>
                 <th class="bg-gray-100! text-center! w-[15%]!">Payment Mode</th>
                 <th class="bg-gray-100! text-center! w-[15%]!">Processed By</th>
-                <th class="bg-gray-100! text-center! w-[5%]!">Action</th>
+                <th
+                  *ngIf="rights().canRead"
+                  class="bg-gray-100! text-center! w-[5%]!"
+                >
+                  Action
+                </th>
               </tr>
             </ng-template>
             <ng-template #body let-data>
@@ -144,7 +153,7 @@ import { TextareaModule } from 'primeng/textarea';
                 <td class="text-center!">
                   {{ data.processedBy?.fullName }}
                 </td>
-                <td class="text-center!">
+                <td *ngIf="rights().canRead" class="text-center!">
                   <i
                     (click)="downloadAttachment(data)"
                     class="pi pi-download text-blue-500! cursor-pointer hover:scale-101"
@@ -269,6 +278,8 @@ export class Income implements OnInit, OnDestroy {
   private readonly incomeService = inject(IncomeService);
   private readonly messageService = inject(MessageService);
   private readonly cdr = inject(ChangeDetectorRef);
+  private readonly permissionContext = inject(PermissionContextService);
+  readonly rights = this.permissionContext.rights;
   protected ngUnsubscribe: Subject<void> = new Subject<void>();
 
   PagingSignal = signal<PagingContent<IncomeDto>>(
@@ -490,13 +501,16 @@ export class Income implements OnInit, OnDestroy {
   }
 
   onEllipsisClick(event: any, data: IncomeDto, menu: any) {
-    this.menuItems = [
-      {
+    this.menuItems = [];
+
+    if (this.rights().canDelete) {
+      this.menuItems.push({
         label: 'Delete',
         icon: 'pi pi-trash',
         command: () => this.ActionClick(data, 'Delete'),
-      },
-    ];
+      });
+    }
+
     menu.toggle(event);
   }
 

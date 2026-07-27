@@ -33,8 +33,9 @@ namespace YLWorks.Controllers
 
         [HttpGet("by-matrix")]
         public async Task<ActionResult<IEnumerable<RolePermissionDto>>> GetPermissionsByMatrix(
-    [FromQuery] string systemRole,
-    [FromQuery] List<Guid>? departmentIds)
+            [FromQuery] string systemRole,
+            [FromQuery] Guid? departmentId,
+            [FromQuery] List<Guid>? departmentIds)
         {
             try
             {
@@ -50,34 +51,28 @@ namespace YLWorks.Controllers
                     .Include(p => p.Module)
                     .Where(p => p.SystemRole.ToLower() == systemRole.ToLower());
 
-                // Department-based filtering
-                if (departmentIds != null && departmentIds.Any())
+                // Admin matrix: exact department scope (strict per-department permissions).
+                if (departmentId.HasValue)
+                {
+                    query = query.Where(p => p.DepartmentId == departmentId.Value);
+                }
+                // Runtime auth: union of the caller's departments (+ legacy global null rows).
+                else if (departmentIds != null && departmentIds.Any())
                 {
                     query = query.Where(p =>
                         p.DepartmentId == null ||
-                        departmentIds.Contains(p.DepartmentId.Value)
-                    );
+                        departmentIds.Contains(p.DepartmentId.Value));
                 }
 
                 var permissions = await query
                     .Select(p => new RolePermissionDto
                     {
                         Id = p.Id,
-
                         SystemRole = p.SystemRole,
-
                         DepartmentId = p.DepartmentId,
-
                         ModuleId = p.SystemModuleId,
-
-                        ModuleName = p.Module != null
-                            ? p.Module.Name
-                            : "",
-
-                        ModuleKey = p.Module != null
-                            ? p.Module.Code
-                            : "",
-
+                        ModuleName = p.Module != null ? p.Module.Name : "",
+                        ModuleKey = p.Module != null ? p.Module.Code : "",
                         CanCreate = p.CanCreate,
                         CanRead = p.CanRead,
                         CanUpdate = p.CanUpdate,

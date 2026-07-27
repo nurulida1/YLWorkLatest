@@ -58,9 +58,30 @@ export class PermissionService {
       });
     }
 
-    return this.http.get<RolePermissionDto[]>(url).pipe(
+    return this.http.get<RolePermissionDto[] | Record<string, unknown>[]>(url).pipe(
       tap((permissions) => {
-        this._matrix.set(Array.isArray(permissions) ? permissions : []);
+        const rows = (Array.isArray(permissions) ? permissions : []).map((row) => {
+          const r = row as Record<string, unknown>;
+          return {
+            id: String(r['id'] ?? r['Id'] ?? ''),
+            systemRole: String(r['systemRole'] ?? r['SystemRole'] ?? ''),
+            departmentId: (() => {
+              const raw = r['departmentId'] ?? r['DepartmentId'];
+              return raw == null || raw === '' ? null : String(raw);
+            })(),
+            systemModuleId: String(
+              r['systemModuleId'] ?? r['SystemModuleId'] ?? r['moduleId'] ?? r['ModuleId'] ?? '',
+            ),
+            moduleName: String(r['moduleName'] ?? r['ModuleName'] ?? ''),
+            moduleKey: String(r['moduleKey'] ?? r['ModuleKey'] ?? ''),
+            canCreate: Boolean(r['canCreate'] ?? r['CanCreate'] ?? false),
+            canRead: Boolean(r['canRead'] ?? r['CanRead'] ?? false),
+            canUpdate: Boolean(r['canUpdate'] ?? r['CanUpdate'] ?? false),
+            canDelete: Boolean(r['canDelete'] ?? r['CanDelete'] ?? false),
+            canUpdateStatus: Boolean(r['canUpdateStatus'] ?? r['CanUpdateStatus'] ?? false),
+          } as RolePermissionDto;
+        });
+        this._matrix.set(rows);
       }),
 
       catchError((error) => {

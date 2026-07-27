@@ -22,6 +22,7 @@ namespace YLWorks.Services
         {
             var notification = new Notification
             {
+                Id = Guid.NewGuid(),
                 UserId = userId,
                 Title = title,
                 Message = message,

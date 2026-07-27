@@ -3,6 +3,7 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
+  computed,
   inject,
   OnDestroy,
   OnInit,
@@ -10,6 +11,7 @@ import {
   ViewChild,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
 import { DialogModule } from 'primeng/dialog';
@@ -18,7 +20,7 @@ import { SelectModule } from 'primeng/select';
 import { Table, TableLazyLoadEvent, TableModule } from 'primeng/table';
 import { LoadingService } from '../../../services/loading.service';
 import { DepartmentService } from '../../../services/departmentService';
-import { forkJoin, Subject, takeUntil } from 'rxjs';
+import { forkJoin, Subject, takeUntil, switchMap, of, catchError } from 'rxjs';
 import { RolePermissionService } from '../../../services/RolePermissionService';
 import { RolePermissionDto } from '../../../models/RolePermission';
 import {
@@ -29,6 +31,7 @@ import {
 } from '../../../shared/helpers/helpers';
 import { MessageService } from 'primeng/api';
 import { SystemModuleService } from '../../../services/SystemModuleService';
+import { PermissionService } from '../../../services/permissionService';
 
 @Component({
   selector: 'app-role-permissions',
@@ -46,7 +49,7 @@ import { SystemModuleService } from '../../../services/SystemModuleService';
     class="w-full min-h-screen bg-[#f4f6f8] p-6 text-gray-800 tracking-normal font-sans"
   >
     <div
-      class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6"
+      class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6"
     >
       <div>
         <h1 class="text-2xl font-bold text-gray-900 m-0">
@@ -55,19 +58,35 @@ import { SystemModuleService } from '../../../services/SystemModuleService';
         <p class="text-sm text-gray-500 mt-1 m-0">
           Configure permissions for each role across different modules.
         </p>
+        <p
+          *ngIf="canManageSystemModules()"
+          class="text-xs text-gray-100 mt-2 m-0"
+        >
+          Modules missing from the list? Register them first.
+        </p>
       </div>
-      <p-button
-        label="Apply Permission Changes"
-        icon="pi pi-shield"
-        [loading]="isSaving()"
-        [disabled]="
-          !selectedSystemRole ||
-          !selectedDepartmentId ||
-          matrixRows().length === 0
-        "
-        (onClick)="onSaveChanges()"
-        styleClass="!bg-[#2b6cb0] hover:!bg-[#2b5a9e] disabled:!opacity-60 !border-0 !py-2 !px-4 !text-sm font-medium rounded-lg shadow-sm text-white transition-all whitespace-nowrap"
-      ></p-button>
+      <div class="flex flex-wrap items-center gap-3 self-end sm:self-auto">
+        <p-button
+          *ngIf="canManageSystemModules()"
+          label="Manage Modules"
+          icon="pi pi-th-large"
+          severity="secondary"
+          (onClick)="goToSystemModules()"
+          styleClass="!bg-white hover:!bg-emerald-600 !text-gray-800 hover:!text-white !border !border-gray-300 hover:!border-emerald-600 !py-2 !px-4 !text-sm font-medium rounded-lg shadow-sm transition-all whitespace-nowrap"
+        ></p-button>
+        <p-button
+          label="Apply Permission Changes"
+          icon="pi pi-shield"
+          [loading]="isSaving()"
+          [disabled]="
+            !selectedSystemRole ||
+            !selectedDepartmentId ||
+            matrixRows().length === 0
+          "
+          (onClick)="onSaveChanges()"
+          styleClass="!bg-[#2b6cb0] hover:!bg-[#2b5a9e] disabled:!opacity-60 !border-0 !py-2 !px-4 !text-sm font-medium rounded-lg shadow-sm text-white transition-all whitespace-nowrap"
+        ></p-button>
+      </div>
     </div>
 
     <div class="grid grid-cols-12 gap-6 items-start">
@@ -245,11 +264,13 @@ export class RolePermissions implements OnInit, OnDestroy {
   @ViewChild('fTable') fTable?: Table;
 
   private readonly cdr = inject(ChangeDetectorRef);
+  private readonly router = inject(Router);
   private readonly messageService = inject(MessageService);
   private readonly loadingService = inject(LoadingService);
   private readonly departmentService = inject(DepartmentService);
   private readonly systemModuleService = inject(SystemModuleService);
   private readonly rolePermissionService = inject(RolePermissionService);
+  private readonly permissionService = inject(PermissionService);
 
   protected ngUnsubscribe: Subject<void> = new Subject<void>();
   private filterChange$ = new Subject<void>();
@@ -266,12 +287,21 @@ export class RolePermissions implements OnInit, OnDestroy {
   matrixRows = signal<RolePermissionDto[]>([]);
   isSaving = signal<boolean>(false);
 
+  private readonly systemModuleRights =
+    this.permissionService.getModuleRights('settings-system-module');
+
+  readonly canManageSystemModules = computed(() => {
+    const rights = this.systemModuleRights();
+    return !!rights.canRead || !!rights.canCreate;
+  });
+
   systemRoles = [
     { label: 'Management', value: 'Management' },
     { label: 'HOD', value: 'HOD' },
     { label: 'Executive', value: 'Executive' },
     { label: 'Support', value: 'Support' },
     { label: 'SuperAdmin', value: 'SuperAdmin' },
+    { label: 'HR', value: 'HR' },
   ];
 
   departmentSelection: any[] = [];
@@ -288,9 +318,99 @@ export class RolePermissions implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.GetDropdown();
 
+    if (this.permissionService.matrix().length === 0) {
+      this.permissionService
+        .loadPermissions()
+        .pipe(takeUntil(this.ngUnsubscribe))
+        .subscribe(() => this.cdr.markForCheck());
+    }
+
     this.filterChange$
-      .pipe(takeUntil(this.ngUnsubscribe))
-      .subscribe(() => this.loadMatrix());
+      .pipe(
+        takeUntil(this.ngUnsubscribe),
+        switchMap(() => {
+          if (!this.selectedSystemRole || !this.selectedDepartmentId) {
+            this.matrixRows.set([]);
+            this.cdr.markForCheck();
+            return of(null);
+          }
+
+          const systemRole = this.selectedSystemRole;
+          const departmentId = this.selectedDepartmentId;
+          this.loadingService.start();
+
+          return forkJoin({
+            modules: this.systemModuleService.GetMany({
+              Page: 1,
+              PageSize: 1000,
+              OrderBy: null,
+              Includes: null,
+              Select: null,
+              Filter: null,
+            }),
+            assignedPermissions: this.rolePermissionService.GetByMatrix(
+              systemRole,
+              departmentId,
+            ),
+          }).pipe(
+            catchError(() => {
+              this.loadingService.stop();
+              return of(null);
+            }),
+          );
+        }),
+      )
+      .subscribe((result) => {
+        if (!result) return;
+
+        this.loadingService.stop();
+        const systemRole = this.selectedSystemRole!;
+        const departmentId = this.selectedDepartmentId;
+        const { modules, assignedPermissions } = result;
+        const emptyId = '00000000-0000-0000-0000-000000000000';
+
+        const byModuleId = new Map(
+          (assignedPermissions ?? []).map((p) => [String(p.systemModuleId), p]),
+        );
+        const byModuleKey = new Map(
+          (assignedPermissions ?? [])
+            .filter((p) => !!p.moduleKey)
+            .map((p) => [String(p.moduleKey).toLowerCase(), p]),
+        );
+
+        const completeMatrix: RolePermissionDto[] = (modules.data ?? []).map(
+          (mod: any) => {
+            const moduleId = String(mod.id ?? '');
+            const moduleKey = String(mod.code ?? '');
+            const existing =
+              byModuleId.get(moduleId) ??
+              (moduleKey ? byModuleKey.get(moduleKey.toLowerCase()) : undefined);
+
+            return {
+              id: existing?.id || emptyId,
+              systemRole,
+              departmentId,
+              systemModuleId: moduleId,
+              moduleName: mod.name,
+              moduleKey: moduleKey || existing?.moduleKey || '',
+              canRead: !!existing?.canRead,
+              canCreate: !!existing?.canCreate,
+              canUpdate: !!existing?.canUpdate,
+              canDelete: !!existing?.canDelete,
+              canUpdateStatus: !!existing?.canUpdateStatus,
+              createdAt: existing?.createdAt ?? new Date(),
+              updatedAt: existing?.updatedAt ?? new Date(),
+            };
+          },
+        );
+
+        this.matrixRows.set(completeMatrix);
+        this.cdr.markForCheck();
+      });
+  }
+
+  goToSystemModules(): void {
+    this.router.navigate(['/settings/system-module']);
   }
 
   GetDropdown() {
@@ -326,83 +446,6 @@ export class RolePermissions implements OnInit, OnDestroy {
 
   onFilterScopeChanged(): void {
     this.filterChange$.next();
-  }
-
-  loadMatrix() {
-    if (!this.selectedSystemRole || !this.selectedDepartmentId) return;
-
-    this.loadingService.start();
-
-    forkJoin({
-      modules: this.systemModuleService.GetMany({
-        Page: 1,
-        PageSize: 1000,
-        OrderBy: null,
-        Includes: null,
-        Select: null,
-        Filter: null,
-      }),
-      assignedPermissions: this.rolePermissionService.GetByMatrix(
-        this.selectedSystemRole,
-        this.selectedDepartmentId,
-      ),
-    })
-      .pipe(takeUntil(this.ngUnsubscribe))
-      .subscribe({
-        next: ({ modules, assignedPermissions }) => {
-          this.loadingService.stop();
-
-          const completeMatrix: RolePermissionDto[] = modules.data.map(
-            (mod: any) => {
-              const existing = assignedPermissions.find(
-                (p) => p.moduleKey === mod.code,
-              );
-              if (existing) {
-                return {
-                  id: existing.id,
-                  systemRole: existing.systemRole,
-                  departmentId: existing.departmentId,
-                  systemModuleId: mod.id,
-
-                  moduleName: mod.name,
-                  moduleKey: mod.code || existing.moduleKey,
-
-                  canRead: !!existing.canRead,
-                  canCreate: !!existing.canCreate,
-                  canUpdate: !!existing.canUpdate,
-                  canDelete: !!existing.canDelete,
-                  canUpdateStatus: !!existing.canUpdateStatus,
-
-                  createdAt: existing.createdAt ?? new Date(),
-                  updatedAt: existing.updatedAt ?? new Date(),
-                };
-              }
-              return {
-                id: '00000000-0000-0000-0000-000000000000', // ✅ better than null
-                systemRole: this.selectedSystemRole!,
-                departmentId: this.selectedDepartmentId,
-                systemModuleId: mod.id,
-                moduleName: mod.name,
-                moduleKey: mod.code || '',
-                canRead: false,
-                canCreate: false,
-                canUpdate: false,
-                canDelete: false,
-                canUpdateStatus: false,
-
-                createdAt: new Date(),
-                updatedAt: new Date(),
-              };
-            },
-          );
-
-          this.matrixRows.set(completeMatrix);
-          this.cdr.markForCheck();
-        },
-        error: () => {
-          this.loadingService.stop();
-        },
-      });
   }
 
   GetData() {
@@ -488,12 +531,21 @@ export class RolePermissions implements OnInit, OnDestroy {
 
   onSaveChanges(): void {
     if (this.matrixRows().length === 0) return;
+    if (!this.selectedSystemRole || !this.selectedDepartmentId) return;
+
+    const systemRole = this.selectedSystemRole;
+    const departmentId = this.selectedDepartmentId;
+    const payload = this.matrixRows().map((row) => ({
+      ...row,
+      systemRole,
+      departmentId,
+    }));
 
     this.isSaving.set(true);
     this.loadingService.start();
 
     this.rolePermissionService
-      .BulkSave(this.matrixRows())
+      .BulkSave(payload)
       .pipe(takeUntil(this.ngUnsubscribe))
       .subscribe({
         next: () => {
@@ -505,6 +557,7 @@ export class RolePermissions implements OnInit, OnDestroy {
             detail:
               'Security policies and access control boundaries updated successfully.',
           });
+          this.onFilterScopeChanged();
           this.cdr.markForCheck();
         },
         error: () => {

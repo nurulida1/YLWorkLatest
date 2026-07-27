@@ -165,6 +165,26 @@ export class Sidemenu {
 
   management: any[] = [
     {
+      label: 'Leave',
+      route: '/leave',
+      icon: 'pi-calendar',
+      items: [
+        {
+          label: 'Leave Application',
+          route: '/leave',
+        },
+        
+        {
+          label: 'Leave Approvals',
+          route: '/leave/approvals',
+        },
+        {
+          label: 'Leave History',
+          route: '/leave/history',
+        },
+      ],
+    },
+    {
       label: 'Quotations',
       route: '/quotations',
       icon: 'pi-file',
@@ -320,6 +340,21 @@ export class Sidemenu {
         {
           label: 'Role Permissions',
           route: '/settings/role-permission',
+        },
+        {
+          label: 'Leave Types',
+          route: '/settings/leave-types',
+          roles: ['SuperAdmin', 'Admin', 'HR'],
+        },
+        {
+          label: 'Leave Policy',
+          route: '/settings/leave-policy',
+          roles: ['SuperAdmin', 'Admin', 'HR'],
+        },
+        {
+          label: 'Leave calendar sync',
+          route: '/settings/leave-calendar-sync',
+          roles: ['SuperAdmin', 'Admin', 'HR'],
         },
       ],
     },

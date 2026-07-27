@@ -1,11 +1,10 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using YLWorks.Data;
 using YLWorks.Hubs;
-using Microsoft.AspNetCore.Authorization;
-using System.Security.Claims;
 
 namespace WebApplication1.Controllers
 {
@@ -26,13 +25,14 @@ namespace WebApplication1.Controllers
         [HttpGet]
         public async Task<IActionResult> GetNotifications()
         {
-            var userId = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
+            var userId = Guid.Parse(
+                User.FindFirst(ClaimTypes.NameIdentifier)!.Value
+            );
 
             var notifications = await _context.Notifications
                 .Where(x => x.UserId == userId)
                 .OrderByDescending(x => x.CreatedAt)
                 .ToListAsync();
-
 
             return Ok(notifications);
         }
@@ -78,9 +78,9 @@ namespace WebApplication1.Controllers
         }
 
         [HttpPut("MarkRead")]
-        public async Task<IActionResult> MarkAsRead([FromQuery] int id)
+        public async Task<IActionResult> MarkAsRead([FromQuery] Guid id)
         {
-            if (id <= 0)
+            if (id == Guid.Empty)
                 return BadRequest(new { Success = false, Message = "Invalid notification ID." });
 
             var notification = await _context.Notifications.FindAsync(id);

@@ -509,18 +509,18 @@ import { Textarea } from 'primeng/textarea';
           <div class="col-span-12 md:col-span-6 flex flex-col gap-1.5">
             <label
               class="text-xs font-semibold text-gray-600 uppercase tracking-wider"
-              >Reporting Manager (HOD)</label
+              >Reporting Managers (HOD)</label
             >
-            <p-select
+            <p-multiSelect
               appendTo="body"
               class="w-full"
-              styleClass="w-full! border border-gray-300 rounded-md text-gray-800 h-[38px] flex items-center"
-              formControlName="hodId"
+              styleClass="w-full! border border-gray-300 rounded-md text-gray-800 min-h-[38px] flex items-center"
+              formControlName="hodIds"
               [options]="hodSelection || []"
               [filter]="true"
-              placeholder="Select reporting line"
-              [showClear]="!!FG.get('hodId')?.value"
-            ></p-select>
+              placeholder="Select reporting managers"
+              display="chip"
+            ></p-multiSelect>
           </div>
 
           <div class="col-span-12 md:col-span-6 flex flex-col gap-1.5">
@@ -917,7 +917,7 @@ export class UserManagement implements OnInit, OnDestroy {
         joinedDate: new FormControl<Date | null>(
           data?.joinedDate ? new Date(data.joinedDate) : null,
         ),
-        hodId: new FormControl<string | null>(data?.hodId || null),
+        hodIds: new FormControl<string[] | null>(data?.hodIds || []),
 
         departmentIds: new FormControl<string[] | null>(
           data?.departmentIds || [],
@@ -933,6 +933,7 @@ export class UserManagement implements OnInit, OnDestroy {
         ...data,
         joinedDate: data.joinedDate ? new Date(data.joinedDate) : null,
         departmentIds: data.departmentIds || [],
+        hodIds: data.hodIds || [],
       });
     }
 

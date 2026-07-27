@@ -98,13 +98,39 @@ builder.Services.AddCors(options =>
 });
 
 
+builder.Services.AddMemoryCache();
+builder.Services.Configure<YLWorks.Services.Leave.GoogleCalendarOptions>(
+    builder.Configuration.GetSection(YLWorks.Services.Leave.GoogleCalendarOptions.SectionName));
+builder.Services.Configure<YLWorks.Services.Leave.LeaveCalendarIcsOptions>(
+    builder.Configuration.GetSection(YLWorks.Services.Leave.LeaveCalendarIcsOptions.SectionName));
+
 builder.Services.AddHealthChecks();
 builder.Services.AddScoped<EmailService>();
 builder.Services.AddScoped<NotificationService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<JwtService>();
+builder.Services.AddScoped<YLWorks.Services.Leave.LeavePolicyService>();
+builder.Services.AddScoped<YLWorks.Services.Leave.LeaveBalanceService>();
+builder.Services.AddScoped<YLWorks.Services.Leave.LeaveConflictService>();
+builder.Services.AddScoped<YLWorks.Services.Leave.LeaveNotificationHelper>();
+builder.Services.AddScoped<YLWorks.Services.Leave.EmergencyLeaveApprovalScheduler>();
+builder.Services.AddScoped<YLWorks.Services.Leave.LeaveRequestService>();
+builder.Services.AddScoped<YLWorks.Services.Leave.LeaveCalendarTokenProtector>();
+builder.Services.AddScoped<YLWorks.Services.Leave.GoogleCalendarLeaveSyncService>();
+builder.Services.AddScoped<YLWorks.Services.Leave.LeaveExternalCalendarSyncCoordinator>();
+builder.Services.AddScoped<YLWorks.Services.Leave.GoogleCalendarAuthService>();
+builder.Services.AddScoped<YLWorks.Services.Leave.OutlookLeaveIcsFeedService>();
+builder.Services.AddHostedService<YLWorks.Services.Leave.LeaveYearEndHostedService>();
 
 var app = builder.Build();
+
+if (app.Environment.IsDevelopment())
+{
+    using var scope = app.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    var logger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("LeaveDbSeeder");
+    await LeaveDbSeeder.SeedAsync(db, logger);
+}
 
 if (app.Environment.IsDevelopment())
 {

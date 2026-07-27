@@ -1238,6 +1238,575 @@ namespace YLWorks.Migrations
                     b.ToTable("InvoiceItems");
                 });
 
+            modelBuilder.Entity("YLWorks.Model.Leave.LeaveAppeal", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("AppealReason")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("Outcome")
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<DateTime>("RaisedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid>("RaisedBy")
+                        .HasColumnType("char(36)");
+
+                    b.Property<Guid>("RequestId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime?>("ResolvedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("ReviewedBy")
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("char(36)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RaisedBy");
+
+                    b.HasIndex("RequestId")
+                        .IsUnique();
+
+                    b.HasIndex("ReviewedBy");
+
+                    b.ToTable("LeaveAppeals");
+                });
+
+            modelBuilder.Entity("YLWorks.Model.Leave.LeaveApproval", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<Guid>("ApproverId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("ApproverRole")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime>("DecidedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Decision")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<string>("RejectionReason")
+                        .HasColumnType("longtext");
+
+                    b.Property<Guid>("RequestId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("char(36)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ApproverId");
+
+                    b.HasIndex("RequestId");
+
+                    b.ToTable("LeaveApprovals");
+                });
+
+            modelBuilder.Entity("YLWorks.Model.Leave.LeaveBalance", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<double>("CarriedForwardDays")
+                        .HasColumnType("double");
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("char(36)");
+
+                    b.Property<double>("CreditedDays")
+                        .HasColumnType("double");
+
+                    b.Property<Guid>("EmployeeId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<double>("EntitledDays")
+                        .HasColumnType("double");
+
+                    b.Property<Guid>("LeaveTypeId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<double>("PendingDays")
+                        .HasColumnType("double");
+
+                    b.Property<double>("RemainingDays")
+                        .HasColumnType("double");
+
+                    b.Property<double>("TenureEntitledDays")
+                        .HasColumnType("double");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("char(36)");
+
+                    b.Property<double>("UsedDays")
+                        .HasColumnType("double");
+
+                    b.Property<int>("Year")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LeaveTypeId");
+
+                    b.HasIndex("EmployeeId", "LeaveTypeId", "Year")
+                        .IsUnique();
+
+                    b.ToTable("LeaveBalances");
+                });
+
+            modelBuilder.Entity("YLWorks.Model.Leave.LeaveBalanceCheckRecord", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("ActionTaken")
+                        .HasMaxLength(30)
+                        .HasColumnType("varchar(30)");
+
+                    b.Property<double>("AvailableDays")
+                        .HasColumnType("double");
+
+                    b.Property<DateTime>("CheckedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("char(36)");
+
+                    b.Property<bool>("IsSufficient")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<Guid>("RequestId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<double>("RequestedDays")
+                        .HasColumnType("double");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("char(36)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RequestId")
+                        .IsUnique();
+
+                    b.ToTable("LeaveBalanceCheckRecords");
+                });
+
+            modelBuilder.Entity("YLWorks.Model.Leave.LeaveCancellation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("char(36)");
+
+                    b.Property<bool>("LeaveStarted")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<Guid>("RequestId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime>("RequestedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid>("RequestedBy")
+                        .HasColumnType("char(36)");
+
+                    b.Property<bool>("RequiresApproval")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<DateTime?>("ResolvedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("char(36)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RequestId")
+                        .IsUnique();
+
+                    b.ToTable("LeaveCancellations");
+                });
+
+            modelBuilder.Entity("YLWorks.Model.Leave.LeaveConflictCheck", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime>("CheckedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<bool>("ConflictFound")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("char(36)");
+
+                    b.Property<bool>("EmployeeOverride")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<int>("OverlappingCount")
+                        .HasColumnType("int");
+
+                    b.Property<string>("OverlappingEmployees")
+                        .HasColumnType("longtext");
+
+                    b.Property<Guid>("RequestId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("char(36)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RequestId")
+                        .IsUnique();
+
+                    b.ToTable("LeaveConflictChecks");
+                });
+
+            modelBuilder.Entity("YLWorks.Model.Leave.LeavePolicy", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<double>("AnnualCarryForwardPercent")
+                        .HasColumnType("double");
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("char(36)");
+
+                    b.Property<int>("EffectiveFromYear")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("char(36)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IsActive");
+
+                    b.ToTable("LeavePolicies");
+                });
+
+            modelBuilder.Entity("YLWorks.Model.Leave.LeaveRequest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<bool>("ConflictOverride")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("char(36)");
+
+                    b.Property<Guid>("EmployeeId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime>("EndDate")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<bool>("IsEmergency")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<bool>("IsUnpaid")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<Guid>("LeaveTypeId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime>("StartDate")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<DateTime>("SubmittedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("TotalDays")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("char(36)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EmployeeId");
+
+                    b.HasIndex("LeaveTypeId");
+
+                    b.ToTable("LeaveRequests");
+                });
+
+            modelBuilder.Entity("YLWorks.Model.Leave.LeaveSupportingDocument", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("FileUrl")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<Guid>("RequestId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime>("UploadedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<bool>("Verified")
+                        .HasColumnType("tinyint(1)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RequestId");
+
+                    b.ToTable("LeaveSupportingDocuments");
+                });
+
+            modelBuilder.Entity("YLWorks.Model.Leave.LeaveTenureBand", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("BandKind")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("char(36)");
+
+                    b.Property<double>("DaysPerYear")
+                        .HasColumnType("double");
+
+                    b.Property<Guid>("LeavePolicyId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<int?>("MaxYearsExclusive")
+                        .HasColumnType("int");
+
+                    b.Property<int>("MinYearsInclusive")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("char(36)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LeavePolicyId");
+
+                    b.ToTable("LeaveTenureBands");
+                });
+
+            modelBuilder.Entity("YLWorks.Model.Leave.LeaveType", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("ApplicableGender")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("char(36)");
+
+                    b.Property<int>("DefaultDaysPerYear")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("longtext");
+
+                    b.Property<bool>("IsEmergency")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<bool>("IsPaid")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<string>("PolicyKind")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("varchar(30)");
+
+                    b.Property<bool>("RequiresDocument")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("char(36)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("LeaveTypes");
+                });
+
+            modelBuilder.Entity("YLWorks.Model.Leave.LeaveYearClose", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime>("ClosedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("ClosedByUserId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<int>("ClosedYear")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("char(36)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClosedYear")
+                        .IsUnique();
+
+                    b.ToTable("LeaveYearCloses");
+                });
+
             modelBuilder.Entity("YLWorks.Model.LocationInventory", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1464,6 +2033,12 @@ namespace YLWorks.Migrations
 
                     b.Property<bool>("IsRead")
                         .HasColumnType("tinyint(1)");
+
+                    b.Property<Guid?>("LeaveRequestId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("Link")
+                        .HasColumnType("longtext");
 
                     b.Property<string>("Message")
                         .IsRequired()
@@ -2913,9 +3488,6 @@ namespace YLWorks.Migrations
                     b.Property<string>("Gender")
                         .HasColumnType("longtext");
 
-                    b.Property<Guid?>("HodId")
-                        .HasColumnType("char(36)");
-
                     b.Property<bool>("IsActive")
                         .HasColumnType("tinyint(1)");
 
@@ -2927,6 +3499,9 @@ namespace YLWorks.Migrations
 
                     b.Property<DateTime?>("LastLoginAt")
                         .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("ManagerId")
+                        .HasColumnType("char(36)");
 
                     b.Property<string>("Password")
                         .IsRequired()
@@ -2957,9 +3532,24 @@ namespace YLWorks.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("HodId");
+                    b.HasIndex("ManagerId");
 
                     b.ToTable("Users");
+                });
+
+            modelBuilder.Entity("YLWorks.Model.UserReportingManager", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<Guid>("ManagerId")
+                        .HasColumnType("char(36)");
+
+                    b.HasKey("UserId", "ManagerId");
+
+                    b.HasIndex("ManagerId");
+
+                    b.ToTable("UserReportingManagers", (string)null);
                 });
 
             modelBuilder.Entity("YLWorks.Model.WorkOrder", b =>
@@ -3467,6 +4057,144 @@ namespace YLWorks.Migrations
                     b.Navigation("GoodsReceivingItem");
 
                     b.Navigation("Invoice");
+                });
+
+            modelBuilder.Entity("YLWorks.Model.Leave.LeaveAppeal", b =>
+                {
+                    b.HasOne("YLWorks.Model.User", "RaisedByUser")
+                        .WithMany()
+                        .HasForeignKey("RaisedBy")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("YLWorks.Model.Leave.LeaveRequest", "Request")
+                        .WithOne("Appeal")
+                        .HasForeignKey("YLWorks.Model.Leave.LeaveAppeal", "RequestId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("YLWorks.Model.User", "ReviewedByUser")
+                        .WithMany()
+                        .HasForeignKey("ReviewedBy")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("RaisedByUser");
+
+                    b.Navigation("Request");
+
+                    b.Navigation("ReviewedByUser");
+                });
+
+            modelBuilder.Entity("YLWorks.Model.Leave.LeaveApproval", b =>
+                {
+                    b.HasOne("YLWorks.Model.User", "Approver")
+                        .WithMany()
+                        .HasForeignKey("ApproverId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("YLWorks.Model.Leave.LeaveRequest", "Request")
+                        .WithMany("Approvals")
+                        .HasForeignKey("RequestId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Approver");
+
+                    b.Navigation("Request");
+                });
+
+            modelBuilder.Entity("YLWorks.Model.Leave.LeaveBalance", b =>
+                {
+                    b.HasOne("YLWorks.Model.User", "Employee")
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("YLWorks.Model.Leave.LeaveType", "LeaveType")
+                        .WithMany("LeaveBalances")
+                        .HasForeignKey("LeaveTypeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Employee");
+
+                    b.Navigation("LeaveType");
+                });
+
+            modelBuilder.Entity("YLWorks.Model.Leave.LeaveBalanceCheckRecord", b =>
+                {
+                    b.HasOne("YLWorks.Model.Leave.LeaveRequest", "Request")
+                        .WithOne("BalanceCheck")
+                        .HasForeignKey("YLWorks.Model.Leave.LeaveBalanceCheckRecord", "RequestId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Request");
+                });
+
+            modelBuilder.Entity("YLWorks.Model.Leave.LeaveCancellation", b =>
+                {
+                    b.HasOne("YLWorks.Model.Leave.LeaveRequest", "Request")
+                        .WithOne("Cancellation")
+                        .HasForeignKey("YLWorks.Model.Leave.LeaveCancellation", "RequestId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Request");
+                });
+
+            modelBuilder.Entity("YLWorks.Model.Leave.LeaveConflictCheck", b =>
+                {
+                    b.HasOne("YLWorks.Model.Leave.LeaveRequest", "Request")
+                        .WithOne("ConflictCheck")
+                        .HasForeignKey("YLWorks.Model.Leave.LeaveConflictCheck", "RequestId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Request");
+                });
+
+            modelBuilder.Entity("YLWorks.Model.Leave.LeaveRequest", b =>
+                {
+                    b.HasOne("YLWorks.Model.User", "Employee")
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("YLWorks.Model.Leave.LeaveType", "LeaveType")
+                        .WithMany("LeaveRequests")
+                        .HasForeignKey("LeaveTypeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Employee");
+
+                    b.Navigation("LeaveType");
+                });
+
+            modelBuilder.Entity("YLWorks.Model.Leave.LeaveSupportingDocument", b =>
+                {
+                    b.HasOne("YLWorks.Model.Leave.LeaveRequest", "Request")
+                        .WithMany("Documents")
+                        .HasForeignKey("RequestId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Request");
+                });
+
+            modelBuilder.Entity("YLWorks.Model.Leave.LeaveTenureBand", b =>
+                {
+                    b.HasOne("YLWorks.Model.Leave.LeavePolicy", "LeavePolicy")
+                        .WithMany("TenureBands")
+                        .HasForeignKey("LeavePolicyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("LeavePolicy");
                 });
 
             modelBuilder.Entity("YLWorks.Model.MaterialItem", b =>
@@ -3984,11 +4712,31 @@ namespace YLWorks.Migrations
 
             modelBuilder.Entity("YLWorks.Model.User", b =>
                 {
-                    b.HasOne("YLWorks.Model.User", "Hod")
-                        .WithMany()
-                        .HasForeignKey("HodId");
+                    b.HasOne("YLWorks.Model.User", "Manager")
+                        .WithMany("DirectReports")
+                        .HasForeignKey("ManagerId")
+                        .OnDelete(DeleteBehavior.SetNull);
 
-                    b.Navigation("Hod");
+                    b.Navigation("Manager");
+                });
+
+            modelBuilder.Entity("YLWorks.Model.UserReportingManager", b =>
+                {
+                    b.HasOne("YLWorks.Model.User", "Manager")
+                        .WithMany()
+                        .HasForeignKey("ManagerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("YLWorks.Model.User", "User")
+                        .WithMany("ReportingManagers")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Manager");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("YLWorks.Model.WorkOrder", b =>
@@ -4072,6 +4820,33 @@ namespace YLWorks.Migrations
                     b.Navigation("Payments");
                 });
 
+            modelBuilder.Entity("YLWorks.Model.Leave.LeavePolicy", b =>
+                {
+                    b.Navigation("TenureBands");
+                });
+
+            modelBuilder.Entity("YLWorks.Model.Leave.LeaveRequest", b =>
+                {
+                    b.Navigation("Appeal");
+
+                    b.Navigation("Approvals");
+
+                    b.Navigation("BalanceCheck");
+
+                    b.Navigation("Cancellation");
+
+                    b.Navigation("ConflictCheck");
+
+                    b.Navigation("Documents");
+                });
+
+            modelBuilder.Entity("YLWorks.Model.Leave.LeaveType", b =>
+                {
+                    b.Navigation("LeaveBalances");
+
+                    b.Navigation("LeaveRequests");
+                });
+
             modelBuilder.Entity("YLWorks.Model.MaterialRequest", b =>
                 {
                     b.Navigation("MaterialItems");
@@ -4152,7 +4927,11 @@ namespace YLWorks.Migrations
 
             modelBuilder.Entity("YLWorks.Model.User", b =>
                 {
+                    b.Navigation("DirectReports");
+
                     b.Navigation("Notifications");
+
+                    b.Navigation("ReportingManagers");
                 });
 
             modelBuilder.Entity("YLWorks.Model.WorkOrder", b =>

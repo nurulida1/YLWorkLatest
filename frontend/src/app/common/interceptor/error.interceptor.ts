@@ -22,6 +22,11 @@ export function ErrorInterceptorFn(
 
   function errorHandler(response: HttpEvent<any>): Observable<HttpEvent<any>> {
     if (response instanceof HttpErrorResponse) {
+      if (isLeaveValidationResponse(response)) {
+        loadingService.stop();
+        throw response;
+      }
+
       switch (response.status) {
         case 400:
           message.add({
@@ -100,5 +105,37 @@ export function ErrorInterceptorFn(
       }
     }
     throw response;
+  }
+
+  /** Leave submit returns business validation in body; component shows the specific toast. */
+  function isLeaveValidationResponse(response: HttpErrorResponse): boolean {
+    const body = parseErrorBody(response.error);
+    if (!body) return false;
+    if (body['balanceSufficient'] === false || body['BalanceSufficient'] === false) return true;
+    if (body['conflictWarning'] || body['ConflictWarning']) return true;
+    const remaining = body['remainingBalance'] ?? body['RemainingBalance'];
+    const requestId = body['requestId'] ?? body['RequestId'];
+    const emptyRequestId =
+      !requestId || requestId === '00000000-0000-0000-0000-000000000000';
+    if (remaining != null && emptyRequestId) return true;
+    return false;
+  }
+
+  function parseErrorBody(error: unknown): Record<string, unknown> | null {
+    if (!error) return null;
+    if (typeof error === 'object' && !Array.isArray(error)) {
+      return error as Record<string, unknown>;
+    }
+    if (typeof error === 'string') {
+      try {
+        const parsed = JSON.parse(error);
+        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+          return parsed as Record<string, unknown>;
+        }
+      } catch {
+        return null;
+      }
+    }
+    return null;
   }
 }

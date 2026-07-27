@@ -171,8 +171,8 @@ namespace WebApplication1.Controllers
           u.Gender,
           u.CreatedAt,
           u.JoinedDate,
-          u.HodId,
           u.Status,
+          HodIds = u.ReportingManagers.Select(rm => rm.ManagerId).ToList(),
           DepartmentIds = u.Departments.Select(d => d.Id).ToList(),
           Departments = u.Departments.Select(d => new { d.Id, d.Name }).ToList()
       })
@@ -226,7 +226,10 @@ namespace WebApplication1.Controllers
         {
             try
             {
-                var query = _context.Users.AsQueryable();
+                var query = _context.Users
+                    .Include(u => u.ReportingManagers)
+                    .Include(u => u.Departments)
+                    .AsQueryable();
 
                 // ===== Includes =====
                 if (!string.IsNullOrEmpty(includes))
@@ -322,7 +325,25 @@ namespace WebApplication1.Controllers
                     return Ok(new { Data = dict });
                 }
 
-                return Ok(item);
+                return Ok(new
+                {
+                    item.Id,
+                    item.EmployeeNo,
+                    item.FullName,
+                    item.DisplayName,
+                    item.Email,
+                    item.SystemRole,
+                    item.JobTitle,
+                    item.IsActive,
+                    item.LastLoginAt,
+                    item.ContactNo,
+                    item.Gender,
+                    item.CreatedAt,
+                    item.JoinedDate,
+                    HodIds = item.ReportingManagers.Select(rm => rm.ManagerId).ToList(),
+                    DepartmentIds = item.Departments.Select(d => d.Id).ToList(),
+                    Departments = item.Departments.Select(d => new { d.Id, d.Name }).ToList()
+                });
             }
             catch (Exception ex)
             {
@@ -360,7 +381,10 @@ namespace WebApplication1.Controllers
 
             try
             {
-                var user = _context.Users.FirstOrDefault(u => u.Email == request.Email);
+                var user = _context.Users
+                    .Include(u => u.Departments)
+                    .Include(u => u.ReportingManagers)
+                    .FirstOrDefault(u => u.Email == request.Email);
 
                 if (user == null || !user.IsActive)
                 {
@@ -388,14 +412,7 @@ namespace WebApplication1.Controllers
                         user.Email,
                         user.SystemRole,
                         user.JobTitle,
-                        user.HodId,
-                        Hod = user.Hod == null ? null : new
-                        {
-                            user.Hod.Id,
-                            user.Hod.FullName,
-                            user.Hod.Email,
-                            user.Hod.JobTitle
-                        },
+                        HodIds = user.ReportingManagers.Select(rm => rm.ManagerId).ToList(),
                         DepartmentIds = user.Departments.Select(d => d.Id).ToList(),
                         Departments = user.Departments.Select(d => new {d.Id, d.Name }).ToList()
                     }
@@ -467,7 +484,6 @@ namespace WebApplication1.Controllers
                     JobTitle = request.JobTitle,
                     SystemRole = "Staff",
                     JoinedDate = request.JoinedDate,
-                    HodId = request.HodId,
                     Gender = request.Gender,
                     IsActive = false,
                     Status = "Pending",
@@ -481,6 +497,22 @@ namespace WebApplication1.Controllers
                         .ToListAsync();
 
                     newUser.Departments = departments;
+                }
+
+                if (request.HodIds?.Any() == true)
+                {
+                    var managerIds = request.HodIds
+                        .Where(id => id != Guid.Empty && id != newUser.Id)
+                        .Distinct()
+                        .ToList();
+                    foreach (var managerId in managerIds)
+                    {
+                        newUser.ReportingManagers.Add(new UserReportingManager
+                        {
+                            UserId = newUser.Id,
+                            ManagerId = managerId
+                        });
+                    }
                 }
 
                 var passwordHasher = new PasswordHasher<User>();
@@ -917,6 +949,7 @@ namespace WebApplication1.Controllers
 
                 var user = await _context.Users
                     .Include(u => u.Departments)
+                    .Include(u => u.ReportingManagers)
                     .FirstOrDefaultAsync(u => u.Id == id);
 
                 if (user == null)
@@ -968,8 +1001,25 @@ namespace WebApplication1.Controllers
                 if (!string.IsNullOrWhiteSpace(request.Gender))
                     user.Gender = request.Gender;
 
-                if (request.HodId.HasValue)
-                    user.HodId = request.HodId;
+                if (request.HodIds != null)
+                {
+                    user.ReportingManagers ??= new List<UserReportingManager>();
+                    user.ReportingManagers.Clear();
+
+                    var managerIds = request.HodIds
+                        .Where(mid => mid != Guid.Empty && mid != user.Id)
+                        .Distinct()
+                        .ToList();
+
+                    foreach (var managerId in managerIds)
+                    {
+                        user.ReportingManagers.Add(new UserReportingManager
+                        {
+                            UserId = user.Id,
+                            ManagerId = managerId
+                        });
+                    }
+                }
 
                 // Update departments
                 if (request.DepartmentIds != null)
@@ -1030,7 +1080,7 @@ namespace WebApplication1.Controllers
                     SystemRole = user.SystemRole,
                     JoinedDate = user.JoinedDate,
                     Gender = user.Gender,
-                    HodId = user.HodId,
+                    HodIds = user.ReportingManagers.Select(rm => rm.ManagerId).ToList(),
                     DepartmentIds = user.Departments.Select(d => d.Id).ToList(),
                     Departments = user.Departments.Select(d => new UserDepartmentDto
                     {

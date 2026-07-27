@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using YLWorks.Model;
+using YLWorks.Model.Leave;
 
 namespace YLWorks.Data
 {
@@ -11,6 +12,7 @@ namespace YLWorks.Data
         // SECURITY / ACCESS
         // =======================
         public DbSet<User> Users { get; set; }
+        public DbSet<UserReportingManager> UserReportingManagers { get; set; }
         public DbSet<PasswordResetToken> PasswordResetTokens { get; set; }
         public DbSet<Notification> Notifications { get; set; }
         public DbSet<RolePermission> RolePermissions { get; set; }
@@ -18,6 +20,24 @@ namespace YLWorks.Data
         public DbSet<SystemModule> SystemModules { get; set; }
 
         public DbSet<ActivityLog> ActivityLogs { get; set; }
+
+        // =======================
+        // LEAVE MANAGEMENT
+        // =======================
+        public DbSet<LeaveType> LeaveTypes { get; set; }
+        public DbSet<LeaveBalance> LeaveBalances { get; set; }
+        public DbSet<LeaveRequest> LeaveRequests { get; set; }
+        public DbSet<LeaveApproval> LeaveApprovals { get; set; }
+        public DbSet<LeaveCancellation> LeaveCancellations { get; set; }
+        public DbSet<LeaveConflictCheck> LeaveConflictChecks { get; set; }
+        public DbSet<LeaveBalanceCheckRecord> LeaveBalanceCheckRecords { get; set; }
+        public DbSet<LeaveSupportingDocument> LeaveSupportingDocuments { get; set; }
+        public DbSet<LeaveAppeal> LeaveAppeals { get; set; }
+        public DbSet<LeavePolicy> LeavePolicies { get; set; }
+        public DbSet<LeaveTenureBand> LeaveTenureBands { get; set; }
+        public DbSet<LeaveYearClose> LeaveYearCloses { get; set; }
+        public DbSet<LeaveCalendarConnection> LeaveCalendarConnections { get; set; }
+        public DbSet<LeaveCalendarEventMap> LeaveCalendarEventMaps { get; set; }
 
         // =======================
         // ORGANIZATION
@@ -317,8 +337,153 @@ namespace YLWorks.Data
                       .HasForeignKey(x => x.ProductServiceId)
                       .OnDelete(DeleteBehavior.SetNull);
             });
+
+            ConfigureLeaveManagement(modelBuilder);
         }
 
-        
+        private static void ConfigureLeaveManagement(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<User>(entity =>
+            {
+                entity.HasOne(u => u.Manager)
+                    .WithMany(u => u.DirectReports)
+                    .HasForeignKey(u => u.ManagerId)
+                    .OnDelete(DeleteBehavior.SetNull);
+            });
+
+            modelBuilder.Entity<UserReportingManager>(entity =>
+            {
+                entity.ToTable("UserReportingManagers");
+                entity.HasKey(e => new { e.UserId, e.ManagerId });
+                entity.HasOne(e => e.User)
+                    .WithMany(u => u.ReportingManagers)
+                    .HasForeignKey(e => e.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                entity.HasOne(e => e.Manager)
+                    .WithMany()
+                    .HasForeignKey(e => e.ManagerId)
+                    .OnDelete(DeleteBehavior.Restrict);
+                entity.HasIndex(e => e.ManagerId);
+            });
+
+            modelBuilder.Entity<LeaveType>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
+                entity.Property(e => e.PolicyKind).HasConversion<string>().HasMaxLength(30);
+                entity.Property(e => e.ApplicableGender).HasConversion<string>().HasMaxLength(20);
+            });
+
+            modelBuilder.Entity<LeaveBalance>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.HasIndex(e => new { e.EmployeeId, e.LeaveTypeId, e.Year }).IsUnique();
+                entity.HasOne(e => e.Employee).WithMany().HasForeignKey(e => e.EmployeeId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                entity.HasOne(e => e.LeaveType).WithMany(t => t.LeaveBalances)
+                    .HasForeignKey(e => e.LeaveTypeId).OnDelete(DeleteBehavior.Restrict);
+            });
+
+            modelBuilder.Entity<LeavePolicy>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.HasIndex(e => e.IsActive);
+            });
+
+            modelBuilder.Entity<LeaveTenureBand>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.BandKind).HasConversion<string>().HasMaxLength(20);
+                entity.HasOne(e => e.LeavePolicy).WithMany(p => p.TenureBands)
+                    .HasForeignKey(e => e.LeavePolicyId).OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<LeaveYearClose>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.HasIndex(e => e.ClosedYear).IsUnique();
+            });
+
+            modelBuilder.Entity<LeaveRequest>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Status)
+                    .HasConversion<string>()
+                    .HasMaxLength(20);
+                entity.HasOne(e => e.Employee).WithMany().HasForeignKey(e => e.EmployeeId)
+                    .OnDelete(DeleteBehavior.Restrict);
+                entity.HasOne(e => e.LeaveType).WithMany(t => t.LeaveRequests)
+                    .HasForeignKey(e => e.LeaveTypeId).OnDelete(DeleteBehavior.Restrict);
+                entity.HasOne(e => e.Cancellation).WithOne(c => c.Request)
+                    .HasForeignKey<LeaveCancellation>(c => c.RequestId);
+                entity.HasOne(e => e.ConflictCheck).WithOne(c => c.Request)
+                    .HasForeignKey<LeaveConflictCheck>(c => c.RequestId);
+                entity.HasOne(e => e.BalanceCheck).WithOne(c => c.Request)
+                    .HasForeignKey<LeaveBalanceCheckRecord>(c => c.RequestId);
+                entity.HasOne(e => e.Appeal).WithOne(a => a.Request)
+                    .HasForeignKey<LeaveAppeal>(a => a.RequestId);
+            });
+
+            modelBuilder.Entity<LeaveApproval>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Decision).HasConversion<string>().HasMaxLength(20);
+                entity.HasOne(e => e.Request).WithMany(r => r.Approvals)
+                    .HasForeignKey(e => e.RequestId).OnDelete(DeleteBehavior.Cascade);
+                entity.HasOne(e => e.Approver).WithMany().HasForeignKey(e => e.ApproverId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            modelBuilder.Entity<LeaveCancellation>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Status).HasConversion<string>().HasMaxLength(20);
+            });
+
+            modelBuilder.Entity<LeaveConflictCheck>(entity => entity.HasKey(e => e.Id));
+
+            modelBuilder.Entity<LeaveBalanceCheckRecord>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.ActionTaken).HasConversion<string>().HasMaxLength(30);
+            });
+
+            modelBuilder.Entity<LeaveSupportingDocument>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.HasOne(e => e.Request).WithMany(r => r.Documents)
+                    .HasForeignKey(e => e.RequestId).OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<LeaveAppeal>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Outcome).HasConversion<string>().HasMaxLength(20);
+                entity.HasOne(e => e.RaisedByUser).WithMany().HasForeignKey(e => e.RaisedBy)
+                    .OnDelete(DeleteBehavior.Restrict);
+                entity.HasOne(e => e.ReviewedByUser).WithMany().HasForeignKey(e => e.ReviewedBy)
+                    .OnDelete(DeleteBehavior.SetNull);
+            });
+
+            modelBuilder.Entity<LeaveCalendarConnection>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Provider).HasConversion<string>().HasMaxLength(20);
+                entity.HasIndex(e => new { e.UserId, e.Provider }).IsUnique();
+                entity.HasIndex(e => e.RefreshTokenProtected);
+                entity.HasOne(e => e.User).WithMany().HasForeignKey(e => e.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<LeaveCalendarEventMap>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.HasIndex(e => new { e.ConnectionId, e.LeaveRequestId }).IsUnique();
+                entity.HasOne(e => e.Connection).WithMany(c => c.EventMaps)
+                    .HasForeignKey(e => e.ConnectionId).OnDelete(DeleteBehavior.Cascade);
+                entity.HasOne(e => e.LeaveRequest).WithMany()
+                    .HasForeignKey(e => e.LeaveRequestId).OnDelete(DeleteBehavior.Cascade);
+            });
+        }
     }
 }

@@ -7,7 +7,7 @@ import {
   RolePermissionDto,
   UpdateRolePermissionRequest,
 } from '../models/RolePermission';
-import { Observable, retry, catchError, throwError } from 'rxjs';
+import { Observable, retry, catchError, throwError, map } from 'rxjs';
 import {
   GridifyQueryExtend,
   PagingContent,
@@ -63,13 +63,31 @@ export class RolePermissionService {
     }
 
     return this.http
-      .get<RolePermissionDto[]>(`${this.url}/by-matrix`, { params })
-      .pipe(retry(1), catchError(this.handleError('GetByMatrix')));
+      .get<RolePermissionDto[] | Record<string, unknown>[]>(`${this.url}/by-matrix`, {
+        params,
+      })
+      .pipe(
+        map((rows) => (rows ?? []).map((r) => this.normalize(r))),
+        retry(1),
+        catchError(this.handleError('GetByMatrix')),
+      );
   }
 
   BulkSave(request: Partial<RolePermissionDto>[]): Observable<any> {
+    const payload = request.map((row) => ({
+      id: row.id && row.id !== '00000000-0000-0000-0000-000000000000' ? row.id : null,
+      systemRole: row.systemRole,
+      departmentId: row.departmentId,
+      systemModuleId: row.systemModuleId,
+      canCreate: !!row.canCreate,
+      canRead: !!row.canRead,
+      canUpdate: !!row.canUpdate,
+      canDelete: !!row.canDelete,
+      canUpdateStatus: !!row.canUpdateStatus,
+    }));
+
     return this.http
-      .post<any>(`${this.url}/bulk-save`, request)
+      .post<any>(`${this.url}/bulk-save`, payload)
       .pipe(retry(1), catchError(this.handleError('BulkSave')));
   }
 
@@ -89,6 +107,32 @@ export class RolePermissionService {
     return this.http
       .delete<BaseResponse>(`${this.url}/Delete`, { params: { id: staff_id } })
       .pipe(retry(1), catchError(this.handleError('Delete')));
+  }
+
+  private normalize(row: RolePermissionDto | Record<string, unknown>): RolePermissionDto {
+    const r = row as Record<string, unknown>;
+    const emptyId = '00000000-0000-0000-0000-000000000000';
+    const id = String(r['id'] ?? r['Id'] ?? emptyId);
+    const moduleId = String(
+      r['systemModuleId'] ?? r['SystemModuleId'] ?? r['moduleId'] ?? r['ModuleId'] ?? '',
+    );
+    const departmentIdRaw = r['departmentId'] ?? r['DepartmentId'];
+    return {
+      id,
+      systemRole: String(r['systemRole'] ?? r['SystemRole'] ?? ''),
+      departmentId:
+        departmentIdRaw == null || departmentIdRaw === ''
+          ? null
+          : String(departmentIdRaw),
+      systemModuleId: moduleId,
+      moduleName: String(r['moduleName'] ?? r['ModuleName'] ?? ''),
+      moduleKey: String(r['moduleKey'] ?? r['ModuleKey'] ?? ''),
+      canCreate: Boolean(r['canCreate'] ?? r['CanCreate'] ?? false),
+      canRead: Boolean(r['canRead'] ?? r['CanRead'] ?? false),
+      canUpdate: Boolean(r['canUpdate'] ?? r['CanUpdate'] ?? false),
+      canDelete: Boolean(r['canDelete'] ?? r['CanDelete'] ?? false),
+      canUpdateStatus: Boolean(r['canUpdateStatus'] ?? r['CanUpdateStatus'] ?? false),
+    };
   }
 
   private handleError = (context: string) => (error: any) => {

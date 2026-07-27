@@ -19,8 +19,7 @@ export interface UserDto extends BaseModel {
   systemRole: string;
   lastLoginAt: Date;
   isActive: boolean;
-  hodId: string;
-  hod: UserDto;
+  hodIds: string[];
   refreshToken: string;
   refreshTokenExpiryTime: Date;
   gender: string;
@@ -41,7 +40,7 @@ export interface RegisterRequest {
   jobTitle: string;
   gender: string;
   joinedDate: Date;
-  hodId: string;
+  hodIds: string[];
 
   departmentIds: string[];
 }
@@ -78,6 +77,8 @@ export interface LoginResponse {
 
   departmentIds: string[];
   departments: DepartmentDto[];
+  gender?: string;
+  hodIds?: string[];
 }
 
 export interface UpdateUserRequest {
@@ -89,7 +90,7 @@ export interface UpdateUserRequest {
   jobTitle?: string;
   systemRole?: string;
   joinedDate?: Date;
-  hodId?: string;
+  hodIds?: string[];
   gender?: string;
 
   departmentIds?: string[];

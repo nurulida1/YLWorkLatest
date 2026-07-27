@@ -19,8 +19,11 @@ namespace YLWorks.Model
         public string? Gender { get; set; }
         public DateTime? LastLoginAt { get; set; }
         public bool IsActive { get; set; } = true;
-        public Guid? HodId { get; set; }
-        public User? Hod { get; set; }
+        /// <summary>Reporting managers (HODs) for leave approval routing.</summary>
+        public ICollection<UserReportingManager> ReportingManagers { get; set; } = new List<UserReportingManager>();
+        public Guid? ManagerId { get; set; }
+        public User? Manager { get; set; }
+        public ICollection<User> DirectReports { get; set; } = new List<User>();
         public string Status { get; set; } = "Pending";
         public string? RejectReason { get; set; }
 
@@ -65,7 +68,7 @@ namespace YLWorks.Model
         public string? Gender { get; set; } = string.Empty;
         public DateTime? JoinedDate { get; set; }
         public string Status { get; set; } = "Approved";
-        public Guid? HodId { get; set; }
+        public List<Guid> HodIds { get; set; } = new();
         public List<Guid> DepartmentIds { get; set; } = new List<Guid>();
 
     }
@@ -128,7 +131,7 @@ namespace YLWorks.Model
         public string JobTitle { get; set; } = string.Empty;
         public string? Gender { get; set; } = string.Empty;
         public DateTime? JoinedDate { get; set; }
-        public Guid? HodId { get; set; }
+        public List<Guid> HodIds { get; set; } = new();
         public string? SystemRole { get; set; }
         public DateTime? UpdatedAt { get; set; }
         public DateTime? CreatedAt { get; set; }
@@ -160,8 +163,7 @@ namespace YLWorks.Model
         public string SystemRole { get; set; } = string.Empty;
         public string JobTitle { get; set; } = string.Empty;
         public string Gender { get; set; }
-        public Guid? HodId { get; set; }
-        public User? Hod { get; set; }
+        public List<Guid> HodIds { get; set; } = new();
         public List<string> Departments { get; set; } = new();
         public List<Guid>? DepartmentIds { get; set; } = new();
     }
@@ -174,7 +176,8 @@ namespace YLWorks.Model
         public string? Email { get; set; }
         public string? JobTitle { get; set; }
         public DateTime? JoinedDate { get; set; }
-        public Guid? HodId { get; set; }
+        /// <summary>Replace reporting managers; empty list clears. Null = leave unchanged.</summary>
+        public List<Guid>? HodIds { get; set; }
         public List<Guid>? DepartmentIds { get; set; }
         public string SystemRole { get; set; } = "Staff"; // e.g., SuperAdmin, Management, HOD, Executive, Support, Staff
         public string? Gender { get; set; }

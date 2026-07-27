@@ -13,7 +13,11 @@ namespace YLWorks.Model
         public string Message { get; set; } = string.Empty;
 
         public string Type { get; set; } = string.Empty;
-        // Approval / Rejection / System / etc
+        // Approval / Rejection / System / Leave.* / etc
+
+        public string? Link { get; set; }
+
+        public Guid? LeaveRequestId { get; set; }
 
         public bool IsRead { get; set; } = false;
 

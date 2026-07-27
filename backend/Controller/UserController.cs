@@ -596,7 +596,6 @@ namespace WebApplication1.Controllers
                 SystemRole = request.SystemRole ?? "Staff",
 
                 JoinedDate = request.JoinedDate,
-                HodId = request.HodId,
                 Gender = request.Gender,
 
 
@@ -616,6 +615,24 @@ namespace WebApplication1.Controllers
                     .ToListAsync();
 
                 user.Departments = departments;
+            }
+
+            // Reporting manager (HOD) assignment
+            if (request.HodIds?.Any() == true)
+            {
+                var managerIds = request.HodIds
+                    .Where(id => id != Guid.Empty && id != user.Id)
+                    .Distinct()
+                    .ToList();
+
+                foreach (var managerId in managerIds)
+                {
+                    user.ReportingManagers.Add(new UserReportingManager
+                    {
+                        UserId = user.Id,
+                        ManagerId = managerId
+                    });
+                }
             }
 
             var passwordHasher = new PasswordHasher<User>();

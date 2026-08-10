@@ -168,6 +168,18 @@ interface CalendarDay {
                     {{ meeting.location }}
                   </p>
 
+                  <p *ngIf="meeting.meetingLink" class="task-location">
+                    <i class="pi pi-video"></i>
+                    <a
+                      [href]="meeting.meetingLink"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="text-blue-600 hover:underline"
+                    >
+                      Join Meeting
+                    </a>
+                  </p>
+
                   <p *ngIf="meeting.description" class="task-description">
                     {{ meeting.description }}
                   </p>

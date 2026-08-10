@@ -8,6 +8,7 @@ export interface MeetingDto extends BaseModel {
   organizer: UserDto;
   meetingDate: string;
   meetingTime: string;
+  meetingMethod: string;
   location?: string;
   meetingLink?: string;
   reminderMinutes: number;

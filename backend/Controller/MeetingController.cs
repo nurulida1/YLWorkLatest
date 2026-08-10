@@ -27,28 +27,48 @@ namespace YLWorks.Controller
         }
 
         [HttpGet("GetMany")]
-        public async Task<ActionResult<object>> GetMany(
-      int page = 1,
-      int pageSize = 10,
-      string? filter = null,
-      string? orderBy = null,
-      string? includes = null)
+        public async Task<ActionResult> GetMany(
+     int page = 1,
+     int pageSize = 10,
+     string? filter = null,
+     string? orderBy = null,
+     string? includes = null)
         {
             try
             {
-                var query = _context.Meetings.AsQueryable();
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
+                if (string.IsNullOrEmpty(userIdClaim))
+                {
+                    return Unauthorized(new { Error = "Invalid token." });
+                }
+
+                if (!Guid.TryParse(userIdClaim, out Guid currentUserId))
+                {
+                    return Unauthorized(new { Error = "Invalid user ID." });
+                }
+
+                var query = _context.Meetings
+                    .Where(m =>
+                        m.OrganizerId == currentUserId ||
+                        m.Participants.Any(p => p.UserId == currentUserId)
+                    )
+                    .AsQueryable();
+
+                // Existing filter
                 if (!string.IsNullOrEmpty(filter))
                 {
                     var parameter = Expression.Parameter(typeof(Meeting), "u");
                     Expression? finalExpression = null;
 
                     var orParts = filter.Split('|');
+
                     foreach (var orPart in orParts)
                     {
                         Expression? orExpression = null;
 
                         var andParts = orPart.Split(',');
+
                         foreach (var andPart in andParts)
                         {
                             bool isNotEqual = andPart.Contains("!=");
@@ -57,44 +77,79 @@ namespace YLWorks.Controller
                                 ? andPart.Split("!=")
                                 : andPart.Split('=');
 
-                            if (kv.Length != 2) continue;
+                            if (kv.Length != 2)
+                                continue;
 
                             var property = kv[0].Trim();
                             var valueStr = kv[1].Trim();
 
-                            var propertyAccess = Expression.PropertyOrField(parameter, property);
+                            var propertyAccess =
+                                Expression.PropertyOrField(parameter, property);
 
                             Expression condition;
 
                             if (propertyAccess.Type == typeof(string))
                             {
-                                var toLowerMethod = typeof(string).GetMethod("ToLower", Type.EmptyTypes)!;
+                                var toLowerMethod =
+                                    typeof(string).GetMethod(
+                                        "ToLower",
+                                        Type.EmptyTypes
+                                    )!;
 
-                                var propertyToLower = Expression.Call(propertyAccess, toLowerMethod);
-                                var valueToLower = Expression.Constant(valueStr.ToLower());
+                                var propertyToLower =
+                                    Expression.Call(
+                                        propertyAccess,
+                                        toLowerMethod
+                                    );
 
-                                var containsMethod = typeof(string).GetMethod("Contains", new[] { typeof(string) })!;
+                                var valueToLower =
+                                    Expression.Constant(valueStr.ToLower());
 
-                                var containsExpr = Expression.Call(propertyToLower, containsMethod, valueToLower);
+                                var containsMethod =
+                                    typeof(string).GetMethod(
+                                        "Contains",
+                                        new[] { typeof(string) }
+                                    )!;
+
+                                var containsExpr =
+                                    Expression.Call(
+                                        propertyToLower,
+                                        containsMethod,
+                                        valueToLower
+                                    );
 
                                 condition = isNotEqual
                                     ? Expression.Not(containsExpr)
                                     : containsExpr;
                             }
-                            else if (propertyAccess.Type == typeof(Guid) || propertyAccess.Type == typeof(Guid?))
+                            else if (
+                                propertyAccess.Type == typeof(Guid) ||
+                                propertyAccess.Type == typeof(Guid?)
+                            )
                             {
+                                var guidValue = Guid.Parse(valueStr);
+
                                 condition = Expression.Equal(
                                     propertyAccess,
-                                    Expression.Constant(Guid.Parse(valueStr), propertyAccess.Type)
+                                    Expression.Constant(
+                                        guidValue,
+                                        propertyAccess.Type
+                                    )
                                 );
                             }
                             else if (propertyAccess.Type.IsEnum)
                             {
-                                var enumValue = Enum.Parse(propertyAccess.Type, valueStr);
-                                var equalsExpr = Expression.Equal(
-                                    propertyAccess,
-                                    Expression.Constant(enumValue)
-                                );
+                                var enumValue =
+                                    Enum.Parse(
+                                        propertyAccess.Type,
+                                        valueStr
+                                    );
+
+                                var equalsExpr =
+                                    Expression.Equal(
+                                        propertyAccess,
+                                        Expression.Constant(enumValue)
+                                    );
 
                                 condition = isNotEqual
                                     ? Expression.Not(equalsExpr)
@@ -102,71 +157,115 @@ namespace YLWorks.Controller
                             }
                             else
                             {
-                                var convertedValue = Convert.ChangeType(valueStr, propertyAccess.Type);
-                                condition = Expression.Equal(
-                                    propertyAccess,
-                                    Expression.Constant(convertedValue)
-                                );
+                                var convertedValue =
+                                    Convert.ChangeType(
+                                        valueStr,
+                                        propertyAccess.Type
+                                    );
+
+                                condition =
+                                    Expression.Equal(
+                                        propertyAccess,
+                                        Expression.Constant(
+                                            convertedValue,
+                                            propertyAccess.Type
+                                        )
+                                    );
                             }
 
                             orExpression = orExpression == null
                                 ? condition
-                                : Expression.AndAlso(orExpression, condition);
+                                : Expression.AndAlso(
+                                    orExpression,
+                                    condition
+                                );
                         }
 
                         finalExpression = finalExpression == null
                             ? orExpression
-                            : Expression.OrElse(finalExpression, orExpression);
+                            : Expression.OrElse(
+                                finalExpression,
+                                orExpression
+                            );
                     }
 
                     if (finalExpression != null)
                     {
-                        var lambda = Expression.Lambda<Func<Meeting, bool>>(finalExpression, parameter);
+                        var lambda =
+                            Expression.Lambda<Func<Meeting, bool>>(
+                                finalExpression,
+                                parameter
+                            );
+
                         query = query.Where(lambda);
                     }
                 }
+
+                // Sorting
                 if (!string.IsNullOrEmpty(orderBy))
                 {
                     if (orderBy.ToLower().Contains("desc"))
+                    {
                         query = query.OrderByDescending(q =>
-                            EF.Property<object>(q, orderBy.Replace(" desc", "").Trim()));
+                            EF.Property<object>(
+                                q,
+                                orderBy.Replace(" desc", "").Trim()
+                            )
+                        );
+                    }
                     else
+                    {
                         query = query.OrderBy(q =>
-                            EF.Property<object>(q, orderBy.Trim()));
+                            EF.Property<object>(
+                                q,
+                                orderBy.Trim()
+                            )
+                        );
+                    }
                 }
+
                 var totalElements = await query.CountAsync();
 
                 var items = await query
-      .Skip((page - 1) * pageSize)
-      .Take(pageSize)
-      .Select(t => new
-      {
-          t.Id,
-          t.Title,
-          t.Description,
-          Organizer = t.Organizer == null ? null : new
-          {
-              t.Organizer.Id,
-              t.Organizer.FullName
-          },
-          t.MeetingDate,
-          t.MeetingTime,
-          t.Location,
-          t.MeetingLink,
-          t.ReminderMinutes,
-          Participants = t.Participants.Select(am => new
-          {
-              am.UserId,
-              User = am.User == null ? null : new
-              {
-                  am.User.FullName,
-                  am.User.Email
-              },
-              am.HasAccepted,
-              am.HasJoined
-          }),
-      })
-      .ToListAsync();
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .Select(t => new
+                    {
+                        t.Id,
+                        t.Title,
+                        t.Description,
+
+                        Organizer = t.Organizer == null
+                            ? null
+                            : new
+                            {
+                                t.Organizer.Id,
+                                t.Organizer.FullName
+                            },
+
+                        t.MeetingDate,
+                        t.MeetingTime,
+                        t.Location,
+                        t.MeetingLink,
+                        t.ReminderMinutes,
+
+                        Participants = t.Participants.Select(am => new
+                        {
+                            am.UserId,
+
+                            User = am.User == null
+                                ? null
+                                : new
+                                {
+                                    am.User.FullName,
+                                    am.User.Email
+                                },
+
+                            am.HasAccepted,
+                            am.HasJoined
+                        })
+                    })
+                    .ToListAsync();
 
                 return Ok(new
                 {
@@ -174,9 +273,16 @@ namespace YLWorks.Controller
                     TotalElements = totalElements
                 });
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                return StatusCode(500, new { Error = "An unexpected error occurred." });
+                return StatusCode(
+                    500,
+                    new
+                    {
+                        Error = "An unexpected error occurred.",
+                        Detail = ex.Message
+                    }
+                );
             }
         }
 

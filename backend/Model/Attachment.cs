@@ -1,4 +1,6 @@
-﻿namespace YLWorks.Model
+using System.ComponentModel.DataAnnotations;
+
+namespace YLWorks.Model
 {
     public class AttachmentDto : BaseEntity
     {
@@ -12,6 +14,7 @@
         public string FileUrl { get; set; } = null!;
 
         // Generic reference system (IMPORTANT FIX)
+        [StringLength(100)]
         public string EntityType { get; set; } = null!; // Invoice, MR, Payment, etc.
         public Guid EntityId { get; set; }
 

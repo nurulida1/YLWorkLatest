@@ -181,7 +181,7 @@ import { Textarea } from 'primeng/textarea';
             [paginator]="true"
             [rows]="Query.PageSize"
             [totalRecords]="PagingSignal().totalElements"
-            [tableStyle]="{ 'min-width': '60rem' }"
+            [tableStyle]="{ 'min-width': '80rem' }"
             [rowsPerPageOptions]="[10, 20, 30, 50]"
             [showGridlines]="true"
             [lazy]="true"
@@ -202,7 +202,7 @@ import { Textarea } from 'primeng/textarea';
                 <th
                   class="border-b! border-gray-300! bg-gray-200! text-gray-600! font-semibold! text-xs! uppercase tracking-wider py-3 px-4 w-[15%]"
                 >
-                  Job Title
+                  System Role
                 </th>
                 <th
                   class="border-b! border-gray-300! bg-gray-200! text-gray-600! font-semibold! text-xs! uppercase tracking-wider py-3 px-4 w-[15%]"
@@ -252,8 +252,22 @@ import { Textarea } from 'primeng/textarea';
                   </div>
                 </td>
 
-                <td class="py-3 px-4 text-gray-600 font-normal">
-                  {{ data.jobTitle || 'Unassigned Role' }}
+                <td class="py-3 px-4">
+                  <span
+                    class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap"
+                    [ngClass]="{
+                      'bg-purple-100 text-purple-700':
+                        data.systemRole === 'SuperAdmin',
+                      'bg-blue-100 text-blue-700':
+                        data.systemRole === 'Management',
+                      'bg-green-100 text-green-700': data.systemRole === 'HOD',
+                      'bg-orange-100 text-orange-700': data.systemRole === 'HR',
+                      'bg-red-100 text-red-700': data.systemRole === 'Support',
+                      'bg-gray-100 text-gray-700': data.systemRole === 'Staff',
+                    }"
+                  >
+                    {{ getRoleLabel(data.systemRole) }}
+                  </span>
                 </td>
 
                 <td class="py-3 px-4">
@@ -378,7 +392,7 @@ import { Textarea } from 'primeng/textarea';
           <h2 class="text-xl font-bold text-gray-800 tracking-tight m-0">
             {{ title }}
           </h2>
-          <p class="text-xs font-normal text-gray-500 tracking-wide m-0">
+          <p class="text-sm font-normal text-gray-500 tracking-wide m-0">
             Provide account details and assign roles or departmental units.
             fields marked with <span class="text-red-500">*</span> are required.
           </p>
@@ -766,9 +780,9 @@ export class UserManagement implements OnInit, OnDestroy {
 
   systemRoles = [
     { label: 'Super Administrator', value: 'SuperAdmin' },
-    { label: 'Management (Director / GM)', value: 'Management' },
+    { label: 'Management (Director)', value: 'Management' },
     { label: 'Head of Department (HOD)', value: 'HOD' },
-    { label: 'Human Resources', value: 'HR' },
+    { label: 'Human Resources (HR)', value: 'HR' },
     { label: 'Staff / Engineer / Executive', value: 'Staff' },
     { label: 'Technical & System Support', value: 'Support' },
   ];
@@ -939,6 +953,41 @@ export class UserManagement implements OnInit, OnDestroy {
 
     this.visible = true;
     this.cdr.detectChanges();
+
+    this.valueOnChange();
+  }
+
+  valueOnChange() {
+    this.FG.get('departmentIds')
+      ?.valueChanges.pipe(takeUntil(this.ngUnsubscribe))
+      .subscribe((departmentIds: string[] | null) => {
+        if (!departmentIds?.length) {
+          this.FG.patchValue(
+            {
+              hodIds: [],
+            },
+            { emitEvent: false },
+          );
+
+          return;
+        }
+
+        const hodIds = [
+          ...new Set(
+            this.departmentSelection
+              .filter((d) => departmentIds.includes(d.value))
+              .map((d) => d.hodId)
+              .filter(Boolean),
+          ),
+        ];
+
+        this.FG.patchValue(
+          {
+            hodIds,
+          },
+          { emitEvent: false },
+        );
+      });
   }
 
   onEllipsisClick(event: any, client: any, menu: any) {
@@ -1026,6 +1075,7 @@ export class UserManagement implements OnInit, OnDestroy {
           this.departmentSelection = res.data.map((x) => ({
             label: x.name,
             value: x.id,
+            hodId: x.hodId,
           }));
         },
       });
@@ -1117,9 +1167,19 @@ export class UserManagement implements OnInit, OnDestroy {
           } else {
             this.PagingSignal.update((state) => ({
               ...state,
+              totalElements: state.totalElements + 1,
               data: [res, ...state.data],
             }));
+
+            if (this.dashboardCount) {
+              this.dashboardCount = {
+                ...this.dashboardCount,
+                totalUsers: this.dashboardCount.totalUsers + 1,
+                activeUsers: this.dashboardCount.activeUsers + 1,
+              };
+            }
           }
+
           this.cdr.markForCheck();
         } else {
           this.messageService.add({
@@ -1181,8 +1241,16 @@ export class UserManagement implements OnInit, OnDestroy {
           ),
         }));
 
+        if (this.dashboardCount) {
+          this.dashboardCount = {
+            ...this.dashboardCount,
+            pendingUsers: Math.max(0, this.dashboardCount.pendingUsers - 1),
+            activeUsers: this.dashboardCount.activeUsers + 1,
+          };
+        }
+
         this.approvalVisible = false;
-        this.GetCount();
+        this.cdr.markForCheck();
       },
     });
   }
@@ -1217,10 +1285,23 @@ export class UserManagement implements OnInit, OnDestroy {
           ),
         }));
 
+        if (this.dashboardCount) {
+          this.dashboardCount = {
+            ...this.dashboardCount,
+            pendingUsers: Math.max(0, this.dashboardCount.pendingUsers - 1),
+          };
+        }
+
         this.rejectVisible = false;
-        this.GetCount();
+        this.cdr.markForCheck();
       },
     });
+  }
+
+  getRoleLabel(role: string): string {
+    return (
+      this.systemRoles.find((x) => x.value === role)?.label || 'Unassigned Role'
+    );
   }
 
   ngOnDestroy(): void {

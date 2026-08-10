@@ -18,6 +18,11 @@
         public User CreatedBy { get; set; }
         public string? Description { get; set; } = string.Empty;
         public string? Priority { get; set; } = string.Empty; // High, Medium, Low
+        public Guid? ProjectLeaderId { get; set; }
+        public User? ProjectLeader { get; set; }
+        public ICollection<AttachmentDto> Attachments { get; set; }
+            = new List<AttachmentDto>();
+        public ICollection<JobSheet> JobSheets { get; set; } = new List<JobSheet>();
         public ICollection<ProjectMember> ProjectMembers { get; set; } = new List<ProjectMember>();
         public ICollection<WorkOrder>? WorkOrders { get; set; }
         public ICollection<Quotation> Quotations { get; set; }
@@ -49,10 +54,13 @@
         public string? Description { get; set; } = string.Empty;
         public string? Priority { get; set; }
         public string? Location { get; set; }
+        public Guid? ProjectLeaderId { get; set; }
         public DateTime? EstimatedCompletedDate { get; set; }
         public double? EstimatedBudget { get; set; }
         public string? Status { get; set; }
         public List<string>? ProjectMembers { get; set; }
+        public List<IFormFile>? Files { get; set; }
+
     }
 
     public class UpdateProjectRequest : CreateProjectRequest
@@ -85,8 +93,13 @@
         public string? Priority { get; set; }
         public Guid? ClientId { get; set; }
         public Company? Client { get; set; }
+        public Guid? ProjectLeaderId { get; set; }
+        public User? ProjectLeader { get; set; }
         public string Status { get; set;} = string.Empty;
+        public ICollection<AttachmentDto> Attachments { get; set; }
+            = new List<AttachmentDto>();
         public List<ProjectMemberDto> ProjectMembers { get; set; } = new();
+        public ICollection<ProjectTask> ProjectTasks { get; set; } = new List<ProjectTask>();
     }
 
     public class ProjectMemberDto

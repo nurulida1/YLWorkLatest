@@ -149,12 +149,12 @@ app.UseCors("AllowAll");
 
 app.UseStaticFiles();
 
-app.UseStaticFiles(new StaticFileOptions
-{
-    FileProvider = new PhysicalFileProvider(
-        Path.Combine(Directory.GetCurrentDirectory(), "Uploads")),
-    RequestPath = "/Uploads"
-});
+//app.UseStaticFiles(new StaticFileOptions
+//{
+//    FileProvider = new PhysicalFileProvider(
+//        Path.Combine(Directory.GetCurrentDirectory(), "Uploads")),
+//    RequestPath = "/Uploads"
+//});
 
 app.UseAuthentication();
 app.UseAuthorization();

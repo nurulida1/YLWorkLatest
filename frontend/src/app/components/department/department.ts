@@ -93,7 +93,7 @@ import { PermissionContextService } from '../../services/permission-context.serv
             </div>
 
             <p-button
-              *hasPermissionAction="'canCreate'" 
+              *hasPermissionAction="'canCreate'"
               label="New Department"
               (onClick)="ActionClick(null, 'add')"
               icon="pi pi-plus-circle"
@@ -248,7 +248,7 @@ import { PermissionContextService } from '../../services/permission-context.serv
                 [showClear]="!!hodId"
                 placeholder="Assign dynamic leadership authority..."
                 [(ngModel)]="hodId"
-                styleClass="w-full border-gray-200! rounded-lg! shadow-none!"
+                styleClass="w-full border-gray-200! rounded-lg! shadow-none! text-base!"
               ></p-select>
             </div>
           </div>

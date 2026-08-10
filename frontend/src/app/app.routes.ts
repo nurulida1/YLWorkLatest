@@ -16,7 +16,7 @@ export const routes: Routes = [
   },
   {
     path: 'dashboard',
-    // canActivate: [...protectedGuards],
+    canActivate: [...protectedGuards],
     data: { moduleKey: 'dashboard' },
     loadComponent: () =>
       import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
@@ -551,6 +551,23 @@ export const routes: Routes = [
         loadChildren: () =>
           import('./components/leave/leave-routing.module').then(
             (m) => m.LeaveRoutingModule,
+          ),
+      },
+    ],
+  },
+  {
+    path: 'meeting',
+    // canActivate: [...protectedGuards],
+    loadComponent: () =>
+      import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
+        (m) => m.ResponsiveLayout,
+      ),
+    children: [
+      {
+        path: '',
+        loadChildren: () =>
+          import('./components/meeting/meeting-routing.module').then(
+            (m) => m.MeetingRoutingModule,
           ),
       },
     ],

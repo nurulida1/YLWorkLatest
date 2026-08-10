@@ -39,6 +39,11 @@ namespace YLWorks.Data
         public DbSet<LeaveCalendarConnection> LeaveCalendarConnections { get; set; }
         public DbSet<LeaveCalendarEventMap> LeaveCalendarEventMaps { get; set; }
 
+        public DbSet<StaffTask> StaffTasks { get; set; }
+        public DbSet<Meeting> Meetings { get; set; }
+        public DbSet<MeetingParticipant> MeetingParticipants { get; set; }
+        public DbSet<StaffTaskChecklist> StaffTaskChecklists { get; set; }
+
         // =======================
         // ORGANIZATION
         // =======================
@@ -79,6 +84,7 @@ namespace YLWorks.Data
         // =======================
         public DbSet<Company> Companies { get; set; }
         public DbSet<Address> Addresses { get; set; }
+        public DbSet<AttachmentDto> Attachments { get; set; }
 
         // =======================
         // SALES / PROCUREMENT
@@ -122,9 +128,31 @@ namespace YLWorks.Data
         public DbSet<ProductService> ProductServices { get; set; }
         public DbSet<StockTransaction> StockTransactions { get; set; }
 
+        public DbSet<JobSheet> JobSheets { get; set; }
+        public DbSet<JobSheetMember> JobSheetMembers { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+
+            // =======================
+            // DEFAULT SUPER ADMIN
+            // =======================
+            modelBuilder.Entity<User>().HasData(
+                new User
+                {
+                    Id = Guid.NewGuid(),
+                    FullName = "Super Admin",
+                    DisplayName = "Super Admin",
+                    Email = "superAdmin@test.com",
+                    Password = "AQAAAAIAAYagAAAAEOv2ndhX3+7JWdIqoToQpq74BVCdwYR/7tuiDEAHhUNYUyXbUHpD1bpWtadaMBYn/A==",
+                    EmployeeNo = "ADMIN001",
+                    SystemRole = "SuperAdmin",
+                    Status = "Approved",
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow
+                }
+            );
 
             // =======================
             // SECURITY
@@ -179,7 +207,7 @@ namespace YLWorks.Data
     .HasOne(t => t.Project)
     .WithMany(p => p.ProjectTasks)
     .HasForeignKey(t => t.ProjectId)
-    .OnDelete(DeleteBehavior.Restrict);
+        .OnDelete(DeleteBehavior.Cascade);
 
             // =======================
             // WORK ORDER
@@ -336,6 +364,17 @@ namespace YLWorks.Data
                       .WithOne(x => x.ProductService)
                       .HasForeignKey(x => x.ProductServiceId)
                       .OnDelete(DeleteBehavior.SetNull);
+            });
+
+            modelBuilder.Entity<AttachmentDto>(entity =>
+            {
+                entity.HasKey(x => x.Id);
+
+
+                entity.HasOne(x => x.UploadedBy)
+                   .WithMany()
+                   .HasForeignKey(x => x.UploadedById)
+                   .OnDelete(DeleteBehavior.Restrict);
             });
 
             ConfigureLeaveManagement(modelBuilder);

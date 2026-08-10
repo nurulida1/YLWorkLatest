@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using YLWorks.Data;
 
@@ -11,9 +12,11 @@ using YLWorks.Data;
 namespace YLWorks.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260731005125_UpdateJobsheet1")]
+    partial class UpdateJobsheet1
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1291,6 +1294,7 @@ namespace YLWorks.Migrations
                         .HasColumnType("datetime(6)");
 
                     b.Property<string>("WorkDescription")
+                        .IsRequired()
                         .HasColumnType("longtext");
 
                     b.HasKey("Id");
@@ -1307,6 +1311,12 @@ namespace YLWorks.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("char(36)");
+
+                    b.Property<decimal>("HoursWorked")
+                        .HasColumnType("decimal(65,30)");
+
+                    b.Property<bool>("IsLeader")
+                        .HasColumnType("tinyint(1)");
 
                     b.Property<Guid>("JobSheetId")
                         .HasColumnType("char(36)");
@@ -2204,83 +2214,6 @@ namespace YLWorks.Migrations
                     b.HasIndex("MaterialRequestId");
 
                     b.ToTable("MaterialRequestStatusHistories");
-                });
-
-            modelBuilder.Entity("YLWorks.Model.Meeting", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("char(36)");
-
-                    b.Property<DateTime?>("CreatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<Guid?>("CreatedById")
-                        .HasColumnType("char(36)");
-
-                    b.Property<string>("Description")
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("Location")
-                        .HasColumnType("longtext");
-
-                    b.Property<DateTime>("MeetingDate")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<string>("MeetingLink")
-                        .HasColumnType("longtext");
-
-                    b.Property<TimeSpan?>("MeetingTime")
-                        .HasColumnType("time(6)");
-
-                    b.Property<Guid>("OrganizerId")
-                        .HasColumnType("char(36)");
-
-                    b.Property<int>("ReminderMinutes")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<Guid?>("UpdatedById")
-                        .HasColumnType("char(36)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("OrganizerId");
-
-                    b.ToTable("Meetings");
-                });
-
-            modelBuilder.Entity("YLWorks.Model.MeetingParticipant", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("char(36)");
-
-                    b.Property<bool>("HasAccepted")
-                        .HasColumnType("tinyint(1)");
-
-                    b.Property<bool>("HasJoined")
-                        .HasColumnType("tinyint(1)");
-
-                    b.Property<Guid>("MeetingId")
-                        .HasColumnType("char(36)");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("char(36)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("MeetingId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("MeetingParticipants");
                 });
 
             modelBuilder.Entity("YLWorks.Model.Notification", b =>
@@ -3624,111 +3557,6 @@ namespace YLWorks.Migrations
                     b.ToTable("SectionInventories");
                 });
 
-            modelBuilder.Entity("YLWorks.Model.StaffTask", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("char(36)");
-
-                    b.Property<decimal?>("ActualHours")
-                        .HasColumnType("decimal(65,30)");
-
-                    b.Property<Guid>("AssignedById")
-                        .HasColumnType("char(36)");
-
-                    b.Property<Guid>("AssignedToId")
-                        .HasColumnType("char(36)");
-
-                    b.Property<string>("Category")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.Property<DateTime?>("CompletedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<DateTime?>("CreatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<Guid?>("CreatedById")
-                        .HasColumnType("char(36)");
-
-                    b.Property<string>("Description")
-                        .HasColumnType("longtext");
-
-                    b.Property<DateTime>("DueDate")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<decimal?>("EstimatedHours")
-                        .HasColumnType("decimal(65,30)");
-
-                    b.Property<bool>("IsRecurring")
-                        .HasColumnType("tinyint(1)");
-
-                    b.Property<string>("Priority")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("RecurringType")
-                        .HasColumnType("longtext");
-
-                    b.Property<DateTime?>("ReminderAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<DateTime?>("StartDate")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<Guid?>("UpdatedById")
-                        .HasColumnType("char(36)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("AssignedById");
-
-                    b.HasIndex("AssignedToId");
-
-                    b.ToTable("StaffTasks");
-                });
-
-            modelBuilder.Entity("YLWorks.Model.StaffTaskChecklist", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("char(36)");
-
-                    b.Property<DateTime?>("CompletedAt")
-                        .HasColumnType("datetime(6)");
-
-                    b.Property<bool>("IsCompleted")
-                        .HasColumnType("tinyint(1)");
-
-                    b.Property<int>("Sequence")
-                        .HasColumnType("int");
-
-                    b.Property<Guid>("StaffTaskId")
-                        .HasColumnType("char(36)");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasColumnType("longtext");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("StaffTaskId");
-
-                    b.ToTable("StaffTaskChecklists");
-                });
-
             modelBuilder.Entity("YLWorks.Model.StockTransaction", b =>
                 {
                     b.Property<Guid>("Id")
@@ -3913,9 +3741,9 @@ namespace YLWorks.Migrations
                     b.HasData(
                         new
                         {
-                            Id = new Guid("f47d088d-f070-4641-b106-789998d7accb"),
+                            Id = new Guid("7671b7dd-6296-4580-b95b-108ad196ddde"),
                             ContactNo = "",
-                            CreatedAt = new DateTime(2026, 8, 10, 9, 5, 52, 550, DateTimeKind.Utc).AddTicks(6970),
+                            CreatedAt = new DateTime(2026, 7, 31, 0, 51, 24, 26, DateTimeKind.Utc).AddTicks(6029),
                             DisplayName = "Super Admin",
                             Email = "superAdmin@test.com",
                             EmployeeNo = "ADMIN001",
@@ -4810,36 +4638,6 @@ namespace YLWorks.Migrations
                     b.Navigation("MaterialRequest");
                 });
 
-            modelBuilder.Entity("YLWorks.Model.Meeting", b =>
-                {
-                    b.HasOne("YLWorks.Model.User", "Organizer")
-                        .WithMany()
-                        .HasForeignKey("OrganizerId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Organizer");
-                });
-
-            modelBuilder.Entity("YLWorks.Model.MeetingParticipant", b =>
-                {
-                    b.HasOne("YLWorks.Model.Meeting", "Meeting")
-                        .WithMany("Participants")
-                        .HasForeignKey("MeetingId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("YLWorks.Model.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Meeting");
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("YLWorks.Model.Notification", b =>
                 {
                     b.HasOne("YLWorks.Model.User", "User")
@@ -5298,36 +5096,6 @@ namespace YLWorks.Migrations
                     b.Navigation("SalesOrder");
                 });
 
-            modelBuilder.Entity("YLWorks.Model.StaffTask", b =>
-                {
-                    b.HasOne("YLWorks.Model.User", "AssignedBy")
-                        .WithMany()
-                        .HasForeignKey("AssignedById")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("YLWorks.Model.User", "AssignedTo")
-                        .WithMany()
-                        .HasForeignKey("AssignedToId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("AssignedBy");
-
-                    b.Navigation("AssignedTo");
-                });
-
-            modelBuilder.Entity("YLWorks.Model.StaffTaskChecklist", b =>
-                {
-                    b.HasOne("YLWorks.Model.StaffTask", "StaffTask")
-                        .WithMany("Checklists")
-                        .HasForeignKey("StaffTaskId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("StaffTask");
-                });
-
             modelBuilder.Entity("YLWorks.Model.User", b =>
                 {
                     b.HasOne("YLWorks.Model.User", "Manager")
@@ -5491,11 +5259,6 @@ namespace YLWorks.Migrations
                     b.Navigation("MaterialRequestStatusHistories");
                 });
 
-            modelBuilder.Entity("YLWorks.Model.Meeting", b =>
-                {
-                    b.Navigation("Participants");
-                });
-
             modelBuilder.Entity("YLWorks.Model.ProductService", b =>
                 {
                     b.Navigation("Inventories");
@@ -5571,11 +5334,6 @@ namespace YLWorks.Migrations
                     b.Navigation("SalesOrderItems");
 
                     b.Navigation("SalesOrderStatusHistories");
-                });
-
-            modelBuilder.Entity("YLWorks.Model.StaffTask", b =>
-                {
-                    b.Navigation("Checklists");
                 });
 
             modelBuilder.Entity("YLWorks.Model.User", b =>

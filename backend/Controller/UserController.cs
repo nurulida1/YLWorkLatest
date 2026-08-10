@@ -1020,17 +1020,19 @@ namespace WebApplication1.Controllers
 
                 if (request.HodIds != null)
                 {
-                    user.ReportingManagers ??= new List<UserReportingManager>();
-                    user.ReportingManagers.Clear();
+                    var oldManagers = await _context.UserReportingManagers
+                        .Where(x => x.UserId == user.Id)
+                        .ToListAsync();
+
+                    _context.UserReportingManagers.RemoveRange(oldManagers);
 
                     var managerIds = request.HodIds
-                        .Where(mid => mid != Guid.Empty && mid != user.Id)
-                        .Distinct()
-                        .ToList();
+                        .Where(x => x != Guid.Empty && x != user.Id)
+                        .Distinct();
 
                     foreach (var managerId in managerIds)
                     {
-                        user.ReportingManagers.Add(new UserReportingManager
+                        _context.UserReportingManagers.Add(new UserReportingManager
                         {
                             UserId = user.Id,
                             ManagerId = managerId
@@ -1038,22 +1040,22 @@ namespace WebApplication1.Controllers
                     }
                 }
 
-                // Update departments
                 if (request.DepartmentIds != null)
                 {
-                    user.Departments ??= new List<Department>();
-                    user.Departments.Clear();
+                    var existingDepartments = user.Departments.ToList();
 
-                    if (request.DepartmentIds.Any())
+                    foreach (var dept in existingDepartments)
                     {
-                        var departments = await _context.Departments
-                            .Where(d => request.DepartmentIds.Contains(d.Id))
-                            .ToListAsync();
+                        user.Departments.Remove(dept);
+                    }
 
-                        foreach (var department in departments)
-                        {
-                            user.Departments.Add(department);
-                        }
+                    var departments = await _context.Departments
+                        .Where(d => request.DepartmentIds.Contains(d.Id))
+                        .ToListAsync();
+
+                    foreach (var department in departments)
+                    {
+                        user.Departments.Add(department);
                     }
                 }
 
@@ -1124,7 +1126,7 @@ namespace WebApplication1.Controllers
                 {
                     Success = false,
                     Error = "Failed to update user.",
-                    Details = ex.Message
+                    Details = ex.InnerException?.Message ?? ex.Message
                 });
             }
         }

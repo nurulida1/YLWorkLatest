@@ -249,7 +249,7 @@ namespace YLWorks.Controller
                 var task = new ProjectTask
                 {
                     Id = Guid.NewGuid(),
-                    TaskCode = await GenerateTaskCode(),
+                    TaskCode = await GenerateTaskCode(request.ProjectId),
                     Title = request.Title,
                     Description = request.Description,
                     ProjectId = request.ProjectId,
@@ -302,51 +302,7 @@ namespace YLWorks.Controller
 
                 await _context.SaveChangesAsync();
 
-                var result = await _context.ProjectTasks
-                    .Include(x => x.Project)
-                    .Include(x => x.AssignedTaskMembers)
-                        .ThenInclude(x => x.User)
-                    .Include(x => x.Checklists)
-                    .Where(x => x.Id == task.Id)
-                    .Select(x => new
-                    {
-                        x.Id,
-                        x.TaskCode,
-                        x.Title,
-                        x.Description,
-                        x.Priority,
-                        x.Category,
-                        x.Status,
-                        x.EstimatedStartDate,
-                        x.EstimatedEndDate,
-                        x.ActualStartDate,
-                        x.CompletedDate,
-                        x.DueDate,
-                        x.Progress,
-                        x.Remarks,
-
-                        Project = x.Project == null ? null : new
-                        {
-                            x.Project.Id,
-                            x.Project.ProjectCode,
-                            x.Project.ProjectTitle
-                        },
-
-                        AssignedUsers = x.AssignedTaskMembers.Select(a => new
-                        {
-                            a.UserId,
-                            Name = a.User == null ? null : a.User.FullName
-                        }),
-
-                        Checklists = x.Checklists.Select(c => new
-                        {
-                            c.Id,
-                            c.Title,
-                            c.IsCompleted,
-                            c.CompletedDate
-                        })
-                    })
-                    .FirstAsync();
+                var result = await GetProjectTaskDto(task.Id);
 
                 await _hub.Clients.All.SendAsync("ProjectTaskAdded", result);
 
@@ -362,15 +318,36 @@ namespace YLWorks.Controller
             }
         }
 
-        private async Task<string> GenerateTaskCode()
+        private async Task<string> GenerateTaskCode(Guid? projectId)
         {
-            var lastTask = await _context.ProjectTasks
+            string prefix;
+
+            IQueryable<ProjectTask> query = _context.ProjectTasks;
+
+            if (projectId.HasValue)
+            {
+                // Task code based on project
+                query = query.Where(x => x.ProjectId == projectId);
+
+                prefix = "TASK";
+            }
+            else
+            {
+                // General task without project
+                query = query.Where(x => x.ProjectId == null);
+
+                prefix = "GEN-TASK";
+            }
+
+
+            var lastTask = await query
                 .OrderByDescending(x => x.CreatedAt)
                 .FirstOrDefaultAsync();
 
+
             if (lastTask == null)
             {
-                return "TASK-0001";
+                return $"{prefix}-0001";
             }
 
 
@@ -378,13 +355,14 @@ namespace YLWorks.Controller
 
             if (!string.IsNullOrEmpty(lastTask.TaskCode))
             {
-                var codeNumber = lastTask.TaskCode.Replace("TASK-", "");
+                var codeNumber = lastTask.TaskCode
+                    .Replace($"{prefix}-", "");
 
                 int.TryParse(codeNumber, out lastNumber);
             }
 
 
-            return $"TASK-{(lastNumber + 1):D4}";
+            return $"{prefix}-{(lastNumber + 1):D4}";
         }
 
         [HttpPut("Update")]
@@ -468,51 +446,7 @@ namespace YLWorks.Controller
 
                 await _context.SaveChangesAsync();
 
-                var result = await _context.ProjectTasks
-                    .Include(x => x.Project)
-                    .Include(x => x.AssignedTaskMembers)
-                        .ThenInclude(x => x.User)
-                    .Include(x => x.Checklists)
-                    .Where(x => x.Id == task.Id)
-                    .Select(x => new
-                    {
-                        x.Id,
-                        x.TaskCode,
-                        x.Title,
-                        x.Description,
-                        x.Priority,
-                        x.Category,
-                        x.Status,
-                        x.EstimatedStartDate,
-                        x.EstimatedEndDate,
-                        x.ActualStartDate,
-                        x.CompletedDate,
-                        x.DueDate,
-                        x.Progress,
-                        x.Remarks,
-
-                        Project = x.Project == null ? null : new
-                        {
-                            x.Project.Id,
-                            x.Project.ProjectCode,
-                            x.Project.ProjectTitle
-                        },
-
-                        AssignedUsers = x.AssignedTaskMembers.Select(a => new
-                        {
-                            a.UserId,
-                            Name = a.User != null ? a.User.FullName : null
-                        }).ToList(),
-
-                        Checklists = x.Checklists.Select(c => new
-                        {
-                            c.Id,
-                            c.Title,
-                            c.IsCompleted,
-                            c.CompletedDate
-                        }).ToList()
-                    })
-                    .FirstAsync();
+                var result = await GetProjectTaskDto(task.Id);
 
                 await _hub.Clients.All.SendAsync("ProjectTaskUpdated", result);
 
@@ -890,5 +824,58 @@ namespace YLWorks.Controller
             }
         }
 
+        private async Task<ProjectTask> GetProjectTaskDto(Guid taskId)
+        {
+            return await _context.ProjectTasks
+                .Include(t => t.AssignedTaskMembers)
+                    .ThenInclude(a => a.User)
+                .Include(t => t.Checklists)
+                .Where(t => t.Id == taskId)
+                .Select(t => new ProjectTask
+                {
+                    Id = t.Id,
+                    ProjectId = t.ProjectId,
+                    TaskCode = t.TaskCode,
+                    Title = t.Title,
+                    Description = t.Description,
+                    Priority = t.Priority,
+                    Category = t.Category,
+                    Status = t.Status,
+                    EstimatedStartDate = t.EstimatedStartDate,
+                    EstimatedEndDate = t.EstimatedEndDate,
+                    ActualStartDate = t.ActualStartDate,
+                    CompletedDate = t.CompletedDate,
+                    DueDate = t.DueDate,
+                    Progress = t.Progress,
+                    Remarks = t.Remarks,
+
+                    AssignedTaskMembers = t.AssignedTaskMembers
+    .Select(a => new ProjectTaskAssignment
+    {
+        Id = a.Id,
+        ProjectTaskId = a.ProjectTaskId,
+        UserId = a.UserId,
+        AssignedDate = a.AssignedDate,
+        User = a.User == null ? null : new User
+        {
+            Id = a.User.Id,
+            FullName = a.User.FullName,
+            Email = a.User.Email
+        }
+    })
+    .ToList(),
+
+                    Checklists = t.Checklists
+                        .Select(c => new ProjectTaskChecklist
+                        {
+                            Id = c.Id,
+                            Title = c.Title,
+                            IsCompleted = c.IsCompleted,
+                            CompletedDate = c.CompletedDate
+                        })
+                        .ToList()
+                })
+                .FirstAsync();
+        }
     }
 }

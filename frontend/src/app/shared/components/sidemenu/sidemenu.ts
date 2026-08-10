@@ -75,9 +75,7 @@ import { ButtonModule } from 'primeng/button';
           <ng-container *ngFor="let item of management">
             <div
               class="flex flex-col gap-2 w-full"
-              *ngIf="
-                !item.roles || item.roles.includes(currentUser?.systemRole)
-              "
+              *ngIf="canView(item) || hasVisibleSubItems(item)"
             >
               <div
                 class="flex flex-row lg:pl-4 items-center justify-between gap-3 py-2 rounded-lg px-2"
@@ -173,7 +171,7 @@ export class Sidemenu {
           label: 'Leave Application',
           route: '/leave',
         },
-        
+
         {
           label: 'Leave Approvals',
           route: '/leave/approvals',
@@ -183,6 +181,11 @@ export class Sidemenu {
           route: '/leave/history',
         },
       ],
+    },
+    {
+      label: 'Upcoming Meetings',
+      route: '/meeting',
+      icon: 'pi-calendar',
     },
     {
       label: 'Quotations',
@@ -325,6 +328,14 @@ export class Sidemenu {
       route: '/clients',
       icon: 'pi-users',
     },
+
+    {
+      label: 'Profile Settings',
+      route: '/profile-settings',
+      icon: 'pi-user',
+      roles: ['Support', 'Staff', 'Management', 'HOD', 'HR'],
+    },
+
     {
       label: 'Settings',
       icon: 'pi-cog',
@@ -332,6 +343,7 @@ export class Sidemenu {
         {
           label: 'User Management',
           route: '/settings/user-management',
+          roles: ['HR'],
         },
         {
           label: 'System Module',
@@ -344,17 +356,17 @@ export class Sidemenu {
         {
           label: 'Leave Types',
           route: '/settings/leave-types',
-          roles: ['SuperAdmin', 'Admin', 'HR'],
+          roles: ['SuperAdmin', 'HOD', 'Management', 'HR'],
         },
         {
           label: 'Leave Policy',
           route: '/settings/leave-policy',
-          roles: ['SuperAdmin', 'Admin', 'HR'],
+          roles: ['SuperAdmin', 'HOD', 'Management', 'HR'],
         },
         {
           label: 'Leave calendar sync',
           route: '/settings/leave-calendar-sync',
-          roles: ['SuperAdmin', 'Admin', 'HR'],
+          roles: ['SuperAdmin', 'HOD', 'Management', 'HR'],
         },
       ],
     },
@@ -392,14 +404,12 @@ export class Sidemenu {
   getAllowedSubItems(item: any) {
     if (!item.items) return [];
 
-    return item.items.filter((sub: any) => {
-      if (!sub.roles) return true; // if no roles defined → allow all
-      return sub.roles.includes(this.currentUser?.systemRole);
-    });
+    return item.items.filter((sub: any) => this.canView(sub));
   }
 
   hasVisibleSubItems(item: any): boolean {
     if (!item.items) return false;
+
     return this.getAllowedSubItems(item).length > 0;
   }
 
@@ -415,6 +425,19 @@ export class Sidemenu {
     }
 
     return false;
+  }
+
+  canView(item: any): boolean {
+    const role = this.currentUser?.systemRole;
+    if (role === 'SuperAdmin') {
+      return true;
+    }
+
+    if (!item.roles) {
+      return true;
+    }
+
+    return item.roles.includes(role);
   }
 
   signOutClick() {

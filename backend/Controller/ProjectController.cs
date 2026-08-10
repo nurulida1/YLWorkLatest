@@ -180,244 +180,645 @@ namespace YLWorks.Controller
         public async Task<IActionResult> GetOne(string? filter = null)
         {
             var query = _context.Projects
-                .Include(x => x.Client).Include(y => y.ProjectMembers).ThenInclude(u => u.User).Include(x => x.PurchaseOrders).Include(x => x.Quotations)
-                .AsQueryable();
+    .Include(x => x.Client)
+    .Include(x => x.ProjectMembers)
+        .ThenInclude(pm => pm.User)
+    .Include(x => x.PurchaseOrders)
+    .Include(x => x.Quotations)
+    .Include(x => x.Attachments)
+    .Include(x => x.ProjectTasks)
+        .ThenInclude(t => t.AssignedTaskMembers)
+            .ThenInclude(a => a.User)
+    .AsQueryable();
+
 
             var filterValue = filter?.Split('=')[1];
+
 
             if (!Guid.TryParse(filterValue, out Guid id))
                 return BadRequest("Invalid Id");
 
+
+
             var data = await query
-    .Where(x => x.Id == id)
-    .Select(x => new
+
+                .Where(x => x.Id == id)
+
+                .Select(x => new
+                {
+                    x.Id,
+                    x.ProjectCode,
+                    x.ProjectTitle,
+                    x.StartDate,
+                    x.EstimatedCompletedDate,
+                    x.Location,
+                    x.EstimatedBudget,
+                    x.DueDate,
+                    x.Description,
+                    x.Priority,
+                    x.Status,
+                    x.ClientId,
+                    x.ProjectLeaderId,
+                    ProjectLeader = x.ProjectLeader == null ? null : new
+                    {
+                        FullName = x.ProjectLeader.FullName,
+                        Email = x.ProjectLeader.Email,
+                        DisplayName = x.ProjectLeader.DisplayName,
+                        JobTitle = x.ProjectLeader.JobTitle
+                    },
+
+                    Client = x.Client == null ? null : new
+                    {
+                        Name = x.Client.Name
+                    },
+
+
+                    ProjectMembers = x.ProjectMembers
+                        .Select(pm => new ProjectMemberDto
+                        {
+                            ProjectId = x.Id,
+
+                            UserId = pm.User.Id,
+
+                            User = pm.User == null
+                            ? null
+                            : new UserDto
+                            {
+                                Id = pm.User.Id,
+                                FullName = pm.User.FullName,
+                                JobTitle = pm.User.JobTitle
+                            }
+
+                        }).ToList(),
+
+
+
+                    MaterialRequests = x.MaterialRequest
+                        .Select(mr => new
+                        {
+                            mr.DocumentNo,
+
+                            mr.RequestDate,
+
+
+                            MaterialItems = mr.MaterialItems
+                                .Select(i => new
+                                {
+                                    i.Description,
+
+                                    i.Brand,
+
+                                    i.Quantity,
+
+                                    i.Unit,
+
+                                    i.Remarks
+
+                                }).ToList()
+
+                        }).ToList(),
+
+                    ProjectTasks = x.ProjectTasks
+    .OrderBy(t => t.EstimatedStartDate)
+    .Select(t => new
     {
-        x.Id,
-        x.ProjectCode,
-        x.ProjectTitle,
-        x.StartDate,
-        x.EstimatedCompletedDate,
-        x.Location,
-        x.EstimatedBudget,
-        x.DueDate,
-        x.Description,
-        x.Priority,
-        x.Status,
-        x.ClientId,
-        Client = x.Client == null ? null : new
-        {
-            Name = x.Client.Name
-        },
-        ProjectMembers = x.ProjectMembers.Select(pm => new ProjectMemberDto
-        {
-            ProjectId = pm.Id,
-            UserId = pm.User.Id,
-            User = pm.User == null ? null : new UserDto
-            {
-                FullName = pm.User.FullName
-            }
-        }),
-        MaterialRequests = x.MaterialRequest.Select(pm => new MaterialRequest
-        {
-            DocumentNo = pm.DocumentNo,
-            RequestDate = pm.RequestDate,
-            MaterialItems = pm.MaterialItems.Select(i => new MaterialItem
-            {
-                Description = i.Description,
-                Brand = i.Brand,
-                Quantity = i.Quantity,
-                Unit = i.Unit,
-                Remarks = i.Remarks
-            }).ToList()
+        t.Id,
+        t.TaskCode,
+        t.Title,
+        t.Description,
+        t.Category,
+        t.Priority,
+        t.Status,
+        t.Progress,
+        t.EstimatedStartDate,
+        t.EstimatedEndDate,
+        t.ActualStartDate,
+        t.CompletedDate,
+        t.DueDate,
+        t.Remarks,
+        t.CreatedAt,
 
-        })
+
+        AssignedTaskMembers = t.AssignedTaskMembers
+            .Select(a => new
+            {
+                a.Id,
+                a.UserId,
+                a.AssignedDate,
+                User = a.User == null ? null : new
+                {
+                    a.User.Id,
+                    a.User.FullName,
+                    a.User.DisplayName,
+                    a.User.JobTitle,
+                    a.User.Email
+                }
+            })
+            .ToList(),
+
+        Checklists = t.Checklists
+            .Select(c => new
+            {
+                c.Id,
+                c.Title,
+                c.IsCompleted
+            })
+            .ToList(),
+
+        TaskAttachments = t.TaskAttachments
+            .Select(a => new
+            {
+                a.Id,
+                a.FileName,
+                a.FileType
+            })
+            .ToList()
     })
-    .FirstOrDefaultAsync();
+    .ToList(),
 
-            if (data == null) return NotFound();
+                    Attachments = x.Attachments
+
+                        .Where(a =>
+                            a.EntityType == "Project"
+                            &&
+                            a.EntityId == x.Id
+                        )
+
+                        .Select(a => new
+                        {
+                            a.Id,
+
+                            a.FileName,
+
+                            a.FileType,
+
+                            a.FileSize,
+
+                            a.FileUrl,
+
+                            a.UploadedAt,
+
+                            a.UploadedById
+                        })
+
+                        .ToList()
+
+
+                })
+
+                .FirstOrDefaultAsync();
+
+
+
+            if (data == null)
+                return NotFound();
+
+
 
             return Ok(data);
         }
 
-
         [HttpPost("Create")]
-        public async Task<ActionResult<Project>> AddProject([FromBody] CreateProjectRequest request)
+        public async Task<ActionResult<Project>> AddProject(
+    [FromForm] CreateProjectRequest request)
         {
             if (string.IsNullOrWhiteSpace(request.ProjectCode))
                 return BadRequest(new { Error = "Project Code is required." });
 
+
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(userIdClaim)) return Unauthorized(new { Error = "Invalid token." });
+
+            if (string.IsNullOrEmpty(userIdClaim))
+                return Unauthorized(new { Error = "Invalid token." });
+
 
             try
             {
+                var userId = Guid.Parse(userIdClaim);
+
+
                 var project = new Project
                 {
                     Id = Guid.NewGuid(),
-                    ProjectCode = request.ProjectCode,
-                    ProjectTitle = request.ProjectTitle,
-                    ClientId = request.ClientId,
-                    Description = request.Description,
-                    StartDate = request.StartDate,
-                    EstimatedCompletedDate = request.EstimatedCompletedDate,
-                    EstimatedBudget = request.EstimatedBudget,
-                    Location = request.Location,
-                    Priority = request.Priority,
-                    Status = string.IsNullOrWhiteSpace(request.Status) ? "Planning" : request.Status,
-                    CreatedById = Guid.Parse(userIdClaim),
 
+                    ProjectCode = request.ProjectCode,
+
+                    ProjectTitle = request.ProjectTitle,
+
+                    ClientId = request.ClientId,
+
+                    Description = request.Description,
+
+                    StartDate = request.StartDate,
+
+                    EstimatedCompletedDate = request.EstimatedCompletedDate,
+
+                    EstimatedBudget = request.EstimatedBudget,
+
+                    Location = request.Location,
+
+                    Priority = request.Priority,
+
+                    ProjectLeaderId = request.ProjectLeaderId,
+
+                    Status = string.IsNullOrWhiteSpace(request.Status)
+                        ? "Planning"
+                        : request.Status,
+
+                    CreatedById = userId,
+
+                    CreatedAt = DateTimeHelper.Now()
                 };
-                project.CreatedAt = DateTimeHelper.Now();
+
 
                 _context.Projects.Add(project);
+
                 await _context.SaveChangesAsync();
 
-                if (request.ProjectMembers != null && request.ProjectMembers.Any())
+
+
+                // ===============================
+                // Add Project Members
+                // ===============================
+
+                if (request.ProjectMembers != null &&
+                    request.ProjectMembers.Any())
                 {
-                    var members = request.ProjectMembers.Select(id => new ProjectMember
-                    {
-                        ProjectId = project.Id,
-                        ProjectCode = project.ProjectCode,
-                        UserId = Guid.Parse(id),
-                        AssignedAt = DateTimeHelper.Now(),
-                        AssignedById = Guid.Parse(userIdClaim)
-                    });
+                    var members = request.ProjectMembers.Select(id =>
+                        new ProjectMember
+                        {
+                            Id = Guid.NewGuid(),
+
+                            ProjectId = project.Id,
+
+                            ProjectCode = project.ProjectCode,
+
+                            UserId = Guid.Parse(id),
+
+                            AssignedAt = DateTimeHelper.Now(),
+
+                            AssignedById = userId
+                        });
+
 
                     _context.ProjectMembers.AddRange(members);
-                    await _context.SaveChangesAsync();
                 }
 
-                var result = await _context.Projects.Include(x => x.ProjectMembers)
-.ThenInclude(pm => pm.User)
-                    .Where(d => d.Id == project.Id)
-                    .Select(d => new ProjectDto
+
+
+                // ===============================
+                // Upload Attachments
+                // ===============================
+
+                if (request.Files != null &&
+                    request.Files.Any())
+                {
+                    foreach (var file in request.Files)
                     {
-                        Id = d.Id,
-                        ProjectCode = d.ProjectCode,
-                        ProjectTitle = d.ProjectTitle,
-                        Description = d.Description,
-                        Priority = d.Priority,
-                        StartDate = d.StartDate,
-                        EstimatedCompletedDate = d.EstimatedCompletedDate,
-                        EstimatedBudget = d.EstimatedBudget,
-                        Location = d.Location,
-                        Status = d.Status,
-                        ClientId = d.ClientId,
-                        Client = d.Client == null ? null : new Company
-                        {
-                           Name = d.Client.Name
-                        },
-                        ProjectMembers = d.ProjectMembers.Select(pm => new ProjectMemberDto
-                        {
-                            ProjectId = pm.Id,
-                            UserId = pm.User.Id,
-                            User = pm.User == null ? null : new UserDto
-                            {
-                                FullName = pm.User.FullName
-                            }
-                        }).ToList()
-                    })
-                    .FirstAsync();
 
-                // Optional: Notify via SignalR
-                await _hub.Clients.All.SendAsync("ProjectAdded", project);
+                        var fileUrl = await UploadFile(
+                            file,
+                            "projects",
+                            project.Id
+                        );
 
-                return Ok(result);
+
+                        var attachment = new AttachmentDto
+                        {
+                            Id = Guid.NewGuid(),
+
+                            FileName = file.FileName,
+
+                            FileType = file.ContentType,
+
+                            FileSize = file.Length,
+
+                            FileUrl = fileUrl,
+
+
+                            EntityType = "Project",
+
+                            EntityId = project.Id,
+
+
+                            UploadedAt = DateTimeHelper.Now(),
+
+                            UploadedById = userId
+                        };
+
+
+                        _context.Attachments.Add(attachment);
+                    }
+                }
+
+
+
+                await _context.SaveChangesAsync();
+
+
+
+                await _hub.Clients.All.SendAsync(
+                    "ProjectAdded",
+                    project
+                );
+
+
+                return Ok(project);
+
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                return StatusCode(500, new { Error = "Failed to add project." });
+                return StatusCode(500, new
+                {
+                    Error = "Failed to add project.",
+                    Message = ex.Message,
+                    InnerException = ex.InnerException?.Message,
+                    StackTrace = ex.StackTrace
+                });
             }
         }
 
         [HttpPut("Update")]
-        public async Task<ActionResult<Project>> UpdateProject([FromBody] UpdateProjectRequest request)
+        public async Task<ActionResult<Project>> UpdateProject(
+    [FromForm] UpdateProjectRequest request)
         {
+
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(userIdClaim)) return Unauthorized(new { Error = "Invalid token." });
 
-            var project = await _context.Projects.FindAsync(request.Id);
-            if (project == null)
-                return NotFound(new { Error = "Project not found." });
+
+            var userIdClaim = User.FindFirst(
+                ClaimTypes.NameIdentifier)?.Value;
+
+
+            if (string.IsNullOrEmpty(userIdClaim))
+                return Unauthorized();
+
+
 
             try
             {
-                project.ProjectCode = request.ProjectCode ?? project.ProjectCode;
-                project.ProjectTitle = request.ProjectTitle;
-                project.Description = request.Description;
-                project.Priority = request.Priority;
-                project.StartDate = request.StartDate;
-                project.EstimatedCompletedDate = request.EstimatedCompletedDate;
-                project.EstimatedBudget = request.EstimatedBudget;
-                project.Location = request.Location;
-                project.ClientId = request.ClientId;
-                project.Status = request.Status ?? project.Status;
-                project.UpdatedAt = DateTimeHelper.Now();
 
-                var existingMembers = _context.ProjectMembers.Where(x => x.ProjectCode == project.ProjectCode);
-                _context.ProjectMembers.RemoveRange(existingMembers);
+                var userId = Guid.Parse(userIdClaim);
 
-                // add new
-                if (request.ProjectMembers != null)
-                {
-                    var newMembers = request.ProjectMembers.Select(id => new ProjectMember
+
+
+                var project = await _context.Projects
+                    .FirstOrDefaultAsync(x => x.Id == request.Id);
+
+
+
+                if (project == null)
+                    return NotFound(new
                     {
-                        ProjectId = project.Id,
-                        ProjectCode = project.ProjectCode,
-                        UserId = Guid.Parse(id),
-                        AssignedAt = DateTimeHelper.Now(),
-                        AssignedById = Guid.Parse(userIdClaim)
+                        Error = "Project not found."
                     });
 
-                    _context.ProjectMembers.AddRange(newMembers);
+
+
+                // ===============================
+                // Update Project Info
+                // ===============================
+
+                project.ProjectCode =
+                    request.ProjectCode ?? project.ProjectCode;
+
+
+                project.ProjectTitle =
+                    request.ProjectTitle;
+
+
+                project.Description =
+                    request.Description;
+
+
+                project.Priority =
+                    request.Priority;
+
+
+                project.StartDate =
+                    request.StartDate;
+
+
+                project.EstimatedCompletedDate =
+                    request.EstimatedCompletedDate;
+
+
+                project.EstimatedBudget =
+                    request.EstimatedBudget;
+
+
+                project.Location =
+                    request.Location;
+
+
+                project.ClientId =
+                    request.ClientId;
+
+
+                project.ProjectLeaderId =
+                    request.ProjectLeaderId;
+
+
+                project.Status =
+                    request.Status ?? project.Status;
+
+
+                project.UpdatedAt =
+                    DateTimeHelper.Now();
+
+
+
+                // ===============================
+                // Replace Members
+                // ===============================
+
+                var oldMembers =
+                    _context.ProjectMembers
+                    .Where(x => x.ProjectId == project.Id);
+
+
+                _context.ProjectMembers.RemoveRange(oldMembers);
+
+
+
+                if (request.ProjectMembers != null)
+                {
+                    var members =
+                        request.ProjectMembers.Select(id =>
+                        new ProjectMember
+                        {
+                            ProjectId = project.Id,
+
+                            ProjectCode = project.ProjectCode,
+
+                            UserId = Guid.Parse(id),
+
+                            AssignedAt = DateTimeHelper.Now(),
+
+                            AssignedById = userId
+                        });
+
+
+                    _context.ProjectMembers.AddRange(members);
                 }
 
-                _context.Projects.Update(project);
+
+
+
+                // ===============================
+                // Add New Attachments
+                // ===============================
+
+                if (request.Files != null &&
+                   request.Files.Any())
+                {
+
+                    foreach (var file in request.Files)
+                    {
+
+                        var fileUrl =
+                            await UploadFile(
+                                file,
+                                "projects",
+                                project.Id
+                            );
+
+
+
+                        _context.Attachments.Add(
+                            new AttachmentDto
+                            {
+                                Id = Guid.NewGuid(),
+
+                                FileName = file.FileName,
+
+                                FileType = file.ContentType,
+
+                                FileSize = file.Length,
+
+                                FileUrl = fileUrl,
+
+
+                                EntityType = "Project",
+
+                                EntityId = project.Id,
+
+
+                                UploadedAt =
+                                    DateTimeHelper.Now(),
+
+                                UploadedById = userId
+                            }
+                        );
+
+                    }
+                }
+
+
+
                 await _context.SaveChangesAsync();
 
-                // Optional: Notify via SignalR
-                var result = await _context.Projects.Include(x => x.ProjectMembers)
-.ThenInclude(pm => pm.User)
-           .Where(d => d.Id == project.Id)
-           .Select(d => new ProjectDto
-           {
-               Id = d.Id,
-               ProjectCode = d.ProjectCode,
-               ProjectTitle = d.ProjectTitle,
-               Description = d.Description,
-               Priority = d.Priority,
-               StartDate = d.StartDate,
-               EstimatedCompletedDate = d.EstimatedCompletedDate,
-               EstimatedBudget = d.EstimatedBudget,
-               Location = d.Location,
-               Status = d.Status,
-               ClientId = d.ClientId,
-               Client = d.Client == null ? null : new Company
-               {
-                   Name = d.Client.Name
 
-               },
-               ProjectMembers = d.ProjectMembers.Select(pm => new ProjectMemberDto
-               {
-                   ProjectId = pm.Id,
-                   UserId = pm.User.Id,
-                   User = pm.User == null ? null : new UserDto
-                   {
-                       FullName = pm.User.FullName
-                   }
-               }).ToList()
-           })
-           .FirstAsync();
-                await _hub.Clients.All.SendAsync("ProjectUpdated", project);
+
+                var result =
+                    await _context.Projects
+
+                    .Include(x => x.ProjectMembers)
+                    .ThenInclude(x => x.User)
+
+                    .Include(x => x.Attachments)
+
+                    .Where(x => x.Id == project.Id)
+
+                    .Select(d => new ProjectDto
+                    {
+
+                        Id = d.Id,
+
+                        ProjectCode = d.ProjectCode,
+
+                        ProjectTitle = d.ProjectTitle,
+
+                        Description = d.Description,
+
+                        Priority = d.Priority,
+
+                        StartDate = d.StartDate,
+
+                        EstimatedCompletedDate =
+                            d.EstimatedCompletedDate,
+
+
+                        EstimatedBudget =
+                            d.EstimatedBudget,
+
+
+                        Location = d.Location,
+
+
+                        Status = d.Status,
+
+
+                        ClientId = d.ClientId,
+
+
+                        ProjectLeaderId =
+                            d.ProjectLeaderId,
+
+
+
+                        ProjectMembers =
+                            d.ProjectMembers
+                            .Select(pm => new ProjectMemberDto
+                            {
+                                ProjectId = pm.ProjectId,
+
+                                UserId = pm.UserId,
+
+
+                                User = pm.User == null
+                                ? null
+                                : new UserDto
+                                {
+                                    FullName =
+                                    pm.User.FullName
+                                }
+
+                            }).ToList(),
+
+
+
+                        Attachments =
+                            d.Attachments
+                            .Where(a => a.EntityType == "Project")
+                            .ToList()
+
+
+                    })
+
+                    .FirstAsync();
+
+
+
+                await _hub.Clients.All.SendAsync(
+                    "ProjectUpdated",
+                    project
+                );
+
 
                 return Ok(result);
+
+
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { Error = "Failed to update project." });
+                return StatusCode(500, new
+                {
+                    Error = "Failed to update project.",
+                    Message = ex.Message
+                });
             }
         }
 
@@ -523,6 +924,11 @@ namespace YLWorks.Controller
                         EndDate = d.EndDate,
                         Status = d.Status,
                         ClientId = d.ClientId,
+                        ProjectLeaderId = d.ProjectLeaderId,
+                        ProjectLeader = d.ProjectLeader == null ? null : new User
+                        {
+                            FullName = d.ProjectLeader.FullName 
+                        },
                         Client = d.Client == null ? null : new Company
                         {
                             Name = d.Client.Name
@@ -581,6 +987,51 @@ namespace YLWorks.Controller
                     Error = "Failed to generate project code."
                 });
             }
+        }
+
+        private async Task<string> UploadFile(
+    IFormFile file,
+    string folder,
+    Guid entityId)
+        {
+
+            var uploadFolder =
+                Path.Combine(
+                    Directory.GetCurrentDirectory(),
+                    "wwwroot",
+                    "uploads",
+                    folder,
+                    entityId.ToString()
+                );
+
+
+            if (!Directory.Exists(uploadFolder))
+                Directory.CreateDirectory(uploadFolder);
+
+
+
+            var fileName =
+                $"{Guid.NewGuid()}_{file.FileName}";
+
+
+            var filePath =
+                Path.Combine(
+                    uploadFolder,
+                    fileName
+                );
+
+
+
+            using (var stream =
+                new FileStream(filePath, FileMode.Create))
+            {
+                await file.CopyToAsync(stream);
+            }
+
+
+
+            return
+                $"/uploads/{folder}/{entityId}/{fileName}";
         }
     }
 }

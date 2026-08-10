@@ -68,17 +68,21 @@ import { TagModule } from 'primeng/tag';
           styleClass="rounded-none! px-5! border-2! border-gray-400! py-1.5!"
         ></p-button>
         <p-button
+          *ngIf="!currentId || status === 'Draft'"
           (onClick)="Save('Draft')"
           label="Save as Draft"
           severity="info"
           [outlined]="true"
           styleClass="rounded-none! px-5! border-2! border-blue-600! text-blue-700! py-1.5!"
         ></p-button>
+
         <p-button
           (onClick)="Save()"
-          label="Create Project"
+          [label]="
+            !currentId || status === 'Draft' ? 'Create Project' : 'Save Changes'
+          "
+          [icon]="!currentId || status === 'Draft' ? 'pi pi-plus' : ''"
           severity="info"
-          icon="pi pi-plus"
           styleClass="rounded-none! px-5! border-none! bg-blue-700! py-2!"
         ></p-button>
       </div>
@@ -189,6 +193,7 @@ import { TagModule } from 'primeng/tag';
                   type="text"
                   pInputText
                   class="w-full rounded-none! pl-8!"
+                  formControlName="location"
                   placeholder="Street, Building, City, Postcode"
                 />
                 <i class="pi pi-map text-gray-600! absolute top-3.5 left-2"></i>
@@ -242,6 +247,7 @@ import { TagModule } from 'primeng/tag';
                 [filter]="true"
                 placeholder="Select Lead..."
                 styleClass="rounded-none!"
+                formControlName="projectLeaderId"
                 panelStyleClass="rounded-none!"
               ></p-select>
             </div>
@@ -295,14 +301,61 @@ import { TagModule } from 'primeng/tag';
               <div class="font-semibold text-gray-600">
                 Documentation & Photos
               </div>
+
+              <input
+                #fileInput
+                type="file"
+                multiple
+                hidden
+                accept=".pdf,.jpg,.jpeg,.png"
+                (change)="onFilesSelected($event)"
+              />
+
               <div
-                class="w-full bg-gray-100 border-2 border-dashed border-gray-300 h-35 flex flex-col items-center justify-center"
+                class="w-full border-2 border-dashed border-gray-300 bg-gray-50 h-36 flex flex-col items-center justify-center cursor-pointer hover:bg-gray-100 transition"
+                (click)="fileInput.click()"
               >
-                <i class="pi pi-cloud-upload text-4xl! text-gray-500!"></i>
-                <div class="font-bold">Upload files here</div>
-                <span class="text-gray-400 text-xs"
-                  >PDF, JPG, PNG (Max 10MB per file)</span
+                <i class="pi pi-cloud-upload text-4xl! text-blue-500!"></i>
+
+                <div class="font-semibold mt-2">Click to upload files</div>
+
+                <span class="text-gray-500 text-xs">
+                  PDF, JPG, JPEG, PNG (Multiple files)
+                </span>
+              </div>
+
+              <div
+                *ngIf="selectedFiles.length"
+                class="mt-4 flex flex-col gap-2"
+              >
+                <div
+                  *ngFor="let file of selectedFiles; let i = index"
+                  class="flex items-center justify-between border border-blue-400 rounded px-3 py-2"
                 >
+                  <div class="flex items-center gap-2">
+                    <i class="pi pi-file"></i>
+
+                    <div>
+                      <div
+                        class="text-blue-800 font-medium whitespace-nowrap truncate max-w-[200px]"
+                      >
+                        {{ file.name }}
+                      </div>
+
+                      <div class="text-xs text-gray-500">
+                        {{ (file.size / 1024).toFixed(1) }} KB
+                      </div>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    class="text-red-500 cursor-pointer"
+                    (click)="removeFile(i)"
+                  >
+                    <i class="pi pi-times"></i>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -329,7 +382,10 @@ export class ProjectForm implements OnInit, OnDestroy {
 
   currentId: string | null = null;
 
+  status: string | null = null;
+
   selectedMembers: any[] = [];
+  selectedFiles: File[] = [];
 
   constructor() {
     this.getDropdown();
@@ -339,10 +395,7 @@ export class ProjectForm implements OnInit, OnDestroy {
   initForm() {
     this.FG = new FormGroup({
       id: new FormControl<string | null>({ value: null, disabled: true }),
-      projectCode: new FormControl<string | null>({
-        value: null,
-        disabled: true,
-      }),
+      projectCode: new FormControl<string | null>(null),
       projectTitle: new FormControl<string | null>(null, Validators.required),
       location: new FormControl<string | null>(null),
       clientId: new FormControl<string | null>(null),
@@ -433,12 +486,13 @@ export class ProjectForm implements OnInit, OnDestroy {
 
   LoadForm() {
     this.loadingService.start();
+
     this.projectService
       .GetOne({
         Page: 1,
         PageSize: 1,
         OrderBy: null,
-        Includes: null,
+        Includes: 'ProjectMembers,Attachments',
         Select: null,
         Filter: `Id=${this.currentId}`,
       })
@@ -446,15 +500,25 @@ export class ProjectForm implements OnInit, OnDestroy {
       .subscribe({
         next: (res) => {
           this.loadingService.stop();
-          if (res)
+
+          if (res) {
+            this.status = res.status;
+
             this.FG.patchValue({
               ...res,
-              estimatedCompletedDate: new Date(res.estimatedCompletedDate),
-              startDate: new Date(res.startDate),
+              startDate: res.startDate ? new Date(res.startDate) : null,
+              estimatedCompletedDate: res.estimatedCompletedDate
+                ? new Date(res.estimatedCompletedDate)
+                : null,
+
+              projectMembers:
+                res.projectMembers?.map((x: any) => x.userId) ?? [],
             });
+          }
+
           this.cdr.markForCheck();
         },
-        error: (err) => {
+        error: () => {
           this.loadingService.stop();
         },
       });
@@ -494,19 +558,53 @@ export class ProjectForm implements OnInit, OnDestroy {
   Save(status: 'Draft' | 'Planning' = 'Planning') {
     this.FG.get('status')?.patchValue(status);
 
+    const formData = new FormData();
+
+    const formValue = this.FG.getRawValue();
+
+    Object.keys(formValue).forEach((key) => {
+      if (
+        key === 'projectMembers' ||
+        formValue[key] === null ||
+        formValue[key] === undefined
+      ) {
+        return;
+      }
+
+      let value = formValue[key];
+
+      if (value instanceof Date) {
+        value = value.toISOString();
+      }
+
+      formData.append(key, value);
+    });
+
+    const members = formValue.projectMembers ?? [];
+
+    members.forEach((id: string) => {
+      formData.append('ProjectMembers', id);
+    });
+
+    this.selectedFiles.forEach((file) => {
+      formData.append('Files', file);
+    });
+
     this.loadingService.start();
 
-    const $request = this.currentId
-      ? this.projectService.Update(this.FG.value)
-      : this.projectService.Create(this.FG.value);
+    const request$ = this.currentId
+      ? this.projectService.Update(formData)
+      : this.projectService.Create(formData);
 
-    $request.pipe(takeUntil(this.ngUnsubscribe)).subscribe({
+    request$.pipe(takeUntil(this.ngUnsubscribe)).subscribe({
       next: (res) => {
         this.loadingService.stop();
 
         this.messageService.add({
           severity: 'success',
+
           summary: 'Success',
+
           detail: this.currentId
             ? `${res.projectCode} updated successfully`
             : `Project: ${res.projectCode} created successfully`,
@@ -514,10 +612,77 @@ export class ProjectForm implements OnInit, OnDestroy {
 
         this.router.navigate(['/projects']);
       },
+
       error: (err) => {
+        console.error(err);
+
         this.loadingService.stop();
+
+        this.messageService.add({
+          severity: 'error',
+
+          summary: 'Error',
+
+          detail: 'Failed to save project',
+        });
       },
     });
+  }
+
+  onFilesSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+
+    if (!input.files?.length) {
+      return;
+    }
+
+    const files = Array.from(input.files);
+
+    const allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png'];
+
+    const maxSize = 10 * 1024 * 1024; //10MB
+
+    files.forEach((file) => {
+      const ext = file.name.split('.').pop()?.toLowerCase();
+
+      if (!ext || !allowedExtensions.includes(ext)) {
+        this.messageService.add({
+          severity: 'warn',
+          summary: 'Invalid File',
+          detail: `${file.name} is not supported.`,
+        });
+
+        return;
+      }
+
+      if (file.size > maxSize) {
+        this.messageService.add({
+          severity: 'warn',
+          summary: 'File Too Large',
+          detail: `${file.name} exceeds 10MB.`,
+        });
+
+        return;
+      }
+
+      const exists = this.selectedFiles.some(
+        (f) => f.name === file.name && f.size === file.size,
+      );
+
+      if (!exists) {
+        this.selectedFiles.push(file);
+      }
+    });
+
+    input.value = '';
+
+    this.cdr.markForCheck();
+  }
+
+  removeFile(index: number): void {
+    this.selectedFiles.splice(index, 1);
+
+    this.cdr.markForCheck();
   }
 
   ngOnDestroy(): void {

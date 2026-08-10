@@ -83,13 +83,13 @@ export class ProjectService {
     );
   }
 
-  Create(request: CreateProjectRequest): Observable<ProjectDto> {
+  Create(request: FormData): Observable<ProjectDto> {
     return this.http
       .post<ProjectDto>(`${this.url}/Create`, request) // no { Data: ... }
       .pipe(retry(1), catchError(this.handleError('Create')));
   }
 
-  Update(request: UpdateProjectRequest): Observable<ProjectDto> {
+  Update(request: FormData): Observable<ProjectDto> {
     return this.http
       .put<ProjectDto>(`${this.url}/Update`, request)
       .pipe(retry(1), catchError(this.handleError('Update')));

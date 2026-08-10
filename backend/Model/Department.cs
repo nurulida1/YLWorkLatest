@@ -33,7 +33,7 @@
     public class CreateDepartmentRequest
     {
         public string Name { get; set; } = string.Empty;
-        public Guid HodId { get; set; }
+        public Guid? HodId { get; set; }
         public string? Description { get; set; }
         public string? Code { get; set; }
         public bool IsActive { get; set; }

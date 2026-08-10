@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using YLWorks.Data;
 
@@ -11,9 +12,11 @@ using YLWorks.Data;
 namespace YLWorks.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260810085303_UpdateMeetingDate")]
+    partial class UpdateMeetingDate
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -2230,8 +2233,8 @@ namespace YLWorks.Migrations
                     b.Property<string>("MeetingLink")
                         .HasColumnType("longtext");
 
-                    b.Property<TimeSpan?>("MeetingTime")
-                        .HasColumnType("time(6)");
+                    b.Property<DateTime?>("MeetingTime")
+                        .HasColumnType("datetime(6)");
 
                     b.Property<Guid>("OrganizerId")
                         .HasColumnType("char(36)");
@@ -3913,9 +3916,9 @@ namespace YLWorks.Migrations
                     b.HasData(
                         new
                         {
-                            Id = new Guid("f47d088d-f070-4641-b106-789998d7accb"),
+                            Id = new Guid("bd00f47f-a3dc-4ed8-adc0-91555290013f"),
                             ContactNo = "",
-                            CreatedAt = new DateTime(2026, 8, 10, 9, 5, 52, 550, DateTimeKind.Utc).AddTicks(6970),
+                            CreatedAt = new DateTime(2026, 8, 10, 8, 53, 1, 854, DateTimeKind.Utc).AddTicks(1266),
                             DisplayName = "Super Admin",
                             Email = "superAdmin@test.com",
                             EmployeeNo = "ADMIN001",

@@ -19,6 +19,7 @@ namespace YLWorks.Model
         public DateTime? DueDate { get; set; }
         public int? Progress { get; set; }
         public string? Remarks { get; set; }
+        public ICollection<JobSheet> JobSheets { get; set; } = new List<JobSheet>();
         public ICollection<ProjectTaskAssignment> AssignedTaskMembers { get; set; } = new List<ProjectTaskAssignment>();
         public ICollection<ProjectTaskAttachment> TaskAttachments { get; set; } = new List<ProjectTaskAttachment>();
         public List<ProjectTaskChecklist> Checklists { get; set; } = new();

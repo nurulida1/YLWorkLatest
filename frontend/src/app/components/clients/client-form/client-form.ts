@@ -145,17 +145,6 @@ import { LoadingService } from '../../../services/loading.service';
             </div>
 
             <div class="col-span-6 flex flex-col gap-1">
-              <div class="font-semibold text-gray-800">Fax No</div>
-              <input
-                type="text"
-                pInputText
-                class="w-full rounded-none!"
-                placeholder="e.g. 03-12345678"
-                formControlName="faxNo"
-              />
-            </div>
-
-            <div class="col-span-6 flex flex-col gap-1">
               <div class="font-semibold text-gray-800">Contact No</div>
               <input
                 type="text"
@@ -163,6 +152,17 @@ import { LoadingService } from '../../../services/loading.service';
                 class="w-full rounded-none!"
                 placeholder="e.g. 03-12345678"
                 formControlName="contactNo"
+              />
+            </div>
+
+            <div class="col-span-6 flex flex-col gap-1">
+              <div class="font-semibold text-gray-800">Fax No</div>
+              <input
+                type="text"
+                pInputText
+                class="w-full rounded-none!"
+                placeholder="e.g. 03-12345678"
+                formControlName="faxNo"
               />
             </div>
           </div>

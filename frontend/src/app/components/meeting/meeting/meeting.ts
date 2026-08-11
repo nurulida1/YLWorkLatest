@@ -7,19 +7,15 @@ import {
   OnDestroy,
   OnInit,
   signal,
-  ViewChild,
 } from '@angular/core';
 import { LoadingService } from '../../../services/loading.service';
 import { MeetingService } from '../../../services/MeetingService';
 import { Subject, takeUntil } from 'rxjs';
 import {
-  BuildFilterText,
-  BuildSortText,
   GridifyQueryExtend,
   PagingContent,
 } from '../../../shared/helpers/helpers';
 import { MeetingDto } from '../../../models/Meeting';
-import { Table, TableLazyLoadEvent, TableModule } from 'primeng/table';
 import { RouterLink } from '@angular/router';
 import { InputTextModule } from 'primeng/inputtext';
 import {
@@ -51,7 +47,6 @@ interface CalendarDay {
   imports: [
     CommonModule,
     RouterLink,
-    TableModule,
     InputTextModule,
     FormsModule,
     ButtonModule,
@@ -139,9 +134,11 @@ interface CalendarDay {
 
             <div class="day-meetings">
               <div
-                *ngFor="let meeting of day.meetings"
+                *ngFor="let meeting of getVisibleMeetings(day.meetings)"
                 class="task"
                 [ngClass]="getMeetingTaskClass(meeting)"
+                [class.task--past]="isMeetingPast(meeting)"
+                [class.task--now]="isMeetingNow(meeting)"
               >
                 <div class="task-title">
                   {{ meeting.title }}
@@ -187,7 +184,7 @@ interface CalendarDay {
                   </p>
 
                   <div
-                    *ngIf="isOrganizer(meeting)"
+                    *ngIf="isOrganizer(meeting) && !isMeetingPast(meeting)"
                     class="flex gap-2 mt-3 pt-3 border-t border-gray-200"
                   >
                     <p-button
@@ -210,6 +207,14 @@ interface CalendarDay {
                   </div>
                 </div>
               </div>
+              <button
+                *ngIf="getMoreMeetingsCount(day) > 0"
+                type="button"
+                class="more-meetings"
+                (click)="showMoreMeetings(day)"
+              >
+                +{{ getMoreMeetingsCount(day) }} more
+              </button>
             </div>
           </div>
         </div>
@@ -414,6 +419,217 @@ interface CalendarDay {
         </div>
       </ng-template>
     </p-dialog>
+
+    <p-dialog
+      [(visible)]="moreMeetingsDialogVisible"
+      [modal]="true"
+      [draggable]="false"
+      [resizable]="false"
+      [dismissableMask]="true"
+      [closeOnEscape]="true"
+      styleClass="w-[60%]! lg:w-[40%]!"
+    >
+      <ng-template #headless>
+        <div class="flex flex-col">
+          <div class="px-6 pt-5 pb-4 border-b border-gray-100">
+            <div class="flex items-start justify-between gap-4">
+              <div>
+                <div class="text-lg font-semibold text-gray-800">
+                  {{ selectedDay?.fullDate | date: 'EEEE, d MMMM yyyy' }}
+                </div>
+
+                <div class="text-sm text-gray-400 mt-1">
+                  {{ selectedDay?.meetings?.length || 0 }}
+                  {{
+                    selectedDay?.meetings?.length === 1 ? 'meeting' : 'meetings'
+                  }}
+                </div>
+              </div>
+
+              <div
+                class="w-9 h-9 rounded-full bg-blue-50 flex items-center justify-center shrink-0"
+              >
+                <i class="pi pi-calendar text-blue-600"></i>
+              </div>
+            </div>
+          </div>
+
+          <div class="px-6 py-5">
+            <div
+              *ngIf="!selectedDay?.meetings?.length"
+              class="flex flex-col items-center justify-center py-10 text-center"
+            >
+              <div
+                class="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mb-3"
+              >
+                <i class="pi pi-calendar-times text-gray-400 text-lg"></i>
+              </div>
+
+              <div class="text-sm font-medium text-gray-600">No meetings</div>
+
+              <div class="text-xs text-gray-400 mt-1">
+                There are no meetings scheduled for this day.
+              </div>
+            </div>
+
+            <div
+              *ngIf="selectedDay?.meetings?.length"
+              class="flex flex-col gap-3"
+            >
+              <div
+                *ngFor="let meeting of selectedDay?.meetings"
+                class="
+              group
+              relative
+              p-4
+              rounded-lg
+              border
+              border-gray-100
+              bg-white
+              shadow-sm
+              transition-all
+              duration-150
+              hover:border-gray-200
+              hover:shadow-md
+            "
+                [class.bg-gray-50]="isMeetingPast(meeting)"
+                [class.opacity-70]="isMeetingPast(meeting)"
+              >
+                <div
+                  class="
+                absolute
+                left-0
+                top-3
+                bottom-3
+                w-1
+                rounded-r-full
+              "
+                  [ngClass]="{
+                    'bg-gray-300': isMeetingPast(meeting),
+                    'bg-blue-500': isMeetingNow(meeting),
+                    'bg-indigo-500':
+                      !isMeetingPast(meeting) && !isMeetingNow(meeting),
+                  }"
+                ></div>
+
+                <div class="flex items-start justify-between gap-4 pl-2">
+                  <div class="min-w-0">
+                    <div class="flex items-center gap-2 mb-1">
+                      <i
+                        class="pi pi-clock text-xs!"
+                        [ngClass]="{
+                          'text-gray-400': isMeetingPast(meeting),
+                          'text-blue-500': isMeetingNow(meeting),
+                          'text-indigo-500':
+                            !isMeetingPast(meeting) && !isMeetingNow(meeting),
+                        }"
+                      ></i>
+
+                      <span
+                        class="text-xs font-semibold"
+                        [ngClass]="{
+                          'text-gray-400': isMeetingPast(meeting),
+                          'text-gray-600': !isMeetingPast(meeting),
+                        }"
+                      >
+                        {{ formatMeetingTime(meeting.meetingTime) }}
+                      </span>
+                    </div>
+
+                    <div
+                      class="font-semibold truncate"
+                      [ngClass]="{
+                        'text-gray-400 line-through': isMeetingPast(meeting),
+                        'text-gray-800': !isMeetingPast(meeting),
+                      }"
+                    >
+                      {{ meeting.title }}
+                    </div>
+
+                    <div
+                      *ngIf="meeting.location || meeting.meetingLink"
+                      class="flex items-center gap-2 mt-2 text-sm text-gray-400"
+                    >
+                      <i
+                        class="pi"
+                        [ngClass]="
+                          meeting.meetingLink ? 'pi-video' : 'pi-map-marker'
+                        "
+                      ></i>
+
+                      <span class="truncate">
+                        {{
+                          meeting.meetingLink
+                            ? 'Online Meeting'
+                            : meeting.location
+                        }}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div class="shrink-0">
+                    <span
+                      *ngIf="isMeetingPast(meeting)"
+                      class="
+                    inline-flex
+                    items-center
+                    gap-1
+                    px-2
+                    py-1
+                    rounded-full
+                    bg-gray-100
+                    text-gray-400
+                    text-[10px]
+                    font-semibold
+                  "
+                    >
+                      Completed
+                    </span>
+
+                    <span
+                      *ngIf="isMeetingNow(meeting)"
+                      class="
+                    inline-flex
+                    items-center
+                    gap-1
+                    px-2
+                    py-1
+                    rounded-full
+                    bg-blue-50
+                    text-blue-600
+                    text-[10px]
+                    font-semibold
+                  "
+                    >
+                      <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                      Now
+                    </span>
+
+                    <span
+                      *ngIf="!isMeetingPast(meeting) && !isMeetingNow(meeting)"
+                      class="
+                    inline-flex
+                    items-center
+                    gap-1
+                    px-2
+                    py-1
+                    rounded-full
+                    bg-indigo-50
+                    text-indigo-600
+                    text-[10px]
+                    font-semibold
+                  "
+                    >
+                      Upcoming
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </ng-template>
+    </p-dialog>
   </div>`,
   styleUrl: './meeting.less',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -424,6 +640,7 @@ export class Meeting implements OnInit, OnDestroy {
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly messageService = inject(MessageService);
   private readonly userService = inject(UserService);
+  private timeRefreshInterval?: ReturnType<typeof setInterval>;
 
   protected ngUnsubscribe: Subject<void> = new Subject<void>();
 
@@ -436,7 +653,10 @@ export class Meeting implements OnInit, OnDestroy {
   dialogVisible: boolean = false;
   isUpdate: boolean = false;
   cancelDialogVisible: boolean = false;
+  moreMeetingsDialogVisible = false;
+
   meetingToCancel: MeetingDto | null = null;
+  selectedDay: CalendarDay | null = null;
 
   FG!: FormGroup;
 
@@ -467,7 +687,7 @@ export class Meeting implements OnInit, OnDestroy {
 
   constructor() {
     this.Query.Page = 1;
-    this.Query.PageSize = 10;
+    this.Query.PageSize = 1000000;
     this.Query.Select = null;
     this.Query.OrderBy = null;
     this.Query.Filter = null;
@@ -493,6 +713,10 @@ export class Meeting implements OnInit, OnDestroy {
       });
 
     this.GetData();
+
+    this.timeRefreshInterval = setInterval(() => {
+      this.cdr.markForCheck();
+    }, 30000);
   }
 
   initForm() {
@@ -867,6 +1091,145 @@ export class Meeting implements OnInit, OnDestroy {
     return 'task--primary';
   }
 
+  getVisibleMeetings(meetings: MeetingDto[]): MeetingDto[] {
+    if (!meetings?.length) {
+      return [];
+    }
+
+    const sortedMeetings = [...meetings].sort((a, b) =>
+      this.compareMeetingTime(a, b),
+    );
+
+    const today = new Date();
+
+    const isToday = meetings.some((meeting) => {
+      if (!meeting.meetingDate) {
+        return false;
+      }
+
+      const meetingDate = new Date(meeting.meetingDate);
+
+      return (
+        meetingDate.getFullYear() === today.getFullYear() &&
+        meetingDate.getMonth() === today.getMonth() &&
+        meetingDate.getDate() === today.getDate()
+      );
+    });
+
+    if (!isToday) {
+      return sortedMeetings.slice(0, 2);
+    }
+
+    const currentMeeting = sortedMeetings.find((meeting) =>
+      this.isMeetingNow(meeting),
+    );
+
+    if (currentMeeting) {
+      const upcoming = sortedMeetings.filter(
+        (meeting) =>
+          meeting.id !== currentMeeting.id && !this.isMeetingPast(meeting),
+      );
+
+      return [currentMeeting, ...upcoming].slice(0, 2);
+    }
+
+    const upcomingMeetings = sortedMeetings.filter(
+      (meeting) => !this.isMeetingPast(meeting),
+    );
+
+    if (upcomingMeetings.length > 0) {
+      return upcomingMeetings.slice(0, 2);
+    }
+
+    return sortedMeetings.slice(-2);
+  }
+
+  private compareMeetingTime(a: MeetingDto, b: MeetingDto): number {
+    const timeA = this.getMeetingDateTime(a)?.getTime() ?? 0;
+    const timeB = this.getMeetingDateTime(b)?.getTime() ?? 0;
+
+    return timeA - timeB;
+  }
+
+  private getMeetingDateTime(meeting: MeetingDto): Date | null {
+    if (!meeting.meetingDate) {
+      return null;
+    }
+
+    const date = new Date(meeting.meetingDate);
+
+    if (meeting.meetingTime) {
+      const [hours, minutes] = meeting.meetingTime
+        .toString()
+        .split(':')
+        .map(Number);
+
+      date.setHours(hours || 0, minutes || 0, 0, 0);
+    } else {
+      date.setHours(0, 0, 0, 0);
+    }
+
+    return date;
+  }
+
+  isMeetingNow(meeting: MeetingDto): boolean {
+    if (!meeting.meetingDate || !meeting.meetingTime) {
+      return false;
+    }
+
+    const meetingDate = new Date(meeting.meetingDate);
+
+    const [hours, minutes] = meeting.meetingTime
+      .toString()
+      .split(':')
+      .map(Number);
+
+    meetingDate.setHours(hours, minutes, 0, 0);
+
+    const now = new Date();
+
+    const start = meetingDate.getTime();
+    const end = start + 60 * 60 * 1000;
+
+    return now.getTime() >= start && now.getTime() < end;
+  }
+
+  isMeetingPast(meeting: MeetingDto): boolean {
+    if (!meeting.meetingDate || !meeting.meetingTime) {
+      return false;
+    }
+
+    const meetingDate = new Date(meeting.meetingDate);
+
+    const [hours, minutes] = meeting.meetingTime
+      .toString()
+      .split(':')
+      .map(Number);
+
+    meetingDate.setHours(hours, minutes, 0, 0);
+
+    const meetingEnd = meetingDate.getTime() + 60 * 60 * 1000;
+
+    console.log(new Date().getTime() >= meetingEnd);
+
+    return new Date().getTime() >= meetingEnd;
+  }
+
+  showMoreMeetings(day: CalendarDay): void {
+    this.selectedDay = {
+      ...day,
+      meetings: [...day.meetings].sort((a, b) => this.compareMeetingTime(a, b)),
+    };
+
+    this.moreMeetingsDialogVisible = true;
+  }
+
+  getMoreMeetingsCount(day: CalendarDay): number {
+    const visibleCount = this.getVisibleMeetings(day.meetings).length;
+
+    return Math.max(day.meetings.length - visibleCount, 0);
+  }
+
   EditMeeting(meeting: MeetingDto): void {
     if (!this.isOrganizer(meeting)) {
       return;
@@ -988,6 +1351,10 @@ export class Meeting implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.ngUnsubscribe.next();
     this.ngUnsubscribe.complete();
+    if (this.timeRefreshInterval) {
+      clearInterval(this.timeRefreshInterval);
+    }
+
     this.loadingService.stop();
   }
 }

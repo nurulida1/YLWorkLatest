@@ -3,7 +3,7 @@ import { UserDto } from './User';
 
 export interface StaffTask extends BaseModel {
   title: string;
-  description: string;
+  description?: string;
   assignedToId: string;
   assignedTo: UserDto;
   assignedById: string;
@@ -11,15 +11,17 @@ export interface StaffTask extends BaseModel {
   priority: string;
   category: string;
   status: string;
-  startDate?: Date;
-  dueDate?: Date;
+  startDate: Date;
+  dueDate: Date;
   reminderAt?: Date;
   isRecurring: boolean;
   recurringType?: string;
   estimatedHours?: number;
   actualHours?: number;
   completedAt?: Date;
-  checklist?: StaffTaskChecklist[];
+  completedById?: string;
+  completedBy?: UserDto;
+  checklists: StaffTaskChecklist[];
 }
 
 export interface StaffTaskChecklist {
@@ -29,5 +31,53 @@ export interface StaffTaskChecklist {
   title: string;
   isCompleted: boolean;
   completedAt?: Date;
+  sequence?: number;
+}
+
+export interface CreateStaffTaskRequest {
+  title: string;
+  description?: string;
+  assignedToId?: string;
+  priority: string;
+  category: string;
+  startDate?: Date;
+  dueDate: Date;
+  reminderAt?: Date;
+  isRecurring: boolean;
+  recurringType?: string;
+  estimatedHours?: number;
+  checklists: CreateStaffTaskChecklistRequest[];
+}
+
+export interface CreateStaffTaskChecklistRequest {
+  title: string;
   sequence: number;
+}
+
+export interface UpdateStaffTaskRequest {
+  id: string;
+  title: string;
+  description?: string;
+  assignedToId: string;
+  priority: string;
+  category: string;
+  status: string;
+  startDate?: Date;
+  dueDate: Date;
+  reminderAt?: Date;
+  isRecurring: boolean;
+  recurringType?: string;
+  estimatedHours?: number;
+  checklists: UpdateStaffTaskChecklistRequest[];
+}
+
+export interface UpdateStaffTaskChecklistRequest {
+  id: string;
+  title: string;
+  isCompleted: boolean;
+  sequence: boolean;
+}
+
+export interface CompleteStaffTaskRequest {
+  actualHours?: number;
 }

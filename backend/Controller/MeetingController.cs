@@ -8,7 +8,6 @@ using YLWorks.Hubs;
 using YLWorks.Model;
 using System.Security.Claims;
 using WebApplication1.Helpers;
-using ClosedXML.Excel;
 
 namespace YLWorks.Controller
 {
@@ -234,7 +233,7 @@ namespace YLWorks.Controller
                         t.Id,
                         t.Title,
                         t.Description,
-
+                        t.OrganizerId,
                         Organizer = t.Organizer == null
                             ? null
                             : new
@@ -556,6 +555,57 @@ namespace YLWorks.Controller
     .ToList(), 
                 })
                 .FirstAsync();
+        }
+
+        [HttpPut("Cancel")]
+        public async Task<IActionResult> CancelMeeting([FromQuery] Guid id)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrEmpty(userIdClaim))
+                return Unauthorized(new { Error = "Invalid token." });
+
+            if (!Guid.TryParse(userIdClaim, out Guid currentUserId))
+                return Unauthorized(new { Error = "Invalid user ID." });
+
+            var meeting = await _context.Meetings
+                .FirstOrDefaultAsync(x => x.Id == id);
+
+            if (meeting == null)
+                return NotFound(new { Error = "Meeting not found." });
+
+            if (meeting.OrganizerId != currentUserId)
+            {
+                return Forbid();
+            }
+
+            try
+            {
+                _context.Meetings.Remove(meeting);
+
+                await _context.SaveChangesAsync();
+
+                await _hub.Clients.All.SendAsync(
+                    "MeetingCancelled",
+                    id
+                );
+
+                return Ok(new
+                {
+                    Message = "Meeting cancelled successfully."
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(
+                    500,
+                    new
+                    {
+                        Error = "Failed to cancel meeting.",
+                        Detail = ex.Message
+                    }
+                );
+            }
         }
     }
 }

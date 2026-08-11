@@ -1,31 +1,31 @@
 import { Injectable } from '@angular/core';
-import { environment } from '../../environments/environment.development';
+import {
+  CreateStaffTaskRequest,
+  StaffTask,
+  UpdateStaffTaskRequest,
+} from '../models/StaffTask';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { MessageService } from 'primeng/api';
 import { Observable, retry, catchError, of, throwError } from 'rxjs';
+import { environment } from '../../environments/environment.development';
 import {
-  CreateMeetingRequest,
-  MeetingDto,
-  UpdateMeetingRequest,
-} from '../models/Meeting';
-import {
-  BaseResponse,
   GridifyQueryExtend,
   PagingContent,
+  BaseResponse,
 } from '../shared/helpers/helpers';
 
 @Injectable({
   providedIn: 'root',
 })
-export class MeetingService {
-  url = environment.ApiBaseUrl + '/Meeting';
+export class StaffTaskService {
+  url = environment.ApiBaseUrl + '/StaffTask';
 
   constructor(
     private http: HttpClient,
     private messageService: MessageService,
   ) {}
 
-  GetMany(query: GridifyQueryExtend): Observable<PagingContent<MeetingDto>> {
+  GetMany(query: GridifyQueryExtend): Observable<PagingContent<StaffTask>> {
     let params = new HttpParams()
       .set('page', query.Page.toString())
       .set('pageSize', query.PageSize.toString());
@@ -44,20 +44,20 @@ export class MeetingService {
     }
 
     return this.http
-      .get<PagingContent<MeetingDto>>(this.url + '/GetMany', {
+      .get<PagingContent<StaffTask>>(this.url + '/GetMany', {
         params,
       })
       .pipe(retry(1), catchError(this.handleError('GetMany')));
   }
 
-  GetOne(id: string): Observable<MeetingDto | null> {
+  GetOne(id: string): Observable<StaffTask | null> {
     let params = new HttpParams();
 
     if (id) {
       params = params.set('id', id);
     }
 
-    return this.http.get<MeetingDto>(this.url + '/GetOne', { params }).pipe(
+    return this.http.get<StaffTask>(this.url + '/GetOne', { params }).pipe(
       retry(1),
       catchError((error) => {
         if (error.status === 404) {
@@ -69,15 +69,15 @@ export class MeetingService {
     );
   }
 
-  Create(request: CreateMeetingRequest): Observable<MeetingDto> {
+  Create(request: CreateStaffTaskRequest): Observable<StaffTask> {
     return this.http
-      .post<MeetingDto>(`${this.url}/Create`, request) // no { Data: ... }
+      .post<StaffTask>(`${this.url}/Create`, request) // no { Data: ... }
       .pipe(retry(1), catchError(this.handleError('Create')));
   }
 
-  Update(request: UpdateMeetingRequest): Observable<MeetingDto> {
+  Update(request: UpdateStaffTaskRequest): Observable<StaffTask> {
     return this.http
-      .put<MeetingDto>(`${this.url}/Update`, request)
+      .put<StaffTask>(`${this.url}/Update`, request)
       .pipe(retry(1), catchError(this.handleError('Update')));
   }
 
@@ -87,18 +87,24 @@ export class MeetingService {
       .pipe(retry(1), catchError(this.handleError('Delete')));
   }
 
+  Reopen(id: string): Observable<StaffTask> {
+    return this.http
+      .put<StaffTask>(`${this.url}/${id}/Reopen`, {})
+      .pipe(retry(1), catchError(this.handleError('Reopen')));
+  }
+
+  Complete(id: string, actualHours?: number): Observable<StaffTask> {
+    const request = actualHours != null ? { actualHours } : null;
+
+    return this.http
+      .put<StaffTask>(`${this.url}/${id}/Complete`, request)
+      .pipe(retry(1), catchError(this.handleError('Complete')));
+  }
+
   GetDropdown(): Observable<any> {
     return this.http
       .get<any>(`${this.url}/GetDropdown`)
       .pipe(retry(1), catchError(this.handleError('GetDropdown')));
-  }
-
-  Cancel(id: string): Observable<BaseResponse> {
-    return this.http
-      .put<BaseResponse>(`${this.url}/Cancel`, null, {
-        params: { id },
-      })
-      .pipe(retry(1), catchError(this.handleError('Cancel')));
   }
 
   private handleError = (context: string) => (error: any) => {

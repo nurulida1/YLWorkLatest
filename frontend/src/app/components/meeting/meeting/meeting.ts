@@ -36,6 +36,7 @@ import { MultiSelectModule } from 'primeng/multiselect';
 import { TextareaModule } from 'primeng/textarea';
 import { SelectModule } from 'primeng/select';
 import { MessageService } from 'primeng/api';
+import { UserService } from '../../../services/userService.service';
 
 interface CalendarDay {
   date: number;
@@ -126,10 +127,11 @@ interface CalendarDay {
           </ng-container>
 
           <div
-            *ngFor="let day of calendarDays"
+            *ngFor="let day of calendarDays; let i = index"
             class="day"
             [class.day--disabled]="!day.isCurrentMonth"
             [class.day--today]="day.isToday"
+            [class.day--last-column]="i % 7 === 6"
           >
             <div class="day-number">
               {{ day.date }}
@@ -183,6 +185,29 @@ interface CalendarDay {
                   <p *ngIf="meeting.description" class="task-description">
                     {{ meeting.description }}
                   </p>
+
+                  <div
+                    *ngIf="isOrganizer(meeting)"
+                    class="flex gap-2 mt-3 pt-3 border-t border-gray-200"
+                  >
+                    <p-button
+                      label="Edit"
+                      icon="pi pi-pencil"
+                      size="small"
+                      severity="info"
+                      [outlined]="true"
+                      (onClick)="EditMeeting(meeting)"
+                    ></p-button>
+
+                    <p-button
+                      label="Cancel Meeting"
+                      icon="pi pi-times"
+                      size="small"
+                      severity="danger"
+                      [outlined]="true"
+                      (onClick)="CancelMeeting(meeting)"
+                    ></p-button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -199,7 +224,9 @@ interface CalendarDay {
       styleClass="backdrop-blur-lg! w-[600px]! max-w-[90vw]!"
       ><ng-template #headless>
         <div class="flex flex-col gap-3 p-5">
-          <strong class="text-lg">New Meeting</strong>
+          <strong class="text-lg">
+            {{ isUpdate ? 'Edit Meeting' : 'New Meeting' }}
+          </strong>
           <div class="grid grid-cols-12 gap-5" [formGroup]="FG">
             <div class="col-span-12 flex flex-col gap-1">
               <div>Meeting Title</div>
@@ -322,10 +349,66 @@ interface CalendarDay {
               (onClick)="CloseDialog()"
             ></p-button>
             <p-button
-              label="Save"
+              [label]="isUpdate ? 'Update' : 'Save'"
               severity="info"
               styleClass="tracking-wide! bg-blue-700! border-none! rounded-sm! py-2! px-5!"
               (onClick)="SaveMeeting()"
+            ></p-button>
+          </div>
+        </div>
+      </ng-template>
+    </p-dialog>
+
+    <p-dialog
+      [(visible)]="cancelDialogVisible"
+      [modal]="true"
+      [draggable]="false"
+      [resizable]="false"
+      [closable]="false"
+      [dismissableMask]="true"
+      styleClass="cancel-dialog"
+    >
+      <ng-template #headless>
+        <div class="p-6">
+          <div class="flex justify-center mb-4">
+            <div
+              class="w-14 h-14 rounded-full bg-red-100 flex items-center justify-center"
+            >
+              <i class="pi pi-exclamation-triangle text-red-500 text-2xl!"></i>
+            </div>
+          </div>
+
+          <div class="text-center">
+            <div class="text-lg font-semibold text-gray-800">
+              Cancel Meeting?
+            </div>
+
+            <div class="mt-2 text-sm text-gray-500">
+              Are you sure you want to cancel this meeting?
+            </div>
+
+            <div
+              *ngIf="meetingToCancel"
+              class="mt-3 px-4 py-3 bg-gray-50 rounded-md text-sm font-medium text-gray-700"
+            >
+              {{ meetingToCancel.title }}
+            </div>
+          </div>
+
+          <div class="flex justify-center gap-2 mt-6">
+            <p-button
+              label="No, Keep It"
+              severity="secondary"
+              [text]="true"
+              (onClick)="CloseCancelDialog()"
+            ></p-button>
+
+            <p-button
+              label="Yes, Cancel"
+              severity="danger"
+              icon="pi pi-times"
+              styleClass="rounded-sm!"
+              (onClick)="ConfirmCancelMeeting()"
             ></p-button>
           </div>
         </div>
@@ -336,12 +419,11 @@ interface CalendarDay {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Meeting implements OnInit, OnDestroy {
-  @ViewChild('fTable') fTable?: Table;
-
   private readonly loadingService = inject(LoadingService);
   private readonly meetingService = inject(MeetingService);
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly messageService = inject(MessageService);
+  private readonly userService = inject(UserService);
 
   protected ngUnsubscribe: Subject<void> = new Subject<void>();
 
@@ -352,6 +434,9 @@ export class Meeting implements OnInit, OnDestroy {
 
   search: string = '';
   dialogVisible: boolean = false;
+  isUpdate: boolean = false;
+  cancelDialogVisible: boolean = false;
+  meetingToCancel: MeetingDto | null = null;
 
   FG!: FormGroup;
 
@@ -364,6 +449,8 @@ export class Meeting implements OnInit, OnDestroy {
 
   calendarDays: CalendarDay[] = [];
 
+  currentUserId = this.userService.currentUser?.userId;
+
   get currentMonthName(): string {
     return this.currentDate.toLocaleDateString('en-US', {
       month: 'long',
@@ -372,6 +459,10 @@ export class Meeting implements OnInit, OnDestroy {
 
   get currentYear(): number {
     return this.currentDate.getFullYear();
+  }
+
+  isOrganizer(meeting: MeetingDto): boolean {
+    return meeting.organizerId === this.currentUserId;
   }
 
   constructor() {
@@ -419,8 +510,21 @@ export class Meeting implements OnInit, OnDestroy {
     });
   }
 
-  OpenDialog() {
+  OpenDialog(): void {
+    this.isUpdate = false;
+
+    this.FG.reset();
+
+    this.FG.patchValue({
+      reminderMinutes: 30,
+      meetingMethod: 'face-to-face',
+      participantIds: [],
+    });
+
+    this.selectedUsers = [];
+
     this.dialogVisible = true;
+
     this.getUserSelection();
   }
 
@@ -442,66 +546,110 @@ export class Meeting implements OnInit, OnDestroy {
     this.dialogVisible = false;
   }
 
-  SaveMeeting() {
-    console.log('Form Validity:', this.FG.value);
-    if (this.FG.valid) {
-      const formValue = this.FG.getRawValue();
-      const time = formValue.meetingTime;
+  SaveMeeting(): void {
+    if (this.FG.invalid) {
+      this.FG.markAllAsTouched();
+      return;
+    }
 
-      const meetingTime = time
-        ? `${String(time.getHours()).padStart(2, '0')}:${String(
-            time.getMinutes(),
-          ).padStart(2, '0')}:00`
-        : null;
+    const formValue = this.FG.getRawValue();
 
-      formValue.meetingTime = meetingTime;
+    const time = formValue.meetingTime;
 
-      this.loadingService.start();
-      this.meetingService
-        .Create(formValue)
-        .pipe(takeUntil(this.ngUnsubscribe))
-        .subscribe({
-          next: (res) => {
-            const currentData = this.PagingSignal();
+    const meetingTime = time
+      ? `${String(time.getHours()).padStart(2, '0')}:${String(
+          time.getMinutes(),
+        ).padStart(2, '0')}:00`
+      : null;
 
-            this.PagingSignal.set({
-              ...currentData,
-              data: [res, ...(currentData.data || [])],
-              totalElements: (currentData.totalElements || 0) + 1,
-            });
+    const request = {
+      ...formValue,
+      meetingTime,
+      participantIds: formValue.participantIds || [],
+    };
 
-            this.generateCalendar();
+    this.loadingService.start();
 
-            this.dialogVisible = false;
-            const reminderMinutes = this.FG.get('reminderMinutes')?.value;
+    const request$ = this.isUpdate
+      ? this.meetingService.Update(request)
+      : this.meetingService.Create(request);
 
-            this.FG.reset();
+    request$.pipe(takeUntil(this.ngUnsubscribe)).subscribe({
+      next: (res) => {
+        const currentData = this.PagingSignal();
 
-            this.FG.patchValue({
-              reminderMinutes,
-              meetingMethod: 'face-to-face',
-            });
-            this.messageService.add({
-              severity: 'success',
-              summary: 'Success',
-              detail: 'Meeting created successfully!',
-            });
+        if (this.isUpdate) {
+          const updatedData = (currentData.data || []).map(
+            (meeting: MeetingDto) => (meeting.id === res.id ? res : meeting),
+          );
 
-            this.cdr.markForCheck();
-          },
-          error: (err) => {
-            this.loadingService.stop();
-            console.error('Error saving meeting:', err);
-          },
-          complete: () => {
-            this.loadingService.stop();
-          },
+          this.PagingSignal.set({
+            ...currentData,
+            data: updatedData,
+          });
+
+          this.messageService.add({
+            severity: 'success',
+            summary: 'Success',
+            detail: 'Meeting updated successfully!',
+          });
+        } else {
+          this.PagingSignal.set({
+            ...currentData,
+            data: [res, ...(currentData.data || [])],
+            totalElements: (currentData.totalElements || 0) + 1,
+          });
+
+          this.messageService.add({
+            severity: 'success',
+            summary: 'Success',
+            detail: 'Meeting created successfully!',
+          });
+        }
+
+        this.generateCalendar();
+
+        this.dialogVisible = false;
+
+        const reminderMinutes = this.FG.get('reminderMinutes')?.value;
+
+        this.FG.reset();
+
+        this.FG.patchValue({
+          reminderMinutes,
+          meetingMethod: 'face-to-face',
+          participantIds: [],
         });
 
-      console.log('Saving meeting:', formValue);
-    } else {
-      console.error('Form is invalid');
-    }
+        this.isUpdate = false;
+        this.selectedUsers = [];
+
+        this.cdr.markForCheck();
+      },
+
+      error: (err) => {
+        console.error(
+          this.isUpdate ? 'Error updating meeting:' : 'Error saving meeting:',
+          err,
+        );
+
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Error',
+          detail:
+            err?.error?.Error ||
+            (this.isUpdate
+              ? 'Failed to update meeting.'
+              : 'Failed to create meeting.'),
+        });
+
+        this.loadingService.stop();
+      },
+
+      complete: () => {
+        this.loadingService.stop();
+      },
+    });
   }
 
   GetData() {
@@ -527,70 +675,6 @@ export class Meeting implements OnInit, OnDestroy {
           this.loadingService.stop();
         },
       });
-  }
-
-  NextPage(event: TableLazyLoadEvent) {
-    if ((event?.first || event?.first === 0) && event?.rows) {
-      this.Query.Page = event.first / event.rows + 1 || 1;
-      this.Query.PageSize = event.rows;
-    }
-
-    const sortText = BuildSortText(event);
-    this.Query.OrderBy = sortText ? sortText : 'CreatedAt desc';
-
-    this.Query.Filter = BuildFilterText(event);
-    this.GetData();
-  }
-
-  onKeyDown(event: KeyboardEvent) {
-    const isEnter = event.key === 'Enter';
-    const isBackspaceClear = event.key === 'Backspace' && this.search === '';
-
-    if (isEnter) {
-      this.Search(this.search);
-    } else if (isBackspaceClear) {
-      this.Search('');
-    }
-  }
-
-  Search(data: string) {
-    const filter = {
-      Title: [
-        {
-          value: data,
-          matchMode: '=',
-          operator: 'and',
-        },
-      ],
-    };
-
-    if (this.fTable != null) {
-      this.fTable.first = 0;
-      this.fTable.filters = filter;
-    }
-
-    const event: TableLazyLoadEvent = {
-      first: 0,
-      rows: this.fTable?.rows,
-      sortField: null,
-      sortOrder: null,
-      filters: filter,
-    };
-
-    this.NextPage(event);
-  }
-
-  ResetTable() {
-    this.search = '';
-
-    if (this.fTable) {
-      this.fTable.first = 0;
-      this.fTable.clearFilterValues();
-      this.fTable.saveState();
-    }
-
-    this.Query.Filter = null;
-    this.GetData();
   }
 
   generateCalendar(): void {
@@ -781,6 +865,124 @@ export class Meeting implements OnInit, OnDestroy {
     }
 
     return 'task--primary';
+  }
+
+  EditMeeting(meeting: MeetingDto): void {
+    if (!this.isOrganizer(meeting)) {
+      return;
+    }
+
+    this.isUpdate = true;
+
+    this.getUserSelection();
+
+    const meetingDate = meeting.meetingDate
+      ? new Date(meeting.meetingDate)
+      : null;
+
+    let meetingTime: Date | null = null;
+
+    if (meeting.meetingTime) {
+      const [hours, minutes] = meeting.meetingTime
+        .toString()
+        .split(':')
+        .map(Number);
+
+      meetingTime = new Date();
+      meetingTime.setHours(hours, minutes, 0, 0);
+    }
+
+    const participantIds =
+      meeting.participants?.map((x: any) => x.userId) || [];
+
+    this.FG.patchValue({
+      id: meeting.id,
+      title: meeting.title,
+      description: meeting.description,
+      meetingDate: meetingDate,
+      meetingTime: meetingTime,
+      location: meeting.location,
+      meetingLink: meeting.meetingLink,
+      meetingMethod: meeting.meetingLink ? 'online' : 'face-to-face',
+      reminderMinutes: meeting.reminderMinutes ?? 30,
+      participantIds: participantIds,
+    });
+
+    this.dialogVisible = true;
+
+    this.cdr.markForCheck();
+  }
+
+  CancelMeeting(meeting: MeetingDto): void {
+    if (!this.isOrganizer(meeting)) {
+      return;
+    }
+
+    this.meetingToCancel = meeting;
+    this.cancelDialogVisible = true;
+  }
+
+  ConfirmCancelMeeting(): void {
+    if (!this.meetingToCancel) {
+      return;
+    }
+
+    const meeting = this.meetingToCancel;
+
+    this.loadingService.start();
+
+    this.meetingService
+      .Cancel(meeting.id)
+      .pipe(takeUntil(this.ngUnsubscribe))
+      .subscribe({
+        next: () => {
+          const currentData = this.PagingSignal();
+
+          const updatedData = (currentData.data || []).filter(
+            (item: MeetingDto) => item.id !== meeting.id,
+          );
+
+          this.PagingSignal.set({
+            ...currentData,
+            data: updatedData,
+            totalElements: Math.max((currentData.totalElements || 0) - 1, 0),
+          });
+
+          this.generateCalendar();
+
+          this.messageService.add({
+            severity: 'success',
+            summary: 'Meeting Cancelled',
+            detail: 'The meeting has been cancelled successfully.',
+          });
+
+          this.cancelDialogVisible = false;
+          this.meetingToCancel = null;
+
+          this.cdr.markForCheck();
+        },
+
+        error: (err) => {
+          console.error('Error cancelling meeting:', err);
+
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: err?.error?.Error || 'Failed to cancel meeting.',
+          });
+
+          this.loadingService.stop();
+        },
+
+        complete: () => {
+          this.loadingService.stop();
+        },
+      });
+  }
+
+  CloseCancelDialog(): void {
+    this.cancelDialogVisible = false;
+    this.meetingToCancel = null;
   }
 
   ngOnDestroy(): void {

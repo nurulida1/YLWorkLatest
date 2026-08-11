@@ -16,7 +16,7 @@ export const routes: Routes = [
   },
   {
     path: 'dashboard',
-    canActivate: [...protectedGuards],
+    // canActivate: [...protectedGuards],
     data: { moduleKey: 'dashboard' },
     loadComponent: () =>
       import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
@@ -540,7 +540,7 @@ export const routes: Routes = [
   },
   {
     path: 'leave',
-    canActivate: [...protectedGuards],
+    // canActivate: [...protectedGuards],
     loadComponent: () =>
       import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
         (m) => m.ResponsiveLayout,
@@ -623,6 +623,25 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./components/personal-info/personal-info').then(
             (m) => m.PersonalInfo,
+          ),
+      },
+    ],
+  },
+
+  {
+    path: 'staff-tasks',
+    data: { moduleKey: 'staff-tasks' },
+    loadComponent: () =>
+      import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
+        (m) => m.ResponsiveLayout,
+      ),
+    children: [
+      {
+        path: '',
+        data: { moduleKey: 'staff-tasks' },
+        loadComponent: () =>
+          import('./components/staffTasks/staffTasks').then(
+            (m) => m.StaffTasks,
           ),
       },
     ],

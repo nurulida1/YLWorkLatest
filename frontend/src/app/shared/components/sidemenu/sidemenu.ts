@@ -185,7 +185,12 @@ export class Sidemenu {
     {
       label: 'Upcoming Meetings',
       route: '/meeting',
-      icon: 'pi-calendar',
+      icon: 'pi-calendar-clock',
+    },
+    {
+      label: 'Tasks',
+      route: '/staff-tasks',
+      icon: 'pi-list-check',
     },
     {
       label: 'Quotations',

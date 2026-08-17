@@ -68,16 +68,38 @@ export interface UpdateStaffTaskRequest {
   isRecurring: boolean;
   recurringType?: string;
   estimatedHours?: number;
-  checklists: UpdateStaffTaskChecklistRequest[];
+  checklists: UpdateStaffTaskChecklistItem[];
 }
 
-export interface UpdateStaffTaskChecklistRequest {
+export interface UpdateStaffTaskChecklistItem {
   id: string;
   title: string;
   isCompleted: boolean;
-  sequence: boolean;
+  sequence: number;
 }
 
+export interface UpdateChecklistOnlyRequest {
+  id: string;
+  checklists: UpdateChecklistOnlyItem[];
+}
+
+export interface UpdateChecklistOnlyItem {
+  id: string;
+  isCompleted: boolean;
+  sequence: number;
+}
+export interface UpdateChecklistItemRequest {
+  id: string;
+  isCompleted: boolean;
+  sequence: number;
+}
 export interface CompleteStaffTaskRequest {
   actualHours?: number;
+}
+
+export interface StaffTaskSummary {
+  myTasks: number;
+  assignedToOthers: number;
+  inProgress: number;
+  completed: number;
 }

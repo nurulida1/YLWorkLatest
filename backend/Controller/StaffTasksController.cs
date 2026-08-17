@@ -555,7 +555,7 @@ namespace YLWorks.Controller
                         // -------------------------------------------------
                         // Assignment
                         // -------------------------------------------------
-
+                        t.AssignedToId,
                         AssignedTo =
                             t.AssignedTo == null
                                 ? null
@@ -564,7 +564,7 @@ namespace YLWorks.Controller
                                     t.AssignedTo.Id,
                                     t.AssignedTo.FullName
                                 },
-
+                        t.AssignedById,
                         AssignedBy =
                             t.AssignedBy == null
                                 ? null
@@ -1107,7 +1107,7 @@ namespace YLWorks.Controller
 
         [HttpPut("Update")]
         public async Task<IActionResult> Update(
-    [FromBody] UpdateStaffTaskRequest request)
+     [FromBody] UpdateStaffTaskRequest request)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
@@ -1127,6 +1127,10 @@ namespace YLWorks.Controller
                     Error = "Title is required."
                 });
             }
+
+            // =========================================================
+            // GET CURRENT USER
+            // =========================================================
 
             var userIdClaim =
                 User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -1181,22 +1185,25 @@ namespace YLWorks.Controller
                 // VALIDATE ASSIGNED USER
                 // =========================================================
 
-                var assignedUserExists =
-                    await _context.Users
-                        .AnyAsync(x =>
-                            x.Id == request.AssignedToId);
-
-                if (!assignedUserExists)
+                if (request.AssignedToId.HasValue)
                 {
-                    return BadRequest(new
+                    var assignedUserExists =
+                        await _context.Users
+                            .AnyAsync(x =>
+                                x.Id == request.AssignedToId.Value);
+
+                    if (!assignedUserExists)
                     {
-                        Error = "Assigned user not found."
-                    });
+                        return BadRequest(new
+                        {
+                            Error = "Assigned user not found."
+                        });
+                    }
                 }
 
 
                 // =========================================================
-                // UPDATE TASK
+                // UPDATE BASIC TASK INFORMATION
                 // =========================================================
 
                 task.Title =
@@ -1217,9 +1224,6 @@ namespace YLWorks.Controller
                     string.IsNullOrWhiteSpace(request.Category)
                         ? "Others"
                         : request.Category;
-
-                task.Status =
-                    request.Status;
 
                 task.StartDate =
                     request.StartDate;
@@ -1243,9 +1247,7 @@ namespace YLWorks.Controller
 
 
                 // =========================================================
-                // CHECKLIST
-                //
-                // Replace existing checklist with submitted checklist.
+                // REMOVE EXISTING CHECKLIST
                 // =========================================================
 
                 var existingChecklists =
@@ -1258,56 +1260,147 @@ namespace YLWorks.Controller
                     .RemoveRange(existingChecklists);
 
 
+                // =========================================================
+                // CREATE UPDATED CHECKLIST
+                // =========================================================
+
+                var newChecklists =
+                    new List<StaffTaskChecklist>();
+
                 if (request.Checklists?.Any() == true)
                 {
                     var sequence = 1;
 
-                    var checklists =
-                        request.Checklists
-                            .Where(x =>
-                                !string.IsNullOrWhiteSpace(x.Title))
-                            .Select(x =>
-                                new StaffTaskChecklist
-                                {
-                                    Id = Guid.NewGuid(),
+                    foreach (var item in request.Checklists)
+                    {
+                        if (string.IsNullOrWhiteSpace(item.Title))
+                            continue;
 
-                                    StaffTaskId =
-                                        task.Id,
+                        newChecklists.Add(
+                            new StaffTaskChecklist
+                            {
+                                Id = Guid.NewGuid(),
 
-                                    Title =
-                                        x.Title.Trim(),
+                                StaffTaskId =
+                                    task.Id,
 
-                                    IsCompleted =
-                                        x.IsCompleted,
+                                Title =
+                                    item.Title.Trim(),
 
-                                    CompletedAt =
-                                        x.IsCompleted
-                                            ? DateTimeHelper.Now()
-                                            : null,
+                                IsCompleted =
+                                    item.IsCompleted,
 
-                                    Sequence =
-                                        x.Sequence > 0
-                                            ? x.Sequence
-                                            : sequence++
-                                })
-                            .ToList();
+                                CompletedAt =
+                                    item.IsCompleted
+                                        ? DateTimeHelper.Now()
+                                        : null,
 
-                    _context.StaffTaskChecklists
-                        .AddRange(checklists);
+                                Sequence =
+                                    item.Sequence > 0
+                                        ? item.Sequence
+                                        : sequence
+                            });
+
+                        sequence++;
+                    }
+
+                    if (newChecklists.Any())
+                    {
+                        _context.StaffTaskChecklists
+                            .AddRange(newChecklists);
+                    }
                 }
 
 
                 // =========================================================
-                // IF UPDATE SETS COMPLETED
+                // DETERMINE TASK STATUS
+                //
+                // IMPORTANT:
+                // Status is determined from checklist if checklist exists.
+                //
+                // All completed  -> Completed
+                // Some completed  -> InProgress
+                // None completed  -> Todo
+                //
+                // If there is no checklist, use request.Status.
+                // =========================================================
+
+                var checklistTotal =
+                    newChecklists.Count;
+
+                var checklistCompleted =
+                    newChecklists.Count(x =>
+                        x.IsCompleted);
+
+
+                if (checklistTotal > 0)
+                {
+                    // -----------------------------------------------------
+                    // ALL CHECKLIST COMPLETED
+                    // -----------------------------------------------------
+
+                    if (checklistCompleted == checklistTotal)
+                    {
+                        task.Status =
+                            "Completed";
+                    }
+
+                    // -----------------------------------------------------
+                    // SOME CHECKLIST COMPLETED
+                    // -----------------------------------------------------
+
+                    else if (checklistCompleted > 0)
+                    {
+                        task.Status =
+                            "InProgress";
+                    }
+
+                    // -----------------------------------------------------
+                    // NO CHECKLIST COMPLETED
+                    // -----------------------------------------------------
+
+                    else
+                    {
+                        task.Status =
+                            "Todo";
+                    }
+                }
+                else
+                {
+                    // -----------------------------------------------------
+                    // NO CHECKLIST
+                    //
+                    // Use status selected from frontend.
+                    // -----------------------------------------------------
+
+                    task.Status =
+                        string.IsNullOrWhiteSpace(request.Status)
+                            ? "Todo"
+                            : request.Status;
+                }
+
+
+                // =========================================================
+                // HANDLE COMPLETION
                 // =========================================================
 
                 if (task.Status == "Completed")
                 {
+                    // -----------------------------------------------------
+                    // Preserve existing CompletedAt if already completed.
+                    // Otherwise create new completion date.
+                    // -----------------------------------------------------
+
                     if (task.CompletedAt == null)
                     {
                         task.CompletedAt =
                             DateTimeHelper.Now();
                     }
+
+                    // -----------------------------------------------------
+                    // Preserve existing CompletedById if available.
+                    // Otherwise current user becomes completer.
+                    // -----------------------------------------------------
 
                     if (task.CompletedById == null)
                     {
@@ -1317,8 +1410,15 @@ namespace YLWorks.Controller
                 }
                 else
                 {
-                    task.CompletedAt = null;
-                    task.CompletedById = null;
+                    // -----------------------------------------------------
+                    // Task is no longer completed
+                    // -----------------------------------------------------
+
+                    task.CompletedAt =
+                        null;
+
+                    task.CompletedById =
+                        null;
                 }
 
 
@@ -1346,6 +1446,10 @@ namespace YLWorks.Controller
                     result
                 );
 
+
+                // =========================================================
+                // RESPONSE
+                // =========================================================
 
                 return Ok(result);
             }
@@ -1842,6 +1946,304 @@ namespace YLWorks.Controller
                 })
                 .FirstOrDefaultAsync();
         }
-    
+
+        [HttpGet("GetSummary")]
+        public async Task<IActionResult> GetSummary()
+        {
+            try
+            {
+                // =========================================================
+                // GET CURRENT USER
+                // =========================================================
+
+                var userIdClaim =
+                    User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+                if (string.IsNullOrEmpty(userIdClaim))
+                {
+                    return Unauthorized(new
+                    {
+                        Error = "Invalid token."
+                    });
+                }
+
+                if (!Guid.TryParse(
+                    userIdClaim,
+                    out Guid currentUserId))
+                {
+                    return Unauthorized(new
+                    {
+                        Error = "Invalid user ID."
+                    });
+                }
+
+
+                // =========================================================
+                // BASE QUERY
+                //
+                // User is involved when:
+                //
+                // 1. AssignedToId = current user
+                //
+                // OR
+                //
+                // 2. AssignedToId is NULL
+                //    AND AssignedById = current user
+                //
+                // NULL AssignedToId means PERSONAL / OWN TASK.
+                //
+                // OR
+                //
+                // 3. AssignedById = current user
+                //    for tasks assigned to someone else.
+                // =========================================================
+
+                var query = _context.StaffTasks
+                    .AsNoTracking()
+                    .Where(t =>
+                        t.AssignedToId == currentUserId ||
+                        t.AssignedById == currentUserId
+                    );
+
+
+                // =========================================================
+                // MY TASKS
+                //
+                // Includes:
+                //
+                // 1. Task assigned to me
+                //
+                // 2. Personal task:
+                //    AssignedToId == null
+                //    AND AssignedById == current user
+                //
+                // Does NOT include tasks I assigned to other people.
+                // =========================================================
+
+                var myTasks = await query
+                    .CountAsync(t =>
+                        t.AssignedToId == currentUserId
+                        ||
+                        (
+                            t.AssignedToId == null &&
+                            t.AssignedById == currentUserId
+                        )
+                    );
+
+
+                // =========================================================
+                // ASSIGNED TO OTHERS
+                //
+                // Created by me and assigned to another user.
+                //
+                // Example:
+                //
+                // AssignedById = Me
+                // AssignedToId = John
+                //
+                // This does NOT include personal tasks.
+                // =========================================================
+
+                var assignedToOthers = await query
+                    .CountAsync(t =>
+                        t.AssignedById == currentUserId &&
+                        t.AssignedToId != null &&
+                        t.AssignedToId != currentUserId
+                    );
+
+
+                // =========================================================
+                // IN PROGRESS
+                //
+                // My task means:
+                //
+                // 1. Assigned to me
+                //
+                // OR
+                //
+                // 2. Personal task
+                //    AssignedToId == null
+                //    AND AssignedById == me
+                //
+                // Then status must be InProgress.
+                // =========================================================
+
+                var inProgress = await query
+                    .CountAsync(t =>
+                        (
+                            t.AssignedToId == currentUserId
+                            ||
+                            (
+                                t.AssignedToId == null &&
+                                t.AssignedById == currentUserId
+                            )
+                        )
+                        &&
+                        t.Status == "InProgress"
+                    );
+
+
+                // =========================================================
+                // COMPLETED
+                //
+                // My task means:
+                //
+                // 1. Assigned to me
+                //
+                // OR
+                //
+                // 2. Personal task
+                //    AssignedToId == null
+                //    AND AssignedById = me
+                //
+                // Then status must be Completed.
+                // =========================================================
+
+                var completed = await query
+                    .CountAsync(t =>
+                        (
+                            t.AssignedToId == currentUserId
+                            ||
+                            (
+                                t.AssignedToId == null &&
+                                t.AssignedById == currentUserId
+                            )
+                        )
+                        &&
+                        t.Status == "Completed"
+                    );
+
+
+                // =========================================================
+                // RESPONSE
+                // =========================================================
+
+                return Ok(new
+                {
+                    MyTasks = myTasks,
+
+                    AssignedToOthers = assignedToOthers,
+
+                    InProgress = inProgress,
+
+                    Completed = completed
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(
+                    500,
+                    new
+                    {
+                        Error =
+                            "Failed to load task summary.",
+
+                        Detail =
+                            ex.Message,
+
+                        InnerException =
+                            ex.InnerException?.Message
+                    }
+                );
+            }
+        }
+
+        [HttpPut("UpdateChecklist")]
+        public async Task<IActionResult> UpdateChecklist(
+    [FromBody] UpdateStaffTaskChecklistRequest request)
+        {
+            var userIdClaim =
+                User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (!Guid.TryParse(userIdClaim, out Guid currentUserId))
+            {
+                return Unauthorized(new
+                {
+                    Error = "Invalid user."
+                });
+            }
+
+            var task = await _context.StaffTasks
+                .FirstOrDefaultAsync(x => x.Id == request.Id);
+
+            if (task == null)
+            {
+                return NotFound(new
+                {
+                    Error = "Task not found."
+                });
+            }
+
+            // Only assigned staff can update checklist
+            if (task.AssignedToId != currentUserId)
+            {
+                return Forbid();
+            }
+
+            foreach (var item in request.Checklists)
+            {
+                var checklist = await _context.StaffTaskChecklists
+                    .FirstOrDefaultAsync(x =>
+                        x.Id == item.Id &&
+                        x.StaffTaskId == task.Id);
+
+                if (checklist == null)
+                    continue;
+
+                checklist.IsCompleted = item.IsCompleted;
+
+                checklist.CompletedAt = item.IsCompleted
+                    ? DateTimeHelper.Now()
+                    : null;
+            }
+
+
+            // =========================================================
+            // UPDATE TASK STATUS BASED ON CHECKLIST
+            // =========================================================
+
+            var total = await _context.StaffTaskChecklists
+                .CountAsync(x => x.StaffTaskId == task.Id);
+
+            var completed = await _context.StaffTaskChecklists
+                .CountAsync(x =>
+                    x.StaffTaskId == task.Id &&
+                    x.IsCompleted);
+
+
+            if (total > 0 && completed == total)
+            {
+                // ALL completed
+                task.Status = "Completed";
+                task.CompletedAt = DateTimeHelper.Now();
+                task.CompletedById = currentUserId;
+            }
+            else if (completed > 0)
+            {
+                // SOME completed
+                task.Status = "InProgress";
+                task.CompletedAt = null;
+                task.CompletedById = null;
+            }
+            else
+            {
+                // NONE completed
+                task.Status = "Todo";
+                task.CompletedAt = null;
+                task.CompletedById = null;
+            }
+
+
+            await _context.SaveChangesAsync();
+
+            var result = await GetStaffTaskDto(task.Id);
+
+            await _hub.Clients.All.SendAsync(
+                "StaffTaskUpdated",
+                result
+            );
+
+            return Ok(result);
+        }
     }
 }

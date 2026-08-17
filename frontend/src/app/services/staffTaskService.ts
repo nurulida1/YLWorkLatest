@@ -2,6 +2,8 @@ import { Injectable } from '@angular/core';
 import {
   CreateStaffTaskRequest,
   StaffTask,
+  StaffTaskSummary,
+  UpdateChecklistOnlyRequest,
   UpdateStaffTaskRequest,
 } from '../models/StaffTask';
 import { HttpClient, HttpParams } from '@angular/common/http';
@@ -81,10 +83,22 @@ export class StaffTaskService {
       .pipe(retry(1), catchError(this.handleError('Update')));
   }
 
+  UpdateChecklist(request: UpdateChecklistOnlyRequest): Observable<StaffTask> {
+    return this.http
+      .put<StaffTask>(`${this.url}/UpdateChecklist`, request)
+      .pipe(retry(1), catchError(this.handleError('UpdateChecklist')));
+  }
+
   Delete(staff_id: string): Observable<BaseResponse> {
     return this.http
       .delete<BaseResponse>(`${this.url}/Delete`, { params: { id: staff_id } })
       .pipe(retry(1), catchError(this.handleError('Delete')));
+  }
+
+  GetSummary(): Observable<StaffTaskSummary> {
+    return this.http
+      .get<StaffTaskSummary>(`${this.url}/GetSummary`)
+      .pipe(retry(1), catchError(this.handleError('GetSummary')));
   }
 
   Reopen(id: string): Observable<StaffTask> {

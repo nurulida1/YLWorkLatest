@@ -8,9 +8,9 @@ namespace YLWorks.Model
 
         public string? Description { get; set; }
 
-        public Guid AssignedToId { get; set; }
+        public Guid? AssignedToId { get; set; }
 
-        public User AssignedTo { get; set; } = null!;
+        public User? AssignedTo { get; set; } = null!;
 
         public Guid AssignedById { get; set; }
 
@@ -68,7 +68,6 @@ namespace YLWorks.Model
         public int Sequence { get; set; }
     }
 
-
     public class CreateStaffTaskRequest
     {
         public string Title { get; set; } = null!;
@@ -105,6 +104,7 @@ namespace YLWorks.Model
         public int Sequence { get; set; }
     }
 
+
     public class UpdateStaffTaskRequest
     {
         public Guid Id { get; set; }
@@ -113,7 +113,7 @@ namespace YLWorks.Model
 
         public string? Description { get; set; }
 
-        public Guid AssignedToId { get; set; }
+        public Guid? AssignedToId { get; set; }
 
         public string Priority { get; set; } = "Medium";
 
@@ -133,12 +133,13 @@ namespace YLWorks.Model
 
         public decimal? EstimatedHours { get; set; }
 
-        public List<UpdateStaffTaskChecklistRequest> Checklists { get; set; }
+        public List<UpdateStaffTaskChecklistItemRequest> Checklists { get; set; }
             = new();
     }
 
 
-    public class UpdateStaffTaskChecklistRequest
+    // Used when creator updates the whole task
+    public class UpdateStaffTaskChecklistItemRequest
     {
         public Guid? Id { get; set; }
 
@@ -148,6 +149,27 @@ namespace YLWorks.Model
 
         public int Sequence { get; set; }
     }
+
+
+    // Used ONLY by assigned staff when ticking checklist
+    public class UpdateStaffTaskChecklistRequest
+    {
+        public Guid Id { get; set; }
+
+        public List<UpdateStaffTaskChecklistItemOnlyRequest> Checklists { get; set; }
+            = new();
+    }
+
+
+    public class UpdateStaffTaskChecklistItemOnlyRequest
+    {
+        public Guid Id { get; set; }
+
+        public bool IsCompleted { get; set; }
+
+        public int Sequence { get; set; }
+    }
+
 
     public class CompleteStaffTaskRequest
     {

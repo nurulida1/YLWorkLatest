@@ -20,7 +20,7 @@ namespace YLWorks.Controller
             Ok(await _policyService.GetPolicyDtoAsync());
 
         [HttpPut]
-        [Authorize(Roles = "SuperAdmin,Admin,HR")]
+        [Authorize(Roles = "HOD,Management,HR,SuperAdmin")]
         public async Task<ActionResult<LeavePolicyDto>> Upsert([FromBody] UpsertLeavePolicyDto dto)
         {
             try

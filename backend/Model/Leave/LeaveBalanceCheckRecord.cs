@@ -1,3 +1,4 @@
+using WebApplication1.Helpers;
 namespace YLWorks.Model.Leave
 {
     public class LeaveBalanceCheckRecord : BaseEntity
@@ -9,6 +10,6 @@ namespace YLWorks.Model.Leave
         public double AvailableDays { get; set; }
         public bool IsSufficient { get; set; }
         public LeaveBalanceAction? ActionTaken { get; set; }
-        public DateTime CheckedAt { get; set; } = DateTime.UtcNow;
+        public DateTime CheckedAt { get; set; } = DateTimeHelper.Now();
     }
 }

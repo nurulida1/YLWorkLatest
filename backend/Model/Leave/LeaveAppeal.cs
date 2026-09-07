@@ -1,3 +1,4 @@
+using WebApplication1.Helpers;
 namespace YLWorks.Model.Leave
 {
     public class LeaveAppeal : BaseEntity
@@ -11,7 +12,7 @@ namespace YLWorks.Model.Leave
         public User? ReviewedByUser { get; set; }
         public string AppealReason { get; set; } = string.Empty;
         public LeaveAppealOutcome? Outcome { get; set; }
-        public DateTime RaisedAt { get; set; } = DateTime.UtcNow;
+        public DateTime RaisedAt { get; set; } = DateTimeHelper.Now();
         public DateTime? ResolvedAt { get; set; }
     }
 }

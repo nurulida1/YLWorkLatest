@@ -574,6 +574,74 @@ import { Textarea } from 'primeng/textarea';
           <div class="col-span-12 md:col-span-6 flex flex-col gap-1.5">
             <label
               class="text-xs font-semibold text-gray-600 uppercase tracking-wider"
+              >Monthly Salary (RM)</label
+            >
+            <p-inputNumber
+              formControlName="monthlySalary"
+              mode="decimal"
+              [minFractionDigits]="2"
+              styleClass="w-full"
+              inputStyleClass="w-full py-2! px-3! border border-gray-300 rounded-md text-sm!"
+              placeholder="Used for overtime claims"
+            />
+          </div>
+
+          <div class="col-span-12 md:col-span-3 flex flex-col gap-1.5">
+            <label
+              class="text-xs font-semibold text-gray-600 uppercase tracking-wider"
+              >Work start (HH:mm)</label
+            >
+            <input
+              type="text"
+              pInputText
+              class="w-full py-2! px-3! border border-gray-300 rounded-md text-sm!"
+              placeholder="09:00"
+              formControlName="workStartTime"
+            />
+          </div>
+          <div class="col-span-12 md:col-span-3 flex flex-col gap-1.5">
+            <label
+              class="text-xs font-semibold text-gray-600 uppercase tracking-wider"
+              >Work end (HH:mm)</label
+            >
+            <input
+              type="text"
+              pInputText
+              class="w-full py-2! px-3! border border-gray-300 rounded-md text-sm!"
+              placeholder="18:00"
+              formControlName="workEndTime"
+            />
+          </div>
+          <div class="col-span-12 md:col-span-3 flex flex-col gap-1.5">
+            <label
+              class="text-xs font-semibold text-gray-600 uppercase tracking-wider"
+              >Rest half-day start</label
+            >
+            <input
+              type="text"
+              pInputText
+              class="w-full py-2! px-3! border border-gray-300 rounded-md text-sm!"
+              placeholder="08:00"
+              formControlName="restDayHalfDayStart"
+            />
+          </div>
+          <div class="col-span-12 md:col-span-3 flex flex-col gap-1.5">
+            <label
+              class="text-xs font-semibold text-gray-600 uppercase tracking-wider"
+              >Rest half-day end</label
+            >
+            <input
+              type="text"
+              pInputText
+              class="w-full py-2! px-3! border border-gray-300 rounded-md text-sm!"
+              placeholder="12:00"
+              formControlName="restDayHalfDayEnd"
+            />
+          </div>
+
+          <div class="col-span-12 md:col-span-6 flex flex-col gap-1.5">
+            <label
+              class="text-xs font-semibold text-gray-600 uppercase tracking-wider"
               >System Access Role</label
             >
             <p-select
@@ -938,6 +1006,21 @@ export class UserManagement implements OnInit, OnDestroy {
         ),
         gender: new FormControl<string | null>(data?.gender || 'Male'),
         systemRole: new FormControl<string | null>(data?.systemRole || null),
+        monthlySalary: new FormControl<number | null>(
+          (data as any)?.monthlySalary ?? null,
+        ),
+        workStartTime: new FormControl<string | null>(
+          (data as any)?.workStartTime ?? null,
+        ),
+        workEndTime: new FormControl<string | null>(
+          (data as any)?.workEndTime ?? null,
+        ),
+        restDayHalfDayStart: new FormControl<string | null>(
+          (data as any)?.restDayHalfDayStart ?? null,
+        ),
+        restDayHalfDayEnd: new FormControl<string | null>(
+          (data as any)?.restDayHalfDayEnd ?? null,
+        ),
       },
       { validators: passwordMatchValidator },
     );

@@ -13,14 +13,17 @@ import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 import { SelectModule } from 'primeng/select';
-import { Subject, takeUntil } from 'rxjs';
-import { finalize } from 'rxjs/operators';
+import { Subject, forkJoin, of, takeUntil } from 'rxjs';
+import { catchError, finalize } from 'rxjs/operators';
 import { DepartmentDto } from '../../../models/Department';
 import {
   LeaveCalendarEventDto,
+  PublicHolidayDto,
   LeaveTypeDto,
 } from '../../../models/Leave';
+import { formatLeaveDurationLabel, normalizeLeaveSession } from '../../../common/leave-day.util';
 import { DepartmentService } from '../../../services/departmentService';
+import { LeaveHolidayService } from '../../../services/leave-holiday.service';
 import { LeaveRequestService } from '../../../services/leave-request.service';
 import { LeaveTypeService } from '../../../services/leave-type.service';
 import { LoadingService } from '../../../services/loading.service';
@@ -39,6 +42,7 @@ interface CalendarDayCell {
   inCurrentMonth: boolean;
   isToday: boolean;
   events: LeaveCalendarEventDto[];
+  holidayName: string | null;
 }
 
 @Component({
@@ -147,20 +151,40 @@ interface CalendarDayCell {
                   >
                     {{ cell.date.getDate() }}
                   </span>
-                  @if (cell.events.length) {
-                    <span class="text-xs font-semibold px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-800">
-                      {{ cell.events.length }}
-                    </span>
-                  }
+                  <div class="flex items-center gap-1">
+                    @if (cell.holidayName) {
+                      <span
+                        class="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-rose-100 text-rose-800"
+                        [title]="cell.holidayName"
+                      >
+                        PH
+                      </span>
+                    }
+                    @if (cell.events.length) {
+                      <span class="text-xs font-semibold px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-800">
+                        {{ cell.events.length }}
+                      </span>
+                    }
+                  </div>
                 </div>
                 <div class="flex flex-col gap-0.5">
-                  @for (ev of cell.events.slice(0, 3); track ev.requestId) {
-                    <div class="truncate text-xs text-gray-700 leading-tight">
-                      {{ ev.employeeName }}
+                  @if (cell.holidayName) {
+                    <div class="truncate text-[11px] font-medium text-rose-700 leading-tight" [title]="cell.holidayName">
+                      {{ cell.holidayName }}
                     </div>
                   }
-                  @if (cell.events.length > 3) {
-                    <div class="text-xs text-gray-500">+{{ cell.events.length - 3 }} more</div>
+                  @for (ev of cell.events.slice(0, cell.holidayName ? 2 : 3); track ev.requestId) {
+                    <div
+                      class="truncate text-xs leading-tight"
+                      [class.text-amber-800]="isHalfDayEvent(ev)"
+                      [class.text-gray-700]="!isHalfDayEvent(ev)"
+                      [title]="eventTitle(ev)"
+                    >
+                      {{ ev.employeeName }}@if (halfDayMarker(ev); as mark) { · {{ mark }} }
+                    </div>
+                  }
+                  @if (cell.events.length > (cell.holidayName ? 2 : 3)) {
+                    <div class="text-xs text-gray-500">+{{ cell.events.length - (cell.holidayName ? 2 : 3) }} more</div>
                   }
                 </div>
               </button>
@@ -193,17 +217,34 @@ interface CalendarDayCell {
                       {{ cell.date | date:'d MMM' }}
                     </div>
                   </div>
-                  @if (cell.events.length) {
-                    <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800">
-                      {{ cell.events.length }}
-                    </span>
-                  }
+                  <div class="flex items-center gap-1">
+                    @if (cell.holidayName) {
+                      <span class="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-rose-100 text-rose-800">
+                        PH
+                      </span>
+                    }
+                    @if (cell.events.length) {
+                      <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800">
+                        {{ cell.events.length }}
+                      </span>
+                    }
+                  </div>
                 </div>
                 <div class="flex flex-col gap-1">
-                  @for (ev of cell.events; track ev.requestId) {
-                    <div class="text-xs text-gray-700 truncate">{{ ev.employeeName }}</div>
+                  @if (cell.holidayName) {
+                    <div class="text-xs font-medium text-rose-700">{{ cell.holidayName }}</div>
                   }
-                  @if (!cell.events.length) {
+                  @for (ev of cell.events; track ev.requestId) {
+                    <div
+                      class="text-xs truncate"
+                      [class.text-amber-800]="isHalfDayEvent(ev)"
+                      [class.text-gray-700]="!isHalfDayEvent(ev)"
+                      [title]="eventTitle(ev)"
+                    >
+                      {{ ev.employeeName }}@if (halfDayMarker(ev); as mark) { · {{ mark }} }
+                    </div>
+                  }
+                  @if (!cell.events.length && !cell.holidayName) {
                     <div class="text-xs text-gray-400">No leave</div>
                   }
                 </div>
@@ -215,6 +256,18 @@ interface CalendarDayCell {
 
       @if (view === 'list') {
         <div class="bg-white border border-gray-200 rounded-lg overflow-hidden">
+          @if (listHolidays.length) {
+            <div class="px-4 py-3 border-b border-gray-100 bg-rose-50/60">
+              <div class="text-xs font-semibold uppercase tracking-wide text-rose-700 mb-2">Public holidays</div>
+              <ul class="m-0 p-0 list-none flex flex-col gap-1">
+                @for (h of listHolidays; track h.id) {
+                  <li class="text-sm text-rose-900">
+                    {{ h.date | date:'mediumDate' }} — {{ h.name }}
+                  </li>
+                }
+              </ul>
+            </div>
+          }
           @if (!listEvents.length) {
             <div class="p-8 text-center text-sm text-gray-500">No approved leave in this range.</div>
           } @else {
@@ -227,6 +280,9 @@ interface CalendarDayCell {
                       {{ ev.startDate | date:'mediumDate' }} – {{ ev.endDate | date:'mediumDate' }}
                       @if (canViewDetails && ev.leaveTypeName) {
                         <span> · {{ ev.leaveTypeName }}</span>
+                      }
+                      @if (canViewDetails && halfDayMarker(ev); as mark) {
+                        <span class="text-amber-700"> · {{ mark }}</span>
                       }
                     </div>
                     @if (canViewDetails && ev.reason) {
@@ -252,8 +308,15 @@ interface CalendarDayCell {
         [style]="{ width: 'min(480px, 95vw)' }"
         [draggable]="false"
       >
+        @if (selectedDayHoliday) {
+          <div class="mb-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-900">
+            Public holiday: <strong>{{ selectedDayHoliday }}</strong>
+          </div>
+        }
         @if (!selectedDayEvents.length) {
-          <p class="text-sm text-gray-500 m-0">No one on leave this day.</p>
+          <p class="text-sm text-gray-500 m-0">
+            {{ selectedDayHoliday ? 'No one on leave this day.' : 'No one on leave this day.' }}
+          </p>
         } @else {
           <ul class="m-0 p-0 list-none flex flex-col gap-3">
             @for (ev of selectedDayEvents; track ev.requestId) {
@@ -264,7 +327,12 @@ interface CalendarDayCell {
                 </div>
                 @if (canViewDetails) {
                   @if (ev.leaveTypeName) {
-                    <div class="text-sm text-gray-700 mt-1">{{ ev.leaveTypeName }}</div>
+                    <div class="text-sm text-gray-700 mt-1">
+                      {{ ev.leaveTypeName }}
+                      @if (formatEventDuration(ev); as dur) {
+                        <span class="text-gray-500"> · {{ dur }}</span>
+                      }
+                    </div>
                   }
                   @if (ev.reason) {
                     <div class="text-xs text-gray-500 mt-1 whitespace-pre-wrap">{{ ev.reason }}</div>
@@ -287,6 +355,7 @@ interface CalendarDayCell {
 })
 export class LeaveTeamCalendar implements OnInit, OnDestroy {
   private readonly leaveRequestService = inject(LeaveRequestService);
+  private readonly leaveHolidayService = inject(LeaveHolidayService);
   private readonly leaveTypeService = inject(LeaveTypeService);
   private readonly departmentService = inject(DepartmentService);
   private readonly userService = inject(UserService);
@@ -306,6 +375,7 @@ export class LeaveTeamCalendar implements OnInit, OnDestroy {
   view: CalendarView = 'month';
   anchorDate = new Date();
   events: LeaveCalendarEventDto[] = [];
+  holidays: PublicHolidayDto[] = [];
   canViewDetails = false;
   canManageCalendarSync = false;
 
@@ -317,13 +387,47 @@ export class LeaveTeamCalendar implements OnInit, OnDestroy {
   monthCells: CalendarDayCell[] = [];
   periodCells: CalendarDayCell[] = [];
   listEvents: LeaveCalendarEventDto[] = [];
+  listHolidays: PublicHolidayDto[] = [];
   rangeLabel = '';
 
   dayDialogVisible = false;
   dayDialogTitle = '';
   selectedDayEvents: LeaveCalendarEventDto[] = [];
+  selectedDayHoliday: string | null = null;
+
+  isHalfDayEvent(ev: LeaveCalendarEventDto): boolean {
+    const start = normalizeLeaveSession(ev.startSession);
+    const end = normalizeLeaveSession(ev.endSession);
+    return start !== 'Full' || end !== 'Full';
+  }
+
+  halfDayMarker(ev: LeaveCalendarEventDto): string | null {
+    if (!this.isHalfDayEvent(ev)) return null;
+    const start = normalizeLeaveSession(ev.startSession);
+    const end = normalizeLeaveSession(ev.endSession);
+    if (start === end) return start;
+    return `${start}-${end}`;
+  }
+
+  formatEventDuration(ev: LeaveCalendarEventDto): string | null {
+    if (ev.totalDays == null && !this.isHalfDayEvent(ev)) return null;
+    return formatLeaveDurationLabel({
+      totalDays: ev.totalDays ?? 0,
+      startSession: ev.startSession,
+      endSession: ev.endSession,
+    });
+  }
+
+  eventTitle(ev: LeaveCalendarEventDto): string {
+    const parts = [ev.employeeName];
+    if (ev.leaveTypeName) parts.push(ev.leaveTypeName);
+    const dur = this.formatEventDuration(ev);
+    if (dur) parts.push(dur);
+    return parts.join(' · ');
+  }
 
   private eventsByDay = new Map<string, LeaveCalendarEventDto[]>();
+  private holidayByDay = new Map<string, string>();
 
   ngOnInit(): void {
     const role = String(this.userService.currentUser?.systemRole ?? '');
@@ -364,6 +468,7 @@ export class LeaveTeamCalendar implements OnInit, OnDestroy {
 
   openDay(cell: CalendarDayCell): void {
     this.selectedDayEvents = cell.events;
+    this.selectedDayHoliday = cell.holidayName;
     this.dayDialogTitle = cell.date.toLocaleDateString(undefined, {
       weekday: 'long',
       day: 'numeric',
@@ -377,20 +482,24 @@ export class LeaveTeamCalendar implements OnInit, OnDestroy {
   reload(): void {
     const { from, to } = this.fetchRange();
     this.loadingService.start();
-    this.leaveRequestService
-      .getCalendar(this.toIsoDate(from), this.toIsoDate(to), {
+    forkJoin({
+      calendar: this.leaveRequestService.getCalendar(this.toIsoDate(from), this.toIsoDate(to), {
         departmentId: this.departmentId,
         leaveTypeId: this.canViewDetails ? this.leaveTypeId : null,
-      })
+      }),
+      holidays: this.leaveHolidayService.getInRange(from, to).pipe(catchError(() => of([] as PublicHolidayDto[]))),
+    })
       .pipe(
         takeUntil(this.destroy$),
         finalize(() => this.loadingService.stop()),
       )
       .subscribe({
-        next: (res) => {
-          this.canViewDetails = res.canViewDetails;
-          this.events = res.events ?? [];
+        next: ({ calendar, holidays }) => {
+          this.canViewDetails = calendar.canViewDetails;
+          this.events = calendar.events ?? [];
+          this.holidays = holidays ?? [];
           this.indexEvents();
+          this.indexHolidays();
           this.rebuildCells();
           this.cdr.markForCheck();
         },
@@ -462,6 +571,7 @@ export class LeaveTeamCalendar implements OnInit, OnDestroy {
       const { from, to } = this.monthGridRange(this.anchorDate);
       this.monthCells = this.buildDayCells(from, to, this.anchorDate.getMonth());
       this.periodCells = [];
+      this.listHolidays = [];
       this.rangeLabel = this.anchorDate.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
     } else if (this.view === 'week') {
       const from = this.startOfWeek(this.anchorDate);
@@ -469,11 +579,13 @@ export class LeaveTeamCalendar implements OnInit, OnDestroy {
       to.setDate(to.getDate() + 6);
       this.periodCells = this.buildDayCells(from, to, null);
       this.monthCells = [];
+      this.listHolidays = [];
       this.rangeLabel = `${from.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })} – ${to.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}`;
     } else if (this.view === 'day') {
       const day = this.stripTime(this.anchorDate);
       this.periodCells = this.buildDayCells(day, day, null);
       this.monthCells = [];
+      this.listHolidays = [];
       this.rangeLabel = day.toLocaleDateString(undefined, {
         weekday: 'long',
         day: 'numeric',
@@ -488,6 +600,9 @@ export class LeaveTeamCalendar implements OnInit, OnDestroy {
         .filter((e) => this.overlaps(e, from, to))
         .slice()
         .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
+      this.listHolidays = this.holidays
+        .slice()
+        .sort((a, b) => a.date.localeCompare(b.date));
       this.rangeLabel = this.anchorDate.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
     }
   }
@@ -507,6 +622,14 @@ export class LeaveTeamCalendar implements OnInit, OnDestroy {
     }
   }
 
+  private indexHolidays(): void {
+    this.holidayByDay.clear();
+    for (const h of this.holidays) {
+      const key = h.date.slice(0, 10);
+      if (key) this.holidayByDay.set(key, h.name);
+    }
+  }
+
   private buildDayCells(from: Date, to: Date, currentMonth: number | null): CalendarDayCell[] {
     const todayKey = this.dayKey(new Date());
     const cells: CalendarDayCell[] = [];
@@ -519,6 +642,7 @@ export class LeaveTeamCalendar implements OnInit, OnDestroy {
         inCurrentMonth: currentMonth == null ? true : date.getMonth() === currentMonth,
         isToday: key === todayKey,
         events: this.eventsByDay.get(key) ?? [],
+        holidayName: this.holidayByDay.get(key) ?? null,
       });
     }
     return cells;

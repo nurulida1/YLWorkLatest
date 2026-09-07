@@ -99,7 +99,8 @@ const PROTECTED_POLICY_KINDS = new Set(['AnnualTenure', 'MedicalTenure']);
               <td class="text-xs text-gray-600">
                 @if (row.isPaid) { Paid } @else { Unpaid }
                 @if (row.isEmergency) { · Emergency }
-                @if (row.requiresDocument) { · Document }
+                @if (row.allowsHalfDay) { · Half day }
+                @if (row.allowsBalanceCascade) { · Cascade }
               </td>
               <td class="whitespace-nowrap">
                 <p-button label="Edit" size="small" [text]="true" (onClick)="openEdit(row)" />
@@ -180,10 +181,29 @@ const PROTECTED_POLICY_KINDS = new Set(['AnnualTenure', 'MedicalTenure']);
             <label class="inline-flex items-center gap-2">
               <p-checkbox [(ngModel)]="form.requiresDocument" [binary]="true" /> Requires document
             </label>
+            <label class="inline-flex items-center gap-2">
+              <p-checkbox [(ngModel)]="form.allowsHalfDay" [binary]="true" /> Allow half day
+            </label>
+            <label class="inline-flex items-center gap-2">
+              <p-checkbox
+                [(ngModel)]="form.allowsBalanceCascade"
+                [binary]="true"
+                [disabled]="!form.isPaid || form.isEmergency"
+              />
+              Allow balance cascade
+            </label>
           </div>
-          <p class="text-xs text-gray-500 m-0">
-            Changing defaults does not rewrite existing year balances. Tenure types use leave policy bands.
-          </p>
+          @if (form.isEmergency) {
+            <p class="text-xs text-amber-800 m-0">
+              Emergency leave has no entitlement balance. It always charges Annual Leave first, then Unpaid Leave
+              (staff must confirm). Cascade setting does not apply.
+            </p>
+          } @else {
+            <p class="text-xs text-gray-500 m-0">
+              Cascade: when remaining on this type is insufficient, take from Annual Leave then Unpaid Leave
+              (staff must confirm). Changing defaults does not rewrite existing year balances.
+            </p>
+          }
         </div>
         <ng-template pTemplate="footer">
           <p-button label="Cancel" severity="secondary" [text]="true" (onClick)="dialogVisible = false" />
@@ -252,6 +272,8 @@ export class LeaveTypesSettings implements OnInit, OnDestroy {
       isEmergency: row.isEmergency,
       defaultDaysPerYear: row.defaultDaysPerYear,
       requiresDocument: row.requiresDocument,
+      allowsHalfDay: !!row.allowsHalfDay,
+      allowsBalanceCascade: row.isEmergency ? false : !!row.allowsBalanceCascade,
       policyKind: row.policyKind || 'Fixed',
       applicableGender: row.applicableGender || 'All',
     };
@@ -295,6 +317,9 @@ export class LeaveTypesSettings implements OnInit, OnDestroy {
     if (!this.form.name?.trim()) {
       this.messageService.add({ severity: 'warn', summary: 'Name required', detail: 'Enter a leave type name.' });
       return;
+    }
+    if (this.form.isEmergency) {
+      this.form.allowsBalanceCascade = false;
     }
     this.saving = true;
     const req$ = this.editingId
@@ -347,6 +372,8 @@ export class LeaveTypesSettings implements OnInit, OnDestroy {
       isEmergency: false,
       defaultDaysPerYear: 0,
       requiresDocument: false,
+      allowsHalfDay: false,
+      allowsBalanceCascade: false,
       policyKind: 'Fixed',
       applicableGender: 'All',
     };

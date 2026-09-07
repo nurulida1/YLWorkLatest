@@ -23,6 +23,12 @@ export interface UserDto extends BaseModel {
   refreshToken: string;
   refreshTokenExpiryTime: Date;
   gender: string;
+  monthlySalary?: number | null;
+  workStartTime?: string | null;
+  workEndTime?: string | null;
+  usesRestDayHalfDay?: boolean | null;
+  restDayHalfDayStart?: string | null;
+  restDayHalfDayEnd?: string | null;
 }
 
 export interface LoginRequest {
@@ -94,6 +100,13 @@ export interface UpdateUserRequest {
   gender?: string;
 
   departmentIds?: string[];
+  monthlySalary?: number | null;
+  workStartTime?: string | null;
+  workEndTime?: string | null;
+  usesRestDayHalfDay?: boolean | null;
+  restDayHalfDayStart?: string | null;
+  restDayHalfDayEnd?: string | null;
+  clearWorkScheduleOverride?: boolean;
 }
 
 export interface StaffDashboard {

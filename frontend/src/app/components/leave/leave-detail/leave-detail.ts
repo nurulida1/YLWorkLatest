@@ -6,6 +6,7 @@ import { ButtonModule } from 'primeng/button';
 import { TagModule } from 'primeng/tag';
 import { finalize } from 'rxjs/operators';
 import { LeaveApprovalChainStepDto, LeaveRequestDto } from '../../../models/Leave';
+import { formatDaysAmount, formatLeaveDurationLabel } from '../../../common/leave-day.util';
 import { LeaveRequestService } from '../../../services/leave-request.service';
 import { LoadingService } from '../../../services/loading.service';
 import { UserService } from '../../../services/userService.service';
@@ -24,13 +25,40 @@ import { environment } from '../../../../environments/environment.development';
             <div class="min-w-0">
               <h1 class="text-xl font-semibold text-gray-800 break-words">{{ request.leaveTypeName }}</h1>
               <p class="text-gray-500 text-sm">{{ request.employeeName }}</p>
+              <div class="flex flex-wrap gap-1.5 mt-2">
+                @if (request.isShortNoticeAnnual) {
+                  <p-tag value="Short notice → Unpaid" severity="warn" />
+                } @else if (hasBalanceSplit(request)) {
+                  <p-tag value="Balance split" severity="warn" />
+                } @else if (request.isUnpaid) {
+                  <p-tag value="Unpaid" severity="secondary" />
+                }
+                @if (request.isEmergency) {
+                  <p-tag value="Emergency" severity="danger" />
+                }
+              </div>
             </div>
             <p-tag [value]="request.status" />
           </div>
 
           <dl class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm mb-6">
             <div><dt class="text-gray-500">Dates</dt><dd>{{ request.startDate | date:'mediumDate' }} – {{ request.endDate | date:'mediumDate' }}</dd></div>
-            <div><dt class="text-gray-500">Total days</dt><dd>{{ request.totalDays }}</dd></div>
+            <div><dt class="text-gray-500">Total days</dt><dd>{{ formatLeaveDays(request) }}</dd></div>
+            @if (hasBalanceSplit(request)) {
+              <div class="sm:col-span-2">
+                <dt class="text-gray-500 mb-1">Balance breakdown</dt>
+                <dd>
+                  <ul class="m-0 pl-5 list-disc text-gray-800">
+                    @for (line of request.balanceAllocations!; track line.leaveTypeId + line.sortOrder) {
+                      <li>
+                        {{ line.leaveTypeName }}: {{ formatDays(line.days) }} day(s)
+                        @if (line.isUnpaidBucket) { (unpaid) }
+                      </li>
+                    }
+                  </ul>
+                </dd>
+              </div>
+            }
             <div class="sm:col-span-2"><dt class="text-gray-500">Reason</dt><dd class="break-words">{{ request.reason }}</dd></div>
             <div><dt class="text-gray-500">Submitted</dt><dd>{{ request.submittedAt | date:'medium' }}</dd></div>
           </dl>
@@ -195,6 +223,20 @@ export class LeaveDetail implements OnInit, OnDestroy {
 
   get chainSteps(): LeaveApprovalChainStepDto[] {
     return this.request?.approvalChain ?? [];
+  }
+
+  formatLeaveDays(row: LeaveRequestDto): string {
+    return formatLeaveDurationLabel(row);
+  }
+
+  formatDays(value: number | null | undefined): string {
+    return formatDaysAmount(value);
+  }
+
+  hasBalanceSplit(row: LeaveRequestDto | null | undefined): boolean {
+    const n = row?.balanceAllocations?.length ?? 0;
+    if (row?.isEmergency && n > 0) return true;
+    return n > 1;
   }
 
   ngOnInit(): void {

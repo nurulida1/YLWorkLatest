@@ -251,6 +251,25 @@ import { PermissionContextService } from '../../services/permission-context.serv
                 styleClass="w-full border-gray-200! rounded-lg! shadow-none! text-base!"
               ></p-select>
             </div>
+
+            <div class="grid grid-cols-2 gap-3">
+              <div class="flex flex-col gap-1.5">
+                <label class="font-semibold text-gray-700">Work start (HH:mm)</label>
+                <input type="text" pInputText class="w-full py-2 px-3 rounded-lg border border-gray-200" placeholder="09:00" [(ngModel)]="workStartTime" />
+              </div>
+              <div class="flex flex-col gap-1.5">
+                <label class="font-semibold text-gray-700">Work end (HH:mm)</label>
+                <input type="text" pInputText class="w-full py-2 px-3 rounded-lg border border-gray-200" placeholder="18:00" [(ngModel)]="workEndTime" />
+              </div>
+              <div class="flex flex-col gap-1.5">
+                <label class="font-semibold text-gray-700">Half-day start</label>
+                <input type="text" pInputText class="w-full py-2 px-3 rounded-lg border border-gray-200" placeholder="08:00" [(ngModel)]="restDayHalfDayStart" />
+              </div>
+              <div class="flex flex-col gap-1.5">
+                <label class="font-semibold text-gray-700">Half-day end</label>
+                <input type="text" pInputText class="w-full py-2 px-3 rounded-lg border border-gray-200" placeholder="12:00" [(ngModel)]="restDayHalfDayEnd" />
+              </div>
+            </div>
           </div>
 
           <div class="border-b border-gray-100"></div>
@@ -299,6 +318,10 @@ export class Department implements OnInit, OnDestroy {
   title: string = 'Add New Department';
   departmentName: string | null = null;
   hodId: string | null = null;
+  workStartTime: string | null = null;
+  workEndTime: string | null = null;
+  restDayHalfDayStart: string | null = null;
+  restDayHalfDayEnd: string | null = null;
   departmentId: string | null = null;
   menuItems: MenuItem[] = [];
 
@@ -444,9 +467,17 @@ export class Department implements OnInit, OnDestroy {
         this.hodId = data?.hodId || null;
         this.departmentName = data?.name || null;
         this.departmentId = data?.id || null;
+        this.workStartTime = data?.workStartTime || null;
+        this.workEndTime = data?.workEndTime || null;
+        this.restDayHalfDayStart = data?.restDayHalfDayStart || null;
+        this.restDayHalfDayEnd = data?.restDayHalfDayEnd || null;
       } else {
         this.hodId = null;
         this.departmentName = null;
+        this.workStartTime = null;
+        this.workEndTime = null;
+        this.restDayHalfDayStart = null;
+        this.restDayHalfDayEnd = null;
       }
       this.visible = true;
       this.cdr.detectChanges();
@@ -511,6 +542,10 @@ export class Department implements OnInit, OnDestroy {
           description: '',
           code: '',
           isActive: true,
+          workStartTime: this.workStartTime,
+          workEndTime: this.workEndTime,
+          restDayHalfDayStart: this.restDayHalfDayStart,
+          restDayHalfDayEnd: this.restDayHalfDayEnd,
         })
       : this.departmentService.Create({
           name: this.departmentName,
@@ -518,6 +553,10 @@ export class Department implements OnInit, OnDestroy {
           description: '',
           code: '',
           isActive: true,
+          workStartTime: this.workStartTime,
+          workEndTime: this.workEndTime,
+          restDayHalfDayStart: this.restDayHalfDayStart,
+          restDayHalfDayEnd: this.restDayHalfDayEnd,
         });
 
     request$.pipe(takeUntil(this.ngUnsubscribe)).subscribe({

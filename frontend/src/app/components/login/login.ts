@@ -18,7 +18,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { PasswordModule } from 'primeng/password';
 import { LoadingService } from '../../services/loading.service';
 import { Subject, takeUntil } from 'rxjs';
-import { Router, RouterLink } from '@angular/router';
+import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
 import { ValidateAllFormFields } from '../../shared/helpers/helpers';
@@ -213,6 +213,7 @@ export class Login implements OnDestroy, OnInit {
   private readonly authService = inject(AuthService);
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
 
   protected ngUnsubscribe: Subject<void> = new Subject<void>();
 
@@ -245,6 +246,69 @@ export class Login implements OnDestroy, OnInit {
     this.cdr.detectChanges();
   }
 
+  private readonly allowedReturnPrefixes: readonly string[] = [
+    '/dashboard',
+    '/inventory',
+    '/notifications',
+    '/settings',
+    '/clients',
+    '/incomes',
+    '/expenses',
+    '/supplier-payments',
+    '/projects',
+    '/material-requests',
+    '/supplier',
+    '/payments',
+    '/user-management',
+    '/quotations',
+    '/goods-receiving',
+    '/purchase-orders',
+    '/sales-order',
+    '/delivery-orders',
+    '/do-rma',
+    '/invoices',
+    '/department',
+    '/access-permission',
+    '/company',
+    '/products-services',
+    '/profile-settings',
+    '/tasks',
+    '/schedule',
+    '/leave',
+    '/claims',
+    '/meeting-room',
+    '/unauthorized',
+    '/change-password-internal',
+  ];
+
+  private resolvePostLoginUrl(): string {
+    const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
+    if (!returnUrl) {
+      return '/dashboard';
+    }
+
+    // Only allow in-app relative paths (blocks open redirects like //evil.com)
+    if (
+      !returnUrl.startsWith('/') ||
+      returnUrl.startsWith('//') ||
+      returnUrl.includes('\\') ||
+      returnUrl.length > 512
+    ) {
+      return '/dashboard';
+    }
+
+    const pathOnly = returnUrl.split('?')[0].split('#')[0];
+    if (!pathOnly || pathOnly === '/login') {
+      return '/dashboard';
+    }
+
+    const isAllowed = this.allowedReturnPrefixes.some(
+      (prefix) => pathOnly === prefix || pathOnly.startsWith(`${prefix}/`),
+    );
+
+    return isAllowed ? returnUrl : '/dashboard';
+  }
+
   onLogin() {
     if (!this.FG.valid) {
       ValidateAllFormFields(this.FG);
@@ -267,7 +331,7 @@ export class Login implements OnDestroy, OnInit {
           if (res.success) {
             this.userService.setCurrentUser(res, rememberMe);
 
-            this.router.navigate(['/dashboard']);
+            void this.router.navigateByUrl(this.resolvePostLoginUrl());
           } else {
             this.error = true;
             this.errorMessage = res.message ?? 'Login failed';

@@ -6,6 +6,8 @@ export interface LeaveTypeDto {
   isEmergency: boolean;
   defaultDaysPerYear: number;
   requiresDocument: boolean;
+  allowsHalfDay: boolean;
+  allowsBalanceCascade: boolean;
   policyKind: string;
   applicableGender: string;
 }
@@ -32,6 +34,8 @@ export interface UpsertLeaveTypeDto {
   isEmergency: boolean;
   defaultDaysPerYear: number;
   requiresDocument: boolean;
+  allowsHalfDay: boolean;
+  allowsBalanceCascade: boolean;
   policyKind: string;
   applicableGender: string;
 }
@@ -66,6 +70,21 @@ export interface CreditLeaveBalanceDto {
   note?: string;
 }
 
+export interface PublicHolidayDto {
+  id: string;
+  date: string;
+  name: string;
+  isActive: boolean;
+}
+
+export interface UpsertPublicHolidayDto {
+  date: string;
+  name: string;
+  isActive: boolean;
+}
+
+export type LeaveDaySession = 'Full' | 'AM' | 'PM';
+
 export interface CreateLeaveRequestDto {
   employeeId: string;
   leaveTypeId: string;
@@ -74,7 +93,11 @@ export interface CreateLeaveRequestDto {
   reason: string;
   isEmergency: boolean;
   isUnpaid: boolean;
-  conflictOverride: boolean;
+  conflictOverride?: boolean;
+  acceptShortNoticeAsUnpaid?: boolean;
+  acceptBalanceCascade?: boolean;
+  startSession?: LeaveDaySession;
+  endSession?: LeaveDaySession;
 }
 
 export type LeaveApprovalChainStatus =
@@ -94,6 +117,14 @@ export interface LeaveApprovalChainStepDto {
   isFinalStep: boolean;
 }
 
+export interface LeaveBalanceAllocationDto {
+  leaveTypeId: string;
+  leaveTypeName: string;
+  days: number;
+  sortOrder: number;
+  isUnpaidBucket: boolean;
+}
+
 export interface LeaveRequestDto {
   requestId: string;
   employeeId: string;
@@ -103,15 +134,20 @@ export interface LeaveRequestDto {
   startDate: string;
   endDate: string;
   totalDays: number;
+  startSession: LeaveDaySession | string;
+  endSession: LeaveDaySession | string;
   reason: string;
   status: string;
   isEmergency: boolean;
   isUnpaid: boolean;
+  isShortNoticeAnnual: boolean;
   conflictOverride: boolean;
   submittedAt: string;
   conflictWarning?: string;
   remainingBalance?: number;
   balanceSufficient?: boolean;
+  requiresBalanceCascadeAccept?: boolean;
+  balanceAllocations?: LeaveBalanceAllocationDto[];
   balanceOptions?: string[];
   rejectionReason?: string;
   documentUrl?: string;
@@ -140,6 +176,9 @@ export interface LeaveCalendarEventDto {
   leaveTypeId?: string;
   leaveTypeName?: string;
   reason?: string;
+  totalDays?: number;
+  startSession?: string;
+  endSession?: string;
   canViewDetails: boolean;
 }
 

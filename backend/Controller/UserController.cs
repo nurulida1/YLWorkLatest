@@ -172,6 +172,20 @@ namespace WebApplication1.Controllers
           u.CreatedAt,
           u.JoinedDate,
           u.Status,
+          u.MonthlySalary,
+          WorkStartTime = u.WorkStartTime.HasValue
+              ? string.Format("{0:D2}:{1:D2}", (int)u.WorkStartTime.Value.TotalHours, u.WorkStartTime.Value.Minutes)
+              : null,
+          WorkEndTime = u.WorkEndTime.HasValue
+              ? string.Format("{0:D2}:{1:D2}", (int)u.WorkEndTime.Value.TotalHours, u.WorkEndTime.Value.Minutes)
+              : null,
+          u.UsesRestDayHalfDay,
+          RestDayHalfDayStart = u.RestDayHalfDayStart.HasValue
+              ? string.Format("{0:D2}:{1:D2}", (int)u.RestDayHalfDayStart.Value.TotalHours, u.RestDayHalfDayStart.Value.Minutes)
+              : null,
+          RestDayHalfDayEnd = u.RestDayHalfDayEnd.HasValue
+              ? string.Format("{0:D2}:{1:D2}", (int)u.RestDayHalfDayEnd.Value.TotalHours, u.RestDayHalfDayEnd.Value.Minutes)
+              : null,
           HodIds = u.ReportingManagers.Select(rm => rm.ManagerId).ToList(),
           DepartmentIds = u.Departments.Select(d => d.Id).ToList(),
           Departments = u.Departments.Select(d => new { d.Id, d.Name }).ToList()
@@ -563,7 +577,7 @@ namespace WebApplication1.Controllers
             }
         }
 
-        [Authorize(Roles = "SuperAdmin")]
+        [Authorize(Roles = "HOD,Management,HR,SuperAdmin")]
         [HttpPost("AdminCreate")]
         public async Task<IActionResult> AdminCreate([FromBody] RegisterRequest request)
         {
@@ -1018,6 +1032,35 @@ namespace WebApplication1.Controllers
                 if (!string.IsNullOrWhiteSpace(request.Gender))
                     user.Gender = request.Gender;
 
+                if (request.MonthlySalary.HasValue)
+                    user.MonthlySalary = request.MonthlySalary.Value;
+
+                if (request.ClearWorkScheduleOverride == true)
+                {
+                    user.WorkStartTime = null;
+                    user.WorkEndTime = null;
+                    user.UsesRestDayHalfDay = null;
+                    user.RestDayHalfDayStart = null;
+                    user.RestDayHalfDayEnd = null;
+                }
+                else
+                {
+                    if (request.WorkStartTime != null)
+                        user.WorkStartTime = YLWorks.Services.Claims.ClaimSettingsService.ParseOptionalTime(
+                            string.IsNullOrWhiteSpace(request.WorkStartTime) ? null : request.WorkStartTime);
+                    if (request.WorkEndTime != null)
+                        user.WorkEndTime = YLWorks.Services.Claims.ClaimSettingsService.ParseOptionalTime(
+                            string.IsNullOrWhiteSpace(request.WorkEndTime) ? null : request.WorkEndTime);
+                    if (request.UsesRestDayHalfDay.HasValue)
+                        user.UsesRestDayHalfDay = request.UsesRestDayHalfDay;
+                    if (request.RestDayHalfDayStart != null)
+                        user.RestDayHalfDayStart = YLWorks.Services.Claims.ClaimSettingsService.ParseOptionalTime(
+                            string.IsNullOrWhiteSpace(request.RestDayHalfDayStart) ? null : request.RestDayHalfDayStart);
+                    if (request.RestDayHalfDayEnd != null)
+                        user.RestDayHalfDayEnd = YLWorks.Services.Claims.ClaimSettingsService.ParseOptionalTime(
+                            string.IsNullOrWhiteSpace(request.RestDayHalfDayEnd) ? null : request.RestDayHalfDayEnd);
+                }
+
                 if (request.HodIds != null)
                 {
                     var oldManagers = await _context.UserReportingManagers
@@ -1106,6 +1149,20 @@ namespace WebApplication1.Controllers
                         Id = d.Id,
                         Name = d.Name
                     }).ToList(),
+                    MonthlySalary = user.MonthlySalary,
+                    WorkStartTime = user.WorkStartTime.HasValue
+                        ? YLWorks.Services.Claims.ClaimSettingsService.FormatTime(user.WorkStartTime.Value)
+                        : null,
+                    WorkEndTime = user.WorkEndTime.HasValue
+                        ? YLWorks.Services.Claims.ClaimSettingsService.FormatTime(user.WorkEndTime.Value)
+                        : null,
+                    UsesRestDayHalfDay = user.UsesRestDayHalfDay,
+                    RestDayHalfDayStart = user.RestDayHalfDayStart.HasValue
+                        ? YLWorks.Services.Claims.ClaimSettingsService.FormatTime(user.RestDayHalfDayStart.Value)
+                        : null,
+                    RestDayHalfDayEnd = user.RestDayHalfDayEnd.HasValue
+                        ? YLWorks.Services.Claims.ClaimSettingsService.FormatTime(user.RestDayHalfDayEnd.Value)
+                        : null,
                     UpdatedAt = user.UpdatedAt,
                     CreatedAt = user.CreatedAt,
                     LastLoginAt = user.LastLoginAt,

@@ -5,7 +5,9 @@ import { RolePermissions } from './role-permissions/role-permissions';
 import { SystemModule } from './system-module/system-module';
 import { LeaveTypesSettings } from './leave-types/leave-types';
 import { LeavePolicySettings } from './leave-policy/leave-policy';
+import { LeaveHolidaysSettings } from './leave-holidays/leave-holidays';
 import { LeaveCalendarSyncSettings } from './leave-calendar-sync/leave-calendar-sync';
+import { ClaimSettingsPage } from './claim-settings/claim-settings';
 import { modulePermissionGuard } from '../../common/permission/module-permission.guard';
 
 const routes: Routes = [
@@ -40,10 +42,22 @@ const routes: Routes = [
     data: { moduleKey: 'settings-leave-policy' },
   },
   {
+    path: 'leave-holidays',
+    component: LeaveHolidaysSettings,
+    canActivate: [modulePermissionGuard],
+    data: { moduleKey: 'settings-leave-holidays' },
+  },
+  {
     path: 'leave-calendar-sync',
     component: LeaveCalendarSyncSettings,
     canActivate: [modulePermissionGuard],
     data: { moduleKey: 'settings-leave-calendar-sync' },
+  },
+  {
+    path: 'claim-settings',
+    component: ClaimSettingsPage,
+    canActivate: [modulePermissionGuard],
+    data: { moduleKey: 'settings-claim-settings' },
   },
 ];
 

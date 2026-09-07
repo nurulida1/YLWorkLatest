@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using YLWorks.Data;
 using YLWorks.Model.Leave;
+using WebApplication1.Helpers;
 
 namespace YLWorks.Services.Leave
 {
@@ -80,7 +81,7 @@ namespace YLWorks.Services.Leave
             var connection = await _context.LeaveCalendarConnections.FindAsync([connectionId], ct);
             if (connection == null) return;
 
-            var today = DateTime.UtcNow.Date;
+            var today = DateTimeHelper.Now().Date;
             var approved = await _context.LeaveRequests
                 .Include(r => r.Employee)
                 .Include(r => r.LeaveType)
@@ -119,14 +120,14 @@ namespace YLWorks.Services.Leave
                         ConnectionId = connection.Id,
                         LeaveRequestId = request.Id,
                         ExternalEventId = externalEventId,
-                        CreatedAt = DateTime.UtcNow
+                        CreatedAt = DateTimeHelper.Now()
                     };
                     _context.LeaveCalendarEventMaps.Add(existingMap);
                 }
                 else
                 {
                     existingMap.ExternalEventId = externalEventId;
-                    existingMap.UpdatedAt = DateTime.UtcNow;
+                    existingMap.UpdatedAt = DateTimeHelper.Now();
                 }
 
                 connection.LastSyncAtUtc = DateTime.UtcNow;
@@ -139,7 +140,7 @@ namespace YLWorks.Services.Leave
                     "Google sync failed for leave {LeaveRequestId} on connection {ConnectionId}",
                     request.Id, connection.Id);
                 connection.LastError = ex.Message;
-                connection.UpdatedAt = DateTime.UtcNow;
+                connection.UpdatedAt = DateTimeHelper.Now();
                 await _context.SaveChangesAsync(ct);
             }
         }

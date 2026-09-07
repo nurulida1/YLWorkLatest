@@ -45,6 +45,8 @@ export class LeaveTypeService {
       isEmergency: Boolean(r['isEmergency'] ?? r['IsEmergency'] ?? false),
       defaultDaysPerYear: Number(r['defaultDaysPerYear'] ?? r['DefaultDaysPerYear'] ?? 0),
       requiresDocument: Boolean(r['requiresDocument'] ?? r['RequiresDocument'] ?? false),
+      allowsHalfDay: Boolean(r['allowsHalfDay'] ?? r['AllowsHalfDay'] ?? false),
+      allowsBalanceCascade: Boolean(r['allowsBalanceCascade'] ?? r['AllowsBalanceCascade'] ?? false),
       policyKind: String(r['policyKind'] ?? r['PolicyKind'] ?? 'Fixed'),
       applicableGender: String(r['applicableGender'] ?? r['ApplicableGender'] ?? 'All'),
     };

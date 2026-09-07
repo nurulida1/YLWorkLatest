@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using YLWorks.Data;
 using YLWorks.Model;
 using YLWorks.Model.Leave;
+using WebApplication1.Helpers;
 
 namespace YLWorks.Services.Leave
 {
@@ -24,7 +25,7 @@ namespace YLWorks.Services.Leave
 
             if (policy == null)
             {
-                policy = CreateDefaultPolicy(DateTime.UtcNow.Year);
+                policy = CreateDefaultPolicy(DateTimeHelper.Now().Year);
                 _context.LeavePolicies.Add(policy);
                 await _context.SaveChangesAsync();
                 return policy;
@@ -70,7 +71,7 @@ namespace YLWorks.Services.Leave
                 {
                     Id = Guid.NewGuid(),
                     IsActive = true,
-                    CreatedAt = DateTime.UtcNow
+                    CreatedAt = DateTimeHelper.Now()
                 };
                 _context.LeavePolicies.Add(policy);
                 await _context.SaveChangesAsync();
@@ -78,9 +79,9 @@ namespace YLWorks.Services.Leave
 
             policy.EffectiveFromYear = dto.EffectiveFromYear > 0
                 ? dto.EffectiveFromYear
-                : DateTime.UtcNow.Year + 1;
+                : DateTimeHelper.Now().Year + 1;
             policy.AnnualCarryForwardPercent = dto.AnnualCarryForwardPercent;
-            policy.UpdatedAt = DateTime.UtcNow;
+            policy.UpdatedAt = DateTimeHelper.Now();
 
             // Hard-delete existing bands in SQL (ignore tracker / client Ids).
             await _context.LeaveTenureBands
@@ -98,7 +99,7 @@ namespace YLWorks.Services.Leave
                 MinYearsInclusive = b.MinYearsInclusive,
                 MaxYearsExclusive = b.MaxYearsExclusive,
                 DaysPerYear = b.DaysPerYear,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTimeHelper.Now()
             }).ToList();
 
             await _context.LeaveTenureBands.AddRangeAsync(newBands);
@@ -144,7 +145,7 @@ namespace YLWorks.Services.Leave
                 EffectiveFromYear = effectiveFromYear,
                 AnnualCarryForwardPercent = 50,
                 IsActive = true,
-                CreatedAt = DateTime.UtcNow,
+                CreatedAt = DateTimeHelper.Now(),
                 TenureBands =
                 [
                     Band(policyId, LeaveTenureBandKind.Annual, 0, 2, 8),
@@ -167,7 +168,7 @@ namespace YLWorks.Services.Leave
                 MinYearsInclusive = min,
                 MaxYearsExclusive = max,
                 DaysPerYear = days,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTimeHelper.Now()
             };
 
         private static LeaveTenureBandKind ParseBandKind(string? value)

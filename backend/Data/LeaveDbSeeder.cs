@@ -10,6 +10,7 @@ namespace YLWorks.Data
     {
         public static async Task SeedAsync(AppDbContext context, ILogger logger)
         {
+            await EnsureBalanceCascadeSchemaAsync(context, logger);
             await EnsurePolicyAndKindsAsync(context, logger);
             await EnsureLeaveSettingsModulesAsync(context, logger);
             await EnsureLeaveCalendarTablesAsync(context, logger);
@@ -28,18 +29,22 @@ namespace YLWorks.Data
             {
                 Id = Guid.NewGuid(), Name = "Annual Leave", Description = "Standard annual leave",
                 IsPaid = true, DefaultDaysPerYear = 8, PolicyKind = LeavePolicyKind.AnnualTenure,
+                AllowsHalfDay = true,
+                AllowsBalanceCascade = true,
                 CreatedAt = DateTime.UtcNow
             };
             var medical = new LeaveType
             {
                 Id = Guid.NewGuid(), Name = "Medical Leave", Description = "Medical leave (MC)",
                 IsPaid = true, DefaultDaysPerYear = 14, RequiresDocument = true,
+                AllowsBalanceCascade = true,
                 PolicyKind = LeavePolicyKind.MedicalTenure, CreatedAt = DateTime.UtcNow
             };
             var emergency = new LeaveType
             {
                 Id = Guid.NewGuid(), Name = "Emergency Leave", Description = "Urgent leave",
-                IsPaid = true, IsEmergency = true, DefaultDaysPerYear = 3, RequiresDocument = true,
+                IsPaid = true, IsEmergency = true, DefaultDaysPerYear = 0, RequiresDocument = true,
+                AllowsBalanceCascade = false,
                 PolicyKind = LeavePolicyKind.Fixed, CreatedAt = DateTime.UtcNow
             };
             var unpaid = new LeaveType
@@ -53,6 +58,7 @@ namespace YLWorks.Data
                 Id = Guid.NewGuid(), Name = "Replacement Leave",
                 Description = "Leave credited for working on a public holiday",
                 IsPaid = true, DefaultDaysPerYear = 0, PolicyKind = LeavePolicyKind.Replacement,
+                AllowsBalanceCascade = true,
                 CreatedAt = DateTime.UtcNow
             };
 
@@ -60,8 +66,9 @@ namespace YLWorks.Data
 
             var users = await SeedUsersAsync(context, logger);
             var mgr1 = users["manager1"];
-            var employees = users.Values.Where(u =>
-                u.SystemRole is "Staff" or "Executive" or "Support").ToList();
+            var employees = users.Values
+                .Where(u => SystemRoles.Employee.Contains(u.SystemRole))
+                .ToList();
 
             var policyService = new LeavePolicyService(context, LoggerFactory.Create(b => { }).CreateLogger<LeavePolicyService>());
 
@@ -73,7 +80,6 @@ namespace YLWorks.Data
 
                 AddBalance(context, emp.Id, annual.Id, year, annualDays);
                 AddBalance(context, emp.Id, medical.Id, year, medicalDays);
-                AddBalance(context, emp.Id, emergency.Id, year, emergency.DefaultDaysPerYear);
                 AddBalance(context, emp.Id, unpaid.Id, year, unpaid.DefaultDaysPerYear);
                 AddBalance(context, emp.Id, replacement.Id, year, 0, isReplacement: true);
             }
@@ -97,7 +103,7 @@ namespace YLWorks.Data
                 Id = Guid.NewGuid(), RequestId = case4.Id, RequestedDays = 30, AvailableDays = 8,
                 IsSufficient = false, CreatedAt = DateTime.UtcNow
             };
-            AddRequest(context, employees[4], emergency, year, 15, 15, LeaveRequestStatus.Approved, true, false, true);
+            AddRequest(context, employees[4], emergency, year, 15, 15, LeaveRequestStatus.Approved, true, false, false);
             var case6 = AddRequest(context, employees[5], annual, year, 8, 9, LeaveRequestStatus.Pending, false, false, false);
             case6.ConflictOverride = true;
             case6.ConflictCheck = new LeaveConflictCheck
@@ -109,6 +115,67 @@ namespace YLWorks.Data
 
             await context.SaveChangesAsync();
             logger.LogInformation("Leave management seed data created.");
+        }
+
+        /// <summary>Adds AllowsBalanceCascade + LeaveRequestBalanceAllocations if missing.</summary>
+        public static async Task EnsureBalanceCascadeSchemaAsync(AppDbContext context, ILogger logger)
+        {
+            try
+            {
+                await context.Database.ExecuteSqlRawAsync("""
+                    SET @db = DATABASE();
+
+                    SET @hadCascadeCol = (
+                        SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+                        WHERE TABLE_SCHEMA = @db AND TABLE_NAME = 'LeaveTypes' AND COLUMN_NAME = 'AllowsBalanceCascade');
+
+                    SET @sql = IF(
+                        @hadCascadeCol = 0,
+                        'ALTER TABLE `LeaveTypes` ADD `AllowsBalanceCascade` tinyint(1) NOT NULL DEFAULT 0',
+                        'SELECT 1');
+                    PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+                    SET @sql = IF(
+                        @hadCascadeCol = 0,
+                        'UPDATE `LeaveTypes` SET `AllowsBalanceCascade` = 1 WHERE `IsPaid` = 1 AND `IsEmergency` = 0 AND LOWER(TRIM(`Name`)) IN (''medical leave'', ''annual leave'', ''replacement leave'')',
+                        'SELECT 1');
+                    PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+                    SET @sql = IF(
+                        (SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES
+                         WHERE TABLE_SCHEMA = @db AND TABLE_NAME = 'LeaveRequestBalanceAllocations') = 0,
+                        'CREATE TABLE `LeaveRequestBalanceAllocations` (
+                            `Id` char(36) COLLATE ascii_general_ci NOT NULL,
+                            `RequestId` char(36) COLLATE ascii_general_ci NOT NULL,
+                            `LeaveTypeId` char(36) COLLATE ascii_general_ci NOT NULL,
+                            `Days` double NOT NULL,
+                            `SortOrder` int NOT NULL,
+                            `IsUnpaidBucket` tinyint(1) NOT NULL,
+                            PRIMARY KEY (`Id`),
+                            KEY `IX_LeaveRequestBalanceAllocations_RequestId` (`RequestId`),
+                            KEY `IX_LeaveRequestBalanceAllocations_LeaveTypeId` (`LeaveTypeId`),
+                            CONSTRAINT `FK_LeaveRequestBalanceAllocations_LeaveRequests_RequestId`
+                                FOREIGN KEY (`RequestId`) REFERENCES `LeaveRequests` (`Id`) ON DELETE CASCADE,
+                            CONSTRAINT `FK_LeaveRequestBalanceAllocations_LeaveTypes_LeaveTypeId`
+                                FOREIGN KEY (`LeaveTypeId`) REFERENCES `LeaveTypes` (`Id`) ON DELETE RESTRICT
+                        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4',
+                        'SELECT 1');
+                    PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+                    """);
+                logger.LogInformation("Leave balance cascade schema ensured.");
+
+                // Emergency has no entitlement; clear cascade flag and default days for existing rows.
+                await context.Database.ExecuteSqlRawAsync("""
+                    UPDATE `LeaveTypes`
+                    SET `AllowsBalanceCascade` = 0,
+                        `DefaultDaysPerYear` = 0
+                    WHERE `IsEmergency` = 1;
+                    """);
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "EnsureBalanceCascadeSchema skipped.");
+            }
         }
 
         /// <summary>Upgrades existing DBs: policy, PolicyKind on types, Replacement type.</summary>
@@ -179,7 +246,7 @@ namespace YLWorks.Data
             }
         }
 
-        /// <summary>Registers settings-leave-types / settings-leave-policy modules + Admin/HR/SuperAdmin rights.</summary>
+        /// <summary>Registers settings-leave-types / settings-leave-policy modules + SuperAdmin/HR rights.</summary>
         public static async Task EnsureLeaveSettingsModulesAsync(AppDbContext context, ILogger logger)
         {
             try
@@ -188,10 +255,11 @@ namespace YLWorks.Data
                 {
                     ("settings-leave-types", "Leave Types", "settings/leave-types"),
                     ("settings-leave-policy", "Leave Policy", "settings/leave-policy"),
+                    ("settings-leave-holidays", "Public Holidays", "settings/leave-holidays"),
                     ("settings-leave-calendar-sync", "Leave Calendar Sync", "settings/leave-calendar-sync"),
                 };
 
-                var roles = new[] { "SuperAdmin", "Admin", "HR" };
+                var roles = SystemRoles.SettingsAdmin;
                 var changed = false;
 
                 foreach (var (code, name, routePrefix) in specs)
@@ -393,6 +461,10 @@ namespace YLWorks.Data
                     .FirstOrDefaultAsync(u => u.Email == email);
                 if (existing != null)
                 {
+                    if (!string.Equals(existing.SystemRole, role, StringComparison.OrdinalIgnoreCase))
+                    {
+                        existing.SystemRole = role;
+                    }
                     if (managerId.HasValue &&
                         !existing.ReportingManagers.Any(rm => rm.ManagerId == managerId.Value))
                     {
@@ -431,17 +503,17 @@ namespace YLWorks.Data
                 return user;
             }
 
-            await EnsureUser("admin", "leave.admin@ylwork.local", "Leave Admin", "Admin", null, "Admin123!");
-            await EnsureUser("hr", "leave.hr@ylwork.local", "Leave HR", "HR", null, "Hr123!");
-            var hodTop = await EnsureUser("manager2", "leave.manager2@ylwork.local", "Leave HOD (Top)", "HOD", null, "Manager123!");
-            var hodMid = await EnsureUser("manager1", "leave.manager1@ylwork.local", "Leave HOD (Mid)", "Manager", hodTop.Id, "Manager123!");
+            await EnsureUser("admin", "leave.admin@ylwork.local", "Leave Super Admin", SystemRoles.SuperAdmin, null, "Admin123!");
+            await EnsureUser("hr", "leave.hr@ylwork.local", "Leave HR", SystemRoles.Hr, null, "Hr123!");
+            var hodTop = await EnsureUser("manager2", "leave.manager2@ylwork.local", "Leave HOD (Top)", SystemRoles.Hod, null, "Manager123!");
+            var hodMid = await EnsureUser("manager1", "leave.manager1@ylwork.local", "Leave HOD (Mid)", SystemRoles.Hod, hodTop.Id, "Manager123!");
 
-            await EnsureUser("e1", "leave.emp1@ylwork.local", "Leave Employee 1", "Staff", hodMid.Id, "Staff123!");
-            await EnsureUser("e2", "leave.emp2@ylwork.local", "Leave Employee 2", "Executive", hodMid.Id, "Staff123!");
-            await EnsureUser("e3", "leave.emp3@ylwork.local", "Leave Employee 3", "Support", hodMid.Id, "Staff123!");
-            await EnsureUser("e4", "leave.emp4@ylwork.local", "Leave Employee 4", "Staff", hodTop.Id, "Staff123!");
-            await EnsureUser("e5", "leave.emp5@ylwork.local", "Leave Employee 5", "Executive", hodTop.Id, "Staff123!");
-            await EnsureUser("e6", "leave.emp6@ylwork.local", "Leave Employee 6", "Support", hodTop.Id, "Staff123!");
+            await EnsureUser("e1", "leave.emp1@ylwork.local", "Leave Employee 1", SystemRoles.Staff, hodMid.Id, "Staff123!");
+            await EnsureUser("e2", "leave.emp2@ylwork.local", "Leave Employee 2", SystemRoles.Staff, hodMid.Id, "Staff123!");
+            await EnsureUser("e3", "leave.emp3@ylwork.local", "Leave Employee 3", SystemRoles.Support, hodMid.Id, "Staff123!");
+            await EnsureUser("e4", "leave.emp4@ylwork.local", "Leave Employee 4", SystemRoles.Staff, hodTop.Id, "Staff123!");
+            await EnsureUser("e5", "leave.emp5@ylwork.local", "Leave Employee 5", SystemRoles.Staff, hodTop.Id, "Staff123!");
+            await EnsureUser("e6", "leave.emp6@ylwork.local", "Leave Employee 6", SystemRoles.Support, hodTop.Id, "Staff123!");
 
             await context.SaveChangesAsync();
             logger.LogInformation("Leave seed users ready ({Count} total).", result.Count);

@@ -111,15 +111,20 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<JwtService>();
 builder.Services.AddScoped<YLWorks.Services.Leave.LeavePolicyService>();
 builder.Services.AddScoped<YLWorks.Services.Leave.LeaveBalanceService>();
+builder.Services.AddScoped<YLWorks.Services.Leave.LeaveBalanceCascadeService>();
 builder.Services.AddScoped<YLWorks.Services.Leave.LeaveConflictService>();
 builder.Services.AddScoped<YLWorks.Services.Leave.LeaveNotificationHelper>();
 builder.Services.AddScoped<YLWorks.Services.Leave.EmergencyLeaveApprovalScheduler>();
+builder.Services.AddScoped<YLWorks.Services.Leave.LeaveHolidayService>();
 builder.Services.AddScoped<YLWorks.Services.Leave.LeaveRequestService>();
 builder.Services.AddScoped<YLWorks.Services.Leave.LeaveCalendarTokenProtector>();
 builder.Services.AddScoped<YLWorks.Services.Leave.GoogleCalendarLeaveSyncService>();
 builder.Services.AddScoped<YLWorks.Services.Leave.LeaveExternalCalendarSyncCoordinator>();
 builder.Services.AddScoped<YLWorks.Services.Leave.GoogleCalendarAuthService>();
 builder.Services.AddScoped<YLWorks.Services.Leave.OutlookLeaveIcsFeedService>();
+builder.Services.AddScoped<YLWorks.Services.Claims.ClaimSettingsService>();
+builder.Services.AddScoped<YLWorks.Services.Claims.ClaimNotificationHelper>();
+builder.Services.AddScoped<YLWorks.Services.Claims.ClaimRequestService>();
 builder.Services.AddHostedService<YLWorks.Services.Leave.LeaveYearEndHostedService>();
 
 var app = builder.Build();
@@ -130,6 +135,8 @@ if (app.Environment.IsDevelopment())
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     var logger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("LeaveDbSeeder");
     await LeaveDbSeeder.SeedAsync(db, logger);
+    var claimLogger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("ClaimDbSeeder");
+    await ClaimDbSeeder.SeedAsync(db, claimLogger);
 }
 
 if (app.Environment.IsDevelopment())
@@ -149,12 +156,12 @@ app.UseCors("AllowAll");
 
 app.UseStaticFiles();
 
-//app.UseStaticFiles(new StaticFileOptions
-//{
-//    FileProvider = new PhysicalFileProvider(
-//        Path.Combine(Directory.GetCurrentDirectory(), "Uploads")),
-//    RequestPath = "/Uploads"
-//});
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(
+        Path.Combine(Directory.GetCurrentDirectory(), "Uploads")),
+    RequestPath = "/Uploads"
+});
 
 app.UseAuthentication();
 app.UseAuthorization();

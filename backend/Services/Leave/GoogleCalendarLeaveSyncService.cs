@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using YLWorks.Data;
 using YLWorks.Model.Leave;
+using WebApplication1.Helpers;
 
 namespace YLWorks.Services.Leave
 {
@@ -80,7 +81,7 @@ namespace YLWorks.Services.Leave
                             connection.RefreshTokenProtected = _tokenProtector.Protect(credential.Token.RefreshToken);
                         connection.TokenExpiresAtUtc = credential.Token.IssuedUtc
                             .AddSeconds(credential.Token.ExpiresInSeconds ?? 3600);
-                        connection.UpdatedAt = DateTime.UtcNow;
+                        connection.UpdatedAt = DateTimeHelper.Now();
                         await _context.SaveChangesAsync(ct);
                     }
                 }
@@ -95,7 +96,7 @@ namespace YLWorks.Services.Leave
             {
                 _logger.LogError(ex, "Failed to create Google Calendar service for connection {ConnectionId}", connection.Id);
                 connection.LastError = ex.Message;
-                connection.UpdatedAt = DateTime.UtcNow;
+                connection.UpdatedAt = DateTimeHelper.Now();
                 await _context.SaveChangesAsync(ct);
                 return null;
             }

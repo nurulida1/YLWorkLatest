@@ -27,7 +27,8 @@ namespace YLWorks.Model.Leave
     {
         Adjusted,
         UnpaidApplied,
-        Cancelled
+        Cancelled,
+        CascadeApplied
     }
 
     public enum LeaveAppealOutcome
@@ -60,6 +61,14 @@ namespace YLWorks.Model.Leave
         Medical = 1
     }
 
+    /// <summary>Session portion of a leave day (full day or half day).</summary>
+    public enum LeaveDaySession
+    {
+        Full = 0,
+        AM = 1,
+        PM = 2
+    }
+
     public enum LeaveCalendarProvider
     {
         Google = 0,
@@ -68,15 +77,14 @@ namespace YLWorks.Model.Leave
 
     public static class LeaveRoles
     {
-        public static readonly string[] Employee =
-            ["Staff", "Executive", "Support"];
+        public static readonly string[] Employee = SystemRoles.Employee;
 
         public static readonly string[] Manager =
-            ["HOD", "Manager", "Management"];
+            [SystemRoles.Hod, SystemRoles.Management];
 
-        public static readonly string[] Hr = ["HR"];
+        public static readonly string[] Hr = [SystemRoles.Hr];
 
-        public static readonly string[] Admin = ["SuperAdmin", "Admin"];
+        public static readonly string[] Admin = [SystemRoles.SuperAdmin];
 
         public static readonly string[] CanApply =
             Employee.Concat(Manager).Concat(Hr).Concat(Admin).ToArray();

@@ -7,6 +7,7 @@ import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { finalize } from 'rxjs/operators';
 import { LeaveRequestDto } from '../../../models/Leave';
+import { formatDaysAmount, formatLeaveDurationLabel } from '../../../common/leave-day.util';
 import { LeaveRequestService } from '../../../services/leave-request.service';
 import { LoadingService } from '../../../services/loading.service';
 import { UserService } from '../../../services/userService.service';
@@ -43,12 +44,28 @@ import { UserService } from '../../../services/userService.service';
             <tr>
               <td>
                 {{ row.leaveTypeName }}
+                @if (row.isShortNoticeAnnual) {
+                  <p-tag value="Short notice → Unpaid" severity="warn" class="ml-1" />
+                } @else if (hasBalanceSplit(row)) {
+                  <p-tag value="Balance split" severity="warn" class="ml-1" />
+                } @else if (row.isUnpaid) {
+                  <p-tag value="Unpaid" severity="secondary" class="ml-1" />
+                }
                 @if (row.isEmergency) {
                   <p-tag value="Emergency" severity="danger" class="ml-1" />
                 }
               </td>
-              <td>{{ row.startDate | date:'mediumDate' }} – {{ row.endDate | date:'mediumDate' }}</td>
-              <td>{{ row.totalDays }}</td>
+              <td>{{ row.startDate | date:'dd MMM yyyy' }} – {{ row.endDate | date:'dd MMM yyyy' }}</td>
+              <td>
+                {{ formatLeaveDays(row) }}
+                @if (hasBalanceSplit(row)) {
+                  <div class="text-xs text-gray-500 mt-0.5">
+                    @for (line of row.balanceAllocations!; track line.leaveTypeId + line.sortOrder; let last = $last) {
+                      <span>{{ line.leaveTypeName }} {{ formatDays(line.days) }}{{ last ? '' : ' · ' }}</span>
+                    }
+                  </div>
+                }
+              </td>
               <td><p-tag [value]="statusLabel(row)" [severity]="statusSeverity(row)" /></td>
               <td>
                 @if (row.status === 'Pending') {
@@ -74,6 +91,20 @@ export class LeaveHistory implements OnInit, OnDestroy {
   private readonly cdr = inject(ChangeDetectorRef);
 
   requests: LeaveRequestDto[] = [];
+
+  formatLeaveDays(row: LeaveRequestDto): string {
+    return formatLeaveDurationLabel(row);
+  }
+
+  formatDays(value: number | null | undefined): string {
+    return formatDaysAmount(value);
+  }
+
+  hasBalanceSplit(row: LeaveRequestDto): boolean {
+    const n = row.balanceAllocations?.length ?? 0;
+    if (row.isEmergency && n > 0) return true;
+    return n > 1;
+  }
 
   ngOnInit(): void {
     const userId = this.userService.currentUser?.userId;

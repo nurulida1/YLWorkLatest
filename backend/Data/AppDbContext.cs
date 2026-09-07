@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using YLWorks.Model;
 using YLWorks.Model.Leave;
 
@@ -32,12 +32,23 @@ namespace YLWorks.Data
         public DbSet<LeaveConflictCheck> LeaveConflictChecks { get; set; }
         public DbSet<LeaveBalanceCheckRecord> LeaveBalanceCheckRecords { get; set; }
         public DbSet<LeaveSupportingDocument> LeaveSupportingDocuments { get; set; }
+        public DbSet<LeaveRequestBalanceAllocation> LeaveRequestBalanceAllocations { get; set; }
         public DbSet<LeaveAppeal> LeaveAppeals { get; set; }
         public DbSet<LeavePolicy> LeavePolicies { get; set; }
         public DbSet<LeaveTenureBand> LeaveTenureBands { get; set; }
         public DbSet<LeaveYearClose> LeaveYearCloses { get; set; }
         public DbSet<LeaveCalendarConnection> LeaveCalendarConnections { get; set; }
         public DbSet<LeaveCalendarEventMap> LeaveCalendarEventMaps { get; set; }
+        public DbSet<PublicHoliday> PublicHolidays { get; set; }
+
+        // =======================
+        // CLAIM MANAGEMENT
+        // =======================
+        public DbSet<YLWorks.Model.Claim.ClaimRequest> ClaimRequests { get; set; }
+        public DbSet<YLWorks.Model.Claim.ClaimLineItem> ClaimLineItems { get; set; }
+        public DbSet<YLWorks.Model.Claim.ClaimApproval> ClaimApprovals { get; set; }
+        public DbSet<YLWorks.Model.Claim.ClaimDocument> ClaimDocuments { get; set; }
+        public DbSet<YLWorks.Model.Claim.ClaimSettings> ClaimSettings { get; set; }
 
         public DbSet<StaffTask> StaffTasks { get; set; }
         public DbSet<Meeting> Meetings { get; set; }
@@ -113,6 +124,7 @@ namespace YLWorks.Data
         public DbSet<MaterialItem> MaterialItems { get; set; }
         public DbSet<MaterialRequestStatusHistory> MaterialRequestStatusHistories { get; set; }
         public DbSet<Inventory> Inventories { get; set; }
+        public DbSet<InventoryAudit> InventoryAudits { get; set; }
         // =======================
         // FINANCE
         // =======================
@@ -138,10 +150,11 @@ namespace YLWorks.Data
             // =======================
             // DEFAULT SUPER ADMIN
             // =======================
+            // Must use fixed Guid/DateTime — Guid.NewGuid()/DateTime.UtcNow break EF migrations.
             modelBuilder.Entity<User>().HasData(
                 new User
                 {
-                    Id = Guid.NewGuid(),
+                    Id = Guid.Parse("6b73aad4-0a70-40c7-9dfc-bcd0a9453e8f"),
                     FullName = "Super Admin",
                     DisplayName = "Super Admin",
                     Email = "superAdmin@test.com",
@@ -150,7 +163,7 @@ namespace YLWorks.Data
                     SystemRole = "SuperAdmin",
                     Status = "Approved",
                     IsActive = true,
-                    CreatedAt = DateTime.UtcNow
+                    CreatedAt = new DateTime(2026, 8, 14, 2, 48, 36, 441, DateTimeKind.Utc).AddTicks(450)
                 }
             );
 
@@ -370,11 +383,31 @@ namespace YLWorks.Data
             {
                 entity.HasKey(x => x.Id);
 
-
                 entity.HasOne(x => x.UploadedBy)
                    .WithMany()
                    .HasForeignKey(x => x.UploadedById)
                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            modelBuilder.Entity<InventoryAudit>(entity =>
+            {
+                entity.HasKey(x => x.Id);
+                entity.Property(x => x.Action).HasMaxLength(20).IsRequired();
+                entity.Property(x => x.UserName).HasMaxLength(200);
+                entity.Property(x => x.Changes).HasColumnType("json").IsRequired();
+                entity.HasIndex(x => new { x.InventoryId, x.CreatedAt });
+
+                entity.HasOne(x => x.Inventory)
+                      .WithMany()
+                      .HasForeignKey(x => x.InventoryId)
+                      .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<Inventory>(entity =>
+            {
+                entity.Property(x => x.Quantity).HasColumnType("decimal(18,3)");
+                entity.Property(x => x.ReservedQuantity).HasColumnType("decimal(18,3)");
+                entity.Property(x => x.Costs).HasColumnType("decimal(18,2)");
             });
 
             ConfigureLeaveManagement(modelBuilder);
@@ -449,6 +482,12 @@ namespace YLWorks.Data
                 entity.Property(e => e.Status)
                     .HasConversion<string>()
                     .HasMaxLength(20);
+                entity.Property(e => e.StartSession)
+                    .HasConversion<string>()
+                    .HasMaxLength(10);
+                entity.Property(e => e.EndSession)
+                    .HasConversion<string>()
+                    .HasMaxLength(10);
                 entity.HasOne(e => e.Employee).WithMany().HasForeignKey(e => e.EmployeeId)
                     .OnDelete(DeleteBehavior.Restrict);
                 entity.HasOne(e => e.LeaveType).WithMany(t => t.LeaveRequests)
@@ -461,6 +500,16 @@ namespace YLWorks.Data
                     .HasForeignKey<LeaveBalanceCheckRecord>(c => c.RequestId);
                 entity.HasOne(e => e.Appeal).WithOne(a => a.Request)
                     .HasForeignKey<LeaveAppeal>(a => a.RequestId);
+            });
+
+            modelBuilder.Entity<LeaveRequestBalanceAllocation>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.HasIndex(e => e.RequestId);
+                entity.HasOne(e => e.Request).WithMany(r => r.BalanceAllocations)
+                    .HasForeignKey(e => e.RequestId).OnDelete(DeleteBehavior.Cascade);
+                entity.HasOne(e => e.LeaveType).WithMany()
+                    .HasForeignKey(e => e.LeaveTypeId).OnDelete(DeleteBehavior.Restrict);
             });
 
             modelBuilder.Entity<LeaveApproval>(entity =>
@@ -522,6 +571,80 @@ namespace YLWorks.Data
                     .HasForeignKey(e => e.ConnectionId).OnDelete(DeleteBehavior.Cascade);
                 entity.HasOne(e => e.LeaveRequest).WithMany()
                     .HasForeignKey(e => e.LeaveRequestId).OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<PublicHoliday>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Name).IsRequired().HasMaxLength(200);
+                entity.Property(e => e.Date).HasColumnType("date");
+                entity.HasIndex(e => e.Date).IsUnique();
+                entity.HasIndex(e => e.IsActive);
+            });
+
+            modelBuilder.Entity<YLWorks.Model.Claim.ClaimRequest>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.ClaimType).HasConversion<string>().HasMaxLength(40);
+                entity.Property(e => e.Status).HasConversion<string>().HasMaxLength(20);
+                entity.Property(e => e.TotalAmount).HasPrecision(18, 2);
+                entity.Property(e => e.Destination).HasMaxLength(200);
+                entity.HasOne(e => e.Employee).WithMany().HasForeignKey(e => e.EmployeeId)
+                    .OnDelete(DeleteBehavior.Restrict);
+                entity.HasIndex(e => e.EmployeeId);
+                entity.HasIndex(e => e.Status);
+            });
+
+            modelBuilder.Entity<YLWorks.Model.Claim.ClaimLineItem>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.LineKind).HasConversion<string>().HasMaxLength(30);
+                entity.Property(e => e.Category).HasConversion<string>().HasMaxLength(30);
+                entity.Property(e => e.DayType).HasConversion<string>().HasMaxLength(30);
+                entity.Property(e => e.VehicleType).HasConversion<string>().HasMaxLength(20);
+                entity.Property(e => e.Amount).HasPrecision(18, 2);
+                entity.Property(e => e.Hours).HasPrecision(10, 2);
+                entity.Property(e => e.OrdinaryRate).HasPrecision(18, 4);
+                entity.Property(e => e.HourlyRate).HasPrecision(18, 4);
+                entity.Property(e => e.Kilometers).HasPrecision(12, 2);
+                entity.HasOne(e => e.Request).WithMany(r => r.LineItems)
+                    .HasForeignKey(e => e.RequestId).OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<YLWorks.Model.Claim.ClaimApproval>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Decision).HasConversion<string>().HasMaxLength(20);
+                entity.HasOne(e => e.Request).WithMany(r => r.Approvals)
+                    .HasForeignKey(e => e.RequestId).OnDelete(DeleteBehavior.Cascade);
+                entity.HasOne(e => e.Approver).WithMany().HasForeignKey(e => e.ApproverId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            modelBuilder.Entity<YLWorks.Model.Claim.ClaimDocument>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.DocumentKind).HasConversion<string>().HasMaxLength(20);
+                entity.HasOne(e => e.Request).WithMany(r => r.Documents)
+                    .HasForeignKey(e => e.RequestId).OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<YLWorks.Model.Claim.ClaimSettings>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.MedicalPerReceiptLimit).HasPrecision(18, 2);
+                entity.Property(e => e.MedicalAnnualLimit).HasPrecision(18, 2);
+                entity.Property(e => e.SafetyShoesLimit).HasPrecision(18, 2);
+                entity.Property(e => e.MileageCarRatePerKm).HasPrecision(18, 4);
+                entity.Property(e => e.MileageMotorcycleRatePerKm).HasPrecision(18, 4);
+                entity.Property(e => e.MealAllowancePerDay).HasPrecision(18, 2);
+                entity.Property(e => e.OtNormalMultiplier).HasPrecision(8, 4);
+                entity.Property(e => e.OtRestDayFirstBandMultiplier).HasPrecision(8, 4);
+                entity.Property(e => e.OtRestDaySecondBandMultiplier).HasPrecision(8, 4);
+                entity.Property(e => e.OtRestDayAfter8HourlyMultiplier).HasPrecision(8, 4);
+                entity.Property(e => e.OtPublicHolidayUpTo8Multiplier).HasPrecision(8, 4);
+                entity.Property(e => e.OtPublicHolidayAfter8HourlyMultiplier).HasPrecision(8, 4);
+                entity.HasIndex(e => e.IsActive);
             });
         }
     }

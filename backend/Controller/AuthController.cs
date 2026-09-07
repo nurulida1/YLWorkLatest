@@ -77,7 +77,7 @@ namespace YLWorks.Controllers
             return Ok("You are authenticated!");
         }
 
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "HOD,Management,HR,SuperAdmin")]
         [HttpPost("approve")]
         public async Task<IActionResult> Approve(ApproveUserRequest request)
         {
@@ -110,7 +110,7 @@ namespace YLWorks.Controllers
             });
         }
 
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "HOD,Management,HR,SuperAdmin")]
         [HttpPost("reject")]
         public async Task<IActionResult> Reject(RejectUserRequest request)
         {

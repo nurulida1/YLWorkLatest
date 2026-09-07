@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.SignalR;
 using YLWorks.Data;
 using YLWorks.Hubs;
 using YLWorks.Model;
+using WebApplication1.Helpers;
 
 namespace YLWorks.Services.Leave
 {
@@ -36,7 +37,7 @@ namespace YLWorks.Services.Leave
                 Link = $"/leave/{leaveRequestId}",
                 LeaveRequestId = leaveRequestId,
                 IsRead = false,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTimeHelper.Now()
             };
 
             _context.Notifications.Add(notification);

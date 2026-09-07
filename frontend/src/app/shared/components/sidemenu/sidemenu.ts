@@ -183,6 +183,29 @@ export class Sidemenu {
       ],
     },
     {
+      label: 'Claims',
+      route: '/claims',
+      icon: 'pi-wallet',
+      items: [
+        {
+          label: 'Claims',
+          route: '/claims',
+        },
+        {
+          label: 'Apply Claim',
+          route: '/claims/apply',
+        },
+        {
+          label: 'Claim Approvals',
+          route: '/claims/approvals',
+        },
+        {
+          label: 'Claim History',
+          route: '/claims/history',
+        },
+      ],
+    },
+    {
       label: 'Upcoming Meetings',
       route: '/meeting',
       icon: 'pi-calendar-clock',
@@ -369,9 +392,19 @@ export class Sidemenu {
           roles: ['SuperAdmin', 'HOD', 'Management', 'HR'],
         },
         {
+          label: 'Public Holidays',
+          route: '/settings/leave-holidays',
+          roles: ['SuperAdmin', 'Admin', 'HR'],
+        },
+        {
           label: 'Leave calendar sync',
           route: '/settings/leave-calendar-sync',
           roles: ['SuperAdmin', 'HOD', 'Management', 'HR'],
+        },
+        {
+          label: 'Claim Settings',
+          route: '/settings/claim-settings',
+          roles: ['SuperAdmin', 'Admin', 'HR'],
         },
       ],
     },

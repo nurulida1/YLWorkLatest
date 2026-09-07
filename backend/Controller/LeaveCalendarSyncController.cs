@@ -10,7 +10,7 @@ namespace YLWorks.Controller
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize(Roles = "SuperAdmin,Admin,HR")]
+    [Authorize(Roles = "HOD,Management,HR,SuperAdmin")]
     public class LeaveCalendarSyncController : ControllerBase
     {
         private readonly AppDbContext _context;

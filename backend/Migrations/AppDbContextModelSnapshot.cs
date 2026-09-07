@@ -253,6 +253,334 @@ namespace YLWorks.Migrations
                     b.ToTable("CategoryInventories");
                 });
 
+            modelBuilder.Entity("YLWorks.Model.Claim.ClaimApproval", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<Guid>("ApproverId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("ApproverRole")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime>("DecidedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Decision")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<string>("RejectionReason")
+                        .HasColumnType("longtext");
+
+                    b.Property<Guid>("RequestId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("char(36)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ApproverId");
+
+                    b.HasIndex("RequestId");
+
+                    b.ToTable("ClaimApprovals");
+                });
+
+            modelBuilder.Entity("YLWorks.Model.Claim.ClaimDocument", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("DocumentKind")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("FileUrl")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<Guid>("RequestId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime>("UploadedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RequestId");
+
+                    b.ToTable("ClaimDocuments");
+                });
+
+            modelBuilder.Entity("YLWorks.Model.Claim.ClaimLineItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Category")
+                        .HasMaxLength(30)
+                        .HasColumnType("varchar(30)");
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("DayType")
+                        .HasMaxLength(30)
+                        .HasColumnType("varchar(30)");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<decimal?>("HourlyRate")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<decimal?>("Hours")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("decimal(10,2)");
+
+                    b.Property<decimal?>("Kilometers")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)");
+
+                    b.Property<string>("LineKind")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("varchar(30)");
+
+                    b.Property<int?>("MealDays")
+                        .HasColumnType("int");
+
+                    b.Property<decimal?>("OrdinaryRate")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<DateTime?>("PurchaseDate")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid>("RequestId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("VehicleType")
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<DateTime?>("WorkDate")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RequestId");
+
+                    b.ToTable("ClaimLineItems");
+                });
+
+            modelBuilder.Entity("YLWorks.Model.Claim.ClaimRequest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("ClaimType")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("varchar(40)");
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("Destination")
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
+
+                    b.Property<Guid>("EmployeeId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("Remarks")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<DateTime>("SubmittedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<decimal>("TotalAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime?>("TripEndDate")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime?>("TripStartDate")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("char(36)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EmployeeId");
+
+                    b.HasIndex("Status");
+
+                    b.ToTable("ClaimRequests");
+                });
+
+            modelBuilder.Entity("YLWorks.Model.Claim.ClaimSettings", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("char(36)");
+
+                    b.Property<TimeSpan>("DefaultRestDayHalfDayEnd")
+                        .HasColumnType("time(6)");
+
+                    b.Property<TimeSpan>("DefaultRestDayHalfDayStart")
+                        .HasColumnType("time(6)");
+
+                    b.Property<bool>("DefaultUsesRestDayHalfDay")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<TimeSpan>("DefaultWorkEndTime")
+                        .HasColumnType("time(6)");
+
+                    b.Property<TimeSpan>("DefaultWorkStartTime")
+                        .HasColumnType("time(6)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<decimal>("MealAllowancePerDay")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("MedicalMonthlyTotalLimit")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("MedicalPerReceiptLimit")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("MileageCarRatePerKm")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<decimal>("MileageMotorcycleRatePerKm")
+                        .HasPrecision(18, 4)
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<int>("OrdinaryDayHours")
+                        .HasColumnType("int");
+
+                    b.Property<int>("OrdinaryRateDivisorDays")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("OtNormalMultiplier")
+                        .HasPrecision(8, 4)
+                        .HasColumnType("decimal(8,4)");
+
+                    b.Property<decimal>("OtPublicHolidayAfter8HourlyMultiplier")
+                        .HasPrecision(8, 4)
+                        .HasColumnType("decimal(8,4)");
+
+                    b.Property<decimal>("OtPublicHolidayUpTo8Multiplier")
+                        .HasPrecision(8, 4)
+                        .HasColumnType("decimal(8,4)");
+
+                    b.Property<decimal>("OtRestDayAfter8HourlyMultiplier")
+                        .HasPrecision(8, 4)
+                        .HasColumnType("decimal(8,4)");
+
+                    b.Property<decimal>("OtRestDayFirstBandMultiplier")
+                        .HasPrecision(8, 4)
+                        .HasColumnType("decimal(8,4)");
+
+                    b.Property<decimal>("OtRestDaySecondBandMultiplier")
+                        .HasPrecision(8, 4)
+                        .HasColumnType("decimal(8,4)");
+
+                    b.Property<decimal>("SafetyShoesLimit")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("char(36)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IsActive");
+
+                    b.ToTable("ClaimSettings");
+                });
+
             modelBuilder.Entity("YLWorks.Model.Company", b =>
                 {
                     b.Property<Guid>("Id")
@@ -735,11 +1063,26 @@ namespace YLWorks.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("varchar(200)");
 
+                    b.Property<TimeSpan?>("RestDayHalfDayEnd")
+                        .HasColumnType("time(6)");
+
+                    b.Property<TimeSpan?>("RestDayHalfDayStart")
+                        .HasColumnType("time(6)");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime(6)");
 
                     b.Property<Guid?>("UpdatedById")
                         .HasColumnType("char(36)");
+
+                    b.Property<bool?>("UsesRestDayHalfDay")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<TimeSpan?>("WorkEndTime")
+                        .HasColumnType("time(6)");
+
+                    b.Property<TimeSpan?>("WorkStartTime")
+                        .HasColumnType("time(6)");
 
                     b.HasKey("Id");
 
@@ -995,7 +1338,7 @@ namespace YLWorks.Migrations
                         .HasColumnType("char(36)");
 
                     b.Property<decimal?>("Costs")
-                        .HasColumnType("decimal(65,30)");
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<DateTime?>("CreatedAt")
                         .HasColumnType("datetime(6)");
@@ -1029,13 +1372,13 @@ namespace YLWorks.Migrations
                         .HasColumnType("char(36)");
 
                     b.Property<decimal?>("Quantity")
-                        .HasColumnType("decimal(65,30)");
+                        .HasColumnType("decimal(18,3)");
 
                     b.Property<string>("Remarks")
                         .HasColumnType("longtext");
 
                     b.Property<decimal?>("ReservedQuantity")
-                        .HasColumnType("decimal(65,30)");
+                        .HasColumnType("decimal(18,3)");
 
                     b.Property<Guid?>("SectionId")
                         .HasColumnType("char(36)");
@@ -1073,6 +1416,41 @@ namespace YLWorks.Migrations
                     b.HasIndex("SectionId");
 
                     b.ToTable("Inventories");
+                });
+
+            modelBuilder.Entity("YLWorks.Model.InventoryAudit", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<string>("Changes")
+                        .IsRequired()
+                        .HasColumnType("json");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid>("InventoryId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("UserName")
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("InventoryId", "CreatedAt");
+
+                    b.ToTable("InventoryAudits");
                 });
 
             modelBuilder.Entity("YLWorks.Model.Invoice", b =>
@@ -1777,7 +2155,15 @@ namespace YLWorks.Migrations
                     b.Property<DateTime>("EndDate")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<string>("EndSession")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("varchar(10)");
+
                     b.Property<bool>("IsEmergency")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<bool>("IsShortNoticeAnnual")
                         .HasColumnType("tinyint(1)");
 
                     b.Property<bool>("IsUnpaid")
@@ -1793,6 +2179,11 @@ namespace YLWorks.Migrations
                     b.Property<DateTime>("StartDate")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<string>("StartSession")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("varchar(10)");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(20)
@@ -1801,8 +2192,8 @@ namespace YLWorks.Migrations
                     b.Property<DateTime>("SubmittedAt")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<int>("TotalDays")
-                        .HasColumnType("int");
+                    b.Property<double>("TotalDays")
+                        .HasColumnType("double");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime(6)");
@@ -1817,6 +2208,36 @@ namespace YLWorks.Migrations
                     b.HasIndex("LeaveTypeId");
 
                     b.ToTable("LeaveRequests");
+                });
+
+            modelBuilder.Entity("YLWorks.Model.Leave.LeaveRequestBalanceAllocation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<double>("Days")
+                        .HasColumnType("double");
+
+                    b.Property<bool>("IsUnpaidBucket")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<Guid>("LeaveTypeId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<Guid>("RequestId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LeaveTypeId");
+
+                    b.HasIndex("RequestId");
+
+                    b.ToTable("LeaveRequestBalanceAllocations");
                 });
 
             modelBuilder.Entity("YLWorks.Model.Leave.LeaveSupportingDocument", b =>
@@ -1909,6 +2330,12 @@ namespace YLWorks.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("char(36)");
 
+                    b.Property<bool>("AllowsBalanceCascade")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<bool>("AllowsHalfDay")
+                        .HasColumnType("tinyint(1)");
+
                     b.Property<string>("ApplicableGender")
                         .IsRequired()
                         .HasMaxLength(20)
@@ -1992,6 +2419,45 @@ namespace YLWorks.Migrations
                         .IsUnique();
 
                     b.ToTable("LeaveYearCloses");
+                });
+
+            modelBuilder.Entity("YLWorks.Model.Leave.PublicHoliday", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime>("Date")
+                        .HasColumnType("date");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("char(36)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Date")
+                        .IsUnique();
+
+                    b.HasIndex("IsActive");
+
+                    b.ToTable("PublicHolidays");
                 });
 
             modelBuilder.Entity("YLWorks.Model.LocationInventory", b =>
@@ -2287,6 +2753,9 @@ namespace YLWorks.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<Guid?>("ClaimRequestId")
                         .HasColumnType("char(36)");
 
                     b.Property<DateTime>("CreatedAt")
@@ -3882,6 +4351,9 @@ namespace YLWorks.Migrations
                     b.Property<Guid?>("ManagerId")
                         .HasColumnType("char(36)");
 
+                    b.Property<decimal?>("MonthlySalary")
+                        .HasColumnType("decimal(65,30)");
+
                     b.Property<string>("Password")
                         .IsRequired()
                         .HasColumnType("longtext");
@@ -3894,6 +4366,12 @@ namespace YLWorks.Migrations
 
                     b.Property<string>("RejectReason")
                         .HasColumnType("longtext");
+
+                    b.Property<TimeSpan?>("RestDayHalfDayEnd")
+                        .HasColumnType("time(6)");
+
+                    b.Property<TimeSpan?>("RestDayHalfDayStart")
+                        .HasColumnType("time(6)");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -3909,6 +4387,15 @@ namespace YLWorks.Migrations
                     b.Property<Guid?>("UpdatedById")
                         .HasColumnType("char(36)");
 
+                    b.Property<bool?>("UsesRestDayHalfDay")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<TimeSpan?>("WorkEndTime")
+                        .HasColumnType("time(6)");
+
+                    b.Property<TimeSpan?>("WorkStartTime")
+                        .HasColumnType("time(6)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("ManagerId");
@@ -3918,7 +4405,7 @@ namespace YLWorks.Migrations
                     b.HasData(
                         new
                         {
-                            Id = new Guid("68315fb8-5429-4fe2-b42c-cf0139881944"),
+                            Id = new Guid("6b73aad4-0a70-40c7-9dfc-bcd0a9453e8f"),
                             ContactNo = "",
                             CreatedAt = new DateTime(2026, 8, 14, 2, 48, 36, 441, DateTimeKind.Utc).AddTicks(450),
                             DisplayName = "Super Admin",
@@ -4004,8 +4491,17 @@ namespace YLWorks.Migrations
                     b.Property<DateTime?>("LastLoginAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<decimal?>("MonthlySalary")
+                        .HasColumnType("decimal(65,30)");
+
                     b.Property<string>("Password")
                         .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("RestDayHalfDayEnd")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("RestDayHalfDayStart")
                         .HasColumnType("longtext");
 
                     b.Property<string>("SystemRole")
@@ -4013,6 +4509,15 @@ namespace YLWorks.Migrations
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime(6)");
+
+                    b.Property<bool?>("UsesRestDayHalfDay")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("WorkEndTime")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("WorkStartTime")
+                        .HasColumnType("longtext");
 
                     b.HasKey("Id");
 
@@ -4238,6 +4743,58 @@ namespace YLWorks.Migrations
                         .HasForeignKey("WorkOrderTaskId");
 
                     b.Navigation("UploadedBy");
+                });
+
+            modelBuilder.Entity("YLWorks.Model.Claim.ClaimApproval", b =>
+                {
+                    b.HasOne("YLWorks.Model.User", "Approver")
+                        .WithMany()
+                        .HasForeignKey("ApproverId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("YLWorks.Model.Claim.ClaimRequest", "Request")
+                        .WithMany("Approvals")
+                        .HasForeignKey("RequestId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Approver");
+
+                    b.Navigation("Request");
+                });
+
+            modelBuilder.Entity("YLWorks.Model.Claim.ClaimDocument", b =>
+                {
+                    b.HasOne("YLWorks.Model.Claim.ClaimRequest", "Request")
+                        .WithMany("Documents")
+                        .HasForeignKey("RequestId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Request");
+                });
+
+            modelBuilder.Entity("YLWorks.Model.Claim.ClaimLineItem", b =>
+                {
+                    b.HasOne("YLWorks.Model.Claim.ClaimRequest", "Request")
+                        .WithMany("LineItems")
+                        .HasForeignKey("RequestId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Request");
+                });
+
+            modelBuilder.Entity("YLWorks.Model.Claim.ClaimRequest", b =>
+                {
+                    b.HasOne("YLWorks.Model.User", "Employee")
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Employee");
                 });
 
             modelBuilder.Entity("YLWorks.Model.Company", b =>
@@ -4468,6 +5025,17 @@ namespace YLWorks.Migrations
                     b.Navigation("ProductService");
 
                     b.Navigation("Section");
+                });
+
+            modelBuilder.Entity("YLWorks.Model.InventoryAudit", b =>
+                {
+                    b.HasOne("YLWorks.Model.Inventory", "Inventory")
+                        .WithMany()
+                        .HasForeignKey("InventoryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Inventory");
                 });
 
             modelBuilder.Entity("YLWorks.Model.Invoice", b =>
@@ -4730,6 +5298,25 @@ namespace YLWorks.Migrations
                     b.Navigation("Employee");
 
                     b.Navigation("LeaveType");
+                });
+
+            modelBuilder.Entity("YLWorks.Model.Leave.LeaveRequestBalanceAllocation", b =>
+                {
+                    b.HasOne("YLWorks.Model.Leave.LeaveType", "LeaveType")
+                        .WithMany()
+                        .HasForeignKey("LeaveTypeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("YLWorks.Model.Leave.LeaveRequest", "Request")
+                        .WithMany("BalanceAllocations")
+                        .HasForeignKey("RequestId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("LeaveType");
+
+                    b.Navigation("Request");
                 });
 
             modelBuilder.Entity("YLWorks.Model.Leave.LeaveSupportingDocument", b =>
@@ -5426,6 +6013,15 @@ namespace YLWorks.Migrations
                     b.Navigation("WorkOrder");
                 });
 
+            modelBuilder.Entity("YLWorks.Model.Claim.ClaimRequest", b =>
+                {
+                    b.Navigation("Approvals");
+
+                    b.Navigation("Documents");
+
+                    b.Navigation("LineItems");
+                });
+
             modelBuilder.Entity("YLWorks.Model.DeliveryOrder", b =>
                 {
                     b.Navigation("DeliveryOrderItems");
@@ -5476,6 +6072,8 @@ namespace YLWorks.Migrations
                     b.Navigation("Appeal");
 
                     b.Navigation("Approvals");
+
+                    b.Navigation("BalanceAllocations");
 
                     b.Navigation("BalanceCheck");
 

@@ -7,6 +7,7 @@ import {
   CancelLeaveDto,
   CreateLeaveRequestDto,
   LeaveApprovalChainStepDto,
+  LeaveBalanceAllocationDto,
   LeaveCalendarEventDto,
   LeaveCalendarFilters,
   LeaveCalendarResponseDto,
@@ -133,6 +134,12 @@ export class LeaveRequestService {
       leaveTypeId: leaveTypeId != null && leaveTypeId !== '' ? String(leaveTypeId) : undefined,
       leaveTypeName: (r['leaveTypeName'] ?? r['LeaveTypeName']) as string | undefined,
       reason: (r['reason'] ?? r['Reason']) as string | undefined,
+      totalDays: (() => {
+        const v = r['totalDays'] ?? r['TotalDays'];
+        return v == null || v === '' ? undefined : Number(v);
+      })(),
+      startSession: (r['startSession'] ?? r['StartSession']) as string | undefined,
+      endSession: (r['endSession'] ?? r['EndSession']) as string | undefined,
       canViewDetails: Boolean(r['canViewDetails'] ?? r['CanViewDetails'] ?? false),
     };
   }
@@ -148,15 +155,24 @@ export class LeaveRequestService {
       startDate: String(r['startDate'] ?? r['StartDate'] ?? ''),
       endDate: String(r['endDate'] ?? r['EndDate'] ?? ''),
       totalDays: Number(r['totalDays'] ?? r['TotalDays'] ?? 0),
+      startSession: String(r['startSession'] ?? r['StartSession'] ?? 'Full'),
+      endSession: String(r['endSession'] ?? r['EndSession'] ?? 'Full'),
       reason: String(r['reason'] ?? r['Reason'] ?? ''),
       status: String(r['status'] ?? r['Status'] ?? ''),
       isEmergency: Boolean(r['isEmergency'] ?? r['IsEmergency'] ?? false),
       isUnpaid: Boolean(r['isUnpaid'] ?? r['IsUnpaid'] ?? false),
+      isShortNoticeAnnual: this.toFlag(r['isShortNoticeAnnual'] ?? r['IsShortNoticeAnnual']),
       conflictOverride: Boolean(r['conflictOverride'] ?? r['ConflictOverride'] ?? false),
       submittedAt: String(r['submittedAt'] ?? r['SubmittedAt'] ?? ''),
       conflictWarning: (r['conflictWarning'] ?? r['ConflictWarning']) as string | undefined,
       remainingBalance: (r['remainingBalance'] ?? r['RemainingBalance']) as number | undefined,
       balanceSufficient: (r['balanceSufficient'] ?? r['BalanceSufficient']) as boolean | undefined,
+      requiresBalanceCascadeAccept: Boolean(
+        r['requiresBalanceCascadeAccept'] ?? r['RequiresBalanceCascadeAccept'] ?? false,
+      ),
+      balanceAllocations: this.normalizeAllocations(
+        r['balanceAllocations'] ?? r['BalanceAllocations'],
+      ),
       balanceOptions: (r['balanceOptions'] ?? r['BalanceOptions']) as string[] | undefined,
       rejectionReason: (r['rejectionReason'] ?? r['RejectionReason']) as string | undefined,
       documentUrl: (r['documentUrl'] ?? r['DocumentUrl']) as string | undefined,
@@ -188,5 +204,28 @@ export class LeaveRequestService {
         isFinalStep: Boolean(s['isFinalStep'] ?? s['IsFinalStep'] ?? false),
       };
     });
+  }
+
+  private normalizeAllocations(raw: unknown): LeaveBalanceAllocationDto[] {
+    if (!Array.isArray(raw)) return [];
+    return raw.map((item, index) => {
+      const a = (item ?? {}) as Record<string, unknown>;
+      return {
+        leaveTypeId: String(a['leaveTypeId'] ?? a['LeaveTypeId'] ?? ''),
+        leaveTypeName: String(a['leaveTypeName'] ?? a['LeaveTypeName'] ?? ''),
+        days: Number(a['days'] ?? a['Days'] ?? 0),
+        sortOrder: Number(a['sortOrder'] ?? a['SortOrder'] ?? index),
+        isUnpaidBucket: Boolean(a['isUnpaidBucket'] ?? a['IsUnpaidBucket'] ?? false),
+      };
+    });
+  }
+
+  private toFlag(value: unknown): boolean {
+    if (value === true || value === 1) return true;
+    if (typeof value === 'string') {
+      const v = value.trim().toLowerCase();
+      return v === 'true' || v === '1';
+    }
+    return false;
   }
 }

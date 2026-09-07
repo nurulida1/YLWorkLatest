@@ -7,6 +7,7 @@ using System.Security.Claims;
 using YLWorks.Data;
 using YLWorks.Hubs;
 using YLWorks.Model;
+using YLWorks.Model.Leave;
 
 namespace YLWorks.Controller
 {
@@ -96,6 +97,111 @@ namespace YLWorks.Controller
             };
 
             return Ok(result);
+        }
+
+        [HttpGet("GetHrDashboard")]
+        [Authorize(Roles = "HR,SuperAdmin,Admin")]
+        public async Task<IActionResult> GetHrDashboard()
+        {
+            var today = DateTime.UtcNow.Date;
+            var oneYearAgo = today.AddYears(-1);
+
+            var activeApproved = await _context.Users
+                .Where(u => u.IsActive && u.Status == "Approved")
+                .Include(u => u.Departments)
+                .ToListAsync();
+
+            var totalEmployees = activeApproved.Count;
+
+            var resignedStaff = await _context.Users
+                .CountAsync(u => !u.IsActive && u.JoinedDate != null);
+
+            var newStaffUnderOneYear = activeApproved
+                .Count(u => u.JoinedDate.HasValue && u.JoinedDate.Value.Date >= oneYearAgo);
+
+            var pendingLeave = await _context.LeaveRequests
+                .CountAsync(r => r.Status == LeaveRequestStatus.Pending);
+
+            var todayLeaveRows = await _context.LeaveRequests
+                .AsNoTracking()
+                .Include(r => r.Employee)
+                .Include(r => r.LeaveType)
+                .Where(r => r.Status == LeaveRequestStatus.Approved)
+                .Where(r => r.StartDate.Date <= today && r.EndDate.Date >= today)
+                .OrderBy(r => r.Employee.FullName)
+                .ToListAsync();
+
+            var onLeaveToday = todayLeaveRows
+                .Select(r => r.EmployeeId)
+                .Distinct()
+                .Count();
+
+            var assumedPresentToday = Math.Max(0, totalEmployees - onLeaveToday);
+
+            var departmentCounts = new Dictionary<Guid, (string Name, int Count)>();
+
+            foreach (var user in activeApproved)
+            {
+                if (user.Departments == null || user.Departments.Count == 0)
+                {
+                    var unassignedKey = Guid.Empty;
+                    if (departmentCounts.TryGetValue(unassignedKey, out var existing))
+                        departmentCounts[unassignedKey] = (existing.Name, existing.Count + 1);
+                    else
+                        departmentCounts[unassignedKey] = ("Unassigned", 1);
+                }
+                else
+                {
+                    foreach (var dept in user.Departments)
+                    {
+                        if (departmentCounts.TryGetValue(dept.Id, out var existing))
+                            departmentCounts[dept.Id] = (existing.Name, existing.Count + 1);
+                        else
+                            departmentCounts[dept.Id] = (dept.Name, 1);
+                    }
+                }
+            }
+
+            var departmentDistribution = departmentCounts
+                .Select(kvp => new DepartmentDistributionDto
+                {
+                    DepartmentId = kvp.Key,
+                    Department = kvp.Value.Name,
+                    Count = kvp.Value.Count
+                })
+                .OrderByDescending(d => d.Count)
+                .ThenBy(d => d.Department)
+                .ToList();
+
+            var todayLeaveEvents = todayLeaveRows.Select(r => new LeaveCalendarEventDto
+            {
+                RequestId = r.Id,
+                EmployeeId = r.EmployeeId,
+                EmployeeName = r.Employee.FullName,
+                StartDate = r.StartDate.Date,
+                EndDate = r.EndDate.Date,
+                LeaveTypeId = r.LeaveTypeId,
+                LeaveTypeName = r.LeaveType.Name,
+                Reason = r.Reason,
+                TotalDays = r.TotalDays,
+                StartSession = r.StartSession.ToString(),
+                EndSession = r.EndSession.ToString(),
+                CanViewDetails = true
+            }).ToList();
+
+            var dashboard = new HrDashboardDto
+            {
+                TotalEmployees = totalEmployees,
+                PendingLeave = pendingLeave,
+                OnLeaveToday = onLeaveToday,
+                AssumedPresentToday = assumedPresentToday,
+                ResignedStaff = resignedStaff,
+                NewStaffUnderOneYear = newStaffUnderOneYear,
+                DepartmentDistribution = departmentDistribution,
+                TodayLeaveEvents = todayLeaveEvents
+            };
+
+            return Ok(dashboard);
         }
 
         [HttpGet("GetSuperAdminDashboard")]

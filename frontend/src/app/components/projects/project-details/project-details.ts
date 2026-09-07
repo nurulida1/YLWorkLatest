@@ -102,10 +102,10 @@ import { DrawerModule } from 'primeng/drawer';
           </div>
           <div class="flex flex-col gap-1">
             <div class="font-bold text-2xl text-gray-800">
-              {{ PagingSignal()?.projectTitle }}
+              {{ PagingSignal().projectTitle }}
             </div>
             <span class="text-gray-500 tracking-wide"
-              >PROJECT ID: {{ PagingSignal()?.projectCode }}</span
+              >PROJECT ID: {{ PagingSignal().projectCode }}</span
             >
           </div>
         </div>
@@ -223,7 +223,7 @@ import { DrawerModule } from 'primeng/drawer';
                       <div class="text-gray-500">Client</div>
                       <div class="flex flex-col gap-1">
                         <div class="font-semibold">
-                          {{ PagingSignal().client?.name }}
+                          {{ PagingSignal().client.name }}
                         </div>
                         <div class="flex flex-row items-center gap-2">
                           <i
@@ -246,15 +246,15 @@ import { DrawerModule } from 'primeng/drawer';
                           class="w-10 h-10 font-semibold text-blue-800 bg-blue-100 rounded-full flex items-center justify-center"
                         >
                           {{
-                            getInitial(PagingSignal().projectLeader?.fullName)
+                            getInitial(PagingSignal().projectLeader.fullName)
                           }}
                         </div>
                         <div class="flex flex-col">
                           <div class="font-semibold">
-                            {{ PagingSignal().projectLeader?.fullName }}
+                            {{ PagingSignal().projectLeader.fullName }}
                           </div>
                           <div class="text-sm text-gray-500">
-                            {{ PagingSignal().projectLeader?.jobTitle }}
+                            {{ PagingSignal().projectLeader.jobTitle }}
                           </div>
                         </div>
                       </div>
@@ -276,12 +276,12 @@ import { DrawerModule } from 'primeng/drawer';
                             <div
                               class="w-10 h-10 rounded-full bg-blue-100 text-blue-800 flex items-center justify-center font-semibold"
                             >
-                              {{ getInitial(member.user?.fullName) }}
+                              {{ getInitial(member.user.fullName) }}
                             </div>
                             <div class="flex flex-col">
-                              <div>{{ member.user?.fullName }}</div>
+                              <div>{{ member.user.fullName }}</div>
                               <div class="text-sm text-gray-500">
-                                {{ member.user?.jobTitle }}
+                                {{ member.user.jobTitle }}
                               </div>
                             </div>
                           </div>
@@ -426,9 +426,9 @@ import { DrawerModule } from 'primeng/drawer';
                             *ngFor="let member of data.assignedTaskMembers"
                           >
                             <p-avatar
-                              [label]="getInitial(member.user?.fullName)"
+                              [label]="getInitial(member.user.fullName)"
                               shape="circle"
-                              pTooltip="{{ member.user?.fullName }}"
+                              pTooltip="{{ member.user.fullName }}"
                               tooltipPosition="top"
                               styleClass="cursor-pointer font-semibold! bg-blue-100! text-blue-800!"
                             ></p-avatar>

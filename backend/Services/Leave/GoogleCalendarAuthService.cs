@@ -9,6 +9,7 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 using YLWorks.Data;
 using YLWorks.Model.Leave;
+using WebApplication1.Helpers;
 
 namespace YLWorks.Services.Leave
 {
@@ -106,7 +107,7 @@ namespace YLWorks.Services.Leave
                         UserId = userId,
                         Provider = LeaveCalendarProvider.Google,
                         ConnectedAtUtc = DateTime.UtcNow,
-                        CreatedAt = DateTime.UtcNow
+                        CreatedAt = DateTimeHelper.Now()
                     };
                     _context.LeaveCalendarConnections.Add(existing);
                 }
@@ -119,7 +120,7 @@ namespace YLWorks.Services.Leave
                 existing.ExternalCalendarId = calendarId;
                 existing.ExternalAccountEmail = email;
                 existing.LastError = null;
-                existing.UpdatedAt = DateTime.UtcNow;
+                existing.UpdatedAt = DateTimeHelper.Now();
 
                 await _context.SaveChangesAsync(ct);
                 await _coordinator.BackfillConnectionAsync(existing.Id, ct);

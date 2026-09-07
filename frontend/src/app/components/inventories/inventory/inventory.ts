@@ -25,7 +25,7 @@ import { InputNumberModule } from 'primeng/inputnumber';
 import { TextareaModule } from 'primeng/textarea';
 import { SelectModule } from 'primeng/select';
 import { DatePickerModule } from 'primeng/datepicker';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { MenuModule } from 'primeng/menu';
 import { DialogModule } from 'primeng/dialog';
 import { ImageModule } from 'primeng/image';
@@ -40,6 +40,7 @@ import {
 } from '../../../shared/helpers/helpers';
 import { HasPermissionActionDirective } from '../../../common/directives/hasPermission.directive';
 import { PermissionContextService } from '../../../services/permission-context.service';
+import { InventoryQrDialog } from '../shared/inventory-qr-dialog';
 
 @Component({
   selector: 'app-inventory',
@@ -59,6 +60,7 @@ import { PermissionContextService } from '../../../services/permission-context.s
     DialogModule,
     ImageModule,
     HasPermissionActionDirective,
+    InventoryQrDialog,
   ],
   template: `<div class="w-full flex flex-col p-5">
       <div class="flex flex-row items-center gap-1 text-gray-500 tracking-wide">
@@ -259,7 +261,7 @@ import { PermissionContextService } from '../../../services/permission-context.s
                       'text-red-500 font-semibold': data.quantity === 1,
                     }"
                   >
-                    {{ data.quantity }}
+                    {{ data.quantity | number: '1.0-3' }}
                   </div>
                 </td>
                 <td class="text-center!">
@@ -460,8 +462,8 @@ import { PermissionContextService } from '../../../services/permission-context.s
                     <p-inputnumber
                       formControlName="quantity"
                       mode="decimal"
-                      [minFractionDigits]="2"
-                      [maxFractionDigits]="4"
+                      [minFractionDigits]="0"
+                      [maxFractionDigits]="3"
                       styleClass="w-full"
                       inputStyleClass="w-full h-10 border border-gray-200 rounded-md text-right px-3 bg-white"
                     ></p-inputnumber>
@@ -627,7 +629,14 @@ import { PermissionContextService } from '../../../services/permission-context.s
           </div>
         </div>
       </ng-template>
-    </p-dialog>`,
+    </p-dialog>
+
+    <app-inventory-qr-dialog
+      [(visible)]="qrVisible"
+      [itemId]="qrItemId"
+      [itemName]="qrItemName"
+      [itemCode]="qrItemCode"
+    ></app-inventory-qr-dialog>`,
   styleUrl: './inventory.less',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -639,6 +648,7 @@ export class Inventory implements OnInit, OnDestroy {
   private readonly messageService = inject(MessageService);
   private readonly inventoryService = inject(InventoryService);
   private readonly permissionContext = inject(PermissionContextService);
+  private readonly router = inject(Router);
   readonly rights = this.permissionContext.rights;
 
   protected ngUnsubscribe: Subject<void> = new Subject<void>();
@@ -656,6 +666,11 @@ export class Inventory implements OnInit, OnDestroy {
 
   visible: boolean = false;
   isUpdate: boolean = false;
+
+  qrVisible = false;
+  qrItemId: string | null = null;
+  qrItemName: string | null = null;
+  qrItemCode: string | null = null;
 
   selectedCategoryId: string = 'All';
   selectedSectionId: string = 'All';
@@ -803,6 +818,18 @@ export class Inventory implements OnInit, OnDestroy {
   onEllipsisClick(event: any, client: any, menu: any) {
     this.menuItems = [];
 
+    this.menuItems.push({
+      label: 'Open',
+      icon: 'pi pi-external-link',
+      command: () => this.openItem(client),
+    });
+
+    this.menuItems.push({
+      label: 'Print QR',
+      icon: 'pi pi-qrcode',
+      command: () => this.openQrDialog(client),
+    });
+
     if (this.rights().canUpdate) {
       this.menuItems.push({
         label: 'Edit',
@@ -820,6 +847,22 @@ export class Inventory implements OnInit, OnDestroy {
     }
 
     menu.toggle(event);
+  }
+
+  openItem(data: InventoryDto | any): void {
+    const id = data?.id || data?.Id;
+    if (!id) return;
+    void this.router.navigate(['/inventory/item', id]);
+  }
+
+  openQrDialog(data: InventoryDto | any): void {
+    const id = data?.id || data?.Id;
+    if (!id) return;
+    this.qrItemId = id;
+    this.qrItemName = data.itemName || data.ItemName || null;
+    this.qrItemCode = data.itemCode || data.ItemCode || null;
+    this.qrVisible = true;
+    this.cdr.markForCheck();
   }
 
   ActionClick(data: InventoryDto | null, action: string) {
@@ -956,15 +999,18 @@ export class Inventory implements OnInit, OnDestroy {
         this.loadingService.stop();
 
         if (res) {
+          const wasUpdate = this.isUpdate;
+          const itemName = res.itemName || res.ItemName || 'Item';
+
           this.messageService.add({
             severity: 'success',
             summary: 'Success',
-            detail: `Inventory: ${res.ItemName + ' has been ' + this.isUpdate ? 'updated' : 'added'} successfully`,
+            detail: `Inventory: ${itemName} has been ${wasUpdate ? 'updated' : 'added'} successfully`,
           });
 
           this.visible = false;
 
-          if (this.isUpdate) {
+          if (wasUpdate) {
             this.PagingSignal.update((state) => ({
               ...state,
               data: state.data.map((u: any) => (u.id === res.id ? res : u)),
@@ -975,6 +1021,7 @@ export class Inventory implements OnInit, OnDestroy {
               ...state,
               data: [res, ...state.data],
             }));
+            this.openQrDialog(res);
           }
           this.cdr.markForCheck();
         } else {

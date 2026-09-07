@@ -97,3 +97,24 @@ export interface StockTransaction {
   referenceId: string;
   createdAt: Date;
 }
+
+export interface InventoryAuditFieldChange {
+  field: string;
+  oldValue: string | null;
+  newValue: string | null;
+}
+
+export interface InventoryAuditChangesPayload {
+  message: string | null;
+  fields: InventoryAuditFieldChange[];
+}
+
+export interface InventoryAuditDto {
+  id: string;
+  inventoryId: string;
+  action: string;
+  userId: string | null;
+  userName: string | null;
+  createdAt: string;
+  changes: InventoryAuditChangesPayload;
+}

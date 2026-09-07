@@ -1,13 +1,40 @@
 import { NgModule } from '@angular/core';
-import { Routes, RouterModule } from '@angular/router';
-import { ClaimForm } from './claim-form/claim-form';
-import { modulePermissionGuard } from '../../common/permission/module-permission.guard';
+import { RouterModule, Routes } from '@angular/router';
+import { ClaimApply } from './claim-apply/claim-apply';
+import { ClaimApprovals } from './claim-approvals/claim-approvals';
+import { ClaimDashboard } from './claim-dashboard/claim-dashboard';
+import { ClaimDetail } from './claim-detail/claim-detail';
+import { ClaimHistory } from './claim-history/claim-history';
 
 const routes: Routes = [
   {
-    path: 'create',
-    component: ClaimForm,
-    canActivate: [modulePermissionGuard],
+    path: '',
+    component: ClaimDashboard,
+    data: { moduleKey: 'claims' },
+  },
+  {
+    path: 'apply',
+    component: ClaimApply,
+    data: { moduleKey: 'claims' },
+  },
+  {
+    path: 'apply/:id',
+    component: ClaimApply,
+    data: { moduleKey: 'claims' },
+  },
+  {
+    path: 'history',
+    component: ClaimHistory,
+    data: { moduleKey: 'claims' },
+  },
+  {
+    path: 'approvals',
+    component: ClaimApprovals,
+    data: { moduleKey: 'claims' },
+  },
+  {
+    path: ':id',
+    component: ClaimDetail,
     data: { moduleKey: 'claims' },
   },
 ];

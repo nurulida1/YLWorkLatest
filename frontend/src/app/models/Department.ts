@@ -9,6 +9,11 @@ export interface DepartmentDto extends BaseModel {
   description: string;
   isActive: boolean;
   users: UserDto[];
+  workStartTime?: string | null;
+  workEndTime?: string | null;
+  usesRestDayHalfDay?: boolean | null;
+  restDayHalfDayStart?: string | null;
+  restDayHalfDayEnd?: string | null;
 }
 
 export interface CreateDepartmentRequest {
@@ -17,6 +22,11 @@ export interface CreateDepartmentRequest {
   description: string;
   isActive: boolean;
   hodId?: string;
+  workStartTime?: string | null;
+  workEndTime?: string | null;
+  usesRestDayHalfDay?: boolean | null;
+  restDayHalfDayStart?: string | null;
+  restDayHalfDayEnd?: string | null;
 }
 
 export interface UpdateDepartmentRequest extends CreateDepartmentRequest {

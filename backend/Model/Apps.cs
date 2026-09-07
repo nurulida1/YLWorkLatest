@@ -1,6 +1,19 @@
+using YLWorks.Model.Leave;
 
 namespace YLWorks.Model { 
     
+    public class HrDashboardDto
+    {
+        public int TotalEmployees { get; set; }
+        public int PendingLeave { get; set; }
+        public int OnLeaveToday { get; set; }
+        public int AssumedPresentToday { get; set; }
+        public int ResignedStaff { get; set; }
+        public int NewStaffUnderOneYear { get; set; }
+        public List<DepartmentDistributionDto> DepartmentDistribution { get; set; } = [];
+        public List<LeaveCalendarEventDto> TodayLeaveEvents { get; set; } = [];
+    }
+
     public class SuperAdminDashboardDto
     {
         public int TotalUsers { get; set; }

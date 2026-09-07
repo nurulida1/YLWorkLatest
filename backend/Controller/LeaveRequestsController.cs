@@ -67,7 +67,7 @@ namespace YLWorks.Controller
 
         /// <summary>Submits a new leave request.</summary>
         [HttpPost]
-        [Authorize(Roles = "Staff,Executive,Support,HOD,Manager,Management,HR,SuperAdmin,Admin")]
+        [Authorize(Roles = "Staff,Executive,Support,HOD,Management,HR,SuperAdmin")]
         public async Task<ActionResult<LeaveRequestDto>> Submit([FromBody] CreateLeaveRequestDto dto)
         {
             try
@@ -88,7 +88,7 @@ namespace YLWorks.Controller
 
         /// <summary>Edits a pending leave request.</summary>
         [HttpPut("{id:guid}")]
-        [Authorize(Roles = "Staff,Executive,Support,HOD,Manager,Management,HR,SuperAdmin,Admin")]
+        [Authorize(Roles = "Staff,Executive,Support,HOD,Management,HR,SuperAdmin")]
         public async Task<ActionResult<LeaveRequestDto>> Update(Guid id, [FromBody] CreateLeaveRequestDto dto)
         {
             try
@@ -108,7 +108,7 @@ namespace YLWorks.Controller
 
         /// <summary>Approves a pending leave request.</summary>
         [HttpPost("{id:guid}/approve")]
-        [Authorize(Roles = "HOD,Manager,Management,HR,SuperAdmin,Admin")]
+        [Authorize(Roles = "HOD,Management,HR,SuperAdmin")]
         public async Task<ActionResult<LeaveRequestDto>> Approve(Guid id, [FromBody] ApproveRejectLeaveDto dto)
         {
             try
@@ -123,7 +123,7 @@ namespace YLWorks.Controller
 
         /// <summary>Rejects a pending leave request (reason required).</summary>
         [HttpPost("{id:guid}/reject")]
-        [Authorize(Roles = "HOD,Manager,Management,HR,SuperAdmin,Admin")]
+        [Authorize(Roles = "HOD,Management,HR,SuperAdmin")]
         public async Task<ActionResult<LeaveRequestDto>> Reject(Guid id, [FromBody] ApproveRejectLeaveDto dto)
         {
             try
@@ -142,7 +142,7 @@ namespace YLWorks.Controller
 
         /// <summary>HR finalizes a pending leave request without forwarding to further managers.</summary>
         [HttpPost("{id:guid}/finalize")]
-        [Authorize(Roles = "HR,SuperAdmin,Admin")]
+        [Authorize(Roles = "HOD,Management,HR,SuperAdmin")]
         public async Task<ActionResult<LeaveRequestDto>> Finalize(Guid id, [FromBody] ApproveRejectLeaveDto dto)
         {
             try
@@ -191,7 +191,7 @@ namespace YLWorks.Controller
 
         /// <summary>Gets pending leave requests awaiting this user's HOD approval (chain).</summary>
         [HttpGet("pending/hod/{hodId:guid}")]
-        [Authorize(Roles = "HOD,Manager,Management,HR,SuperAdmin,Admin")]
+        [Authorize(Roles = "HOD,Management,HR,SuperAdmin")]
         public async Task<ActionResult<List<LeaveRequestDto>>> GetPendingForHod(Guid hodId) =>
             Ok(await _leaveService.GetPendingForHodAsync(hodId));
 

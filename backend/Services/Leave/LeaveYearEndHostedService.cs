@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using YLWorks.Data;
 using YLWorks.Services.Leave;
+using WebApplication1.Helpers;
 
 namespace YLWorks.Services.Leave
 {
@@ -24,7 +25,7 @@ namespace YLWorks.Services.Leave
             {
                 try
                 {
-                    var now = DateTime.UtcNow;
+                    var now = DateTimeHelper.Now();
                     // After Jan 1 00:05 UTC, close previous calendar year if not done.
                     if (now.Month == 1 && now.Day >= 1 && now.Hour >= 0)
                     {

@@ -1,8 +1,10 @@
-﻿namespace YLWorks.Model
+﻿using WebApplication1.Helpers;
+
+namespace YLWorks.Model
 {
     public abstract class BaseEntity
     {
-        public DateTime? CreatedAt { get; set; } = DateTime.Now;
+        public DateTime? CreatedAt { get; set; } = DateTimeHelper.Now();
         public DateTime? UpdatedAt { get; set; }
         public Guid? CreatedById { get; set; }
         public Guid? UpdatedById { get; set; }

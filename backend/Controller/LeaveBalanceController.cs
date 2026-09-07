@@ -25,7 +25,7 @@ namespace YLWorks.Controller
             Ok(await _balanceService.GetAllBalancesForEmployeeAsync(employeeId, year));
 
         [HttpPost("credit")]
-        [Authorize(Roles = "SuperAdmin,Admin,HR")]
+        [Authorize(Roles = "HOD,Management,HR,SuperAdmin")]
         public async Task<IActionResult> Credit([FromBody] CreditLeaveBalanceDto dto)
         {
             try
@@ -48,7 +48,7 @@ namespace YLWorks.Controller
 
         /// <summary>Closes the given year and creates next-year balances (idempotent).</summary>
         [HttpPost("run-year-end")]
-        [Authorize(Roles = "SuperAdmin,Admin,HR")]
+        [Authorize(Roles = "HOD,Management,HR,SuperAdmin")]
         public async Task<IActionResult> RunYearEnd([FromQuery] int? year = null)
         {
             try

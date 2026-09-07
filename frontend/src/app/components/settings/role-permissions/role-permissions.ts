@@ -136,11 +136,58 @@ import { PermissionService } from '../../../services/permissionService';
                 <th class="py-3 px-5 w-[35%]">
                   System Module Context Identifier
                 </th>
-                <th class="py-3 px-3 text-center w-[13%]">View</th>
-                <th class="py-3 px-3 text-center w-[13%]">Create</th>
-                <th class="py-3 px-3 text-center w-[13%]">Edit</th>
-                <th class="py-3 px-3 text-center w-[13%]">Delete</th>
-                <th class="py-3 px-3 text-center w-[13%]">Status</th>
+                <th class="py-3 px-3 text-center w-[13%]">
+                  <div class="flex items-center justify-center gap-2">
+                    <span>View</span>
+                    <p-checkbox
+                      [binary]="true"
+                      [ngModel]="allCanRead()"
+                      (ngModelChange)="setAllPermissions('canRead', $event)"
+                    ></p-checkbox>
+                  </div>
+                </th>
+                <th class="py-3 px-3 text-center w-[13%]">
+                  <div class="flex items-center justify-center gap-2">
+                    <span>Create</span>
+                    <p-checkbox
+                      [binary]="true"
+                      [ngModel]="allCanCreate()"
+                      (ngModelChange)="setAllPermissions('canCreate', $event)"
+                    ></p-checkbox>
+                  </div>
+                </th>
+                <th class="py-3 px-3 text-center w-[13%]">
+                  <div class="flex items-center justify-center gap-2">
+                    <span>Edit</span>
+                    <p-checkbox
+                      [binary]="true"
+                      [ngModel]="allCanUpdate()"
+                      (ngModelChange)="setAllPermissions('canUpdate', $event)"
+                    ></p-checkbox>
+                  </div>
+                </th>
+                <th class="py-3 px-3 text-center w-[13%]">
+                  <div class="flex items-center justify-center gap-2">
+                    <span>Delete</span>
+                    <p-checkbox
+                      [binary]="true"
+                      [ngModel]="allCanDelete()"
+                      (ngModelChange)="setAllPermissions('canDelete', $event)"
+                    ></p-checkbox>
+                  </div>
+                </th>
+                <th class="py-3 px-3 text-center w-[13%]">
+                  <div class="flex items-center justify-center gap-2">
+                    <span>Status</span>
+                    <p-checkbox
+                      [binary]="true"
+                      [ngModel]="allCanUpdateStatus()"
+                      (ngModelChange)="
+                        setAllPermissions('canUpdateStatus', $event)
+                      "
+                    ></p-checkbox>
+                  </div>
+                </th>
               </tr>
             </thead>
             <tbody class="text-sm">
@@ -295,13 +342,39 @@ export class RolePermissions implements OnInit, OnDestroy {
     return !!rights.canRead || !!rights.canCreate;
   });
 
+  readonly allCanRead = computed(() => {
+    const rows = this.matrixRows();
+    return rows.length > 0 && rows.every((r) => !!r.canRead);
+  });
+
+  readonly allCanCreate = computed(() => {
+    const rows = this.matrixRows();
+    return rows.length > 0 && rows.every((r) => !!r.canCreate);
+  });
+
+  readonly allCanUpdate = computed(() => {
+    const rows = this.matrixRows();
+    return rows.length > 0 && rows.every((r) => !!r.canUpdate);
+  });
+
+  readonly allCanDelete = computed(() => {
+    const rows = this.matrixRows();
+    return rows.length > 0 && rows.every((r) => !!r.canDelete);
+  });
+
+  readonly allCanUpdateStatus = computed(() => {
+    const rows = this.matrixRows();
+    return rows.length > 0 && rows.every((r) => !!r.canUpdateStatus);
+  });
+
+  
   systemRoles = [
-    { label: 'Management', value: 'Management' },
-    { label: 'HOD', value: 'HOD' },
-    { label: 'Executive', value: 'Executive' },
-    { label: 'Support', value: 'Support' },
-    { label: 'SuperAdmin', value: 'SuperAdmin' },
-    { label: 'HR', value: 'HR' },
+    { label: 'Super Administrator', value: 'SuperAdmin' },
+    { label: 'Management (Director)', value: 'Management' },
+    { label: 'Head of Department (HOD)', value: 'HOD' },
+    { label: 'Human Resources (HR)', value: 'HR' },
+    { label: 'Staff / Engineer / Executive', value: 'Staff' },
+    { label: 'Technical & System Support', value: 'Support' },
   ];
 
   departmentSelection: any[] = [];
@@ -580,6 +653,19 @@ export class RolePermissions implements OnInit, OnDestroy {
     const updated = this.matrixRows().map((r) =>
       r.systemModuleId === row.systemModuleId ? { ...r, [field]: value } : r,
     );
+
+    this.matrixRows.set(updated);
+    this.cdr.markForCheck();
+  }
+
+  setAllPermissions(
+    field: keyof RolePermissionDto,
+    value: boolean,
+  ): void {
+    const updated = this.matrixRows().map((r) => ({
+      ...r,
+      [field]: value,
+    }));
 
     this.matrixRows.set(updated);
     this.cdr.markForCheck();

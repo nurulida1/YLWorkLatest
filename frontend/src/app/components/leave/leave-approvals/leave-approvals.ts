@@ -10,6 +10,7 @@ import { TagModule } from 'primeng/tag';
 import { TextareaModule } from 'primeng/textarea';
 import { finalize } from 'rxjs/operators';
 import { LeaveRequestDto } from '../../../models/Leave';
+import { formatDaysAmount, formatLeaveDurationLabel } from '../../../common/leave-day.util';
 import { LeaveRequestService } from '../../../services/leave-request.service';
 import { LoadingService } from '../../../services/loading.service';
 import { UserService } from '../../../services/userService.service';
@@ -57,11 +58,22 @@ import { environment } from '../../../../environments/environment.development';
               <td>{{ row.employeeName }}</td>
               <td>
                 {{ row.leaveTypeName }}
+                @if (row.isShortNoticeAnnual) { <p-tag value="Short notice → Unpaid" severity="warn" class="ml-1" /> }
+                @else if (hasBalanceSplit(row)) { <p-tag value="Balance split" severity="warn" class="ml-1" /> }
+                @else if (row.isUnpaid) { <p-tag value="Unpaid" severity="secondary" class="ml-1" /> }
                 @if (row.isEmergency) { <p-tag value="URGENT" severity="danger" class="ml-1" /> }
-                @if (row.conflictOverride) { <i class="pi pi-flag text-amber-500 ml-1" title="Conflict override"></i> }
               </td>
-              <td>{{ row.startDate | date:'shortDate' }} – {{ row.endDate | date:'shortDate' }}</td>
-              <td>{{ row.totalDays }}</td>
+              <td>{{ row.startDate | date:'dd MMM yyyy' }} – {{ row.endDate | date:'dd MMM yyyy' }}</td>
+              <td>
+                {{ formatLeaveDays(row) }}
+                @if (hasBalanceSplit(row)) {
+                  <div class="text-xs text-gray-500 mt-0.5">
+                    @for (line of row.balanceAllocations!; track line.leaveTypeId + line.sortOrder; let last = $last) {
+                      <span>{{ line.leaveTypeName }} {{ formatDays(line.days) }}{{ last ? '' : ' · ' }}</span>
+                    }
+                  </div>
+                }
+              </td>
               <td class="max-w-xs whitespace-pre-wrap text-gray-700">{{ row.reason }}</td>
               <td>
                 @if (row.documentUrl) {
@@ -122,6 +134,20 @@ export class LeaveApprovals implements OnInit, OnDestroy {
   rejectVisible = false;
   selected: LeaveRequestDto | null = null;
   rejectForm = this.fb.group({ rejectionReason: ['', [Validators.required, Validators.minLength(3)]] });
+
+  formatLeaveDays(row: LeaveRequestDto): string {
+    return formatLeaveDurationLabel(row);
+  }
+
+  formatDays(value: number | null | undefined): string {
+    return formatDaysAmount(value);
+  }
+
+  hasBalanceSplit(row: LeaveRequestDto): boolean {
+    const n = row.balanceAllocations?.length ?? 0;
+    if (row.isEmergency && n > 0) return true;
+    return n > 1;
+  }
 
   ngOnInit(): void {
     const hodId = this.userService.currentUser?.userId;

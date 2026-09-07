@@ -42,7 +42,7 @@ namespace YLWorks.Controller
         }
 
         [HttpPost]
-        [Authorize(Roles = "SuperAdmin,Admin,HR")]
+        [Authorize(Roles = "HOD,Management,HR,SuperAdmin")]
         public async Task<ActionResult<LeaveTypeDto>> Create([FromBody] UpsertLeaveTypeDto dto)
         {
             if (!TryParsePolicyKind(dto.PolicyKind, out var kind))
@@ -59,6 +59,8 @@ namespace YLWorks.Controller
                 IsEmergency = dto.IsEmergency,
                 DefaultDaysPerYear = dto.DefaultDaysPerYear,
                 RequiresDocument = dto.RequiresDocument,
+                AllowsHalfDay = dto.AllowsHalfDay,
+                AllowsBalanceCascade = dto.IsEmergency ? false : dto.AllowsBalanceCascade,
                 PolicyKind = kind,
                 ApplicableGender = gender,
                 CreatedAt = DateTime.UtcNow
@@ -69,7 +71,7 @@ namespace YLWorks.Controller
         }
 
         [HttpPut("{id:guid}")]
-        [Authorize(Roles = "SuperAdmin,Admin,HR")]
+        [Authorize(Roles = "HOD,Management,HR,SuperAdmin")]
         public async Task<ActionResult<LeaveTypeDto>> Update(Guid id, [FromBody] UpsertLeaveTypeDto dto)
         {
             var entity = await _context.LeaveTypes.FindAsync(id);
@@ -86,6 +88,8 @@ namespace YLWorks.Controller
             entity.IsEmergency = dto.IsEmergency;
             entity.DefaultDaysPerYear = dto.DefaultDaysPerYear;
             entity.RequiresDocument = dto.RequiresDocument;
+            entity.AllowsHalfDay = dto.AllowsHalfDay;
+            entity.AllowsBalanceCascade = dto.IsEmergency ? false : dto.AllowsBalanceCascade;
             entity.PolicyKind = kind;
             entity.ApplicableGender = gender;
             entity.UpdatedAt = DateTime.UtcNow;
@@ -94,7 +98,7 @@ namespace YLWorks.Controller
         }
 
         [HttpDelete("{id:guid}")]
-        [Authorize(Roles = "SuperAdmin,Admin,HR")]
+        [Authorize(Roles = "HOD,Management,HR,SuperAdmin")]
         public async Task<IActionResult> Delete(Guid id)
         {
             var entity = await _context.LeaveTypes.FindAsync(id);
@@ -158,6 +162,8 @@ namespace YLWorks.Controller
             IsEmergency = t.IsEmergency,
             DefaultDaysPerYear = t.DefaultDaysPerYear,
             RequiresDocument = t.RequiresDocument,
+            AllowsHalfDay = t.AllowsHalfDay,
+            AllowsBalanceCascade = t.AllowsBalanceCascade,
             PolicyKind = t.PolicyKind.ToString(),
             ApplicableGender = t.ApplicableGender.ToString()
         };

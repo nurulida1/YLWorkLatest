@@ -16,6 +16,7 @@ import { TagModule } from 'primeng/tag';
 import { forkJoin, of, Subject, takeUntil } from 'rxjs';
 import { catchError, finalize } from 'rxjs/operators';
 import { LeaveBalanceDto, LeaveRequestDto } from '../../../models/Leave';
+import { formatLeaveDurationLabel } from '../../../common/leave-day.util';
 import { LeaveBalanceService } from '../../../services/leave-balance.service';
 import { LeaveRequestService } from '../../../services/leave-request.service';
 import { LoadingService } from '../../../services/loading.service';
@@ -114,8 +115,11 @@ const APPROVER_ROLES = ['SuperAdmin', 'Admin', 'HR', 'Manager', 'HOD', 'Manageme
                     <div class="text-lg font-bold text-gray-900 leading-tight">
                       {{ upcomingLeave.startDate | date:'d MMM' }} – {{ upcomingLeave.endDate | date:'d MMM' }}
                     </div>
-                    <div class="text-sm text-gray-500">
-                      {{ upcomingLeave.leaveTypeName }} · {{ upcomingLeave.totalDays }} day(s)
+                    <div class="text-sm text-gray-500 flex flex-wrap items-center gap-1.5">
+                      <span>{{ upcomingLeave.leaveTypeName }} · {{ formatLeaveDays(upcomingLeave) }}</span>
+                      @if (upcomingLeave.isShortNoticeAnnual) {
+                        <p-tag value="Short notice → Unpaid" severity="warn" />
+                      }
                     </div>
                   } @else {
                     <div class="text-2xl font-bold text-gray-400">—</div>
@@ -144,16 +148,19 @@ const APPROVER_ROLES = ['SuperAdmin', 'Admin', 'HR', 'Manager', 'HOD', 'Manageme
                           class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-white rounded-md border border-amber-100 px-3 py-2"
                           [class.bg-red-50]="row.isEmergency"
                         >
-                          <div class="text-sm">
+                          <div class="text-sm flex flex-wrap items-center gap-1.5">
                             <span class="font-semibold text-gray-800">{{ row.employeeName }}</span>
-                            <span class="text-gray-500"> · {{ row.leaveTypeName }}</span>
+                            <span class="text-gray-500">· {{ row.leaveTypeName }}</span>
+                            @if (row.isShortNoticeAnnual) {
+                              <p-tag value="Short notice → Unpaid" severity="warn" />
+                            }
                             @if (row.isEmergency) {
-                              <p-tag value="URGENT" severity="danger" class="ml-1" />
+                              <p-tag value="URGENT" severity="danger" />
                             }
                           </div>
                           <div class="text-sm text-gray-600">
                             {{ row.startDate | date:'shortDate' }} – {{ row.endDate | date:'shortDate' }}
-                            · {{ row.totalDays }} day(s)
+                            · {{ formatLeaveDays(row) }}
                           </div>
                         </div>
                       }
@@ -166,13 +173,13 @@ const APPROVER_ROLES = ['SuperAdmin', 'Admin', 'HR', 'Manager', 'HOD', 'Manageme
 
               <div>
                 <h2 class="text-sm font-semibold text-gray-700 mb-3">Leave balances ({{ currentYear }})</h2>
-                @if (balances.length === 0) {
+                @if (paidBalances.length === 0 && !unpaidUsage) {
                   <div class="bg-white border border-gray-200 rounded-lg p-6 text-center text-gray-500 text-sm">
                     No leave balances found for this year.
                   </div>
                 } @else {
                   <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    @for (b of balances; track b.leaveTypeId) {
+                    @for (b of paidBalances; track b.leaveTypeId) {
                       <div class="bg-white border border-gray-200 rounded-lg p-4 flex flex-col gap-3">
                         <div class="font-semibold text-gray-800">{{ b.leaveTypeName }}</div>
                         <div>
@@ -208,6 +215,33 @@ const APPROVER_ROLES = ['SuperAdmin', 'Admin', 'HR', 'Manager', 'HOD', 'Manageme
                         }
                       </div>
                     }
+
+                    @if (unpaidUsage) {
+                      <div class="bg-slate-50 border border-slate-200 rounded-lg p-4 flex flex-col gap-3">
+                        <div class="flex items-center justify-between gap-2">
+                          <div class="font-semibold text-slate-800">Unpaid Leave</div>
+                          <span class="text-[11px] font-semibold uppercase tracking-wide text-slate-500 bg-white border border-slate-200 px-2 py-0.5 rounded">
+                            Unlimited
+                          </span>
+                        </div>
+                        <div>
+                          <div class="text-3xl font-bold text-slate-800">{{ unpaidUsage.takenDays }}</div>
+                          <div class="text-xs text-gray-500 uppercase tracking-wide">days taken this year</div>
+                        </div>
+                        <div class="text-xs text-gray-600 flex flex-col gap-0.5">
+                          <span>Approved: {{ unpaidUsage.approvedDays }}</span>
+                          <span>Pending: {{ unpaidUsage.pendingDays }}</span>
+                          @if (unpaidUsage.shortNoticeDays > 0) {
+                            <span class="text-amber-700">
+                              Short-notice Annual: {{ unpaidUsage.shortNoticeDays }} day(s)
+                            </span>
+                          }
+                        </div>
+                        <p class="text-xs text-slate-500 m-0 leading-relaxed">
+                          Unpaid leave has no balance limit, so it is not deducted from Annual or other paid types.
+                        </p>
+                      </div>
+                    }
                   </div>
                 }
               </div>
@@ -241,13 +275,20 @@ const APPROVER_ROLES = ['SuperAdmin', 'Admin', 'HR', 'Manager', 'HOD', 'Manageme
                   <ng-template pTemplate="body" let-row>
                     <tr>
                       <td>
-                        {{ row.leaveTypeName }}
-                        @if (row.isEmergency) {
-                          <p-tag value="Emergency" severity="danger" class="ml-1" />
-                        }
+                        <div class="flex flex-wrap items-center gap-1.5">
+                          <span>{{ row.leaveTypeName }}</span>
+                          @if (row.isShortNoticeAnnual) {
+                            <p-tag value="Short notice → Unpaid" severity="warn" />
+                          } @else if (row.isUnpaid) {
+                            <p-tag value="Unpaid" severity="secondary" />
+                          }
+                          @if (row.isEmergency) {
+                            <p-tag value="Emergency" severity="danger" />
+                          }
+                        </div>
                       </td>
                       <td>{{ row.startDate | date:'mediumDate' }} – {{ row.endDate | date:'mediumDate' }}</td>
-                      <td>{{ row.totalDays }}</td>
+                      <td>{{ formatLeaveDays(row) }}</td>
                       <td><p-tag [value]="row.status" [severity]="statusSeverity(row)" /></td>
                       <td class="flex gap-1">
                         @if (row.status === 'Pending') {
@@ -294,6 +335,13 @@ export class LeaveDashboard implements OnInit, OnDestroy {
   calendarMounted = false;
 
   balances: LeaveBalanceDto[] = [];
+  paidBalances: LeaveBalanceDto[] = [];
+  unpaidUsage: {
+    takenDays: number;
+    approvedDays: number;
+    pendingDays: number;
+    shortNoticeDays: number;
+  } | null = null;
   requests: LeaveRequestDto[] = [];
   pendingApprovals: LeaveRequestDto[] = [];
 
@@ -306,6 +354,10 @@ export class LeaveDashboard implements OnInit, OnDestroy {
   recentRequests: LeaveRequestDto[] = [];
   statusChips: { label: string; count: number; class: string }[] = [];
   canApprove = false;
+
+  formatLeaveDays(row: LeaveRequestDto): string {
+    return formatLeaveDurationLabel(row);
+  }
 
   ngOnInit(): void {
     const user = this.userService.currentUser;
@@ -339,7 +391,8 @@ export class LeaveDashboard implements OnInit, OnDestroy {
           this.requests = requests;
           this.pendingApprovals = approvals;
           this.computeDerived();
-          this.cdr.markForCheck();
+          // Tabs + OnPush: markForCheck alone can leave the overview table without badge updates.
+          this.cdr.detectChanges();
         },
         error: () => {
           this.messageService.add({
@@ -347,7 +400,7 @@ export class LeaveDashboard implements OnInit, OnDestroy {
             summary: 'Error',
             detail: 'Failed to load leave dashboard',
           });
-          this.cdr.markForCheck();
+          this.cdr.detectChanges();
         },
       });
   }
@@ -364,7 +417,7 @@ export class LeaveDashboard implements OnInit, OnDestroy {
     if (value === 'calendar') {
       this.calendarMounted = true;
     }
-    this.cdr.markForCheck();
+    this.cdr.detectChanges();
   }
 
   statusSeverity(row: LeaveRequestDto): 'success' | 'warn' | 'danger' | 'info' | 'secondary' {
@@ -387,12 +440,19 @@ export class LeaveDashboard implements OnInit, OnDestroy {
   }
 
   isLowBalance(b: LeaveBalanceDto): boolean {
-    const name = b.leaveTypeName.toLowerCase();
-    if (name.includes('unpaid')) return false;
+    if (this.isUnpaidBalance(b)) return false;
     return b.remainingDays <= 2 && b.entitledDays > 0;
   }
 
+  isUnpaidBalance(b: LeaveBalanceDto): boolean {
+    return b.leaveTypeName.toLowerCase().includes('unpaid');
+  }
+
   private computeDerived(): void {
+    this.paidBalances = this.balances.filter(
+      (b) => !this.isUnpaidBalance(b) && !this.isEmergencyBalance(b),
+    );
+    this.unpaidUsage = this.computeUnpaidUsage();
     this.setHeroBalance();
     this.pendingCount = this.requests.filter((r) => r.status === 'Pending').length;
     this.approvedThisYearCount = this.requests.filter(
@@ -406,15 +466,65 @@ export class LeaveDashboard implements OnInit, OnDestroy {
     this.statusChips = this.buildStatusChips();
   }
 
+  isEmergencyBalance(b: LeaveBalanceDto): boolean {
+    return b.leaveTypeName.toLowerCase().includes('emergency');
+  }
+
+  private computeUnpaidUsage(): {
+    takenDays: number;
+    approvedDays: number;
+    pendingDays: number;
+    shortNoticeDays: number;
+  } | null {
+    const hasUnpaidType = this.balances.some((b) => this.isUnpaidBalance(b));
+    const yearRequests = this.requests.filter(
+      (r) =>
+        this.isInYear(r.startDate) &&
+        (r.status === 'Pending' || r.status === 'Approved'),
+    );
+
+    const unpaidDayRows = yearRequests
+      .map((r) => ({ request: r, days: this.unpaidDaysFromRequest(r) }))
+      .filter((row) => row.days > 0);
+
+    if (!hasUnpaidType && unpaidDayRows.length === 0) return null;
+
+    const approvedDays = unpaidDayRows
+      .filter((row) => row.request.status === 'Approved')
+      .reduce((sum, row) => sum + row.days, 0);
+    const pendingDays = unpaidDayRows
+      .filter((row) => row.request.status === 'Pending')
+      .reduce((sum, row) => sum + row.days, 0);
+    const shortNoticeDays = yearRequests
+      .filter((r) => r.isShortNoticeAnnual)
+      .reduce((sum, r) => sum + (r.totalDays || 0), 0);
+
+    return {
+      takenDays: approvedDays + pendingDays,
+      approvedDays,
+      pendingDays,
+      shortNoticeDays,
+    };
+  }
+
+  /** Unpaid portion for a request (full unpaid, short-notice, or cascade unpaid bucket). */
+  private unpaidDaysFromRequest(r: LeaveRequestDto): number {
+    const allocations = r.balanceAllocations ?? [];
+    if (allocations.length > 0) {
+      return allocations
+        .filter((a) => a.isUnpaidBucket)
+        .reduce((sum, a) => sum + (a.days || 0), 0);
+    }
+    if (r.isUnpaid || r.isShortNoticeAnnual) return r.totalDays || 0;
+    return 0;
+  }
+
   private setHeroBalance(): void {
-    const annual = this.balances.find((b) => b.leaveTypeName.toLowerCase().includes('annual'));
-    const hero = annual ?? this.balances.find((b) => !b.leaveTypeName.toLowerCase().includes('unpaid'));
+    const annual = this.paidBalances.find((b) => b.leaveTypeName.toLowerCase().includes('annual'));
+    const hero = annual ?? this.paidBalances[0];
     if (hero) {
       this.heroRemaining = String(hero.remainingDays);
       this.heroBalanceLabel = hero.leaveTypeName;
-    } else if (this.balances.length > 0) {
-      this.heroRemaining = String(this.balances[0].remainingDays);
-      this.heroBalanceLabel = this.balances[0].leaveTypeName;
     } else {
       this.heroRemaining = '—';
       this.heroBalanceLabel = 'No balance data';

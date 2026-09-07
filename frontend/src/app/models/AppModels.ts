@@ -83,3 +83,35 @@ export interface ActivityLogDto {
   icon: string;
   color: string;
 }
+
+export interface HrDepartmentDistribution {
+  departmentId: string;
+  department: string;
+  count: number;
+}
+
+export interface HrTodayLeaveEvent {
+  requestId: string;
+  employeeId: string;
+  employeeName: string;
+  startDate: string;
+  endDate: string;
+  leaveTypeId?: string;
+  leaveTypeName?: string;
+  reason?: string;
+  totalDays?: number;
+  startSession?: string;
+  endSession?: string;
+  canViewDetails: boolean;
+}
+
+export interface HrDashboardDto {
+  totalEmployees: number;
+  pendingLeave: number;
+  onLeaveToday: number;
+  assumedPresentToday: number;
+  resignedStaff: number;
+  newStaffUnderOneYear: number;
+  departmentDistribution: HrDepartmentDistribution[];
+  todayLeaveEvents: HrTodayLeaveEvent[];
+}

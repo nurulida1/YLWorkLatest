@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using YLWorks.Data;
 using YLWorks.Model;
 using YLWorks.Model.Leave;
+using WebApplication1.Helpers;
 
 namespace YLWorks.Services.Leave
 {
@@ -10,26 +11,29 @@ namespace YLWorks.Services.Leave
     {
         private readonly AppDbContext _context;
         private readonly LeaveBalanceService _balanceService;
-        private readonly LeaveConflictService _conflictService;
+        private readonly LeaveBalanceCascadeService _cascadeService;
         private readonly LeaveNotificationHelper _notifications;
         private readonly EmergencyLeaveApprovalScheduler _emergencyScheduler;
+        private readonly LeaveHolidayService _holidayService;
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly ILogger<LeaveRequestService> _logger;
 
         public LeaveRequestService(
             AppDbContext context,
             LeaveBalanceService balanceService,
-            LeaveConflictService conflictService,
+            LeaveBalanceCascadeService cascadeService,
             LeaveNotificationHelper notifications,
             EmergencyLeaveApprovalScheduler emergencyScheduler,
+            LeaveHolidayService holidayService,
             IServiceScopeFactory scopeFactory,
             ILogger<LeaveRequestService> logger)
         {
             _context = context;
             _balanceService = balanceService;
-            _conflictService = conflictService;
+            _cascadeService = cascadeService;
             _notifications = notifications;
             _emergencyScheduler = emergencyScheduler;
+            _holidayService = holidayService;
             _scopeFactory = scopeFactory;
             _logger = logger;
         }
@@ -129,6 +133,9 @@ namespace YLWorks.Services.Leave
                 LeaveTypeId = canViewDetails ? r.LeaveTypeId : null,
                 LeaveTypeName = canViewDetails ? r.LeaveType.Name : null,
                 Reason = canViewDetails ? r.Reason : null,
+                TotalDays = canViewDetails ? r.TotalDays : null,
+                StartSession = canViewDetails ? r.StartSession.ToString() : null,
+                EndSession = canViewDetails ? r.EndSession.ToString() : null,
                 CanViewDetails = canViewDetails
             }).ToList();
 
@@ -150,13 +157,26 @@ namespace YLWorks.Services.Leave
             if (dto.EndDate.Date < dto.StartDate.Date)
                 throw new InvalidOperationException("End date must be on or after start date.");
 
-            var totalDays = LeaveBalanceService.CalculateTotalDays(dto.StartDate, dto.EndDate);
-            if (totalDays <= 0)
-                throw new InvalidOperationException("Invalid leave duration.");
+            await _holidayService.EnsureStartOrEndNotHolidayAsync(dto.StartDate, dto.EndDate);
+
+            if (!LeaveDayCalculator.TryParseSession(dto.StartSession, out var startSession) ||
+                !LeaveDayCalculator.TryParseSession(dto.EndSession, out var endSession))
+            {
+                throw new InvalidOperationException("Invalid leave session. Use Full, AM, or PM.");
+            }
 
             var leaveType = await _context.LeaveTypes
                 .FirstOrDefaultAsync(t => t.Id == dto.LeaveTypeId)
                 ?? throw new InvalidOperationException("Leave type not found.");
+
+            (startSession, endSession) = LeaveDayCalculator.NormalizeAndValidateSessions(
+                dto.StartDate, dto.EndDate, startSession, endSession, leaveType.AllowsHalfDay);
+
+            var totalDays = await _holidayService.CountChargeableDaysAsync(
+                dto.StartDate, dto.EndDate, startSession, endSession);
+            if (totalDays <= 0)
+                throw new InvalidOperationException(
+                    "Invalid leave duration. After excluding public holidays, no chargeable leave days remain.");
 
             if (!LeaveGenderRules.IsEligible(leaveType.ApplicableGender, employee.Gender))
             {
@@ -166,38 +186,70 @@ namespace YLWorks.Services.Leave
                         : $"This leave type is only available to {LeaveGenderRules.DescribeRequirement(leaveType.ApplicableGender)}.");
             }
 
-            var isEmergency = leaveType.IsEmergency;
-            var isUnpaid = !leaveType.IsPaid;
+            var resolved = await ResolveLeaveTypeForRequestAsync(dto, leaveType);
+            leaveType = resolved.LeaveType;
+            var isEmergency = resolved.IsEmergency;
+            var isShortNoticeAnnual = resolved.IsShortNoticeAnnual;
 
             var year = dto.StartDate.Year;
-            var balanceCheck = await _balanceService.CheckBalanceAsync(
-                dto.EmployeeId, dto.LeaveTypeId, totalDays, year, isUnpaid);
+            LeaveBalanceCascadePlan plan;
+            if (isShortNoticeAnnual)
+            {
+                // Full Annual → Unpaid conversion: single unpaid bucket, no cascade accept.
+                plan = new LeaveBalanceCascadePlan
+                {
+                    Lines =
+                    [
+                        new LeaveBalanceAllocationLine
+                        {
+                            LeaveTypeId = leaveType.Id,
+                            LeaveTypeName = leaveType.Name,
+                            Days = totalDays,
+                            SortOrder = 0,
+                            IsUnpaidBucket = true
+                        }
+                    ],
+                    IsSufficient = true,
+                    RequiresAccept = false,
+                    AvailableOnPrimary = totalDays
+                };
+            }
+            else
+            {
+                plan = await _cascadeService.PlanAsync(
+                    dto.EmployeeId, leaveType, totalDays, year, dto.StartDate);
+            }
 
-            if (!balanceCheck.IsSufficient && !isUnpaid)
+            if (!plan.IsSufficient)
             {
                 return new LeaveRequestDto
                 {
                     EmployeeId = dto.EmployeeId,
                     BalanceSufficient = false,
-                    RemainingBalance = balanceCheck.AvailableDays,
-                    BalanceOptions = balanceCheck.Options,
-                    TotalDays = totalDays
-                };
-            }
-
-            var conflict = await _conflictService.CheckConflictAsync(
-                dto.EmployeeId, dto.StartDate, dto.EndDate);
-
-            if (conflict.ConflictFound && !dto.ConflictOverride)
-            {
-                return new LeaveRequestDto
-                {
-                    EmployeeId = dto.EmployeeId,
-                    BalanceSufficient = true,
+                    RemainingBalance = plan.AvailableOnPrimary,
+                    BalanceOptions = new List<string>
+                    {
+                        "Adjust dates to fit remaining balance",
+                        "Ask HR to enable balance cascade on this leave type",
+                        "Apply as unpaid leave"
+                    },
                     TotalDays = totalDays,
-                    ConflictWarning = $"Team conflict: {conflict.OverlappingCount} colleague(s) on leave ({conflict.OverlappingEmployees}). Set conflict override to proceed."
+                    BalanceAllocations = MapPlanToAllocationDtos(plan)
                 };
             }
+
+            if (plan.RequiresAccept && !dto.AcceptBalanceCascade)
+            {
+                throw new InvalidOperationException(
+                    leaveType.IsEmergency
+                        ? "Emergency leave is charged from Annual Leave first, then Unpaid Leave. " +
+                          "Please confirm the balance split and resubmit."
+                        : "Insufficient balance on the selected leave type. Remaining days will be taken from " +
+                          "Annual Leave (if available) then Unpaid Leave. Please confirm the balance split and resubmit.");
+            }
+
+            var isUnpaid = plan.Lines.All(l => l.IsUnpaidBucket);
+            var hasPaidAllocations = plan.Lines.Any(l => !l.IsUnpaidBucket);
 
             var managerIds = GetReportingManagerIds(employee);
             // Top-of-org (no reporting managers): approve immediately with no approval-chain rows.
@@ -207,51 +259,61 @@ namespace YLWorks.Services.Leave
             {
                 Id = Guid.NewGuid(),
                 EmployeeId = dto.EmployeeId,
-                LeaveTypeId = dto.LeaveTypeId,
+                LeaveTypeId = leaveType.Id,
                 StartDate = dto.StartDate.Date,
                 EndDate = dto.EndDate.Date,
                 TotalDays = totalDays,
+                StartSession = startSession,
+                EndSession = endSession,
                 Reason = dto.Reason,
                 IsEmergency = isEmergency,
                 IsUnpaid = isUnpaid,
-                ConflictOverride = dto.ConflictOverride,
+                IsShortNoticeAnnual = isShortNoticeAnnual,
+                ConflictOverride = false,
                 Status = autoApproveNoManager ? LeaveRequestStatus.Approved : LeaveRequestStatus.Pending,
-                SubmittedAt = DateTime.UtcNow,
-                CreatedAt = DateTime.UtcNow
+                SubmittedAt = DateTimeHelper.Now(),
+                CreatedAt = DateTimeHelper.Now()
             };
+
+            ReplaceBalanceAllocations(request, plan);
 
             request.BalanceCheck = new LeaveBalanceCheckRecord
             {
                 Id = Guid.NewGuid(),
                 RequestId = request.Id,
                 RequestedDays = totalDays,
-                AvailableDays = balanceCheck.AvailableDays,
-                IsSufficient = balanceCheck.IsSufficient || isUnpaid,
-                ActionTaken = isUnpaid ? LeaveBalanceAction.UnpaidApplied : null,
-                CheckedAt = DateTime.UtcNow,
-                CreatedAt = DateTime.UtcNow
+                AvailableDays = plan.AvailableOnPrimary,
+                IsSufficient = true,
+                ActionTaken = plan.RequiresAccept
+                    ? LeaveBalanceAction.CascadeApplied
+                    : isUnpaid
+                        ? LeaveBalanceAction.UnpaidApplied
+                        : null,
+                CheckedAt = DateTimeHelper.Now(),
+                CreatedAt = DateTimeHelper.Now()
             };
 
+            // Team overlap is allowed — conflict check no longer blocks apply.
             request.ConflictCheck = new LeaveConflictCheck
             {
                 Id = Guid.NewGuid(),
                 RequestId = request.Id,
-                ConflictFound = conflict.ConflictFound,
-                OverlappingCount = conflict.OverlappingCount,
-                OverlappingEmployees = conflict.OverlappingEmployees,
-                EmployeeOverride = dto.ConflictOverride,
-                CheckedAt = DateTime.UtcNow,
-                CreatedAt = DateTime.UtcNow
+                ConflictFound = false,
+                OverlappingCount = 0,
+                OverlappingEmployees = string.Empty,
+                EmployeeOverride = false,
+                CheckedAt = DateTimeHelper.Now(),
+                CreatedAt = DateTimeHelper.Now()
             };
 
             _context.LeaveRequests.Add(request);
 
-            if (!isUnpaid)
+            if (hasPaidAllocations)
             {
                 if (autoApproveNoManager)
-                    await _balanceService.DeductBalanceAsync(dto.EmployeeId, dto.LeaveTypeId, totalDays, year);
+                    await DeductPaidAllocationsAsync(request, year);
                 else
-                    await _balanceService.AddPendingDaysAsync(dto.EmployeeId, dto.LeaveTypeId, totalDays, year);
+                    await AddPendingPaidAllocationsAsync(request, year);
             }
 
             await _context.SaveChangesAsync();
@@ -270,9 +332,11 @@ namespace YLWorks.Services.Leave
             }
             else
             {
+                var shortNoticeLabel = isShortNoticeAnnual ? "short-notice annual (unpaid) " : "";
+                var cascadeLabel = plan.RequiresAccept ? "cascade-split " : "";
                 var notifyType = isEmergency ? "Emergency" : "Submitted";
                 var notifyMsg =
-                    $"{employee.FullName} submitted a {(isEmergency ? "emergency " : "")}leave request ({totalDays} day(s)).";
+                    $"{employee.FullName} submitted a {(isEmergency ? "emergency " : "")}{shortNoticeLabel}{cascadeLabel}leave request ({totalDays} day(s)).";
                 foreach (var managerId in managerIds)
                 {
                     await _notifications.SendLeaveNotificationAsync(
@@ -287,10 +351,7 @@ namespace YLWorks.Services.Leave
 
             var loaded = await GetRequestQuery().FirstAsync(r => r.Id == request.Id);
             var usersById = await LoadUsersWithManagersAsync();
-            var result = MapToDto(loaded, usersById);
-            if (conflict.ConflictFound && dto.ConflictOverride)
-                result.ConflictWarning = $"Proceeding with override. Overlap: {conflict.OverlappingEmployees}";
-            return result;
+            return MapToDto(loaded, usersById);
         }
 
         public async Task<LeaveRequestDto> UpdatePendingAsync(Guid requestId, CreateLeaveRequestDto dto)
@@ -306,13 +367,26 @@ namespace YLWorks.Services.Leave
             if (dto.EndDate.Date < dto.StartDate.Date)
                 throw new InvalidOperationException("End date must be on or after start date.");
 
-            var totalDays = LeaveBalanceService.CalculateTotalDays(dto.StartDate, dto.EndDate);
-            if (totalDays <= 0)
-                throw new InvalidOperationException("Invalid leave duration.");
+            await _holidayService.EnsureStartOrEndNotHolidayAsync(dto.StartDate, dto.EndDate);
+
+            if (!LeaveDayCalculator.TryParseSession(dto.StartSession, out var startSession) ||
+                !LeaveDayCalculator.TryParseSession(dto.EndSession, out var endSession))
+            {
+                throw new InvalidOperationException("Invalid leave session. Use Full, AM, or PM.");
+            }
 
             var leaveType = await _context.LeaveTypes
                 .FirstOrDefaultAsync(t => t.Id == dto.LeaveTypeId)
                 ?? throw new InvalidOperationException("Leave type not found.");
+
+            (startSession, endSession) = LeaveDayCalculator.NormalizeAndValidateSessions(
+                dto.StartDate, dto.EndDate, startSession, endSession, leaveType.AllowsHalfDay);
+
+            var totalDays = await _holidayService.CountChargeableDaysAsync(
+                dto.StartDate, dto.EndDate, startSession, endSession);
+            if (totalDays <= 0)
+                throw new InvalidOperationException(
+                    "Invalid leave duration. After excluding public holidays, no chargeable leave days remain.");
 
             var employee = await _context.Users.AsNoTracking()
                 .FirstOrDefaultAsync(u => u.Id == dto.EmployeeId)
@@ -326,79 +400,92 @@ namespace YLWorks.Services.Leave
                         : $"This leave type is only available to {LeaveGenderRules.DescribeRequirement(leaveType.ApplicableGender)}.");
             }
 
-            var isEmergency = leaveType.IsEmergency;
-            var isUnpaid = !leaveType.IsPaid;
+            var resolved = await ResolveLeaveTypeForRequestAsync(dto, leaveType);
+            leaveType = resolved.LeaveType;
+            var isEmergency = resolved.IsEmergency;
+            var isShortNoticeAnnual = resolved.IsShortNoticeAnnual;
             var year = dto.StartDate.Year;
 
-            var samePaidBucket =
-                !request.IsUnpaid &&
-                request.LeaveTypeId == dto.LeaveTypeId &&
-                request.StartDate.Year == year;
-            var releasedPendingDays = samePaidBucket ? request.TotalDays : 0;
+            var creditBack = BuildCreditBackFromRequest(request, year);
 
-            var balanceCheck = await _balanceService.CheckBalanceAsync(
-                dto.EmployeeId, dto.LeaveTypeId, totalDays, year, isUnpaid);
-            var availableDays = balanceCheck.AvailableDays + releasedPendingDays;
-            var sufficient = isUnpaid || availableDays >= totalDays;
-
-            if (!sufficient)
+            LeaveBalanceCascadePlan plan;
+            if (isShortNoticeAnnual)
             {
-                var options = balanceCheck.Options;
-                if (options == null || options.Count == 0)
+                plan = new LeaveBalanceCascadePlan
                 {
-                    options = new List<string>
-                    {
-                        "Adjust dates to fit remaining balance",
-                        "Apply as unpaid leave",
-                        "Cancel submission"
-                    };
-                }
+                    Lines =
+                    [
+                        new LeaveBalanceAllocationLine
+                        {
+                            LeaveTypeId = leaveType.Id,
+                            LeaveTypeName = leaveType.Name,
+                            Days = totalDays,
+                            SortOrder = 0,
+                            IsUnpaidBucket = true
+                        }
+                    ],
+                    IsSufficient = true,
+                    RequiresAccept = false,
+                    AvailableOnPrimary = totalDays
+                };
+            }
+            else
+            {
+                plan = await _cascadeService.PlanAsync(
+                    dto.EmployeeId, leaveType, totalDays, year, dto.StartDate, creditBack);
+            }
+
+            if (!plan.IsSufficient)
+            {
                 return new LeaveRequestDto
                 {
                     RequestId = request.Id,
                     EmployeeId = dto.EmployeeId,
                     BalanceSufficient = false,
-                    RemainingBalance = availableDays,
-                    BalanceOptions = options,
-                    TotalDays = totalDays
-                };
-            }
-
-            var conflict = await _conflictService.CheckConflictAsync(
-                dto.EmployeeId, dto.StartDate, dto.EndDate);
-
-            if (conflict.ConflictFound && !dto.ConflictOverride)
-            {
-                return new LeaveRequestDto
-                {
-                    RequestId = request.Id,
-                    EmployeeId = dto.EmployeeId,
-                    BalanceSufficient = true,
+                    RemainingBalance = plan.AvailableOnPrimary,
+                    BalanceOptions = new List<string>
+                    {
+                        "Adjust dates to fit remaining balance",
+                        "Ask HR to enable balance cascade on this leave type",
+                        "Apply as unpaid leave"
+                    },
                     TotalDays = totalDays,
-                    ConflictWarning = $"Team conflict: {conflict.OverlappingCount} colleague(s) on leave ({conflict.OverlappingEmployees}). Set conflict override to proceed."
+                    BalanceAllocations = MapPlanToAllocationDtos(plan)
                 };
             }
 
-            if (!request.IsUnpaid)
+            if (plan.RequiresAccept && !dto.AcceptBalanceCascade)
             {
-                await _balanceService.RestoreBalanceAsync(
-                    request.EmployeeId, request.LeaveTypeId, request.TotalDays, request.StartDate.Year, wasApproved: false);
-            }
-            if (!isUnpaid)
-            {
-                await _balanceService.AddPendingDaysAsync(
-                    request.EmployeeId, dto.LeaveTypeId, totalDays, year);
+                throw new InvalidOperationException(
+                    leaveType.IsEmergency
+                        ? "Emergency leave is charged from Annual Leave first, then Unpaid Leave. " +
+                          "Please confirm the balance split and resubmit."
+                        : "Insufficient balance on the selected leave type. Remaining days will be taken from " +
+                          "Annual Leave (if available) then Unpaid Leave. Please confirm the balance split and resubmit.");
             }
 
-            request.LeaveTypeId = dto.LeaveTypeId;
+            var isUnpaid = plan.Lines.All(l => l.IsUnpaidBucket);
+            var hasPaidAllocations = plan.Lines.Any(l => !l.IsUnpaidBucket);
+
+            await RestorePaidAllocationsAsync(request, wasApproved: false);
+
+            request.LeaveTypeId = leaveType.Id;
             request.StartDate = dto.StartDate.Date;
             request.EndDate = dto.EndDate.Date;
             request.TotalDays = totalDays;
+            request.StartSession = startSession;
+            request.EndSession = endSession;
             request.Reason = dto.Reason;
             request.IsEmergency = isEmergency;
             request.IsUnpaid = isUnpaid;
-            request.ConflictOverride = dto.ConflictOverride;
-            request.UpdatedAt = DateTime.UtcNow;
+            request.IsShortNoticeAnnual = isShortNoticeAnnual;
+            request.ConflictOverride = false;
+            request.UpdatedAt = DateTimeHelper.Now();
+
+            ReplaceBalanceAllocations(request, plan);
+
+            if (hasPaidAllocations)
+                await AddPendingPaidAllocationsAsync(request, year);
 
             if (request.BalanceCheck == null)
             {
@@ -406,15 +493,19 @@ namespace YLWorks.Services.Leave
                 {
                     Id = Guid.NewGuid(),
                     RequestId = request.Id,
-                    CreatedAt = DateTime.UtcNow
+                    CreatedAt = DateTimeHelper.Now()
                 };
             }
             request.BalanceCheck.RequestedDays = totalDays;
-            request.BalanceCheck.AvailableDays = availableDays;
-            request.BalanceCheck.IsSufficient = sufficient;
-            request.BalanceCheck.ActionTaken = isUnpaid ? LeaveBalanceAction.UnpaidApplied : null;
-            request.BalanceCheck.CheckedAt = DateTime.UtcNow;
-            request.BalanceCheck.UpdatedAt = DateTime.UtcNow;
+            request.BalanceCheck.AvailableDays = plan.AvailableOnPrimary;
+            request.BalanceCheck.IsSufficient = true;
+            request.BalanceCheck.ActionTaken = plan.RequiresAccept
+                ? LeaveBalanceAction.CascadeApplied
+                : isUnpaid
+                    ? LeaveBalanceAction.UnpaidApplied
+                    : null;
+            request.BalanceCheck.CheckedAt = DateTimeHelper.Now();
+            request.BalanceCheck.UpdatedAt = DateTimeHelper.Now();
 
             if (request.ConflictCheck == null)
             {
@@ -422,15 +513,15 @@ namespace YLWorks.Services.Leave
                 {
                     Id = Guid.NewGuid(),
                     RequestId = request.Id,
-                    CreatedAt = DateTime.UtcNow
+                    CreatedAt = DateTimeHelper.Now()
                 };
             }
-            request.ConflictCheck.ConflictFound = conflict.ConflictFound;
-            request.ConflictCheck.OverlappingCount = conflict.OverlappingCount;
-            request.ConflictCheck.OverlappingEmployees = conflict.OverlappingEmployees;
-            request.ConflictCheck.EmployeeOverride = dto.ConflictOverride;
-            request.ConflictCheck.CheckedAt = DateTime.UtcNow;
-            request.ConflictCheck.UpdatedAt = DateTime.UtcNow;
+            request.ConflictCheck.ConflictFound = false;
+            request.ConflictCheck.OverlappingCount = 0;
+            request.ConflictCheck.OverlappingEmployees = string.Empty;
+            request.ConflictCheck.EmployeeOverride = false;
+            request.ConflictCheck.CheckedAt = DateTimeHelper.Now();
+            request.ConflictCheck.UpdatedAt = DateTimeHelper.Now();
 
             await _context.SaveChangesAsync();
 
@@ -439,10 +530,7 @@ namespace YLWorks.Services.Leave
 
             var loaded = await GetRequestQuery().FirstAsync(r => r.Id == request.Id);
             var usersById = await LoadUsersWithManagersAsync();
-            var result = MapToDto(loaded, usersById);
-            if (conflict.ConflictFound && dto.ConflictOverride)
-                result.ConflictWarning = $"Proceeding with override. Overlap: {conflict.OverlappingEmployees}";
-            return result;
+            return MapToDto(loaded, usersById);
         }
 
         public async Task<LeaveRequestDto> ApproveAsync(Guid requestId, Guid approverId)
@@ -467,11 +555,11 @@ namespace YLWorks.Services.Leave
                 ApproverId = approverId,
                 Decision = LeaveApprovalDecision.Approved,
                 ApproverRole = approver.SystemRole,
-                DecidedAt = DateTime.UtcNow,
-                CreatedAt = DateTime.UtcNow
+                DecidedAt = DateTimeHelper.Now(),
+                CreatedAt = DateTimeHelper.Now()
             });
 
-            request.UpdatedAt = DateTime.UtcNow;
+            request.UpdatedAt = DateTimeHelper.Now();
 
             var next = GetReportingManagerIds(approver);
             if (next.Count > 0)
@@ -533,8 +621,8 @@ namespace YLWorks.Services.Leave
                 ApproverId = hrUserId,
                 Decision = LeaveApprovalDecision.Approved,
                 ApproverRole = "HR",
-                DecidedAt = DateTime.UtcNow,
-                CreatedAt = DateTime.UtcNow
+                DecidedAt = DateTimeHelper.Now(),
+                CreatedAt = DateTimeHelper.Now()
             });
 
             return await FinalizeApprovalAsync(request, hrUser, requestId, approvalAlreadyRecorded: true);
@@ -547,7 +635,7 @@ namespace YLWorks.Services.Leave
             bool approvalAlreadyRecorded = false)
         {
             request.Status = LeaveRequestStatus.Approved;
-            request.UpdatedAt = DateTime.UtcNow;
+            request.UpdatedAt = DateTimeHelper.Now();
 
             if (!approvalAlreadyRecorded)
             {
@@ -558,14 +646,12 @@ namespace YLWorks.Services.Leave
                     ApproverId = approver.Id,
                     Decision = LeaveApprovalDecision.Approved,
                     ApproverRole = approver.SystemRole,
-                    DecidedAt = DateTime.UtcNow,
-                    CreatedAt = DateTime.UtcNow
+                    DecidedAt = DateTimeHelper.Now(),
+                    CreatedAt = DateTimeHelper.Now()
                 });
             }
 
-            if (!request.IsUnpaid)
-                await _balanceService.DeductBalanceAsync(
-                    request.EmployeeId, request.LeaveTypeId, request.TotalDays, request.StartDate.Year);
+            await DeductPaidAllocationsAsync(request, request.StartDate.Year);
 
             await _context.SaveChangesAsync();
 
@@ -598,7 +684,7 @@ namespace YLWorks.Services.Leave
                 throw new InvalidOperationException("You are not the current approver for this leave request.");
 
             request.Status = LeaveRequestStatus.Rejected;
-            request.UpdatedAt = DateTime.UtcNow;
+            request.UpdatedAt = DateTimeHelper.Now();
 
             _context.LeaveApprovals.Add(new LeaveApproval
             {
@@ -608,13 +694,12 @@ namespace YLWorks.Services.Leave
                 Decision = LeaveApprovalDecision.Rejected,
                 RejectionReason = rejectionReason,
                 ApproverRole = approver.SystemRole,
-                DecidedAt = DateTime.UtcNow,
-                CreatedAt = DateTime.UtcNow
+                DecidedAt = DateTimeHelper.Now(),
+                CreatedAt = DateTimeHelper.Now()
             });
 
-            if (!request.IsUnpaid)
-                await _balanceService.RestoreBalanceAsync(
-                    request.EmployeeId, request.LeaveTypeId, request.TotalDays, request.StartDate.Year, wasApproved: false);
+            if (HasPaidAllocations(request) || !request.IsUnpaid)
+                await RestorePaidAllocationsAsync(request, wasApproved: false);
 
             await _context.SaveChangesAsync();
 
@@ -633,7 +718,7 @@ namespace YLWorks.Services.Leave
             if (request.Status != LeaveRequestStatus.Approved && request.Status != LeaveRequestStatus.Pending)
                 throw new InvalidOperationException("This request cannot be cancelled.");
 
-            var today = DateTime.UtcNow.Date;
+            var today = DateTimeHelper.Now().Date;
             var leaveStarted = request.StartDate.Date <= today;
 
             if (!leaveStarted)
@@ -641,14 +726,9 @@ namespace YLWorks.Services.Leave
                 var wasApproved = request.Status == LeaveRequestStatus.Approved;
 
                 request.Status = LeaveRequestStatus.Cancelled;
-                request.UpdatedAt = DateTime.UtcNow;
+                request.UpdatedAt = DateTimeHelper.Now();
 
-                if (!request.IsUnpaid)
-                {
-                    await _balanceService.RestoreBalanceAsync(
-                        request.EmployeeId, request.LeaveTypeId, request.TotalDays,
-                        request.StartDate.Year, wasApproved: wasApproved);
-                }
+                await RestorePaidAllocationsAsync(request, wasApproved: wasApproved);
 
                 await _context.SaveChangesAsync();
                 if (wasApproved)
@@ -666,8 +746,8 @@ namespace YLWorks.Services.Leave
                 LeaveStarted = true,
                 RequiresApproval = true,
                 Status = LeaveCancelStatus.Pending,
-                RequestedAt = DateTime.UtcNow,
-                CreatedAt = DateTime.UtcNow
+                RequestedAt = DateTimeHelper.Now(),
+                CreatedAt = DateTimeHelper.Now()
             };
             await _context.SaveChangesAsync();
 
@@ -690,6 +770,7 @@ namespace YLWorks.Services.Leave
         public async Task AutoApproveEmergencyIfPendingAsync(Guid requestId)
         {
             var request = await _context.LeaveRequests
+                .Include(r => r.BalanceAllocations)
                 .FirstOrDefaultAsync(r => r.Id == requestId && r.IsEmergency);
 
             if (request == null || request.Status != LeaveRequestStatus.Pending)
@@ -701,7 +782,7 @@ namespace YLWorks.Services.Leave
             var approverId = hrUser?.Id ?? request.EmployeeId;
 
             request.Status = LeaveRequestStatus.Approved;
-            request.UpdatedAt = DateTime.UtcNow;
+            request.UpdatedAt = DateTimeHelper.Now();
 
             _context.LeaveApprovals.Add(new LeaveApproval
             {
@@ -710,13 +791,11 @@ namespace YLWorks.Services.Leave
                 ApproverId = approverId,
                 Decision = LeaveApprovalDecision.Overridden,
                 ApproverRole = "HR",
-                DecidedAt = DateTime.UtcNow,
-                CreatedAt = DateTime.UtcNow
+                DecidedAt = DateTimeHelper.Now(),
+                CreatedAt = DateTimeHelper.Now()
             });
 
-            if (!request.IsUnpaid)
-                await _balanceService.DeductBalanceAsync(
-                    request.EmployeeId, request.LeaveTypeId, request.TotalDays, request.StartDate.Year);
+            await DeductPaidAllocationsAsync(request, request.StartDate.Year);
 
             await _context.SaveChangesAsync();
 
@@ -778,8 +857,8 @@ namespace YLWorks.Services.Leave
                 RequestId = requestId,
                 FileName = file.FileName,
                 FileUrl = relative,
-                UploadedAt = DateTime.UtcNow,
-                CreatedAt = DateTime.UtcNow
+                UploadedAt = DateTimeHelper.Now(),
+                CreatedAt = DateTimeHelper.Now()
             });
             await _context.SaveChangesAsync();
             return relative;
@@ -794,7 +873,9 @@ namespace YLWorks.Services.Leave
                 .Include(r => r.BalanceCheck)
                 .Include(r => r.Cancellation)
                 .Include(r => r.Appeal)
-                .Include(r => r.Documents);
+                .Include(r => r.Documents)
+                .Include(r => r.BalanceAllocations)
+                    .ThenInclude(a => a.LeaveType);
 
         private async Task<LeaveRequest> GetRequestForActionAsync(Guid requestId) =>
             await GetRequestQuery().FirstOrDefaultAsync(r => r.Id == requestId)
@@ -1003,16 +1084,28 @@ namespace YLWorks.Services.Leave
                 StartDate = r.StartDate,
                 EndDate = r.EndDate,
                 TotalDays = r.TotalDays,
+                StartSession = r.StartSession.ToString(),
+                EndSession = r.EndSession.ToString(),
                 Reason = r.Reason,
                 Status = r.Status.ToString(),
                 IsEmergency = r.IsEmergency,
                 IsUnpaid = r.IsUnpaid,
+                IsShortNoticeAnnual = r.IsShortNoticeAnnual,
                 ConflictOverride = r.ConflictOverride,
                 SubmittedAt = r.SubmittedAt,
-                ConflictWarning = r.ConflictCheck?.ConflictFound == true && !r.ConflictOverride
-                    ? r.ConflictCheck.OverlappingEmployees
-                    : null,
+                ConflictWarning = null,
                 RemainingBalance = r.BalanceCheck?.AvailableDays,
+                BalanceAllocations = (r.BalanceAllocations ?? Array.Empty<LeaveRequestBalanceAllocation>())
+                    .OrderBy(a => a.SortOrder)
+                    .Select(a => new LeaveBalanceAllocationDto
+                    {
+                        LeaveTypeId = a.LeaveTypeId,
+                        LeaveTypeName = a.LeaveType?.Name ?? string.Empty,
+                        Days = a.Days,
+                        SortOrder = a.SortOrder,
+                        IsUnpaidBucket = a.IsUnpaidBucket
+                    })
+                    .ToList(),
                 RejectionReason = latestRejection?.RejectionReason,
                 HasAppeal = r.Appeal != null,
                 AppealOutcome = r.Appeal?.Outcome?.ToString(),
@@ -1023,6 +1116,170 @@ namespace YLWorks.Services.Leave
                 NoApproverAssigned = noApproverAssigned,
                 ApprovalChain = approvalChain
             };
+        }
+
+        private static bool HasPaidAllocations(LeaveRequest request) =>
+            request.BalanceAllocations != null &&
+            request.BalanceAllocations.Any(a => !a.IsUnpaidBucket && a.Days > 0);
+
+        private static Dictionary<Guid, double> BuildCreditBackFromRequest(LeaveRequest request, int year)
+        {
+            var credit = new Dictionary<Guid, double>();
+            if (request.StartDate.Year != year)
+                return credit;
+
+            if (request.BalanceAllocations != null && request.BalanceAllocations.Count > 0)
+            {
+                foreach (var line in request.BalanceAllocations.Where(a => !a.IsUnpaidBucket && a.Days > 0))
+                {
+                    credit[line.LeaveTypeId] = credit.GetValueOrDefault(line.LeaveTypeId) + line.Days;
+                }
+                return credit;
+            }
+
+            // Legacy requests without allocation rows.
+            if (!request.IsUnpaid && request.TotalDays > 0)
+                credit[request.LeaveTypeId] = request.TotalDays;
+
+            return credit;
+        }
+
+        private static List<LeaveBalanceAllocationDto> MapPlanToAllocationDtos(LeaveBalanceCascadePlan plan) =>
+            plan.Lines.Select(l => new LeaveBalanceAllocationDto
+            {
+                LeaveTypeId = l.LeaveTypeId,
+                LeaveTypeName = l.LeaveTypeName,
+                Days = l.Days,
+                SortOrder = l.SortOrder,
+                IsUnpaidBucket = l.IsUnpaidBucket
+            }).ToList();
+
+        private void ReplaceBalanceAllocations(LeaveRequest request, LeaveBalanceCascadePlan plan)
+        {
+            if (request.BalanceAllocations.Count > 0)
+                _context.LeaveRequestBalanceAllocations.RemoveRange(request.BalanceAllocations);
+
+            request.BalanceAllocations = plan.Lines.Select(l => new LeaveRequestBalanceAllocation
+            {
+                Id = Guid.NewGuid(),
+                RequestId = request.Id,
+                LeaveTypeId = l.LeaveTypeId,
+                Days = l.Days,
+                SortOrder = l.SortOrder,
+                IsUnpaidBucket = l.IsUnpaidBucket
+            }).ToList();
+        }
+
+        private async Task AddPendingPaidAllocationsAsync(LeaveRequest request, int year)
+        {
+            foreach (var line in GetPaidAllocationLines(request))
+            {
+                await _balanceService.AddPendingDaysAsync(
+                    request.EmployeeId, line.LeaveTypeId, line.Days, year);
+            }
+        }
+
+        private async Task DeductPaidAllocationsAsync(LeaveRequest request, int year)
+        {
+            var paid = GetPaidAllocationLines(request).ToList();
+            if (paid.Count == 0 && !request.IsUnpaid &&
+                (request.BalanceAllocations == null || request.BalanceAllocations.Count == 0))
+            {
+                // Legacy: deduct whole request against LeaveTypeId.
+                await _balanceService.DeductBalanceAsync(
+                    request.EmployeeId, request.LeaveTypeId, request.TotalDays, year);
+                return;
+            }
+
+            foreach (var line in paid)
+            {
+                await _balanceService.DeductBalanceAsync(
+                    request.EmployeeId, line.LeaveTypeId, line.Days, year);
+            }
+        }
+
+        private async Task RestorePaidAllocationsAsync(LeaveRequest request, bool wasApproved)
+        {
+            var year = request.StartDate.Year;
+            var paid = GetPaidAllocationLines(request).ToList();
+            if (paid.Count == 0 && !request.IsUnpaid &&
+                (request.BalanceAllocations == null || request.BalanceAllocations.Count == 0))
+            {
+                await _balanceService.RestoreBalanceAsync(
+                    request.EmployeeId, request.LeaveTypeId, request.TotalDays, year, wasApproved);
+                return;
+            }
+
+            foreach (var line in paid)
+            {
+                await _balanceService.RestoreBalanceAsync(
+                    request.EmployeeId, line.LeaveTypeId, line.Days, year, wasApproved);
+            }
+        }
+
+        private static IEnumerable<(Guid LeaveTypeId, double Days)> GetPaidAllocationLines(LeaveRequest request)
+        {
+            if (request.BalanceAllocations == null)
+                yield break;
+
+            foreach (var a in request.BalanceAllocations.Where(x => !x.IsUnpaidBucket && x.Days > 0))
+                yield return (a.LeaveTypeId, a.Days);
+        }
+
+        private const string AnnualLeaveTypeName = "Annual Leave";
+        private const string UnpaidLeaveTypeName = "Unpaid Leave";
+        private const int AnnualLeaveMinNoticeCalendarDays = 7;
+
+        private sealed record ResolvedLeaveType(
+            LeaveType LeaveType,
+            bool IsEmergency,
+            bool IsUnpaid,
+            bool IsShortNoticeAnnual);
+
+        private static bool IsNamedLeaveType(LeaveType type, string expectedName) =>
+            string.Equals(type.Name?.Trim(), expectedName, StringComparison.OrdinalIgnoreCase);
+
+        private static bool RequiresShortNoticeAnnualConversion(LeaveType selectedType, DateTime startDate)
+        {
+            if (selectedType.IsEmergency) return false;
+            if (!IsNamedLeaveType(selectedType, AnnualLeaveTypeName)) return false;
+            var today = DateTimeHelper.Now().Date;
+            var daysUntilStart = (startDate.Date - today).TotalDays;
+            return daysUntilStart < AnnualLeaveMinNoticeCalendarDays;
+        }
+
+        private async Task<ResolvedLeaveType> ResolveLeaveTypeForRequestAsync(
+            CreateLeaveRequestDto dto,
+            LeaveType selectedType)
+        {
+            if (!RequiresShortNoticeAnnualConversion(selectedType, dto.StartDate))
+            {
+                return new ResolvedLeaveType(
+                    selectedType,
+                    selectedType.IsEmergency,
+                    !selectedType.IsPaid,
+                    IsShortNoticeAnnual: false);
+            }
+
+            if (!dto.AcceptShortNoticeAsUnpaid)
+            {
+                throw new InvalidOperationException(
+                    "Annual leave requires at least 7 calendar days' notice before the start date. " +
+                    "To proceed with short notice, this request will be recorded as Unpaid Leave (not deducted from Annual Leave). " +
+                    "Please confirm short-notice unpaid leave and resubmit.");
+            }
+
+            var unpaidName = UnpaidLeaveTypeName.ToLowerInvariant();
+            var unpaid = await _context.LeaveTypes
+                .FirstOrDefaultAsync(t => t.Name.ToLower() == unpaidName)
+                ?? throw new InvalidOperationException(
+                    "Unpaid Leave type is not configured. Ask HR to add an \"Unpaid Leave\" leave type.");
+
+            return new ResolvedLeaveType(
+                unpaid,
+                IsEmergency: false,
+                IsUnpaid: true,
+                IsShortNoticeAnnual: true);
         }
     }
 }

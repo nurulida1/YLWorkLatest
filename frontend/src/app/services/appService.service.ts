@@ -5,6 +5,7 @@ import { environment } from '../../environments/environment.development';
 import {
   DashboardCount,
   DashboardSummary,
+  HrDashboardDto,
   SuperAdminDashboardDto,
 } from '../models/AppModels';
 import { Observable, retry, catchError, throwError } from 'rxjs';
@@ -50,6 +51,12 @@ export class AppService {
     return this.http
       .get<SuperAdminDashboardDto>(`${this.url}/GetSuperAdminDashboard`)
       .pipe(retry(1), catchError(this.handleError('GetSuperAdminDashboard')));
+  }
+
+  GetHrDashboard(): Observable<HrDashboardDto> {
+    return this.http
+      .get<HrDashboardDto>(`${this.url}/GetHrDashboard`)
+      .pipe(retry(1), catchError(this.handleError('GetHrDashboard')));
   }
 
   private handleError = (context: string) => (error: any) => {

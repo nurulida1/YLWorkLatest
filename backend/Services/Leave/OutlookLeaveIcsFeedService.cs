@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using YLWorks.Data;
 using YLWorks.Model.Leave;
+using WebApplication1.Helpers;
 
 namespace YLWorks.Services.Leave
 {
@@ -45,7 +46,7 @@ namespace YLWorks.Services.Leave
                     UserId = userId,
                     Provider = LeaveCalendarProvider.Outlook,
                     ConnectedAtUtc = DateTime.UtcNow,
-                    CreatedAt = DateTime.UtcNow,
+                    CreatedAt = DateTimeHelper.Now(),
                     TokenExpiresAtUtc = DateTime.UtcNow.AddYears(100),
                     ExternalCalendarId = "ics"
                 };
@@ -57,7 +58,7 @@ namespace YLWorks.Services.Leave
             existing.ExternalCalendarId = "ics";
             existing.ExternalAccountEmail = accountEmail ?? string.Empty;
             existing.LastError = null;
-            existing.UpdatedAt = DateTime.UtcNow;
+            existing.UpdatedAt = DateTimeHelper.Now();
             if (existing.ConnectedAtUtc == default)
                 existing.ConnectedAtUtc = DateTime.UtcNow;
 
@@ -76,7 +77,7 @@ namespace YLWorks.Services.Leave
             var rawToken = GenerateToken();
             existing.AccessTokenProtected = _tokenProtector.Protect(rawToken);
             existing.RefreshTokenProtected = HashToken(rawToken);
-            existing.UpdatedAt = DateTime.UtcNow;
+            existing.UpdatedAt = DateTimeHelper.Now();
             existing.LastError = null;
             await _context.SaveChangesAsync(ct);
             return (existing, BuildFeedUrl(rawToken));
@@ -128,10 +129,10 @@ namespace YLWorks.Services.Leave
                 return null;
 
             connection.LastSyncAtUtc = DateTime.UtcNow;
-            connection.UpdatedAt = DateTime.UtcNow;
+            connection.UpdatedAt = DateTimeHelper.Now();
             await _context.SaveChangesAsync(ct);
 
-            var from = DateTime.UtcNow.Date.AddDays(-Math.Max(0, _options.IncludePastDays));
+            var from = DateTimeHelper.Now().Date.AddDays(-Math.Max(0, _options.IncludePastDays));
             var leaves = await _context.LeaveRequests
                 .AsNoTracking()
                 .Include(r => r.Employee)

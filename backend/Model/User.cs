@@ -27,6 +27,16 @@ namespace YLWorks.Model
         public string Status { get; set; } = "Pending";
         public string? RejectReason { get; set; }
 
+        /// <summary>Monthly salary used for overtime ordinary/hourly rate (RM).</summary>
+        public decimal? MonthlySalary { get; set; }
+
+        /// <summary>Optional per-employee work schedule override (null = use department/company default).</summary>
+        public TimeSpan? WorkStartTime { get; set; }
+        public TimeSpan? WorkEndTime { get; set; }
+        public bool? UsesRestDayHalfDay { get; set; }
+        public TimeSpan? RestDayHalfDayStart { get; set; }
+        public TimeSpan? RestDayHalfDayEnd { get; set; }
+
         // Refresh token support
         public string? RefreshToken { get; set; }
         public DateTime? RefreshTokenExpiryTime { get; set; }
@@ -140,6 +150,13 @@ namespace YLWorks.Model
 
         public List<Guid> DepartmentIds { get; set; } = new List<Guid>();
         public List<UserDepartmentDto> Departments { get; set; } = new List<UserDepartmentDto>();
+
+        public decimal? MonthlySalary { get; set; }
+        public string? WorkStartTime { get; set; }
+        public string? WorkEndTime { get; set; }
+        public bool? UsesRestDayHalfDay { get; set; }
+        public string? RestDayHalfDayStart { get; set; }
+        public string? RestDayHalfDayEnd { get; set; }
     }
 
     public class UserDepartmentDto
@@ -179,8 +196,18 @@ namespace YLWorks.Model
         /// <summary>Replace reporting managers; empty list clears. Null = leave unchanged.</summary>
         public List<Guid>? HodIds { get; set; }
         public List<Guid>? DepartmentIds { get; set; }
-        public string SystemRole { get; set; } = "Staff"; // e.g., SuperAdmin, Management, HOD, Executive, Support, Staff
+        public string SystemRole { get; set; } = "Staff"; // SuperAdmin, Management, HOD, HR, Staff, Support
         public string? Gender { get; set; }
+
+        public decimal? MonthlySalary { get; set; }
+        /// <summary>HH:mm; null = leave unchanged. Empty string clears override.</summary>
+        public string? WorkStartTime { get; set; }
+        public string? WorkEndTime { get; set; }
+        public bool? UsesRestDayHalfDay { get; set; }
+        public string? RestDayHalfDayStart { get; set; }
+        public string? RestDayHalfDayEnd { get; set; }
+        /// <summary>When true, clears employee schedule overrides so department/company defaults apply.</summary>
+        public bool? ClearWorkScheduleOverride { get; set; }
     }
 
     public class StaffDashboardDto

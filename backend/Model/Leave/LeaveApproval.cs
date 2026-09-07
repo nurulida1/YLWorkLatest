@@ -1,3 +1,4 @@
+using WebApplication1.Helpers;
 namespace YLWorks.Model.Leave
 {
     public class LeaveApproval : BaseEntity
@@ -10,6 +11,6 @@ namespace YLWorks.Model.Leave
         public LeaveApprovalDecision Decision { get; set; }
         public string? RejectionReason { get; set; }
         public string ApproverRole { get; set; } = string.Empty;
-        public DateTime DecidedAt { get; set; } = DateTime.UtcNow;
+        public DateTime DecidedAt { get; set; } = DateTimeHelper.Now();
     }
 }

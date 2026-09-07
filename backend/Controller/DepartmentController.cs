@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
@@ -208,6 +208,11 @@ namespace YLWorks.Controller
                     Name = request.Name,
                     HodId = request.HodId,
                     IsActive = request.IsActive,
+                    WorkStartTime = YLWorks.Services.Claims.ClaimSettingsService.ParseOptionalTime(request.WorkStartTime),
+                    WorkEndTime = YLWorks.Services.Claims.ClaimSettingsService.ParseOptionalTime(request.WorkEndTime),
+                    UsesRestDayHalfDay = request.UsesRestDayHalfDay,
+                    RestDayHalfDayStart = YLWorks.Services.Claims.ClaimSettingsService.ParseOptionalTime(request.RestDayHalfDayStart),
+                    RestDayHalfDayEnd = YLWorks.Services.Claims.ClaimSettingsService.ParseOptionalTime(request.RestDayHalfDayEnd),
                 };
 
                 dept.CreatedAt = DateTimeHelper.Now();
@@ -228,7 +233,20 @@ namespace YLWorks.Controller
                         Hod = d.Hod == null ? null : new HodDto
                         {
                             FullName = d.Hod.FullName
-                        }
+                        },
+                        WorkStartTime = d.WorkStartTime.HasValue
+                            ? string.Format("{0:D2}:{1:D2}", (int)d.WorkStartTime.Value.TotalHours, d.WorkStartTime.Value.Minutes)
+                            : null,
+                        WorkEndTime = d.WorkEndTime.HasValue
+                            ? string.Format("{0:D2}:{1:D2}", (int)d.WorkEndTime.Value.TotalHours, d.WorkEndTime.Value.Minutes)
+                            : null,
+                        UsesRestDayHalfDay = d.UsesRestDayHalfDay,
+                        RestDayHalfDayStart = d.RestDayHalfDayStart.HasValue
+                            ? string.Format("{0:D2}:{1:D2}", (int)d.RestDayHalfDayStart.Value.TotalHours, d.RestDayHalfDayStart.Value.Minutes)
+                            : null,
+                        RestDayHalfDayEnd = d.RestDayHalfDayEnd.HasValue
+                            ? string.Format("{0:D2}:{1:D2}", (int)d.RestDayHalfDayEnd.Value.TotalHours, d.RestDayHalfDayEnd.Value.Minutes)
+                            : null
                     })
                     .FirstAsync();
 
@@ -258,6 +276,11 @@ namespace YLWorks.Controller
                 dept.Name = request.Name ?? dept.Name;
                 dept.HodId = request.HodId;
                 dept.IsActive = request.IsActive;
+                dept.WorkStartTime = YLWorks.Services.Claims.ClaimSettingsService.ParseOptionalTime(request.WorkStartTime);
+                dept.WorkEndTime = YLWorks.Services.Claims.ClaimSettingsService.ParseOptionalTime(request.WorkEndTime);
+                dept.UsesRestDayHalfDay = request.UsesRestDayHalfDay;
+                dept.RestDayHalfDayStart = YLWorks.Services.Claims.ClaimSettingsService.ParseOptionalTime(request.RestDayHalfDayStart);
+                dept.RestDayHalfDayEnd = YLWorks.Services.Claims.ClaimSettingsService.ParseOptionalTime(request.RestDayHalfDayEnd);
                 dept.UpdatedAt = DateTimeHelper.Now();
 
                 _context.Departments.Update(dept);
@@ -276,7 +299,20 @@ namespace YLWorks.Controller
                Hod = d.Hod == null ? null : new HodDto
                {
                    FullName = d.Hod.FullName
-               }
+               },
+               WorkStartTime = d.WorkStartTime.HasValue
+                   ? string.Format("{0:D2}:{1:D2}", (int)d.WorkStartTime.Value.TotalHours, d.WorkStartTime.Value.Minutes)
+                   : null,
+               WorkEndTime = d.WorkEndTime.HasValue
+                   ? string.Format("{0:D2}:{1:D2}", (int)d.WorkEndTime.Value.TotalHours, d.WorkEndTime.Value.Minutes)
+                   : null,
+               UsesRestDayHalfDay = d.UsesRestDayHalfDay,
+               RestDayHalfDayStart = d.RestDayHalfDayStart.HasValue
+                   ? string.Format("{0:D2}:{1:D2}", (int)d.RestDayHalfDayStart.Value.TotalHours, d.RestDayHalfDayStart.Value.Minutes)
+                   : null,
+               RestDayHalfDayEnd = d.RestDayHalfDayEnd.HasValue
+                   ? string.Format("{0:D2}:{1:D2}", (int)d.RestDayHalfDayEnd.Value.TotalHours, d.RestDayHalfDayEnd.Value.Minutes)
+                   : null
            })
            .FirstAsync();
                 await _hub.Clients.All.SendAsync("DepartmentUpdated", dept);

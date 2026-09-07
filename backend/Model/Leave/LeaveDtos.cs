@@ -23,6 +23,14 @@ namespace YLWorks.Model.Leave
         public bool IsEmergency { get; set; }
         public bool IsUnpaid { get; set; }
         public bool ConflictOverride { get; set; }
+        /// <summary>Required when Annual Leave start is under 7 calendar days from today.</summary>
+        public bool AcceptShortNoticeAsUnpaid { get; set; }
+        /// <summary>Required when paid balance cascades to Annual and/or Unpaid.</summary>
+        public bool AcceptBalanceCascade { get; set; }
+        /// <summary>Full | AM | PM — ignored when leave type does not allow half day.</summary>
+        public string StartSession { get; set; } = nameof(LeaveDaySession.Full);
+        /// <summary>Full | AM | PM — ignored when leave type does not allow half day.</summary>
+        public string EndSession { get; set; } = nameof(LeaveDaySession.Full);
     }
 
     public class LeaveRequestDto
@@ -34,16 +42,21 @@ namespace YLWorks.Model.Leave
         public string LeaveTypeName { get; set; } = string.Empty;
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
-        public int TotalDays { get; set; }
+        public double TotalDays { get; set; }
+        public string StartSession { get; set; } = nameof(LeaveDaySession.Full);
+        public string EndSession { get; set; } = nameof(LeaveDaySession.Full);
         public string Reason { get; set; } = string.Empty;
         public string Status { get; set; } = string.Empty;
         public bool IsEmergency { get; set; }
         public bool IsUnpaid { get; set; }
+        public bool IsShortNoticeAnnual { get; set; }
         public bool ConflictOverride { get; set; }
         public DateTime SubmittedAt { get; set; }
         public string? ConflictWarning { get; set; }
         public double? RemainingBalance { get; set; }
         public bool BalanceSufficient { get; set; } = true;
+        public bool RequiresBalanceCascadeAccept { get; set; }
+        public List<LeaveBalanceAllocationDto> BalanceAllocations { get; set; } = new();
         public List<string>? BalanceOptions { get; set; }
         public string? RejectionReason { get; set; }
         public bool HasAppeal { get; set; }
@@ -130,8 +143,19 @@ namespace YLWorks.Model.Leave
         public bool IsEmergency { get; set; }
         public int DefaultDaysPerYear { get; set; }
         public bool RequiresDocument { get; set; }
+        public bool AllowsHalfDay { get; set; }
+        public bool AllowsBalanceCascade { get; set; }
         public string PolicyKind { get; set; } = nameof(LeavePolicyKind.Fixed);
         public string ApplicableGender { get; set; } = nameof(LeaveApplicableGender.All);
+    }
+
+    public class LeaveBalanceAllocationDto
+    {
+        public Guid LeaveTypeId { get; set; }
+        public string LeaveTypeName { get; set; } = string.Empty;
+        public double Days { get; set; }
+        public int SortOrder { get; set; }
+        public bool IsUnpaidBucket { get; set; }
     }
 
     public class UpsertLeaveTypeDto
@@ -143,6 +167,8 @@ namespace YLWorks.Model.Leave
         public bool IsEmergency { get; set; }
         public int DefaultDaysPerYear { get; set; }
         public bool RequiresDocument { get; set; }
+        public bool AllowsHalfDay { get; set; }
+        public bool AllowsBalanceCascade { get; set; }
         /// <summary>Fixed | AnnualTenure | MedicalTenure | Replacement</summary>
         public string PolicyKind { get; set; } = nameof(LeavePolicyKind.Fixed);
         /// <summary>All | Male | Female</summary>
@@ -223,6 +249,9 @@ namespace YLWorks.Model.Leave
         public Guid? LeaveTypeId { get; set; }
         public string? LeaveTypeName { get; set; }
         public string? Reason { get; set; }
+        public double? TotalDays { get; set; }
+        public string? StartSession { get; set; }
+        public string? EndSession { get; set; }
         public bool CanViewDetails { get; set; }
     }
 

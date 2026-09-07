@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using YLWorks.Data;
 using YLWorks.Model;
 using YLWorks.Model.Leave;
+using WebApplication1.Helpers;
 
 namespace YLWorks.Services.Leave
 {
@@ -23,10 +24,29 @@ namespace YLWorks.Services.Leave
 
         public static int CalculateTotalDays(DateTime start, DateTime end)
         {
-            var s = start.Date;
-            var e = end.Date;
-            if (e < s) return 0;
-            return (e - s).Days + 1;
+            return (int)CalculateChargeableDays(start, end, LeaveDaySession.Full, LeaveDaySession.Full, null);
+        }
+
+        /// <summary>
+        /// Inclusive calendar days between start and end, optionally skipping public holidays.
+        /// Weekends are still counted.
+        /// </summary>
+        public static int CalculateTotalDays(
+            DateTime start,
+            DateTime end,
+            IEnumerable<DateTime>? excludeDates)
+        {
+            return (int)CalculateChargeableDays(start, end, LeaveDaySession.Full, LeaveDaySession.Full, excludeDates);
+        }
+
+        public static double CalculateChargeableDays(
+            DateTime start,
+            DateTime end,
+            LeaveDaySession startSession,
+            LeaveDaySession endSession,
+            IEnumerable<DateTime>? excludeDates)
+        {
+            return LeaveDayCalculator.CalculateChargeableDays(start, end, startSession, endSession, excludeDates);
         }
 
         public async Task<LeaveBalance?> GetBalanceAsync(Guid employeeId, Guid leaveTypeId, int year)
@@ -36,7 +56,7 @@ namespace YLWorks.Services.Leave
         }
 
         public async Task<BalanceCheckResultDto> CheckBalanceAsync(
-            Guid employeeId, Guid leaveTypeId, int totalDays, int year, bool isUnpaid)
+            Guid employeeId, Guid leaveTypeId, double totalDays, int year, bool isUnpaid)
         {
             if (isUnpaid)
             {
@@ -72,27 +92,27 @@ namespace YLWorks.Services.Leave
             return result;
         }
 
-        public async Task AddPendingDaysAsync(Guid employeeId, Guid leaveTypeId, int days, int year)
+        public async Task AddPendingDaysAsync(Guid employeeId, Guid leaveTypeId, double days, int year)
         {
             var balance = await EnsureBalanceAsync(employeeId, leaveTypeId, year);
             balance.PendingDays += days;
             RecalculateRemaining(balance);
-            balance.UpdatedAt = DateTime.UtcNow;
+            balance.UpdatedAt = DateTimeHelper.Now();
             await _context.SaveChangesAsync();
         }
 
-        public async Task DeductBalanceAsync(Guid employeeId, Guid leaveTypeId, int days, int year)
+        public async Task DeductBalanceAsync(Guid employeeId, Guid leaveTypeId, double days, int year)
         {
             var balance = await EnsureBalanceAsync(employeeId, leaveTypeId, year);
             balance.PendingDays = Math.Max(0, balance.PendingDays - days);
             balance.UsedDays += days;
             RecalculateRemaining(balance);
-            balance.UpdatedAt = DateTime.UtcNow;
+            balance.UpdatedAt = DateTimeHelper.Now();
             await _context.SaveChangesAsync();
             _logger.LogInformation("Deducted {Days} leave days for employee {EmployeeId}", days, employeeId);
         }
 
-        public async Task RestoreBalanceAsync(Guid employeeId, Guid leaveTypeId, int days, int year, bool wasApproved)
+        public async Task RestoreBalanceAsync(Guid employeeId, Guid leaveTypeId, double days, int year, bool wasApproved)
         {
             var balance = await EnsureBalanceAsync(employeeId, leaveTypeId, year);
             if (wasApproved)
@@ -101,7 +121,7 @@ namespace YLWorks.Services.Leave
                 balance.PendingDays = Math.Max(0, balance.PendingDays - days);
 
             RecalculateRemaining(balance);
-            balance.UpdatedAt = DateTime.UtcNow;
+            balance.UpdatedAt = DateTimeHelper.Now();
             await _context.SaveChangesAsync();
         }
 
@@ -121,7 +141,9 @@ namespace YLWorks.Services.Leave
                 .ToListAsync();
 
             // Hide gender-restricted types that do not match this employee (leave orphan rows in DB).
+            // Emergency has no balance card (charged via Annual → Unpaid).
             return balances
+                .Where(b => !b.LeaveType.IsEmergency)
                 .Where(b => LeaveGenderRules.IsEligible(b.LeaveType.ApplicableGender, employeeGender))
                 .Select(b => new LeaveBalanceDto
                 {
@@ -167,6 +189,9 @@ namespace YLWorks.Services.Leave
             {
                 if (existingSet.Contains(type.Id))
                     continue;
+                // Emergency has no entitlement pool — charged from Annual then Unpaid.
+                if (type.IsEmergency)
+                    continue;
                 if (!LeaveGenderRules.IsEligible(type.ApplicableGender, employee.Gender))
                     continue;
 
@@ -183,7 +208,7 @@ namespace YLWorks.Services.Leave
             if (dto.Days <= 0)
                 throw new ArgumentException("Days must be greater than zero.");
 
-            var year = dto.Year ?? DateTime.UtcNow.Year;
+            var year = dto.Year ?? DateTimeHelper.Now().Year;
             var leaveType = await _context.LeaveTypes.FindAsync(dto.LeaveTypeId)
                 ?? throw new InvalidOperationException("Leave type not found.");
 
@@ -205,7 +230,7 @@ namespace YLWorks.Services.Leave
             balance.CreditedDays += dto.Days;
             balance.EntitledDays = balance.CreditedDays;
             RecalculateRemaining(balance);
-            balance.UpdatedAt = DateTime.UtcNow;
+            balance.UpdatedAt = DateTimeHelper.Now();
             await _context.SaveChangesAsync();
 
             _logger.LogInformation(
@@ -291,6 +316,8 @@ namespace YLWorks.Services.Leave
 
                 foreach (var ft in fixedTypes)
                 {
+                    if (ft.IsEmergency)
+                        continue;
                     if (!LeaveGenderRules.IsEligible(ft.ApplicableGender, emp.Gender))
                         continue;
                     await UpsertYearBalanceForRolloverAsync(
@@ -303,10 +330,10 @@ namespace YLWorks.Services.Leave
             {
                 Id = Guid.NewGuid(),
                 ClosedYear = closedYear,
-                ClosedAt = DateTime.UtcNow,
+                ClosedAt = DateTimeHelper.Now(),
                 ClosedByUserId = closedByUserId,
                 Notes = $"Rollover to {nextYear}",
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTimeHelper.Now()
             });
 
             await _context.SaveChangesAsync();
@@ -365,7 +392,7 @@ namespace YLWorks.Services.Leave
 
             ApplyEntitlement(balance, type, tenure, carried, credited);
             RecalculateRemaining(balance);
-            balance.UpdatedAt = DateTime.UtcNow;
+            balance.UpdatedAt = DateTimeHelper.Now();
         }
 
         private async Task UpsertYearBalanceAsync(
@@ -389,7 +416,7 @@ namespace YLWorks.Services.Leave
             {
                 ApplyEntitlement(balance, type, tenure, carried, credited);
                 RecalculateRemaining(balance);
-                balance.UpdatedAt = DateTime.UtcNow;
+                balance.UpdatedAt = DateTimeHelper.Now();
             }
         }
 
@@ -435,7 +462,7 @@ namespace YLWorks.Services.Leave
                 Year = year,
                 UsedDays = 0,
                 PendingDays = 0,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTimeHelper.Now()
             };
             ApplyEntitlement(balance, type, tenure, carried, credited);
             RecalculateRemaining(balance);

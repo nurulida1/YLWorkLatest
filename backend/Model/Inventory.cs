@@ -159,4 +159,46 @@ namespace YLWorks.Model
         public string? ItemCode { get; set; }
         public string ItemName { get; set; } = string.Empty;
     }
+
+    public class InventoryAudit
+    {
+        public Guid Id { get; set; }
+        public Guid InventoryId { get; set; }
+        public Inventory? Inventory { get; set; }
+
+        /// <summary>Create or Update</summary>
+        public string Action { get; set; } = string.Empty;
+
+        public Guid? UserId { get; set; }
+        public string? UserName { get; set; }
+
+        public DateTime CreatedAt { get; set; }
+
+        /// <summary>JSON: { message, fields: [{ field, oldValue, newValue }] }</summary>
+        public string Changes { get; set; } = "{}";
+    }
+
+    public class InventoryAuditFieldChange
+    {
+        public string Field { get; set; } = string.Empty;
+        public string? OldValue { get; set; }
+        public string? NewValue { get; set; }
+    }
+
+    public class InventoryAuditChangesPayload
+    {
+        public string? Message { get; set; }
+        public List<InventoryAuditFieldChange> Fields { get; set; } = new();
+    }
+
+    public class InventoryAuditDto
+    {
+        public Guid Id { get; set; }
+        public Guid InventoryId { get; set; }
+        public string Action { get; set; } = string.Empty;
+        public Guid? UserId { get; set; }
+        public string? UserName { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public InventoryAuditChangesPayload Changes { get; set; } = new();
+    }
 }

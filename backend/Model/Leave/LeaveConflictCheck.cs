@@ -1,3 +1,4 @@
+using WebApplication1.Helpers;
 namespace YLWorks.Model.Leave
 {
     public class LeaveConflictCheck : BaseEntity
@@ -9,6 +10,6 @@ namespace YLWorks.Model.Leave
         public int OverlappingCount { get; set; }
         public string? OverlappingEmployees { get; set; }
         public bool EmployeeOverride { get; set; }
-        public DateTime CheckedAt { get; set; } = DateTime.UtcNow;
+        public DateTime CheckedAt { get; set; } = DateTimeHelper.Now();
     }
 }

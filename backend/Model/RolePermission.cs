@@ -10,7 +10,7 @@ namespace YLWorks.Model
 
         [Required]
         [StringLength(50)]
-        public string SystemRole { get; set; } = string.Empty; // e.g., "Management", "HOD", "Executive", "Support"
+        public string SystemRole { get; set; } = string.Empty; // SuperAdmin, Management, HOD, HR, Staff, Support
 
         public Guid? DepartmentId { get; set; }
 

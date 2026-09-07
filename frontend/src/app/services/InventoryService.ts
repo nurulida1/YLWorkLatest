@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import {
   CreateInventoryRequest,
+  InventoryAuditDto,
   InventoryDropdownResponse,
   InventoryDto,
   UpdateInventoryRequest,
@@ -52,36 +53,28 @@ export class InventoryService {
       .pipe(retry(1), catchError(this.handleError('GetMany')));
   }
 
-  GetOne(query: GridifyQueryExtend): Observable<InventoryDto | null> {
-    let params = new HttpParams()
-      .set('page', query.Page.toString())
-      .set('pageSize', query.PageSize.toString());
-
-    if (query.Select) {
-      params = params.set('select', query.Select);
-    }
-    if (query.OrderBy) {
-      params = params.set('orderBy', query.OrderBy);
-    }
-    if (query.Filter) {
-      params = params.set('filter', query.Filter);
-    }
-    if (query.Includes) {
-      params = params.set('includes', query.Includes);
-    }
+  GetOne(id: string): Observable<InventoryDto | null> {
+    const params = new HttpParams().set('id', id);
 
     return this.http.get<InventoryDto>(this.url + '/GetOne', { params }).pipe(
       retry(1),
       catchError((error) => {
         if (error.status === 404) {
-          // Return null gracefully when not found
           return of(null);
-        } else {
-          // Handle all other errors
-          return this.handleError('GetOne')(error);
         }
+        return this.handleError('GetOne')(error);
       }),
     );
+  }
+
+  GetAudit(inventoryId: string, take = 10): Observable<InventoryAuditDto[]> {
+    const params = new HttpParams()
+      .set('inventoryId', inventoryId)
+      .set('take', take.toString());
+
+    return this.http
+      .get<InventoryAuditDto[]>(`${this.url}/GetAudit`, { params })
+      .pipe(retry(1), catchError(this.handleError('GetAudit')));
   }
 
   Create(request: CreateInventoryRequest): Observable<InventoryDto> {

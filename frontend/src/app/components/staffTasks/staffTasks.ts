@@ -317,14 +317,14 @@ import { CheckboxModule } from 'primeng/checkbox';
                       <div class="task-meta-item">
                         <div class="task-avatar">
                           {{
-                            task.assignedTo?.fullName
+                            task.assignedTo.fullName
                               ? task.assignedTo.fullName.charAt(0).toUpperCase()
                               : 'ME'
                           }}
                         </div>
 
                         <span>
-                          {{ task.assignedTo?.fullName || 'Own Task' }}
+                          {{ task.assignedTo.fullName || 'Own Task' }}
                         </span>
                       </div>
 
@@ -427,7 +427,7 @@ import { CheckboxModule } from 'primeng/checkbox';
 
               Showing
               <strong>
-                {{ PagingSignal().data?.length || 0 }}
+                {{ PagingSignal().data.length || 0 }}
               </strong>
 
               of

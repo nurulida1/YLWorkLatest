@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using WebApplication1.Helpers;
 
 namespace YLWorks.Model
 {
@@ -19,9 +20,11 @@ namespace YLWorks.Model
 
         public Guid? LeaveRequestId { get; set; }
 
+        public Guid? ClaimRequestId { get; set; }
+
         public bool IsRead { get; set; } = false;
 
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedAt { get; set; } = DateTimeHelper.Now();
 
 
         // Navigation

@@ -1,3 +1,4 @@
+using WebApplication1.Helpers;
 namespace YLWorks.Model.Leave
 {
     public class LeaveCancellation : BaseEntity
@@ -9,7 +10,7 @@ namespace YLWorks.Model.Leave
         public bool LeaveStarted { get; set; }
         public bool RequiresApproval { get; set; }
         public LeaveCancelStatus Status { get; set; } = LeaveCancelStatus.Pending;
-        public DateTime RequestedAt { get; set; } = DateTime.UtcNow;
+        public DateTime RequestedAt { get; set; } = DateTimeHelper.Now();
         public DateTime? ResolvedAt { get; set; }
     }
 }

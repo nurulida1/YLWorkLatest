@@ -17,7 +17,16 @@ import { ButtonModule } from 'primeng/button';
 import { UserService } from '../../../services/userService.service';
 import { LoginResponse } from '../../../models/User';
 import { AuthService } from '../../../services/authService';
+import { MenuItem } from 'primeng/api';
 
+interface SideMenuItem {
+  label: string;
+  route?: string;
+  icon?: string;
+  roles?: string[];
+  mobileOnly?: boolean;
+  items?: SideMenuItem[];
+}
 @Component({
   selector: 'app-sidemenu',
   imports: [
@@ -159,6 +168,10 @@ import { AuthService } from '../../../services/authService';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Sidemenu {
+  // ==========================================
+  // DEPENDENCIES
+  // ==========================================
+
   readonly router = inject(Router);
 
   private readonly cdr = inject(ChangeDetectorRef);
@@ -167,14 +180,23 @@ export class Sidemenu {
   private readonly userService = inject(UserService);
   private readonly authService = inject(AuthService);
 
+  // ==========================================
+  // COMPONENT STATE
+  // ==========================================
+
   currentUrl = '';
   currentUser: LoginResponse | null = null;
 
   showDialog = false;
   signOutDialog = false;
+
   openMenu: string | null = null;
 
-  mainMenu: any[] = [
+  // ==========================================
+  // MAIN MENU
+  // ==========================================
+
+  readonly mainMenu: SideMenuItem[] = [
     {
       label: 'Dashboard',
       route: '/dashboard',
@@ -187,53 +209,12 @@ export class Sidemenu {
     },
   ];
 
-  management: any[] = [
-    {
-      label: 'Activity Log',
-      route: '/activity-log',
-      icon: 'pi-history',
-      roles: ['SuperAdmin'],
-    },
-    {
-      label: 'Announcements',
-      route: '/announcements',
-      icon: 'pi-bell',
-    },
-    {
-      label: 'Leave',
-      route: '/leave',
-      icon: 'pi-calendar',
-      items: [
-        {
-          label: 'Leave Application',
-          route: '/leave',
-        },
-        {
-          label: 'Leave Approvals',
-          route: '/leave/approvals',
-          roles: ['SuperAdmin', 'Management', 'HOD', 'HR'],
-        },
-      ],
-    },
-    {
-      label: 'Claims',
-      route: '/claims',
-      icon: 'pi-wallet',
-      items: [
-        {
-          label: 'Claims',
-          route: '/claims',
-        },
-        {
-          label: 'Apply Claim',
-          route: '/claims/apply',
-        },
-        {
-          label: 'Claim Approvals',
-          route: '/claims/approvals',
-        },
-      ],
-    },
+  // ==========================================
+  // MANAGEMENT MENU
+  // ==========================================
+
+  readonly management: SideMenuItem[] = [
+    // WORKSPACE
     {
       label: 'My Work',
       icon: 'pi-briefcase',
@@ -261,6 +242,33 @@ export class Sidemenu {
       ],
     },
     {
+      label: 'Leave & Claims',
+      icon: 'pi-calendar',
+      items: [
+        {
+          label: 'Leave Application',
+          route: '/leave',
+        },
+        {
+          label: 'Leave Approvals',
+          route: '/leave/approvals',
+          roles: ['SuperAdmin', 'Management', 'HOD', 'HR'],
+        },
+        {
+          label: 'Claims',
+          route: '/claims',
+        },
+        {
+          label: 'Apply Claim',
+          route: '/claims/apply',
+        },
+        {
+          label: 'Claim Approvals',
+          route: '/claims/approvals',
+        },
+      ],
+    },
+    {
       label: 'Support & Requests',
       icon: 'pi-desktop',
       items: [
@@ -276,59 +284,66 @@ export class Sidemenu {
         },
       ],
     },
+
+    // BUSINESS OPERATIONS
     {
-      label: 'Projects',
+      label: 'Project Management',
       icon: 'pi-folder',
-      route: '/projects',
       roles: ['SuperAdmin', 'Management', 'HOD'],
+      items: [
+        {
+          label: 'Projects',
+          route: '/projects',
+          roles: ['SuperAdmin', 'Management', 'HOD'],
+        },
+        {
+          label: 'Work Orders',
+          route: '/work-order',
+          roles: ['SuperAdmin', 'Management', 'HOD'],
+        },
+        {
+          label: 'Quotations',
+          route: '/quotations',
+          roles: ['SuperAdmin', 'Management', 'HOD'],
+        },
+      ],
     },
     {
-      label: 'Work Orders',
-      icon: 'pi-wrench',
-      route: '/work-order',
-      roles: ['SuperAdmin', 'Management', 'HOD'],
-    },
-    {
-      label: 'Quotations',
-      route: '/quotations',
-      icon: 'pi-file',
-      roles: ['SuperAdmin', 'Management', 'HOD'],
-    },
-    {
-      label: 'Products Services',
-      icon: 'pi-list',
-      route: '/products-services',
-      roles: ['SuperAdmin', 'Management', 'HOD'],
-    },
-    {
-      label: 'Sales Order',
-      icon: 'pi-money-bill',
-      route: '/sales-order',
-      roles: ['SuperAdmin', 'Management', 'HOD'],
-    },
-    {
-      label: 'Delivery Orders',
-      icon: 'pi-truck',
-      route: '/delivery-orders',
-      roles: ['SuperAdmin', 'Management', 'HOD'],
-    },
-    {
-      label: 'Purchase Orders',
+      label: 'Sales & Purchasing',
       icon: 'pi-shopping-cart',
-      route: '/purchase-orders',
       roles: ['SuperAdmin', 'Management', 'HOD'],
-    },
-    {
-      label: 'Goods Receiving',
-      icon: 'pi-clipboard',
-      route: '/goods-receiving',
-      roles: ['SuperAdmin', 'Management', 'HOD'],
-    },
-    {
-      label: 'DO RMA',
-      icon: 'pi-refresh',
-      route: '/do-rma',
-      roles: ['SuperAdmin', 'Management', 'HOD'],
+      items: [
+        {
+          label: 'Products Services',
+          route: '/products-services',
+          roles: ['SuperAdmin', 'Management', 'HOD'],
+        },
+        {
+          label: 'Sales Order',
+          route: '/sales-order',
+          roles: ['SuperAdmin', 'Management', 'HOD'],
+        },
+        {
+          label: 'Delivery Orders',
+          route: '/delivery-orders',
+          roles: ['SuperAdmin', 'Management', 'HOD'],
+        },
+        {
+          label: 'Purchase Orders',
+          route: '/purchase-orders',
+          roles: ['SuperAdmin', 'Management', 'HOD'],
+        },
+        {
+          label: 'Goods Receiving',
+          route: '/goods-receiving',
+          roles: ['SuperAdmin', 'Management', 'HOD'],
+        },
+        {
+          label: 'DO RMA',
+          route: '/do-rma',
+          roles: ['SuperAdmin', 'Management', 'HOD'],
+        },
+      ],
     },
     {
       label: 'Inventory',
@@ -357,8 +372,8 @@ export class Sidemenu {
       ],
     },
     {
-      label: 'Invoices',
-      icon: 'pi-receipt',
+      label: 'Finance',
+      icon: 'pi-wallet',
       roles: ['SuperAdmin', 'Management', 'HOD'],
       items: [
         {
@@ -371,59 +386,60 @@ export class Sidemenu {
           route: '/invoices/purchase',
           roles: ['SuperAdmin', 'Management', 'HOD'],
         },
+        {
+          label: 'Expenses',
+          route: '/expenses',
+          roles: ['SuperAdmin', 'Management', 'HOD'],
+        },
+        {
+          label: 'Incomes',
+          route: '/incomes',
+          roles: ['SuperAdmin', 'Management', 'HOD'],
+        },
+        {
+          label: 'Payments',
+          route: '/payments',
+          roles: ['SuperAdmin', 'Management', 'HOD'],
+        },
+      ],
+    },
+
+    // ADMINISTRATION
+    {
+      label: 'Company Management',
+      icon: 'pi-building',
+      roles: ['SuperAdmin', 'Management', 'HOD'],
+      items: [
+        {
+          label: 'My Company',
+          route: '/company',
+          roles: ['SuperAdmin', 'Management', 'HOD'],
+        },
+        {
+          label: 'Department',
+          route: '/department',
+        },
+        {
+          label: 'Suppliers',
+          route: '/supplier',
+          roles: ['SuperAdmin', 'Management', 'HOD'],
+        },
+        {
+          label: 'Clients',
+          route: '/clients',
+          roles: ['SuperAdmin', 'Management', 'HOD'],
+        },
       ],
     },
     {
-      label: 'Expenses',
-      route: '/expenses',
-      icon: 'pi-wallet',
-      roles: ['SuperAdmin', 'Management', 'HOD'],
-    },
-    {
-      label: 'Incomes',
-      route: '/incomes',
-      icon: 'pi-chart-line',
-      roles: ['SuperAdmin', 'Management', 'HOD'],
-    },
-    {
-      label: 'Payments',
-      route: '/payments',
-      icon: 'pi-credit-card',
-      roles: ['SuperAdmin', 'Management', 'HOD'],
-    },
-    {
-      label: 'My Company',
-      route: '/company',
-      icon: 'pi-building',
-      roles: ['SuperAdmin', 'Management', 'HOD'],
-    },
-    {
-      label: 'Suppliers',
-      route: '/supplier',
-      icon: 'pi-shop',
-      roles: ['SuperAdmin', 'Management', 'HOD'],
-    },
-    {
-      label: 'Clients',
-      route: '/clients',
-      icon: 'pi-users',
-      roles: ['SuperAdmin', 'Management', 'HOD'],
-    },
-    {
-      label: 'User Management',
-      route: '/user-management',
-      icon: 'pi-users',
-      roles: ['SuperAdmin', 'HR'],
-    },
-    {
-      label: 'Department',
-      route: '/department',
-      icon: 'pi-building',
-    },
-    {
-      label: 'Settings',
+      label: 'Administration Settings',
       icon: 'pi-cog',
       items: [
+        {
+          label: 'User Management',
+          route: '/user-management',
+          roles: ['SuperAdmin', 'HR'],
+        },
         {
           label: 'Profile Settings',
           route: '/profile-settings',
@@ -457,7 +473,7 @@ export class Sidemenu {
           roles: ['SuperAdmin', 'Admin', 'HR'],
         },
         {
-          label: 'Leave calendar sync',
+          label: 'Leave Calendar Sync',
           route: '/settings/leave-calendar-sync',
           roles: ['SuperAdmin', 'HOD', 'Management', 'HR'],
         },
@@ -468,21 +484,40 @@ export class Sidemenu {
         },
       ],
     },
+    {
+      label: 'Activity Log',
+      route: '/activity-log',
+      icon: 'pi-history',
+      roles: ['SuperAdmin'],
+    },
+    {
+      label: 'Announcements',
+      route: '/announcements',
+      icon: 'pi-bell',
+    },
   ];
 
+  // ==========================================
+  // LIFECYCLE
+  // ==========================================
+
   constructor() {
-    // Restore current user.
+    this.initializeCurrentUser();
+    this.initializeRouteTracking();
+  }
+
+  private initializeCurrentUser(): void {
     this.currentUser = this.userService.currentUser;
 
-    // Keep the menu synchronized when user data changes.
     this.userService.currentUser$
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((user) => {
         this.currentUser = user;
         this.cdr.markForCheck();
       });
+  }
 
-    // Track current route.
+  private initializeRouteTracking(): void {
     this.currentUrl = this.router.url;
     this.syncOpenMenuWithRoute();
 
@@ -499,33 +534,25 @@ export class Sidemenu {
   }
 
   // ==========================================
-  // MENU ROUTE HANDLING
+  // ROUTE HANDLING
+  // ==========================================
+
+  // ==========================================
+  // ROUTE HANDLING
   // ==========================================
 
   syncOpenMenuWithRoute(): void {
-    for (const item of this.management) {
-      if (!item.items) continue;
+    const activeParent = this.management.find((item) =>
+      item.items?.some((sub) => this.isRouteMatch(this.currentUrl, sub.route)),
+    );
 
-      const isChildActive = item.items.some((sub: any) =>
-        this.isRouteMatch(this.currentUrl, sub.route),
-      );
-
-      if (isChildActive) {
-        this.openMenu = item.label;
-        return;
-      }
-    }
+    this.openMenu = activeParent?.label ?? null;
   }
 
-  isActive(route?: string, item?: any): boolean {
+  isActive(route?: string, item?: SideMenuItem): boolean {
     if (!route) return false;
 
-    // Parent menu is active only on its own route.
-    if (item?.items) {
-      return this.currentUrl === route;
-    }
-
-    return this.currentUrl === route;
+    return this.currentUrl.split('?')[0].split('#')[0] === route;
   }
 
   private isRouteMatch(currentUrl: string, route?: string): boolean {
@@ -540,15 +567,11 @@ export class Sidemenu {
   // SUBMENU HANDLING
   // ==========================================
 
-  getAllowedSubItems(item: any): any[] {
-    if (!item.items) return [];
-
-    return item.items.filter((sub: any) => this.canView(sub));
+  getAllowedSubItems(item: SideMenuItem): SideMenuItem[] {
+    return item.items?.filter((sub) => this.canView(sub)) ?? [];
   }
 
-  hasVisibleSubItems(item: any): boolean {
-    if (!item.items) return false;
-
+  hasVisibleSubItems(item: SideMenuItem): boolean {
     return this.getAllowedSubItems(item).length > 0;
   }
 
@@ -561,18 +584,16 @@ export class Sidemenu {
   // ROLE AND DEPARTMENT PERMISSIONS
   // ==========================================
 
-  canView(item: any): boolean {
+  canView(item: SideMenuItem): boolean {
     const role = this.currentUser?.systemRole?.trim().toLowerCase();
 
     if (!role) return false;
 
-    // SuperAdmin can view everything.
     if (role === 'superadmin') {
       return true;
     }
 
-    // Inventory special access.
-    if (item.label === 'Inventory' || item.route?.startsWith('/inventory/')) {
+    if (this.isInventoryMenu(item)) {
       return (
         role === 'director' ||
         role === 'hod' ||
@@ -580,13 +601,19 @@ export class Sidemenu {
       );
     }
 
-    // Items without role restrictions are visible to authenticated users.
-    if (!item.roles || item.roles.length === 0) {
+    if (!item.roles?.length) {
       return true;
     }
 
     return item.roles.some(
       (allowedRole: string) => allowedRole.trim().toLowerCase() === role,
+    );
+  }
+
+  private isInventoryMenu(item: SideMenuItem): boolean {
+    return (
+      item.label === 'Inventory' ||
+      item.route?.startsWith('/inventory/') === true
     );
   }
 

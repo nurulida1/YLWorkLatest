@@ -668,90 +668,215 @@ import { AvatarGroupModule } from 'primeng/avatargroup';
       </div>
     </div>
 
+    <!-- Mobile Login -->
     <div
-      class="h-screen lg:hidden flex flex-col items-center justify-between relative overflow-hidden bg-[#1E3C92]"
+      class="lg:hidden min-h-screen min-h-[100dvh] w-full flex flex-col relative overflow-x-hidden overflow-y-auto bg-[#1E3C92]"
     >
+      <!-- Background Decorations -->
       <div
-        class="absolute -top-12 -right-16 w-64 h-64 bg-[#ffffff0d] rounded-full blur-md"
+        class="absolute -top-16 -right-16 w-64 h-64 bg-white/5 rounded-full blur-2xl pointer-events-none"
       ></div>
+
       <div
-        class="absolute top-48 -left-12 w-48 h-48 bg-[#60a5fa1a] rounded-full blur"
+        class="absolute top-48 -left-16 w-48 h-48 bg-blue-300/10 rounded-full blur-2xl pointer-events-none"
       ></div>
-      <div class="h-[30%] w-full flex flex-col gap-7 p-10">
-        <div class="flex flex-row items-center gap-3">
+
+      <!-- Header -->
+      <div class="relative z-10 px-6 pt-9 pb-8 sm:px-8 sm:pt-12">
+        <!-- Branding -->
+        <div class="flex items-center gap-3">
           <div
-            class="w-10 h-10 rounded-xl flex items-center justify-center bg-white/10 border border-white/20"
+            class="w-11 h-11 shrink-0 rounded-xl flex items-center justify-center bg-white/10 border border-white/20 shadow-lg"
           >
-            <div class="font-extrabold text-white text-shadow-md">YL</div>
+            <span class="font-extrabold text-white text-lg">YL</span>
           </div>
-          <div class="text-white tracking-wide">WORKS ENTERPRISE</div>
+
+          <div>
+            <div class="text-white font-bold tracking-wider text-sm">
+              YL WORKS
+            </div>
+
+            <div class="text-blue-100/60 text-[10px] tracking-[0.2em]">
+              ENTERPRISE WORKSPACE
+            </div>
+          </div>
         </div>
-        <div class="font-bold text-3xl text-white tracking-wide w-[80%]">
-          Log In to stay on top of your tasks and projects.
+
+        <!-- Welcome Text -->
+        <div class="mt-8 max-w-sm">
+          <div
+            class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 border border-white/10"
+          >
+            <span class="w-1.5 h-1.5 rounded-full bg-green-400"></span>
+
+            <span class="text-white/80 text-[10px] font-medium tracking-wide">
+              YOUR WORKSPACE, CONNECTED
+            </span>
+          </div>
+
+          <h1
+            class="text-3xl sm:text-4xl font-bold text-white tracking-tight mt-4 leading-tight"
+          >
+            Welcome back.
+            <span class="text-blue-200">Let's get to work.</span>
+          </h1>
+
+          <p class="text-blue-100/70 text-sm mt-3 leading-relaxed max-w-xs">
+            Sign in to manage your tasks, projects and daily work activities.
+          </p>
         </div>
       </div>
-      <div class="h-[70%] w-full">
-        <div
-          class="bg-white h-full p-6 flex flex-col items-center gap-2 rounded-t-4xl"
-        >
-          <div class="h-1 w-15 rounded-full bg-gray-200"></div>
-          <div class="font-extrabold text-3xl mt-4 text-gray-800">Login</div>
-          <span class="text-gray-500 text-sm mb-4"
-            >Don't Have An Account?
-            <b class="text-blue-800 cursor-pointer" [routerLink]="'/register'"
-              >Sign Up</b
-            ></span
-          >
 
-          <div class="flex flex-col mt-3 gap-6 w-full px-5" [formGroup]="FG">
-            <div class="relative">
-              <input
-                type="text"
-                pInputText
-                class="w-full! bg-gray-50! pl-12! rounded-full! p-5! placeholder:text-gray-400! border-gray-200!"
-                formControlName="email"
-                placeholder="syukshah@ylworks.com"
-              />
-              <i class="pi pi-user absolute! top-6! left-5! text-gray-400!"></i>
+      <!-- Login Card -->
+      <div
+        class="relative z-10 flex-1 bg-white rounded-t-[2rem] px-6 pt-7 pb-8 sm:px-9 sm:pt-9 shadow-[0_-10px_40px_rgba(0,0,0,0.12)]"
+      >
+        <div class="w-full max-w-md mx-auto">
+          <!-- Card Heading -->
+          <div class="flex items-center justify-between">
+            <div>
+              <h2 class="text-2xl font-bold text-gray-900">Sign In</h2>
+
+              <p class="text-sm text-gray-500 mt-1">
+                Access your YL Works account
+              </p>
             </div>
-            <div class="relative">
-              <p-password
-                styleClass="w-full!"
-                inputStyleClass="w-full! bg-gray-50! pl-12! rounded-full! p-5! placeholder:text-gray-400! border-gray-200!"
-                formControlName="password"
-                placeholder="Enter your password"
-                [toggleMask]="true"
-              />
-              <i
-                class="pi pi-lock absolute! top-6.5! left-5! text-gray-400!"
-              ></i>
+
+            <div
+              class="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center"
+            >
+              <i class="pi pi-lock text-xl text-[#2148BC]"></i>
             </div>
-            <div class="flex flex-row items-center justify-between">
-              <div class="flex flex-row items-center gap-2">
+          </div>
+
+          <!-- Register Link -->
+          <div class="mt-5 text-sm text-gray-500">
+            New employee?
+
+            <a
+              routerLink="/register"
+              class="font-semibold text-[#2148BC] ml-1 hover:underline"
+            >
+              Request onboarding
+            </a>
+          </div>
+
+          <!-- Login Form -->
+          <div class="flex flex-col gap-5 mt-8" [formGroup]="FG">
+            <!-- Email -->
+            <div class="flex flex-col gap-2">
+              <label
+                for="mobile-email"
+                class="text-xs font-bold text-gray-600 tracking-wider"
+              >
+                WORK EMAIL
+              </label>
+
+              <div class="relative">
+                <i
+                  class="pi pi-envelope absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 z-10"
+                ></i>
+
+                <input
+                  id="mobile-email"
+                  type="email"
+                  pInputText
+                  formControlName="email"
+                  autocomplete="username"
+                  class="w-full! bg-gray-50! pl-11! pr-4! py-4! rounded-xl! border-gray-200! text-sm!"
+                  placeholder="Enter your work email"
+                />
+              </div>
+
+              <small
+                *ngIf="FG.get('email')?.invalid && FG.get('email')?.touched"
+                class="text-red-500 text-xs pl-1"
+              >
+                Please enter a valid work email.
+              </small>
+            </div>
+
+            <!-- Password -->
+            <div class="flex flex-col gap-2">
+              <label
+                for="mobile-password"
+                class="text-xs font-bold text-gray-600 tracking-wider"
+              >
+                PASSWORD
+              </label>
+
+              <div class="relative">
+                <i
+                  class="pi pi-lock absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 z-10"
+                ></i>
+
+                <p-password
+                  inputId="mobile-password"
+                  formControlName="password"
+                  autocomplete="current-password"
+                  styleClass="w-full!"
+                  inputStyleClass="w-full! bg-gray-50! pl-11! pr-12! py-4! rounded-xl! border-gray-200! text-sm!"
+                  [toggleMask]="true"
+                  [feedback]="false"
+                  placeholder="Enter your password"
+                ></p-password>
+              </div>
+
+              <small
+                *ngIf="
+                  FG.get('password')?.invalid && FG.get('password')?.touched
+                "
+                class="text-red-500 text-xs pl-1"
+              >
+                Password is required.
+              </small>
+            </div>
+
+            <!-- Remember Me & Forgot Password -->
+            <div class="flex items-center justify-between gap-3 pt-1">
+              <div class="flex items-center gap-2">
                 <p-checkbox
                   [binary]="true"
                   formControlName="rememberMe"
                 ></p-checkbox>
-                <span class="mt-1 text-gray-500 text-sm">Remember Me</span>
+
+                <label class="text-sm text-gray-600"> Remember me </label>
               </div>
-              <span
-                class="text-blue-800 text-sm font-semibold"
-                [routerLink]="'/forgot-password'"
-                >Forgot Password?</span
+
+              <a
+                routerLink="/forgot-password"
+                class="text-sm font-semibold text-[#2148BC] hover:underline whitespace-nowrap"
               >
+                Forgot password?
+              </a>
             </div>
           </div>
+
+          <!-- Sign In Button -->
           <p-button
-            label="Sign In"
+            label="Sign In to Workspace"
+            icon="pi pi-arrow-right"
+            iconPos="right"
             (onClick)="onLogin()"
             [rounded]="true"
-            class="w-full! mt-4 px-4!"
-            styleClass="w-full! bg-[#2148BC]! text-white! border-none! p-5!"
+            styleClass="w-full! mt-7! bg-[#2148BC]! hover:bg-[#193a9f]! text-white! border-none! py-4! shadow-lg! font-semibold!"
           ></p-button>
 
-          <span class="text-gray-500 text-sm text-center"
-            >Protected by YL Works Enterprise Security</span
-          >
+          <!-- Security Information -->
+          <div class="flex items-center justify-center gap-2 mt-6">
+            <i class="pi pi-shield text-[#2148BC] text-sm"></i>
+
+            <span class="text-xs text-gray-400">
+              Protected by YL Works Enterprise Security
+            </span>
+          </div>
+
+          <!-- Footer -->
+          <div class="mt-7 pt-5 border-t border-gray-100 text-center">
+            <p class="text-[11px] text-gray-400">
+              © {{ currentYear }} YL Systems Sdn. Bhd.
+            </p>
+          </div>
         </div>
       </div>
     </div>
@@ -765,7 +890,7 @@ export class Login implements OnDestroy, OnInit {
   private readonly authService = inject(AuthService);
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly router = inject(Router);
-
+  readonly currentYear = new Date().getFullYear();
   protected ngUnsubscribe: Subject<void> = new Subject<void>();
 
   FG!: FormGroup;

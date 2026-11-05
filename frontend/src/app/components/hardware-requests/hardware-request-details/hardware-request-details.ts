@@ -130,7 +130,7 @@ import {
           </section>
 
           <!-- Items -->
-          @if (request.items?.length) {
+          @if (request.items.length) {
             <section class="card">
               <div class="card-header">
                 <div>

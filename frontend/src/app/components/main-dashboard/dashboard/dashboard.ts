@@ -829,7 +829,7 @@ interface WeekDayCell {
                         </div>
 
                         <div class="text-xs text-gray-400 mt-2">
-                          {{ request.items?.length || 0 }} item(s)
+                          {{ request.items.length || 0 }} item(s)
                           @if (request.neededBy) {
                             <span class="mx-1">•</span>
                             Needed by

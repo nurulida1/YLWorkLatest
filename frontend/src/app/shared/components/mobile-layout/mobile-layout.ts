@@ -1,62 +1,86 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, ViewChild } from '@angular/core';
-import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
-import { TranslatePipe, TranslateDirective } from '@ngx-translate/core';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
+import {
+  Router,
+  RouterOutlet,
+  RouterLink,
+  RouterLinkActive,
+} from '@angular/router';
+
 import { AvatarModule } from 'primeng/avatar';
 import { ButtonModule } from 'primeng/button';
-import { Menu, MenuModule } from 'primeng/menu';
+
+interface QuickAction {
+  label: string;
+  description: string;
+  icon: string;
+  route: string;
+  color: string;
+  background: string;
+}
 
 @Component({
   selector: 'app-mobile-layout',
+  standalone: true,
   imports: [
     CommonModule,
     RouterOutlet,
     RouterLink,
-    ButtonModule,
-    MenuModule,
     RouterLinkActive,
     AvatarModule,
+    ButtonModule,
   ],
   template: `
-    <div class="h-screen overflow-hidden flex flex-col">
-      <div class="h-[90%] overflow-y-auto">
+    <div class="mobile-layout">
+      <!-- Main Content -->
+      <main class="mobile-content">
         <router-outlet></router-outlet>
-      </div>
+      </main>
 
-      <div
-        class="px-8 py-3 h-[10%] border-t border-gray-200 bg-white flex flex-row items-center justify-between"
-      >
+      <!-- Bottom Navigation -->
+      <nav class="bottom-navigation">
         <a
           routerLink="/dashboard"
           routerLinkActive="active"
           [routerLinkActiveOptions]="{ exact: true }"
           class="nav-item"
         >
-          <i class="pi pi-home text-xl!"></i>
-          <span class="text-sm">Home</span>
+          <i class="pi pi-home"></i>
+          <span>Home</span>
         </a>
 
-        <a routerLink="/tasks" routerLinkActive="active" class="nav-item">
-          <i class="pi pi-clipboard text-xl!"></i>
-          <span class="text-sm">Tasks</span>
+        <a routerLink="/my-tasks" routerLinkActive="active" class="nav-item">
+          <i class="pi pi-clipboard"></i>
+          <span>My Work</span>
         </a>
+
+        <!-- Create Button -->
+        <div class="quick-action-wrapper">
+          <button
+            type="button"
+            class="quick-action-button"
+            [class.active]="showQuickActions"
+            aria-label="Open quick actions"
+            [attr.aria-expanded]="showQuickActions"
+            (click)="toggleActions()"
+          >
+            <i
+              class="pi"
+              [class.pi-plus]="!showQuickActions"
+              [class.pi-times]="showQuickActions"
+            ></i>
+          </button>
+
+          <span class="quick-action-label">Create</span>
+        </div>
 
         <a
-          routerLink="/new"
+          routerLink="/announcements"
           routerLinkActive="active"
-          class="nav-item new-item"
+          class="nav-item"
         >
-          <div
-            class="border-2 border-blue-600 shadow-lg w-13 h-13 bg-blue-800 flex items-center justify-center rounded-full"
-          >
-            <i class="pi pi-plus text-xl! text-white!"></i>
-          </div>
-          <span class="text-sm">New</span>
-        </a>
-
-        <a routerLink="/notice" routerLinkActive="active" class="nav-item">
-          <i class="pi pi-megaphone text-xl!"></i>
-          <span class="text-sm">Notices</span>
+          <i class="pi pi-megaphone"></i>
+          <span>Notices</span>
         </a>
 
         <a
@@ -64,45 +88,133 @@ import { Menu, MenuModule } from 'primeng/menu';
           routerLinkActive="active"
           class="nav-item"
         >
-          <i class="pi pi-cog text-xl!"></i>
-          <span class="text-sm">Settings</span>
+          <i class="pi pi-user"></i>
+          <span>Profile</span>
         </a>
-      </div>
+      </nav>
+
+      <!-- Quick Action Backdrop -->
+      <div
+        class="quick-action-backdrop"
+        [class.show]="showQuickActions"
+        (click)="closeActions()"
+      ></div>
+
+      <!-- Quick Action Bottom Sheet -->
+      <section
+        class="quick-action-sheet"
+        [class.show]="showQuickActions"
+        [attr.aria-hidden]="!showQuickActions"
+        aria-label="Create new"
+      >
+        <div class="sheet-handle"></div>
+
+        <div class="sheet-header">
+          <div>
+            <h3>Create New</h3>
+            <p>What would you like to create?</p>
+          </div>
+
+          <button
+            type="button"
+            class="sheet-close-button"
+            aria-label="Close quick actions"
+            (click)="closeActions()"
+          >
+            <i class="pi pi-times"></i>
+          </button>
+        </div>
+
+        <div class="quick-action-grid">
+          @for (action of quickActions; track action.route) {
+            <button
+              type="button"
+              class="quick-action-card"
+              (click)="navigateTo(action.route)"
+            >
+              <div
+                class="action-icon"
+                [style.background]="action.background"
+                [style.color]="action.color"
+              >
+                <i [class]="action.icon"></i>
+              </div>
+
+              <div class="action-text">
+                <span class="action-title">{{ action.label }}</span>
+                <span class="action-description">
+                  {{ action.description }}
+                </span>
+              </div>
+
+              <i class="pi pi-angle-right action-arrow"></i>
+            </button>
+          }
+        </div>
+      </section>
     </div>
   `,
   styleUrl: './mobile-layout.less',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class MobileLayout {
-  @ViewChild('menu') menu!: Menu;
+  showQuickActions = false;
 
-  showActions: boolean = false;
+  constructor(private router: Router) {}
 
-  quickActions = [
+  quickActions: QuickAction[] = [
     {
       label: 'Apply Leave',
+      description: 'Submit a leave application',
       icon: 'pi pi-calendar-plus',
-      routerLink: '/leave/apply',
+      route: '/leave',
+      color: '#2563eb',
+      background: '#eff6ff',
     },
     {
-      label: 'Submit Claim',
+      label: 'Apply Claim',
+      description: 'Submit an expense claim',
       icon: 'pi pi-wallet',
-      routerLink: '/claims/create',
+      route: '/claims/apply',
+      color: '#059669',
+      background: '#ecfdf5',
     },
     {
-      label: 'Material Request',
+      label: 'Daily Report',
+      description: 'Submit your daily report',
       icon: 'pi pi-file-edit',
-      routerLink: '/material-requests',
+      route: '/daily-reports',
+      color: '#7c3aed',
+      background: '#f5f3ff',
     },
     {
-      label: 'Approval',
-      icon: 'pi pi-check-circle',
-      routerLink: '/approval',
+      label: 'Hardware Request',
+      description: 'Request equipment or IT support',
+      icon: 'pi pi-desktop',
+      route: '/hardware-request',
+      color: '#ea580c',
+      background: '#fff7ed',
     },
     {
-      label: 'Meeting Room',
+      label: 'Create Meeting',
+      description: 'Schedule a new meeting',
       icon: 'pi pi-calendar',
-      routerLink: '/meeting-room',
+      route: '/meeting',
+      color: '#0891b2',
+      background: '#ecfeff',
     },
   ];
+
+  toggleActions(): void {
+    this.showQuickActions = !this.showQuickActions;
+  }
+
+  closeActions(): void {
+    this.showQuickActions = false;
+  }
+
+  navigateTo(route: string): void {
+    this.closeActions();
+    this.router.navigateByUrl(route);
+  }
 }

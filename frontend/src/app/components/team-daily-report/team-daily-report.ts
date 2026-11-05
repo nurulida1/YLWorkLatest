@@ -476,11 +476,11 @@ interface TeamReport {
                 </h3>
 
                 <span class="task-count">
-                  {{ selectedReport.tasks?.length || 0 }} Tasks
+                  {{ selectedReport.tasks.length || 0 }} Tasks
                 </span>
               </div>
 
-              @if (selectedReport.tasks?.length) {
+              @if (selectedReport.tasks.length) {
                 <div class="linked-task-list">
                   @for (task of selectedReport.tasks; track task.id) {
                     <div class="linked-task">

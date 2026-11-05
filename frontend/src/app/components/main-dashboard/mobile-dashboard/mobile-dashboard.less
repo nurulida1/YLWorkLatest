@@ -1,3 +1,83 @@
 :host {
   display: block;
+  width: 100%;
+  min-height: 100%;
+  background: #f8fafc;
+  overflow-x: hidden;
+}
+
+/* Dashboard */
+.min-h-screen {
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+/* Search input */
+input[pInputText] {
+  width: 100%;
+  outline: none;
+  box-shadow: none;
+  font-size: 14px;
+
+  &::placeholder {
+    color: #94a3b8;
+  }
+
+  &:focus {
+    border-color: #bfdbfe;
+    box-shadow: 0 0 0 3px rgb(59 130 246 / 10%);
+  }
+}
+
+/* Quick action links */
+a {
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Interactive cards */
+a,
+button {
+  transition:
+    transform 0.15s ease,
+    background-color 0.15s ease;
+
+  &:active {
+    transform: scale(0.97);
+  }
+}
+
+/* Task checkbox alignment */
+p-checkbox {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+/* Task description */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+/* Smooth scrolling */
+:host {
+  scroll-behavior: smooth;
+}
+
+/* Small mobile screens */
+@media (max-width: 360px) {
+  .text-2xl {
+    font-size: 1.25rem;
+  }
+
+  .grid.grid-cols-2 {
+    gap: 0.625rem;
+  }
+}
+
+/* Prevent horizontal overflow */
+* {
+  box-sizing: border-box;
 }

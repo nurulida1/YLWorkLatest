@@ -130,7 +130,7 @@ import { UserService } from '../../services/userService.service';
                       <span
                         class="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700"
                       >
-                        {{ report.tasks?.length || 0 }}
+                        {{ report.tasks.length || 0 }}
                       </span>
                     </td>
 
@@ -557,7 +557,7 @@ import { UserService } from '../../services/userService.service';
               <div>
                 <h3 class="mb-3 font-semibold text-gray-800">Linked Tasks</h3>
 
-                @if (selectedReport.tasks?.length) {
+                @if (selectedReport.tasks.length) {
                   <div class="space-y-3">
                     @for (task of selectedReport.tasks; track task.id) {
                       <div class="rounded-lg border border-gray-200 p-4">

@@ -404,8 +404,8 @@ import { environment } from '../../../../environments/environment.development';
                   >
                     {{
                       getInitial(
-                        data.requestedBy?.displayName ??
-                          data.requestedBy?.fullName
+                        data.requestedBy.displayName ??
+                          data.requestedBy.fullName
                       )
                     }}
                   </div>
@@ -413,8 +413,8 @@ import { environment } from '../../../../environments/environment.development';
                   <div class="flex flex-col min-w-0">
                     <b class="text-xs text-gray-800 truncate">
                       {{
-                        data.requestedBy?.displayName ??
-                          data.requestedBy?.fullName
+                        data.requestedBy.displayName ??
+                          data.requestedBy.fullName
                       }}
                     </b>
 

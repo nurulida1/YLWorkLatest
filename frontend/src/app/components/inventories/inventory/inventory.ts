@@ -72,53 +72,72 @@ import { environment } from '../../../../environments/environment.development';
   ],
   template: `
     <div class="min-h-screen bg-slate-50">
+      <!-- ============================================== -->
       <!-- MOBILE HEADER -->
-      <div class="lg:hidden bg-blue-800 px-5 pt-6 pb-8 rounded-b-[2rem]">
+      <!-- ============================================== -->
+      <div
+        class="lg:hidden bg-gradient-to-br from-blue-950 via-blue-900 to-blue-700 px-5 pt-7 pb-8 rounded-b-[28px]"
+      >
         <div class="flex items-center justify-between">
           <div>
-            <p class="text-xs text-blue-200 font-semibold tracking-widest">
+            <p class="text-[10px] text-blue-200 font-bold tracking-[0.2em]">
               YL WORKS
             </p>
-            <h1 class="text-2xl font-bold text-white mt-1">Inventory</h1>
-            <p class="text-sm text-blue-100 mt-1">
-              Manage your stock and equipment
+            <h1 class="text-2xl font-extrabold text-white mt-1">Inventory</h1>
+            <p class="text-xs text-blue-100 mt-1">
+              Stock and equipment management
             </p>
           </div>
 
           <div
-            class="w-11 h-11 rounded-xl bg-white flex items-center justify-center"
+            class="w-11 h-11 rounded-2xl bg-white/15 border border-white/20 flex items-center justify-center"
           >
-            <span class="font-bold text-blue-800">
+            <span class="text-sm font-bold text-white">
               {{ getInitial(currentUser?.displayName) }}
             </span>
           </div>
         </div>
 
+        <!-- Mobile Statistics -->
         <div class="grid grid-cols-3 gap-2 mt-6">
-          <div class="bg-white/10 rounded-xl p-3 text-white">
-            <p class="text-xs text-blue-100">Total Items</p>
-            <p class="text-2xl font-bold">
+          <div class="bg-white/10 border border-white/10 rounded-2xl p-3">
+            <div class="flex items-center gap-1.5 text-blue-100">
+              <i class="pi pi-box text-xs"></i>
+              <span class="text-[10px] font-semibold">Total</span>
+            </div>
+            <p class="text-2xl font-extrabold text-white mt-2">
               {{ dashboardCount?.totalItems ?? 0 }}
             </p>
+            <p class="text-[9px] text-blue-200 mt-0.5">Items</p>
           </div>
 
-          <div class="bg-red-500/20 rounded-xl p-3 text-white">
-            <p class="text-xs text-red-100">Low Stock</p>
-            <p class="text-2xl font-bold">
+          <div class="bg-red-500/15 border border-red-300/20 rounded-2xl p-3">
+            <div class="flex items-center gap-1.5 text-red-100">
+              <i class="pi pi-exclamation-triangle text-xs"></i>
+              <span class="text-[10px] font-semibold">Low Stock</span>
+            </div>
+            <p class="text-2xl font-extrabold text-white mt-2">
               {{ dashboardCount?.lowStock ?? 0 }}
             </p>
+            <p class="text-[9px] text-red-100 mt-0.5">Items</p>
           </div>
 
-          <div class="bg-white/10 rounded-xl p-3 text-white">
-            <p class="text-xs text-blue-100">Reserved</p>
-            <p class="text-2xl font-bold">
+          <div class="bg-white/10 border border-white/10 rounded-2xl p-3">
+            <div class="flex items-center gap-1.5 text-blue-100">
+              <i class="pi pi-truck text-xs"></i>
+              <span class="text-[10px] font-semibold">Reserved</span>
+            </div>
+            <p class="text-2xl font-extrabold text-white mt-2">
               {{ dashboardCount?.reserved ?? 0 }}
             </p>
+            <p class="text-[9px] text-blue-200 mt-0.5">Items</p>
           </div>
         </div>
       </div>
 
+      <!-- ============================================== -->
       <!-- DESKTOP HEADER -->
+      <!-- ============================================== -->
       <div class="hidden lg:block px-6 pt-6">
         <div class="flex items-center gap-2 text-sm text-gray-500">
           <a routerLink="/dashboard" class="hover:text-blue-700"> Dashboard </a>
@@ -145,19 +164,25 @@ import { environment } from '../../../../environments/environment.development';
         </div>
       </div>
 
+      <!-- ============================================== -->
       <!-- MOBILE ADD BUTTON -->
-      <div class="lg:hidden px-5 -mt-1">
-        <p-button
-          label="Add New Item"
-          icon="pi pi-plus"
-          styleClass="w-full!"
-          (onClick)="ActionClick(null, 'add')"
-        ></p-button>
+      <!-- ============================================== -->
+      <div class="lg:hidden px-5 mt-5">
+        <button
+          type="button"
+          class="w-full flex items-center justify-center gap-2 bg-blue-700 hover:bg-blue-800 active:scale-[0.98] text-white rounded-2xl py-3.5 font-bold text-sm shadow-lg shadow-blue-900/15 transition-all"
+          (click)="ActionClick(null, 'add')"
+        >
+          <i class="pi pi-plus"></i>
+          Add New Inventory
+        </button>
       </div>
 
-      <!-- DESKTOP SUMMARY -->
+      <!-- ============================================== -->
+      <!-- DESKTOP STATISTICS -->
+      <!-- ============================================== -->
       <div class="hidden lg:grid grid-cols-3 gap-4 px-6 mt-6">
-        <div class="bg-white border border-gray-200 rounded-xl p-5">
+        <div class="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
           <div class="flex items-center justify-between">
             <div>
               <p class="text-sm text-gray-500">Total Inventory</p>
@@ -173,7 +198,7 @@ import { environment } from '../../../../environments/environment.development';
           </div>
         </div>
 
-        <div class="bg-white border border-gray-200 rounded-xl p-5">
+        <div class="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
           <div class="flex items-center justify-between">
             <div>
               <p class="text-sm text-gray-500">Low Stock</p>
@@ -189,7 +214,7 @@ import { environment } from '../../../../environments/environment.development';
           </div>
         </div>
 
-        <div class="bg-white border border-gray-200 rounded-xl p-5">
+        <div class="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
           <div class="flex items-center justify-between">
             <div>
               <p class="text-sm text-gray-500">Reserved / In-Transit</p>
@@ -206,8 +231,70 @@ import { environment } from '../../../../environments/environment.development';
         </div>
       </div>
 
-      <!-- RESTOCK ALERT -->
-      <div class="px-5 lg:px-6 mt-5">
+      <!-- ============================================== -->
+      <!-- MOBILE RESTOCK ALERT -->
+      <!-- ============================================== -->
+      <div class="lg:hidden px-5 mt-4">
+        <button
+          type="button"
+          class="w-full flex items-center gap-3 p-3.5 rounded-2xl border text-left transition-all"
+          [ngClass]="
+            (dashboardCount?.restock ?? 0) > 0
+              ? 'bg-red-50 border-red-200'
+              : 'bg-green-50 border-green-200'
+          "
+          [disabled]="(dashboardCount?.restock ?? 0) <= 0"
+          (click)="applyRestockFilter()"
+        >
+          <div
+            class="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
+            [ngClass]="
+              (dashboardCount?.restock ?? 0) > 0
+                ? 'bg-red-100 text-red-600'
+                : 'bg-green-100 text-green-600'
+            "
+          >
+            <i
+              [ngClass]="
+                (dashboardCount?.restock ?? 0) > 0
+                  ? 'pi pi-exclamation-triangle'
+                  : 'pi pi-check-circle'
+              "
+              class="text-lg"
+            ></i>
+          </div>
+
+          <div class="flex-1 min-w-0">
+            <p
+              class="text-sm font-bold"
+              [ngClass]="
+                (dashboardCount?.restock ?? 0) > 0
+                  ? 'text-red-800'
+                  : 'text-green-800'
+              "
+            >
+              {{
+                (dashboardCount?.restock ?? 0) > 0
+                  ? 'Restock Required'
+                  : 'Stock Levels Healthy'
+              }}
+            </p>
+            <p class="text-xs text-gray-500 mt-1">
+              {{ dashboardCount?.restock ?? 0 }} items need attention
+            </p>
+          </div>
+
+          <i
+            *ngIf="(dashboardCount?.restock ?? 0) > 0"
+            class="pi pi-arrow-right text-red-500"
+          ></i>
+        </button>
+      </div>
+
+      <!-- ============================================== -->
+      <!-- DESKTOP RESTOCK ALERT -->
+      <!-- ============================================== -->
+      <div class="hidden lg:block px-6 mt-5">
         <div
           class="flex items-center justify-between gap-3 p-4 rounded-xl border"
           [ngClass]="
@@ -254,10 +341,80 @@ import { environment } from '../../../../environments/environment.development';
         </div>
       </div>
 
-      <!-- SEARCH AND FILTERS -->
-      <div class="px-5 lg:px-6 mt-5">
-        <div class="bg-white border border-gray-200 rounded-xl p-4">
-          <div class="flex flex-col lg:flex-row gap-3">
+      <!-- ============================================== -->
+      <!-- MOBILE SEARCH AND FILTERS -->
+      <!-- ============================================== -->
+      <div class="lg:hidden px-5 mt-5">
+        <div class="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm">
+          <div class="flex items-center justify-between mb-3">
+            <div>
+              <h2 class="text-sm font-bold text-gray-900">Find Inventory</h2>
+              <p class="text-xs text-gray-400 mt-0.5">
+                Search and filter your items
+              </p>
+            </div>
+
+            <button
+              type="button"
+              class="text-xs font-semibold text-blue-700"
+              (click)="ResetTable()"
+            >
+              <i class="pi pi-refresh mr-1"></i>
+              Reset
+            </button>
+          </div>
+
+          <div class="relative">
+            <i
+              class="pi pi-search absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400"
+            ></i>
+            <input
+              type="text"
+              pInputText
+              [(ngModel)]="search"
+              placeholder="Search item, brand or model..."
+              class="w-full pl-10! pr-3! py-3! rounded-xl! bg-gray-50! border-gray-200!"
+              (keyup)="onKeyDown($event)"
+            />
+          </div>
+
+          <div class="grid grid-cols-1 gap-2.5 mt-3">
+            <p-select
+              [options]="sectionFilter"
+              [(ngModel)]="selectedSectionId"
+              placeholder="All Sections"
+              appendTo="body"
+              styleClass="w-full"
+              (onChange)="applyFilters()"
+            ></p-select>
+
+            <p-select
+              [options]="categoryFilter"
+              [(ngModel)]="selectedCategoryId"
+              placeholder="All Categories"
+              appendTo="body"
+              styleClass="w-full"
+              (onChange)="applyFilters()"
+            ></p-select>
+
+            <p-select
+              [options]="statusOptions"
+              [(ngModel)]="selectedStatus"
+              placeholder="All Status"
+              appendTo="body"
+              styleClass="w-full"
+              (onChange)="applyFilters()"
+            ></p-select>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================================== -->
+      <!-- DESKTOP SEARCH AND FILTERS -->
+      <!-- ============================================== -->
+      <div class="hidden lg:block px-6 mt-5">
+        <div class="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm">
+          <div class="flex flex-row gap-3">
             <div class="relative flex-1">
               <i class="pi pi-search absolute left-3 top-3.5 text-gray-400"></i>
               <input
@@ -270,48 +427,288 @@ import { environment } from '../../../../environments/environment.development';
               />
             </div>
 
-            <div class="grid grid-cols-2 lg:flex gap-2">
-              <p-select
-                [options]="sectionFilter"
-                [(ngModel)]="selectedSectionId"
-                placeholder="All Sections"
-                appendTo="body"
-                styleClass="w-full lg:w-44"
-                (onChange)="applyFilters()"
-              ></p-select>
+            <p-select
+              [options]="sectionFilter"
+              [(ngModel)]="selectedSectionId"
+              placeholder="All Sections"
+              appendTo="body"
+              styleClass="w-44"
+              (onChange)="applyFilters()"
+            ></p-select>
 
-              <p-select
-                [options]="categoryFilter"
-                [(ngModel)]="selectedCategoryId"
-                placeholder="All Categories"
-                appendTo="body"
-                styleClass="w-full lg:w-44"
-                (onChange)="applyFilters()"
-              ></p-select>
+            <p-select
+              [options]="categoryFilter"
+              [(ngModel)]="selectedCategoryId"
+              placeholder="All Categories"
+              appendTo="body"
+              styleClass="w-44"
+              (onChange)="applyFilters()"
+            ></p-select>
 
-              <p-select
-                [options]="statusOptions"
-                [(ngModel)]="selectedStatus"
-                placeholder="All Status"
-                appendTo="body"
-                styleClass="w-full lg:w-40"
-                (onChange)="applyFilters()"
-              ></p-select>
+            <p-select
+              [options]="statusOptions"
+              [(ngModel)]="selectedStatus"
+              placeholder="All Status"
+              appendTo="body"
+              styleClass="w-40"
+              (onChange)="applyFilters()"
+            ></p-select>
 
-              <p-button
-                label="Reset"
-                icon="pi pi-refresh"
-                severity="secondary"
-                [outlined]="true"
-                (onClick)="ResetTable()"
-              ></p-button>
-            </div>
+            <p-button
+              label="Reset"
+              icon="pi pi-refresh"
+              severity="secondary"
+              [outlined]="true"
+              (onClick)="ResetTable()"
+            ></p-button>
           </div>
         </div>
       </div>
 
-      <!-- INVENTORY LIST -->
-      <div class="px-5 lg:px-6 py-5">
+      <!-- ============================================== -->
+      <!-- MOBILE INVENTORY LIST -->
+      <!-- ============================================== -->
+      <div class="lg:hidden px-5 mt-6 pb-6">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h2 class="text-lg font-extrabold text-gray-900">
+              Inventory Items
+            </h2>
+            <p class="text-xs text-gray-400 mt-1">
+              {{ PagingSignal()?.totalElements ?? 0 }} items found
+            </p>
+          </div>
+
+          <div class="flex items-center gap-1.5 text-xs text-gray-500">
+            <i class="pi pi-list"></i>
+            <span>Page {{ Query.Page }} / {{ totalPages }}</span>
+          </div>
+        </div>
+
+        <div class="flex flex-col gap-3">
+          <ng-container *ngFor="let data of PagingSignal()?.data">
+            <div
+              class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden"
+            >
+              <!-- Item Header -->
+              <div class="p-4">
+                <div class="flex items-start gap-3">
+                  <div
+                    class="w-[76px] h-[76px] rounded-xl bg-slate-50 border border-gray-100 flex-shrink-0 overflow-hidden flex items-center justify-center"
+                  >
+                    <img
+                      *ngIf="data.attachment"
+                      [src]="data.attachment"
+                      class="w-full h-full object-contain"
+                      alt="Inventory item"
+                    />
+                    <i
+                      *ngIf="!data.attachment"
+                      class="pi pi-image text-2xl text-gray-300"
+                    ></i>
+                  </div>
+
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-start justify-between gap-2">
+                      <div class="min-w-0">
+                        <p
+                          class="text-[10px] font-bold text-blue-700 tracking-wide"
+                        >
+                          {{ data.itemCode || 'NO ITEM CODE' }}
+                        </p>
+
+                        <h3
+                          class="font-bold text-gray-900 text-sm leading-snug mt-1 break-words"
+                        >
+                          {{ data.itemName }}
+                        </h3>
+
+                        <p class="text-xs text-gray-500 mt-1">
+                          {{ data.brand || 'No brand' }}
+                          <span *ngIf="data.model"> · {{ data.model }}</span>
+                        </p>
+                      </div>
+
+                      <button
+                        type="button"
+                        class="w-9 h-9 rounded-xl flex items-center justify-center text-gray-500 hover:bg-gray-100 flex-shrink-0"
+                        (click)="onEllipsisClick($event, data, menu)"
+                      >
+                        <i class="pi pi-ellipsis-v"></i>
+                      </button>
+                    </div>
+
+                    <div class="mt-2">
+                      <span
+                        class="inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-bold"
+                        [ngClass]="getStatusClass(data.status)"
+                      >
+                        {{ data.status || 'Unknown' }}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Stock Information -->
+                <div class="grid grid-cols-2 gap-3 mt-5">
+                  <div class="bg-slate-50 rounded-xl p-3">
+                    <p
+                      class="text-[10px] text-gray-400 font-bold uppercase tracking-wide"
+                    >
+                      Available Balance
+                    </p>
+
+                    <p
+                      class="text-lg font-extrabold mt-1"
+                      [ngClass]="
+                        data.quantity <= data.parLevel
+                          ? 'text-red-600'
+                          : 'text-gray-900'
+                      "
+                    >
+                      {{ data.quantity | number: '1.0-3' }}
+                      <span class="text-xs font-semibold text-gray-500">
+                        {{ data.unit }}
+                      </span>
+                    </p>
+                  </div>
+
+                  <div class="bg-slate-50 rounded-xl p-3">
+                    <p
+                      class="text-[10px] text-gray-400 font-bold uppercase tracking-wide"
+                    >
+                      Minimum Level
+                    </p>
+
+                    <p class="text-lg font-extrabold text-gray-900 mt-1">
+                      {{ data.parLevel }}
+                      <span class="text-xs font-semibold text-gray-500">
+                        {{ data.unit }}
+                      </span>
+                    </p>
+                  </div>
+                </div>
+
+                <!-- Stock Progress -->
+                <div class="mt-4">
+                  <div class="flex items-center justify-between mb-2">
+                    <span class="text-xs font-semibold text-gray-600">
+                      Stock Level
+                    </span>
+
+                    <span
+                      class="text-xs font-bold"
+                      [ngClass]="
+                        data.quantity <= data.parLevel
+                          ? 'text-red-600'
+                          : 'text-green-700'
+                      "
+                    >
+                      {{
+                        getProgress(data.quantity, data.parLevel)
+                          | number: '1.0-0'
+                      }}%
+                    </span>
+                  </div>
+
+                  <p-progressbar
+                    [value]="getProgress(data.quantity, data.parLevel)"
+                    [showValue]="false"
+                    [style]="{ height: '6px' }"
+                  ></p-progressbar>
+                </div>
+              </div>
+
+              <!-- Item Footer -->
+              <div
+                class="flex items-center justify-between gap-3 px-4 py-3 bg-gray-50 border-t border-gray-100"
+              >
+                <div class="min-w-0">
+                  <p class="text-[10px] text-gray-400 font-semibold uppercase">
+                    Storage Section
+                  </p>
+                  <p class="text-xs font-semibold text-gray-700 mt-1 truncate">
+                    {{ data.section?.name || 'Not assigned' }}
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  class="flex-shrink-0 flex items-center gap-2 text-xs font-bold text-blue-700 bg-white border border-blue-100 rounded-lg px-3 py-2"
+                  (click)="DetailsClick(data)"
+                >
+                  View Details
+                  <i class="pi pi-arrow-right text-[10px]"></i>
+                </button>
+              </div>
+            </div>
+          </ng-container>
+        </div>
+
+        <!-- Mobile Empty State -->
+        <div
+          *ngIf="!PagingSignal()?.data?.length"
+          class="bg-white rounded-2xl border border-gray-200 p-8 text-center"
+        >
+          <div
+            class="w-16 h-16 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto"
+          >
+            <i class="pi pi-box text-2xl text-gray-400"></i>
+          </div>
+
+          <h3 class="font-bold text-gray-800 mt-4">No Inventory Found</h3>
+
+          <p class="text-xs text-gray-400 mt-1">
+            Try changing your search or filter options.
+          </p>
+
+          <button
+            type="button"
+            class="mt-4 text-sm font-bold text-blue-700"
+            (click)="ResetTable()"
+          >
+            Clear Filters
+          </button>
+        </div>
+
+        <!-- Mobile Pagination -->
+        <div
+          *ngIf="(PagingSignal()?.totalElements ?? 0) > Query.PageSize"
+          class="flex items-center justify-between gap-3 bg-white border border-gray-200 rounded-2xl p-3 mt-4"
+        >
+          <button
+            type="button"
+            class="w-10 h-10 flex items-center justify-center rounded-xl border border-gray-200 text-gray-600 disabled:opacity-30"
+            [disabled]="Query.Page <= 1"
+            (click)="changeMobilePage(-1)"
+          >
+            <i class="pi pi-chevron-left"></i>
+          </button>
+
+          <div class="text-center">
+            <p class="text-sm font-bold text-gray-800">
+              Page {{ Query.Page }} of {{ totalPages }}
+            </p>
+            <p class="text-[10px] text-gray-400 mt-0.5">
+              {{ PagingSignal()?.totalElements ?? 0 }} total items
+            </p>
+          </div>
+
+          <button
+            type="button"
+            class="w-10 h-10 flex items-center justify-center rounded-xl border border-gray-200 text-gray-600 disabled:opacity-30"
+            [disabled]="Query.Page >= totalPages"
+            (click)="changeMobilePage(1)"
+          >
+            <i class="pi pi-chevron-right"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- ============================================== -->
+      <!-- DESKTOP INVENTORY TABLE -->
+      <!-- ============================================== -->
+      <div class="hidden lg:block px-6 py-6">
         <div class="flex items-center justify-between mb-4">
           <div>
             <h2 class="text-lg font-bold text-gray-900">Inventory Items</h2>
@@ -321,184 +718,8 @@ import { environment } from '../../../../environments/environment.development';
           </div>
         </div>
 
-        <!-- MOBILE CARDS -->
-        <div class="lg:hidden flex flex-col gap-3">
-          <ng-container *ngFor="let data of PagingSignal()?.data">
-            <div
-              class="bg-white rounded-xl border border-gray-200 p-4 shadow-sm"
-            >
-              <div class="flex gap-3">
-                <div
-                  class="w-20 h-20 rounded-xl bg-gray-100 flex-shrink-0 overflow-hidden flex items-center justify-center"
-                >
-                  <img
-                    *ngIf="data.attachment"
-                    [src]="data.attachment"
-                    class="w-full h-full object-contain"
-                    alt="Inventory item"
-                  />
-                  <i
-                    *ngIf="!data.attachment"
-                    class="pi pi-image text-2xl text-gray-300"
-                  ></i>
-                </div>
-
-                <div class="flex-1 min-w-0">
-                  <div class="flex items-start justify-between gap-2">
-                    <div class="min-w-0">
-                      <h3 class="font-bold text-gray-900 text-sm">
-                        {{ data.itemName }}
-                      </h3>
-                      <p class="text-xs text-gray-500 mt-1">
-                        {{ data.brand || 'No brand' }}
-                        <span *ngIf="data.model"> · {{ data.model }}</span>
-                      </p>
-                      <p class="text-xs text-gray-400 mt-1">
-                        {{ data.itemCode }}
-                      </p>
-                    </div>
-
-                    <button
-                      type="button"
-                      class="w-8 h-8 rounded-lg hover:bg-gray-100 text-gray-500 flex-shrink-0"
-                      (click)="onEllipsisClick($event, data, menu)"
-                    >
-                      <i class="pi pi-ellipsis-v"></i>
-                    </button>
-                  </div>
-
-                  <div class="mt-2">
-                    <span
-                      class="inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold"
-                      [ngClass]="getStatusClass(data.status)"
-                    >
-                      {{ data.status || 'Unknown' }}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div
-                class="grid grid-cols-3 gap-2 mt-4 pt-3 border-t border-gray-100"
-              >
-                <div>
-                  <p class="text-[10px] uppercase text-gray-400 font-semibold">
-                    Balance
-                  </p>
-                  <p
-                    class="font-bold text-sm mt-1"
-                    [ngClass]="
-                      data.quantity <= data.parLevel
-                        ? 'text-red-600'
-                        : 'text-gray-800'
-                    "
-                  >
-                    {{ data.quantity | number: '1.0-3' }} {{ data.unit }}
-                  </p>
-                </div>
-
-                <div>
-                  <p class="text-[10px] uppercase text-gray-400 font-semibold">
-                    Par Level
-                  </p>
-                  <p class="font-bold text-sm text-gray-800 mt-1">
-                    {{ data.parLevel }}
-                  </p>
-                </div>
-
-                <div>
-                  <p class="text-[10px] uppercase text-gray-400 font-semibold">
-                    Section
-                  </p>
-                  <p class="font-bold text-sm text-gray-800 mt-1 truncate">
-                    {{ data.section?.name || '-' }}
-                  </p>
-                </div>
-              </div>
-
-              <div class="mt-3">
-                <p-progressbar
-                  [value]="getProgress(data.quantity, data.parLevel)"
-                  [showValue]="false"
-                  [style]="{ height: '5px' }"
-                ></p-progressbar>
-              </div>
-
-              <div
-                class="flex items-center justify-between mt-3 pt-3 border-t border-gray-100"
-              >
-                <button
-                  type="button"
-                  class="text-sm text-blue-700 font-semibold"
-                  (click)="DetailsClick(data)"
-                >
-                  View Details
-                </button>
-
-                <div class="flex items-center gap-3">
-                  <button
-                    type="button"
-                    class="text-blue-700 text-sm"
-                    (click)="ActionClick(data, 'Update')"
-                  >
-                    <i class="pi pi-pencil"></i>
-                    Edit
-                  </button>
-
-                  <button
-                    type="button"
-                    class="text-red-600 text-sm"
-                    (click)="DeleteInventory(data)"
-                  >
-                    <i class="pi pi-trash"></i>
-                    Delete
-                  </button>
-                </div>
-              </div>
-            </div>
-          </ng-container>
-
-          <div
-            *ngIf="!PagingSignal()?.data?.length"
-            class="bg-white rounded-xl border border-gray-200 p-8 text-center"
-          >
-            <i class="pi pi-box text-3xl text-gray-300"></i>
-            <p class="font-semibold text-gray-700 mt-3">No inventory found</p>
-            <p class="text-sm text-gray-400 mt-1">
-              Try changing your search or filters.
-            </p>
-          </div>
-
-          <!-- MOBILE PAGINATION -->
-          <div
-            *ngIf="(PagingSignal()?.totalElements ?? 0) > Query.PageSize"
-            class="flex items-center justify-between bg-white border border-gray-200 rounded-xl p-3"
-          >
-            <p-button
-              icon="pi pi-chevron-left"
-              severity="secondary"
-              [outlined]="true"
-              [disabled]="Query.Page <= 1"
-              (onClick)="changeMobilePage(-1)"
-            ></p-button>
-
-            <span class="text-sm text-gray-600">
-              Page {{ Query.Page }} of {{ totalPages }}
-            </span>
-
-            <p-button
-              icon="pi pi-chevron-right"
-              severity="secondary"
-              [outlined]="true"
-              [disabled]="Query.Page >= totalPages"
-              (onClick)="changeMobilePage(1)"
-            ></p-button>
-          </div>
-        </div>
-
-        <!-- DESKTOP TABLE -->
         <div
-          class="hidden lg:block bg-white rounded-xl border border-gray-200 overflow-hidden"
+          class="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm"
         >
           <p-table
             #fTable
@@ -515,15 +736,22 @@ import { environment } from '../../../../environments/environment.development';
             <ng-template #header>
               <tr>
                 <th class="w-20">Image</th>
+
                 <th pSortableColumn="ItemName">
-                  Item <p-sortIcon field="ItemName"></p-sortIcon>
+                  Item
+                  <p-sortIcon field="ItemName"></p-sortIcon>
                 </th>
+
                 <th pSortableColumn="Brand">
-                  Brand <p-sortIcon field="Brand"></p-sortIcon>
+                  Brand
+                  <p-sortIcon field="Brand"></p-sortIcon>
                 </th>
+
                 <th pSortableColumn="Model">
-                  Model <p-sortIcon field="Model"></p-sortIcon>
+                  Model
+                  <p-sortIcon field="Model"></p-sortIcon>
                 </th>
+
                 <th>Section</th>
                 <th class="text-center!">Balance</th>
                 <th class="text-center!">Par Level</th>
@@ -580,7 +808,9 @@ import { environment } from '../../../../environments/environment.development';
                   {{ data.quantity | number: '1.0-3' }}
                 </td>
 
-                <td class="text-center!">{{ data.parLevel }}</td>
+                <td class="text-center!">
+                  {{ data.parLevel }}
+                </td>
 
                 <td class="text-center!">
                   <span
@@ -606,9 +836,12 @@ import { environment } from '../../../../environments/environment.development';
             <ng-template #emptymessage>
               <tr>
                 <td colspan="9">
-                  <div class="py-10 text-center text-gray-500">
+                  <div class="py-12 text-center text-gray-500">
                     <i class="pi pi-box text-3xl text-gray-300"></i>
-                    <p class="mt-2">No inventory available</p>
+                    <p class="mt-3 font-semibold">No inventory available</p>
+                    <p class="text-xs mt-1">
+                      Try changing your search or filters.
+                    </p>
                   </div>
                 </td>
               </tr>
@@ -618,10 +851,14 @@ import { environment } from '../../../../environments/environment.development';
       </div>
     </div>
 
+    <!-- ============================================== -->
     <!-- ACTION MENU -->
-    <p-menu #menu [model]="menuItems" [popup]="true"></p-menu>
+    <!-- ============================================== -->
+    <p-menu #menu [model]="menuItems" [popup]="true" appendTo="body"></p-menu>
 
+    <!-- ============================================== -->
     <!-- ADD / EDIT INVENTORY DIALOG -->
+    <!-- ============================================== -->
     <p-dialog
       [(visible)]="visible"
       [modal]="true"
@@ -675,6 +912,7 @@ import { environment } from '../../../../environments/environment.development';
                 Item name is required.
               </small>
             </div>
+
             <div class="flex flex-col gap-1.5">
               <label class="text-sm font-semibold text-gray-700">
                 Item Code
@@ -872,6 +1110,7 @@ import { environment } from '../../../../environments/environment.development';
             ></textarea>
           </div>
 
+          <!-- Product Image -->
           <div class="flex flex-col gap-2">
             <label class="text-sm font-semibold text-gray-700">
               Product Image
@@ -891,7 +1130,7 @@ import { environment } from '../../../../environments/environment.development';
                 />
               </div>
 
-              <div class="flex-1">
+              <div class="flex-1 min-w-0">
                 <p class="text-sm font-semibold text-gray-800">
                   Image selected
                 </p>
@@ -944,11 +1183,15 @@ import { environment } from '../../../../environments/environment.development';
       </form>
 
       <ng-template #footer>
-        <div class="flex justify-end gap-2 w-full">
+        <div
+          class="flex flex-col-reverse sm:flex-row justify-end gap-2 w-full py-3 border-t border-gray-200"
+        >
           <p-button
             label="Cancel"
             severity="secondary"
             [outlined]="true"
+            class="w-full!"
+            styleClass="w-full! py-3!"
             [disabled]="saving"
             (onClick)="visible = false"
           ></p-button>
@@ -957,8 +1200,9 @@ import { environment } from '../../../../environments/environment.development';
             [label]="
               saving ? 'Saving...' : isUpdate ? 'Save Changes' : 'Save Item'
             "
+            class="w-full!"
             icon="pi pi-save"
-            styleClass="bg-blue-900! border-none! hover:bg-blue-700! cursor-pointer!"
+            styleClass="bg-blue-900! border-none! hover:bg-blue-700! cursor-pointer! w-full! py-3!"
             [loading]="saving"
             [disabled]="saving"
             (onClick)="SaveInventory()"
@@ -967,7 +1211,9 @@ import { environment } from '../../../../environments/environment.development';
       </ng-template>
     </p-dialog>
 
+    <!-- ============================================== -->
     <!-- DELETE CONFIRMATION -->
+    <!-- ============================================== -->
     <p-dialog
       [(visible)]="confirmDialog"
       [modal]="true"
@@ -1043,7 +1289,7 @@ import { environment } from '../../../../environments/environment.development';
             </div>
           </div>
 
-          <div class="flex justify-end gap-2 mt-5">
+          <div class="flex flex-col-reverse sm:flex-row justify-end gap-2 mt-5">
             <p-button
               label="Cancel"
               severity="secondary"
@@ -1065,7 +1311,9 @@ import { environment } from '../../../../environments/environment.development';
       </ng-template>
     </p-dialog>
 
+    <!-- ============================================== -->
     <!-- ITEM DETAILS -->
+    <!-- ============================================== -->
     <p-dialog
       [(visible)]="detailVisible"
       [modal]="true"
@@ -1075,7 +1323,7 @@ import { environment } from '../../../../environments/environment.development';
     >
       <ng-container *ngIf="selectedItem as item">
         <div class="flex flex-col gap-5">
-          <!-- ITEM SUMMARY -->
+          <!-- Item Summary -->
           <div class="flex items-start gap-4">
             <div
               class="w-24 h-24 rounded-xl bg-gray-100 overflow-hidden flex-shrink-0 flex items-center justify-center"
@@ -1114,7 +1362,7 @@ import { environment } from '../../../../environments/environment.development';
             </div>
           </div>
 
-          <!-- STOCK LEVEL -->
+          <!-- Stock Level -->
           <div class="border border-gray-200 rounded-xl p-4">
             <div class="flex justify-between items-center">
               <h3 class="font-bold text-sm text-gray-800">Stock Level</h3>
@@ -1155,7 +1403,7 @@ import { environment } from '../../../../environments/environment.development';
             </div>
           </div>
 
-          <!-- ITEM INFORMATION -->
+          <!-- Item Information -->
           <div class="border border-gray-200 rounded-xl p-4">
             <h3 class="font-bold text-sm text-gray-800 mb-4">
               Item Information
@@ -1206,8 +1454,8 @@ import { environment } from '../../../../environments/environment.development';
             </div>
           </div>
 
-          <!-- COST INFORMATION -->
-          <div class="grid grid-cols-2 gap-3">
+          <!-- Cost Information -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div class="bg-gray-50 border border-gray-200 rounded-xl p-4">
               <p class="text-xs text-gray-500">Unit Cost</p>
               <p class="font-bold text-lg text-gray-900 mt-1">
@@ -1223,7 +1471,7 @@ import { environment } from '../../../../environments/environment.development';
             </div>
           </div>
 
-          <!-- DESCRIPTION -->
+          <!-- Description -->
           <div class="border border-gray-200 rounded-xl p-4">
             <h3 class="font-bold text-sm text-gray-800">
               Description / Remarks
@@ -1236,24 +1484,32 @@ import { environment } from '../../../../environments/environment.development';
       </ng-container>
 
       <ng-template #footer>
-        <div class="flex justify-end gap-2">
+        <div
+          class="w-full border-t border-gray-200 pt-2 flex flex-col-reverse sm:flex-row justify-end gap-2"
+        >
           <p-button
             label="Close"
             severity="secondary"
             [outlined]="true"
+            styleClass="w-full!"
+            class="w-full!"
             (onClick)="detailVisible = false"
           ></p-button>
 
           <p-button
             label="Edit Item"
             icon="pi pi-pencil"
+            class="w-full!"
+            styleClass="w-full! bg-blue-900! border-none! hover:bg-blue-700!"
             (onClick)="editSelectedItem()"
           ></p-button>
         </div>
       </ng-template>
     </p-dialog>
 
+    <!-- ============================================== -->
     <!-- QR CODE DIALOG -->
+    <!-- ============================================== -->
     <app-inventory-qr-dialog
       [(visible)]="qrVisible"
       [itemId]="qrItemId"

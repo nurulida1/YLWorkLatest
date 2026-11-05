@@ -515,41 +515,79 @@ export class NavbarComponent implements OnDestroy, OnInit {
   // ==========================================
 
   management: any[] = [
+    // ==========================================
+    // WORK MANAGEMENT
+    // ==========================================
     {
-      label: 'Quotations',
-      route: '/quotations',
-      icon: 'pi-file',
+      label: 'Work Management',
+      icon: 'pi-briefcase',
+      items: [
+        {
+          label: 'Projects',
+          route: '/projects',
+        },
+        {
+          label: 'Work Orders',
+          route: '/work-order',
+        },
+        {
+          label: 'Tasks',
+          route: '/tasks',
+        },
+      ],
     },
+
+    // ==========================================
+    // SALES & PURCHASING
+    // ==========================================
     {
-      label: 'Purchase Orders',
+      label: 'Sales & Purchasing',
       icon: 'pi-shopping-cart',
-      route: '/purchase-orders',
+      items: [
+        {
+          label: 'Quotations',
+          route: '/quotations',
+        },
+        {
+          label: 'Sales Order',
+          route: '/sales-order',
+        },
+        {
+          label: 'Purchase Orders',
+          route: '/purchase-orders',
+        },
+      ],
     },
+
+    // ==========================================
+    // DELIVERY & LOGISTICS
+    // ==========================================
     {
-      label: 'Sales Order',
-      icon: 'pi-money-bill',
-      route: '/sales-order',
+      label: 'Delivery & Logistics',
+      icon: 'pi-truck',
+      items: [
+        {
+          label: 'Inbound DO',
+          route: '/delivery-orders/inbound',
+        },
+        {
+          label: 'Outbound DO',
+          route: '/delivery-orders/outbound',
+        },
+        {
+          label: 'DO RMA',
+          route: '/delivery-orders/rma',
+        },
+        {
+          label: 'Material Requests',
+          route: '/material-requests',
+        },
+      ],
     },
-    {
-      label: 'Company',
-      route: '/company',
-      icon: 'pi-building',
-    },
-    {
-      label: 'Suppliers',
-      route: '/supplier',
-      icon: 'pi-shop',
-    },
-    {
-      label: 'Clients',
-      route: '/clients',
-      icon: 'pi-users',
-    },
-    {
-      label: 'Material Requests',
-      route: '/material-requests',
-      icon: 'pi-list',
-    },
+
+    // ==========================================
+    // INVENTORY
+    // ==========================================
     {
       label: 'Inventory',
       icon: 'pi-box',
@@ -572,68 +610,67 @@ export class NavbarComponent implements OnDestroy, OnInit {
         },
       ],
     },
+
+    // ==========================================
+    // FINANCE
+    // ==========================================
     {
-      label: 'Delivery Orders',
-      icon: 'pi-truck',
-      items: [
-        {
-          label: 'Inbound DO',
-          route: '/delivery-orders/inbound',
-        },
-        {
-          label: 'Outbound DO',
-          route: '/delivery-orders/outbound',
-        },
-        {
-          label: 'DO RMA',
-          route: '/delivery-orders/rma',
-        },
-      ],
-    },
-    {
-      label: 'Work Orders',
-      icon: 'pi-wrench',
-      route: '/work-order',
-    },
-    {
-      label: 'Projects',
-      icon: 'pi-folder',
-      route: '/projects',
-    },
-    {
-      label: 'Tasks',
-      icon: 'pi-check-square',
-      route: '/tasks',
-    },
-    {
-      label: 'Invoices',
-      icon: 'pi-receipt',
-      items: [
-        {
-          label: 'Sales Invoice',
-          route: '/invoices/sales',
-        },
-        {
-          label: 'Purchase Invoice',
-          route: '/invoices/purchase',
-        },
-      ],
-    },
-    {
-      label: 'Expenses',
-      route: '/expenses',
+      label: 'Finance',
       icon: 'pi-wallet',
+      items: [
+        {
+          label: 'Invoices',
+          items: [
+            {
+              label: 'Sales Invoice',
+              route: '/invoices/sales',
+            },
+            {
+              label: 'Purchase Invoice',
+              route: '/invoices/purchase',
+            },
+          ],
+        },
+        {
+          label: 'Expenses',
+          route: '/expenses',
+        },
+        {
+          label: 'Incomes',
+          route: '/incomes',
+        },
+        {
+          label: 'Payments',
+          route: '/payments',
+        },
+      ],
     },
+
+    // ==========================================
+    // COMPANY MANAGEMENT
+    // ==========================================
     {
-      label: 'Incomes',
-      route: '/incomes',
-      icon: 'pi-chart-line',
+      label: 'Company Management',
+      icon: 'pi-building',
+      items: [
+        {
+          label: 'Company',
+          route: '/company',
+        },
+        {
+          label: 'Suppliers',
+          route: '/supplier',
+        },
+        {
+          label: 'Clients',
+          route: '/clients',
+        },
+      ],
     },
-    {
-      label: 'Payments',
-      route: '/payments',
-      icon: 'pi-credit-card',
-    },
+
+    // ==========================================
+    // SETTINGS
+    // ==========================================
     {
       label: 'Settings',
       icon: 'pi-cog',
@@ -645,7 +682,6 @@ export class NavbarComponent implements OnDestroy, OnInit {
       ],
     },
   ];
-
   // ==========================================
   // CONSTRUCTOR
   // ==========================================
@@ -751,34 +787,41 @@ export class NavbarComponent implements OnDestroy, OnInit {
     return currentRoute === route || currentRoute.startsWith(`${route}/`);
   }
 
-  syncOpenMenuWithRoute(): void {
-    for (const item of this.management) {
-      if (!item.items) continue;
-
-      const isChildActive = item.items.some((sub: any) =>
-        this.isRouteMatch(sub.route),
-      );
-
-      if (isChildActive) {
-        this.openMenu = item.label;
-        return;
-      }
+  private hasActiveRoute(item: any): boolean {
+    if (item.route && this.isRouteMatch(item.route)) {
+      return true;
     }
 
-    this.openMenu = null;
+    return item.items?.some((sub: any) => this.hasActiveRoute(sub)) ?? false;
+  }
+
+  syncOpenMenuWithRoute(): void {
+    const activeParent = this.management.find((item) =>
+      this.hasActiveRoute(item),
+    );
+
+    this.openMenu = activeParent?.label ?? null;
   }
 
   isActive(route?: string, item?: any): boolean {
-    if (item?.items) {
-      return (
-        item.items.some((sub: any) => this.isRouteMatch(sub.route)) ||
-        this.isRouteMatch(route)
-      );
+    if (item) {
+      return this.hasActiveRoute(item);
     }
 
     return this.isRouteMatch(route);
   }
 
+  getAllowedSubItems(item: any): any[] {
+    if (!item.items) return [];
+
+    return item.items.filter(
+      (sub: any) => this.canView(sub) || this.hasVisibleSubItems(sub),
+    );
+  }
+
+  hasVisibleSubItems(item: any): boolean {
+    return this.getAllowedSubItems(item).length > 0;
+  }
   // ==========================================
   // ROLE PERMISSIONS
   // ==========================================
@@ -801,16 +844,6 @@ export class NavbarComponent implements OnDestroy, OnInit {
     return item.roles.some(
       (role: string) => role.trim().toLowerCase() === currentRole,
     );
-  }
-
-  getAllowedSubItems(item: any): any[] {
-    if (!item.items) return [];
-
-    return item.items.filter((sub: any) => this.canView(sub));
-  }
-
-  hasVisibleSubItems(item: any): boolean {
-    return this.getAllowedSubItems(item).length > 0;
   }
 
   toggleMenu(label: string): void {

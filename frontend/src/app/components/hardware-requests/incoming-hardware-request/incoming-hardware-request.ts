@@ -237,7 +237,7 @@ type RequestTypeFilter = 'All' | HardwareRequestType;
 
                     <td>
                       <span class="item-quantity">
-                        {{ request.items?.length || 0 }} item(s)
+                        {{ request.items.length || 0 }} item(s)
                       </span>
                     </td>
 

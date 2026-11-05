@@ -352,7 +352,7 @@ import { UserService } from '../../../services/userService.service';
               </section>
 
               <!-- Documents -->
-              @if (req.documents?.length) {
+              @if (req.documents.length) {
                 <section
                   class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm"
                 >

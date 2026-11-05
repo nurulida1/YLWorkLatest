@@ -40,281 +40,606 @@ import { RouterLink } from '@angular/router';
     RouterLink,
   ],
   template: `
-    <div class="flex flex-col">
-      <div
-        class="relative bg-[#1D4ED8] rounded-b-[2.5rem] overflow-hidden pb-3"
-      >
+    <div class="min-h-screen bg-slate-50 flex flex-col pb-8">
+      <!-- ==================== MOBILE HEADER ==================== -->
+      <div class="relative bg-[#1D4ED8] rounded-b-[2.5rem] overflow-hidden">
+        <!-- Decorative Background -->
         <div
           class="absolute -top-20 -right-15 w-56 h-56 rounded-full border border-white/15"
         ></div>
-
         <div
           class="absolute -top-12 -right-8 w-44 h-44 rounded-full border border-white/20"
         ></div>
-
         <div
           class="absolute top-8 -right-20 w-36 h-36 rounded-full bg-white/5"
         ></div>
 
-        <div class="relative z-10 h-full px-6 py-6 flex flex-col">
-          <div class="flex flex-row items-center justify-between">
-            <div class="flex flex-row items-center gap-3">
-              <div
-                class="w-12 h-12 rounded-full flex items-center justify-center bg-white/10 border border-white/30"
-              >
-                <div class="font-semibold text-white">YL</div>
-              </div>
-              <div class="uppercase text-white mt-1">Works Enterprise</div>
-            </div>
-            <div class="flex flex-row items-center gap-2">
+        <div class="relative z-10 px-5 pt-6 pb-10">
+          <!-- Brand and Profile -->
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
               <div
                 class="w-11 h-11 rounded-full flex items-center justify-center bg-white/10 border border-white/30"
               >
-                <i class="pi pi-bell text-white!"></i>
+                <span class="font-bold text-white text-lg">YL</span>
               </div>
-              <div
-                class="w-11 h-11 rounded-full flex items-center justify-center bg-[#FCDF7B] border border-[#e5c85f]"
+
+              <div class="flex flex-col">
+                <span class="uppercase text-white font-semibold tracking-wide">
+                  Works Enterprise
+                </span>
+                <span class="text-white/60 text-[10px] tracking-widest">
+                  OFFICE MANAGEMENT
+                </span>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <button
+                type="button"
+                class="w-10 h-10 rounded-full flex items-center justify-center bg-white/10 border border-white/30"
               >
-                <div class="font-semibold">
+                <i class="pi pi-bell text-white"></i>
+              </button>
+
+              <div
+                class="w-10 h-10 rounded-full flex items-center justify-center bg-[#FCDF7B] border border-[#e5c85f]"
+              >
+                <span class="font-bold text-slate-800">
                   {{ getInitial(currentUser?.displayName) }}
-                </div>
+                </span>
               </div>
             </div>
           </div>
-          <div class="flex flex-col mt-10">
-            <div class="font-semibold text-2xl text-white text-shadow-lg">
-              Welcome back, {{ currentUser?.displayName }}
+
+          <!-- Welcome -->
+          <div class="mt-9">
+            <div class="text-white/70 text-sm">Welcome back,</div>
+
+            <h1 class="text-2xl font-bold text-white mt-1">
+              {{ currentUser?.displayName }}
+            </h1>
+
+            <div class="flex items-center gap-2 mt-2">
+              <i class="pi pi-briefcase text-white/70 text-xs"></i>
+              <span class="text-white/80 text-sm">
+                {{ currentUser?.jobTitle ?? 'Employee' }}
+              </span>
             </div>
-            <span class="font-light text-white/80 mt-1 tracking-wide">{{
-              currentUser?.jobTitle
-            }}</span>
-            <div class="mt-4 w-full relative">
+
+            <div class="mt-5 relative">
               <input
-                class="w-full p-3! pl-10! rounded-full!"
-                [(ngModel)]="searchTerm"
-                placeholder="Search tasks, materials, notices..."
                 pInputText
+                [(ngModel)]="searchTerm"
+                placeholder="Search anything..."
+                class="w-full rounded-xl! bg-white! border-0! py-3! pl-11! pr-4! text-sm!"
               />
+
               <i
-                class="pi pi-search absolute! top-4.5! left-4! text-gray-400!"
+                class="pi pi-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
               ></i>
             </div>
           </div>
         </div>
       </div>
-      <div class="relative w-full px-5 h-30">
-        <div
-          class="absolute -top-5 left-1/2 -translate-x-1/2 w-[calc(100%-2.5rem)] py-5 px-7 bg-white rounded-2xl shadow-lg"
-        >
-          <div class="flex flex-row items-center justify-between px-3">
-            <div class="flex flex-col items-center gap-1">
+
+      <!-- ==================== QUICK ACTIONS ==================== -->
+      <div class="relative px-5 -mt-5 z-20">
+        <div class="bg-white rounded-2xl shadow-lg border border-slate-100 p-4">
+          <div class="grid grid-cols-4 gap-2">
+            <a
+              routerLink="/claims"
+              class="flex flex-col items-center gap-2 py-2"
+            >
               <div
-                [routerLink]="'/claims'"
-                class="w-13 h-13 rounded-xl flex items-center justify-center bg-green-100"
+                class="w-12 h-12 rounded-xl bg-green-50 flex items-center justify-center"
               >
-                <i class="pi pi-money-bill text-green-800! text-2xl!"></i>
+                <i class="pi pi-wallet text-green-600 text-xl"></i>
               </div>
-              <div class="text-sm font-semibold">Claims</div>
-            </div>
-            <div class="flex flex-col items-center gap-1">
+              <span class="text-xs font-semibold text-slate-700">Claims</span>
+            </a>
+
+            <a
+              routerLink="/my-tasks"
+              class="flex flex-col items-center gap-2 py-2"
+            >
               <div
-                [routerLink]="'/tasks'"
-                class="w-13 h-13 rounded-xl flex items-center justify-center bg-blue-100"
+                class="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center"
               >
-                <i class="pi pi-list-check text-blue-800! text-2xl!"></i>
+                <i class="pi pi-list-check text-blue-600 text-xl"></i>
               </div>
-              <div class="text-sm font-semibold">Tasks</div>
-            </div>
-            <div class="flex flex-col items-center gap-1">
+              <span class="text-xs font-semibold text-slate-700">Tasks</span>
+            </a>
+
+            <a
+              routerLink="/leave"
+              class="flex flex-col items-center gap-2 py-2"
+            >
               <div
-                [routerLink]="'/leave'"
-                class="w-13 h-13 rounded-xl flex items-center justify-center bg-yellow-100"
+                class="w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center"
               >
-                <i class="pi pi-calendar text-yellow-800! text-2xl!"></i>
+                <i class="pi pi-calendar text-amber-600 text-xl"></i>
               </div>
-              <div class="text-sm font-semibold">Leave</div>
-            </div>
-            <div class="flex flex-col items-center gap-1">
+              <span class="text-xs font-semibold text-slate-700">Leave</span>
+            </a>
+
+            <a
+              routerLink="/announcements"
+              class="flex flex-col items-center gap-2 py-2"
+            >
               <div
-                [routerLink]="'/notice'"
-                class="w-13 h-13 rounded-xl flex items-center justify-center bg-violet-100"
+                class="w-12 h-12 rounded-xl bg-violet-50 flex items-center justify-center"
               >
-                <i class="pi pi-megaphone text-violet-800! text-2xl!"></i>
+                <i class="pi pi-megaphone text-violet-600 text-xl"></i>
               </div>
-              <div class="text-sm font-semibold">Notices</div>
-            </div>
+              <span class="text-xs font-semibold text-slate-700">Notices</span>
+            </a>
           </div>
         </div>
       </div>
-      <div class="flex flex-col gap-3 mt-2 px-6">
-        <div class="font-semibold tracking-wide uppercase text-gray-400">
-          Quick Access
+
+      <!-- ==================== SUPER ADMIN DASHBOARD ==================== -->
+      @if (currentUser?.systemRole === 'SuperAdmin') {
+        <div class="flex flex-col gap-6 px-5 mt-7">
+          <!-- Section Heading -->
+          <div class="flex items-center justify-between">
+            <div>
+              <h2 class="text-lg font-bold text-slate-800">Overview</h2>
+              <p class="text-xs text-slate-400 mt-1">
+                Company statistics and activities
+              </p>
+            </div>
+
+            <span
+              class="text-xs font-semibold text-blue-700 bg-blue-50 px-3 py-1.5 rounded-full"
+            >
+              Super Admin
+            </span>
+          </div>
+
+          <!-- Loading -->
+          @if (dashboard()) {
+            <!-- Statistics -->
+            <div class="grid grid-cols-2 gap-3">
+              <div
+                class="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm"
+              >
+                <div class="flex items-center justify-between">
+                  <div
+                    class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center"
+                  >
+                    <i class="pi pi-users text-blue-600 text-lg"></i>
+                  </div>
+                  <span class="text-xs text-slate-400">Users</span>
+                </div>
+                <div class="text-2xl font-bold text-slate-800 mt-4">
+                  {{ dashboard()?.totalUsers ?? 0 }}
+                </div>
+                <div class="text-xs text-slate-500 mt-1">Total Users</div>
+              </div>
+
+              <div
+                class="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm"
+              >
+                <div class="flex items-center justify-between">
+                  <div
+                    class="w-10 h-10 rounded-xl bg-green-50 flex items-center justify-center"
+                  >
+                    <i class="pi pi-user-check text-green-600 text-lg"></i>
+                  </div>
+                  <span class="text-xs text-slate-400">Active</span>
+                </div>
+                <div class="text-2xl font-bold text-slate-800 mt-4">
+                  {{ dashboard()?.activeUsers ?? 0 }}
+                </div>
+                <div class="text-xs text-slate-500 mt-1">Active Users</div>
+              </div>
+
+              <div
+                class="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm"
+              >
+                <div class="flex items-center justify-between">
+                  <div
+                    class="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center"
+                  >
+                    <i class="pi pi-user-minus text-red-600 text-lg"></i>
+                  </div>
+                  <span class="text-xs text-slate-400">Inactive</span>
+                </div>
+                <div class="text-2xl font-bold text-slate-800 mt-4">
+                  {{ dashboard()?.inactiveUsers ?? 0 }}
+                </div>
+                <div class="text-xs text-slate-500 mt-1">Inactive Users</div>
+              </div>
+
+              <div
+                class="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm"
+              >
+                <div class="flex items-center justify-between">
+                  <div
+                    class="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center"
+                  >
+                    <i class="pi pi-user-plus text-amber-600 text-lg"></i>
+                  </div>
+                  <span class="text-xs text-slate-400">Pending</span>
+                </div>
+                <div class="text-2xl font-bold text-slate-800 mt-4">
+                  {{ dashboard()?.pendingApprovals ?? 0 }}
+                </div>
+                <div class="text-xs text-slate-500 mt-1">Pending Approvals</div>
+              </div>
+
+              <div
+                class="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm"
+              >
+                <div class="flex items-center justify-between">
+                  <div
+                    class="w-10 h-10 rounded-xl bg-violet-50 flex items-center justify-center"
+                  >
+                    <i class="pi pi-sitemap text-violet-600 text-lg"></i>
+                  </div>
+                  <span class="text-xs text-slate-400">Departments</span>
+                </div>
+                <div class="text-2xl font-bold text-slate-800 mt-4">
+                  {{ dashboard()?.totalDepartments ?? 0 }}
+                </div>
+                <div class="text-xs text-slate-500 mt-1">Departments</div>
+              </div>
+
+              <div
+                class="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm"
+              >
+                <div class="flex items-center justify-between">
+                  <div
+                    class="w-10 h-10 rounded-xl bg-cyan-50 flex items-center justify-center"
+                  >
+                    <i class="pi pi-box text-cyan-600 text-lg"></i>
+                  </div>
+                  <span class="text-xs text-slate-400">Inventory</span>
+                </div>
+                <div class="text-2xl font-bold text-slate-800 mt-4">
+                  {{ dashboard()?.totalInventoryItems ?? 0 }}
+                </div>
+                <div class="text-xs text-slate-500 mt-1">Inventory Items</div>
+              </div>
+
+              <div
+                class="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm"
+              >
+                <div class="flex items-center justify-between">
+                  <div
+                    class="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center"
+                  >
+                    <i
+                      class="pi pi-exclamation-triangle text-orange-600 text-lg"
+                    ></i>
+                  </div>
+                  <span class="text-xs text-slate-400">Low Stock</span>
+                </div>
+                <div class="text-2xl font-bold text-slate-800 mt-4">
+                  {{ dashboard()?.lowStockItems ?? 0 }}
+                </div>
+                <div class="text-xs text-slate-500 mt-1">Low Stock Items</div>
+              </div>
+
+              <div
+                class="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm"
+              >
+                <div class="flex items-center justify-between">
+                  <div
+                    class="w-10 h-10 rounded-xl bg-rose-50 flex items-center justify-center"
+                  >
+                    <i class="pi pi-wrench text-rose-600 text-lg"></i>
+                  </div>
+                  <span class="text-xs text-slate-400">Faulty</span>
+                </div>
+                <div class="text-2xl font-bold text-slate-800 mt-4">
+                  {{ dashboard()?.faultyItems ?? 0 }}
+                </div>
+                <div class="text-xs text-slate-500 mt-1">Faulty Items</div>
+              </div>
+            </div>
+
+            <!-- Pending Registrations -->
+            <div
+              class="bg-white rounded-2xl border border-slate-100 shadow-sm p-4"
+            >
+              <div class="flex items-center justify-between mb-4">
+                <div>
+                  <h3 class="font-bold text-slate-800">
+                    Pending Registrations
+                  </h3>
+                  <p class="text-xs text-slate-400 mt-1">
+                    Users awaiting approval
+                  </p>
+                </div>
+                <a
+                  routerLink="/user-management"
+                  class="text-xs font-semibold text-blue-600"
+                >
+                  View All
+                </a>
+              </div>
+
+              <!-- Registration list will be added using the actual DTO properties -->
+            </div>
+
+            <!-- Recent Activities -->
+            <div
+              class="bg-white rounded-2xl border border-slate-100 shadow-sm p-4"
+            >
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="font-bold text-slate-800">Recent Activities</h3>
+              </div>
+
+              <!-- Activity list will be added using the actual DTO properties -->
+            </div>
+          } @else {
+            <div
+              class="bg-white rounded-2xl p-8 flex flex-col items-center justify-center"
+            >
+              <i class="pi pi-spin pi-spinner text-blue-600 text-2xl"></i>
+              <span class="text-sm text-slate-500 mt-3">
+                Loading dashboard...
+              </span>
+            </div>
+          }
         </div>
-        <div class="grid grid-cols-12 gap-4 justify-between">
-          <div
-            [routerLink]="'/directory'"
-            class="col-span-6 flex flex-row gap-3 items-center p-5 bg-white border border-gray-100 rounded-xl shadow-md"
-          >
-            <div
-              class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center"
-            >
-              <i class="pi pi-users text-blue-700! text-xl!"></i>
+      } @else {
+        <!-- ==================== STAFF / HR / LOGISTICS DASHBOARD ==================== -->
+        <div class="flex flex-col gap-6 px-5 mt-7">
+          <!-- Quick Access -->
+          <section>
+            <div class="flex items-center justify-between mb-3">
+              <div>
+                <h2 class="text-lg font-bold text-slate-800">Quick Access</h2>
+                <p class="text-xs text-slate-400 mt-1">
+                  Your frequently used modules
+                </p>
+              </div>
             </div>
-            <div class="flex flex-col">
-              <b>Directory</b
-              ><span class="text-gray-400 text-xs">See coworkers</span>
+
+            <div class="grid grid-cols-2 gap-3">
+              <a
+                routerLink="/directory"
+                class="flex items-center gap-3 p-4 bg-white border border-slate-100 rounded-xl shadow-sm"
+              >
+                <div
+                  class="w-10 h-10 shrink-0 bg-blue-50 rounded-xl flex items-center justify-center"
+                >
+                  <i class="pi pi-users text-blue-700 text-lg"></i>
+                </div>
+                <div class="min-w-0">
+                  <div class="font-semibold text-sm text-slate-800">
+                    Directory
+                  </div>
+                  <span class="text-xs text-slate-400">Find coworkers</span>
+                </div>
+              </a>
+
+              <a
+                routerLink="/projects"
+                class="flex items-center gap-3 p-4 bg-white border border-slate-100 rounded-xl shadow-sm"
+              >
+                <div
+                  class="w-10 h-10 shrink-0 bg-violet-50 rounded-xl flex items-center justify-center"
+                >
+                  <i class="pi pi-briefcase text-violet-700 text-lg"></i>
+                </div>
+                <div class="min-w-0">
+                  <div class="font-semibold text-sm text-slate-800">
+                    Projects
+                  </div>
+                  <span class="text-xs text-slate-400">Project updates</span>
+                </div>
+              </a>
+
+              <a
+                routerLink="/inventory/listing"
+                class="flex items-center gap-3 p-4 bg-white border border-slate-100 rounded-xl shadow-sm"
+              >
+                <div
+                  class="w-10 h-10 shrink-0 bg-green-50 rounded-xl flex items-center justify-center"
+                >
+                  <i class="pi pi-box text-green-700 text-lg"></i>
+                </div>
+                <div class="min-w-0">
+                  <div class="font-semibold text-sm text-slate-800">
+                    Inventory
+                  </div>
+                  <span class="text-xs text-slate-400">Warehouse stock</span>
+                </div>
+              </a>
+
+              <a
+                routerLink="/hardware-request"
+                class="flex items-center gap-3 p-4 bg-white border border-slate-100 rounded-xl shadow-sm"
+              >
+                <div
+                  class="w-10 h-10 shrink-0 bg-orange-50 rounded-xl flex items-center justify-center"
+                >
+                  <i class="pi pi-file text-orange-700 text-lg"></i>
+                </div>
+                <div class="min-w-0">
+                  <div class="font-semibold text-sm text-slate-800">
+                    Hardware
+                  </div>
+                  <span class="text-xs text-slate-400">Request equipment</span>
+                </div>
+              </a>
             </div>
-          </div>
-          <div
-            [routerLink]="'/projects'"
-            class="col-span-6 flex flex-row gap-3 items-center p-5 bg-white border border-gray-100 rounded-xl shadow-md"
-          >
-            <div
-              class="w-10 h-10 bg-violet-100 rounded-lg flex items-center justify-center"
-            >
-              <i class="pi pi-list text-violet-700! text-xl!"></i>
+          </section>
+
+          <!-- Tasks -->
+          <section>
+            <div class="flex items-center justify-between mb-3">
+              <div>
+                <h2 class="text-lg font-bold text-slate-800">Tasks to Do</h2>
+                <p class="text-xs text-slate-400 mt-1">Your assigned tasks</p>
+              </div>
+
+              <a
+                routerLink="/my-tasks"
+                class="flex items-center gap-1 text-sm font-semibold text-blue-600"
+              >
+                View All
+                <i class="pi pi-chevron-right text-xs"></i>
+              </a>
             </div>
-            <div class="flex flex-col">
-              <b>Projects</b
-              ><span class="text-gray-400 text-xs">Latest Projects</span>
-            </div>
-          </div>
-          <div
-            [routerLink]="'/inventory'"
-            class="col-span-6 flex flex-row gap-3 items-center p-5 bg-white border border-gray-100 rounded-xl shadow-md"
-          >
-            <div
-              class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center"
-            >
-              <i class="pi pi-box text-green-700! text-xl!"></i>
-            </div>
-            <div class="flex flex-col">
-              <b>Inventory</b
-              ><span class="text-gray-400 text-xs">Warehouse Stock</span>
-            </div>
-          </div>
-          <div
-            [routerLink]="'/material-requests'"
-            class="col-span-6 flex flex-row gap-3 items-center p-5 bg-white border border-gray-100 rounded-xl shadow-md"
-          >
-            <div
-              class="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center"
-            >
-              <i class="pi pi-file-o text-orange-700! text-xl!"></i>
-            </div>
-            <div class="flex flex-col">
-              <b>Materials</b
-              ><span class="text-gray-400 text-xs">Request materials</span>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="flex flex-col gap-5 px-5 mt-6">
-        <div class="flex flex-row items-center justify-between">
-          <div class="font-semibold text-lg">Tasks to Do</div>
-          <div
-            class="flex flex-row items-center gap-2 text-blue-700"
-            [routerLink]="['/tasks']"
-          >
-            <div class="text-sm">View All</div>
-            <i class="pi pi-chevron-right text-xs!"></i>
-          </div>
-        </div>
-        <div class="flex flex-col gap-3">
-          <ng-container *ngFor="let task of staffTask">
-            <div
-              class="flex flex-row bg-white rounded-lg border border-gray-100 p-4 shadow-sm border-l-4"
-              [ngClass]="{
-                'border-l-red-500': task.priority === 'Critical',
-                'border-l-orange-500': task.priority === 'High',
-                'border-l-yellow-500': task.priority === 'Medium',
-                'border-l-blue-500': task.priority === 'Low',
-              }"
-            >
-              <div class="flex flex-row gap-3">
-                <p-checkbox
-                  [binary]="true"
-                  [(ngModel)]="task.isCompleted"
-                ></p-checkbox>
-                <div class="flex flex-col gap-1">
-                  <div class="font-semibold">{{ task.title }}</div>
-                  <div class="flex flex-row items-center gap-2">
-                    <i class="pi pi-clock text-gray-400! text-xs! mt-1!"></i>
-                    <span class="text-gray-500 text-sm">{{
-                      task.dueDate | date
-                    }}</span>
+
+            <div class="flex flex-col gap-3">
+              @for (task of filteredTasks; track task.id) {
+                <div
+                  class="bg-white rounded-xl border border-slate-100 shadow-sm p-4 border-l-4"
+                  [ngClass]="{
+                    'border-l-red-500': task.priority === 'Critical',
+                    'border-l-orange-500': task.priority === 'High',
+                    'border-l-amber-500': task.priority === 'Medium',
+                    'border-l-blue-500': task.priority === 'Low',
+                  }"
+                >
+                  <div class="flex items-start gap-3">
+                    <p-checkbox
+                      [binary]="true"
+                      [(ngModel)]="task.isCompleted"
+                    ></p-checkbox>
+
+                    <div class="flex-1 min-w-0">
+                      <div
+                        class="font-semibold text-sm text-slate-800"
+                        [class.line-through]="task.isCompleted"
+                        [class.text-slate-400]="task.isCompleted"
+                      >
+                        {{ task.title }}
+                      </div>
+
+                      <p class="text-xs text-slate-400 mt-1 line-clamp-2">
+                        {{ task.description }}
+                      </p>
+
+                      <div class="flex items-center justify-between gap-2 mt-3">
+                        <div
+                          class="flex items-center gap-1.5 text-xs text-slate-500"
+                        >
+                          <i class="pi pi-calendar text-slate-400"></i>
+                          <span>
+                            {{ task.dueDate | date: 'dd MMM yyyy' }}
+                          </span>
+                        </div>
+
+                        <span
+                          class="text-[10px] font-semibold px-2 py-1 rounded-full"
+                          [ngClass]="{
+                            'bg-red-50 text-red-600':
+                              task.priority === 'Critical',
+                            'bg-orange-50 text-orange-600':
+                              task.priority === 'High',
+                            'bg-amber-50 text-amber-600':
+                              task.priority === 'Medium',
+                            'bg-blue-50 text-blue-600': task.priority === 'Low',
+                          }"
+                        >
+                          {{ task.priority }}
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
+              } @empty {
+                <div
+                  class="bg-white rounded-xl border border-slate-100 p-6 text-center"
+                >
+                  <i class="pi pi-check-circle text-3xl text-green-500"></i>
+                  <p class="text-sm font-semibold text-slate-700 mt-3">
+                    No pending tasks
+                  </p>
+                  <p class="text-xs text-slate-400 mt-1">
+                    You're all caught up!
+                  </p>
+                </div>
+              }
             </div>
-          </ng-container>
+          </section>
         </div>
-      </div>
+      }
+
+      <!-- ==================== BOTTOM SPACING ==================== -->
+      <div class="h-6"></div>
     </div>
   `,
   styleUrl: './mobile-dashboard.less',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class MobileDashboard implements OnInit, OnDestroy {
+  // ==================== SERVICES ====================
+
   private readonly loadingService = inject(LoadingService);
   private readonly appService = inject(AppService);
   private readonly staffTaskService = inject(StaffTaskService);
-  private readonly departmentService = inject(DepartmentService);
   private readonly userService = inject(UserService);
   private readonly cdr = inject(ChangeDetectorRef);
-  protected ngUnsubscribe: Subject<void> = new Subject<void>();
+
+  // ==================== SUBSCRIPTION ====================
+
+  private readonly ngUnsubscribe = new Subject<void>();
+
+  // ==================== USER ====================
 
   currentUser = this.userService.currentUser;
 
-  approveDialog: boolean = false;
-  rejectDialog: boolean = false;
+  get isSuperAdmin(): boolean {
+    return this.currentUser?.systemRole?.toLowerCase() === 'superadmin';
+  }
 
-  selectedUser: any = null;
-  staffTask: any;
-
-  selectedDepartments: string[] = [];
-  selectedRole: string = 'Staff';
-
-  rejectReason: string = '';
-  searchTerm: string = '';
-
-  departments: any[] = [];
-
-  roles: any[] = [
-    { label: 'Administrator', value: 'SuperAdmin' },
-    { label: 'HR', value: 'HR' },
-    { label: 'Manager', value: 'Manager' },
-    { label: 'Director', value: 'Director' },
-    { label: 'Staff', value: 'Staff' },
-  ];
+  // ==================== DASHBOARD DATA ====================
 
   dashboard = signal<SuperAdminDashboardDto | null>(null);
 
-  ngOnInit(): void {
-    if (this.currentUser?.systemRole === 'SuperAdmin') {
-      this.loadingService.start();
-      this.appService
-        .GetSuperAdminDashboard()
-        .pipe(takeUntil(this.ngUnsubscribe))
-        .subscribe({
-          next: (res) => {
-            this.dashboard.set(res);
-            this.cdr.markForCheck();
-            this.loadingService.stop();
-          },
-          error: (err) => {
-            this.loadingService.stop();
-          },
-        });
+  staffTask: any[] = [];
 
-      this.LoadDepartments();
+  // ==================== UI STATE ====================
+
+  searchTerm = '';
+
+  // ==================== INITIALIZATION ====================
+
+  ngOnInit(): void {
+    if (this.isSuperAdmin) {
+      this.loadSuperAdminDashboard();
     } else {
-      this.GetTask();
+      this.loadStaffTasks();
     }
   }
 
-  GetTask() {
+  // ==================== SUPER ADMIN DASHBOARD ====================
+
+  private loadSuperAdminDashboard(): void {
     this.loadingService.start();
+
+    this.appService
+      .GetSuperAdminDashboard()
+      .pipe(takeUntil(this.ngUnsubscribe))
+      .subscribe({
+        next: (res) => {
+          this.dashboard.set(res);
+
+          this.loadingService.stop();
+          this.cdr.markForCheck();
+        },
+        error: (err) => {
+          console.error('Failed to load Super Admin dashboard:', err);
+
+          this.loadingService.stop();
+          this.cdr.markForCheck();
+        },
+      });
+  }
+
+  // ==================== STAFF TASKS ====================
+
+  private loadStaffTasks(): void {
+    this.loadingService.start();
+
     this.staffTaskService
       .GetMany({
         Page: 1,
@@ -327,39 +652,28 @@ export class MobileDashboard implements OnInit, OnDestroy {
       .pipe(takeUntil(this.ngUnsubscribe))
       .subscribe({
         next: (res) => {
+          this.staffTask = res?.data ?? [];
+
           this.loadingService.stop();
-          this.staffTask = res.data;
           this.cdr.markForCheck();
         },
         error: (err) => {
+          console.error('Failed to load staff tasks:', err);
+
+          this.staffTask = [];
+
           this.loadingService.stop();
+          this.cdr.markForCheck();
         },
       });
   }
 
-  LoadDepartments() {
-    this.departmentService
-      .GetMany({
-        Page: 1,
-        PageSize: 1000000,
-        OrderBy: `Name desc`,
-        Filter: null,
-        Includes: null,
-        Select: null,
-      })
-      .pipe(takeUntil(this.ngUnsubscribe))
-      .subscribe({
-        next: (res) => {
-          if (res) this.departments = res.data;
-        },
-        error: (err) => {
-          console.error(err);
-        },
-      });
-  }
+  // ==================== USER INITIAL ====================
 
   getInitial(fullName?: string): string {
-    if (!fullName?.trim()) return '?';
+    if (!fullName?.trim()) {
+      return '?';
+    }
 
     const names = fullName.trim().split(/\s+/).filter(Boolean);
 
@@ -370,88 +684,16 @@ export class MobileDashboard implements OnInit, OnDestroy {
     return (names[0].charAt(0) + names[1].charAt(0)).toUpperCase();
   }
 
-  openApprove(user: any) {
-    this.selectedUser = user;
-    this.selectedDepartments = [];
-    this.selectedRole = 'Staff';
-    this.approveDialog = true;
-  }
+  // ==================== FILTER TASKS ====================
 
-  openReject(user: any) {
-    this.selectedUser = user;
-    this.rejectReason = '';
-    this.rejectDialog = true;
-  }
-
-  approveUser() {
-    const request = {
-      userId: this.selectedUser.id,
-      departmentIds: this.selectedDepartments,
-      systemRole: this.selectedRole,
-    };
-
-    this.loadingService.start();
-
-    // this.userService.approveUser(request).subscribe({
-    //   next: () => {
-
-    //     this.approveDialog = false;
-
-    //     this.dashboard.update(d => {
-    //       if (!d) return d;
-
-    //       return {
-    //         ...d,
-    //         pendingApprovals: d.pendingApprovals - 1,
-    //         pendingUsers: d.pendingUsers.filter(x => x.id !== this.selectedUser.id)
-    //       };
-    //     });
-
-    //     this.loadingService.stop();
-
-    //   },
-    //   error: () => this.loadingService.stop()
-    // });
-  }
-
-  rejectUser() {
-    const request = {
-      userId: this.selectedUser.id,
-      reason: this.rejectReason,
-    };
-
-    this.loadingService.start();
-
-    // this.appService.rejectUser(request).subscribe({
-    //   next: () => {
-
-    //     this.rejectDialog = false;
-
-    //     this.dashboard.update(d => {
-    //       if (!d) return d;
-
-    //       return {
-    //         ...d,
-    //         pendingApprovals: d.pendingApprovals - 1,
-    //         pendingUsers: d.pendingUsers.filter(x => x.id !== this.selectedUser.id)
-    //       };
-    //     });
-
-    //     this.loadingService.stop();
-
-    //   },
-    //   error: () => this.loadingService.stop()
-    // });
-  }
-
-  get filteredTasks() {
+  get filteredTasks(): any[] {
     const search = this.searchTerm.trim().toLowerCase();
 
     if (!search) {
-      return this.staffTask ?? [];
+      return this.staffTask;
     }
 
-    return (this.staffTask ?? []).filter((task: any) => {
+    return this.staffTask.filter((task: any) => {
       return (
         task.title?.toLowerCase().includes(search) ||
         task.description?.toLowerCase().includes(search)
@@ -459,9 +701,10 @@ export class MobileDashboard implements OnInit, OnDestroy {
     });
   }
 
+  // ==================== DESTROY ====================
+
   ngOnDestroy(): void {
     this.ngUnsubscribe.next();
     this.ngUnsubscribe.complete();
-    this.loadingService.stop();
   }
 }

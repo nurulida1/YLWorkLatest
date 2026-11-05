@@ -1,13 +1,11 @@
+
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using System.Security.Claims;
-using System.Text;
 using YLWorks.Model;
 using YLWorks.Data;
 using YLWorks.Services;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.EntityFrameworkCore;
 
 namespace YLWorks.Controllers
 {
@@ -15,118 +13,190 @@ namespace YLWorks.Controllers
     [ApiController]
     public class AuthController : ControllerBase
     {
-        private readonly IConfiguration _config;
-        private readonly IAuthService authService;
+        private readonly IAuthService _authService;
         private readonly JwtService _jwtService;
         private readonly AppDbContext _context;
 
-        public AuthController(IConfiguration config, AppDbContext context, IAuthService authService, JwtService jwtService)
+        public AuthController(
+            AppDbContext context,
+            IAuthService authService,
+            JwtService jwtService)
         {
-            _config = config;
-            _jwtService = jwtService;
-            this.authService = authService;
             _context = context;
-
+            _authService = authService;
+            _jwtService = jwtService;
         }
 
+        // ==========================================
+        // AUTHENTICATE
+        // ==========================================
         [AllowAnonymous]
         [HttpPost("authenticate")]
-        public async Task<ActionResult<LoginResponse>> Authenticate(LoginRequest request)
+        public async Task<ActionResult<LoginResponse>> Authenticate(
+            [FromBody] LoginRequest request)
         {
             var result = await _jwtService.Authenticate(request);
+
+            if (result == null || !result.Success)
+            {
+                return Unauthorized(result);
+            }
+
             return Ok(result);
         }
 
+        // ==========================================
+        // REGISTER
+        // ==========================================
         [AllowAnonymous]
         [HttpPost("register")]
-        public async Task<ActionResult<User>> Register(RegisterRequest request)
+        public async Task<IActionResult> Register(
+            [FromBody] RegisterRequest request)
         {
-            var user = await authService.RegisterAsync(request);
+            var user = await _authService.RegisterAsync(request);
 
             if (user == null)
-                return BadRequest("Email already exists.");
+            {
+                return BadRequest(new
+                {
+                    success = false,
+                    message = "Email already exists."
+                });
+            }
 
             return Ok(new
             {
+                success = true,
                 message = "Registration submitted. Waiting for admin approval.",
                 userId = user.Id
             });
         }
 
-        [AllowAnonymous]
-        [HttpPost("login")]
-        public async Task<ActionResult<TokenResponseDto>> Login(LoginRequest request)
-        {
-            var token = await authService.LoginAsync(request);
-            if (token is null)
-                return BadRequest("Invalid email or password.");
-
-            return Ok(new
-            {
-                access_token = token.AccessToken,
-                refresh_token = token.RefreshToken,
-                token_type = "bearer",
-                expires_in = (int)(DateTime.UtcNow.AddMinutes(60) - DateTime.UtcNow).TotalSeconds
-            });
-        }
-
+        // ==========================================
+        // CHECK AUTHENTICATION
+        // ==========================================
         [Authorize]
         [HttpGet("IsAuthenticated")]
         public IActionResult AuthenticatedOnlyEndPoint()
         {
-            return Ok("You are authenticated!");
+            return Ok(new
+            {
+                success = true,
+                message = "You are authenticated!"
+            });
         }
 
+        // ==========================================
+        // APPROVE USER
+        // ==========================================
         [Authorize(Roles = "HOD,Management,HR,SuperAdmin")]
         [HttpPost("approve")]
-        public async Task<IActionResult> Approve(ApproveUserRequest request)
+        public async Task<IActionResult> Approve(
+            [FromBody] ApproveUserRequest request)
         {
-            var user = await _context.Users
-                .Include(x => x.Departments)
-                .FirstOrDefaultAsync(x => x.Id == request.UserId);
+            var result = await _authService.ApproveUserAsync(request);
 
-            if (user == null)
-                return NotFound("User not found.");
-
-            var departments = await _context.Departments
-                .Where(x => request.DepartmentIds.Contains(x.Id))
-                .ToListAsync();
-
-            if (departments.Count != request.DepartmentIds.Count)
+            if (!result)
             {
-                return BadRequest("One or more departments not found.");
+                return BadRequest(new
+                {
+                    success = false,
+                    message = "Unable to approve user. Please check the user and departments."
+                });
             }
-
-            user.Departments = departments;
-            user.SystemRole = request.SystemRole;
-            user.Status = "Approved";
-            user.IsActive = true;
-
-            await _context.SaveChangesAsync();
 
             return Ok(new
             {
+                success = true,
                 message = "User approved successfully."
             });
         }
 
+        // ==========================================
+        // REJECT USER
+        // ==========================================
         [Authorize(Roles = "HOD,Management,HR,SuperAdmin")]
         [HttpPost("reject")]
-        public async Task<IActionResult> Reject(RejectUserRequest request)
+        public async Task<IActionResult> Reject(
+            [FromBody] RejectUserRequest request)
         {
-            var user = await _context.Users.FindAsync(request.UserId);
+            var result = await _authService.RejectUserAsync(request);
 
-            if (user == null)
-                return NotFound();
-
-            user.Status = "Rejected";
-            user.RejectReason = request.Reason;
-
-            await _context.SaveChangesAsync();
+            if (!result)
+            {
+                return NotFound(new
+                {
+                    success = false,
+                    message = "User not found."
+                });
+            }
 
             return Ok(new
             {
+                success = true,
                 message = "User rejected."
+            });
+        }
+
+        // ==========================================
+        // REFRESH TOKEN
+        // ==========================================
+        [AllowAnonymous]
+        [HttpPost("refresh")]
+        public async Task<IActionResult> Refresh(
+            [FromBody] RefreshTokenRequestDto request)
+        {
+            var result = await _authService.RefreshTokensAsync(request);
+
+            if (result == null)
+            {
+                return Unauthorized(new
+                {
+                    success = false,
+                    message = "Refresh token is invalid or expired. Please login again."
+                });
+            }
+
+            return Ok(new
+            {
+                success = true,
+                accessToken = result.AccessToken,
+                refreshToken = result.RefreshToken,
+                expiresAt = result.ExpiresAt
+            });
+        }
+
+        // ==========================================
+        // LOGOUT
+        // ==========================================
+        [Authorize]
+        [HttpPost("logout")]
+        public async Task<IActionResult> Logout()
+        {
+            var userIdValue = User.FindFirstValue(
+                ClaimTypes.NameIdentifier
+            );
+
+            if (!Guid.TryParse(userIdValue, out var userId))
+            {
+                return Unauthorized();
+            }
+
+            var result = await _authService.RevokeRefreshTokenAsync(userId);
+
+            if (!result)
+            {
+                return NotFound(new
+                {
+                    success = false,
+                    message = "User not found."
+                });
+            }
+
+            return Ok(new
+            {
+                success = true,
+                message = "Logged out successfully."
             });
         }
     }

@@ -18,7 +18,7 @@ import {
 import {
   formatDaysAmount,
   formatLeaveDurationLabel,
-} from '../../../common/leave-day.util';
+} from '../../../common/guard/leave-day.util';
 import { LeaveRequestService } from '../../../services/leave-request.service';
 import { LoadingService } from '../../../services/loading.service';
 import { UserService } from '../../../services/userService.service';

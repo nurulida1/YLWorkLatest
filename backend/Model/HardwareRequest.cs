@@ -176,6 +176,10 @@ namespace YLWorks.Model
     public class ApproveHardwareRequestDto
     {
         public string? Remarks { get; set; }
+
+        // Optional: if null, assign to the approver.
+        public Guid? AssignedToId { get; set; }
+
         public List<ApproveHardwareRequestItemDto>? Items { get; set; }
     }
 

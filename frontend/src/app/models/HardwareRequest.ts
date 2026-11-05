@@ -120,7 +120,12 @@ export interface HardwareRequestDto {
 
 export interface ApproveHardwareRequest {
   remarks?: string | null;
-  items?: ApproveHardwareRequestItem[];
+  assignedToId?: string | null;
+  items: {
+    requestItemId: string;
+    approvedQuantity: number;
+    remarks?: string | null;
+  }[];
 }
 
 export interface ApproveHardwareRequestItem {

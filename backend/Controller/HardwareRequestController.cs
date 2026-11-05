@@ -537,12 +537,23 @@ namespace YLWorks.Controller
             if (request == null)
                 return NotFound("Request not found.");
 
-            // Requester, existing managers or responsible HOD.
-            if (request.RequestedById != currentUserId.Value &&
-                !await CanManageRequestAsync(request, currentUserId.Value))
-            {
+            // Check whether the current user is:
+            // 1. The original requester
+            // 2. An authorized manager or responsible HOD
+            // 3. The staff member assigned to this request
+            var isRequester =
+                request.RequestedById == currentUserId.Value;
+
+            var canManage = await CanManageRequestAsync(
+                request,
+                currentUserId.Value
+            );
+
+            var isAssignedStaff =
+                request.AssignedToId == currentUserId.Value;
+
+            if (!isRequester && !canManage && !isAssignedStaff)
                 return Forbid();
-            }
 
             return Ok(new
             {
@@ -632,18 +643,43 @@ namespace YLWorks.Controller
                     return Forbid();
 
                 if (request.Status != "Pending")
-                    return BadRequest(
-                        "Only pending requests can be approved.");
+                    return BadRequest("Only pending requests can be approved.");
 
-                // IT Support does not need inventory approval quantities.
+                // ==========================================
+                // IT SUPPORT APPROVAL
+                // ==========================================
+
                 if (request.RequestType == "ITSupport")
                 {
+                    var assignedToId = dto.AssignedToId ?? currentUserId.Value;
+
+                    var itAssignedStaff = await _context.Users
+                        .FirstOrDefaultAsync(x =>
+                            x.Id == assignedToId &&
+                            x.IsActive &&
+                            x.Status == "Approved");
+
+                    if (itAssignedStaff == null)
+                    {
+                        return BadRequest(
+                            "Assigned staff was not found or is inactive.");
+                    }
+
                     request.Status = "Approved";
                     request.ApprovedById = currentUserId.Value;
                     request.ApprovedAt = DateTimeHelper.Now();
                     request.AdminRemarks = dto.Remarks;
+                    request.AssignedToId = itAssignedStaff.Id;
 
                     await _context.SaveChangesAsync();
+
+                    await NotifyUserAsync(
+                        itAssignedStaff.Id,
+                        "New Request Assigned",
+                        $"You have been assigned to IT support request '{request.Subject}'.",
+                        "HardwareRequest",
+                        request.Id
+                    );
 
                     await NotifyRequesterAsync(
                         request,
@@ -657,10 +693,14 @@ namespace YLWorks.Controller
                     return Ok(new
                     {
                         success = true,
-                        message = "IT support request approved.",
-                        status = request.Status
+                        message = $"IT support request approved and assigned to {itAssignedStaff.FullName}.",
+                        status = request.Status,
+                        assignedTo = itAssignedStaff.FullName
                     });
                 }
+                // ==========================================
+                // HARDWARE / SITE MATERIAL APPROVAL
+                // ==========================================
 
                 foreach (var item in request.Items)
                 {
@@ -677,6 +717,7 @@ namespace YLWorks.Controller
                             $"Invalid approved quantity for {item.ItemName}.");
                     }
 
+                    // Reserve inventory stock.
                     if (item.InventoryId.HasValue && approvedQuantity > 0)
                     {
                         var inventory = item.Inventory;
@@ -714,6 +755,10 @@ namespace YLWorks.Controller
                     item.Remarks = approval?.Remarks ?? item.Remarks;
                 }
 
+                // ==========================================
+                // SET REQUEST STATUS
+                // ==========================================
+
                 request.Status = request.Items.Any(
                     x => x.ApprovedQuantity > 0)
                     ? "Approved"
@@ -723,7 +768,52 @@ namespace YLWorks.Controller
                 request.ApprovedAt = DateTimeHelper.Now();
                 request.AdminRemarks = dto.Remarks;
 
+                User? assignedStaff = null;
+
+                // ==========================================
+                // ASSIGN STAFF IF APPROVED
+                // ==========================================
+
+                if (request.Status == "Approved")
+                {
+                    // If no staff is selected, assign to the approver.
+                    var assignedToId = dto.AssignedToId ?? currentUserId.Value;
+
+                    assignedStaff = await _context.Users
+                        .FirstOrDefaultAsync(x =>
+                            x.Id == assignedToId &&
+                            x.IsActive &&
+                            x.Status == "Approved");
+
+                    if (assignedStaff == null)
+                    {
+                        return BadRequest(
+                            "Assigned staff was not found or is inactive.");
+                    }
+
+                    request.AssignedToId = assignedStaff.Id;
+                }
+
                 await _context.SaveChangesAsync();
+
+                // ==========================================
+                // NOTIFY ASSIGNED STAFF
+                // ==========================================
+
+                if (assignedStaff != null)
+                {
+                    await NotifyUserAsync(
+                        assignedStaff.Id,
+                        "New Request Assigned",
+                        $"You have been assigned to request '{request.Subject}'.",
+                        "HardwareRequest",
+                        request.Id
+                    );
+                }
+
+                // ==========================================
+                // NOTIFY REQUESTER (ONLY ONCE)
+                // ==========================================
 
                 await NotifyRequesterAsync(
                     request,
@@ -746,9 +836,10 @@ namespace YLWorks.Controller
                 {
                     success = true,
                     message = request.Status == "Approved"
-                        ? "Request approved and stock reserved."
+                        ? $"Request approved and assigned to {assignedStaff?.FullName}. Stock reserved."
                         : "All requested quantities were rejected.",
-                    status = request.Status
+                    status = request.Status,
+                    assignedTo = assignedStaff?.FullName
                 });
             }
             catch (Exception ex)
@@ -1037,21 +1128,22 @@ namespace YLWorks.Controller
         // POST: api/HardwareRequest/{id}/UpdateStatus
         // =========================================================
 
+
         [HttpPost("{id:guid}/UpdateStatus")]
         public async Task<IActionResult> UpdateStatus(
             Guid id,
             [FromBody] UpdateHardwareRequestStatusDto dto)
         {
-            // Operational status updates remain restricted
-            // to existing IT / Admin / Inventory managers.
-            if (!IsRequestManager())
-                return Forbid();
+            var currentUserId = GetCurrentUserId();
+
+            if (currentUserId == null)
+                return Unauthorized();
 
             var allowedStatuses = new[]
             {
-                "InProgress",
-                "Resolved"
-            };
+        "InProgress",
+        "Resolved"
+    };
 
             if (!allowedStatuses.Contains(dto.Status))
                 return BadRequest("Invalid status.");
@@ -1062,12 +1154,29 @@ namespace YLWorks.Controller
             if (request == null)
                 return NotFound("Request not found.");
 
+            // This endpoint is only for IT Support requests.
             if (request.RequestType != "ITSupport")
             {
                 return BadRequest(
                     "This status update endpoint is for IT support requests.");
             }
 
+            // Check whether the user is:
+            // 1. An authorized manager
+            // 2. The responsible HOD
+            // 3. The staff member assigned to this request
+            var canManage = await CanManageRequestAsync(
+                request,
+                currentUserId.Value
+            );
+
+            var isAssignedStaff =
+                request.AssignedToId == currentUserId.Value;
+
+            if (!canManage && !isAssignedStaff)
+                return Forbid();
+
+            // Prevent updates to closed requests.
             if (request.Status == "Rejected" ||
                 request.Status == "Cancelled" ||
                 request.Status == "Resolved")
@@ -1106,6 +1215,7 @@ namespace YLWorks.Controller
                 status = request.Status
             });
         }
+
 
         // =========================================================
         // 14. CANCEL REQUEST
@@ -1204,6 +1314,109 @@ namespace YLWorks.Controller
                     error = ex.Message
                 });
             }
+        }
+
+        // =========================================================
+        // GET INCOMING REQUESTS
+        // GET: api/HardwareRequest/Incoming
+        // =========================================================
+
+        [HttpGet("Incoming")]
+        public async Task<IActionResult> GetIncomingRequests()
+        {
+            var currentUserId = GetCurrentUserId();
+
+            if (currentUserId == null)
+                return Unauthorized();
+
+            var query = RequestQuery();
+
+            // Existing Admin, IT and Inventory managers
+            // can view all incoming requests.
+            if (!IsRequestManager())
+            {
+                query = query.Where(x =>
+                    // Assigned staff can view their assigned requests.
+                    x.AssignedToId == currentUserId.Value
+
+                    ||
+
+                    // Active HOD can view requests belonging to their department.
+                    (
+                        x.ResponsibleDepartmentId.HasValue &&
+                        _context.Departments.Any(d =>
+                            d.Id == x.ResponsibleDepartmentId.Value &&
+                            d.IsActive &&
+                            d.HodId == currentUserId.Value
+                        )
+                    )
+                );
+            }
+
+            var requests = await query
+                .Where(x => x.Status != "Draft")
+                .OrderByDescending(x => x.Id)
+                .Select(x => new
+                {
+                    x.Id,
+                    x.RequestType,
+                    x.Subject,
+                    x.Description,
+                    x.Priority,
+                    x.Status,
+
+                    x.ResponsibleDepartmentId,
+
+                    ResponsibleDepartment = x.ResponsibleDepartment != null
+                        ? x.ResponsibleDepartment.Name
+                        : null,
+
+                    x.ProjectId,
+                    x.ProjectName,
+                    x.SiteName,
+                    x.Location,
+                    x.LocationDetails,
+                    x.NeededBy,
+                    x.ApprovedAt,
+                    x.CompletedAt,
+                    x.AdminRemarks,
+                    x.RejectionReason,
+
+                    RequestedById = x.RequestedById,
+
+                    RequestedBy = x.RequestedBy != null
+                        ? x.RequestedBy.FullName
+                        : null,
+
+                    ApprovedBy = x.ApprovedBy != null
+                        ? x.ApprovedBy.FullName
+                        : null,
+
+                    AssignedToId = x.AssignedToId,
+
+                    AssignedTo = x.AssignedTo != null
+                        ? x.AssignedTo.FullName
+                        : null,
+
+                    Items = x.Items.Select(i => new
+                    {
+                        i.Id,
+                        i.InventoryId,
+                        i.ItemName,
+                        i.ItemCode,
+                        i.Description,
+                        i.Unit,
+                        i.RequestedQuantity,
+                        i.ApprovedQuantity,
+                        i.IssuedQuantity,
+                        i.ReservedQuantity,
+                        i.Status,
+                        i.Remarks
+                    })
+                })
+                .ToListAsync();
+
+            return Ok(requests);
         }
     }
 }

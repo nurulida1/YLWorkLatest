@@ -1,8 +1,10 @@
 import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
+  ChangeDetectorRef,
   Component,
   inject,
+  OnDestroy,
   signal,
 } from '@angular/core';
 import { UserService } from '../../services/userService.service';
@@ -17,6 +19,9 @@ import {
 } from '@ngx-translate/core';
 import { AppConfigService } from '../../services/appConfig.service';
 import { FormsModule } from '@angular/forms';
+import { Subject, takeUntil } from 'rxjs';
+import { LoginResponse } from '../../models/User';
+import { AuthService } from '../../services/authService';
 
 @Component({
   selector: 'app-mobile-settings',
@@ -256,19 +261,43 @@ import { FormsModule } from '@angular/forms';
   styleUrl: './mobile-settings.less',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class MobileSettings {
+export class MobileSettings implements OnDestroy {
   private readonly userService = inject(UserService);
+  private readonly authService = inject(AuthService);
   private readonly translate = inject(TranslateService);
   private readonly appConfigService = inject(AppConfigService);
+  private readonly cdr = inject(ChangeDetectorRef);
 
-  currentUser = this.userService.currentUser;
-  name: string | undefined = this.currentUser?.fullName ?? undefined;
+  private readonly destroy$ = new Subject<void>();
+
+  currentUser: LoginResponse | null = null;
 
   readonly appState = this.appConfigService.appState;
 
   isLanguageDialogOpen = signal(false);
   isLoggingOut = signal(false);
   isThemeDialogOpen = signal(false);
+
+  selectedLanguage = signal<'en' | 'zh' | 'ms'>(
+    (localStorage.getItem('language') as 'en' | 'zh' | 'ms') ?? 'en',
+  );
+
+  constructor() {
+    this.currentUser = this.userService.currentUser;
+
+    this.userService.currentUser$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((user) => {
+        this.currentUser = user;
+        this.cdr.markForCheck();
+      });
+  }
+
+  get name(): string {
+    return (
+      this.currentUser?.displayName || this.currentUser?.fullName || 'User'
+    );
+  }
 
   get initials(): string {
     const name = this.currentUser?.fullName;
@@ -287,17 +316,19 @@ export class MobileSettings {
       .toUpperCase();
   }
 
-  async LogOut() {
+  async LogOut(): Promise<void> {
     if (this.isLoggingOut()) return;
 
     this.isLoggingOut.set(true);
 
-    await new Promise((r) => setTimeout(r, 700));
+    // Small delay to show the signing-out animation.
+    await new Promise((resolve) => setTimeout(resolve, 700));
 
-    this.userService.logout();
+    // Use AuthService to revoke refresh token and clear session.
+    this.authService.logout();
   }
 
-  changeLanguage(language: 'en' | 'zh' | 'ms') {
+  changeLanguage(language: 'en' | 'zh' | 'ms'): void {
     this.selectedLanguage.set(language);
 
     this.translate.use(language);
@@ -320,11 +351,7 @@ export class MobileSettings {
     }
   }
 
-  selectedLanguage = signal<'en' | 'zh' | 'ms'>(
-    (localStorage.getItem('language') as 'en' | 'zh' | 'ms') ?? 'en',
-  );
-
-  toggleDarkMode(isDark: boolean) {
+  toggleDarkMode(isDark: boolean): void {
     this.appConfigService.appState.update((state) => {
       if (!state) return state;
 
@@ -333,5 +360,10 @@ export class MobileSettings {
         darkTheme: isDark,
       };
     });
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 }

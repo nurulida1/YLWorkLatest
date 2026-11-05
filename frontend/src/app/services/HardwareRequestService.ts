@@ -1,4 +1,4 @@
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { MessageService } from 'primeng/api';
 import { Observable, retry, catchError, of, throwError } from 'rxjs';
@@ -54,6 +54,16 @@ export class HardwareRequestService {
     return this.http
       .get<HardwareRequestDto[]>(`${this.url}/All`)
       .pipe(retry(1), catchError(this.handleError('GetAll')));
+  }
+
+  // ==========================================
+  // GET: api/HardwareRequest/Incoming
+  // Get all incoming requests, not only Pending
+  // ==========================================
+  GetIncomingRequests(): Observable<HardwareRequestDto[]> {
+    return this.http
+      .get<HardwareRequestDto[]>(`${this.url}/Incoming`)
+      .pipe(retry(1), catchError(this.handleError('GetIncomingRequests')));
   }
 
   // ==========================================
@@ -144,6 +154,10 @@ export class HardwareRequestService {
       .pipe(retry(1), catchError(this.handleError('Cancel')));
   }
 
+  // ==========================================
+  // GET: api/HardwareRequest/PendingApprovals
+  // Keep for pages that need pending requests only
+  // ==========================================
   GetPendingApprovals(): Observable<HardwareRequestDto[]> {
     return this.http
       .get<HardwareRequestDto[]>(`${this.url}/PendingApprovals`)

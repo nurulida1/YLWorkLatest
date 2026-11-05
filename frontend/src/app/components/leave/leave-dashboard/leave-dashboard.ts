@@ -16,7 +16,7 @@ import { TagModule } from 'primeng/tag';
 import { forkJoin, of, Subject, takeUntil } from 'rxjs';
 import { catchError, finalize } from 'rxjs/operators';
 import { LeaveBalanceDto, LeaveRequestDto } from '../../../models/Leave';
-import { formatLeaveDurationLabel } from '../../../common/leave-day.util';
+import { formatLeaveDurationLabel } from '../../../common/guard/leave-day.util';
 import { LeaveBalanceService } from '../../../services/leave-balance.service';
 import { LeaveRequestService } from '../../../services/leave-request.service';
 import { LoadingService } from '../../../services/loading.service';

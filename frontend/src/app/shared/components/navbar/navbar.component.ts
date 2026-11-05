@@ -9,22 +9,29 @@ import {
   OnDestroy,
   OnInit,
 } from '@angular/core';
+
 import { NavigationEnd, Router, RouterLink } from '@angular/router';
+import { Subject, filter, takeUntil } from 'rxjs';
+
 import { AvatarModule } from 'primeng/avatar';
 import { ButtonModule } from 'primeng/button';
-import { Subject, Subscription, filter, takeUntil } from 'rxjs';
 import { PopoverModule } from 'primeng/popover';
 import { DialogModule } from 'primeng/dialog';
+import { FormsModule } from '@angular/forms';
+import { InputTextModule } from 'primeng/inputtext';
+import { MenuItem } from 'primeng/api';
+import { MenuModule } from 'primeng/menu';
+import { DrawerModule } from 'primeng/drawer';
+import { RippleModule } from 'primeng/ripple';
+
 import { AppConfigService } from '../../../services/appConfig.service';
 import { LoadingService } from '../../../services/loading.service';
 import { NotificationService } from '../../../services/notificationService.service';
 import { UserService } from '../../../services/userService.service';
+
 import { NotificationDto } from '../../../models/Notifications';
-import { FormsModule } from '@angular/forms';
-import { InputTextModule } from 'primeng/inputtext';
-import { MenuItem, MessageService } from 'primeng/api';
-import { MenuModule } from 'primeng/menu';
-import { DrawerModule } from 'primeng/drawer';
+import { LoginResponse } from '../../../models/User';
+import { AuthService } from '../../../services/authService';
 
 @Component({
   selector: 'app-navbar',
@@ -34,18 +41,19 @@ import { DrawerModule } from 'primeng/drawer';
     ButtonModule,
     PopoverModule,
     DialogModule,
-    AvatarModule,
     FormsModule,
     InputTextModule,
     MenuModule,
     DrawerModule,
     RouterLink,
+    RippleModule,
   ],
   template: `
     <div
       class="border-b border-gray-200 w-full py-3 px-2 bg-white flex flex-row items-center justify-between"
     >
-      <div class="">
+      <!-- Mobile Sidebar Toggle -->
+      <div>
         <div class="block pl-3 lg:pl-0 lg:hidden">
           <div
             class="pi pi-bars text-xl! cursor-pointer"
@@ -53,6 +61,7 @@ import { DrawerModule } from 'primeng/drawer';
           ></div>
         </div>
       </div>
+
       <div class="flex flex-row gap-4 items-center">
         <!-- Dark Mode Toggle -->
         <div
@@ -64,32 +73,28 @@ import { DrawerModule } from 'primeng/drawer';
             class="text-lg text-gray-500!"
           ></i>
         </div>
+
+        <!-- Notification Bell -->
         <div
           id="notification-bell"
-          class="relative w-10 h-10 border rounded-full border-gray-300
-           flex items-center justify-center cursor-pointer"
+          class="relative w-10 h-10 border rounded-full border-gray-300 flex items-center justify-center cursor-pointer"
           (click)="onBellClick()"
         >
           <i class="pi pi-bell text-lg text-gray-500!"></i>
 
           <span
             *ngIf="unreadCount > 0"
-            class="absolute -top-1 -right-1 bg-red-500 text-white
-               text-[10px] rounded-full min-w-5 h-5
-               flex items-center justify-center px-1"
+            class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] rounded-full min-w-5 h-5 flex items-center justify-center px-1"
           >
             {{ unreadCount > 99 ? '99+' : unreadCount }}
           </span>
         </div>
 
+        <!-- Desktop Notification Panel -->
         <div
           id="notification-panel"
-          #notificationPanel
           *ngIf="notificationVisible && !isMobile"
-          class="absolute right-4 top-16 z-50 w-80
-         max-h-[min(32rem,calc(100vh-5rem))]
-         flex flex-col overflow-hidden
-         bg-white border border-gray-200 rounded-lg shadow-lg"
+          class="absolute right-4 top-16 z-50 w-80 max-h-[min(32rem,calc(100vh-5rem))] flex flex-col overflow-hidden bg-white border border-gray-200 rounded-lg shadow-lg"
         >
           <div
             class="flex justify-between items-center p-3 border-b border-gray-300"
@@ -101,7 +106,7 @@ import { DrawerModule } from 'primeng/drawer';
             </span>
           </div>
 
-          <!-- Scrollable notification list -->
+          <!-- Notification List -->
           <div class="flex-1 overflow-y-auto min-h-0">
             <div
               *ngIf="notificationLists.length === 0"
@@ -113,7 +118,9 @@ import { DrawerModule } from 'primeng/drawer';
             <div
               *ngFor="let notification of notificationLists | slice: 0 : 5"
               class="p-3 border-b border-gray-200 hover:bg-gray-50"
-              [ngClass]="{ 'bg-blue-50': !notification.isRead }"
+              [ngClass]="{
+                'bg-blue-50': !notification.isRead,
+              }"
             >
               <div class="flex justify-between items-start gap-2">
                 <div class="text-sm text-gray-800 font-semibold">
@@ -164,16 +171,20 @@ import { DrawerModule } from 'primeng/drawer';
           </div>
         </div>
 
+        <!-- Profile Icon -->
         <div
           class="w-10 h-10 border rounded-full border-gray-300 flex items-center justify-center cursor-pointer"
         >
           <i class="pi pi-user text-lg text-gray-500!"></i>
         </div>
+
+        <!-- Profile Menu Toggle -->
         <div
           (click)="menu.toggle($event)"
           class="pi pi-angle-down text-lg! text-gray-500! cursor-pointer"
         ></div>
 
+        <!-- Profile Menu -->
         <p-menu
           #menu
           [model]="items"
@@ -188,13 +199,23 @@ import { DrawerModule } from 'primeng/drawer';
                 shape="circle"
                 styleClass="p-2! border border-gray-200 bg-gray-100!"
               ></p-avatar>
-              <span class="flex flex-col">
-                <span class="font-bold">{{ currentUser.displayName }}</span>
-                <span class="text-sm">{{ currentUser.email }}</span>
+
+              <span class="flex flex-col min-w-0">
+                <span class="font-bold truncate">
+                  {{
+                    currentUser?.displayName || currentUser?.fullName || 'User'
+                  }}
+                </span>
+
+                <span class="text-sm truncate">
+                  {{ currentUser?.email || '' }}
+                </span>
               </span>
             </div>
+
             <div class="border-b border-gray-200"></div>
           </ng-template>
+
           <ng-template #item let-item>
             <a
               pRipple
@@ -203,17 +224,20 @@ import { DrawerModule } from 'primeng/drawer';
             >
               <span [class]="item.icon"></span>
               <span class="ms-2 text-[14px]">{{ item.label }}</span>
+
               <span
                 *ngIf="item.shortcut"
                 class="ms-auto border border-surface rounded bg-emphasis text-muted-color text-xs p-1"
-                >{{ item.shortcut }}</span
               >
+                {{ item.shortcut }}
+              </span>
             </a>
           </ng-template>
         </p-menu>
       </div>
     </div>
 
+    <!-- Mobile Drawer -->
     <p-drawer
       [(visible)]="showSidebar"
       (onHide)="showSidebar = false"
@@ -224,13 +248,14 @@ import { DrawerModule } from 'primeng/drawer';
     >
       <ng-template #headless>
         <div class="flex flex-col pt-7 pb-5 text-white">
+          <!-- Logo -->
           <div
             class="flex flex-row items-center gap-4 px-5 border-b border-white/10 pb-5"
           >
             <div class="w-50">
               <img
                 src="assets/logo-yl-work.png"
-                alt=""
+                alt="YL Work"
                 class="w-full h-full object-cover cursor-pointer"
                 [routerLink]="'/dashboard'"
               />
@@ -240,13 +265,11 @@ import { DrawerModule } from 'primeng/drawer';
           <div
             class="py-5 flex flex-col px-3 overflow-y-auto scrollbar scroll-smooth"
           >
+            <!-- Main Menu -->
             <div class="flex flex-col gap-2 w-full">
               <ng-container *ngFor="let item of mainMenu">
                 <div
-                  *ngIf="
-                    item.roles.includes(currentUser?.systemRole) &&
-                    (!item.items || hasVisibleSubItems(item))
-                  "
+                  *ngIf="canView(item) || hasVisibleSubItems(item)"
                   class="flex flex-row items-center gap-3 py-3 px-2 text-[14px]"
                   [routerLink]="item.route"
                   [ngClass]="{
@@ -264,23 +287,22 @@ import { DrawerModule } from 'primeng/drawer';
                       }"
                     ></i>
 
-                    <span>
-                      {{ item.label }}
-                    </span>
+                    <span>{{ item.label }}</span>
                   </div>
                 </div>
               </ng-container>
             </div>
+
+            <!-- Management Menu -->
             <div
               class="mt-1 flex flex-col items-center lg:items-start gap-3 text-[14px]"
             >
               <ng-container *ngFor="let item of management">
                 <div
+                  *ngIf="canView(item) || hasVisibleSubItems(item)"
                   class="flex flex-col gap-2 w-full"
-                  *ngIf="
-                    !item.roles || item.roles.includes(currentUser?.systemRole)
-                  "
                 >
+                  <!-- Parent Menu -->
                   <div
                     class="flex flex-row lg:pl-4 items-center justify-between gap-3 py-2 rounded-lg px-2"
                     [ngClass]="{
@@ -288,8 +310,11 @@ import { DrawerModule } from 'primeng/drawer';
                       'hover:text-gray-400 cursor-pointer text-gray-300':
                         !isActive(item.route, item),
                     }"
-                    (click)="item.items ? toggleMenu(item.label) : null"
-                    [routerLink]="!item.items ? item.route : null"
+                    (click)="
+                      item.items
+                        ? toggleMenu(item.label)
+                        : item.route && router.navigate([item.route])
+                    "
                   >
                     <div class="flex items-center gap-3">
                       <i
@@ -300,9 +325,7 @@ import { DrawerModule } from 'primeng/drawer';
                         }"
                       ></i>
 
-                      <span>
-                        {{ item.label }}
-                      </span>
+                      <span>{{ item.label }}</span>
                     </div>
 
                     <i
@@ -315,6 +338,7 @@ import { DrawerModule } from 'primeng/drawer';
                     ></i>
                   </div>
 
+                  <!-- Submenu -->
                   <div
                     *ngIf="item.items && openMenu === item.label"
                     class="ml-10 flex flex-col gap-1"
@@ -339,10 +363,11 @@ import { DrawerModule } from 'primeng/drawer';
               </ng-container>
             </div>
           </div>
-        </div></ng-template
-      >
+        </div>
+      </ng-template>
     </p-drawer>
 
+    <!-- Logout Confirmation Dialog -->
     <p-dialog
       [(visible)]="signOutDialog"
       (onHide)="signOutDialog = false"
@@ -356,7 +381,6 @@ import { DrawerModule } from 'primeng/drawer';
     >
       <ng-template #headless>
         <div class="px-6 pt-8 pb-6 sm:px-8">
-          <!-- Icon -->
           <div class="flex justify-center">
             <div
               class="flex h-20 w-20 items-center justify-center rounded-full bg-red-50 ring-8 ring-red-50/50"
@@ -365,7 +389,6 @@ import { DrawerModule } from 'primeng/drawer';
             </div>
           </div>
 
-          <!-- Title & Description -->
           <div class="mt-6 text-center">
             <h2 class="text-xl font-bold tracking-tight text-gray-900">
               Confirm Logout
@@ -377,7 +400,6 @@ import { DrawerModule } from 'primeng/drawer';
             </p>
           </div>
 
-          <!-- Actions -->
           <div class="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
             <p-button
               label="Cancel"
@@ -407,40 +429,45 @@ export class NavbarComponent implements OnDestroy, OnInit {
   private readonly notificationService = inject(NotificationService);
   private readonly appConfigService = inject(AppConfigService);
   private readonly loadingService = inject(LoadingService);
-  private readonly messageService = inject(MessageService);
   private readonly userService = inject(UserService);
+  private readonly authService = inject(AuthService);
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly router = inject(Router);
 
-  private destroy$ = new Subject<void>();
+  private readonly destroy$ = new Subject<void>();
 
-  isDarkMode = computed(
+  readonly isDarkMode = computed(
     () => this.appConfigService.appState()?.darkTheme ?? false,
   );
-  role: string | null = localStorage.getItem('role');
+
   isMobile = window.innerWidth < 770;
 
-  notificationVisible: boolean = false;
-  userRequestVisible: boolean = false;
-  showLogoutDialog: boolean = false;
-  visibleSetting: boolean = false;
-  signOutDialog: boolean = false;
-  isLogin: boolean = false;
-  showSidebar: boolean = false;
+  notificationVisible = false;
+  userRequestVisible = false;
+  showLogoutDialog = false;
+  visibleSetting = false;
+  signOutDialog = false;
+  isLogin = false;
+  showSidebar = false;
 
-  type: string = '';
-  reason: string = '';
-  currentUrl: string = '';
+  type = '';
+  reason = '';
+  currentUrl = '';
   openMenu: string | null = null;
 
   userId: string | null = null;
-  unreadCount: number = 0;
-  items: MenuItem[] | undefined;
+  unreadCount = 0;
+
+  items: MenuItem[] = [];
 
   selectedNotification: NotificationDto | null = null;
-
   notificationLists: NotificationDto[] = [];
-  currentUser: any = {};
+
+  currentUser: LoginResponse | null = null;
+
+  // ==========================================
+  // MAIN MENU
+  // ==========================================
 
   mainMenu: any[] = [
     {
@@ -483,12 +510,15 @@ export class NavbarComponent implements OnDestroy, OnInit {
     // },
   ];
 
+  // ==========================================
+  // MANAGEMENT MENU
+  // ==========================================
+
   management: any[] = [
     {
       label: 'Quotations',
       route: '/quotations',
       icon: 'pi-file',
-      // roles: ['Sales Director', 'Sales Executive', 'Sales Support'],
     },
     {
       label: 'Purchase Orders',
@@ -509,38 +539,17 @@ export class NavbarComponent implements OnDestroy, OnInit {
       label: 'Suppliers',
       route: '/supplier',
       icon: 'pi-shop',
-      // roles: [
-      //   'Sales Director',
-      //   'Sales Executive',
-      //   'Sales Support',
-      //   'SuperAdmin',
-      // ],
     },
-
     {
       label: 'Clients',
       route: '/clients',
       icon: 'pi-users',
-      // roles: [
-      //   'Sales Director',
-      //   'Sales Executive',
-      //   'Sales Support',
-      //   'SuperAdmin',
-      // ],
     },
-
-    // {
-    //   label: 'Supplier Payments',
-    //   route: '/supplier-payments',
-    //   roles: ['Purchasing Executive', 'SuperAdmin'],
-    // },
     {
       label: 'Material Requests',
       route: '/material-requests',
       icon: 'pi-list',
-      // roles: ['Purchasing Executive', 'Project Manager', 'SuperAdmin'],
     },
-
     {
       label: 'Inventory',
       icon: 'pi-box',
@@ -562,9 +571,7 @@ export class NavbarComponent implements OnDestroy, OnInit {
           route: '/inventory/section',
         },
       ],
-      // roles: ['Logistic Assistant', 'SuperAdmin', 'Purchasing Executive'],
     },
-
     {
       label: 'Delivery Orders',
       icon: 'pi-truck',
@@ -583,24 +590,20 @@ export class NavbarComponent implements OnDestroy, OnInit {
         },
       ],
     },
-
     {
       label: 'Work Orders',
       icon: 'pi-wrench',
       route: '/work-order',
-      // roles: ['SuperAdmin', 'Admin'],
     },
     {
       label: 'Projects',
       icon: 'pi-folder',
       route: '/projects',
-      // roles: ['SuperAdmin', 'Admin'],
     },
     {
       label: 'Tasks',
       icon: 'pi-check-square',
       route: '/tasks',
-      // roles: ['SuperAdmin', 'Admin'],
     },
     {
       label: 'Invoices',
@@ -620,21 +623,17 @@ export class NavbarComponent implements OnDestroy, OnInit {
       label: 'Expenses',
       route: '/expenses',
       icon: 'pi-wallet',
-      // roles: ['Purchasing Executive', 'SuperAdmin'],
     },
     {
       label: 'Incomes',
       route: '/incomes',
       icon: 'pi-chart-line',
-      // roles: ['Purchasing Executive', 'SuperAdmin'],
     },
     {
       label: 'Payments',
       route: '/payments',
       icon: 'pi-credit-card',
-      // roles: ['Purchasing Executive', 'SuperAdmin'],
     },
-
     {
       label: 'Settings',
       icon: 'pi-cog',
@@ -647,35 +646,27 @@ export class NavbarComponent implements OnDestroy, OnInit {
     },
   ];
 
-  @HostListener('document:click', ['$event'])
-  onDocumentClick(event: MouseEvent) {
-    if (!this.notificationVisible || this.isMobile) return;
-
-    const target = event.target as HTMLElement;
-
-    const notificationPanel = document.getElementById('notification-panel');
-
-    const notificationBell = document.getElementById('notification-bell');
-
-    const clickedInsidePanel = notificationPanel?.contains(target);
-    const clickedBell = notificationBell?.contains(target);
-
-    if (!clickedInsidePanel && !clickedBell) {
-      this.notificationVisible = false;
-      this.cdr.markForCheck();
-    }
-  }
-
-  @HostListener('window:resize', [])
-  onResize() {
-    this.isMobile = window.innerWidth < 770;
-  }
+  // ==========================================
+  // CONSTRUCTOR
+  // ==========================================
 
   constructor() {
-    this.userId = this.userService.currentUser?.userId ?? null;
     this.currentUser = this.userService.currentUser;
+    this.userId = this.currentUser?.userId ?? null;
 
     this.currentUrl = this.router.url;
+
+    // Keep navbar user information synchronized.
+    this.userService.currentUser$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((user) => {
+        this.currentUser = user;
+        this.userId = user?.userId ?? null;
+
+        this.cdr.markForCheck();
+      });
+
+    // Listen for route changes.
     this.router.events
       .pipe(
         filter(
@@ -683,13 +674,26 @@ export class NavbarComponent implements OnDestroy, OnInit {
         ),
         takeUntil(this.destroy$),
       )
-      .subscribe((event: NavigationEnd) => {
+      .subscribe((event) => {
         this.currentUrl = event.urlAfterRedirects;
+
+        this.syncOpenMenuWithRoute();
+
+        this.notificationVisible = false;
+        this.showSidebar = false;
+
+        this.cdr.markForCheck();
       });
+
+    this.syncOpenMenuWithRoute();
   }
 
+  // ==========================================
+  // INITIALIZATION
+  // ==========================================
+
   ngOnInit(): void {
-    // Listen to the notification list maintained by NotificationService.
+    // Notification list.
     this.notificationService.notifications$
       .pipe(takeUntil(this.destroy$))
       .subscribe((notifications) => {
@@ -697,7 +701,7 @@ export class NavbarComponent implements OnDestroy, OnInit {
         this.cdr.markForCheck();
       });
 
-    // Listen to the unread count maintained by NotificationService.
+    // Unread count.
     this.notificationService.unreadCount$
       .pipe(takeUntil(this.destroy$))
       .subscribe((count) => {
@@ -705,7 +709,7 @@ export class NavbarComponent implements OnDestroy, OnInit {
         this.cdr.markForCheck();
       });
 
-    // Load saved notifications from the database.
+    // Load notifications.
     this.notificationService
       .GetNotifications()
       .pipe(takeUntil(this.destroy$))
@@ -713,9 +717,10 @@ export class NavbarComponent implements OnDestroy, OnInit {
         error: (err) => console.error('Failed to load notifications:', err),
       });
 
-    // Get the current unread count from the backend.
+    // Refresh unread count using the service.
     this.notificationService.refreshUnreadCount();
 
+    // Profile menu.
     this.items = [
       {
         items: [
@@ -724,6 +729,7 @@ export class NavbarComponent implements OnDestroy, OnInit {
             icon: 'pi pi-sign-out',
             command: () => {
               this.signOutDialog = true;
+              this.cdr.markForCheck();
             },
           },
         ],
@@ -733,27 +739,24 @@ export class NavbarComponent implements OnDestroy, OnInit {
     this.syncOpenMenuWithRoute();
   }
 
-  loadNotifications() {
-    this.notificationService.GetNotifications().subscribe({
-      next: (res: NotificationDto[]) => {
-        this.notificationLists = res;
+  // ==========================================
+  // ROUTE HANDLING
+  // ==========================================
 
-        this.unreadCount = res.filter((x) => !x.isRead).length;
+  private isRouteMatch(route?: string): boolean {
+    if (!route) return false;
 
-        this.cdr.markForCheck();
-      },
-      error: (err) => {
-        console.error('Failed to load notifications:', err);
-      },
-    });
+    const currentRoute = this.currentUrl.split('?')[0].split('#')[0];
+
+    return currentRoute === route || currentRoute.startsWith(`${route}/`);
   }
 
-  syncOpenMenuWithRoute() {
+  syncOpenMenuWithRoute(): void {
     for (const item of this.management) {
       if (!item.items) continue;
 
       const isChildActive = item.items.some((sub: any) =>
-        this.currentUrl.startsWith(sub.route),
+        this.isRouteMatch(sub.route),
       );
 
       if (isChildActive) {
@@ -761,65 +764,118 @@ export class NavbarComponent implements OnDestroy, OnInit {
         return;
       }
     }
-  }
 
-  refreshUnreadCount() {
-    this.loadingService.start();
-    this.notificationService.UnreadCount().subscribe({
-      next: (res) => {
-        this.loadingService.stop();
-        if (res.success) {
-          this.unreadCount = res.unreadCount;
-          this.cdr.detectChanges();
-        }
-      },
-      error: (err) => {
-        this.loadingService.stop();
-      },
-    });
+    this.openMenu = null;
   }
 
   isActive(route?: string, item?: any): boolean {
-    if (route) {
-      return this.currentUrl.startsWith(route);
-    }
-
     if (item?.items) {
-      return item.items.some((sub: any) =>
-        this.currentUrl.startsWith(sub.route),
+      return (
+        item.items.some((sub: any) => this.isRouteMatch(sub.route)) ||
+        this.isRouteMatch(route)
       );
     }
 
-    return false;
+    return this.isRouteMatch(route);
   }
 
-  LogOut() {
-    this.userService.logout();
-  }
+  // ==========================================
+  // ROLE PERMISSIONS
+  // ==========================================
 
-  ToggleSidebar() {
-    this.showSidebar = true;
-    this.cdr.detectChanges();
-  }
+  canView(item: any): boolean {
+    const currentRole = this.currentUser?.systemRole?.trim().toLowerCase();
 
-  ShowSettingDialog() {
-    this.visibleSetting = !this.visibleSetting;
-    if (this.notificationVisible && this.visibleSetting) {
-      this.notificationVisible = false;
+    if (!currentRole) return false;
+
+    // SuperAdmin can access everything.
+    if (currentRole === 'superadmin') {
+      return true;
     }
-    this.cdr.detectChanges();
+
+    // Items without role restrictions.
+    if (!item.roles || item.roles.length === 0) {
+      return true;
+    }
+
+    return item.roles.some(
+      (role: string) => role.trim().toLowerCase() === currentRole,
+    );
   }
 
-  toggleDarkMode() {
+  getAllowedSubItems(item: any): any[] {
+    if (!item.items) return [];
+
+    return item.items.filter((sub: any) => this.canView(sub));
+  }
+
+  hasVisibleSubItems(item: any): boolean {
+    return this.getAllowedSubItems(item).length > 0;
+  }
+
+  toggleMenu(label: string): void {
+    this.openMenu = this.openMenu === label ? null : label;
+    this.cdr.markForCheck();
+  }
+
+  // ==========================================
+  // MOBILE SIDEBAR
+  // ==========================================
+
+  ToggleSidebar(): void {
+    this.showSidebar = true;
+    this.cdr.markForCheck();
+  }
+
+  @HostListener('window:resize')
+  onResize(): void {
+    this.isMobile = window.innerWidth < 770;
+
+    if (!this.isMobile) {
+      this.showSidebar = false;
+    }
+
+    this.cdr.markForCheck();
+  }
+
+  // ==========================================
+  // DARK MODE
+  // ==========================================
+
+  toggleDarkMode(): void {
     this.appConfigService.appState.update((state) => ({
       ...state,
       darkTheme: !state?.darkTheme,
     }));
 
-    this.cdr.detectChanges();
+    this.cdr.markForCheck();
   }
 
-  onBellClick() {
+  // ==========================================
+  // NOTIFICATIONS
+  // ==========================================
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    if (!this.notificationVisible || this.isMobile) return;
+
+    const target = event.target as HTMLElement;
+
+    const notificationPanel = document.getElementById('notification-panel');
+
+    const notificationBell = document.getElementById('notification-bell');
+
+    const clickedInsidePanel = notificationPanel?.contains(target);
+
+    const clickedBell = notificationBell?.contains(target);
+
+    if (!clickedInsidePanel && !clickedBell) {
+      this.notificationVisible = false;
+      this.cdr.markForCheck();
+    }
+  }
+
+  onBellClick(): void {
     if (this.isMobile) {
       this.router.navigate(['/notifications']);
       return;
@@ -829,55 +885,83 @@ export class NavbarComponent implements OnDestroy, OnInit {
     this.cdr.markForCheck();
   }
 
-  RoleRequestClick(notification: NotificationDto) {
-    this.selectedNotification = notification;
-    this.userRequestVisible = true;
-    this.cdr.detectChanges();
-  }
-
-  toggleMenu(label: string) {
-    this.openMenu = this.openMenu === label ? null : label;
-  }
-
-  CancelDialog() {
-    this.userRequestVisible = false;
-    this.cdr.detectChanges();
-  }
-
-  getAllowedSubItems(item: any) {
-    if (!item.items) return [];
-
-    return item.items.filter((sub: any) => {
-      if (!sub.roles) return true;
-      return sub.roles.includes(this.currentUser?.systemRole);
-    });
-  }
-
-  hasVisibleSubItems(item: any): boolean {
-    if (!item.items) return false;
-    return this.getAllowedSubItems(item).length > 0;
-  }
-
-  markNotificationAsRead(notification: NotificationDto) {
+  markNotificationAsRead(notification: NotificationDto): void {
     if (notification.isRead) return;
 
-    this.notificationService.MarkRead(notification.id).subscribe({
-      next: () => {
-        notification.isRead = true;
+    this.notificationService
+      .MarkRead(notification.id)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => {
+          notification.isRead = true;
 
-        this.unreadCount = Math.max(0, this.unreadCount - 1);
+          this.unreadCount = Math.max(0, this.unreadCount - 1);
 
-        this.cdr.markForCheck();
-      },
-      error: (err) => {
-        console.error('Failed to mark notification as read:', err);
-      },
-    });
+          this.cdr.markForCheck();
+        },
+        error: (err) =>
+          console.error('Failed to mark notification as read:', err),
+      });
   }
+
+  loadNotifications(): void {
+    this.notificationService
+      .GetNotifications()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (res: NotificationDto[]) => {
+          this.notificationLists = res;
+
+          this.unreadCount = res.filter(
+            (notification) => !notification.isRead,
+          ).length;
+
+          this.cdr.markForCheck();
+        },
+        error: (err) => console.error('Failed to load notifications:', err),
+      });
+  }
+
+  // ==========================================
+  // OTHER DIALOGS
+  // ==========================================
+
+  ShowSettingDialog(): void {
+    this.visibleSetting = !this.visibleSetting;
+
+    if (this.notificationVisible && this.visibleSetting) {
+      this.notificationVisible = false;
+    }
+
+    this.cdr.markForCheck();
+  }
+
+  RoleRequestClick(notification: NotificationDto): void {
+    this.selectedNotification = notification;
+    this.userRequestVisible = true;
+    this.cdr.markForCheck();
+  }
+
+  CancelDialog(): void {
+    this.userRequestVisible = false;
+    this.cdr.markForCheck();
+  }
+
+  // ==========================================
+  // LOGOUT
+  // ==========================================
+
+  LogOut(): void {
+    this.signOutDialog = false;
+    this.authService.logout();
+  }
+
+  // ==========================================
+  // CLEANUP
+  // ==========================================
 
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
-    this.loadingService.stop();
   }
 }

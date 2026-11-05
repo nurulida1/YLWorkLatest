@@ -4753,6 +4753,9 @@ namespace YLWorks.Migrations
                     b.Property<string>("RejectReason")
                         .HasColumnType("longtext");
 
+                    b.Property<bool>("RememberMe")
+                        .HasColumnType("tinyint(1)");
+
                     b.Property<TimeSpan?>("RestDayHalfDayEnd")
                         .HasColumnType("time(6)");
 
@@ -4800,6 +4803,7 @@ namespace YLWorks.Migrations
                             FullName = "Super Admin",
                             IsActive = true,
                             Password = "AQAAAAIAAYagAAAAEOv2ndhX3+7JWdIqoToQpq74BVCdwYR/7tuiDEAHhUNYUyXbUHpD1bpWtadaMBYn/A==",
+                            RememberMe = false,
                             Status = "Approved",
                             SystemRole = "SuperAdmin"
                         });

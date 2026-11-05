@@ -3,14 +3,20 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
+  DestroyRef,
   inject,
 } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
-import { UserService } from '../../../services/userService.service';
+import { NavigationEnd, Router, RouterLink } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { filter } from 'rxjs';
+
 import { TooltipModule } from 'primeng/tooltip';
-import { LoginResponse } from '../../../models/User';
 import { DialogModule } from 'primeng/dialog';
 import { ButtonModule } from 'primeng/button';
+
+import { UserService } from '../../../services/userService.service';
+import { LoginResponse } from '../../../models/User';
+import { AuthService } from '../../../services/authService';
 
 @Component({
   selector: 'app-sidemenu',
@@ -21,83 +27,45 @@ import { ButtonModule } from 'primeng/button';
     DialogModule,
     ButtonModule,
   ],
-  template: `<div
-    class="h-full flex flex-col justify-between pt-7 pb-5 border-r border-gray-200 text-white"
-  >
-    <div class="flex flex-col">
-      <div
-        class="flex flex-row items-center gap-4 lg:px-6 border-b border-white/10 pb-5"
-      >
-        <div class="w-50">
-          <img
-            src="assets/logo-yl-work.png"
-            alt=""
-            class="w-full h-full object-cover cursor-pointer"
-            [routerLink]="'/dashboard'"
-          />
-        </div>
-      </div>
-
-      <div
-        class="py-5 flex flex-col gap-7 lg:gap-3 lg:pl-3 lg:pr-2 overflow-y-auto scrollbar scroll-smooth"
-      >
-        <div class="flex flex-col gap-2 w-full">
-          <ng-container *ngFor="let item of mainMenu">
-            <div
-              class="flex flex-row lg:pl-4 py-2 items-center justify-center lg:justify-start gap-3 px-2 text-[14px]"
-              [routerLink]="item.route"
-              [ngClass]="{
-                'rounded-lg bg-blue-500 text-white': isActive(item.route),
-                'cursor-pointer hover:text-gray-400 text-gray-300': !isActive(
-                  item.route
-                ),
-              }"
-            >
-              <div class="flex items-center gap-3">
-                <i
-                  class="pi {{ item.icon }} text-sm! xl:text-base!"
-                  [ngClass]="{
-                    'text-white': isActive(item.route, item),
-                    'text-gray-400': !isActive(item.route, item),
-                  }"
-                ></i>
-
-                <span class="hidden lg:block">
-                  {{ item.label }}
-                </span>
-              </div>
-            </div>
-          </ng-container>
-        </div>
+  template: `
+    <div
+      class="h-full flex flex-col justify-between pt-7 pb-5 border-r border-gray-200 text-white"
+    >
+      <div class="flex flex-col">
+        <!-- Logo -->
         <div
-          class="flex flex-col items-center lg:items-start gap-3 text-[14px]"
+          class="flex flex-row items-center gap-4 lg:px-6 border-b border-white/10 pb-5"
         >
-          <ng-container *ngFor="let item of management">
-            <div
-              class="flex flex-col gap-2 w-full"
-              [ngClass]="{
-                'lg:hidden': item.mobileOnly,
-              }"
-              *ngIf="canView(item) || hasVisibleSubItems(item)"
-            >
+          <div class="w-50">
+            <img
+              src="assets/logo-yl-work.png"
+              alt="YL Work"
+              class="w-full h-full object-cover cursor-pointer"
+              [routerLink]="'/dashboard'"
+            />
+          </div>
+        </div>
+
+        <div
+          class="py-5 flex flex-col gap-7 lg:gap-3 lg:pl-3 lg:pr-2 overflow-y-auto scrollbar scroll-smooth"
+        >
+          <!-- Main Menu -->
+          <div class="flex flex-col gap-2 w-full">
+            <ng-container *ngFor="let item of mainMenu">
               <div
-                class="flex flex-row lg:pl-4 items-center justify-between gap-3 py-2 rounded-lg px-2"
+                class="flex flex-row lg:pl-4 py-2 items-center justify-center lg:justify-start gap-3 px-2 text-[14px] cursor-pointer"
+                [routerLink]="item.route"
                 [ngClass]="{
-                  'bg-blue-500 text-white': isActive(item.route, item),
-                  'hover:text-gray-400 cursor-pointer text-gray-300': !isActive(
-                    item.route,
-                    item
-                  ),
+                  'rounded-lg bg-blue-500 text-white': isActive(item.route),
+                  'hover:text-gray-400 text-gray-300': !isActive(item.route),
                 }"
-                (click)="item.items ? toggleMenu(item.label) : null"
-                [routerLink]="!item.items ? item.route : null"
               >
                 <div class="flex items-center gap-3">
                   <i
                     class="pi {{ item.icon }} text-sm! xl:text-base!"
                     [ngClass]="{
-                      'text-white': isActive(item.route, item),
-                      'text-gray-400': !isActive(item.route, item),
+                      'text-white': isActive(item.route),
+                      'text-gray-400': !isActive(item.route),
                     }"
                   ></i>
 
@@ -105,55 +73,105 @@ import { ButtonModule } from 'primeng/button';
                     {{ item.label }}
                   </span>
                 </div>
-
-                <i
-                  *ngIf="item.items"
-                  class="text-sm! hidden! lg:block! pi"
-                  [ngClass]="{
-                    'pi-chevron-right': openMenu !== item.label,
-                    'pi-chevron-down': openMenu === item.label,
-                  }"
-                ></i>
               </div>
+            </ng-container>
+          </div>
 
+          <!-- Management Menu -->
+          <div
+            class="flex flex-col items-center lg:items-start gap-3 text-[14px]"
+          >
+            <ng-container *ngFor="let item of management">
               <div
-                *ngIf="item.items && openMenu === item.label"
-                class="ml-10 flex flex-col gap-1"
+                *ngIf="canView(item) || hasVisibleSubItems(item)"
+                class="flex flex-col gap-2 w-full"
+                [ngClass]="{
+                  'lg:hidden': item.mobileOnly,
+                }"
               >
+                <!-- Parent Menu -->
                 <div
-                  *ngFor="let sub of getAllowedSubItems(item)"
-                  class="py-3 px-3 rounded-md cursor-pointer"
+                  class="flex flex-row lg:pl-4 items-center justify-between gap-3 py-2 rounded-lg px-2"
                   [ngClass]="{
-                    'bg-gray-700 font-semibold text-blue-500': isActive(
-                      sub.route
-                    ),
-                    'hover:bg-gray-700 hover:text-blue-500': !isActive(
-                      sub.route
-                    ),
+                    'bg-blue-500 text-white': isActive(item.route, item),
+                    'hover:text-gray-400 cursor-pointer text-gray-300':
+                      !isActive(item.route, item),
                   }"
-                  [routerLink]="sub.route"
+                  (click)="
+                    item.items
+                      ? toggleMenu(item.label)
+                      : item.route && router.navigate([item.route])
+                  "
                 >
-                  {{ sub.label }}
+                  <div class="flex items-center gap-3">
+                    <i
+                      class="pi {{ item.icon }} text-sm! xl:text-base!"
+                      [ngClass]="{
+                        'text-white': isActive(item.route, item),
+                        'text-gray-400': !isActive(item.route, item),
+                      }"
+                    ></i>
+
+                    <span class="hidden lg:block">
+                      {{ item.label }}
+                    </span>
+                  </div>
+
+                  <i
+                    *ngIf="item.items"
+                    class="text-sm! hidden! lg:block! pi"
+                    [ngClass]="{
+                      'pi-chevron-right': openMenu !== item.label,
+                      'pi-chevron-down': openMenu === item.label,
+                    }"
+                  ></i>
+                </div>
+
+                <!-- Submenu -->
+                <div
+                  *ngIf="item.items && openMenu === item.label"
+                  class="ml-10 flex flex-col gap-1"
+                >
+                  <div
+                    *ngFor="let sub of getAllowedSubItems(item)"
+                    class="py-3 px-3 rounded-md cursor-pointer"
+                    [ngClass]="{
+                      'bg-gray-700 font-semibold text-blue-500': isActive(
+                        sub.route
+                      ),
+                      'hover:bg-gray-700 hover:text-blue-500': !isActive(
+                        sub.route
+                      ),
+                    }"
+                    [routerLink]="sub.route"
+                  >
+                    {{ sub.label }}
+                  </div>
                 </div>
               </div>
-            </div>
-          </ng-container>
+            </ng-container>
+          </div>
         </div>
       </div>
     </div>
-  </div> `,
+  `,
   styleUrl: './sidemenu.less',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Sidemenu {
-  private readonly router = inject(Router);
-  private readonly cdr = inject(ChangeDetectorRef);
-  private readonly userService = inject(UserService);
+  readonly router = inject(Router);
 
-  currentUrl: string = '';
+  private readonly cdr = inject(ChangeDetectorRef);
+  private readonly destroyRef = inject(DestroyRef);
+
+  private readonly userService = inject(UserService);
+  private readonly authService = inject(AuthService);
+
+  currentUrl = '';
   currentUser: LoginResponse | null = null;
-  showDialog: boolean = false;
-  signOutDialog: boolean = false;
+
+  showDialog = false;
+  signOutDialog = false;
   openMenu: string | null = null;
 
   mainMenu: any[] = [
@@ -185,7 +203,6 @@ export class Sidemenu {
           label: 'Leave Application',
           route: '/leave',
         },
-
         {
           label: 'Leave Approvals',
           route: '/leave/approvals',
@@ -251,8 +268,6 @@ export class Sidemenu {
           label: 'Incoming Requests',
           route: '/hardware-request/incoming',
           icon: 'pi-inbox',
-          roles: ['SuperAdmin', 'Management', 'HOD'],
-          departments: ['IT', 'Purchasing & Logistic'],
         },
       ],
     },
@@ -261,14 +276,12 @@ export class Sidemenu {
       icon: 'pi-folder',
       route: '/projects',
       roles: ['SuperAdmin', 'Management', 'HOD'],
-      // roles: ['SuperAdmin', 'Admin'],
     },
     {
       label: 'Work Orders',
       icon: 'pi-wrench',
       route: '/work-order',
       roles: ['SuperAdmin', 'Management', 'HOD'],
-      // roles: ['SuperAdmin', 'Admin'],
     },
     {
       label: 'Quotations',
@@ -294,35 +307,24 @@ export class Sidemenu {
       route: '/delivery-orders',
       roles: ['SuperAdmin', 'Management', 'HOD'],
     },
-
     {
       label: 'Purchase Orders',
       icon: 'pi-shopping-cart',
       route: '/purchase-orders',
       roles: ['SuperAdmin', 'Management', 'HOD'],
     },
-
     {
       label: 'Goods Receiving',
       icon: 'pi-clipboard',
       route: '/goods-receiving',
       roles: ['SuperAdmin', 'Management', 'HOD'],
     },
-
     {
       label: 'DO RMA',
       icon: 'pi-refresh',
       route: '/do-rma',
       roles: ['SuperAdmin', 'Management', 'HOD'],
     },
-
-    // {
-    //   label: 'Material Requests',
-    //   route: '/material-requests',
-    //   icon: 'pi-list',
-    //   roles: ['SuperAdmin', 'Management', 'HOD'],
-    // },
-
     {
       label: 'Inventory',
       icon: 'pi-box',
@@ -371,23 +373,19 @@ export class Sidemenu {
       route: '/expenses',
       icon: 'pi-wallet',
       roles: ['SuperAdmin', 'Management', 'HOD'],
-      // roles: ['Purchasing Executive', 'SuperAdmin'],
     },
     {
       label: 'Incomes',
       route: '/incomes',
       icon: 'pi-chart-line',
       roles: ['SuperAdmin', 'Management', 'HOD'],
-      // roles: ['Purchasing Executive', 'SuperAdmin'],
     },
     {
       label: 'Payments',
       route: '/payments',
       icon: 'pi-credit-card',
       roles: ['SuperAdmin', 'Management', 'HOD'],
-      // roles: ['Purchasing Executive', 'SuperAdmin'],
     },
-
     {
       label: 'My Company',
       route: '/company',
@@ -400,14 +398,12 @@ export class Sidemenu {
       icon: 'pi-shop',
       roles: ['SuperAdmin', 'Management', 'HOD'],
     },
-
     {
       label: 'Clients',
       route: '/clients',
       icon: 'pi-users',
       roles: ['SuperAdmin', 'Management', 'HOD'],
     },
-
     {
       label: 'User Management',
       route: '/user-management',
@@ -418,9 +414,7 @@ export class Sidemenu {
       label: 'Department',
       route: '/department',
       icon: 'pi-building',
-      // roles: ['Purchasing Executive', 'SuperAdmin'],
     },
-
     {
       label: 'Settings',
       icon: 'pi-cog',
@@ -472,25 +466,43 @@ export class Sidemenu {
   ];
 
   constructor() {
+    // Restore current user.
     this.currentUser = this.userService.currentUser;
 
-    this.currentUrl = this.router.url;
+    // Keep the menu synchronized when user data changes.
+    this.userService.currentUser$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((user) => {
+        this.currentUser = user;
+        this.cdr.markForCheck();
+      });
 
+    // Track current route.
+    this.currentUrl = this.router.url;
     this.syncOpenMenuWithRoute();
 
-    this.router.events.subscribe((event) => {
-      this.currentUrl = this.router.url;
-      this.syncOpenMenuWithRoute();
-      this.cdr.markForCheck();
-    });
+    this.router.events
+      .pipe(
+        filter((event) => event instanceof NavigationEnd),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe(() => {
+        this.currentUrl = this.router.url;
+        this.syncOpenMenuWithRoute();
+        this.cdr.markForCheck();
+      });
   }
 
-  syncOpenMenuWithRoute() {
+  // ==========================================
+  // MENU ROUTE HANDLING
+  // ==========================================
+
+  syncOpenMenuWithRoute(): void {
     for (const item of this.management) {
       if (!item.items) continue;
 
       const isChildActive = item.items.some((sub: any) =>
-        this.currentUrl.startsWith(sub.route),
+        this.isRouteMatch(this.currentUrl, sub.route),
       );
 
       if (isChildActive) {
@@ -500,7 +512,30 @@ export class Sidemenu {
     }
   }
 
-  getAllowedSubItems(item: any) {
+  isActive(route?: string, item?: any): boolean {
+    if (!route) return false;
+
+    // Parent menu is active only on its own route.
+    if (item?.items) {
+      return this.currentUrl === route;
+    }
+
+    return this.currentUrl === route;
+  }
+
+  private isRouteMatch(currentUrl: string, route?: string): boolean {
+    if (!route) return false;
+
+    const cleanUrl = currentUrl.split('?')[0].split('#')[0];
+
+    return cleanUrl === route || cleanUrl.startsWith(`${route}/`);
+  }
+
+  // ==========================================
+  // SUBMENU HANDLING
+  // ==========================================
+
+  getAllowedSubItems(item: any): any[] {
     if (!item.items) return [];
 
     return item.items.filter((sub: any) => this.canView(sub));
@@ -512,69 +547,73 @@ export class Sidemenu {
     return this.getAllowedSubItems(item).length > 0;
   }
 
-  isActive(route?: string, item?: any): boolean {
-    if (!route) return false;
-
-    // Parent menu: active only when the URL exactly matches its route.
-    if (item?.items) {
-      return this.currentUrl === route;
-    }
-
-    // Submenu or normal menu: exact route matching.
-    return this.currentUrl === route;
+  toggleMenu(label: string): void {
+    this.openMenu = this.openMenu === label ? null : label;
+    this.cdr.markForCheck();
   }
 
+  // ==========================================
+  // ROLE AND DEPARTMENT PERMISSIONS
+  // ==========================================
+
   canView(item: any): boolean {
-    const role = this.currentUser?.systemRole;
-    const normalizedRole = role?.trim().toLowerCase();
+    const role = this.currentUser?.systemRole?.trim().toLowerCase();
+
+    if (!role) return false;
 
     // SuperAdmin can view everything.
-    if (normalizedRole === 'superadmin') {
+    if (role === 'superadmin') {
       return true;
     }
 
-    // Special access for Inventory.
+    // Inventory special access.
     if (item.label === 'Inventory' || item.route?.startsWith('/inventory/')) {
       return (
-        normalizedRole === 'director' ||
-        normalizedRole === 'hod' ||
+        role === 'director' ||
+        role === 'hod' ||
         this.hasPurchasingLogisticDepartment()
       );
     }
 
-    // Normal role-based access.
-    if (!item.roles) {
+    // Items without role restrictions are visible to authenticated users.
+    if (!item.roles || item.roles.length === 0) {
       return true;
     }
 
     return item.roles.some(
-      (allowedRole: string) => allowedRole.toLowerCase() === normalizedRole,
+      (allowedRole: string) => allowedRole.trim().toLowerCase() === role,
     );
-  }
-
-  signOutClick() {
-    this.signOutDialog = true;
-    this.cdr.detectChanges();
-  }
-
-  LogOut() {
-    this.userService.logout();
-  }
-
-  toggleDialog() {
-    this.showDialog = !this.showDialog;
-  }
-
-  toggleMenu(label: string) {
-    this.openMenu = this.openMenu === label ? null : label;
   }
 
   private hasPurchasingLogisticDepartment(): boolean {
     const departments = this.currentUser?.departments ?? [];
 
     return departments.some(
-      (department: any) =>
-        department.trim().toLowerCase() === 'purchasing & logistic',
+      (department) =>
+        department?.trim().toLowerCase() === 'purchasing & logistic',
     );
+  }
+
+  // ==========================================
+  // DIALOG HANDLING
+  // ==========================================
+
+  signOutClick(): void {
+    this.signOutDialog = true;
+    this.cdr.markForCheck();
+  }
+
+  toggleDialog(): void {
+    this.showDialog = !this.showDialog;
+    this.cdr.markForCheck();
+  }
+
+  // ==========================================
+  // AUTHENTICATION
+  // ==========================================
+
+  LogOut(): void {
+    this.signOutDialog = false;
+    this.authService.logout();
   }
 }

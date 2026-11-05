@@ -1,9 +1,9 @@
 import { Routes } from '@angular/router';
 import { Unauthorized } from './common/components/unauthorized/unauthorized';
-import { authGuard } from './common/auth.guard';
+import { authGuard } from './common/guard/auth.guard';
 import { modulePermissionGuard } from './common/permission/module-permission.guard';
 import { SplashScreen } from './components/auth/splash-screen/splash-screen';
-import { deviceRedirectGuard } from './common/device-redirect.guard';
+import { deviceRedirectGuard } from './common/guard/device-redirect.guard';
 
 const protectedGuards = [authGuard, modulePermissionGuard] as const;
 
@@ -800,14 +800,6 @@ export const routes: Routes = [
           ),
       },
       {
-        path: ':id',
-        data: { moduleKey: 'hardware-request' },
-        loadComponent: () =>
-          import('./components/hardware-requests/hardware-request-details/hardware-request-details').then(
-            (m) => m.HardwareRequestDetails,
-          ),
-      },
-      {
         path: 'incoming',
         data: { moduleKey: 'incoming' },
         loadComponent: () =>
@@ -815,6 +807,14 @@ export const routes: Routes = [
             (m) => m.IncomingHardwareRequest,
           ),
       },
+      // {
+      //   path: ':id',
+      //   data: { moduleKey: 'hardware-request' },
+      //   loadComponent: () =>
+      //     import('./components/hardware-requests/hardware-request-details/hardware-request-details').then(
+      //       (m) => m.HardwareRequestDetails,
+      //     ),
+      // },
     ],
   },
 

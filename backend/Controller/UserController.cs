@@ -1,10 +1,9 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Security.Claims;
@@ -25,28 +24,35 @@ namespace WebApplication1.Controllers
         private readonly AppDbContext _context;
         private readonly EmailService _emailService;
         private readonly IHubContext<NotificationHub> _hub;
-        private readonly IConfiguration _config;
 
-        public UsersController(AppDbContext context, EmailService emailService, IHubContext<NotificationHub> hub, IConfiguration config)
+        public UsersController(
+            AppDbContext context,
+            EmailService emailService,
+            IHubContext<NotificationHub> hub)
         {
             _context = context;
             _emailService = emailService;
             _hub = hub;
-            _config = config;
         }
 
+        // =========================================================
+        // GET MANY USERS
+        // =========================================================
         [Authorize]
         [HttpGet("GetMany")]
         public ActionResult<object> GetMany(
-     int page = 1,
-     int pageSize = 10,
-     string? filter = null,
-     string? orderBy = null,
-     string? select = null,
-     string? includes = null)
+            int page = 1,
+            int pageSize = 10,
+            string? filter = null,
+            string? orderBy = null,
+            string? select = null,
+            string? includes = null)
         {
             try
             {
+                page = Math.Max(page, 1);
+                pageSize = Math.Clamp(pageSize, 1, 500);
+
                 var query = _context.Users.AsQueryable();
 
                 if (!string.IsNullOrEmpty(includes))
@@ -62,14 +68,14 @@ namespace WebApplication1.Controllers
                     var parameter = Expression.Parameter(typeof(User), "u");
                     Expression? finalExpression = null;
 
-                    // Split OR conditions first
                     var orParts = filter.Split('|');
+
                     foreach (var orPart in orParts)
                     {
                         Expression? orExpression = null;
 
-                        // Split AND conditions
                         var andParts = orPart.Split(',');
+
                         foreach (var andPart in andParts)
                         {
                             bool isNotEqual = andPart.Contains("!=");
@@ -78,262 +84,559 @@ namespace WebApplication1.Controllers
                                 ? andPart.Split("!=")
                                 : andPart.Split('=');
 
-                            if (kv.Length != 2) continue;
+                            if (kv.Length != 2)
+                                continue;
 
                             var property = kv[0].Trim();
                             var valueStr = kv[1].Trim();
 
-                            var propertyAccess = Expression.PropertyOrField(parameter, property);
+                            var propertyInfo = typeof(User).GetProperty(
+                                property,
+                                BindingFlags.IgnoreCase |
+                                BindingFlags.Public |
+                                BindingFlags.Instance
+                            );
+
+                            if (propertyInfo == null)
+                                continue;
+
+                            var propertyAccess = Expression.Property(
+                                parameter,
+                                propertyInfo
+                            );
 
                             Expression condition;
 
-                            if (propertyAccess.Type == typeof(string))
+                            var propertyType =
+                                Nullable.GetUnderlyingType(propertyAccess.Type)
+                                ?? propertyAccess.Type;
+
+                            if (propertyType == typeof(string))
                             {
-                                var toLowerMethod = typeof(string).GetMethod("ToLower", Type.EmptyTypes)!;
+                                var toLowerMethod = typeof(string).GetMethod(
+                                    "ToLower",
+                                    Type.EmptyTypes
+                                )!;
 
-                                var propertyToLower = Expression.Call(propertyAccess, toLowerMethod);
-                                var valueToLower = Expression.Constant(valueStr.ToLower());
+                                var containsMethod = typeof(string).GetMethod(
+                                    "Contains",
+                                    new[] { typeof(string) }
+                                )!;
 
-                                var containsMethod = typeof(string).GetMethod("Contains", new[] { typeof(string) })!;
+                                var propertyToLower = Expression.Call(
+                                    propertyAccess,
+                                    toLowerMethod
+                                );
 
-                                var containsExpr = Expression.Call(propertyToLower, containsMethod, valueToLower);
+                                var valueToLower = Expression.Constant(
+                                    valueStr.ToLower()
+                                );
+
+                                var containsExpr = Expression.Call(
+                                    propertyToLower,
+                                    containsMethod,
+                                    valueToLower
+                                );
 
                                 condition = isNotEqual
                                     ? Expression.Not(containsExpr)
                                     : containsExpr;
                             }
-                            else if (propertyAccess.Type == typeof(Guid) || propertyAccess.Type == typeof(Guid?))
+                            else if (propertyType == typeof(Guid))
                             {
+                                if (!Guid.TryParse(valueStr, out var guidValue))
+                                    continue;
+
+                                var constant = Expression.Constant(guidValue);
+
                                 condition = Expression.Equal(
                                     propertyAccess,
-                                    Expression.Constant(Guid.Parse(valueStr), propertyAccess.Type)
+                                    constant
                                 );
-                            }
-                            else if (propertyAccess.Type.IsEnum)
-                            {
-                                var enumValue = Enum.Parse(propertyAccess.Type, valueStr);
-                                var equalsExpr = Expression.Equal(propertyAccess, Expression.Constant(enumValue));
 
-                                condition = isNotEqual
-                                    ? Expression.Not(equalsExpr)
-                                    : equalsExpr;
+                                if (isNotEqual)
+                                    condition = Expression.Not(condition);
+                            }
+                            else if (propertyType.IsEnum)
+                            {
+                                if (!Enum.TryParse(
+                                    propertyType,
+                                    valueStr,
+                                    true,
+                                    out var enumValue))
+                                {
+                                    continue;
+                                }
+
+                                var constant = Expression.Constant(
+                                    enumValue,
+                                    propertyType
+                                );
+
+                                condition = Expression.Equal(
+                                    propertyAccess,
+                                    constant
+                                );
+
+                                if (isNotEqual)
+                                    condition = Expression.Not(condition);
                             }
                             else
                             {
-                                var convertedValue = Convert.ChangeType(valueStr, propertyAccess.Type);
-                                condition = Expression.Equal(propertyAccess, Expression.Constant(convertedValue));
+                                try
+                                {
+                                    var convertedValue = Convert.ChangeType(
+                                        valueStr,
+                                        propertyType
+                                    );
+
+                                    var constant = Expression.Constant(
+                                        convertedValue,
+                                        propertyType
+                                    );
+
+                                    if (propertyAccess.Type != propertyType)
+                                    {
+                                        condition = Expression.Equal(
+                                            propertyAccess,
+                                            Expression.Convert(
+                                                constant,
+                                                propertyAccess.Type
+                                            )
+                                        );
+                                    }
+                                    else
+                                    {
+                                        condition = Expression.Equal(
+                                            propertyAccess,
+                                            constant
+                                        );
+                                    }
+
+                                    if (isNotEqual)
+                                        condition = Expression.Not(condition);
+                                }
+                                catch
+                                {
+                                    continue;
+                                }
                             }
 
                             orExpression = orExpression == null
                                 ? condition
-                                : Expression.AndAlso(orExpression, condition); // AND inside one OR part
+                                : Expression.AndAlso(
+                                    orExpression,
+                                    condition
+                                );
                         }
 
-                        finalExpression = finalExpression == null
-                            ? orExpression
-                            : Expression.OrElse(finalExpression, orExpression); // OR between parts
+                        if (orExpression != null)
+                        {
+                            finalExpression = finalExpression == null
+                                ? orExpression
+                                : Expression.OrElse(
+                                    finalExpression,
+                                    orExpression
+                                );
+                        }
                     }
 
                     if (finalExpression != null)
                     {
-                        var lambda = Expression.Lambda<Func<User, bool>>(finalExpression, parameter);
+                        var lambda = Expression.Lambda<Func<User, bool>>(
+                            finalExpression,
+                            parameter
+                        );
+
                         query = query.Where(lambda);
                     }
                 }
 
-
-                // OrderBy (e.g., "CreatedDate desc")
+                // OrderBy
                 if (!string.IsNullOrEmpty(orderBy))
                 {
-                    if (orderBy.ToLower().Contains("desc"))
-                        query = query.OrderByDescending(q => EF.Property<object>(q, orderBy.Replace(" desc", "").Trim()));
-                    else
-                        query = query.OrderBy(q => EF.Property<object>(q, orderBy.Trim()));
+                    var isDesc = orderBy.Contains(
+                        "desc",
+                        StringComparison.OrdinalIgnoreCase
+                    );
+
+                    var fieldName = orderBy
+                        .Replace(
+                            " desc",
+                            "",
+                            StringComparison.OrdinalIgnoreCase
+                        )
+                        .Replace(
+                            " asc",
+                            "",
+                            StringComparison.OrdinalIgnoreCase
+                        )
+                        .Trim();
+
+                    var propertyInfo = typeof(User).GetProperty(
+                        fieldName,
+                        BindingFlags.IgnoreCase |
+                        BindingFlags.Public |
+                        BindingFlags.Instance
+                    );
+
+                    if (propertyInfo != null)
+                    {
+                        query = isDesc
+                            ? query.OrderByDescending(
+                                x => EF.Property<object>(
+                                    x,
+                                    propertyInfo.Name
+                                )
+                            )
+                            : query.OrderBy(
+                                x => EF.Property<object>(
+                                    x,
+                                    propertyInfo.Name
+                                )
+                            );
+                    }
                 }
 
-                var TotalElements = query.Count();
+                var totalElements = query.Count();
 
                 var items = query
-      .Skip((page - 1) * pageSize)
-      .Take(pageSize)
-      .Select(u => new
-      {
-          u.Id,
-          u.EmployeeNo,
-          u.FullName,
-          u.DisplayName,
-          u.Email,
-          u.SystemRole,
-          u.JobTitle,
-          u.IsActive,
-          u.LastLoginAt,
-          u.ContactNo,
-          u.Gender,
-          u.CreatedAt,
-          u.JoinedDate,
-          u.Status,
-          u.MonthlySalary,
-          WorkStartTime = u.WorkStartTime.HasValue
-              ? string.Format("{0:D2}:{1:D2}", (int)u.WorkStartTime.Value.TotalHours, u.WorkStartTime.Value.Minutes)
-              : null,
-          WorkEndTime = u.WorkEndTime.HasValue
-              ? string.Format("{0:D2}:{1:D2}", (int)u.WorkEndTime.Value.TotalHours, u.WorkEndTime.Value.Minutes)
-              : null,
-          u.UsesRestDayHalfDay,
-          RestDayHalfDayStart = u.RestDayHalfDayStart.HasValue
-              ? string.Format("{0:D2}:{1:D2}", (int)u.RestDayHalfDayStart.Value.TotalHours, u.RestDayHalfDayStart.Value.Minutes)
-              : null,
-          RestDayHalfDayEnd = u.RestDayHalfDayEnd.HasValue
-              ? string.Format("{0:D2}:{1:D2}", (int)u.RestDayHalfDayEnd.Value.TotalHours, u.RestDayHalfDayEnd.Value.Minutes)
-              : null,
-          HodIds = u.ReportingManagers.Select(rm => rm.ManagerId).ToList(),
-          DepartmentIds = u.Departments.Select(d => d.Id).ToList(),
-          Departments = u.Departments.Select(d => new { d.Id, d.Name }).ToList()
-      })
-      .ToList();
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .Select(u => new
+                    {
+                        u.Id,
+                        u.EmployeeNo,
+                        u.FullName,
+                        u.DisplayName,
+                        u.Email,
+                        u.SystemRole,
+                        u.JobTitle,
+                        u.IsActive,
+                        u.LastLoginAt,
+                        u.ContactNo,
+                        u.Gender,
+                        u.CreatedAt,
+                        u.JoinedDate,
+                        u.Status,
+                        u.MonthlySalary,
 
+                        WorkStartTime = u.WorkStartTime.HasValue
+                            ? string.Format(
+                                "{0:D2}:{1:D2}",
+                                (int)u.WorkStartTime.Value.TotalHours,
+                                u.WorkStartTime.Value.Minutes
+                            )
+                            : null,
 
-                // Select (e.g., "Id,Status")
+                        WorkEndTime = u.WorkEndTime.HasValue
+                            ? string.Format(
+                                "{0:D2}:{1:D2}",
+                                (int)u.WorkEndTime.Value.TotalHours,
+                                u.WorkEndTime.Value.Minutes
+                            )
+                            : null,
+
+                        u.UsesRestDayHalfDay,
+
+                        RestDayHalfDayStart = u.RestDayHalfDayStart.HasValue
+                            ? string.Format(
+                                "{0:D2}:{1:D2}",
+                                (int)u.RestDayHalfDayStart.Value.TotalHours,
+                                u.RestDayHalfDayStart.Value.Minutes
+                            )
+                            : null,
+
+                        RestDayHalfDayEnd = u.RestDayHalfDayEnd.HasValue
+                            ? string.Format(
+                                "{0:D2}:{1:D2}",
+                                (int)u.RestDayHalfDayEnd.Value.TotalHours,
+                                u.RestDayHalfDayEnd.Value.Minutes
+                            )
+                            : null,
+
+                        HodIds = u.ReportingManagers
+                            .Select(rm => rm.ManagerId)
+                            .ToList(),
+
+                        DepartmentIds = u.Departments
+                            .Select(d => d.Id)
+                            .ToList(),
+
+                        Departments = u.Departments
+                            .Select(d => new
+                            {
+                                d.Id,
+                                d.Name
+                            })
+                            .ToList()
+                    })
+                    .ToList();
+
                 if (!string.IsNullOrEmpty(select))
                 {
-                    var selectedFields = select.Split(',').Select(f => f.Trim()).ToList();
+                    var selectedFields = select
+                        .Split(',')
+                        .Select(f => f.Trim())
+                        .ToList();
+
                     var projected = items.Select(item =>
                     {
-                        var dict = new Dictionary<string, object>();
+                        var dict = new Dictionary<string, object?>();
+
                         foreach (var field in selectedFields)
                         {
-                            var value = item.GetType().GetProperty(field)?.GetValue(item);
-                            dict[field] = value ?? "null";
+                            var value = item.GetType()
+                                .GetProperty(
+                                    field,
+                                    BindingFlags.IgnoreCase |
+                                    BindingFlags.Public |
+                                    BindingFlags.Instance
+                                )
+                                ?.GetValue(item);
+
+                            dict[field] = value;
                         }
+
                         return dict;
                     });
 
                     return Ok(new
                     {
                         Data = projected,
-                        TotalElements
+                        TotalElements = totalElements
                     });
                 }
 
                 return Ok(new
                 {
                     Data = items,
-                    TotalElements
+                    TotalElements = totalElements
                 });
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { Error = "An unexpected error occured." });
-            }
+                Console.WriteLine(ex);
 
+                return StatusCode(500, new
+                {
+                    Error = "An unexpected error occurred."
+                });
+            }
         }
 
+        // =========================================================
+        // GET ONE USER
+        // =========================================================
         [Authorize]
         [HttpGet("GetOne")]
         public ActionResult<object> GetOne(
-     int page = 1,
-     int pageSize = 1,
-     string? filter = null,
-     string? orderBy = null,
-     string? select = null,
-     string? includes = null)
+            int page = 1,
+            int pageSize = 1,
+            string? filter = null,
+            string? orderBy = null,
+            string? select = null,
+            string? includes = null)
         {
             try
             {
+                page = Math.Max(page, 1);
+                pageSize = Math.Clamp(pageSize, 1, 500);
+
                 var query = _context.Users
                     .Include(u => u.ReportingManagers)
                     .Include(u => u.Departments)
                     .AsQueryable();
 
-                // ===== Includes =====
+                // Includes
                 if (!string.IsNullOrEmpty(includes))
                 {
                     foreach (var include in includes.Split(','))
                     {
                         var navProp = include.Trim();
-                        if (!string.IsNullOrEmpty(navProp))
-                        {
-                            var propInfo = typeof(User).GetProperty(navProp, BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
-                            if (propInfo != null)
-                                query = query.Include(navProp);
-                        }
+
+                        if (string.IsNullOrEmpty(navProp))
+                            continue;
+
+                        var propInfo = typeof(User).GetProperty(
+                            navProp,
+                            BindingFlags.IgnoreCase |
+                            BindingFlags.Public |
+                            BindingFlags.Instance
+                        );
+
+                        if (propInfo != null)
+                            query = query.Include(propInfo.Name);
                     }
                 }
 
-                // ===== Filter =====
+                // Filter
                 if (!string.IsNullOrEmpty(filter))
                 {
                     var parts = filter.Split('=');
+
                     if (parts.Length == 2)
                     {
                         var propertyName = parts[0].Trim();
                         var valueStr = parts[1].Trim();
 
-                        var propertyInfo = typeof(User).GetProperty(propertyName, BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
+                        var propertyInfo = typeof(User).GetProperty(
+                            propertyName,
+                            BindingFlags.IgnoreCase |
+                            BindingFlags.Public |
+                            BindingFlags.Instance
+                        );
+
                         if (propertyInfo != null)
                         {
                             try
                             {
+                                var propertyType =
+                                    Nullable.GetUnderlyingType(
+                                        propertyInfo.PropertyType
+                                    ) ?? propertyInfo.PropertyType;
+
                                 object typedValue;
 
-                                if (propertyInfo.PropertyType == typeof(Guid) || propertyInfo.PropertyType == typeof(Guid?))
+                                if (propertyType == typeof(Guid))
                                     typedValue = Guid.Parse(valueStr);
-                                else if (propertyInfo.PropertyType.IsEnum)
-                                    typedValue = Enum.Parse(propertyInfo.PropertyType, valueStr);
-                                else if (propertyInfo.PropertyType == typeof(int) || propertyInfo.PropertyType == typeof(int?))
-                                    typedValue = int.Parse(valueStr);
-                                else if (propertyInfo.PropertyType == typeof(bool) || propertyInfo.PropertyType == typeof(bool?))
-                                    typedValue = bool.Parse(valueStr);
-                                else if (propertyInfo.PropertyType == typeof(DateTime) || propertyInfo.PropertyType == typeof(DateTime?))
-                                    typedValue = DateTime.Parse(valueStr);
+                                else if (propertyType.IsEnum)
+                                    typedValue = Enum.Parse(
+                                        propertyType,
+                                        valueStr,
+                                        true
+                                    );
                                 else
-                                    typedValue = valueStr;
+                                    typedValue = Convert.ChangeType(
+                                        valueStr,
+                                        propertyType
+                                    );
 
-                                var parameter = Expression.Parameter(typeof(User), "x");
-                                var propertyAccess = Expression.Property(parameter, propertyInfo);
-                                var constant = Expression.Constant(typedValue);
-                                var equals = Expression.Equal(propertyAccess, constant);
-                                var lambda = Expression.Lambda<Func<User, bool>>(equals, parameter);
+                                var parameter = Expression.Parameter(
+                                    typeof(User),
+                                    "x"
+                                );
+
+                                var propertyAccess = Expression.Property(
+                                    parameter,
+                                    propertyInfo
+                                );
+
+                                var constant = Expression.Constant(
+                                    typedValue,
+                                    propertyType
+                                );
+
+                                Expression comparison;
+
+                                if (propertyAccess.Type != propertyType)
+                                {
+                                    comparison = Expression.Equal(
+                                        propertyAccess,
+                                        Expression.Convert(
+                                            constant,
+                                            propertyAccess.Type
+                                        )
+                                    );
+                                }
+                                else
+                                {
+                                    comparison = Expression.Equal(
+                                        propertyAccess,
+                                        constant
+                                    );
+                                }
+
+                                var lambda = Expression.Lambda<Func<User, bool>>(
+                                    comparison,
+                                    parameter
+                                );
+
                                 query = query.Where(lambda);
                             }
                             catch
                             {
-                                // Ignore invalid filter
+                                // Ignore invalid filter.
                             }
                         }
                     }
                 }
 
-                // ===== OrderBy =====
+                // OrderBy
                 if (!string.IsNullOrEmpty(orderBy))
                 {
-                    var isDesc = orderBy.ToLower().Contains("desc");
-                    var fieldName = orderBy.Replace(" desc", "", StringComparison.OrdinalIgnoreCase).Trim();
+                    var isDesc = orderBy.Contains(
+                        "desc",
+                        StringComparison.OrdinalIgnoreCase
+                    );
 
-                    var propertyInfo = typeof(User).GetProperty(fieldName, BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
+                    var fieldName = orderBy
+                        .Replace(
+                            " desc",
+                            "",
+                            StringComparison.OrdinalIgnoreCase
+                        )
+                        .Replace(
+                            " asc",
+                            "",
+                            StringComparison.OrdinalIgnoreCase
+                        )
+                        .Trim();
+
+                    var propertyInfo = typeof(User).GetProperty(
+                        fieldName,
+                        BindingFlags.IgnoreCase |
+                        BindingFlags.Public |
+                        BindingFlags.Instance
+                    );
+
                     if (propertyInfo != null)
                     {
                         query = isDesc
-                            ? query.OrderByDescending(x => EF.Property<object>(x, propertyInfo.Name))
-                            : query.OrderBy(x => EF.Property<object>(x, propertyInfo.Name));
+                            ? query.OrderByDescending(
+                                x => EF.Property<object>(
+                                    x,
+                                    propertyInfo.Name
+                                )
+                            )
+                            : query.OrderBy(
+                                x => EF.Property<object>(
+                                    x,
+                                    propertyInfo.Name
+                                )
+                            );
                     }
                 }
 
-                // ===== Paging =====
-                var item = query.Skip((page - 1) * pageSize).Take(pageSize).FirstOrDefault();
+                // Paging
+                var item = query
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .FirstOrDefault();
+
                 if (item == null)
                     return Ok(new { Data = new { } });
 
-                // ===== Select specific fields =====
+                // Select fields
                 if (!string.IsNullOrEmpty(select))
                 {
-                    var selectedFields = select.Split(',').Select(f => f.Trim()).ToList();
+                    var selectedFields = select
+                        .Split(',')
+                        .Select(f => f.Trim())
+                        .ToList();
+
                     var dict = new Dictionary<string, object?>();
 
                     foreach (var field in selectedFields)
                     {
-                        var propInfo = item.GetType().GetProperty(field, BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
-                        dict[field] = propInfo != null ? propInfo.GetValue(item) : null;
+                        var propInfo = item.GetType().GetProperty(
+                            field,
+                            BindingFlags.IgnoreCase |
+                            BindingFlags.Public |
+                            BindingFlags.Instance
+                        );
+
+                        dict[field] = propInfo?.GetValue(item);
                     }
 
                     return Ok(new { Data = dict });
@@ -354,170 +657,80 @@ namespace WebApplication1.Controllers
                     item.Gender,
                     item.CreatedAt,
                     item.JoinedDate,
-                    HodIds = item.ReportingManagers.Select(rm => rm.ManagerId).ToList(),
-                    DepartmentIds = item.Departments.Select(d => d.Id).ToList(),
-                    Departments = item.Departments.Select(d => new { d.Id, d.Name }).ToList()
+
+                    HodIds = item.ReportingManagers
+                        .Select(rm => rm.ManagerId)
+                        .ToList(),
+
+                    DepartmentIds = item.Departments
+                        .Select(d => d.Id)
+                        .ToList(),
+
+                    Departments = item.Departments
+                        .Select(d => new
+                        {
+                            d.Id,
+                            d.Name
+                        })
+                        .ToList()
                 });
             }
             catch (Exception ex)
             {
-                // Log ex if needed
-                return StatusCode(500, new { Error = "An unexpected error occurred." });
+                Console.WriteLine(ex);
+
+                return StatusCode(500, new
+                {
+                    Error = "An unexpected error occurred."
+                });
             }
         }
 
-        [Authorize]
+        // =========================================================
+        // UPDATE USER STATUS
+        // =========================================================
+        [Authorize(Roles = "SuperAdmin,HR,Management")]
         [HttpPut("{id}/status")]
-        public async Task<IActionResult> UpdateUserStatus(Guid id, [FromQuery] bool isActive)
+        public async Task<IActionResult> UpdateUserStatus(
+            Guid id,
+            [FromQuery] bool isActive)
         {
             var user = await _context.Users.FindAsync(id);
+
             if (user == null)
                 return NotFound(new { Error = "User not found." });
 
             user.IsActive = isActive;
             user.UpdatedAt = DateTimeHelper.Now();
-            // user.UpdatedById = currentUserId; // Recommended if you have a BaseEntity
+
+            if (!isActive)
+            {
+                user.RefreshToken = null;
+                user.RefreshTokenExpiryTime = null;
+            }
 
             await _context.SaveChangesAsync();
 
-            return Ok(new { Success = true, Status = user.IsActive });
+            return Ok(new
+            {
+                Success = true,
+                Status = user.IsActive
+            });
         }
 
-        //login
-        [AllowAnonymous]
-        [HttpPost("Login")]
-        public async Task<IActionResult> Login([FromBody] LoginRequest request)
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            try
-            {
-                var user = _context.Users
-                    .Include(u => u.Departments)
-                    .Include(u => u.ReportingManagers)
-                    .FirstOrDefault(u => u.Email == request.Email);
-
-                if (user == null || !user.IsActive)
-                {
-                    return Ok(new { Success = false, Message = "User account not found" });
-                }
-                // Here you would normally verify the password hash
-                var passwordHasher = new PasswordHasher<User>();
-
-                var passwordResult = passwordHasher.VerifyHashedPassword(
-                    user,
-                    user.Password,
-                    request.Password
-                );
-
-                if (passwordResult == PasswordVerificationResult.Failed)
-                {
-                    // Check legacy SHA256 password
-                    var legacyHash = HashPassword(request.Password);
-
-                    if (user.Password != legacyHash)
-                    {
-                        return Ok(new
-                        {
-                            Success = false,
-                            Message = "Your password is incorrect"
-                        });
-                    }
-
-                    // Upgrade legacy SHA256 to ASP.NET Identity hash
-                    user.Password = passwordHasher.HashPassword(
-                        user,
-                        request.Password
-                    );
-
-                    await _context.SaveChangesAsync();
-                }
-                else if (passwordResult == PasswordVerificationResult.SuccessRehashNeeded)
-                {
-                    user.Password = passwordHasher.HashPassword(
-                        user,
-                        request.Password
-                    );
-
-                    await _context.SaveChangesAsync();
-                }
-
-                var token = GenerateJwtToken(user);
-
-                //var token = GenerateJwtToken(user);
-                return Ok(new
-                {
-                    Success = true,
-                    Token = token,
-                    User = new
-                    {
-                        user.Id,
-                        user.FullName,
-                        user.DisplayName,
-                        user.Email,
-                        user.SystemRole,
-                        user.JobTitle,
-                        HodIds = user.ReportingManagers.Select(rm => rm.ManagerId).ToList(),
-                        DepartmentIds = user.Departments.Select(d => d.Id).ToList(),
-                        Departments = user.Departments.Select(d => new { d.Id, d.Name }).ToList()
-                    }
-                });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { Error = "Login failed." });
-            }
-        }
-
-        private string GenerateJwtToken(User user)
-        {
-            var claims = new[]
-            {
-        new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-        new Claim(ClaimTypes.Email, user.Email),
-        new Claim(ClaimTypes.Role, user.SystemRole ?? "Staff")
-    };
-
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]));
-            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-
-            var token = new JwtSecurityToken(
-                issuer: _config["Jwt:Issuer"],
-                audience: _config["Jwt:Audience"],
-                claims: claims,
-                expires: DateTime.Now.AddHours(12),
-                signingCredentials: creds
-            );
-
-            return new JwtSecurityTokenHandler().WriteToken(token);
-        }
-
-
-
-        private string HashPassword(string password)
-        {
-            using (var sha = SHA256.Create())
-            {
-                var bytes = sha.ComputeHash(Encoding.UTF8.GetBytes(password));
-                return Convert.ToBase64String(bytes);
-            }
-        }
-
-
-
+        // =========================================================
+        // REGISTER
+        // =========================================================
         [AllowAnonymous]
         [HttpPost("Register")]
-        public async Task<IActionResult> Register([FromBody] RegisterRequest request)
+        public async Task<IActionResult> Register(
+            [FromBody] RegisterRequest request)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
             try
             {
-                // Validate password
                 if (request.Password != request.ConfirmPassword)
                 {
                     return Ok(new
@@ -527,8 +740,8 @@ namespace WebApplication1.Controllers
                     });
                 }
 
-                // Check duplicate email
-                if (await _context.Users.AnyAsync(u => u.Email == request.Email))
+                if (await _context.Users.AnyAsync(
+                    u => u.Email == request.Email))
                 {
                     return Ok(new
                     {
@@ -537,7 +750,6 @@ namespace WebApplication1.Controllers
                     });
                 }
 
-                // Create new user
                 var newUser = new User
                 {
                     Id = Guid.NewGuid(),
@@ -565,7 +777,7 @@ namespace WebApplication1.Controllers
                     newUser.Departments = departments;
                 }
 
-                // Assign reporting managers / HOD
+                // Assign reporting managers
                 if (request.HodIds?.Any() == true)
                 {
                     var managerIds = request.HodIds
@@ -575,15 +787,16 @@ namespace WebApplication1.Controllers
 
                     foreach (var managerId in managerIds)
                     {
-                        newUser.ReportingManagers.Add(new UserReportingManager
-                        {
-                            UserId = newUser.Id,
-                            ManagerId = managerId
-                        });
+                        newUser.ReportingManagers.Add(
+                            new UserReportingManager
+                            {
+                                UserId = newUser.Id,
+                                ManagerId = managerId
+                            }
+                        );
                     }
                 }
 
-                // Hash password
                 var passwordHasher = new PasswordHasher<User>();
 
                 newUser.Password = passwordHasher.HashPassword(
@@ -591,10 +804,8 @@ namespace WebApplication1.Controllers
                     request.Password
                 );
 
-                // Add new user
                 _context.Users.Add(newUser);
 
-                // Activity Log
                 _context.ActivityLogs.Add(new ActivityLog
                 {
                     Id = Guid.NewGuid(),
@@ -607,15 +818,9 @@ namespace WebApplication1.Controllers
                     CreatedAt = DateTimeHelper.Now()
                 });
 
-                // Save user and activity log first
                 await _context.SaveChangesAsync();
 
-
-                // =====================================================
-                // NOTIFICATION TO SUPERADMIN
-                // =====================================================
-
-                // Get all active SuperAdmins
+                // Notify active SuperAdmins
                 var superAdmins = await _context.Users
                     .Where(u =>
                         u.SystemRole == "SuperAdmin" &&
@@ -626,7 +831,6 @@ namespace WebApplication1.Controllers
                 var notificationMessage =
                     $"{newUser.FullName} has requested to register as {newUser.JobTitle}.";
 
-                // Create persistent notifications
                 var notifications = new List<Notification>();
 
                 foreach (var adminId in superAdmins)
@@ -644,18 +848,13 @@ namespace WebApplication1.Controllers
                     });
                 }
 
-                // Save notifications ONCE
                 if (notifications.Any())
                 {
                     _context.Notifications.AddRange(notifications);
                     await _context.SaveChangesAsync();
                 }
 
-
-                // =====================================================
-                // SIGNALR REAL-TIME NOTIFICATION
-                // =====================================================
-
+                // SignalR notifications
                 foreach (var notification in notifications)
                 {
                     await _hub.Clients
@@ -673,16 +872,18 @@ namespace WebApplication1.Controllers
                         });
                 }
 
-
-                // =====================================================
-                // RETURN SUCCESS
-                // =====================================================
-
                 return Ok(new
                 {
                     Success = true,
                     Message = "Registration submitted successfully. Please wait for administrator approval.",
-                    User = newUser
+                    User = new
+                    {
+                        newUser.Id,
+                        newUser.EmployeeNo,
+                        newUser.FullName,
+                        newUser.Email,
+                        newUser.Status
+                    }
                 });
             }
             catch (Exception ex)
@@ -706,15 +907,19 @@ namespace WebApplication1.Controllers
             }
         }
 
+        // =========================================================
+        // ADMIN CREATE USER
+        // =========================================================
         [Authorize(Roles = "HOD,Management,HR,SuperAdmin")]
         [HttpPost("AdminCreate")]
-        public async Task<IActionResult> AdminCreate([FromBody] RegisterRequest request)
+        public async Task<IActionResult> AdminCreate(
+            [FromBody] RegisterRequest request)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-
-            if (await _context.Users.AnyAsync(x => x.Email == request.Email))
+            if (await _context.Users.AnyAsync(
+                x => x.Email == request.Email))
             {
                 return Ok(new
                 {
@@ -723,32 +928,22 @@ namespace WebApplication1.Controllers
                 });
             }
 
-
             var user = new User
             {
                 Id = Guid.NewGuid(),
-
                 EmployeeNo = GenerateEmployeeNo(),
-
                 FullName = request.FullName,
                 DisplayName = request.DisplayName,
                 Email = request.Email,
                 ContactNo = request.ContactNo,
                 JobTitle = request.JobTitle,
-
                 SystemRole = request.SystemRole ?? "Staff",
-
                 JoinedDate = request.JoinedDate,
                 Gender = request.Gender,
-
-
-                // Admin created
                 Status = "Approved",
                 IsActive = true,
-
                 CreatedAt = DateTimeHelper.Now()
             };
-
 
             // Department assignment
             if (request.DepartmentIds?.Any() == true)
@@ -760,36 +955,33 @@ namespace WebApplication1.Controllers
                 user.Departments = departments;
             }
 
-            // Reporting manager (HOD) assignment
+            // Reporting manager assignment
             if (request.HodIds?.Any() == true)
             {
                 var managerIds = request.HodIds
                     .Where(id => id != Guid.Empty && id != user.Id)
-                    .Distinct()
-                    .ToList();
+                    .Distinct();
 
                 foreach (var managerId in managerIds)
                 {
-                    user.ReportingManagers.Add(new UserReportingManager
-                    {
-                        UserId = user.Id,
-                        ManagerId = managerId
-                    });
+                    user.ReportingManagers.Add(
+                        new UserReportingManager
+                        {
+                            UserId = user.Id,
+                            ManagerId = managerId
+                        }
+                    );
                 }
             }
 
             var passwordHasher = new PasswordHasher<User>();
-
-            var plainPassword = request.Password;
 
             user.Password = passwordHasher.HashPassword(
                 user,
                 request.Password
             );
 
-
             _context.Users.Add(user);
-
 
             _context.ActivityLogs.Add(new ActivityLog
             {
@@ -803,57 +995,103 @@ namespace WebApplication1.Controllers
                 CreatedAt = DateTimeHelper.Now()
             });
 
-
             await _context.SaveChangesAsync();
 
-            _emailService.SendAccountCreatedEmail(
-       user.Email,
-       user.FullName,
-       request.Password
-   );
+            try
+            {
+                _emailService.SendAccountCreatedEmail(
+                    user.Email,
+                    user.FullName,
+                    request.Password
+                );
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Account email sending failed: {ex}");
+            }
 
             return Ok(new
             {
                 Success = true,
                 Message = "User created successfully.",
-                User = user
+                User = new
+                {
+                    user.Id,
+                    user.EmployeeNo,
+                    user.FullName,
+                    user.DisplayName,
+                    user.Email,
+                    user.SystemRole,
+                    user.JobTitle,
+                    user.Status,
+                    user.IsActive
+                }
             });
         }
 
+        // =========================================================
+        // GENERATE EMPLOYEE NUMBER
+        // =========================================================
         private string GenerateEmployeeNo()
         {
-            // Get last EmployeeId numeric part
             var lastEmployee = _context.Users
                 .OrderByDescending(u => u.CreatedAt)
                 .FirstOrDefault();
 
             int nextNumber = 1;
-            if (lastEmployee != null && lastEmployee.EmployeeNo.StartsWith("EMP-"))
+
+            if (lastEmployee != null &&
+                lastEmployee.EmployeeNo.StartsWith("EMP-"))
             {
-                var lastNumberStr = lastEmployee.EmployeeNo.Substring(4); // skip "EMP-"
+                var lastNumberStr =
+                    lastEmployee.EmployeeNo.Substring(4);
+
                 if (int.TryParse(lastNumberStr, out int lastNumber))
                     nextNumber = lastNumber + 1;
             }
 
-            return $"EMP-{nextNumber:D4}"; // EMP-0001, EMP-0002 ...
+            return $"EMP-{nextNumber:D4}";
         }
 
-        [AllowAnonymous]
+        // =========================================================
+        // CHANGE PASSWORD
+        // =========================================================
+        [Authorize]
         [HttpPut("ChangePassword")]
-        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
+        public async Task<IActionResult> ChangePassword(
+            [FromBody] ChangePasswordRequest request)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
             try
             {
-                var user = await _context.Users.FindAsync(request.UserId);
+                var userIdValue = User.FindFirstValue(
+                    ClaimTypes.NameIdentifier
+                );
+
+                if (!Guid.TryParse(userIdValue, out var userId))
+                    return Unauthorized();
+
+                var user = await _context.Users.FindAsync(userId);
 
                 if (user == null)
-                    return NotFound(new { Success = false, Message = "User not found." });
+                {
+                    return NotFound(new
+                    {
+                        Success = false,
+                        Message = "User not found."
+                    });
+                }
 
                 if (request.NewPassword != request.ConfirmPassword)
-                    return Ok(new { Success = false, Message = "Passwords do not match." });
+                {
+                    return BadRequest(new
+                    {
+                        Success = false,
+                        Message = "Passwords do not match."
+                    });
+                }
 
                 var passwordHasher = new PasswordHasher<User>();
 
@@ -861,9 +1099,13 @@ namespace WebApplication1.Controllers
                     user,
                     request.NewPassword
                 );
+
                 user.UpdatedAt = DateTimeHelper.Now();
 
-                // Activity Log
+                // Revoke refresh token after password change.
+                user.RefreshToken = null;
+                user.RefreshTokenExpiryTime = null;
+
                 _context.ActivityLogs.Add(new ActivityLog
                 {
                     Id = Guid.NewGuid(),
@@ -878,7 +1120,6 @@ namespace WebApplication1.Controllers
 
                 await _context.SaveChangesAsync();
 
-                // SignalR Notification
                 await _hub.Clients.All.SendAsync("ReceiveNotification", new
                 {
                     Title = "Password Changed",
@@ -890,7 +1131,7 @@ namespace WebApplication1.Controllers
                 return Ok(new
                 {
                     Success = true,
-                    Message = "Password changed successfully."
+                    Message = "Password changed successfully. Please login again."
                 });
             }
             catch (Exception ex)
@@ -900,16 +1141,18 @@ namespace WebApplication1.Controllers
                 return StatusCode(500, new
                 {
                     Success = false,
-                    Error = "Failed to change password.",
-                    Details = ex.Message
+                    Error = "Failed to change password."
                 });
             }
         }
 
+        // =========================================================
+        // RESET PASSWORD
+        // =========================================================
         [AllowAnonymous]
         [HttpPost("ResetPassword")]
         public async Task<IActionResult> ResetPassword(
-    [FromBody] ResetPasswordRequest request)
+            [FromBody] ResetPasswordRequest request)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
@@ -928,7 +1171,6 @@ namespace WebApplication1.Controllers
                         t.ExpiryTime > now
                     );
 
-                // Validate token
                 if (resetToken == null || !resetToken.User.IsActive)
                 {
                     return Ok(new
@@ -940,16 +1182,19 @@ namespace WebApplication1.Controllers
 
                 var user = resetToken.User;
 
-                // Update password
                 var passwordHasher = new PasswordHasher<User>();
 
                 user.Password = passwordHasher.HashPassword(
                     user,
                     request.NewPassword
                 );
+
                 user.UpdatedAt = now;
 
-                // Activity Log
+                // Revoke refresh token after password reset.
+                user.RefreshToken = null;
+                user.RefreshTokenExpiryTime = null;
+
                 _context.ActivityLogs.Add(new ActivityLog
                 {
                     Id = Guid.NewGuid(),
@@ -962,15 +1207,12 @@ namespace WebApplication1.Controllers
                     CreatedAt = now
                 });
 
-                // Delete token so it cannot be reused
                 _context.PasswordResetTokens.Remove(resetToken);
 
-                // Save password, activity log and token deletion together
                 await _context.SaveChangesAsync();
 
                 await transaction.CommitAsync();
 
-                // SignalR Notification (after successful commit)
                 await _hub.Clients.All.SendAsync("ReceiveNotification", new
                 {
                     Title = "Password Reset",
@@ -987,7 +1229,6 @@ namespace WebApplication1.Controllers
             }
             catch (DbUpdateConcurrencyException)
             {
-                // Another request has already consumed this token
                 return Ok(new
                 {
                     Success = false,
@@ -1006,18 +1247,32 @@ namespace WebApplication1.Controllers
             }
         }
 
-        //profile
+        // =========================================================
+        // GET PROFILE
+        // =========================================================
+        [Authorize]
         [HttpGet("Profile")]
-        [Authorize] // Requires authentication
         public IActionResult GetProfile()
         {
             try
             {
-                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                if (string.IsNullOrEmpty(userId))
-                    return Unauthorized(new { Error = "User ID not found in token." });
+                var userId = User.FindFirst(
+                    ClaimTypes.NameIdentifier
+                )?.Value;
 
-                var user = _context.Users.Find(Guid.Parse(userId));
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return Unauthorized(new
+                    {
+                        Error = "User ID not found in token."
+                    });
+                }
+
+                if (!Guid.TryParse(userId, out var parsedUserId))
+                    return Unauthorized();
+
+                var user = _context.Users.Find(parsedUserId);
+
                 if (user == null)
                     return NotFound(new { Error = "User not found." });
 
@@ -1034,35 +1289,58 @@ namespace WebApplication1.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { Error = "Failed to retrieve profile.", Details = ex.Message });
+                Console.WriteLine(ex);
+
+                return StatusCode(500, new
+                {
+                    Error = "Failed to retrieve profile."
+                });
             }
         }
 
+        // =========================================================
+        // FORGOT PASSWORD
+        // =========================================================
         [AllowAnonymous]
         [HttpPost("ForgotPassword")]
-        public IActionResult ForgotPassword([FromQuery] string Email)
+        public IActionResult ForgotPassword(
+            [FromQuery] string Email)
         {
             if (string.IsNullOrEmpty(Email))
             {
-                return BadRequest(new { Success = false, Message = "Email is required." });
+                return BadRequest(new
+                {
+                    Success = false,
+                    Message = "Email is required."
+                });
             }
 
             try
             {
-                var user = _context.Users.FirstOrDefault(u => u.Email == Email);
+                var user = _context.Users.FirstOrDefault(
+                    u => u.Email == Email
+                );
 
-                // To prevent leaking whether an email exists or not
+                // Do not reveal whether the email exists.
                 if (user == null || !user.IsActive)
                 {
-                    return Ok(new { Success = true, Message = "If your email is registered, you will receive reset instructions shortly." });
+                    return Ok(new
+                    {
+                        Success = true,
+                        Message = "If your email is registered, you will receive reset instructions shortly."
+                    });
                 }
 
-                var previousTokens = _context.PasswordResetTokens.Where(x => x.UserId == user.Id);
+                var previousTokens = _context.PasswordResetTokens
+                    .Where(x => x.UserId == user.Id);
 
                 _context.PasswordResetTokens.RemoveRange(previousTokens);
                 _context.SaveChanges();
 
-                var token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(48));
+                var token = Convert.ToBase64String(
+                    RandomNumberGenerator.GetBytes(48)
+                );
+
                 var expiry = DateTimeHelper.Now().AddHours(1);
 
                 var resetToken = new PasswordResetToken
@@ -1076,7 +1354,9 @@ namespace WebApplication1.Controllers
                 _context.PasswordResetTokens.Add(resetToken);
                 _context.SaveChanges();
 
-                var resetLink = $"http://localhost:4200/reset-password?token={Uri.EscapeDataString(token)}";
+                var resetLink =
+                    $"http://localhost:4200/reset-password?token={Uri.EscapeDataString(token)}";
+
                 _emailService.SendResetEmail(user.Email, resetLink);
 
                 return Ok(new
@@ -1088,10 +1368,19 @@ namespace WebApplication1.Controllers
             catch (Exception ex)
             {
                 Console.WriteLine(ex);
-                return StatusCode(500, new { Success = false, Error = "Failed to send reset password link." });
+
+                return StatusCode(500, new
+                {
+                    Success = false,
+                    Error = "Failed to send reset password link."
+                });
             }
         }
 
+        // =========================================================
+        // DASHBOARD COUNTS
+        // =========================================================
+        [Authorize]
         [HttpGet("DashboardCounts")]
         public IActionResult GetDashboardCounts()
         {
@@ -1122,29 +1411,41 @@ namespace WebApplication1.Controllers
 
                 return StatusCode(500, new
                 {
-                    Error = "Failed to get dashboard counts.",
-                    Details = ex.Message
+                    Error = "Failed to get dashboard counts."
                 });
             }
         }
 
+        // =========================================================
+        // UPDATE USER
+        // =========================================================
         [Authorize]
         [HttpPut("Update/{id}")]
-        public async Task<IActionResult> UpdateUser(Guid id, [FromBody] UpdateUserRequest request)
+        public async Task<IActionResult> UpdateUser(
+            Guid id,
+            [FromBody] UpdateUserRequest request)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
             try
             {
-                // Get logged-in user from JWT
-                var currentUserIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                var currentUserIdClaim = User.FindFirst(
+                    ClaimTypes.NameIdentifier
+                )?.Value;
+
                 Guid? currentUserId = null;
 
-                if (Guid.TryParse(currentUserIdClaim, out var parsedId))
+                if (Guid.TryParse(
+                    currentUserIdClaim,
+                    out var parsedId))
+                {
                     currentUserId = parsedId;
+                }
 
-                var actorName = User.FindFirst(ClaimTypes.Name)?.Value ?? "System";
+                var actorName = User.FindFirst(
+                    ClaimTypes.Name
+                )?.Value ?? "System";
 
                 var user = await _context.Users
                     .Include(u => u.Departments)
@@ -1152,18 +1453,23 @@ namespace WebApplication1.Controllers
                     .FirstOrDefaultAsync(u => u.Id == id);
 
                 if (user == null)
+                {
                     return NotFound(new
                     {
                         Success = false,
                         Message = "User not found."
                     });
+                }
 
-                // Prevent duplicate email
+                // Prevent duplicate email.
                 if (!string.IsNullOrWhiteSpace(request.Email) &&
                     request.Email != user.Email)
                 {
                     bool emailExists = await _context.Users
-                        .AnyAsync(x => x.Email == request.Email && x.Id != id);
+                        .AnyAsync(x =>
+                            x.Email == request.Email &&
+                            x.Id != id
+                        );
 
                     if (emailExists)
                     {
@@ -1175,7 +1481,7 @@ namespace WebApplication1.Controllers
                     }
                 }
 
-                // Update user fields
+                // Update user fields.
                 if (!string.IsNullOrWhiteSpace(request.FullName))
                     user.FullName = request.FullName;
 
@@ -1203,6 +1509,7 @@ namespace WebApplication1.Controllers
                 if (request.MonthlySalary.HasValue)
                     user.MonthlySalary = request.MonthlySalary.Value;
 
+                // Work schedule.
                 if (request.ClearWorkScheduleOverride == true)
                 {
                     user.WorkStartTime = null;
@@ -1214,21 +1521,53 @@ namespace WebApplication1.Controllers
                 else
                 {
                     if (request.WorkStartTime != null)
-                        user.WorkStartTime = YLWorks.Services.Claims.ClaimSettingsService.ParseOptionalTime(
-                            string.IsNullOrWhiteSpace(request.WorkStartTime) ? null : request.WorkStartTime);
+                    {
+                        user.WorkStartTime =
+                            YLWorks.Services.Claims.ClaimSettingsService.ParseOptionalTime(
+                                string.IsNullOrWhiteSpace(request.WorkStartTime)
+                                    ? null
+                                    : request.WorkStartTime
+                            );
+                    }
+
                     if (request.WorkEndTime != null)
-                        user.WorkEndTime = YLWorks.Services.Claims.ClaimSettingsService.ParseOptionalTime(
-                            string.IsNullOrWhiteSpace(request.WorkEndTime) ? null : request.WorkEndTime);
+                    {
+                        user.WorkEndTime =
+                            YLWorks.Services.Claims.ClaimSettingsService.ParseOptionalTime(
+                                string.IsNullOrWhiteSpace(request.WorkEndTime)
+                                    ? null
+                                    : request.WorkEndTime
+                            );
+                    }
+
                     if (request.UsesRestDayHalfDay.HasValue)
-                        user.UsesRestDayHalfDay = request.UsesRestDayHalfDay;
+                    {
+                        user.UsesRestDayHalfDay =
+                            request.UsesRestDayHalfDay;
+                    }
+
                     if (request.RestDayHalfDayStart != null)
-                        user.RestDayHalfDayStart = YLWorks.Services.Claims.ClaimSettingsService.ParseOptionalTime(
-                            string.IsNullOrWhiteSpace(request.RestDayHalfDayStart) ? null : request.RestDayHalfDayStart);
+                    {
+                        user.RestDayHalfDayStart =
+                            YLWorks.Services.Claims.ClaimSettingsService.ParseOptionalTime(
+                                string.IsNullOrWhiteSpace(request.RestDayHalfDayStart)
+                                    ? null
+                                    : request.RestDayHalfDayStart
+                            );
+                    }
+
                     if (request.RestDayHalfDayEnd != null)
-                        user.RestDayHalfDayEnd = YLWorks.Services.Claims.ClaimSettingsService.ParseOptionalTime(
-                            string.IsNullOrWhiteSpace(request.RestDayHalfDayEnd) ? null : request.RestDayHalfDayEnd);
+                    {
+                        user.RestDayHalfDayEnd =
+                            YLWorks.Services.Claims.ClaimSettingsService.ParseOptionalTime(
+                                string.IsNullOrWhiteSpace(request.RestDayHalfDayEnd)
+                                    ? null
+                                    : request.RestDayHalfDayEnd
+                            );
+                    }
                 }
 
+                // Update reporting managers.
                 if (request.HodIds != null)
                 {
                     var oldManagers = await _context.UserReportingManagers
@@ -1238,27 +1577,29 @@ namespace WebApplication1.Controllers
                     _context.UserReportingManagers.RemoveRange(oldManagers);
 
                     var managerIds = request.HodIds
-                        .Where(x => x != Guid.Empty && x != user.Id)
-                        .Distinct();
+                        .Where(x =>
+                            x != Guid.Empty &&
+                            x != user.Id
+                        )
+                        .Distinct()
+                        .ToList();
 
                     foreach (var managerId in managerIds)
                     {
-                        _context.UserReportingManagers.Add(new UserReportingManager
-                        {
-                            UserId = user.Id,
-                            ManagerId = managerId
-                        });
+                        _context.UserReportingManagers.Add(
+                            new UserReportingManager
+                            {
+                                UserId = user.Id,
+                                ManagerId = managerId
+                            }
+                        );
                     }
                 }
 
+                // Update departments.
                 if (request.DepartmentIds != null)
                 {
-                    var existingDepartments = user.Departments.ToList();
-
-                    foreach (var dept in existingDepartments)
-                    {
-                        user.Departments.Remove(dept);
-                    }
+                    user.Departments.Clear();
 
                     var departments = await _context.Departments
                         .Where(d => request.DepartmentIds.Contains(d.Id))
@@ -1274,14 +1615,14 @@ namespace WebApplication1.Controllers
 
                 _context.Users.Update(user);
 
-                // Activity Log
                 _context.ActivityLogs.Add(new ActivityLog
                 {
                     Id = Guid.NewGuid(),
                     UserId = currentUserId,
                     Module = "User",
                     Action = "Update",
-                    Description = $"{actorName} updated the profile of {user.FullName} ({user.EmployeeNo}).",
+                    Description =
+                        $"{actorName} updated the profile of {user.FullName} ({user.EmployeeNo}).",
                     Icon = "pi pi-user-edit",
                     Color = "orange",
                     CreatedAt = DateTimeHelper.Now()
@@ -1289,7 +1630,6 @@ namespace WebApplication1.Controllers
 
                 await _context.SaveChangesAsync();
 
-                // SignalR Notification
                 await _hub.Clients.All.SendAsync("ReceiveNotification", new
                 {
                     Title = "User Updated",
@@ -1310,27 +1650,51 @@ namespace WebApplication1.Controllers
                     SystemRole = user.SystemRole,
                     JoinedDate = user.JoinedDate,
                     Gender = user.Gender,
-                    HodIds = user.ReportingManagers.Select(rm => rm.ManagerId).ToList(),
-                    DepartmentIds = user.Departments.Select(d => d.Id).ToList(),
-                    Departments = user.Departments.Select(d => new UserDepartmentDto
-                    {
-                        Id = d.Id,
-                        Name = d.Name
-                    }).ToList(),
+
+                    HodIds = user.ReportingManagers
+                        .Select(rm => rm.ManagerId)
+                        .ToList(),
+
+                    DepartmentIds = user.Departments
+                        .Select(d => d.Id)
+                        .ToList(),
+
+                    Departments = user.Departments
+                        .Select(d => new UserDepartmentDto
+                        {
+                            Id = d.Id,
+                            Name = d.Name
+                        })
+                        .ToList(),
+
                     MonthlySalary = user.MonthlySalary,
+
                     WorkStartTime = user.WorkStartTime.HasValue
-                        ? YLWorks.Services.Claims.ClaimSettingsService.FormatTime(user.WorkStartTime.Value)
+                        ? YLWorks.Services.Claims.ClaimSettingsService.FormatTime(
+                            user.WorkStartTime.Value
+                        )
                         : null,
+
                     WorkEndTime = user.WorkEndTime.HasValue
-                        ? YLWorks.Services.Claims.ClaimSettingsService.FormatTime(user.WorkEndTime.Value)
+                        ? YLWorks.Services.Claims.ClaimSettingsService.FormatTime(
+                            user.WorkEndTime.Value
+                        )
                         : null,
+
                     UsesRestDayHalfDay = user.UsesRestDayHalfDay,
+
                     RestDayHalfDayStart = user.RestDayHalfDayStart.HasValue
-                        ? YLWorks.Services.Claims.ClaimSettingsService.FormatTime(user.RestDayHalfDayStart.Value)
+                        ? YLWorks.Services.Claims.ClaimSettingsService.FormatTime(
+                            user.RestDayHalfDayStart.Value
+                        )
                         : null,
+
                     RestDayHalfDayEnd = user.RestDayHalfDayEnd.HasValue
-                        ? YLWorks.Services.Claims.ClaimSettingsService.FormatTime(user.RestDayHalfDayEnd.Value)
+                        ? YLWorks.Services.Claims.ClaimSettingsService.FormatTime(
+                            user.RestDayHalfDayEnd.Value
+                        )
                         : null,
+
                     UpdatedAt = user.UpdatedAt,
                     CreatedAt = user.CreatedAt,
                     LastLoginAt = user.LastLoginAt,
@@ -1356,7 +1720,9 @@ namespace WebApplication1.Controllers
             }
         }
 
-
+        // =========================================================
+        // USER APPROVAL
+        // =========================================================
         [Authorize(Roles = "SuperAdmin,HR,Management")]
         [HttpPut("Approval/{id}")]
         public async Task<IActionResult> Approval(
@@ -1370,10 +1736,15 @@ namespace WebApplication1.Controllers
             if (user == null)
                 return NotFound(new { Error = "User not found." });
 
-            if (request.Status != "Approved" && request.Status != "Rejected")
-                return BadRequest(new { Error = "Invalid approval status." });
+            if (request.Status != "Approved" &&
+                request.Status != "Rejected")
+            {
+                return BadRequest(new
+                {
+                    Error = "Invalid approval status."
+                });
+            }
 
-            // Update status
             user.Status = request.Status;
 
             if (request.Status == "Approved")
@@ -1390,6 +1761,10 @@ namespace WebApplication1.Controllers
             {
                 user.IsActive = false;
                 user.RejectReason = request.Reason;
+
+                // Revoke refresh token when rejected.
+                user.RefreshToken = null;
+                user.RefreshTokenExpiryTime = null;
             }
 
             await _context.SaveChangesAsync();

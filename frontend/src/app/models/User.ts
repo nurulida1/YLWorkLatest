@@ -2,12 +2,15 @@ import { UserRole } from '../shared/enum/enum';
 import { BaseModel } from './BaseModel';
 import { DepartmentDto } from './Department';
 
+// ==========================================
+// USER DTO
+// ==========================================
+
 export interface UserDto extends BaseModel {
   fullName: string;
   displayName: string;
   email: string;
   contactNo: string;
-  password: string;
 
   departmentIds: string[];
   departments: DepartmentDto[];
@@ -17,24 +20,36 @@ export interface UserDto extends BaseModel {
   employeeNo: string;
   jobTitle: string;
   systemRole: string;
+
   lastLoginAt: Date;
   isActive: boolean;
   hodIds: string[];
-  refreshToken: string;
-  refreshTokenExpiryTime: Date;
+
   gender: string;
+
   monthlySalary?: number | null;
+
   workStartTime?: string | null;
   workEndTime?: string | null;
+
   usesRestDayHalfDay?: boolean | null;
   restDayHalfDayStart?: string | null;
   restDayHalfDayEnd?: string | null;
 }
 
+// ==========================================
+// LOGIN REQUEST
+// ==========================================
+
 export interface LoginRequest {
   email: string;
   password: string;
+  rememberMe: boolean;
 }
+
+// ==========================================
+// REGISTER REQUEST
+// ==========================================
 
 export interface RegisterRequest {
   fullName: string;
@@ -47,13 +62,20 @@ export interface RegisterRequest {
   gender: string;
   joinedDate: Date;
   hodIds: string[];
-
   departmentIds: string[];
 }
+
+// ==========================================
+// FORGOT PASSWORD REQUEST
+// ==========================================
 
 export interface ForgotPasswordRequest {
   email: string;
 }
+
+// ==========================================
+// RESET PASSWORD REQUEST
+// ==========================================
 
 export interface ResetPasswordRequest {
   token: string;
@@ -61,53 +83,99 @@ export interface ResetPasswordRequest {
   confirmPassword: string;
 }
 
+// ==========================================
+// CHANGE PASSWORD REQUEST
+// ==========================================
+
 export interface ChangePasswordRequest {
   userId: string;
   newPassword: string;
   confirmPassword: string;
 }
 
+// ==========================================
+// LOGIN RESPONSE
+// ==========================================
+
 export interface LoginResponse {
   success: boolean;
   message: string;
+
+  userId: string;
   email: string;
   fullName: string;
   displayName: string;
   employeeNo: string;
+
   accessToken: string;
   refreshToken: string;
-  expiresAt?: Date;
-  userId: string;
+  expiresAt?: string;
+
   systemRole: UserRole | string;
   jobTitle?: string;
 
   departmentIds: string[];
-  departments: DepartmentDto[];
+  departments: string[];
+
   gender?: string;
   hodIds?: string[];
 }
 
+// ==========================================
+// REFRESH TOKEN REQUEST
+// ==========================================
+
+export interface RefreshTokenRequest {
+  refreshToken: string;
+}
+
+// ==========================================
+// REFRESH TOKEN RESPONSE
+// ==========================================
+
+export interface RefreshTokenResponse {
+  success: boolean;
+  accessToken: string;
+  refreshToken: string;
+  expiresAt: string;
+}
+
+// ==========================================
+// UPDATE USER REQUEST
+// ==========================================
+
 export interface UpdateUserRequest {
   id: string;
+
   fullName?: string;
   displayName?: string;
   email?: string;
   contactNo?: string;
+
   jobTitle?: string;
   systemRole?: string;
   joinedDate?: Date;
+
   hodIds?: string[];
   gender?: string;
 
   departmentIds?: string[];
+
   monthlySalary?: number | null;
+
   workStartTime?: string | null;
   workEndTime?: string | null;
+
   usesRestDayHalfDay?: boolean | null;
-  restDayHalfDayStart?: string | null;
-  restDayHalfDayEnd?: string | null;
+  restDayHalfStart?: string | null;
+  restDayHalfEnd?: string | null;
+
   clearWorkScheduleOverride?: boolean;
 }
+
+// ==========================================
+// STAFF DASHBOARD
+// ==========================================
 
 export interface StaffDashboard {
   totalStaff: number;
@@ -115,6 +183,10 @@ export interface StaffDashboard {
   inactive: number;
   departmentDistribution: DepartmentDistribution[];
 }
+
+// ==========================================
+// DEPARTMENT DISTRIBUTION
+// ==========================================
 
 export interface DepartmentDistribution {
   departmentId: string;

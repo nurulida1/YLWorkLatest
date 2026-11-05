@@ -28,7 +28,7 @@ import {
   formatDaysAmount,
   formatSessionLabel,
   normalizeLeaveSession,
-} from '../../../common/leave-day.util';
+} from '../../../common/guard/leave-day.util';
 import { LeaveBalanceService } from '../../../services/leave-balance.service';
 import { LeaveHolidayService } from '../../../services/leave-holiday.service';
 import { LeaveRequestService } from '../../../services/leave-request.service';

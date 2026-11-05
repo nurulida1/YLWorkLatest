@@ -42,6 +42,8 @@ namespace YLWorks.Model
         public DateTime? RefreshTokenExpiryTime { get; set; }
         public ICollection<Notification> Notifications { get; set; }
         = new List<Notification>();
+
+        public bool RememberMe { get; set; } = false;
     }
 
     public class LoginRequest
@@ -51,6 +53,8 @@ namespace YLWorks.Model
         public string Email { get; set; } = string.Empty;
         [Required]
         public string Password { get; set; } = string.Empty;
+        public bool RememberMe { get; set; } = false;
+
     }
 
     public class RegisterRequest

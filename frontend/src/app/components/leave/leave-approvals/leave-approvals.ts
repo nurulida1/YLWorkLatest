@@ -1,5 +1,11 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectorRef, Component, inject, OnDestroy, OnInit } from '@angular/core';
+import {
+  ChangeDetectorRef,
+  Component,
+  inject,
+  OnDestroy,
+  OnInit,
+} from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { MessageService } from 'primeng/api';
@@ -10,7 +16,10 @@ import { TagModule } from 'primeng/tag';
 import { TextareaModule } from 'primeng/textarea';
 import { finalize } from 'rxjs/operators';
 import { LeaveRequestDto } from '../../../models/Leave';
-import { formatDaysAmount, formatLeaveDurationLabel } from '../../../common/leave-day.util';
+import {
+  formatDaysAmount,
+  formatLeaveDurationLabel,
+} from '../../../common/guard/leave-day.util';
 import { LeaveRequestService } from '../../../services/leave-request.service';
 import { LoadingService } from '../../../services/loading.service';
 import { UserService } from '../../../services/userService.service';
@@ -31,14 +40,14 @@ import { environment } from '../../../../environments/environment.development';
   template: `
     <div class="w-full flex flex-col p-5 gap-4">
       <div class="flex items-center gap-1 text-gray-500 text-sm">
-        <a routerLink="/dashboard" class="hover:text-gray-700">Dashboard</a><span>/</span>
-        <a routerLink="/leave" class="hover:text-gray-700">Leave</a><span>/</span>
+        <a routerLink="/dashboard" class="hover:text-gray-700">Dashboard</a
+        ><span>/</span>
+        <a routerLink="/leave" class="hover:text-gray-700">Leave</a
+        ><span>/</span>
         <span class="text-gray-800 font-semibold">Approvals</span>
       </div>
       <h1 class="text-xl font-semibold text-gray-800">Pending HOD approvals</h1>
-      <p class="text-gray-500 text-sm">
-        Leave requests
-      </p>
+      <p class="text-gray-500 text-sm">Leave requests</p>
 
       <div class="bg-white border border-gray-200 rounded-lg p-4">
         <p-table [value]="requests" styleClass="p-datatable-sm">
@@ -58,23 +67,45 @@ import { environment } from '../../../../environments/environment.development';
               <td>{{ row.employeeName }}</td>
               <td>
                 {{ row.leaveTypeName }}
-                @if (row.isShortNoticeAnnual) { <p-tag value="Short notice → Unpaid" severity="warn" class="ml-1" /> }
-                @else if (hasBalanceSplit(row)) { <p-tag value="Balance split" severity="warn" class="ml-1" /> }
-                @else if (row.isUnpaid) { <p-tag value="Unpaid" severity="secondary" class="ml-1" /> }
-                @if (row.isEmergency) { <p-tag value="URGENT" severity="danger" class="ml-1" /> }
+                @if (row.isShortNoticeAnnual) {
+                  <p-tag
+                    value="Short notice → Unpaid"
+                    severity="warn"
+                    class="ml-1"
+                  />
+                } @else if (hasBalanceSplit(row)) {
+                  <p-tag value="Balance split" severity="warn" class="ml-1" />
+                } @else if (row.isUnpaid) {
+                  <p-tag value="Unpaid" severity="secondary" class="ml-1" />
+                }
+                @if (row.isEmergency) {
+                  <p-tag value="URGENT" severity="danger" class="ml-1" />
+                }
               </td>
-              <td>{{ row.startDate | date:'dd MMM yyyy' }} – {{ row.endDate | date:'dd MMM yyyy' }}</td>
+              <td>
+                {{ row.startDate | date: 'dd MMM yyyy' }} –
+                {{ row.endDate | date: 'dd MMM yyyy' }}
+              </td>
               <td>
                 {{ formatLeaveDays(row) }}
                 @if (hasBalanceSplit(row)) {
                   <div class="text-xs text-gray-500 mt-0.5">
-                    @for (line of row.balanceAllocations!; track line.leaveTypeId + line.sortOrder; let last = $last) {
-                      <span>{{ line.leaveTypeName }} {{ formatDays(line.days) }}{{ last ? '' : ' · ' }}</span>
+                    @for (
+                      line of row.balanceAllocations!;
+                      track line.leaveTypeId + line.sortOrder;
+                      let last = $last
+                    ) {
+                      <span
+                        >{{ line.leaveTypeName }} {{ formatDays(line.days)
+                        }}{{ last ? '' : ' · ' }}</span
+                      >
                     }
                   </div>
                 }
               </td>
-              <td class="max-w-xs whitespace-pre-wrap text-gray-700">{{ row.reason }}</td>
+              <td class="max-w-xs whitespace-pre-wrap text-gray-700">
+                {{ row.reason }}
+              </td>
               <td>
                 @if (row.documentUrl) {
                   <a
@@ -85,14 +116,20 @@ import { environment } from '../../../../environments/environment.development';
                     [title]="row.documentFileName || 'View document'"
                   >
                     <i class="pi pi-file text-yellow-600 shrink-0"></i>
-                    <span class="truncate">{{ row.documentFileName || 'View' }}</span>
+                    <span class="truncate">{{
+                      row.documentFileName || 'View'
+                    }}</span>
                   </a>
                 } @else {
                   <span class="text-gray-400 text-sm">—</span>
                 }
               </td>
               <td class="flex gap-1 flex-wrap">
-                <p-button label="Approve" size="small" (onClick)="approve(row)" />
+                <p-button
+                  label="Approve"
+                  size="small"
+                  (onClick)="approve(row)"
+                />
                 @if (canFinalize(row)) {
                   <p-button
                     label="Finalize"
@@ -102,21 +139,44 @@ import { environment } from '../../../../environments/environment.development';
                     (onClick)="finalize(row)"
                   />
                 }
-                <p-button label="Reject" size="small" severity="danger" [outlined]="true" (onClick)="openReject(row)" />
+                <p-button
+                  label="Reject"
+                  size="small"
+                  severity="danger"
+                  [outlined]="true"
+                  (onClick)="openReject(row)"
+                />
               </td>
             </tr>
           </ng-template>
           <ng-template pTemplate="emptymessage">
-            <tr><td colspan="7" class="text-center text-gray-500 py-8">No pending requests.</td></tr>
+            <tr>
+              <td colspan="7" class="text-center text-gray-500 py-8">
+                No pending requests.
+              </td>
+            </tr>
           </ng-template>
         </p-table>
       </div>
 
-      <p-dialog header="Reject leave" [(visible)]="rejectVisible" [modal]="true" [style]="{ width: '440px' }">
+      <p-dialog
+        header="Reject leave"
+        [(visible)]="rejectVisible"
+        [modal]="true"
+        [style]="{ width: '440px' }"
+      >
         <form [formGroup]="rejectForm" class="flex flex-col gap-3">
           <p class="text-sm text-gray-600">Rejection reason is mandatory.</p>
-          <textarea pTextarea formControlName="rejectionReason" rows="4"></textarea>
-          <p-button label="Confirm reject" severity="danger" (onClick)="confirmReject()" />
+          <textarea
+            pTextarea
+            formControlName="rejectionReason"
+            rows="4"
+          ></textarea>
+          <p-button
+            label="Confirm reject"
+            severity="danger"
+            (onClick)="confirmReject()"
+          />
         </form>
       </p-dialog>
     </div>
@@ -133,7 +193,9 @@ export class LeaveApprovals implements OnInit, OnDestroy {
   requests: LeaveRequestDto[] = [];
   rejectVisible = false;
   selected: LeaveRequestDto | null = null;
-  rejectForm = this.fb.group({ rejectionReason: ['', [Validators.required, Validators.minLength(3)]] });
+  rejectForm = this.fb.group({
+    rejectionReason: ['', [Validators.required, Validators.minLength(3)]],
+  });
 
   formatLeaveDays(row: LeaveRequestDto): string {
     return formatLeaveDurationLabel(row);
@@ -162,7 +224,11 @@ export class LeaveApprovals implements OnInit, OnDestroy {
           this.cdr.markForCheck();
         },
         error: () => {
-          this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Failed to load pending requests' });
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: 'Failed to load pending requests',
+          });
           this.cdr.markForCheck();
         },
       });
@@ -181,12 +247,22 @@ export class LeaveApprovals implements OnInit, OnDestroy {
       .pipe(finalize(() => this.loadingService.stop()))
       .subscribe({
         next: () => {
-          this.requests = this.requests.filter((r) => r.requestId !== row.requestId);
-          this.messageService.add({ severity: 'success', summary: 'Approved', detail: `${row.employeeName}'s leave approved` });
+          this.requests = this.requests.filter(
+            (r) => r.requestId !== row.requestId,
+          );
+          this.messageService.add({
+            severity: 'success',
+            summary: 'Approved',
+            detail: `${row.employeeName}'s leave approved`,
+          });
           this.cdr.markForCheck();
         },
         error: (e) => {
-          this.messageService.add({ severity: 'error', summary: 'Error', detail: e.error?.message || 'Approve failed' });
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: e.error?.message || 'Approve failed',
+          });
           this.cdr.markForCheck();
         },
       });
@@ -209,7 +285,9 @@ export class LeaveApprovals implements OnInit, OnDestroy {
       .pipe(finalize(() => this.loadingService.stop()))
       .subscribe({
         next: () => {
-          this.requests = this.requests.filter((r) => r.requestId !== row.requestId);
+          this.requests = this.requests.filter(
+            (r) => r.requestId !== row.requestId,
+          );
           this.messageService.add({
             severity: 'success',
             summary: 'Finalized',
@@ -249,11 +327,19 @@ export class LeaveApprovals implements OnInit, OnDestroy {
           const id = this.selected!.requestId;
           this.requests = this.requests.filter((r) => r.requestId !== id);
           this.rejectVisible = false;
-          this.messageService.add({ severity: 'info', summary: 'Rejected', detail: 'Employee notified' });
+          this.messageService.add({
+            severity: 'info',
+            summary: 'Rejected',
+            detail: 'Employee notified',
+          });
           this.cdr.markForCheck();
         },
         error: (e) => {
-          this.messageService.add({ severity: 'error', summary: 'Error', detail: e.error?.message || 'Reject failed' });
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: e.error?.message || 'Reject failed',
+          });
           this.cdr.markForCheck();
         },
       });

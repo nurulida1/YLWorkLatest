@@ -24,6 +24,8 @@ import {
 } from '@angular/forms';
 import { MessageService } from 'primeng/api';
 import { HardwareRequestService } from '../../../services/HardwareRequestService';
+import { UserService } from '../../../services/userService.service';
+import { SelectModule } from 'primeng/select';
 
 type RequestFilter =
   | 'All'
@@ -40,7 +42,7 @@ type RequestTypeFilter = 'All' | HardwareRequestType;
 
 @Component({
   selector: 'app-incoming-hardware-request',
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, SelectModule],
   template: `
     <div class="incoming-page">
       <!-- PAGE HEADER -->
@@ -169,7 +171,9 @@ type RequestTypeFilter = 'All' | HardwareRequestType;
           <div class="empty-state">
             <div class="empty-icon">▤</div>
             <h3>No requests found</h3>
-            <p>There are no requests matching your current filters.</p>
+            <p class="mb-2">
+              There are no requests matching your current filters.
+            </p>
 
             <button type="button" class="btn-clear" (click)="clearFilters()">
               Clear Filters
@@ -570,6 +574,7 @@ type RequestTypeFilter = 'All' | HardwareRequestType;
                 Review each requested item and enter the quantity you approve.
               </div>
 
+              <!-- APPROVAL ITEMS -->
               <div formArrayName="items" class="approval-list">
                 @for (
                   item of approvalItems.controls;
@@ -579,6 +584,7 @@ type RequestTypeFilter = 'All' | HardwareRequestType;
                   <div class="approval-item" [formGroupName]="i">
                     <div class="approval-item-heading">
                       <strong>{{ item.get('itemName')?.value }}</strong>
+
                       <span>
                         Requested: {{ item.get('requestedQuantity')?.value }}
                       </span>
@@ -587,6 +593,7 @@ type RequestTypeFilter = 'All' | HardwareRequestType;
                     <div class="form-grid">
                       <div class="form-field">
                         <label>Approved Quantity <span>*</span></label>
+
                         <input
                           type="number"
                           formControlName="approvedQuantity"
@@ -608,6 +615,7 @@ type RequestTypeFilter = 'All' | HardwareRequestType;
 
                       <div class="form-field">
                         <label>Item Remarks</label>
+
                         <input
                           type="text"
                           formControlName="remarks"
@@ -619,8 +627,37 @@ type RequestTypeFilter = 'All' | HardwareRequestType;
                 }
               </div>
 
+              <!-- ASSIGN STAFF - OUTSIDE THE ITEMS LOOP -->
+              <div class="form-field">
+                <label>Assign To</label>
+
+                <p-select
+                  formControlName="assignedToId"
+                  [options]="assignableUsers"
+                  optionLabel="label"
+                  optionValue="value"
+                  placeholder="Select staff (optional)"
+                  [showClear]="approveForm.get('assignedToId')?.value"
+                  styleClass="w-full"
+                  [filter]="true"
+                  appendTo="body"
+                ></p-select>
+
+                <small class="helper-text">
+                  Leave empty to automatically assign this request to yourself.
+                </small>
+
+                @if (assignableUsers.length === 0) {
+                  <small class="helper-text">
+                    No staff members available. Please check the employee list.
+                  </small>
+                }
+              </div>
+
+              <!-- APPROVAL REMARKS -->
               <div class="form-field">
                 <label>Approval Remarks</label>
+
                 <textarea
                   formControlName="remarks"
                   rows="3"
@@ -740,16 +777,17 @@ type RequestTypeFilter = 'All' | HardwareRequestType;
               <div class="form-field">
                 <label>Assign To <span>*</span></label>
 
-                <select formControlName="assignedToId">
-                  <option value="">-- Select Staff --</option>
-
-                  @for (user of assignableUsers; track user.id) {
-                    <option [value]="user.id">
-                      {{ user.fullName }}
-                    </option>
-                  }
-                </select>
-
+                <p-select
+                  formControlName="assignedToId"
+                  [options]="assignableUsers"
+                  optionLabel="label"
+                  optionValue="value"
+                  [filter]="true"
+                  placeholder="-- Select Staff --"
+                  [showClear]="assignForm.get('assignedToId')?.value"
+                  styleClass="w-full"
+                  appendTo="body"
+                ></p-select>
                 @if (
                   assignForm.get('assignedToId')?.touched &&
                   assignForm.get('assignedToId')?.invalid
@@ -925,10 +963,15 @@ type RequestTypeFilter = 'All' | HardwareRequestType;
               <div class="form-field">
                 <label>New Status <span>*</span></label>
 
-                <select formControlName="status">
-                  <option value="InProgress">In Progress</option>
-                  <option value="Resolved">Resolved</option>
-                </select>
+                <p-select
+                  formControlName="status"
+                  [options]="statusOptions"
+                  optionLabel="label"
+                  optionValue="value"
+                  placeholder="Select status"
+                  styleClass="w-full"
+                  appendTo="body"
+                ></p-select>
               </div>
 
               <div class="form-field">
@@ -965,8 +1008,11 @@ type RequestTypeFilter = 'All' | HardwareRequestType;
 export class IncomingHardwareRequest implements OnInit {
   private readonly requestService = inject(HardwareRequestService);
   private readonly fb = inject(FormBuilder);
+  private readonly userService = inject(UserService);
   private readonly messageService = inject(MessageService);
   private readonly cdr = inject(ChangeDetectorRef);
+
+  currentUserId = this.userService.currentUser?.userId;
 
   // =====================================================
   // DATA
@@ -977,14 +1023,14 @@ export class IncomingHardwareRequest implements OnInit {
 
   selectedRequest: HardwareRequestDto | null = null;
 
-  loading = false;
-  submitting = false;
+  loading: boolean = false;
+  submitting: boolean = false;
 
   // =====================================================
   // FILTERS
   // =====================================================
 
-  searchText = '';
+  searchText: string = '';
 
   selectedStatus: RequestFilter = 'All';
   selectedType: RequestTypeFilter = 'All';
@@ -1014,6 +1060,7 @@ export class IncomingHardwareRequest implements OnInit {
 
   approveForm = this.fb.group({
     remarks: [''],
+    assignedToId: [''],
     items: this.fb.array([]),
   });
 
@@ -1054,16 +1101,21 @@ export class IncomingHardwareRequest implements OnInit {
   // MODAL / ACTION STATE
   // =====================================================
 
-  showDetails = false;
-  showApproveDialog = false;
-  showRejectDialog = false;
-  showAssignDialog = false;
-  showIssueDialog = false;
-  showStatusDialog = false;
+  showDetails: boolean = false;
+  showApproveDialog: boolean = false;
+  showRejectDialog: boolean = false;
+  showAssignDialog: boolean = false;
+  showIssueDialog: boolean = false;
+  showStatusDialog: boolean = false;
 
   // Populate this from your existing employee/user API.
   // Do not use arbitrary hardcoded user IDs.
-  assignableUsers: { id: string; fullName: string }[] = [];
+  assignableUsers: { label: string; value: string }[] = [];
+
+  statusOptions = [
+    { label: 'In Progress', value: 'InProgress' },
+    { label: 'Resolved', value: 'Resolved' },
+  ];
 
   // =====================================================
   // INITIALIZATION
@@ -1071,16 +1123,52 @@ export class IncomingHardwareRequest implements OnInit {
 
   ngOnInit(): void {
     this.loadRequests();
+    this.loadUsers();
+  }
+
+  loadUsers(): void {
+    this.userService
+      .GetMany({
+        Page: 1,
+        PageSize: 1000000,
+        OrderBy: 'FullName',
+        Filter: `SystemRole!=SuperAdmin`,
+        Select: null,
+        Includes: null,
+      })
+      .subscribe({
+        next: (res) => {
+          this.assignableUsers = (res.data ?? [])
+            .filter((user: any) => user.isActive && user.status === 'Approved')
+            .map((user: any) => ({
+              label: user.fullName,
+              value: user.id,
+            }));
+
+          this.cdr.markForCheck();
+        },
+        error: (error) => {
+          console.error('Error loading assignable users:', error);
+
+          this.assignableUsers = [];
+
+          this.showError('Failed to load staff members.');
+        },
+      });
   }
 
   // =====================================================
   // LOAD REQUESTS
   // =====================================================
 
+  // =====================================================
+  // LOAD ALL INCOMING REQUESTS
+  // =====================================================
+
   loadRequests(): void {
     this.loading = true;
 
-    this.requestService.GetPendingApprovals().subscribe({
+    this.requestService.GetIncomingRequests().subscribe({
       next: (data) => {
         this.requests = data ?? [];
         this.applyFilters();
@@ -1088,8 +1176,11 @@ export class IncomingHardwareRequest implements OnInit {
         this.loading = false;
         this.cdr.markForCheck();
       },
-      error: () => {
+      error: (error) => {
+        console.error('Error loading incoming requests:', error);
+
         this.loading = false;
+        this.showError('Failed to load incoming requests.');
         this.cdr.markForCheck();
       },
     });
@@ -1214,6 +1305,7 @@ export class IncomingHardwareRequest implements OnInit {
 
     this.approveForm.reset({
       remarks: '',
+      assignedToId: request.assignedToId ?? '',
     });
 
     this.approvalItems.clear();
@@ -1224,6 +1316,7 @@ export class IncomingHardwareRequest implements OnInit {
           requestItemId: [item.id],
           itemName: [item.itemName],
           requestedQuantity: [item.requestedQuantity],
+
           approvedQuantity: [
             item.requestedQuantity,
             [
@@ -1232,12 +1325,14 @@ export class IncomingHardwareRequest implements OnInit {
               Validators.max(item.requestedQuantity),
             ],
           ],
+
           remarks: [item.remarks ?? ''],
         }),
       );
     });
 
     this.showApproveDialog = true;
+    this.cdr.markForCheck();
   }
 
   approveRequest(): void {
@@ -1250,7 +1345,9 @@ export class IncomingHardwareRequest implements OnInit {
 
     const payload: ApproveHardwareRequest = {
       remarks: formValue.remarks,
-      items: formValue.items.map((item: any) => ({
+      assignedToId: formValue.assignedToId || null,
+
+      items: (formValue.items ?? []).map((item: any) => ({
         requestItemId: item.requestItemId,
         approvedQuantity: Number(item.approvedQuantity),
         remarks: item.remarks,
@@ -1262,12 +1359,23 @@ export class IncomingHardwareRequest implements OnInit {
     this.requestService.Approve(this.selectedRequest.id, payload).subscribe({
       next: (response) => {
         this.showSuccess(response.message || 'Request approved successfully.');
-        this.showApproveDialog = false;
+
         this.submitting = false;
+        this.showApproveDialog = false;
+
         this.refreshSelectedRequest();
       },
-      error: () => {
+
+      error: (error) => {
+        console.error('Error approving request:', error);
+
         this.submitting = false;
+
+        this.showError(
+          error.error?.message ||
+            'Failed to approve request. Please try again.',
+        );
+
         this.cdr.markForCheck();
       },
     });
@@ -1580,7 +1688,6 @@ export class IncomingHardwareRequest implements OnInit {
   ): number {
     return Math.max(0, approvedQuantity - issuedQuantity);
   }
-
   canApprove(request: HardwareRequestDto): boolean {
     return request.status === 'Pending';
   }
@@ -1589,8 +1696,13 @@ export class IncomingHardwareRequest implements OnInit {
     return request.status === 'Pending';
   }
 
+  // Only managers / HODs should see Assign.
+  // Assigned staff should not see this button.
   canAssign(request: HardwareRequestDto): boolean {
-    return !['Rejected', 'Cancelled', 'Resolved'].includes(request.status);
+    return (
+      !this.isAssignedStaff(request) &&
+      !['Rejected', 'Cancelled', 'Resolved'].includes(request.status)
+    );
   }
 
   canIssue(request: HardwareRequestDto): boolean {
@@ -1603,9 +1715,14 @@ export class IncomingHardwareRequest implements OnInit {
   }
 
   canUpdateStatus(request: HardwareRequestDto): boolean {
-    return ['Approved', 'PartiallyIssued', 'InProgress'].includes(
-      request.status,
+    return (
+      ['Approved', 'PartiallyIssued', 'InProgress'].includes(request.status) &&
+      (this.isAssignedStaff(request) || !this.isAssignedStaff(request))
     );
+  }
+
+  isAssignedStaff(request: HardwareRequestDto): boolean {
+    return !!this.currentUserId && request.assignedToId === this.currentUserId;
   }
 
   // =====================================================

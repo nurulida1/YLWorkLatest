@@ -24,7 +24,6 @@ import { SelectModule } from 'primeng/select';
 import { Subject, takeUntil } from 'rxjs';
 import { AuthService } from '../../../services/authService';
 import { LoadingService } from '../../../services/loading.service';
-import { UserService } from '../../../services/userService.service';
 import { ValidateAllFormFields } from '../../../shared/helpers/helpers';
 import { FloatLabelModule } from 'primeng/floatlabel';
 import { AvatarModule } from 'primeng/avatar';
@@ -763,7 +762,6 @@ import { AvatarGroupModule } from 'primeng/avatargroup';
 export class Login implements OnDestroy, OnInit {
   private readonly loadingService = inject(LoadingService);
   private readonly messageService = inject(MessageService);
-  private readonly userService = inject(UserService);
   private readonly authService = inject(AuthService);
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly router = inject(Router);
@@ -799,8 +797,8 @@ export class Login implements OnDestroy, OnInit {
     this.cdr.detectChanges();
   }
 
-  onLogin() {
-    if (!this.FG.valid) {
+  onLogin(): void {
+    if (this.FG.invalid) {
       ValidateAllFormFields(this.FG);
       return;
     }
@@ -809,38 +807,42 @@ export class Login implements OnDestroy, OnInit {
 
     const email = this.FG.get('email')?.value;
     const password = this.FG.get('password')?.value;
-    const rememberMe = this.FG.get('rememberMe')?.value;
+    const rememberMe = this.FG.get('rememberMe')?.value ?? false;
 
     this.authService
-      .authenticate(email, password)
+      .login(email, password, rememberMe)
       .pipe(takeUntil(this.ngUnsubscribe))
       .subscribe({
         next: (res) => {
           this.loadingService.stop();
 
           if (res.success) {
-            this.userService.setCurrentUser(res, rememberMe);
-
+            // AuthService should already save the tokens and update currentUser.
             this.router.navigate(['/dashboard']);
-          } else {
-            this.error = true;
-            this.errorMessage = res.message ?? 'Login failed';
-            this.messageService.add({
-              severity: 'error',
-              summary: 'Authentication Failed',
-              detail: this.errorMessage,
-              life: 5000,
-            });
+            return;
           }
+
+          this.error = true;
+          this.errorMessage = res.message ?? 'Login failed';
+
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Authentication Failed',
+            detail: this.errorMessage,
+            life: 5000,
+          });
         },
+
         error: (err) => {
           this.loadingService.stop();
+
           this.error = true;
           this.errorMessage =
             err?.error?.message ?? 'An unexpected network error occurred';
+
           this.messageService.add({
-            severity: 'warn',
-            summary: 'Network Error',
+            severity: 'error',
+            summary: 'Login Failed',
             detail: this.errorMessage,
             life: 6000,
           });
@@ -851,6 +853,5 @@ export class Login implements OnDestroy, OnInit {
   ngOnDestroy(): void {
     this.ngUnsubscribe.next();
     this.ngUnsubscribe.complete();
-    this.loadingService.stop();
   }
 }

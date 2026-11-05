@@ -26,11 +26,13 @@ import {
 import { HardwareRequestService } from '../../../services/HardwareRequestService';
 import { InventoryService } from '../../../services/InventoryService';
 import { InventoryDropdownItem } from '../../../models/Inventory';
+import { DatePickerModule } from 'primeng/datepicker';
+import { SelectModule } from 'primeng/select';
 
 @Component({
   selector: 'app-hardware-request',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, DatePickerModule, SelectModule],
   template: `
     <div class="hardware-page">
       <!-- PAGE HEADER -->
@@ -124,20 +126,30 @@ import { InventoryDropdownItem } from '../../../models/Inventory';
                 <div class="form-field">
                   <label>Priority <span>*</span></label>
 
-                  <select formControlName="priority">
-                    @for (priority of priorities; track priority) {
-                      <option [value]="priority">
-                        {{ priority }}
-                      </option>
-                    }
-                  </select>
+                  <p-select
+                    formControlName="priority"
+                    [options]="priorities"
+                    placeholder="Select Priority"
+                    appendTo="body"
+                    styleClass="w-full"
+                  >
+                  </p-select>
                 </div>
 
                 <!-- NEEDED BY -->
                 <div class="form-field">
                   <label>Needed By</label>
 
-                  <input type="date" formControlName="neededBy" />
+                  <p-datepicker
+                    formControlName="neededBy"
+                    dateFormat="dd/mm/yy"
+                    placeholder="Select Needed By Date"
+                    [showIcon]="true"
+                    [showButtonBar]="true"
+                    appendTo="body"
+                    styleClass="w-full"
+                    inputStyleClass="w-full"
+                  />
                 </div>
               </div>
             </div>
@@ -235,27 +247,33 @@ import { InventoryDropdownItem } from '../../../models/Inventory';
                         <div class="form-field full-width">
                           <label>Inventory Item (Optional)</label>
 
-                          <select
+                          <p-select
                             formControlName="inventoryId"
-                            (change)="onInventorySelected(i)"
+                            [options]="inventoryItems"
+                            optionLabel="itemName"
+                            optionValue="id"
+                            placeholder="-- Select Inventory or Enter Manually --"
                             [disabled]="inventoryLoading"
+                            [showClear]="form.get('inventoryId')?.value"
+                            [filter]="true"
+                            filterBy="itemName,itemCode"
+                            appendTo="body"
+                            styleClass="w-full"
+                            (onChange)="onInventorySelected(i)"
                           >
-                            <option value="">
-                              -- Select Inventory or Enter Manually --
-                            </option>
-
-                            @for (
-                              inventory of inventoryItems;
-                              track inventory.id
-                            ) {
-                              <option [value]="inventory.id">
-                                {{ inventory.itemName }}
+                            <ng-template let-inventory pTemplate="item">
+                              <div class="flex flex-col">
+                                <span class="font-medium">{{
+                                  inventory.itemName
+                                }}</span>
                                 @if (inventory.itemCode) {
-                                  ({{ inventory.itemCode }})
+                                  <small class="text-gray-500">{{
+                                    inventory.itemCode
+                                  }}</small>
                                 }
-                              </option>
-                            }
-                          </select>
+                              </div>
+                            </ng-template>
+                          </p-select>
                         </div>
 
                         <!-- ITEM NAME -->

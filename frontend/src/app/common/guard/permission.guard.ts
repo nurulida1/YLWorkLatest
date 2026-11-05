@@ -4,7 +4,7 @@ import { CanActivateFn, Router } from '@angular/router';
 
 import { map, catchError, of } from 'rxjs';
 
-import { PermissionService } from '../services/permissionService';
+import { PermissionService } from '../../services/permissionService';
 
 type PermissionAction =
   | 'canRead'

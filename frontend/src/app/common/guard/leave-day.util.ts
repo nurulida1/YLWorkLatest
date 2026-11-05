@@ -1,7 +1,9 @@
-import { LeaveDaySession, LeaveRequestDto } from '../models/Leave';
+import { LeaveDaySession, LeaveRequestDto } from '../../models/Leave';
 
 export function normalizeLeaveSession(value: unknown): LeaveDaySession {
-  const v = String(value ?? 'Full').trim().toUpperCase();
+  const v = String(value ?? 'Full')
+    .trim()
+    .toUpperCase();
   if (v === 'AM') return 'AM';
   if (v === 'PM') return 'PM';
   return 'Full';
@@ -38,7 +40,9 @@ export function formatLeaveDurationLabel(row: {
   return `${days} day(s) · ${formatSessionLabel(start)} – ${formatSessionLabel(end)}`;
 }
 
-export function formatRequestSessionSummary(row: LeaveRequestDto): string | null {
+export function formatRequestSessionSummary(
+  row: LeaveRequestDto,
+): string | null {
   const start = normalizeLeaveSession(row.startSession);
   const end = normalizeLeaveSession(row.endSession);
   if (start === 'Full' && end === 'Full') return null;
@@ -53,7 +57,11 @@ export function calculateChargeableDaysClient(
   endSession: LeaveDaySession,
   isHoliday: (d: Date) => boolean,
 ): { total: number; skipped: number } {
-  const first = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+  const first = new Date(
+    start.getFullYear(),
+    start.getMonth(),
+    start.getDate(),
+  );
   const last = new Date(end.getFullYear(), end.getMonth(), end.getDate());
   if (last.getTime() < first.getTime()) return { total: 0, skipped: 0 };
 

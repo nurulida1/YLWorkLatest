@@ -6,6 +6,7 @@ using System.Text;
 using System.IdentityModel.Tokens.Jwt;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
+using System.Security.Cryptography;
 
 namespace YLWorks.Services
 {
@@ -22,8 +23,8 @@ namespace YLWorks.Services
 
         public async Task<LoginResponse> Authenticate(LoginRequest request)
         {
-            // 1. Validate input
-            if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Password))
+            if (string.IsNullOrWhiteSpace(request.Email) ||
+                string.IsNullOrWhiteSpace(request.Password))
             {
                 return new LoginResponse
                 {
@@ -32,48 +33,97 @@ namespace YLWorks.Services
                 };
             }
 
-            // 2. Find user
             var userAccount = await _context.Users
                 .Include(u => u.Departments)
+                .Include(u => u.ReportingManagers)
                 .FirstOrDefaultAsync(x => x.Email == request.Email);
 
-            if (userAccount == null || !userAccount.IsActive)
+            if (userAccount == null)
             {
                 return new LoginResponse
                 {
                     Success = false,
-                    Message = "Login failed: user does not exist or is inactive."
+                    Message = "Invalid email or password."
                 };
             }
 
-            // 3. Verify password
+            if (userAccount.Status == "Pending")
+            {
+                return new LoginResponse
+                {
+                    Success = false,
+                    Message = "Your account is pending administrator approval."
+                };
+            }
+
+            if (userAccount.Status == "Rejected")
+            {
+                return new LoginResponse
+                {
+                    Success = false,
+                    Message = "Your account has been rejected."
+                };
+            }
+
+            if (!userAccount.IsActive)
+            {
+                return new LoginResponse
+                {
+                    Success = false,
+                    Message = "Your account is inactive."
+                };
+            }
+
+            if (userAccount.Status == "Pending")
+            {
+                return new LoginResponse
+                {
+                    Success = false,
+                    Message = "Your account is pending administrator approval."
+                };
+            }
+
+            if (userAccount.Status == "Rejected")
+            {
+                return new LoginResponse
+                {
+                    Success = false,
+                    Message = "Your account has been rejected."
+                };
+            }
+
             var passwordHasher = new PasswordHasher<User>();
-            var verifyResult = passwordHasher.VerifyHashedPassword(userAccount, userAccount.Password, request.Password);
+
+            var verifyResult = passwordHasher.VerifyHashedPassword(
+                userAccount,
+                userAccount.Password,
+                request.Password
+            );
 
             if (verifyResult == PasswordVerificationResult.Failed)
             {
                 return new LoginResponse
                 {
                     Success = false,
-                    Message = "Invalid password."
+                    Message = "Invalid email or password."
                 };
             }
 
-            // 4. Update last active timestamp
-            TimeZoneInfo malaysiaTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Singapore Standard Time");
-            userAccount.LastLoginAt = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, malaysiaTimeZone);
-            _context.Users.Update(userAccount);
+            if (verifyResult == PasswordVerificationResult.SuccessRehashNeeded)
+            {
+                userAccount.Password = passwordHasher.HashPassword(
+                    userAccount,
+                    request.Password
+                );
+            }
 
-            await _context.SaveChangesAsync();
+            var tokenValidityMins = _config.GetValue<int>(
+                "Jwt:TokenValidityMins",
+                60
+            );
 
-            // 5. JWT configuration
-            var issuer = _config["Jwt:Issuer"];
-            var audience = _config["Jwt:Audience"];
-            var key = _config["Jwt:Key"];
-            var tokenValidityMins = _config.GetValue<int>("Jwt:TokenValidityMins", 60);
             var tokenExpiryTimeStamp = DateTime.UtcNow.AddMinutes(tokenValidityMins);
 
-            // 6. Claims
             var claims = new List<Claim>
     {
         new Claim(ClaimTypes.Email, userAccount.Email),
@@ -81,24 +131,51 @@ namespace YLWorks.Services
         new Claim(ClaimTypes.Role, userAccount.SystemRole)
     };
 
-            // 7. Generate JWT token
-            var tokenHandler = new JwtSecurityTokenHandler();
+            var key = _config["Jwt:Key"]
+                ?? throw new InvalidOperationException("JWT Key is missing.");
+
             var tokenDescriptor = new SecurityTokenDescriptor
             {
                 Subject = new ClaimsIdentity(claims),
                 Expires = tokenExpiryTimeStamp,
-                Issuer = issuer,
-                Audience = audience,
+                Issuer = _config["Jwt:Issuer"],
+                Audience = _config["Jwt:Audience"],
                 SigningCredentials = new SigningCredentials(
                     new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key)),
                     SecurityAlgorithms.HmacSha256Signature
-                ),
+                )
             };
+
+            var tokenHandler = new JwtSecurityTokenHandler();
 
             var securityToken = tokenHandler.CreateToken(tokenDescriptor);
             var accessToken = tokenHandler.WriteToken(securityToken);
 
-            // 8. Return response1
+            // Save Remember Me preference
+            userAccount.RememberMe = request.RememberMe;
+
+            // Generate a new refresh token
+            var refreshToken = GenerateRefreshToken();
+
+            var refreshTokenExpiry = DateTime.UtcNow.AddDays(
+                request.RememberMe ? 30 : 1
+            );
+
+            userAccount.RefreshToken = refreshToken;
+            userAccount.RefreshTokenExpiryTime = refreshTokenExpiry;
+
+            // Update last login
+            var malaysiaTimeZone = TimeZoneInfo.FindSystemTimeZoneById(
+                "Singapore Standard Time"
+            );
+
+            userAccount.LastLoginAt = TimeZoneInfo.ConvertTimeFromUtc(
+                DateTime.UtcNow,
+                malaysiaTimeZone
+            );
+
+            await _context.SaveChangesAsync();
+
             return new LoginResponse
             {
                 Success = true,
@@ -108,15 +185,36 @@ namespace YLWorks.Services
                 DisplayName = userAccount.DisplayName,
                 EmployeeNo = userAccount.EmployeeNo,
                 UserId = userAccount.Id.ToString(),
-                Gender = userAccount.Gender,
+                Gender = userAccount.Gender ?? string.Empty,
                 SystemRole = userAccount.SystemRole,
-                JobTitle = userAccount.JobTitle,
+                JobTitle = userAccount.JobTitle ?? string.Empty,
+
                 AccessToken = accessToken,
-                RefreshToken = userAccount.RefreshToken ?? string.Empty,
+                RefreshToken = refreshToken,
                 ExpiresAt = tokenExpiryTimeStamp,
-                Departments = userAccount.Departments?.Select(d => d.Name).ToList() ?? new List<string>(),
-                DepartmentIds = userAccount.Departments?.Select(d => d.Id).ToList() ?? new List<Guid>(),
+
+                HodIds = userAccount.ReportingManagers
+                    .Select(rm => rm.ManagerId)
+                    .ToList(),
+
+                Departments = userAccount.Departments?
+                    .Select(d => d.Name)
+                    .ToList() ?? new List<string>(),
+
+                DepartmentIds = userAccount.Departments?
+                    .Select(d => d.Id)
+                    .ToList() ?? new List<Guid>()
             };
+        }
+
+        private string GenerateRefreshToken()
+        {
+            var randomNumber = new byte[64];
+
+            using var rng = RandomNumberGenerator.Create();
+            rng.GetBytes(randomNumber);
+
+            return Convert.ToBase64String(randomNumber);
         }
     }
 }

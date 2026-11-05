@@ -17,7 +17,7 @@ import { Subject, forkJoin, catchError, of, takeUntil, finalize } from 'rxjs';
 import {
   normalizeLeaveSession,
   formatLeaveDurationLabel,
-} from '../../../common/leave-day.util';
+} from '../../../common/guard/leave-day.util';
 import { DepartmentDto } from '../../../models/Department';
 import {
   LeaveCalendarEventDto,

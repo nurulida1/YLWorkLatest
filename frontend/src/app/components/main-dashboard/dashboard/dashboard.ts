@@ -907,13 +907,20 @@ interface WeekDayCell {
             </div>
 
             <div class="flex flex-row items-end gap-2">
-              <b class="text-5xl text-gray-600">0</b>
-              <span class="text-gray-400 mb-1">/ 8 days left</span>
+              <b class="text-5xl text-gray-600">
+                {{ staffDashboard?.annualLeaveBalance?.remainingDays ?? 0 }}
+              </b>
+
+              <span class="text-gray-400 mb-1">
+                /
+                {{ staffDashboard?.annualLeaveBalance?.entitledDays ?? 0 }}
+                days left
+              </span>
             </div>
 
             <p-progressbar
               [style]="{ height: '6px' }"
-              [value]="50"
+              [value]="staffDashboard?.annualLeaveBalance?.percentageUsed ?? 0"
               [showValue]="false"
             ></p-progressbar>
           </div>

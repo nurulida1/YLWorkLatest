@@ -18,6 +18,8 @@ import {
   HrDashboardDto,
   SuperAdminDashboardDto,
   TeamAbsence,
+  TodayMeeting,
+  TodayMeetingsResponse,
 } from '../../../models/AppModels';
 import { LeaveCalendarEventDto } from '../../../models/Leave';
 import { AppService } from '../../../services/appService.service';
@@ -931,13 +933,23 @@ interface WeekDayCell {
             </div>
 
             <div class="flex flex-row items-end gap-2">
-              <b class="text-5xl text-gray-700">0</b>
+              <b class="text-5xl text-gray-700">{{ todayMeetingCount }}</b>
               <span class="text-gray-400 mb-1">sessions</span>
             </div>
 
-            <div class="flex flex-row items-center gap-2">
-              <i class="pi pi-circle-fill text-gray-400! text-[7px]!"></i>
-              <span class="text-gray-500">No meetings</span>
+            <div class="flex items-center gap-2 text-sm">
+              @if (todayMeetingsLoading) {
+                <i class="pi pi-spin pi-spinner text-blue-600"></i>
+                <span class="text-gray-500">Loading meetings...</span>
+              } @else if (todayMeetingCount > 0) {
+                <i class="pi pi-circle-fill text-green-500! text-[7px]!"></i>
+                <span class="text-green-600">
+                  {{ todayMeetingCount }} meeting(s) scheduled
+                </span>
+              } @else {
+                <i class="pi pi-circle-fill text-gray-400! text-[7px]!"></i>
+                <span class="text-gray-500">No meetings today</span>
+              }
             </div>
           </div>
 
@@ -1000,37 +1012,153 @@ interface WeekDayCell {
           <!-- Today's Schedule -->
           <div class="lg:col-span-7">
             <div
-              class="border border-gray-200 rounded-lg shadow-sm p-5 flex flex-col bg-white h-full"
+              class="border border-gray-200 rounded-xl shadow-sm p-5 flex flex-col bg-white h-full"
             >
+              <!-- Header -->
               <div
-                class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-100 pb-2"
+                class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-100 pb-4"
               >
                 <div class="flex flex-col">
-                  <b class="text-xl">Today's Schedule</b>
-                  <span class="text-gray-400 text-sm">
-                    Synced in real time with Google Calendar
+                  <div class="flex items-center gap-2">
+                    <b class="text-xl text-gray-800">Today's Schedule</b>
+
+                    @if (!todayMeetingsLoading && todayMeetingCount > 0) {
+                      <span
+                        class="px-2 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-semibold"
+                      >
+                        {{ todayMeetingCount }}
+                      </span>
+                    }
+                  </div>
+
+                  <span class="text-gray-400 text-sm mt-1">
+                    Meetings you've organised or been invited to today
                   </span>
                 </div>
 
-                <div class="flex flex-row items-center gap-2">
-                  <p-button
-                    [routerLink]="'/meeting'"
-                    label="Full Calendar"
-                    severity="secondary"
-                    size="small"
-                    styleClass="bg-white! border-gray-200!"
-                  ></p-button>
-                </div>
+                <p-button
+                  [routerLink]="'/meeting'"
+                  label="Full Calendar"
+                  icon="pi pi-calendar"
+                  severity="secondary"
+                  size="small"
+                  styleClass="bg-white! border-gray-200! shrink-0"
+                ></p-button>
               </div>
 
-              <div
-                class="flex flex-col items-center justify-center py-8 text-center"
-              >
-                <i class="pi pi-calendar text-3xl text-gray-300 mb-3"></i>
-                <b class="text-gray-600">No meetings scheduled</b>
-                <span class="text-sm text-gray-400 mt-1">
-                  Your schedule for today is clear.
-                </span>
+              <!-- Meeting List -->
+              <div class="flex-1 min-h-0">
+                @if (todayMeetingsLoading) {
+                  <div class="flex flex-col items-center justify-center py-12">
+                    <i
+                      class="pi pi-spin pi-spinner text-2xl text-blue-600 mb-3"
+                    ></i>
+                    <span class="text-sm text-gray-500">
+                      Loading today's schedule...
+                    </span>
+                  </div>
+                } @else {
+                  @for (meeting of todayMeetings; track meeting.id) {
+                    <div
+                      class="flex items-start gap-3 sm:gap-4 p-4 border-b border-gray-100 last:border-0 hover:bg-blue-50/40 rounded-xl transition-colors"
+                    >
+                      <!-- Time -->
+                      <div
+                        class="w-16 shrink-0 flex flex-col items-center justify-center rounded-xl bg-blue-50 text-blue-800 py-3"
+                      >
+                        <i class="pi pi-clock text-sm mb-1"></i>
+
+                        <span class="font-bold text-sm">
+                          {{ meeting.meetingTime?.substring(0, 5) || '--:--' }}
+                        </span>
+                      </div>
+
+                      <!-- Details -->
+                      <div class="flex-1 min-w-0">
+                        <div
+                          class="font-semibold text-gray-800 text-sm sm:text-base"
+                        >
+                          {{ meeting.title }}
+                        </div>
+
+                        @if (meeting.description) {
+                          <p
+                            class="text-xs sm:text-sm text-gray-500 mt-1 line-clamp-2"
+                          >
+                            {{ meeting.description }}
+                          </p>
+                        }
+
+                        <!-- Location and Method -->
+                        <div
+                          class="flex flex-wrap items-center gap-x-3 gap-y-2 mt-2 text-xs text-gray-500"
+                        >
+                          @if (meeting.location) {
+                            <span class="flex items-center gap-1">
+                              <i class="pi pi-map-marker text-[10px]!"></i>
+                              {{ meeting.location }}
+                            </span>
+                          }
+
+                          <span class="flex items-center gap-1">
+                            <i
+                              class="text-[10px]! pi"
+                              [ngClass]="{
+                                'pi-video': meeting.meetingLink,
+                                'pi-user': !meeting.meetingLink,
+                              }"
+                            ></i>
+                            {{
+                              meeting.meetingLink ? 'Online' : 'Face to face'
+                            }}
+                          </span>
+                        </div>
+
+                        <!-- Organiser -->
+                        <div class="text-xs text-gray-400 mt-2">
+                          Organised by {{ meeting.organizerName }}
+                        </div>
+                      </div>
+
+                      <!-- Join Button -->
+                      @if (meeting.meetingLink) {
+                        <a
+                          [href]="meeting.meetingLink"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          class="shrink-0 inline-flex items-center gap-1 px-3 py-2 rounded-lg bg-blue-50 text-blue-700 text-xs font-semibold hover:bg-blue-100 transition-colors"
+                        >
+                          Join
+                          <i class="pi pi-external-link text-[10px]"></i>
+                        </a>
+                      }
+                    </div>
+                  } @empty {
+                    <div
+                      class="flex flex-col items-center justify-center py-12 text-center"
+                    >
+                      <div
+                        class="w-14 h-14 rounded-2xl bg-blue-50 flex items-center justify-center mb-3"
+                      >
+                        <i class="pi pi-calendar text-2xl text-blue-300"></i>
+                      </div>
+
+                      <b class="text-gray-700">No meetings scheduled</b>
+
+                      <span class="text-sm text-gray-400 mt-1">
+                        Your schedule for today is clear.
+                      </span>
+
+                      <a
+                        routerLink="/meeting"
+                        class="mt-4 text-sm font-semibold text-blue-700 hover:text-blue-900"
+                      >
+                        View meeting calendar
+                        <i class="pi pi-arrow-right text-xs ml-1"></i>
+                      </a>
+                    </div>
+                  }
+                }
               </div>
             </div>
           </div>
@@ -1043,60 +1171,60 @@ interface WeekDayCell {
               <!-- Header -->
               <div class="px-5 py-4 border-b border-slate-100">
                 <div class="flex items-center justify-between gap-3">
+                  <!-- Title -->
                   <div class="flex items-center gap-3 min-w-0">
                     <div
-                      class="w-10 h-10 shrink-0 rounded-xl bg-orange-50 flex items-center justify-center"
+                      class="w-11 h-11 shrink-0 rounded-2xl bg-orange-50 flex items-center justify-center"
                     >
                       <i
-                        class="pi pi-calendar-times text-orange-600 text-lg"
+                        class="pi pi-calendar-times text-orange-500 text-lg"
                       ></i>
                     </div>
 
                     <div class="min-w-0">
-                      <h3
-                        class="text-sm font-bold tracking-wide text-slate-800"
-                      >
+                      <h3 class="text-sm font-bold text-slate-800">
                         Team Absence
                       </h3>
-                      <p class="text-xs text-slate-400 mt-0.5">
-                        Approved leave · Today
+                      <p class="text-xs text-slate-400 mt-1">
+                        Approved leave today
                       </p>
                     </div>
                   </div>
 
-                  <div class="flex items-center gap-2 shrink-0">
-                    <!-- Count -->
-                    <div
-                      class="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold"
+                  <!-- Away Count -->
+                  <div class="flex flex-col items-end shrink-0">
+                    <span
+                      class="text-2xl font-bold leading-none"
                       [ngClass]="
                         teamAbsenceCount > 0
-                          ? 'bg-orange-50 text-orange-700'
-                          : 'bg-emerald-50 text-emerald-700'
+                          ? 'text-orange-600'
+                          : 'text-emerald-600'
                       "
                     >
-                      <span
-                        class="w-1.5 h-1.5 rounded-full"
-                        [ngClass]="
-                          teamAbsenceCount > 0
-                            ? 'bg-orange-500'
-                            : 'bg-emerald-500'
-                        "
-                      ></span>
-                      {{ teamAbsenceCount }} away
-                    </div>
+                      {{ teamAbsenceCount }}
+                    </span>
+
+                    <span class="text-[11px] text-slate-400 mt-1">
+                      {{
+                        teamAbsenceCount === 1 ? 'person away' : 'people away'
+                      }}
+                    </span>
                   </div>
                 </div>
 
-                <!-- View Calendar -->
-                <!-- <div class="mt-3 flex justify-end">
+                <!-- Calendar Link -->
+                <div class="mt-3 pt-3 border-t border-slate-50">
                   <a
-                    routerLink="/leave/calendar"
-                    class="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-700 transition-colors"
+                    routerLink="/leave"
+                    [queryParams]="{ type: 'calendar' }"
+                    class="flex items-center justify-between text-xs font-semibold text-blue-600 hover:text-blue-700 transition-colors group"
                   >
-                    View full leave calendar
-                    <i class="pi pi-arrow-up-right text-[10px]!"></i>
+                    <span>View full leave calendar</span>
+                    <i
+                      class="pi pi-arrow-up-right text-[10px] group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform"
+                    ></i>
                   </a>
-                </div> -->
+                </div>
               </div>
 
               <!-- Absence List -->
@@ -1666,6 +1794,9 @@ export class Dashboard implements OnInit, OnDestroy {
   medicalBalance: MedicalBalanceDto | null = null;
   teamAbsences: TeamAbsence[] = [];
 
+  todayMeetings: TodayMeeting[] = [];
+  todayMeetingsLoading = false;
+
   personalTasks: PersonalTask[] = [
     {
       title: 'Review pending leave applications',
@@ -1731,6 +1862,9 @@ export class Dashboard implements OnInit, OnDestroy {
   ];
 
   ngOnInit(): void {
+    if (!this.isSuperAdmin) {
+      this.loadTodayMeetings();
+    }
     if (this.isSuperAdmin) {
       this.loadSuperAdminDashboard();
     } else if (this.isHr) {
@@ -2025,6 +2159,31 @@ export class Dashboard implements OnInit, OnDestroy {
     return `${y}-${m}-${d}`;
   }
 
+  loadTodayMeetings(): void {
+    this.todayMeetingsLoading = true;
+
+    this.appService
+      .GetTodayMeetings(this.formatDayKey(this.today))
+      .pipe(
+        takeUntil(this.destroy$),
+        finalize(() => {
+          this.todayMeetingsLoading = false;
+          this.cdr.markForCheck();
+        }),
+      )
+      .subscribe({
+        next: (res: TodayMeetingsResponse) => {
+          this.todayMeetings = res?.data?.meetings ?? [];
+          this.cdr.markForCheck();
+        },
+        error: (err) => {
+          console.error("Failed to load today's meetings:", err);
+          this.todayMeetings = [];
+          this.cdr.markForCheck();
+        },
+      });
+  }
+
   showDialogReceipt() {
     this.initReceiptForm();
     this.showReceipt = true;
@@ -2115,5 +2274,9 @@ export class Dashboard implements OnInit, OnDestroy {
 
   toggleTeamAbsences(): void {
     this.showAllTeamAbsences = !this.showAllTeamAbsences;
+  }
+
+  get todayMeetingCount(): number {
+    return this.todayMeetings.length;
   }
 }

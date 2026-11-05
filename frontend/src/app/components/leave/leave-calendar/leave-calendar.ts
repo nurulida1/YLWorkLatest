@@ -11,7 +11,6 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
-import { DialogModule } from 'primeng/dialog';
 import { SelectModule } from 'primeng/select';
 import { Subject, forkJoin, catchError, of, takeUntil, finalize } from 'rxjs';
 
@@ -74,14 +73,7 @@ interface CalendarWeekEvent {
 @Component({
   selector: 'app-leave-calendar',
   standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule,
-    RouterLink,
-    ButtonModule,
-    DialogModule,
-    SelectModule,
-  ],
+  imports: [CommonModule, FormsModule, RouterLink, ButtonModule, SelectModule],
   template: `
     <!-- CALENDAR CARD -->
     <section class="border border-gray-200 overflow-hidden">
@@ -130,8 +122,11 @@ interface CalendarWeekEvent {
 
           <!-- FILTERS + VIEW -->
           <div class="flex flex-col sm:flex-row sm:items-end gap-3">
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div class="w-full sm:w-48">
+            <div
+              class="grid grid-cols-1 gap-3"
+              [ngClass]="canViewDetails ? 'sm:grid-cols-2' : 'sm:grid-cols-1'"
+            >
+              <div class="w-full">
                 <label
                   class="block text-[11px] font-bold uppercase tracking-wide text-slate-400 mb-1.5"
                 >
@@ -151,7 +146,7 @@ interface CalendarWeekEvent {
               </div>
 
               @if (canViewDetails) {
-                <div class="w-full sm:w-48">
+                <div class="w-full">
                   <label
                     class="block text-[11px] font-bold uppercase tracking-wide text-slate-400 mb-1.5"
                   >
@@ -252,15 +247,10 @@ interface CalendarWeekEvent {
                   <!-- DATE CELLS -->
                   @for (cell of week.days; track cell.key; let i = $index) {
                     <div
-                      class="relative min-h-[135px] p-2 pb-10 border-r border-slate-100 cursor-pointer transition hover:bg-blue-50/40"
+                      class="relative min-h-[135px] p-2 pb-10 border-r border-slate-100 transition hover:bg-slate-50"
                       [class.bg-slate-50]="!cell.inCurrentMonth"
                       [class.bg-blue-50]="cell.isToday"
                       [class.border-r-0]="i === 6"
-                      (click)="openDay(cell)"
-                      (keydown.enter)="openDay(cell)"
-                      (keydown.space)="$event.preventDefault(); openDay(cell)"
-                      tabindex="0"
-                      role="button"
                       [attr.aria-label]="
                         (cell.date | date: 'fullDate') +
                         ', ' +
@@ -312,11 +302,11 @@ interface CalendarWeekEvent {
 
                   <!-- CONTINUOUS LEAVE EVENTS -->
                   <div
-                    class="absolute inset-x-0 top-1/2 -translate-y-1/2 grid grid-cols-7 auto-rows-[28px] gap-y-1 px-1 pointer-events-none z-10"
+                    class="absolute inset-x-0 top-1/2 -translate-y-1/2 grid grid-cols-7 auto-rows-[28px] gap-y-1 px-1 z-10"
                   >
                     @for (item of week.events; track item.event.requestId) {
                       <div
-                        class="min-w-0 h-7 flex items-center px-2 border-y border-l-2 pointer-events-none"
+                        class="group relative min-w-0 h-7 flex items-center px-2 border-y border-l-2 pointer-events-auto cursor-help"
                         [style.grid-column]="
                           item.startColumn + 1 + ' / span ' + item.span
                         "
@@ -351,6 +341,43 @@ interface CalendarWeekEvent {
                             </span>
                           </div>
                         }
+                        <!-- Hover Details -->
+                        <div
+                          class="hidden group-hover:block absolute left-0 top-full mt-1 w-64 p-3 rounded-xl bg-white border border-slate-200 shadow-xl z-50"
+                        >
+                          <p class="text-sm font-bold text-slate-800">
+                            {{ item.event.employeeName }}
+                          </p>
+
+                          <p class="text-xs text-slate-500 mt-1">
+                            {{ item.event.leaveTypeName || 'Leave' }}
+                          </p>
+
+                          <div class="border-t border-slate-100 my-2"></div>
+
+                          <p class="text-xs text-slate-600">
+                            {{ item.event.startDate | date: 'mediumDate' }}
+                            –
+                            {{ item.event.endDate | date: 'mediumDate' }}
+                          </p>
+
+                          <p class="text-xs text-slate-600 mt-2">
+                            {{
+                              halfDayMarker(item.event) ||
+                                formatEventDuration(item.event)
+                            }}
+                          </p>
+
+                          @if (canViewDetails && item.event.reason) {
+                            <div class="border-t border-slate-100 my-2"></div>
+
+                            <p
+                              class="text-xs text-slate-600 whitespace-pre-wrap"
+                            >
+                              {{ item.event.reason }}
+                            </p>
+                          }
+                        </div>
                       </div>
                     }
                   </div>
@@ -365,7 +392,7 @@ interface CalendarWeekEvent {
           class="px-4 py-3 bg-slate-50 border-t border-slate-100 flex items-center justify-between"
         >
           <span class="text-xs text-slate-500">
-            Select a date to view its leave details.
+            Hover over a leave entry to view its details.
           </span>
 
           <span class="text-xs font-medium text-slate-400">
@@ -383,13 +410,8 @@ interface CalendarWeekEvent {
         >
           @for (cell of periodCells; track cell.key) {
             <div
-              class="min-w-0 min-h-56 border-b border-r border-slate-100 p-3 hover:bg-slate-50/70 transition cursor-pointer"
+              class="min-w-0 min-h-56 border-b border-r border-slate-100 p-3 hover:bg-slate-50/70 transition"
               [class.bg-blue-50]="cell.isToday"
-              (click)="openDay(cell)"
-              (keydown.enter)="openDay(cell)"
-              (keydown.space)="$event.preventDefault(); openDay(cell)"
-              tabindex="0"
-              role="button"
             >
               <div class="flex items-start justify-between gap-2 mb-4">
                 <div>
@@ -418,6 +440,7 @@ interface CalendarWeekEvent {
               @if (cell.holidayName) {
                 <div
                   class="flex gap-2 p-2 rounded-lg bg-rose-50 border border-rose-100 mb-2"
+                  [title]="cell.holidayName"
                 >
                   <i class="pi pi-flag text-rose-600 text-xs mt-0.5"></i>
                   <span class="text-xs font-semibold text-rose-800">
@@ -429,10 +452,9 @@ interface CalendarWeekEvent {
               <div class="flex flex-col gap-2">
                 @for (ev of cell.events; track ev.requestId) {
                   <div
-                    class="p-2.5 rounded-lg border"
+                    class="group relative p-2.5 rounded-lg border cursor-help"
                     [style.background-color]="leaveTypeColor(ev).background"
                     [style.border-color]="leaveTypeColor(ev).border"
-                    [title]="eventTitle(ev)"
                   >
                     <p
                       class="text-xs font-bold truncate"
@@ -455,6 +477,140 @@ interface CalendarWeekEvent {
                     >
                       {{ halfDayMarker(ev) || formatEventDuration(ev) }}
                     </p>
+
+                    <!-- HOVER DETAILS -->
+                    <div
+                      class="invisible opacity-0 group-hover:visible group-hover:opacity-100
+         absolute left-0 top-full mt-2 w-72
+         bg-white rounded-xl border border-slate-200
+         shadow-[0_8px_30px_rgba(15,23,42,0.14)]
+         z-50 overflow-hidden
+         transition-all duration-200
+         pointer-events-none"
+                    >
+                      <!-- TOP ACCENT -->
+                      <div
+                        class="h-1 w-full"
+                        [style.background-color]="leaveTypeColor(ev).border"
+                      ></div>
+
+                      <div class="p-4">
+                        <!-- EMPLOYEE -->
+                        <div class="flex items-center gap-3">
+                          <div
+                            class="w-10 h-10 rounded-full flex items-center justify-center shrink-0"
+                            [style.background-color]="
+                              leaveTypeColor(ev).background
+                            "
+                            [style.color]="leaveTypeColor(ev).text"
+                          >
+                            <i class="pi pi-user text-sm"></i>
+                          </div>
+
+                          <div class="min-w-0 flex-1">
+                            <p
+                              class="text-sm font-bold text-slate-800 truncate"
+                            >
+                              {{ ev.employeeName }}
+                            </p>
+
+                            <p class="text-[11px] text-slate-400 mt-0.5">
+                              Leave Request
+                            </p>
+                          </div>
+                        </div>
+
+                        <!-- LEAVE TYPE -->
+                        <div class="mt-4">
+                          <span
+                            class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold"
+                            [style.background-color]="
+                              leaveTypeColor(ev).background
+                            "
+                            [style.color]="leaveTypeColor(ev).text"
+                          >
+                            <i class="pi pi-tag text-[9px]"></i>
+                            {{ ev.leaveTypeName || 'Leave' }}
+                          </span>
+                        </div>
+
+                        <!-- DATE AND DURATION -->
+                        <div class="mt-4 space-y-3">
+                          <div class="flex items-start gap-3">
+                            <div
+                              class="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center shrink-0"
+                            >
+                              <i
+                                class="pi pi-calendar text-slate-500 text-xs"
+                              ></i>
+                            </div>
+
+                            <div class="min-w-0">
+                              <p
+                                class="text-[10px] font-bold uppercase tracking-wider text-slate-400"
+                              >
+                                Leave Period
+                              </p>
+
+                              <p
+                                class="text-xs font-semibold text-slate-700 mt-1"
+                              >
+                                {{ ev.startDate | date: 'mediumDate' }}
+                              </p>
+
+                              @if (ev.startDate !== ev.endDate) {
+                                <p class="text-xs text-slate-500 mt-0.5">
+                                  Until {{ ev.endDate | date: 'mediumDate' }}
+                                </p>
+                              }
+                            </div>
+                          </div>
+
+                          <div class="flex items-start gap-3">
+                            <div
+                              class="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center shrink-0"
+                            >
+                              <i class="pi pi-clock text-slate-500 text-xs"></i>
+                            </div>
+
+                            <div class="min-w-0">
+                              <p
+                                class="text-[10px] font-bold uppercase tracking-wider text-slate-400"
+                              >
+                                Duration
+                              </p>
+
+                              <p
+                                class="text-xs font-semibold text-slate-700 mt-1"
+                              >
+                                {{
+                                  halfDayMarker(ev) ||
+                                    formatEventDuration(ev) ||
+                                    'Not specified'
+                                }}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+
+                        <!-- REASON -->
+                        @if (canViewDetails && ev.reason) {
+                          <div class="border-t border-slate-100 mt-4 pt-3">
+                            <p
+                              class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5"
+                            >
+                              Reason
+                            </p>
+
+                            <p
+                              class="text-xs text-slate-600 leading-relaxed whitespace-pre-wrap break-words"
+                            >
+                              {{ ev.reason }}
+                            </p>
+                          </div>
+                        }
+                      </div>
+                    </div>
                   </div>
                 }
 
@@ -597,7 +753,7 @@ interface CalendarWeekEvent {
 
                       @if (ev.leaveTypeName) {
                         <p class="text-xs text-slate-600 mt-1">
-                          <i class="pi pi-tag text-[10px] mr-1"></i>
+                          <i class="pi pi-tag text-[10px]! mr-1"></i>
                           {{ ev.leaveTypeName }}
                         </p>
                       }
@@ -632,115 +788,6 @@ interface CalendarWeekEvent {
         </div>
       }
     </section>
-
-    <!-- DAY DETAIL DIALOG -->
-    <p-dialog
-      [(visible)]="dayDialogVisible"
-      [header]="dayDialogTitle"
-      [modal]="true"
-      [style]="{ width: 'min(520px, 95vw)' }"
-      [draggable]="false"
-      [resizable]="false"
-      [breakpoints]="{ '640px': '95vw' }"
-      styleClass="leave-calendar-dialog"
-    >
-      <div class="flex flex-col gap-4">
-        @if (selectedDayHoliday) {
-          <div
-            class="flex items-start gap-3 p-3 rounded-xl bg-rose-50 border border-rose-100"
-          >
-            <div
-              class="w-9 h-9 rounded-lg bg-rose-100 flex items-center justify-center shrink-0"
-            >
-              <i class="pi pi-flag text-rose-600"></i>
-            </div>
-
-            <div>
-              <p class="text-xs font-bold text-rose-800">Public Holiday</p>
-
-              <p class="text-sm text-rose-900 mt-0.5">
-                {{ selectedDayHoliday }}
-              </p>
-            </div>
-          </div>
-        }
-
-        @if (!selectedDayEvents.length) {
-          <div class="py-8 text-center">
-            <i class="pi pi-calendar-times text-3xl text-slate-300"></i>
-
-            <p class="text-sm font-semibold text-slate-700 mt-3">
-              No leave scheduled
-            </p>
-
-            <p class="text-xs text-slate-400 mt-1">
-              There are no leave entries for this date.
-            </p>
-          </div>
-        } @else {
-          <div class="flex flex-col gap-3">
-            @for (ev of selectedDayEvents; track ev.requestId) {
-              <div class="rounded-xl border border-slate-200 p-4">
-                <div class="flex items-start gap-3">
-                  <div
-                    class="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
-                    [style.background-color]="leaveTypeColor(ev).background"
-                    [style.color]="leaveTypeColor(ev).text"
-                  >
-                    <i class="pi pi-user"></i>
-                  </div>
-
-                  <div class="min-w-0 flex-1">
-                    <p class="text-sm font-bold text-slate-800">
-                      {{ ev.employeeName }}
-                    </p>
-
-                    <p class="text-xs text-slate-500 mt-1">
-                      {{ ev.startDate | date: 'mediumDate' }}
-                      –
-                      {{ ev.endDate | date: 'mediumDate' }}
-                    </p>
-
-                    @if (ev.leaveTypeName) {
-                      <p class="text-xs text-slate-600 mt-2">
-                        {{ ev.leaveTypeName }}
-                      </p>
-                    }
-
-                    @if (canViewDetails) {
-                      @if (halfDayMarker(ev); as mark) {
-                        <span
-                          class="inline-block mt-2 text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-1 rounded-full"
-                        >
-                          {{ mark }}
-                        </span>
-                      }
-
-                      @if (ev.reason) {
-                        <p
-                          class="text-xs text-slate-500 mt-2 whitespace-pre-wrap"
-                        >
-                          {{ ev.reason }}
-                        </p>
-                      }
-
-                      <a
-                        [routerLink]="['/leave', ev.requestId]"
-                        class="inline-flex items-center gap-2 text-xs font-bold text-blue-600 hover:text-blue-800 mt-3"
-                        (click)="dayDialogVisible = false"
-                      >
-                        View Leave Request
-                        <i class="pi pi-arrow-right text-[10px]"></i>
-                      </a>
-                    }
-                  </div>
-                </div>
-              </div>
-            }
-          </div>
-        }
-      </div>
-    </p-dialog>
   `,
   styleUrl: './leave-calendar.less',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -788,13 +835,7 @@ export class LeaveCalendar implements OnInit, OnDestroy {
   listEvents: LeaveCalendarEventDto[] = [];
   listHolidays: PublicHolidayDto[] = [];
 
-  rangeLabel = '';
-
-  dayDialogVisible = false;
-  dayDialogTitle = '';
-
-  selectedDayEvents: LeaveCalendarEventDto[] = [];
-  selectedDayHoliday: string | null = null;
+  rangeLabel: string = '';
 
   private eventsByDay = new Map<string, LeaveCalendarEventDto[]>();
   private holidayByDay = new Map<string, string>();
@@ -921,22 +962,6 @@ export class LeaveCalendar implements OnInit, OnDestroy {
     this.anchorDate = new Date();
     this.reload();
   }
-
-  openDay(cell: CalendarDayCell): void {
-    this.selectedDayEvents = cell.events;
-    this.selectedDayHoliday = cell.holidayName;
-
-    this.dayDialogTitle = cell.date.toLocaleDateString(undefined, {
-      weekday: 'long',
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-    });
-
-    this.dayDialogVisible = true;
-    this.cdr.markForCheck();
-  }
-
   // --------------------------------------------------
   // DATA LOADING
   // --------------------------------------------------

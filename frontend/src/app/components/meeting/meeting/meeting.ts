@@ -875,7 +875,21 @@ export class Meeting implements OnInit, OnDestroy {
           });
         }
 
+        const savedMeetingDate = res.meetingDate
+          ? new Date(res.meetingDate)
+          : formValue.meetingDate;
+
+        if (savedMeetingDate && !isNaN(savedMeetingDate.getTime())) {
+          this.currentDate = new Date(
+            savedMeetingDate.getFullYear(),
+            savedMeetingDate.getMonth(),
+            1,
+          );
+        }
+
+        // Refresh calendar using the latest data.
         this.generateCalendar();
+        this.cdr.markForCheck();
 
         this.dialogVisible = false;
 

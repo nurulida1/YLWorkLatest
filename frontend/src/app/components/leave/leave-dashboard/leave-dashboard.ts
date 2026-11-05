@@ -7,7 +7,7 @@ import {
   OnDestroy,
   OnInit,
 } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { TableModule } from 'primeng/table';
@@ -1356,6 +1356,8 @@ export class LeaveDashboard implements OnInit, OnDestroy {
   private readonly loadingService = inject(LoadingService);
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly destroy$ = new Subject<void>();
+  private readonly activatedRoute = inject(ActivatedRoute);
+  private readonly router = inject(Router);
 
   readonly currentYear = new Date().getFullYear();
 
@@ -1390,8 +1392,24 @@ export class LeaveDashboard implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    // Keep the selected tab synchronised with the URL.
+    this.activatedRoute.queryParamMap
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((params) => {
+        const type = params.get('type');
+
+        this.activeTab = type === 'calendar' ? 'calendar' : 'overview';
+
+        if (this.activeTab === 'calendar') {
+          this.calendarMounted = true;
+        }
+
+        this.cdr.detectChanges();
+      });
+
     const user = this.userService.currentUser;
     const userId = user?.userId;
+
     if (!userId) return;
 
     this.canApprove = APPROVER_ROLES.includes(String(user.systemRole ?? ''));
@@ -1401,9 +1419,11 @@ export class LeaveDashboard implements OnInit, OnDestroy {
     const balances$ = this.leaveBalanceService
       .getBalances(userId, this.currentYear)
       .pipe(catchError(() => of([] as LeaveBalanceDto[])));
+
     const requests$ = this.leaveRequestService
       .getAll(userId)
       .pipe(catchError(() => of([] as LeaveRequestDto[])));
+
     const approvals$ = this.canApprove
       ? this.leaveRequestService
           .getPendingForHod(userId)
@@ -1424,8 +1444,8 @@ export class LeaveDashboard implements OnInit, OnDestroy {
           this.balances = balances;
           this.requests = requests;
           this.pendingApprovals = approvals;
+
           this.computeDerived();
-          // Tabs + OnPush: markForCheck alone can leave the overview table without badge updates.
           this.cdr.detectChanges();
         },
         error: () => {
@@ -1434,6 +1454,7 @@ export class LeaveDashboard implements OnInit, OnDestroy {
             summary: 'Error',
             detail: 'Failed to load leave dashboard',
           });
+
           this.cdr.detectChanges();
         },
       });
@@ -1447,10 +1468,22 @@ export class LeaveDashboard implements OnInit, OnDestroy {
 
   onTabChange(value: string | number | undefined): void {
     if (value == null) return;
+
     this.activeTab = value;
+
     if (value === 'calendar') {
       this.calendarMounted = true;
     }
+
+    this.router.navigate([], {
+      relativeTo: this.activatedRoute,
+      queryParams: {
+        type: value === 'calendar' ? 'calendar' : null,
+      },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
+
     this.cdr.detectChanges();
   }
 

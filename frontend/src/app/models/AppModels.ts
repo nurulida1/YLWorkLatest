@@ -121,3 +121,33 @@ export interface TeamAbsence {
   startDate: string;
   endDate: string;
 }
+
+export interface TodayMeetingParticipant {
+  userId: string;
+  fullName: string;
+  hasAccepted: boolean;
+  hasJoined: boolean;
+}
+
+export interface TodayMeeting {
+  id: string;
+  title: string;
+  description?: string;
+  meetingDate: string;
+  meetingTime: string | null;
+  location?: string;
+  meetingLink?: string;
+  meetingMethod?: string;
+  organizerId: string;
+  organizerName: string;
+  participants: TodayMeetingParticipant[];
+}
+
+export interface TodayMeetingsResponse {
+  success: boolean;
+  data: {
+    date: string;
+    totalMeetings: number;
+    meetings: TodayMeeting[];
+  };
+}

@@ -7,6 +7,7 @@ import {
   DashboardSummary,
   HrDashboardDto,
   SuperAdminDashboardDto,
+  TodayMeetingsResponse,
 } from '../models/AppModels';
 import { Observable, retry, catchError, throwError, map } from 'rxjs';
 import { InventoryDashboardResponseDto } from '../models/Inventory';
@@ -83,6 +84,15 @@ export class AppService {
   GetPendingHardwareApprovals(): Observable<HardwareRequestDto[]> {
     return this.http.get<HardwareRequestDto[]>(
       `${environment.ApiBaseUrl}/App/GetPendingHardwareApprovals`,
+    );
+  }
+
+  GetTodayMeetings(date: string) {
+    return this.http.get<TodayMeetingsResponse>(
+      `${this.url}/GetTodayMeetings`,
+      {
+        params: { date },
+      },
     );
   }
 }

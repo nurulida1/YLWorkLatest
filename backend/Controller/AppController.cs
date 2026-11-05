@@ -526,5 +526,74 @@ namespace YLWorks.Controller
 
             return Ok(requests);
         }
+
+        [HttpGet("GetTodayMeetings")]
+        [Authorize]
+        public async Task<IActionResult> GetTodayMeetings([FromQuery] DateTime? date)
+        {
+            var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (string.IsNullOrEmpty(userIdClaim) ||
+                !Guid.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized();
+            }
+
+            var today = (date ?? DateTime.Today).Date;
+            var tomorrow = today.AddDays(1);
+
+            var meetings = await _context.Meetings
+                .AsNoTracking()
+                .Where(m =>
+                    m.MeetingDate >= today &&
+                    m.MeetingDate < tomorrow &&
+                    (
+                        m.OrganizerId == userId ||
+                        m.Participants.Any(p => p.UserId == userId)
+                    ))
+                .OrderBy(m => m.MeetingTime)
+                .ThenBy(m => m.Title)
+                .Select(m => new
+                {
+                    id = m.Id,
+                    title = m.Title,
+                    description = m.Description,
+                    meetingDate = m.MeetingDate,
+
+                    meetingTime = m.MeetingTime.HasValue
+                        ? m.MeetingTime.Value.ToString(@"hh\:mm")
+                        : null,
+
+                    location = m.Location,
+                    meetingLink = m.MeetingLink,
+
+                    organizerId = m.OrganizerId,
+                    organizerName = m.Organizer != null
+                        ? m.Organizer.FullName
+                        : "Unknown",
+
+                    participants = m.Participants.Select(p => new
+                    {
+                        userId = p.UserId,
+                        fullName = p.User != null
+                            ? p.User.FullName
+                            : "Unknown",
+                        hasAccepted = p.HasAccepted,
+                        hasJoined = p.HasJoined
+                    }).ToList()
+                })
+                .ToListAsync();
+
+            return Ok(new
+            {
+                success = true,
+                data = new
+                {
+                    date = today,
+                    totalMeetings = meetings.Count,
+                    meetings
+                }
+            });
+        }
     }
 }

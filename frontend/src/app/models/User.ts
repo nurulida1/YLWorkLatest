@@ -88,7 +88,7 @@ export interface ResetPasswordRequest {
 // ==========================================
 
 export interface ChangePasswordRequest {
-  userId: string;
+  currentPassword: string;
   newPassword: string;
   confirmPassword: string;
 }
@@ -167,8 +167,8 @@ export interface UpdateUserRequest {
   workEndTime?: string | null;
 
   usesRestDayHalfDay?: boolean | null;
-  restDayHalfStart?: string | null;
-  restDayHalfEnd?: string | null;
+  restDayHalfDayStart?: string | null;
+  restDayHalfDayEnd?: string | null;
 
   clearWorkScheduleOverride?: boolean;
 }

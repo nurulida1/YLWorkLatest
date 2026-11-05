@@ -1,102 +1,168 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿
+using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
 namespace YLWorks.Model
 {
     public class User : BaseEntity
     {
         public Guid Id { get; set; }
+
         public string FullName { get; set; } = string.Empty;
+
         public string? DisplayName { get; set; } = string.Empty;
+
         public string Email { get; set; } = string.Empty;
+
         public string? ContactNo { get; set; } = string.Empty;
+
         public string Password { get; set; } = string.Empty;
+
         public ICollection<Department> Departments { get; set; }
+            = new List<Department>();
+
         public DateTime? JoinedDate { get; set; }
+
         public string? AccessPermission { get; set; }
+
         public string EmployeeNo { get; set; } = string.Empty;
+
         public string? JobTitle { get; set; }
+
         public string SystemRole { get; set; } = "Staff";
+
         public string? Gender { get; set; }
+
         public DateTime? LastLoginAt { get; set; }
+
         public bool IsActive { get; set; } = true;
-        /// <summary>Reporting managers (HODs) for leave approval routing.</summary>
-        public ICollection<UserReportingManager> ReportingManagers { get; set; } = new List<UserReportingManager>();
+
+        /// <summary>
+        /// Reporting managers (HODs) for leave approval routing.
+        /// </summary>
+        public ICollection<UserReportingManager> ReportingManagers { get; set; }
+            = new List<UserReportingManager>();
+
         public Guid? ManagerId { get; set; }
+
         public User? Manager { get; set; }
-        public ICollection<User> DirectReports { get; set; } = new List<User>();
+
+        public ICollection<User> DirectReports { get; set; }
+            = new List<User>();
+
         public string Status { get; set; } = "Pending";
+
         public string? RejectReason { get; set; }
 
-        /// <summary>Monthly salary used for overtime ordinary/hourly rate (RM).</summary>
+        /// <summary>
+        /// Monthly salary used for overtime ordinary/hourly rate (RM).
+        /// </summary>
         public decimal? MonthlySalary { get; set; }
 
-        /// <summary>Optional per-employee work schedule override (null = use department/company default).</summary>
+        /// <summary>
+        /// Optional per-employee work schedule override.
+        /// Null = use department/company default.
+        /// </summary>
         public TimeSpan? WorkStartTime { get; set; }
+
         public TimeSpan? WorkEndTime { get; set; }
+
         public bool? UsesRestDayHalfDay { get; set; }
+
         public TimeSpan? RestDayHalfDayStart { get; set; }
+
         public TimeSpan? RestDayHalfDayEnd { get; set; }
 
         // Refresh token support
         public string? RefreshToken { get; set; }
+
         public DateTime? RefreshTokenExpiryTime { get; set; }
+
         public ICollection<Notification> Notifications { get; set; }
-        = new List<Notification>();
+            = new List<Notification>();
 
         public bool RememberMe { get; set; } = false;
     }
+
+    // =========================================================
+    // LOGIN REQUEST
+    // =========================================================
 
     public class LoginRequest
     {
         [Required]
         [EmailAddress]
         public string Email { get; set; } = string.Empty;
+
         [Required]
         public string Password { get; set; } = string.Empty;
-        public bool RememberMe { get; set; } = false;
 
+        public bool RememberMe { get; set; } = false;
     }
+
+    // =========================================================
+    // REGISTER REQUEST
+    // =========================================================
 
     public class RegisterRequest
     {
         [Required]
         public string FullName { get; set; } = string.Empty;
 
-        public string? DisplayName { get; set;} = string.Empty;
-        
+        public string? DisplayName { get; set; } = string.Empty;
+
         [Required]
         [EmailAddress]
         public string Email { get; set; } = string.Empty;
 
         [Required]
-        [MinLength(6)]
+        [MinLength(8)]
         public string Password { get; set; } = string.Empty;
 
         [Required]
-        [Compare("Password")]
+        [Compare(nameof(Password), ErrorMessage = "Passwords do not match.")]
         public string ConfirmPassword { get; set; } = string.Empty;
 
         public string? ContactNo { get; set; }
-        public string? JobTitle {  get; set; } = string.Empty;
-        public string? SystemRole { get; set; } = string.Empty;
-        public string? Gender { get; set; } = string.Empty;
-        public DateTime? JoinedDate { get; set; }
-        public string Status { get; set; } = "Approved";
-        public List<Guid> HodIds { get; set; } = new();
-        public List<Guid> DepartmentIds { get; set; } = new List<Guid>();
 
+        public string? JobTitle { get; set; } = string.Empty;
+
+        public string? SystemRole { get; set; } = string.Empty;
+
+        public string? Gender { get; set; } = string.Empty;
+
+        public DateTime? JoinedDate { get; set; }
+
+        public string Status { get; set; } = "Approved";
+
+        public List<Guid> HodIds { get; set; } = new();
+
+        public List<Guid> DepartmentIds { get; set; } = new();
     }
+
+    // =========================================================
+    // PASSWORD RESET TOKEN
+    // =========================================================
 
     public class PasswordResetToken
     {
         public Guid Id { get; set; }
+
         public Guid UserId { get; set; }
+
         public string Token { get; set; } = string.Empty;
+
         public DateTime ExpiryTime { get; set; }
+
         public User User { get; set; } = null!;
+
         public DateTime? UsedAt { get; set; }
     }
 
+    // =========================================================
+    // FORGOT PASSWORD REQUEST
+    // =========================================================
 
     public class ForgotPasswordRequest
     {
@@ -105,115 +171,201 @@ namespace YLWorks.Model
         public string Email { get; set; } = string.Empty;
     }
 
+    // =========================================================
+    // RESET PASSWORD REQUEST
+    // =========================================================
+
     public class ResetPasswordRequest
     {
         [Required]
         public string Token { get; set; } = string.Empty;
 
         [Required]
-        [MinLength(6)]
+        [MinLength(8)]
         public string NewPassword { get; set; } = string.Empty;
 
         [Required]
-        [Compare("NewPassword")]
+        [Compare(nameof(NewPassword), ErrorMessage = "Passwords do not match.")]
         public string ConfirmPassword { get; set; } = string.Empty;
     }
+
+    // =========================================================
+    // CHANGE PASSWORD REQUEST
+    // =========================================================
 
     public class ChangePasswordRequest
     {
         [Required]
-        public Guid UserId { get; set; }
+        public string CurrentPassword { get; set; } = string.Empty;
 
         [Required]
-        [MinLength(6)]
+        [MinLength(8)]
         public string NewPassword { get; set; } = string.Empty;
 
         [Required]
-        [Compare("NewPassword")]
+        [Compare(nameof(NewPassword), ErrorMessage = "Passwords do not match.")]
         public string ConfirmPassword { get; set; } = string.Empty;
     }
 
+    // =========================================================
+    // USER DTO
+    // =========================================================
 
     public class UserDto
     {
         public Guid Id { get; set; }
+
         public string Email { get; set; } = string.Empty;
-        public string ContactNo { get; set; } = string.Empty;
-        public string Password { get; set; } = string.Empty;
+
+        public string? ContactNo { get; set; }
+
         public string FullName { get; set; } = string.Empty;
+
         public string? DisplayName { get; set; } = string.Empty;
+
         public string EmployeeNo { get; set; } = string.Empty;
+
         public string JobTitle { get; set; } = string.Empty;
+
         public string? Gender { get; set; } = string.Empty;
+
         public DateTime? JoinedDate { get; set; }
+
         public List<Guid> HodIds { get; set; } = new();
+
         public string? SystemRole { get; set; }
+
         public DateTime? UpdatedAt { get; set; }
+
         public DateTime? CreatedAt { get; set; }
+
         public DateTime? LastLoginAt { get; set; }
+
         public bool IsActive { get; set; } = true;
 
-        public List<Guid> DepartmentIds { get; set; } = new List<Guid>();
-        public List<UserDepartmentDto> Departments { get; set; } = new List<UserDepartmentDto>();
+        public List<Guid> DepartmentIds { get; set; } = new();
+
+        public List<UserDepartmentDto> Departments { get; set; } = new();
 
         public decimal? MonthlySalary { get; set; }
+
         public string? WorkStartTime { get; set; }
+
         public string? WorkEndTime { get; set; }
+
         public bool? UsesRestDayHalfDay { get; set; }
+
         public string? RestDayHalfDayStart { get; set; }
+
         public string? RestDayHalfDayEnd { get; set; }
     }
+
+    // =========================================================
+    // USER DEPARTMENT DTO
+    // =========================================================
 
     public class UserDepartmentDto
     {
         public Guid Id { get; set; }
+
         public string Name { get; set; } = string.Empty;
     }
+
+    // =========================================================
+    // LOGIN RESPONSE
+    // =========================================================
 
     public class LoginResponse
     {
         public bool Success { get; set; }
+
         public string Message { get; set; } = string.Empty;
+
         public string Email { get; set; } = string.Empty;
+
         public string FullName { get; set; } = string.Empty;
-        public string? DisplayName { get; set;} = string.Empty;
+
+        public string? DisplayName { get; set; } = string.Empty;
+
         public string EmployeeNo { get; set; } = string.Empty;
+
         public string AccessToken { get; set; } = string.Empty;
+
         public string RefreshToken { get; set; } = string.Empty;
+
         public DateTime? ExpiresAt { get; set; }
+
         public string UserId { get; set; } = string.Empty;
+
         public string SystemRole { get; set; } = string.Empty;
+
         public string JobTitle { get; set; } = string.Empty;
-        public string Gender { get; set; }
+
+        public string? Gender { get; set; }
+
         public List<Guid> HodIds { get; set; } = new();
+
         public List<string> Departments { get; set; } = new();
+
         public List<Guid>? DepartmentIds { get; set; } = new();
     }
+
+    // =========================================================
+    // UPDATE USER REQUEST
+    // =========================================================
 
     public class UpdateUserRequest
     {
         public string? FullName { get; set; }
-        public string? DisplayName { get; set;} = string.Empty;
+
+        public string? DisplayName { get; set; } = string.Empty;
+
         public string? ContactNo { get; set; }
+
         public string? Email { get; set; }
+
         public string? JobTitle { get; set; }
+
         public DateTime? JoinedDate { get; set; }
-        /// <summary>Replace reporting managers; empty list clears. Null = leave unchanged.</summary>
+
+        /// <summary>
+        /// Replace reporting managers; empty list clears.
+        /// Null = leave unchanged.
+        /// </summary>
         public List<Guid>? HodIds { get; set; }
+
         public List<Guid>? DepartmentIds { get; set; }
-        public string SystemRole { get; set; } = "Staff"; // SuperAdmin, Management, HOD, HR, Staff, Support
+
+        public string? SystemRole { get; set; }
+
         public string? Gender { get; set; }
 
         public decimal? MonthlySalary { get; set; }
-        /// <summary>HH:mm; null = leave unchanged. Empty string clears override.</summary>
+
+        /// <summary>
+        /// HH:mm; null = leave unchanged.
+        /// Empty string clears override.
+        /// </summary>
         public string? WorkStartTime { get; set; }
+
         public string? WorkEndTime { get; set; }
+
         public bool? UsesRestDayHalfDay { get; set; }
+
         public string? RestDayHalfDayStart { get; set; }
+
         public string? RestDayHalfDayEnd { get; set; }
-        /// <summary>When true, clears employee schedule overrides so department/company defaults apply.</summary>
+
+        /// <summary>
+        /// When true, clears employee schedule overrides
+        /// so department/company defaults apply.
+        /// </summary>
         public bool? ClearWorkScheduleOverride { get; set; }
     }
+
+    // =========================================================
+    // DEPARTMENT DISTRIBUTION DTO
+    // =========================================================
 
     public class DepartmentDistributionDto
     {
@@ -224,18 +376,33 @@ namespace YLWorks.Model
         public int Count { get; set; }
     }
 
+    // =========================================================
+    // APPROVE USER REQUEST
+    // =========================================================
+
     public class ApproveUserRequest
     {
         public Guid UserId { get; set; }
+
         public List<Guid> DepartmentIds { get; set; } = new();
-        public string SystemRole { get; set; }
+
+        public string SystemRole { get; set; } = "Staff";
     }
+
+    // =========================================================
+    // REJECT USER REQUEST
+    // =========================================================
 
     public class RejectUserRequest
     {
         public Guid UserId { get; set; }
+
         public string? Reason { get; set; }
     }
+
+    // =========================================================
+    // APPROVAL REQUEST
+    // =========================================================
 
     public class ApprovalRequest
     {
@@ -245,7 +412,6 @@ namespace YLWorks.Model
         public string? SystemRole { get; set; }
 
         public List<Guid>? DepartmentIds { get; set; }
-
 
         // For Rejected
         public string? Reason { get; set; }

@@ -13,7 +13,7 @@ import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { LoadingService } from '../../../services/loading.service';
 import { UserService } from '../../../services/userService.service';
-import { Subject, takeUntil } from 'rxjs';
+import { finalize, Subject, takeUntil } from 'rxjs';
 
 @Component({
   selector: 'app-forgot-password',
@@ -105,7 +105,8 @@ import { Subject, takeUntil } from 'rxjs';
                 ></i>
 
                 <input
-                  type="text"
+                  type="email"
+                  autocomplete="email"
                   pInputText
                   [(ngModel)]="email"
                   class="w-full!
@@ -120,6 +121,7 @@ import { Subject, takeUntil } from 'rxjs';
               focus:bg-white!
               transition-all"
                   placeholder="Enter your work email"
+                  [disabled]="isSubmitting"
                 />
               </div>
             </div>
@@ -134,7 +136,7 @@ import { Subject, takeUntil } from 'rxjs';
             icon="pi pi-arrow-right"
             iconPos="right"
             [rounded]="true"
-            [disabled]="!email"
+            [disabled]="!email.trim() || isSubmitting"
             styleClass="
           shadow-lg!
           w-full!
@@ -412,7 +414,7 @@ import { Subject, takeUntil } from 'rxjs';
 
           <!-- SEND BUTTON -->
           <p-button
-            label="Send Reset Link"
+            [label]="isSubmitting ? 'Sending...' : 'Send Reset Link'"
             (onClick)="ResetLink()"
             [rounded]="true"
             [disabled]="!email"
@@ -445,38 +447,51 @@ import { Subject, takeUntil } from 'rxjs';
   styleUrl: './forgot-password.less',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ForgotPassword implements OnInit, OnDestroy {
+export class ForgotPassword implements OnDestroy {
   private readonly loadingService = inject(LoadingService);
   private readonly userService = inject(UserService);
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly router = inject(Router);
-  protected ngUnsubscribe: Subject<void> = new Subject<void>();
 
-  email: string = '';
+  private readonly ngUnsubscribe = new Subject<void>();
 
-  ngOnInit(): void {}
+  email = '';
+  isSubmitting = false;
 
-  ResetLink() {
-    if (!this.email) return;
+  ResetLink(): void {
+    const email = this.email.trim();
 
+    // Validate email
+    if (
+      !email ||
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ||
+      this.isSubmitting
+    ) {
+      return;
+    }
+
+    this.isSubmitting = true;
     this.loadingService.start();
+    this.cdr.markForCheck();
 
     this.userService
-      .ResetPasswordLink(this.email)
-      .pipe(takeUntil(this.ngUnsubscribe))
+      .ResetPasswordLink(email)
+      .pipe(
+        takeUntil(this.ngUnsubscribe),
+        finalize(() => {
+          this.isSubmitting = false;
+          this.loadingService.stop();
+          this.cdr.markForCheck();
+        }),
+      )
       .subscribe({
-        next: (res) => {
-          this.loadingService.stop();
-
+        next: () => {
           this.router.navigate(['/email-link'], {
-            queryParams: { email: this.email },
+            queryParams: { email },
           });
-
-          this.cdr.markForCheck();
         },
-        error: (err) => {
-          this.loadingService.stop();
-          this.cdr.markForCheck();
+        error: () => {
+          // UserService handles the error notification.
         },
       });
   }
@@ -484,6 +499,5 @@ export class ForgotPassword implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.ngUnsubscribe.next();
     this.ngUnsubscribe.complete();
-    this.loadingService.stop();
   }
 }

@@ -332,4 +332,9 @@ export class AuthService {
 
     return throwError(() => error);
   };
+
+  logoutAfterPasswordChange(): void {
+    this.clearAuth();
+    this.router.navigate(['/login']);
+  }
 }

@@ -12,7 +12,7 @@ import { ButtonModule } from 'primeng/button';
 import { FormsModule } from '@angular/forms';
 import { InputTextModule } from 'primeng/inputtext';
 import { UserService } from '../../../services/userService.service';
-import { Subject, takeUntil } from 'rxjs';
+import { finalize, Subject, takeUntil } from 'rxjs';
 
 @Component({
   selector: 'app-email-link',
@@ -85,30 +85,31 @@ import { Subject, takeUntil } from 'rxjs';
                 ></i>
 
                 <input
-                  type="text"
+                  type="email"
                   pInputText
+                  autocomplete="email"
                   [(ngModel)]="email"
                   [disabled]="!edit"
                   class="w-full!
-                  bg-gray-50!
-                  pl-12! pr-20!
-                  rounded-2xl! py-4!
-                  placeholder:text-gray-400!
-                  border-gray-200!
-                  focus:border-blue-500!
-                  focus:bg-white!
-                  transition-all"
+    bg-gray-50!
+    pl-12! pr-20!
+    rounded-2xl! py-4!
+    placeholder:text-gray-400!
+    border-gray-200!
+    focus:border-blue-500!
+    focus:bg-white!
+    transition-all"
                   placeholder="Enter your work email"
                 />
 
                 <button
                   type="button"
                   class="absolute right-5 top-1/2
-                  -translate-y-1/2
-                  text-sm font-semibold
-                  text-[#2148BC]
-                  hover:underline cursor-pointer"
-                  (click)="edit = !edit"
+    -translate-y-1/2
+    text-sm font-semibold
+    text-[#2148BC]
+    hover:underline cursor-pointer"
+                  (click)="toggleEditEmail()"
                 >
                   {{ edit ? 'Save' : 'Edit' }}
                 </button>
@@ -119,7 +120,7 @@ import { Subject, takeUntil } from 'rxjs';
           <!-- OPEN EMAIL -->
           <p-button
             class="yl-login-button"
-            label="Open Email App"
+            label="Open Company Email"
             icon="pi pi-arrow-right"
             iconPos="right"
             [rounded]="true"
@@ -517,45 +518,72 @@ import { Subject, takeUntil } from 'rxjs';
   styleUrl: './email-link.less',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class EmailLink implements OnInit, OnDestroy {
+export class EmailLink implements OnDestroy {
   private readonly loadingService = inject(LoadingService);
   private readonly activatedRoute = inject(ActivatedRoute);
   private readonly userService = inject(UserService);
 
-  protected ngUnsubscribe: Subject<void> = new Subject<void>();
+  private readonly ngUnsubscribe = new Subject<void>();
 
-  email: string = this.activatedRoute.snapshot.queryParams['email'];
-  edit: boolean = false;
+  email = this.activatedRoute.snapshot.queryParamMap.get('email') ?? '';
 
-  ngOnInit(): void {}
+  edit = false;
+  isResending = false;
+
+  toggleEditEmail(): void {
+    if (!this.edit) {
+      this.edit = true;
+      return;
+    }
+
+    this.email = this.email.trim();
+
+    if (!this.isValidEmail(this.email)) {
+      return;
+    }
+
+    this.edit = false;
+  }
+
+  private isValidEmail(email: string): boolean {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  }
 
   ResendLink(): void {
-    if (!this.email) return;
+    const email = this.email.trim();
 
+    if (!this.isValidEmail(email) || this.isResending || this.edit) {
+      return;
+    }
+
+    this.isResending = true;
     this.loadingService.start();
 
     this.userService
-      .ResetPasswordLink(this.email)
-      .pipe(takeUntil(this.ngUnsubscribe))
+      .ResetPasswordLink(email)
+      .pipe(
+        takeUntil(this.ngUnsubscribe),
+        finalize(() => {
+          this.isResending = false;
+          this.loadingService.stop();
+        }),
+      )
       .subscribe({
-        next: () => {
-          this.loadingService.stop();
-        },
-        error: () => {
-          this.loadingService.stop();
-        },
+        next: () => {},
+        error: () => {},
       });
   }
 
   openEmailApp(): void {
-    if (!this.email) return;
-
-    window.open('https://mail.google.com/mail/u/0/#inbox', '_blank');
+    window.open(
+      'https://xmail-02.ximplify.com/Default.aspx',
+      '_blank',
+      'noopener,noreferrer',
+    );
   }
 
   ngOnDestroy(): void {
     this.ngUnsubscribe.next();
     this.ngUnsubscribe.complete();
-    this.loadingService.stop();
   }
 }

@@ -1,5 +1,4 @@
-﻿
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
@@ -65,7 +64,11 @@ namespace WebApplication1.Controllers
 
                 if (!string.IsNullOrEmpty(filter))
                 {
-                    var parameter = Expression.Parameter(typeof(User), "u");
+                    var parameter = Expression.Parameter(
+                        typeof(User),
+                        "u"
+                    );
+
                     Expression? finalExpression = null;
 
                     var orParts = filter.Split('|');
@@ -108,8 +111,9 @@ namespace WebApplication1.Controllers
                             Expression condition;
 
                             var propertyType =
-                                Nullable.GetUnderlyingType(propertyAccess.Type)
-                                ?? propertyAccess.Type;
+                                Nullable.GetUnderlyingType(
+                                    propertyAccess.Type
+                                ) ?? propertyAccess.Type;
 
                             if (propertyType == typeof(string))
                             {
@@ -144,10 +148,14 @@ namespace WebApplication1.Controllers
                             }
                             else if (propertyType == typeof(Guid))
                             {
-                                if (!Guid.TryParse(valueStr, out var guidValue))
+                                if (!Guid.TryParse(
+                                    valueStr,
+                                    out var guidValue))
                                     continue;
 
-                                var constant = Expression.Constant(guidValue);
+                                var constant = Expression.Constant(
+                                    guidValue
+                                );
 
                                 condition = Expression.Equal(
                                     propertyAccess,
@@ -164,9 +172,7 @@ namespace WebApplication1.Controllers
                                     valueStr,
                                     true,
                                     out var enumValue))
-                                {
                                     continue;
-                                }
 
                                 var constant = Expression.Constant(
                                     enumValue,
@@ -617,9 +623,40 @@ namespace WebApplication1.Controllers
                 if (item == null)
                     return Ok(new { Data = new { } });
 
-                // Select fields
+                // Only allow safe fields to be selected.
                 if (!string.IsNullOrEmpty(select))
                 {
+                    var allowedFields = new HashSet<string>(
+                        new[]
+                        {
+                            "Id",
+                            "EmployeeNo",
+                            "FullName",
+                            "DisplayName",
+                            "Email",
+                            "SystemRole",
+                            "JobTitle",
+                            "IsActive",
+                            "LastLoginAt",
+                            "ContactNo",
+                            "Gender",
+                            "CreatedAt",
+                            "UpdatedAt",
+                            "JoinedDate",
+                            "Status",
+                            "MonthlySalary",
+                            "WorkStartTime",
+                            "WorkEndTime",
+                            "UsesRestDayHalfDay",
+                            "RestDayHalfDayStart",
+                            "RestDayHalfDayEnd",
+                            "HodIds",
+                            "DepartmentIds",
+                            "Departments"
+                        },
+                        StringComparer.OrdinalIgnoreCase
+                    );
+
                     var selectedFields = select
                         .Split(',')
                         .Select(f => f.Trim())
@@ -629,14 +666,72 @@ namespace WebApplication1.Controllers
 
                     foreach (var field in selectedFields)
                     {
-                        var propInfo = item.GetType().GetProperty(
-                            field,
-                            BindingFlags.IgnoreCase |
-                            BindingFlags.Public |
-                            BindingFlags.Instance
-                        );
+                        if (!allowedFields.Contains(field))
+                            continue;
 
-                        dict[field] = propInfo?.GetValue(item);
+                        object? value = null;
+
+                        switch (field.ToLowerInvariant())
+                        {
+                            case "hodids":
+                                value = item.ReportingManagers
+                                    .Select(rm => rm.ManagerId)
+                                    .ToList();
+                                break;
+
+                            case "departmentids":
+                                value = item.Departments
+                                    .Select(d => d.Id)
+                                    .ToList();
+                                break;
+
+                            case "departments":
+                                value = item.Departments
+                                    .Select(d => new
+                                    {
+                                        d.Id,
+                                        d.Name
+                                    })
+                                    .ToList();
+                                break;
+
+                            case "workstarttime":
+                                value = item.WorkStartTime.HasValue
+                                    ? $"{(int)item.WorkStartTime.Value.TotalHours:D2}:{item.WorkStartTime.Value.Minutes:D2}"
+                                    : null;
+                                break;
+
+                            case "workendtime":
+                                value = item.WorkEndTime.HasValue
+                                    ? $"{(int)item.WorkEndTime.Value.TotalHours:D2}:{item.WorkEndTime.Value.Minutes:D2}"
+                                    : null;
+                                break;
+
+                            case "restdayhalfdaystart":
+                                value = item.RestDayHalfDayStart.HasValue
+                                    ? $"{(int)item.RestDayHalfDayStart.Value.TotalHours:D2}:{item.RestDayHalfDayStart.Value.Minutes:D2}"
+                                    : null;
+                                break;
+
+                            case "restdayhalfdayend":
+                                value = item.RestDayHalfDayEnd.HasValue
+                                    ? $"{(int)item.RestDayHalfDayEnd.Value.TotalHours:D2}:{item.RestDayHalfDayEnd.Value.Minutes:D2}"
+                                    : null;
+                                break;
+
+                            default:
+                                value = item.GetType()
+                                    .GetProperty(
+                                        field,
+                                        BindingFlags.IgnoreCase |
+                                        BindingFlags.Public |
+                                        BindingFlags.Instance
+                                    )
+                                    ?.GetValue(item);
+                                break;
+                        }
+
+                        dict[field] = value;
                     }
 
                     return Ok(new { Data = dict });
@@ -997,6 +1092,9 @@ namespace WebApplication1.Controllers
 
             await _context.SaveChangesAsync();
 
+            // NOTE:
+            // This currently preserves your existing account-created email.
+            // Replace it with a secure password-setup link before production.
             try
             {
                 _emailService.SendAccountCreatedEmail(
@@ -1062,7 +1160,13 @@ namespace WebApplication1.Controllers
             [FromBody] ChangePasswordRequest request)
         {
             if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+            {
+                return Ok(new
+                {
+                    Success = false,
+                    Message = "Invalid password request."
+                });
+            }
 
             try
             {
@@ -1077,7 +1181,7 @@ namespace WebApplication1.Controllers
 
                 if (user == null)
                 {
-                    return NotFound(new
+                    return Ok(new
                     {
                         Success = false,
                         Message = "User not found."
@@ -1086,7 +1190,7 @@ namespace WebApplication1.Controllers
 
                 if (request.NewPassword != request.ConfirmPassword)
                 {
-                    return BadRequest(new
+                    return Ok(new
                     {
                         Success = false,
                         Message = "Passwords do not match."
@@ -1095,6 +1199,30 @@ namespace WebApplication1.Controllers
 
                 var passwordHasher = new PasswordHasher<User>();
 
+                var verificationResult = passwordHasher.VerifyHashedPassword(
+                    user,
+                    user.Password,
+                    request.CurrentPassword
+                );
+
+                if (verificationResult == PasswordVerificationResult.Failed)
+                {
+                    return Ok(new
+                    {
+                        Success = false,
+                        Message = "Current password is incorrect."
+                    });
+                }
+
+                if (request.CurrentPassword == request.NewPassword)
+                {
+                    return Ok(new
+                    {
+                        Success = false,
+                        Message = "New password must be different from current password."
+                    });
+                }
+
                 user.Password = passwordHasher.HashPassword(
                     user,
                     request.NewPassword
@@ -1102,9 +1230,16 @@ namespace WebApplication1.Controllers
 
                 user.UpdatedAt = DateTimeHelper.Now();
 
-                // Revoke refresh token after password change.
+                // Revoke refresh token.
                 user.RefreshToken = null;
                 user.RefreshTokenExpiryTime = null;
+
+                // Invalidate all outstanding reset tokens.
+                var resetTokens = await _context.PasswordResetTokens
+                    .Where(x => x.UserId == user.Id)
+                    .ToListAsync();
+
+                _context.PasswordResetTokens.RemoveRange(resetTokens);
 
                 _context.ActivityLogs.Add(new ActivityLog
                 {
@@ -1120,14 +1255,6 @@ namespace WebApplication1.Controllers
 
                 await _context.SaveChangesAsync();
 
-                await _hub.Clients.All.SendAsync("ReceiveNotification", new
-                {
-                    Title = "Password Changed",
-                    Message = $"Password for {user.FullName} has been updated.",
-                    Type = "info",
-                    Time = DateTimeHelper.Now()
-                });
-
                 return Ok(new
                 {
                     Success = true,
@@ -1141,11 +1268,10 @@ namespace WebApplication1.Controllers
                 return StatusCode(500, new
                 {
                     Success = false,
-                    Error = "Failed to change password."
+                    Message = "Failed to change password."
                 });
             }
         }
-
         // =========================================================
         // RESET PASSWORD
         // =========================================================
@@ -1159,21 +1285,33 @@ namespace WebApplication1.Controllers
 
             try
             {
+                if (request.NewPassword != request.ConfirmPassword)
+                {
+                    return BadRequest(new
+                    {
+                        Success = false,
+                        Message = "Passwords do not match."
+                    });
+                }
+
                 await using var transaction =
                     await _context.Database.BeginTransactionAsync();
 
                 var now = DateTimeHelper.Now();
 
+                var hashedToken = HashResetToken(request.Token);
+
                 var resetToken = await _context.PasswordResetTokens
                     .Include(t => t.User)
                     .FirstOrDefaultAsync(t =>
-                        t.Token == request.Token &&
-                        t.ExpiryTime > now
+                        t.Token == hashedToken &&
+                        t.ExpiryTime > now &&
+                        t.UsedAt == null
                     );
 
                 if (resetToken == null || !resetToken.User.IsActive)
                 {
-                    return Ok(new
+                    return BadRequest(new
                     {
                         Success = false,
                         Message = "Invalid or expired token."
@@ -1191,7 +1329,7 @@ namespace WebApplication1.Controllers
 
                 user.UpdatedAt = now;
 
-                // Revoke refresh token after password reset.
+                // Revoke existing refresh token.
                 user.RefreshToken = null;
                 user.RefreshTokenExpiryTime = null;
 
@@ -1207,19 +1345,16 @@ namespace WebApplication1.Controllers
                     CreatedAt = now
                 });
 
-                _context.PasswordResetTokens.Remove(resetToken);
+                // Invalidate all reset tokens for this user.
+                var userResetTokens = await _context.PasswordResetTokens
+                    .Where(t => t.UserId == user.Id)
+                    .ToListAsync();
+
+                _context.PasswordResetTokens.RemoveRange(userResetTokens);
 
                 await _context.SaveChangesAsync();
 
                 await transaction.CommitAsync();
-
-                await _hub.Clients.All.SendAsync("ReceiveNotification", new
-                {
-                    Title = "Password Reset",
-                    Message = $"Password for {user.Email} has been successfully reset.",
-                    Type = "info",
-                    Time = now
-                });
 
                 return Ok(new
                 {
@@ -1229,7 +1364,7 @@ namespace WebApplication1.Controllers
             }
             catch (DbUpdateConcurrencyException)
             {
-                return Ok(new
+                return BadRequest(new
                 {
                     Success = false,
                     Message = "Invalid or expired token."
@@ -1303,10 +1438,10 @@ namespace WebApplication1.Controllers
         // =========================================================
         [AllowAnonymous]
         [HttpPost("ForgotPassword")]
-        public IActionResult ForgotPassword(
+        public async Task<IActionResult> ForgotPassword(
             [FromQuery] string Email)
         {
-            if (string.IsNullOrEmpty(Email))
+            if (string.IsNullOrWhiteSpace(Email))
             {
                 return BadRequest(new
                 {
@@ -1317,7 +1452,7 @@ namespace WebApplication1.Controllers
 
             try
             {
-                var user = _context.Users.FirstOrDefault(
+                var user = await _context.Users.FirstOrDefaultAsync(
                     u => u.Email == Email
                 );
 
@@ -1331,33 +1466,58 @@ namespace WebApplication1.Controllers
                     });
                 }
 
-                var previousTokens = _context.PasswordResetTokens
-                    .Where(x => x.UserId == user.Id);
+                // Remove previous reset tokens.
+                var previousTokens = await _context.PasswordResetTokens
+                    .Where(x => x.UserId == user.Id)
+                    .ToListAsync();
 
                 _context.PasswordResetTokens.RemoveRange(previousTokens);
-                _context.SaveChanges();
 
+                // Generate a secure random token.
                 var token = Convert.ToBase64String(
                     RandomNumberGenerator.GetBytes(48)
                 );
 
-                var expiry = DateTimeHelper.Now().AddHours(1);
+                var expiry = DateTimeHelper.Now().AddMinutes(30);
 
                 var resetToken = new PasswordResetToken
                 {
                     UserId = user.Id,
-                    Token = token,
+                    Token = HashResetToken(token),
                     ExpiryTime = expiry,
                     UsedAt = null
                 };
 
                 _context.PasswordResetTokens.Add(resetToken);
-                _context.SaveChanges();
 
+                await _context.SaveChangesAsync();
+
+                // TODO: Move frontend URL into appsettings.json.
                 var resetLink =
                     $"http://localhost:4200/reset-password?token={Uri.EscapeDataString(token)}";
 
-                _emailService.SendResetEmail(user.Email, resetLink);
+                try
+                {
+                    _emailService.SendResetEmail(
+                        user.Email,
+                        resetLink
+                    );
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(
+                        $"Reset email sending failed: {ex}"
+                    );
+
+                    _context.PasswordResetTokens.Remove(resetToken);
+                    await _context.SaveChangesAsync();
+
+                    return StatusCode(500, new
+                    {
+                        Success = false,
+                        Message = "Failed to send reset password link."
+                    });
+                }
 
                 return Ok(new
                 {
@@ -1419,7 +1579,7 @@ namespace WebApplication1.Controllers
         // =========================================================
         // UPDATE USER
         // =========================================================
-        [Authorize]
+        [Authorize(Roles = "HOD,Management,HR,SuperAdmin")]
         [HttpPut("Update/{id}")]
         public async Task<IActionResult> UpdateUser(
             Guid id,
@@ -1802,6 +1962,18 @@ namespace WebApplication1.Controllers
                 Message = "User status updated successfully.",
                 EmailSent = emailSent
             });
+        }
+
+        // =========================================================
+        // HASH RESET TOKEN
+        // =========================================================
+        private static string HashResetToken(string token)
+        {
+            var hash = SHA256.HashData(
+                Encoding.UTF8.GetBytes(token)
+            );
+
+            return Convert.ToHexString(hash);
         }
     }
 }

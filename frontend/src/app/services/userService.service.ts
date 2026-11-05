@@ -224,8 +224,8 @@ export class UserService {
     const params = new HttpParams().set('Email', email);
 
     return this.http
-      .post<BaseResponse>(`${this.url}/ForgotPassword`, {}, { params })
-      .pipe(retry(1), catchError(this.handleError('ResetPasswordLink')));
+      .post<BaseResponse>(`${this.url}/ForgotPassword`, null, { params })
+      .pipe(catchError(this.handleError('ResetPasswordLink')));
   }
 
   // ==========================================
@@ -235,7 +235,7 @@ export class UserService {
   ResetPassword(request: ResetPasswordRequest): Observable<BaseResponse> {
     return this.http
       .post<BaseResponse>(`${this.url}/ResetPassword`, request)
-      .pipe(retry(1), catchError(this.handleError('ResetPassword')));
+      .pipe(catchError(this.handleError('ResetPassword')));
   }
 
   // ==========================================
@@ -244,8 +244,8 @@ export class UserService {
 
   ChangePassword(request: ChangePasswordRequest): Observable<BaseResponse> {
     return this.http
-      .post<BaseResponse>(`${this.url}/ChangePassword`, request)
-      .pipe(retry(1), catchError(this.handleError('ChangePassword')));
+      .put<BaseResponse>(`${this.url}/ChangePassword`, request)
+      .pipe(catchError(this.handleError('ChangePassword')));
   }
 
   // ==========================================

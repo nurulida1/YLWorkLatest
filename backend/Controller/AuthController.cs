@@ -33,13 +33,17 @@ namespace YLWorks.Controllers
         [AllowAnonymous]
         [HttpPost("authenticate")]
         public async Task<ActionResult<LoginResponse>> Authenticate(
-            [FromBody] LoginRequest request)
+    [FromBody] LoginRequest request)
         {
             var result = await _jwtService.Authenticate(request);
 
             if (result == null || !result.Success)
             {
-                return Unauthorized(result);
+                return Ok(new LoginResponse
+                {
+                    Success = false,
+                    Message = result?.Message ?? "Invalid email or password."
+                });
             }
 
             return Ok(result);

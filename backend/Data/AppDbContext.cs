@@ -153,6 +153,10 @@ namespace YLWorks.Data
 
         public DbSet<HardwareRequestItem> HardwareRequestItems { get; set; }
 
+        public DbSet<OfficeHandbook> OfficeHandbooks { get; set; }
+
+        public DbSet<OfficeHandbookCategory> OfficeHandbookCategories { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);

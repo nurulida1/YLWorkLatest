@@ -180,6 +180,11 @@ export class Sidemenu {
       route: '/dashboard',
       icon: 'pi-home',
     },
+    {
+      label: 'Office Handbook',
+      route: '/office-handbook',
+      icon: 'pi-book',
+    },
   ];
 
   management: any[] = [

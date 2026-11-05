@@ -3180,6 +3180,107 @@ namespace YLWorks.Migrations
                     b.ToTable("Notifications");
                 });
 
+            modelBuilder.Entity("YLWorks.Model.OfficeHandbook", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime?>("ArchivedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("ArchivedBy")
+                        .HasMaxLength(450)
+                        .HasColumnType("varchar(450)");
+
+                    b.Property<string>("AttachmentName")
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<string>("AttachmentPath")
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
+
+                    b.Property<Guid>("CategoryId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("varchar(450)");
+
+                    b.Property<bool>("IsArchived")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<bool>("IsPublished")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<DateTime?>("PublishedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Slug")
+                        .IsRequired()
+                        .HasMaxLength(250)
+                        .HasColumnType("varchar(250)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(450)
+                        .HasColumnType("varchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CategoryId");
+
+                    b.ToTable("OfficeHandbooks");
+                });
+
+            modelBuilder.Entity("YLWorks.Model.OfficeHandbookCategory", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("varchar(150)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("OfficeHandbookCategories");
+                });
+
             modelBuilder.Entity("YLWorks.Model.PORMAItem", b =>
                 {
                     b.Property<Guid>("Id")
@@ -4836,7 +4937,6 @@ namespace YLWorks.Migrations
                         .HasColumnType("char(36)");
 
                     b.Property<string>("ContactNo")
-                        .IsRequired()
                         .HasColumnType("longtext");
 
                     b.Property<DateTime?>("CreatedAt")
@@ -4883,10 +4983,6 @@ namespace YLWorks.Migrations
 
                     b.Property<decimal?>("MonthlySalary")
                         .HasColumnType("decimal(65,30)");
-
-                    b.Property<string>("Password")
-                        .IsRequired()
-                        .HasColumnType("longtext");
 
                     b.Property<string>("RestDayHalfDayEnd")
                         .HasColumnType("longtext");
@@ -5952,6 +6048,17 @@ namespace YLWorks.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("YLWorks.Model.OfficeHandbook", b =>
+                {
+                    b.HasOne("YLWorks.Model.OfficeHandbookCategory", "Category")
+                        .WithMany("Handbooks")
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Category");
+                });
+
             modelBuilder.Entity("YLWorks.Model.PORMAItem", b =>
                 {
                     b.HasOne("YLWorks.Model.PurchaseOrderRMA", "PurchaseOrderRMA")
@@ -6619,6 +6726,11 @@ namespace YLWorks.Migrations
             modelBuilder.Entity("YLWorks.Model.Meeting", b =>
                 {
                     b.Navigation("Participants");
+                });
+
+            modelBuilder.Entity("YLWorks.Model.OfficeHandbookCategory", b =>
+                {
+                    b.Navigation("Handbooks");
                 });
 
             modelBuilder.Entity("YLWorks.Model.ProductService", b =>

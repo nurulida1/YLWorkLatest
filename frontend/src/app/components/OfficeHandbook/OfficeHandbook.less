@@ -1,0 +1,130 @@
+:host {
+  display: block;
+  width: 100%;
+  min-height: 100%;
+  background: #f8fafc;
+}
+
+/* Page layout */
+.min-h-screen {
+  min-height: 100vh;
+}
+
+/* Breadcrumb */
+a {
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+/* Overview cards */
+.rounded-2xl {
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+/* Category sidebar */
+aside {
+  .space-y-1 {
+    button {
+      min-height: 44px;
+
+      i {
+        font-size: 14px;
+        flex-shrink: 0;
+      }
+    }
+  }
+}
+
+/* Search input */
+input[type="text"] {
+  &::placeholder {
+    color: #94a3b8;
+  }
+
+  &:focus {
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+}
+
+/* Article cards */
+.group {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+
+  h3 {
+    overflow-wrap: anywhere;
+  }
+
+  > div:last-child {
+    margin-top: auto;
+  }
+}
+
+/* Article content preview */
+.line-clamp-2,
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-2 {
+  -webkit-line-clamp: 2;
+}
+
+.line-clamp-3 {
+  -webkit-line-clamp: 3;
+}
+
+/* Article action menu */
+:host ::ng-deep {
+  .p-menu {
+    min-width: 180px;
+    padding: 6px;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(15, 23, 42, 0.1);
+
+    .p-menu-item-content {
+      border-radius: 8px;
+    }
+
+    .p-menu-item-link {
+      padding: 10px 12px;
+      font-size: 13px;
+    }
+  }
+}
+
+/* Loading state */
+.pi-spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .min-h-screen {
+    padding: 16px;
+  }
+
+  aside {
+    width: 100%;
+  }
+
+  .group {
+    padding: 16px;
+  }
+}

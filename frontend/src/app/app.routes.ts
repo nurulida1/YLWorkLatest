@@ -728,6 +728,25 @@ export const routes: Routes = [
   },
 
   {
+    path: 'office-handbook',
+    data: { moduleKey: 'office-handbook' },
+    loadComponent: () =>
+      import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
+        (m) => m.ResponsiveLayout,
+      ),
+    children: [
+      {
+        path: '',
+        data: { moduleKey: 'office-handbook' },
+        loadComponent: () =>
+          import('./components/OfficeHandbook/OfficeHandbook').then(
+            (m) => m.OfficeHandbookComponent,
+          ),
+      },
+    ],
+  },
+
+  {
     path: 'task-management',
     data: { moduleKey: 'task-management' },
     loadComponent: () =>

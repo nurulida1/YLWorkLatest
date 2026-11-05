@@ -126,6 +126,7 @@ builder.Services.AddScoped<YLWorks.Services.Claims.ClaimSettingsService>();
 builder.Services.AddScoped<YLWorks.Services.Claims.ClaimNotificationHelper>();
 builder.Services.AddScoped<YLWorks.Services.Claims.ClaimRequestService>();
 builder.Services.AddHostedService<YLWorks.Services.Leave.LeaveYearEndHostedService>();
+builder.Services.AddScoped<IOfficeHandbookService, OfficeHandbookService>();
 
 var app = builder.Build();
 

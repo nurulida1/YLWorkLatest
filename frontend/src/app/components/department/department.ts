@@ -46,158 +46,276 @@ import { PermissionContextService } from '../../services/permission-context.serv
     DialogModule,
     HasPermissionActionDirective,
   ],
-  template: `<div class="w-full flex flex-col p-6">
-      <div
-        class="flex flex-row items-center gap-2 text-xs tracking-wider uppercase text-gray-400 font-medium"
-      >
-        <span
-          class="cursor-pointer hover:text-gray-600 transition-colors"
-          [routerLink]="'/dashboard'"
-        >
-          Dashboard
-        </span>
-        <span class="text-gray-300">/</span>
-        <span class="text-gray-600 font-semibold">Department</span>
-      </div>
-
-      <div
-        class="mt-4 border border-gray-100 rounded-xl shadow-sm bg-white overflow-hidden flex flex-col"
-      >
+  template: `
+    <div class="department-page w-full min-h-full p-6">
+      <div class="w-full max-w-[1440px] mx-auto">
+        <!-- Breadcrumb -->
         <div
-          class="p-6 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-gray-50/50"
+          class="flex items-center gap-2 text-xs font-medium tracking-wide text-gray-400 uppercase"
         >
-          <div class="flex flex-col">
-            <h1 class="text-xl text-gray-800 font-bold tracking-tight">
+          <span
+            class="cursor-pointer hover:text-blue-600 transition-colors"
+            [routerLink]="'/dashboard'"
+          >
+            Dashboard
+          </span>
+
+          <i class="pi pi-angle-right text-gray-300"></i>
+
+          <span class="text-gray-700 font-semibold">Department</span>
+        </div>
+
+        <!-- Page Heading -->
+        <div
+          class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mt-5 mb-6"
+        >
+          <div>
+            <h1 class="text-2xl font-bold text-gray-900 tracking-tight">
               Departments
             </h1>
-            <p class="text-sm text-gray-500 mt-0.5">
-              Create, edit, and orchestrate functional organizational branches.
+
+            <p class="text-sm text-gray-500 mt-1">
+              Manage your organization's departments and reporting structure.
             </p>
           </div>
 
-          <div class="flex flex-row items-center gap-2.5 self-end sm:self-auto">
-            <div class="w-72 relative">
-              <input
-                type="text"
-                pInputText
-                [(ngModel)]="search"
-                class="w-full pl-3 pr-9 py-2 text-sm rounded-lg border-gray-200 focus:border-sky-500! shadow-inner!"
-                placeholder="Search branches by name..."
-                (keyup)="onKeyDown($event)"
-              />
-              <i
-                class="pi pi-search absolute top-1/2 -translate-y-1/2 right-3 text-gray-400 text-sm pointer-events-none"
-              ></i>
-            </div>
-
-            <p-button
-              *hasPermissionAction="'canCreate'"
-              label="New Department"
-              (onClick)="ActionClick(null, 'add')"
-              icon="pi pi-plus-circle"
-              severity="info"
-              styleClass="bg-blue-800! border-none! text-white! py-2 px-4 rounded-lg text-sm font-medium tracking-wide shadow-sm"
-            ></p-button>
-          </div>
+          <p-button
+            *hasPermissionAction="'canCreate'"
+            label="New Department"
+            icon="pi pi-plus"
+            (onClick)="ActionClick(null, 'add')"
+            severity="info"
+            styleClass="bg-blue-800! hover:bg-blue-900! border-none! text-white! py-2.5 px-5 rounded-lg text-sm font-semibold shadow-sm"
+          ></p-button>
         </div>
 
-        <div class="p-4 bg-white">
-          <p-table
-            #fTable
-            [value]="PagingSignal().data"
-            [paginator]="true"
-            [rows]="Query.PageSize"
-            [totalRecords]="PagingSignal().totalElements"
-            [tableStyle]="{ 'min-width': '50rem' }"
-            [rowsPerPageOptions]="[10, 20, 30, 50]"
-            [stripedRows]="true"
-            [showGridlines]="false"
-            [lazy]="true"
-            (onLazyLoad)="NextPage($event)"
-            styleClass="p-datatable-sm"
+        <!-- Department Table Card -->
+        <div
+          class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden"
+        >
+          <!-- Card Header -->
+          <div
+            class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 p-5 sm:p-6 border-b border-gray-100"
           >
-            <ng-template #header>
-              <tr
-                class="text-xs uppercase text-gray-500 font-bold border-b border-gray-200"
-              >
-                <th class="bg-gray-50/70 py-3.5 px-5 text-left w-[45%]">
-                  Department Name
-                </th>
-                <th class="bg-gray-50/70 py-3.5 px-5 text-left w-[40%]">
-                  Head of Department (HOD)
-                </th>
-                <th
-                  *ngIf="rights().canUpdate || rights().canDelete"
-                  class="bg-gray-50/70 py-3.5 px-5 text-center w-[15%]"
-                >
-                  Actions
-                </th>
-              </tr>
-            </ng-template>
+            <div>
+              <h2 class="text-base font-bold text-gray-800">
+                Department Directory
+              </h2>
 
-            <ng-template #body let-data>
-              <tr
-                class="border-b border-gray-100 last:border-0 hover:bg-gray-50/50 transition-colors text-sm text-gray-700"
+              <p class="text-xs text-gray-400 mt-1">
+                View and manage all registered departments.
+              </p>
+            </div>
+
+            <!-- Search -->
+            <div
+              class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2"
+            >
+              <div class="relative w-full sm:w-80">
+                <i
+                  class="pi pi-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm pointer-events-none"
+                ></i>
+
+                <input
+                  type="text"
+                  pInputText
+                  [(ngModel)]="search"
+                  class="w-full pl-9! pr-3! py-2.5! text-sm! rounded-lg! border-gray-200! shadow-none! focus:border-blue-500!"
+                  placeholder="Search department..."
+                  (keyup)="onKeyDown($event)"
+                />
+              </div>
+
+              <button
+                type="button"
+                *ngIf="search"
+                (click)="ResetTable()"
+                class="inline-flex items-center justify-center gap-2 px-3 py-2.5 text-sm font-medium text-gray-500 border border-gray-200 rounded-lg hover:bg-gray-50 hover:text-gray-700 transition-colors"
               >
-                <td class="py-3 px-5 font-semibold text-gray-900">
-                  <div class="flex items-center gap-2">
-                    <span class="w-2 h-2 rounded-full bg-sky-400"></span>
-                    {{ data.name }}
-                  </div>
-                </td>
-                <td class="py-3 px-5 text-gray-600">
-                  <div
-                    class="flex items-center gap-2"
-                    *ngIf="data.hod?.fullName; else noHod"
+                <i class="pi pi-times"></i>
+                Clear
+              </button>
+            </div>
+          </div>
+
+          <!-- Table -->
+          <div class="p-4 sm:p-5">
+            <p-table
+              #fTable
+              [value]="PagingSignal().data"
+              [paginator]="true"
+              [rows]="Query.PageSize"
+              [totalRecords]="PagingSignal().totalElements"
+              [tableStyle]="{ 'min-width': '45rem' }"
+              [rowsPerPageOptions]="[10, 20, 30, 50]"
+              [stripedRows]="true"
+              [showGridlines]="false"
+              [lazy]="true"
+              (onLazyLoad)="NextPage($event)"
+              styleClass="p-datatable-sm department-table"
+            >
+              <!-- Table Header -->
+              <ng-template #header>
+                <tr class="text-xs uppercase text-gray-500 font-semibold">
+                  <th
+                    class="bg-gray-50! py-4! px-5! text-left! w-[45%]! border-b! border-gray-200!"
                   >
-                    <i class="pi pi-user text-xs text-gray-400"></i>
-                    <span>{{ data.hod?.fullName }}</span>
-                  </div>
-                  <ng-template #noHod>
-                    <span class="text-xs italic text-gray-400"
-                      >Unassigned / Vacant</span
+                    Department Name
+                  </th>
+
+                  <th
+                    class="bg-gray-50! py-4! px-5! text-left! w-[40%]! border-b! border-gray-200!"
+                  >
+                    Head of Department
+                  </th>
+
+                  <th
+                    *ngIf="rights().canUpdate || rights().canDelete"
+                    class="bg-gray-50! py-4! px-5! text-center! w-[15%]! border-b! border-gray-200!"
+                  >
+                    Actions
+                  </th>
+                </tr>
+              </ng-template>
+
+              <!-- Table Body -->
+              <ng-template #body let-data>
+                <tr class="hover:bg-blue-50/30 transition-colors">
+                  <!-- Department Name -->
+                  <td class="py-4! px-5!">
+                    <div class="flex items-center gap-3">
+                      <div
+                        class="flex items-center justify-center w-10 h-10 rounded-lg bg-blue-50 text-blue-700 shrink-0"
+                      >
+                        <i class="pi pi-building text-base"></i>
+                      </div>
+
+                      <div class="min-w-0">
+                        <div class="text-sm font-semibold text-gray-800">
+                          {{ data.name || 'Unnamed Department' }}
+                        </div>
+
+                        <div class="text-xs text-gray-400 mt-1">Department</div>
+                      </div>
+                    </div>
+                  </td>
+
+                  <!-- HOD -->
+                  <td class="py-4! px-5!">
+                    <div
+                      *ngIf="data.hod?.fullName; else noHod"
+                      class="flex items-center gap-3"
                     >
-                  </ng-template>
-                </td>
-                <td
-                  *ngIf="rights().canUpdate || rights().canDelete"
-                  class="py-3 px-5 text-center"
-                >
-                  <button
-                    class="p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-md transition-all inline-flex items-center justify-center"
-                    (click)="onEllipsisClick($event, data, menu)"
-                  >
-                    <i class="pi pi-ellipsis-h text-sm"></i>
-                  </button>
-                </td>
-              </tr>
-            </ng-template>
+                      <div
+                        class="flex items-center justify-center w-9 h-9 rounded-full bg-purple-50 text-purple-700 shrink-0"
+                      >
+                        <i class="pi pi-user text-sm"></i>
+                      </div>
 
-            <ng-template #emptymessage>
-              <tr>
-                <td
-                  colspan="3"
-                  class="py-12 text-center text-gray-400 bg-white font-medium border border-gray-100 rounded-lg"
-                >
-                  <i
-                    class="pi pi-folder-open text-3xl text-gray-200 mb-2 block"
-                  ></i>
-                  No workspace department branches discovered matching selection
-                  records.
-                </td>
-              </tr>
-            </ng-template>
-          </p-table>
+                      <div class="min-w-0">
+                        <div class="text-sm font-medium text-gray-700">
+                          {{ data.hod?.fullName }}
+                        </div>
+
+                        <div class="text-xs text-green-600 mt-0.5">
+                          Assigned
+                        </div>
+                      </div>
+                    </div>
+
+                    <ng-template #noHod>
+                      <div class="flex items-center gap-2 text-gray-400">
+                        <div
+                          class="flex items-center justify-center w-9 h-9 rounded-full bg-gray-100 shrink-0"
+                        >
+                          <i class="pi pi-user text-sm"></i>
+                        </div>
+
+                        <div>
+                          <div class="text-sm font-medium italic">
+                            Unassigned
+                          </div>
+
+                          <div class="text-xs mt-0.5">No HOD assigned</div>
+                        </div>
+                      </div>
+                    </ng-template>
+                  </td>
+
+                  <!-- Actions -->
+                  <td
+                    *ngIf="rights().canUpdate || rights().canDelete"
+                    class="py-4! px-5! text-center!"
+                  >
+                    <button
+                      type="button"
+                      class="inline-flex items-center justify-center w-9 h-9 rounded-lg text-gray-400 hover:text-blue-700 hover:bg-blue-50 transition-all"
+                      (click)="onEllipsisClick($event, data, menu)"
+                      aria-label="Department actions"
+                    >
+                      <i class="pi pi-ellipsis-v text-sm"></i>
+                    </button>
+                  </td>
+                </tr>
+              </ng-template>
+
+              <!-- Empty State -->
+              <ng-template #emptymessage>
+                <tr>
+                  <td
+                    [attr.colspan]="
+                      rights().canUpdate || rights().canDelete ? 3 : 2
+                    "
+                    class="py-16! text-center!"
+                  >
+                    <div class="flex flex-col items-center justify-center">
+                      <div
+                        class="flex items-center justify-center w-16 h-16 rounded-full bg-gray-50 mb-4"
+                      >
+                        <i class="pi pi-building text-2xl text-gray-300"></i>
+                      </div>
+
+                      <h3 class="text-sm font-semibold text-gray-700">
+                        No departments found
+                      </h3>
+
+                      <p class="text-xs text-gray-400 mt-2 max-w-xs">
+                        There are currently no departments matching your search.
+                      </p>
+
+                      <button
+                        *ngIf="search"
+                        type="button"
+                        (click)="ResetTable()"
+                        class="mt-4 text-sm font-semibold text-blue-700 hover:text-blue-900 transition-colors"
+                      >
+                        Clear search
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              </ng-template>
+            </p-table>
+          </div>
         </div>
       </div>
     </div>
+
+    <!-- ============================================ -->
+    <!-- DEPARTMENT ACTION MENU -->
+    <!-- ============================================ -->
 
     <p-menu
       #menu
       [model]="menuItems"
       [popup]="true"
-      styleClass="text-sm shadow-md border-gray-100!"
+      appendTo="body"
+      styleClass="text-sm shadow-lg border border-gray-100! rounded-lg!"
     ></p-menu>
+
+    <!-- ============================================ -->
+    <!-- ADD / EDIT DEPARTMENT DIALOG -->
+    <!-- ============================================ -->
 
     <p-dialog
       *ngIf="visible"
@@ -205,120 +323,216 @@ import { PermissionContextService } from '../../services/permission-context.serv
       [modal]="true"
       [draggable]="false"
       [closable]="true"
+      [dismissableMask]="true"
       (onHide)="visible = false"
-      styleClass="relative border-0 bg-white rounded-xl shadow-2xl overflow-y-auto w-[90%] max-w-lg"
+      [style]="{ width: '550px', maxWidth: '95vw' }"
+      [breakpoints]="{ '640px': '95vw' }"
+      styleClass="department-dialog border-0 rounded-xl overflow-hidden"
     >
       <ng-template #headless>
-        <div class="p-6 flex flex-col space-y-6">
-          <div class="flex flex-col">
-            <h3 class="font-bold text-lg text-gray-800">{{ title }}</h3>
-            <p class="text-xs text-gray-400 mt-0.5 tracking-wide">
-              Provide management parameters to configure structural data
-              profiles.
-            </p>
-          </div>
-
-          <div class="space-y-4 text-sm text-gray-700">
-            <div class="flex flex-col gap-1.5">
-              <label class="font-semibold text-gray-700">
-                Department Name <span class="text-rose-500 font-bold">*</span>
-              </label>
-              <input
-                type="text"
-                pInputText
-                class="w-full py-2 px-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-sky-100"
-                placeholder="e.g. Technology Support Services"
-                [(ngModel)]="departmentName"
-              />
-            </div>
-
-            <div class="flex flex-col gap-1.5">
-              <label class="font-semibold text-gray-700"
-                >Head of Department (HOD)</label
+        <div class="flex flex-col">
+          <!-- Dialog Header -->
+          <div
+            class="flex items-start justify-between gap-4 px-6 py-5 border-b border-gray-100 bg-gray-50/70"
+          >
+            <div class="flex items-center gap-3">
+              <div
+                class="flex items-center justify-center w-11 h-11 rounded-xl bg-blue-100 text-blue-700 shrink-0"
               >
-              <p-select
-                [options]="hodSelection || []"
-                optionLabel="label"
-                optionValue="value"
-                appendTo="body"
-                [filter]="true"
-                filterPlaceholder="Search user identity profiles..."
-                [showClear]="!!hodId"
-                placeholder="Assign dynamic leadership authority..."
-                [(ngModel)]="hodId"
-                styleClass="w-full border-gray-200! rounded-lg! shadow-none! text-base!"
-              ></p-select>
+                <i
+                  class="pi"
+                  [ngClass]="isUpdate ? 'pi-pencil' : 'pi-building'"
+                ></i>
+              </div>
+
+              <div>
+                <h3 class="text-lg font-bold text-gray-800">
+                  {{ title }}
+                </h3>
+
+                <p class="text-xs text-gray-400 mt-1">
+                  {{
+                    isUpdate
+                      ? 'Update department details and working hours.'
+                      : 'Create a new department and configure its details.'
+                  }}
+                </p>
+              </div>
             </div>
 
-            <div class="grid grid-cols-2 gap-3">
-              <div class="flex flex-col gap-1.5">
-                <label class="font-semibold text-gray-700"
-                  >Work start (HH:mm)</label
-                >
-                <input
-                  type="text"
-                  pInputText
-                  class="w-full py-2 px-3 rounded-lg border border-gray-200"
-                  placeholder="09:00"
-                  [(ngModel)]="workStartTime"
-                />
-              </div>
-              <div class="flex flex-col gap-1.5">
-                <label class="font-semibold text-gray-700"
-                  >Work end (HH:mm)</label
-                >
-                <input
-                  type="text"
-                  pInputText
-                  class="w-full py-2 px-3 rounded-lg border border-gray-200"
-                  placeholder="18:00"
-                  [(ngModel)]="workEndTime"
-                />
-              </div>
-              <div class="flex flex-col gap-1.5">
-                <label class="font-semibold text-gray-700"
-                  >Half-day start</label
-                >
-                <input
-                  type="text"
-                  pInputText
-                  class="w-full py-2 px-3 rounded-lg border border-gray-200"
-                  placeholder="08:00"
-                  [(ngModel)]="restDayHalfDayStart"
-                />
-              </div>
-              <div class="flex flex-col gap-1.5">
-                <label class="font-semibold text-gray-700">Half-day end</label>
-                <input
-                  type="text"
-                  pInputText
-                  class="w-full py-2 px-3 rounded-lg border border-gray-200"
-                  placeholder="12:00"
-                  [(ngModel)]="restDayHalfDayEnd"
-                />
-              </div>
-            </div>
+            <button
+              type="button"
+              (click)="visible = false"
+              class="flex items-center justify-center w-8 h-8 rounded-lg text-gray-400 hover:bg-gray-200 hover:text-gray-700 transition-colors"
+            >
+              <i class="pi pi-times"></i>
+            </button>
           </div>
 
-          <div class="border-b border-gray-100"></div>
+          <!-- Dialog Content -->
+          <div class="p-6 space-y-6">
+            <!-- Basic Information -->
+            <section>
+              <div class="flex items-center gap-2 mb-4">
+                <i class="pi pi-info-circle text-blue-600"></i>
 
-          <div class="flex flex-row items-center justify-between gap-3 pt-1">
+                <h4 class="text-sm font-bold text-gray-800">
+                  Department Information
+                </h4>
+              </div>
+
+              <div class="space-y-4">
+                <!-- Department Name -->
+                <div class="flex flex-col gap-2">
+                  <label class="text-sm font-semibold text-gray-700">
+                    Department Name
+                    <span class="text-rose-500">*</span>
+                  </label>
+
+                  <input
+                    type="text"
+                    pInputText
+                    class="w-full py-2.5! px-3! text-sm! rounded-lg! border-gray-200! shadow-none! focus:border-blue-500!"
+                    placeholder="Enter department name"
+                    [(ngModel)]="departmentName"
+                  />
+                </div>
+
+                <!-- HOD -->
+                <div class="flex flex-col gap-2">
+                  <label class="text-sm font-semibold text-gray-700">
+                    Head of Department (HOD)
+                  </label>
+
+                  <p-select
+                    [options]="hodSelection || []"
+                    optionLabel="label"
+                    optionValue="value"
+                    appendTo="body"
+                    [filter]="true"
+                    filterPlaceholder="Search employee..."
+                    [showClear]="!!hodId"
+                    placeholder="Select a department head"
+                    [(ngModel)]="hodId"
+                    styleClass="w-full border-gray-200! rounded-lg! shadow-none! text-sm!"
+                  ></p-select>
+
+                  <p class="text-xs text-gray-400">
+                    Assign an employee to lead this department.
+                  </p>
+                </div>
+              </div>
+            </section>
+
+            <!-- Working Hours -->
+            <section>
+              <div class="flex items-center gap-2 mb-4">
+                <i class="pi pi-clock text-blue-600"></i>
+
+                <h4 class="text-sm font-bold text-gray-800">
+                  Working Hours Configuration
+                </h4>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <!-- Work Start -->
+                <div class="flex flex-col gap-2">
+                  <label class="text-sm font-medium text-gray-600">
+                    Work Start Time
+                  </label>
+
+                  <input
+                    type="text"
+                    pInputText
+                    class="w-full py-2.5! px-3! text-sm! rounded-lg! border-gray-200! shadow-none!"
+                    placeholder="09:00"
+                    [(ngModel)]="workStartTime"
+                  />
+                </div>
+
+                <!-- Work End -->
+                <div class="flex flex-col gap-2">
+                  <label class="text-sm font-medium text-gray-600">
+                    Work End Time
+                  </label>
+
+                  <input
+                    type="text"
+                    pInputText
+                    class="w-full py-2.5! px-3! text-sm! rounded-lg! border-gray-200! shadow-none!"
+                    placeholder="18:00"
+                    [(ngModel)]="workEndTime"
+                  />
+                </div>
+
+                <!-- Half Day Start -->
+                <div class="flex flex-col gap-2">
+                  <label class="text-sm font-medium text-gray-600">
+                    Half-day Start
+                  </label>
+
+                  <input
+                    type="text"
+                    pInputText
+                    class="w-full py-2.5! px-3! text-sm! rounded-lg! border-gray-200! shadow-none!"
+                    placeholder="08:00"
+                    [(ngModel)]="restDayHalfDayStart"
+                  />
+                </div>
+
+                <!-- Half Day End -->
+                <div class="flex flex-col gap-2">
+                  <label class="text-sm font-medium text-gray-600">
+                    Half-day End
+                  </label>
+
+                  <input
+                    type="text"
+                    pInputText
+                    class="w-full py-2.5! px-3! text-sm! rounded-lg! border-gray-200! shadow-none!"
+                    placeholder="12:00"
+                    [(ngModel)]="restDayHalfDayEnd"
+                  />
+                </div>
+              </div>
+
+              <div
+                class="flex items-start gap-2 mt-4 p-3 rounded-lg bg-blue-50 text-blue-700"
+              >
+                <i class="pi pi-info-circle text-sm mt-0.5"></i>
+
+                <p class="text-xs leading-relaxed">
+                  Enter time using the 24-hour format (HH:mm), for example 09:00
+                  or 18:00.
+                </p>
+              </div>
+            </section>
+          </div>
+
+          <!-- Dialog Footer -->
+          <div
+            class="flex flex-col-reverse sm:flex-row items-center justify-end gap-2 px-6 py-4 border-t border-gray-100 bg-gray-50/50"
+          >
             <p-button
               label="Cancel"
               severity="secondary"
+              [outlined]="true"
               (onClick)="visible = false"
-              styleClass="border border-gray-200! py-2 px-4 rounded-lg text-sm font-medium hover:bg-gray-50!"
+              styleClass="w-full sm:w-auto py-2 px-5 rounded-lg text-sm font-medium"
             ></p-button>
+
             <p-button
               (onClick)="SaveDepartment()"
-              [label]="isUpdate ? 'Save Changes' : 'Create Branch'"
+              [label]="isUpdate ? 'Save Changes' : 'Create Department'"
+              [icon]="isUpdate ? 'pi pi-save' : 'pi pi-plus'"
               severity="info"
-              styleClass="py-2 px-5 rounded-lg text-sm font-medium tracking-wide shadow-sm"
+              styleClass="w-full sm:w-auto bg-blue-800! hover:bg-blue-900! border-none! py-2 px-5 rounded-lg text-sm font-semibold shadow-sm"
             ></p-button>
           </div>
         </div>
       </ng-template>
-    </p-dialog>`,
+    </p-dialog>
+  `,
   styleUrl: './department.less',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

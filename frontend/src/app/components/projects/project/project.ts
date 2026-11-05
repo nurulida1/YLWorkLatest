@@ -31,7 +31,6 @@ import { ProjectDto } from '../../../models/Project';
 import { SelectModule } from 'primeng/select';
 import { DatePickerModule } from 'primeng/datepicker';
 import { MultiSelectModule } from 'primeng/multiselect';
-import { RadioButton } from 'primeng/radiobutton';
 import { ProgressBarModule } from 'primeng/progressbar';
 import { AvatarModule } from 'primeng/avatar';
 import { TooltipModule } from 'primeng/tooltip';
@@ -42,6 +41,7 @@ import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import { TabsModule } from 'primeng/tabs';
 import { CheckboxModule } from 'primeng/checkbox';
+import { UserService } from '../../../services/userService.service';
 
 @Component({
   selector: 'app-project',
@@ -66,7 +66,181 @@ import { CheckboxModule } from 'primeng/checkbox';
     TabsModule,
     CheckboxModule,
   ],
-  template: `<div class="w-full min-h-[92.9vh] flex flex-col p-5">
+  template: `
+    <div class="flex flex-col lg:hidden">
+      <div
+        class="relative bg-[#1D4ED8] rounded-b-[2.5rem] overflow-hidden pb-3"
+      >
+        <div
+          class="absolute -top-20 -right-15 w-56 h-56 bg-white/10 rounded-full border border-white/15 flex items-center justify-center"
+        >
+          <div
+            class="w-44 h-44 rounded-full border border-white/20 bg-[#1D4ED8]"
+          ></div>
+        </div>
+
+        <div
+          class="absolute top-8 -right-20 w-36 h-36 rounded-full bg-white/5"
+        ></div>
+
+        <div class="relative z-10 h-full px-6 py-6 flex flex-col">
+          <div class="flex flex-row items-center justify-between">
+            <div
+              class="flex flex-row items-center px-3 py-1 rounded-full border border-white/20 bg-white/10 gap-2"
+            >
+              <i class="pi pi-circle-fill text-[4px]! text-green-500!"></i>
+              <span class="font-semibold text-white/80 text-sm"
+                >YL WORKS ENTERPRISE</span
+              >
+            </div>
+
+            <div class="flex flex-row items-center gap-2">
+              <div
+                class="w-11 h-11 rounded-full flex items-center justify-center bg-white/10 border border-white/30"
+              >
+                <i class="pi pi-bell text-white!"></i>
+              </div>
+              <div
+                class="w-11 h-11 rounded-full flex items-center justify-center bg-white/10 border border-white/20"
+              >
+                <div class="font-semibold text-white text-shadow-sm">
+                  {{ getInitial(currentUser?.displayName) }}
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="flex flex-row justify-between mt-5">
+            <div class="flex flex-col gap-1">
+              <b class="text-2xl text-white text-shadow-sm">Projects</b>
+              <span class="text-sm text-white/80"
+                >Monitor site progress, milestones & active jobs</span
+              >
+            </div>
+            <p-button
+              [routerLink]="'/projects/form'"
+              label="New Project"
+              size="small"
+              [rounded]="true"
+              icon="pi pi-plus"
+              styleClass="bg-white! whitespace-nowrap! border-none! text-blue-900! px-5! py-2! font-bold! shadow-lg!"
+            ></p-button>
+          </div>
+
+          <div
+            class="flex flex-row items-center gap-2 p-2 rounded-md bg-white/10 border border-white/20 mt-4"
+          >
+            <i class="pi pi-truck text-yellow-400!"></i>
+            <span
+              class="font-semibold text-sm text-white tracking-wide text-shadow-sm"
+              >12 active sites scheduled</span
+            >
+          </div>
+        </div>
+      </div>
+
+      <div class="p-5 flex flex-col gap-5">
+        <div class="w-full relative">
+          <div class="-mt-10">
+            <div
+              class="w-full h-full bg-white shadow-sm border border-gray-200 rounded-2xl flex flex-col p-5"
+            >
+              <div class="flex flex-row items-center justify-between">
+                <div class="font-bold">Overview Status</div>
+                <div
+                  class="flex flex-row items-center gap-1"
+                  [routerLink]="'/clients'"
+                >
+                  <div class="text-sm text-blue-700 font-semibold">
+                    Client Directory
+                  </div>
+                  <i class="pi pi-chevron-right text-blue-700! text-xs!"></i>
+                </div>
+              </div>
+              <div class="grid grid-cols-12 gap-4 mt-4">
+                <div
+                  class="col-span-6 border border-gray-200 bg-gray-50 rounded-xl flex flex-col p-4"
+                >
+                  <div class="flex flex-row items-center justify-between">
+                    <div class="text-gray-500 font-semibold text-sm">
+                      ACTIVE PROJECTS
+                    </div>
+                    <div
+                      class="w-9 h-8 bg-blue-100 flex items-center justify-center rounded-lg"
+                    >
+                      <i class="pi pi-folder text-blue-700!"></i>
+                    </div>
+                  </div>
+                  <div class="mt-4 flex flex-col gap-2">
+                    <div class="flex flex-row items-end gap-1">
+                      <b class="text-3xl">0</b>
+                      <div class="text-gray-400 font-semibold text-sm mb-1">
+                        / 0 Total
+                      </div>
+                    </div>
+                    <p-progressbar></p-progressbar>
+                    <div
+                      class="font-semibold flex flex-row items-center text-xs justify-between"
+                    >
+                      <div class="text-gray-500">On Track: 0</div>
+                      <div class="text-blue-700">0% Active</div>
+                    </div>
+                  </div>
+                </div>
+                <div
+                  class="col-span-6 border border-gray-200 bg-gray-50 rounded-xl flex flex-col justify-between p-4"
+                >
+                  <div class="flex flex-row items-center justify-between">
+                    <div class="text-gray-500 font-semibold text-sm">
+                      COMPLETED
+                    </div>
+                    <div
+                      class="w-9 h-8 bg-green-100 flex items-center justify-center rounded-lg"
+                    >
+                      <i class="pi pi-check-circle text-green-700!"></i>
+                    </div>
+                  </div>
+                  <div class="mt-4 flex flex-col gap-2">
+                    <div class="flex flex-row items-end gap-1">
+                      <b class="text-3xl">0</b>
+                      <div class="text-gray-400 font-semibold text-sm mb-1">
+                        / 0 Total
+                      </div>
+                    </div>
+                    <p-progressbar [color]="'green'"></p-progressbar>
+                    <div
+                      class="font-semibold flex flex-row items-center text-xs justify-between"
+                    >
+                      <div class="text-gray-500">0% on time</div>
+                      <div class="text-green-700">0% Fulfilled</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex flex-row items-center gap-2 max-w-screen">
+          <div
+            class="rounded-full py-1 px-5 text-center border border-blue-300 font-semibold text-blue-800"
+          >
+            All (0)
+          </div>
+          <div
+            class="text-sm rounded-full bg-gray-100 text-center py-2 px-5 text-gray-500"
+          >
+            In Progress
+          </div>
+          <div
+            class="text-sm rounded-full bg-gray-100 text-center py-2 px-5 text-gray-500"
+          >
+            In Progress
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="w-full min-h-[92.9vh] hidden lg:flex flex-col p-5">
       <div class="flex flex-row items-center justify-between">
         <div
           class="flex flex-row items-center gap-1 text-gray-500 tracking-wide"
@@ -246,7 +420,8 @@ import { CheckboxModule } from 'primeng/checkbox';
         </div>
       </div>
     </div>
-    <p-menu #menu [model]="menuItems" [popup]="true"></p-menu> `,
+    <p-menu #menu [model]="menuItems" [popup]="true"></p-menu>
+  `,
   styleUrl: './project.less',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -257,6 +432,7 @@ export class Project implements OnInit, OnDestroy {
   private readonly projectService = inject(ProjectService);
   private readonly router = inject(Router);
   private readonly cdr = inject(ChangeDetectorRef);
+  private readonly userService = inject(UserService);
   protected ngUnsubscribe: Subject<void> = new Subject<void>();
 
   PagingSignal = signal<PagingContent<ProjectDto>>(
@@ -270,6 +446,8 @@ export class Project implements OnInit, OnDestroy {
   selectedStatus: string | null = null;
   sortBy: string | null = null;
   menuItems: MenuItem[] = [];
+
+  currentUser = this.userService.currentUser;
 
   calendarOptions: CalendarOptions = {
     plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
@@ -482,14 +660,16 @@ export class Project implements OnInit, OnDestroy {
     }
   }
 
-  getInitials(name: string | undefined | null) {
-    if (!name) return '';
-    return name
-      .split(' ')
-      .filter((n) => n)
-      .map((n) => n[0])
-      .join('')
-      .toUpperCase();
+  getInitial(fullName?: string): string {
+    if (!fullName?.trim()) return '?';
+
+    const names = fullName.trim().split(/\s+/).filter(Boolean);
+
+    if (names.length === 1) {
+      return names[0].substring(0, 2).toUpperCase();
+    }
+
+    return (names[0].charAt(0) + names[1].charAt(0)).toUpperCase();
   }
 
   ngOnDestroy(): void {

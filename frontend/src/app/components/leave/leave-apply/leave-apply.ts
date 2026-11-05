@@ -7,11 +7,7 @@ import {
   OnDestroy,
   OnInit,
 } from '@angular/core';
-import {
-  FormBuilder,
-  ReactiveFormsModule,
-  Validators,
-} from '@angular/forms';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -21,7 +17,12 @@ import { SelectModule } from 'primeng/select';
 import { TextareaModule } from 'primeng/textarea';
 import { forkJoin, merge, of, Subject, takeUntil } from 'rxjs';
 import { catchError, finalize } from 'rxjs/operators';
-import { LeaveBalanceAllocationDto, LeaveBalanceDto, LeaveDaySession, LeaveTypeDto } from '../../../models/Leave';
+import {
+  LeaveBalanceAllocationDto,
+  LeaveBalanceDto,
+  LeaveDaySession,
+  LeaveTypeDto,
+} from '../../../models/Leave';
 import {
   calculateChargeableDaysClient,
   formatDaysAmount,
@@ -59,18 +60,31 @@ import { UserService } from '../../../services/userService.service';
       </div>
 
       <div class="bg-white border border-gray-200 rounded-lg p-6 max-w-2xl">
-        <h1 class="text-xl font-semibold text-gray-800 mb-1">{{ isEditMode ? 'Edit Leave Request' : 'Apply for Leave' }}</h1>
+        <h1 class="text-xl font-semibold text-gray-800 mb-1">
+          {{ isEditMode ? 'Edit Leave Request' : 'Apply for Leave' }}
+        </h1>
         <p class="text-gray-500 text-sm mb-6">
-          {{ isEditMode ? 'Update your pending leave request.' : 'Submit a new leave request for HOD approval.' }}
+          {{
+            isEditMode
+              ? 'Update your pending leave request.'
+              : 'Submit a new leave request for HOD approval.'
+          }}
         </p>
 
         @if (!isEditMode && willAutoApprove) {
-          <div class="rounded-md bg-blue-50 border border-blue-100 px-4 py-3 text-sm text-blue-900 mb-4">
-            No reporting manager is assigned to your profile — this request will be auto-approved on submit.
+          <div
+            class="rounded-md bg-blue-50 border border-blue-100 px-4 py-3 text-sm text-blue-900 mb-4"
+          >
+            No reporting manager is assigned to your profile — this request will
+            be auto-approved on submit.
           </div>
         }
 
-        <form [formGroup]="form" (ngSubmit)="onSubmit()" class="flex flex-col gap-4">
+        <form
+          [formGroup]="form"
+          (ngSubmit)="onSubmit()"
+          class="flex flex-col gap-4"
+        >
           <div>
             <label class="text-sm text-gray-600 mb-1 block">Leave type</label>
             <p-select
@@ -82,7 +96,9 @@ import { UserService } from '../../../services/userService.service';
               class="w-full"
             />
             @if (pageReady && leaveTypes.length === 0) {
-              <p class="text-amber-600 text-xs mt-1">No leave types found. Run the API seed or add types in settings.</p>
+              <p class="text-amber-600 text-xs mt-1">
+                No leave types found. Run the API seed or add types in settings.
+              </p>
             }
           </div>
 
@@ -121,12 +137,16 @@ import { UserService } from '../../../services/userService.service';
                   optionValue="value"
                   class="w-full max-w-md"
                 />
-                <p class="text-xs text-gray-500 mt-1 m-0">Half day (AM or PM) deducts 0.5 day.</p>
+                <p class="text-xs text-gray-500 mt-1 m-0">
+                  Half day (AM or PM) deducts 0.5 day.
+                </p>
               </div>
             } @else {
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4 -mt-1">
                 <div>
-                  <label class="text-sm text-gray-600 mb-1 block">Start session</label>
+                  <label class="text-sm text-gray-600 mb-1 block"
+                    >Start session</label
+                  >
                   <p-select
                     formControlName="startSession"
                     [options]="startSessionOptions"
@@ -136,7 +156,9 @@ import { UserService } from '../../../services/userService.service';
                   />
                 </div>
                 <div>
-                  <label class="text-sm text-gray-600 mb-1 block">End session</label>
+                  <label class="text-sm text-gray-600 mb-1 block"
+                    >End session</label
+                  >
                   <p-select
                     formControlName="endSession"
                     [options]="endSessionOptions"
@@ -147,86 +169,127 @@ import { UserService } from '../../../services/userService.service';
                 </div>
               </div>
               <p class="text-xs text-gray-500 -mt-2 m-0">
-                Multi-day: start Full or PM; end Full or AM. Half portions count as 0.5 day.
+                Multi-day: start Full or PM; end Full or AM. Half portions count
+                as 0.5 day.
               </p>
             }
           }
           @if (disabledHolidayDates.length) {
             <p class="text-xs text-gray-500 -mt-2">
-              Public holidays cannot be start/end dates, and holidays inside the range are not deducted from balance.
+              Public holidays cannot be start/end dates, and holidays inside the
+              range are not deducted from balance.
             </p>
           }
 
           @if (selectedBalance && !selectedLeaveType?.isEmergency) {
-            <div class="rounded-md bg-blue-50 border border-blue-100 px-4 py-3 text-sm text-blue-900">
-              Remaining balance: <strong>{{ selectedBalance.remainingDays }}</strong> day(s)
-              for {{ selectedBalance.leaveTypeName }}
+            <div
+              class="rounded-md bg-blue-50 border border-blue-100 px-4 py-3 text-sm text-blue-900"
+            >
+              Remaining balance:
+              <strong>{{ selectedBalance.remainingDays }}</strong> day(s) for
+              {{ selectedBalance.leaveTypeName }}
             </div>
           }
 
           @if (selectedLeaveType?.isEmergency && chargeableDays !== null) {
-            <div class="rounded-md bg-red-50 border border-red-100 px-4 py-3 text-sm text-red-900">
+            <div
+              class="rounded-md bg-red-50 border border-red-100 px-4 py-3 text-sm text-red-900"
+            >
               Emergency leave has no separate balance. Days are taken from
-              <strong>Annual Leave</strong> first, then <strong>Unpaid Leave</strong>.
+              <strong>Annual Leave</strong> first, then
+              <strong>Unpaid Leave</strong>.
               @if (annualBalanceForEmergency) {
                 <span>
-                  · Annual remaining: <strong>{{ annualBalanceForEmergency.remainingDays }}</strong>
+                  · Annual remaining:
+                  <strong>{{ annualBalanceForEmergency.remainingDays }}</strong>
                 </span>
               }
             </div>
           }
 
-          @if (chargeableDays !== null && (isShortNoticeAnnual || (selectedLeaveType && !selectedLeaveType.isPaid))) {
+          @if (
+            chargeableDays !== null &&
+            (isShortNoticeAnnual ||
+              (selectedLeaveType && !selectedLeaveType.isPaid))
+          ) {
             <p class="text-sm text-slate-600 -mt-1">
-              Days requested (unpaid): <strong>{{ formatDays(chargeableDays) }}</strong>
+              Days requested (unpaid):
+              <strong>{{ formatDays(chargeableDays) }}</strong>
               @if (sessionSummary) {
                 <span class="text-slate-500"> · {{ sessionSummary }}</span>
               }
               @if (holidaysSkippedInRange > 0) {
                 <span class="text-slate-500">
-                  ({{ holidaysSkippedInRange }} public holiday{{ holidaysSkippedInRange === 1 ? '' : 's' }} excluded)
+                  ({{ holidaysSkippedInRange }} public holiday{{
+                    holidaysSkippedInRange === 1 ? '' : 's'
+                  }}
+                  excluded)
                 </span>
               }
               @if (isShortNoticeAnnual) {
-                <span class="text-amber-700"> · Annual balance will not be deducted</span>
+                <span class="text-amber-700">
+                  · Annual balance will not be deducted</span
+                >
               }
             </p>
-          } @else if (chargeableDays !== null && (selectedBalance || selectedLeaveType?.isEmergency)) {
+          } @else if (
+            chargeableDays !== null &&
+            (selectedBalance || selectedLeaveType?.isEmergency)
+          ) {
             <p
               class="text-sm -mt-1"
               [class.text-red-600]="isInsufficientBalance"
               [class.text-slate-600]="!isInsufficientBalance"
             >
-              Leave days to deduct: <strong>{{ formatDays(chargeableDays) }}</strong>
+              Leave days to deduct:
+              <strong>{{ formatDays(chargeableDays) }}</strong>
               @if (sessionSummary) {
                 <span class="text-slate-500"> · {{ sessionSummary }}</span>
               }
               @if (holidaysSkippedInRange > 0) {
                 <span class="text-slate-500">
-                  ({{ holidaysSkippedInRange }} public holiday{{ holidaysSkippedInRange === 1 ? '' : 's' }} excluded)
+                  ({{ holidaysSkippedInRange }} public holiday{{
+                    holidaysSkippedInRange === 1 ? '' : 's'
+                  }}
+                  excluded)
                 </span>
               }
               @if (!cascadePreview) {
-                · After this request: <strong>{{ formatDays(remainingAfterRequest) }}</strong> day(s) left
+                · After this request:
+                <strong>{{ formatDays(remainingAfterRequest) }}</strong> day(s)
+                left
               }
             </p>
             @if (cascadePreview) {
-              <div class="rounded-md bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-950 space-y-2">
+              <div
+                class="rounded-md bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-950 space-y-2"
+              >
                 <p class="font-semibold m-0">
-                  {{ selectedLeaveType?.isEmergency ? 'Emergency leave balance split' : 'Balance split required' }}
+                  {{
+                    selectedLeaveType?.isEmergency
+                      ? 'Emergency leave balance split'
+                      : 'Balance split required'
+                  }}
                 </p>
                 <p class="m-0">
                   @if (selectedLeaveType?.isEmergency) {
                     Emergency leave is charged in this order:
                   } @else {
-                    Not enough remaining on {{ selectedLeaveType?.name }}. Days will be taken in this order:
+                    Not enough remaining on {{ selectedLeaveType?.name }}. Days
+                    will be taken in this order:
                   }
                 </p>
                 <ul class="m-0 pl-5 list-disc">
-                  @for (line of cascadePreview.lines; track line.leaveTypeName + line.sortOrder) {
+                  @for (
+                    line of cascadePreview.lines;
+                    track line.leaveTypeName + line.sortOrder
+                  ) {
                     <li>
-                      {{ line.leaveTypeName }}: <strong>{{ formatDays(line.days) }}</strong> day(s)
-                      @if (line.isUnpaidBucket) { (unpaid) }
+                      {{ line.leaveTypeName }}:
+                      <strong>{{ formatDays(line.days) }}</strong> day(s)
+                      @if (line.isUnpaidBucket) {
+                        (unpaid)
+                      }
                     </li>
                   }
                 </ul>
@@ -236,7 +299,10 @@ import { UserService } from '../../../services/userService.service';
                     [binary]="true"
                     inputId="cascadeAccept"
                   />
-                  <label for="cascadeAccept" class="text-sm text-amber-950 cursor-pointer">
+                  <label
+                    for="cascadeAccept"
+                    class="text-sm text-amber-950 cursor-pointer"
+                  >
                     I understand and agree to this balance split
                   </label>
                 </div>
@@ -249,11 +315,15 @@ import { UserService } from '../../../services/userService.service';
           }
 
           @if (isShortNoticeAnnual) {
-            <div class="rounded-md bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-950 space-y-2">
+            <div
+              class="rounded-md bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-950 space-y-2"
+            >
               <p class="font-semibold m-0">Short-notice Annual Leave</p>
               <p class="m-0">
-                Annual leave must be requested at least <strong>7 calendar days</strong> before the start date.
-                This request is short notice, so it will be recorded as <strong>Unpaid Leave</strong>
+                Annual leave must be requested at least
+                <strong>7 calendar days</strong> before the start date. This
+                request is short notice, so it will be recorded as
+                <strong>Unpaid Leave</strong>
                 (not deducted from your Annual Leave balance).
               </p>
               <div class="flex items-start gap-2 pt-1">
@@ -262,7 +332,10 @@ import { UserService } from '../../../services/userService.service';
                   [binary]="true"
                   inputId="shortNoticeAccept"
                 />
-                <label for="shortNoticeAccept" class="text-sm text-amber-950 cursor-pointer">
+                <label
+                  for="shortNoticeAccept"
+                  class="text-sm text-amber-950 cursor-pointer"
+                >
                   I understand and agree to proceed as unpaid leave
                 </label>
               </div>
@@ -270,29 +343,45 @@ import { UserService } from '../../../services/userService.service';
           }
 
           @if (selectedLeaveType?.isPaid && !isShortNoticeAnnual) {
-            <span class="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 bg-emerald-50 px-2 py-1 rounded w-fit">
+            <span
+              class="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 bg-emerald-50 px-2 py-1 rounded w-fit"
+            >
               Paid Leave
             </span>
-          } @else if ((selectedLeaveType && !selectedLeaveType.isPaid) || isShortNoticeAnnual) {
-            <span class="inline-flex items-center gap-1 text-xs font-semibold text-slate-700 bg-slate-100 px-2 py-1 rounded w-fit">
+          } @else if (
+            (selectedLeaveType && !selectedLeaveType.isPaid) ||
+            isShortNoticeAnnual
+          ) {
+            <span
+              class="inline-flex items-center gap-1 text-xs font-semibold text-slate-700 bg-slate-100 px-2 py-1 rounded w-fit"
+            >
               Unpaid Leave
             </span>
           }
           @if (selectedLeaveType?.isEmergency) {
-            <span class="inline-flex items-center gap-1 text-xs font-semibold text-red-600 bg-red-50 px-2 py-1 rounded w-fit">
+            <span
+              class="inline-flex items-center gap-1 text-xs font-semibold text-red-600 bg-red-50 px-2 py-1 rounded w-fit"
+            >
               Emergency Leave
             </span>
           }
 
           <div>
             <label class="text-sm text-gray-600 mb-1 block">Reason</label>
-            <textarea pTextarea formControlName="reason" rows="4" class="w-full"></textarea>
+            <textarea
+              pTextarea
+              formControlName="reason"
+              rows="4"
+              class="w-full"
+            ></textarea>
           </div>
 
           <div class="flex flex-col gap-2">
             <label class="text-sm text-gray-600">
               Supporting document
-              @if (selectedLeaveType?.requiresDocument && !hasExistingDocument) {
+              @if (
+                selectedLeaveType?.requiresDocument && !hasExistingDocument
+              ) {
                 <span class="text-red-600">*</span>
               }
             </label>
@@ -307,7 +396,9 @@ import { UserService } from '../../../services/userService.service';
               />
 
               <p-button
-                [label]="selectedFile || hasExistingDocument ? 'Reupload' : 'Upload'"
+                [label]="
+                  selectedFile || hasExistingDocument ? 'Reupload' : 'Upload'
+                "
                 severity="secondary"
                 icon="pi pi-upload"
                 styleClass="border-gray-200!"
@@ -316,34 +407,56 @@ import { UserService } from '../../../services/userService.service';
               />
 
               @if (selectedFileName) {
-                <div class="bg-gray-100 border border-gray-200 rounded-lg px-3 py-2 text-sm flex items-center gap-2">
+                <div
+                  class="bg-gray-100 border border-gray-200 rounded-lg px-3 py-2 text-sm flex items-center gap-2"
+                >
                   <i class="pi pi-file text-yellow-600!"></i>
-                  <span class="truncate max-w-[220px]">{{ selectedFileName }}</span>
+                  <span class="truncate max-w-[220px]">{{
+                    selectedFileName
+                  }}</span>
                 </div>
               }
             </div>
 
             @if (selectedLeaveType?.requiresDocument && hasExistingDocument) {
-              <p class="text-xs text-gray-500">A document is already attached. Upload only if you want to replace it.</p>
+              <p class="text-xs text-gray-500">
+                A document is already attached. Upload only if you want to
+                replace it.
+              </p>
             } @else if (selectedLeaveType?.requiresDocument) {
-              <p class="text-xs text-red-600">Document is mandatory for this leave type.</p>
+              <p class="text-xs text-red-600">
+                Document is mandatory for this leave type.
+              </p>
             } @else {
               <p class="text-xs text-gray-500">Optional for this leave type.</p>
             }
           </div>
 
-          <div class="flex gap-2 pt-2">
+          <div class="border-t border-gray-200 flex justify-end gap-2 pt-2">
             <p-button
               type="submit"
+              styleClass="bg-blue-600! border-none! hover:bg-blue-700! px-5!"
               [label]="isEditMode ? 'Update request' : 'Submit request'"
-              [disabled]="!pageReady || isInsufficientBalance || shortNoticeBlocked || cascadeBlocked"
+              [disabled]="
+                !pageReady ||
+                isInsufficientBalance ||
+                shortNoticeBlocked ||
+                cascadeBlocked
+              "
             />
-            <p-button type="button" label="Cancel" severity="secondary" routerLink="/leave" />
+            <p-button
+              type="button"
+              label="Cancel"
+              severity="secondary"
+              styleClass="px-5!"
+              routerLink="/leave"
+            />
           </div>
         </form>
       </div>
     </div>
   `,
+  styleUrl: './leave-apply.less',
 })
 export class LeaveApply implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
@@ -392,7 +505,8 @@ export class LeaveApply implements OnInit, OnDestroy {
   }
 
   get sessionSummary(): string | null {
-    if (!this.selectedLeaveType?.allowsHalfDay || this.chargeableDays === null) return null;
+    if (!this.selectedLeaveType?.allowsHalfDay || this.chargeableDays === null)
+      return null;
     const start = normalizeLeaveSession(this.form.value.startSession);
     const end = normalizeLeaveSession(this.form.value.endSession);
     if (start === 'Full' && end === 'Full') return null;
@@ -428,7 +542,11 @@ export class LeaveApply implements OnInit, OnDestroy {
   }
 
   get remainingAfterRequest(): number | null {
-    if (this.chargeableDays === null || !this.selectedLeaveType?.isPaid || this.isShortNoticeAnnual) {
+    if (
+      this.chargeableDays === null ||
+      !this.selectedLeaveType?.isPaid ||
+      this.isShortNoticeAnnual
+    ) {
       return null;
     }
     if (this.selectedLeaveType.isEmergency || this.cascadePreview) return null;
@@ -436,7 +554,8 @@ export class LeaveApply implements OnInit, OnDestroy {
   }
 
   get isShortNoticeAnnual(): boolean {
-    if (!this.selectedLeaveType || this.selectedLeaveType.isEmergency) return false;
+    if (!this.selectedLeaveType || this.selectedLeaveType.isEmergency)
+      return false;
     if (!this.isAnnualLeaveName(this.selectedLeaveType.name)) return false;
     const start = this.toLocalDate(this.form.get('startDate')?.value);
     if (!start) return false;
@@ -444,12 +563,16 @@ export class LeaveApply implements OnInit, OnDestroy {
   }
 
   get shortNoticeBlocked(): boolean {
-    return this.isShortNoticeAnnual && !this.form.value.acceptShortNoticeAsUnpaid;
+    return (
+      this.isShortNoticeAnnual && !this.form.value.acceptShortNoticeAsUnpaid
+    );
   }
 
   get annualBalanceForEmergency(): LeaveBalanceDto | null {
     if (!this.selectedLeaveType?.isEmergency) return null;
-    const annual = this.allLeaveTypes.find((t) => this.isAnnualLeaveName(t.name) && t.isPaid);
+    const annual = this.allLeaveTypes.find(
+      (t) => this.isAnnualLeaveName(t.name) && t.isPaid,
+    );
     if (!annual) return null;
     return this.balances.find((b) => b.leaveTypeId === annual.id) ?? null;
   }
@@ -457,13 +580,22 @@ export class LeaveApply implements OnInit, OnDestroy {
   /** Client preview: Emergency always Annual→Unpaid; other types when cascade needed. */
   get cascadePreview(): { lines: LeaveBalanceAllocationDto[] } | null {
     if (this.isShortNoticeAnnual) return null;
-    if (!this.selectedLeaveType || this.chargeableDays === null || this.chargeableDays <= 0) return null;
+    if (
+      !this.selectedLeaveType ||
+      this.chargeableDays === null ||
+      this.chargeableDays <= 0
+    )
+      return null;
 
     if (this.selectedLeaveType.isEmergency) {
       return this.buildEmergencySplitPreview(this.chargeableDays);
     }
 
-    if (!this.selectedLeaveType.isPaid || !this.selectedLeaveType.allowsBalanceCascade) return null;
+    if (
+      !this.selectedLeaveType.isPaid ||
+      !this.selectedLeaveType.allowsBalanceCascade
+    )
+      return null;
 
     const primaryAvail = Math.max(0, this.effectiveRemaining);
     if (this.chargeableDays <= primaryAvail) return null;
@@ -481,10 +613,23 @@ export class LeaveApply implements OnInit, OnDestroy {
     }
 
     const start = this.toLocalDate(this.form.get('startDate')?.value);
-    const annualType = this.allLeaveTypes.find((t) => this.isAnnualLeaveName(t.name) && t.isPaid);
-    const isAnnualSelected = this.isAnnualLeaveName(this.selectedLeaveType.name);
-    if (rest > 0 && annualType && !isAnnualSelected && start && !this.isWithinShortNoticeWindow(start)) {
-      const annualAvail = Math.max(0, this.effectiveRemainingForType(annualType.id));
+    const annualType = this.allLeaveTypes.find(
+      (t) => this.isAnnualLeaveName(t.name) && t.isPaid,
+    );
+    const isAnnualSelected = this.isAnnualLeaveName(
+      this.selectedLeaveType.name,
+    );
+    if (
+      rest > 0 &&
+      annualType &&
+      !isAnnualSelected &&
+      start &&
+      !this.isWithinShortNoticeWindow(start)
+    ) {
+      const annualAvail = Math.max(
+        0,
+        this.effectiveRemainingForType(annualType.id),
+      );
       const annualTake = Math.min(annualAvail, rest);
       if (annualTake > 0) {
         lines.push({
@@ -499,7 +644,9 @@ export class LeaveApply implements OnInit, OnDestroy {
     }
 
     if (rest > 0) {
-      const unpaidType = this.allLeaveTypes.find((t) => this.isUnpaidLeaveName(t.name));
+      const unpaidType = this.allLeaveTypes.find((t) =>
+        this.isUnpaidLeaveName(t.name),
+      );
       lines.push({
         leaveTypeId: unpaidType?.id ?? '',
         leaveTypeName: unpaidType?.name ?? 'Unpaid Leave',
@@ -512,10 +659,18 @@ export class LeaveApply implements OnInit, OnDestroy {
     return { lines };
   }
 
-  private buildEmergencySplitPreview(totalDays: number): { lines: LeaveBalanceAllocationDto[] } {
-    const annualType = this.allLeaveTypes.find((t) => this.isAnnualLeaveName(t.name) && t.isPaid);
-    const unpaidType = this.allLeaveTypes.find((t) => this.isUnpaidLeaveName(t.name));
-    const annualAvail = annualType ? Math.max(0, this.effectiveRemainingForType(annualType.id)) : 0;
+  private buildEmergencySplitPreview(totalDays: number): {
+    lines: LeaveBalanceAllocationDto[];
+  } {
+    const annualType = this.allLeaveTypes.find(
+      (t) => this.isAnnualLeaveName(t.name) && t.isPaid,
+    );
+    const unpaidType = this.allLeaveTypes.find((t) =>
+      this.isUnpaidLeaveName(t.name),
+    );
+    const annualAvail = annualType
+      ? Math.max(0, this.effectiveRemainingForType(annualType.id))
+      : 0;
     const annualTake = Math.min(annualAvail, totalDays);
     const unpaidTake = Math.round((totalDays - annualTake) * 10000) / 10000;
     const lines: LeaveBalanceAllocationDto[] = [];
@@ -620,9 +775,9 @@ export class LeaveApply implements OnInit, OnDestroy {
         const y = new Date().getFullYear();
         const from = new Date(y, 0, 1);
         const to = new Date(y + 1, 11, 31);
-        return this.leaveHolidayService.getInRange(from, to).pipe(
-          catchError(() => of([])),
-        );
+        return this.leaveHolidayService
+          .getInRange(from, to)
+          .pipe(catchError(() => of([])));
       })(),
     })
       .pipe(
@@ -638,9 +793,12 @@ export class LeaveApply implements OnInit, OnDestroy {
         this.balances = balances;
         this.leaveTypes = this.filterSelectableLeaveTypes(types, balances);
         this.setHolidays(holidays);
-        const hodIds = (profile as { hodIds?: string[]; HodIds?: string[] } | null)?.hodIds
-          ?? (profile as { hodIds?: string[]; HodIds?: string[] } | null)?.HodIds
-          ?? [];
+        const hodIds =
+          (profile as { hodIds?: string[]; HodIds?: string[] } | null)
+            ?.hodIds ??
+          (profile as { hodIds?: string[]; HodIds?: string[] } | null)
+            ?.HodIds ??
+          [];
         this.willAutoApprove = !Array.isArray(hodIds) || hodIds.length === 0;
         if (this.editRequestId) {
           this.loadRequestForEdit(this.editRequestId);
@@ -696,11 +854,20 @@ export class LeaveApply implements OnInit, OnDestroy {
       this.form.get('startDate')?.value,
       this.form.get('endDate')?.value,
     );
-    if (!this.isShortNoticeAnnual && this.form.value.acceptShortNoticeAsUnpaid) {
-      this.form.patchValue({ acceptShortNoticeAsUnpaid: false }, { emitEvent: false });
+    if (
+      !this.isShortNoticeAnnual &&
+      this.form.value.acceptShortNoticeAsUnpaid
+    ) {
+      this.form.patchValue(
+        { acceptShortNoticeAsUnpaid: false },
+        { emitEvent: false },
+      );
     }
     if (!this.cascadePreview && this.form.value.acceptBalanceCascade) {
-      this.form.patchValue({ acceptBalanceCascade: false }, { emitEvent: false });
+      this.form.patchValue(
+        { acceptBalanceCascade: false },
+        { emitEvent: false },
+      );
     }
     // OnPush: markForCheck alone was leaving a stale deduct preview after date picks.
     this.cdr.detectChanges();
@@ -712,7 +879,8 @@ export class LeaveApply implements OnInit, OnDestroy {
       this.leaveTypes.find((t) => t.id === typeId) ??
       this.allLeaveTypes.find((t) => t.id === typeId) ??
       null;
-    this.selectedBalance = this.balances.find((b) => b.leaveTypeId === typeId) ?? null;
+    this.selectedBalance =
+      this.balances.find((b) => b.leaveTypeId === typeId) ?? null;
   }
 
   private toLocalDate(value: Date | string | null | undefined): Date | null {
@@ -736,7 +904,9 @@ export class LeaveApply implements OnInit, OnDestroy {
     startInput?: Date | string | null,
     endInput?: Date | string | null,
   ): void {
-    const start = this.toLocalDate(startInput ?? this.form.get('startDate')?.value);
+    const start = this.toLocalDate(
+      startInput ?? this.form.get('startDate')?.value,
+    );
     const end = this.toLocalDate(endInput ?? this.form.get('endDate')?.value);
     if (!start || !end || end.getTime() < start.getTime()) {
       this.chargeableDays = null;
@@ -745,7 +915,9 @@ export class LeaveApply implements OnInit, OnDestroy {
     }
 
     const allowsHalf = !!this.selectedLeaveType?.allowsHalfDay;
-    let startSession = normalizeLeaveSession(this.form.get('startSession')?.value);
+    let startSession = normalizeLeaveSession(
+      this.form.get('startSession')?.value,
+    );
     let endSession = normalizeLeaveSession(this.form.get('endSession')?.value);
     if (!allowsHalf) {
       startSession = 'Full';
@@ -805,8 +977,14 @@ export class LeaveApply implements OnInit, OnDestroy {
     if (!allowsHalf) {
       this.startSessionOptions = [{ label: 'Full day', value: 'Full' }];
       this.endSessionOptions = [{ label: 'Full day', value: 'Full' }];
-      if (this.form.value.startSession !== 'Full' || this.form.value.endSession !== 'Full') {
-        this.form.patchValue({ startSession: 'Full', endSession: 'Full' }, { emitEvent: false });
+      if (
+        this.form.value.startSession !== 'Full' ||
+        this.form.value.endSession !== 'Full'
+      ) {
+        this.form.patchValue(
+          { startSession: 'Full', endSession: 'Full' },
+          { emitEvent: false },
+        );
       }
       return;
     }
@@ -837,7 +1015,10 @@ export class LeaveApply implements OnInit, OnDestroy {
     ];
     const startSession = normalizeLeaveSession(this.form.value.startSession);
     const endSession = normalizeLeaveSession(this.form.value.endSession);
-    const patch: { startSession?: LeaveDaySession; endSession?: LeaveDaySession } = {};
+    const patch: {
+      startSession?: LeaveDaySession;
+      endSession?: LeaveDaySession;
+    } = {};
     if (startSession === 'AM') patch.startSession = 'Full';
     if (endSession === 'PM') patch.endSession = 'Full';
     if (Object.keys(patch).length) {
@@ -890,7 +1071,11 @@ export class LeaveApply implements OnInit, OnDestroy {
       });
       return;
     }
-    if (selectedType.requiresDocument && !this.selectedFile && !this.hasExistingDocument) {
+    if (
+      selectedType.requiresDocument &&
+      !this.selectedFile &&
+      !this.hasExistingDocument
+    ) {
       this.messageService.add({
         severity: 'warn',
         summary: 'Document required',
@@ -922,7 +1107,8 @@ export class LeaveApply implements OnInit, OnDestroy {
       this.messageService.add({
         severity: 'warn',
         summary: 'Short-notice confirmation required',
-        detail: 'Confirm that you agree to proceed as unpaid leave before submitting.',
+        detail:
+          'Confirm that you agree to proceed as unpaid leave before submitting.',
       });
       return;
     }
@@ -939,7 +1125,12 @@ export class LeaveApply implements OnInit, OnDestroy {
     this.loadingService.start();
 
     // Datepicker can leave endSession stale after collapsing multi-day → same day.
-    const sessions = this.resolveSessionsForSubmit(v.startDate, v.endDate, v.startSession, v.endSession);
+    const sessions = this.resolveSessionsForSubmit(
+      v.startDate,
+      v.endDate,
+      v.startSession,
+      v.endSession,
+    );
     this.form.patchValue(
       { startSession: sessions.startSession, endSession: sessions.endSession },
       { emitEvent: false },
@@ -958,9 +1149,10 @@ export class LeaveApply implements OnInit, OnDestroy {
       startSession: sessions.startSession,
       endSession: sessions.endSession,
     };
-    const save$ = this.isEditMode && this.editRequestId
-      ? this.leaveRequestService.update(this.editRequestId, payload)
-      : this.leaveRequestService.submit(payload);
+    const save$ =
+      this.isEditMode && this.editRequestId
+        ? this.leaveRequestService.update(this.editRequestId, payload)
+        : this.leaveRequestService.submit(payload);
 
     save$
       .pipe(
@@ -987,11 +1179,17 @@ export class LeaveApply implements OnInit, OnDestroy {
             return;
           }
           const autoApproved = this.isAutoApprovedResponse(res);
-          const detailPath = requestId ? ['/leave', requestId] : ['/leave', 'history'];
+          const detailPath = requestId
+            ? ['/leave', requestId]
+            : ['/leave', 'history'];
           if (!requestId || !this.selectedFile) {
             this.messageService.add({
               severity: 'success',
-              summary: this.isEditMode ? 'Updated' : autoApproved ? 'Auto-approved' : 'Submitted',
+              summary: this.isEditMode
+                ? 'Updated'
+                : autoApproved
+                  ? 'Auto-approved'
+                  : 'Submitted',
               detail: this.isEditMode
                 ? 'Leave request updated'
                 : autoApproved
@@ -1013,7 +1211,11 @@ export class LeaveApply implements OnInit, OnDestroy {
               next: () => {
                 this.messageService.add({
                   severity: 'success',
-                  summary: this.isEditMode ? 'Updated' : autoApproved ? 'Auto-approved' : 'Submitted',
+                  summary: this.isEditMode
+                    ? 'Updated'
+                    : autoApproved
+                      ? 'Auto-approved'
+                      : 'Submitted',
                   detail: this.isEditMode
                     ? 'Leave request updated with document'
                     : autoApproved
@@ -1048,16 +1250,16 @@ export class LeaveApply implements OnInit, OnDestroy {
               life: 8000,
             });
           } else {
-              this.messageService.add({
-                severity: 'error',
-                summary: 'Error',
-                detail:
-                  (body?.['message'] as string) ||
-                  (body?.['Message'] as string) ||
-                  (this.isEditMode
-                    ? 'Failed to update leave request.'
-                    : 'Failed to submit leave request.'),
-              });
+            this.messageService.add({
+              severity: 'error',
+              summary: 'Error',
+              detail:
+                (body?.['message'] as string) ||
+                (body?.['Message'] as string) ||
+                (this.isEditMode
+                  ? 'Failed to update leave request.'
+                  : 'Failed to submit leave request.'),
+            });
           }
           this.cdr.markForCheck();
         },
@@ -1066,7 +1268,7 @@ export class LeaveApply implements OnInit, OnDestroy {
 
   private isAutoApprovedResponse(res: {
     status?: string;
-    noApproverAssigned?: boolean; 
+    noApproverAssigned?: boolean;
   }): boolean {
     return (
       !this.isEditMode &&
@@ -1159,7 +1361,10 @@ export class LeaveApply implements OnInit, OnDestroy {
     }
   }
 
-  private holidayStartEndMessage(start: Date | null | undefined, end: Date | null | undefined): string | null {
+  private holidayStartEndMessage(
+    start: Date | null | undefined,
+    end: Date | null | undefined,
+  ): string | null {
     if (!start || !end) return null;
     const startKey = this.dateKey(start);
     const endKey = this.dateKey(end);
@@ -1168,8 +1373,10 @@ export class LeaveApply implements OnInit, OnDestroy {
     if (startName && endName && startKey === endKey) {
       return `Start and end date cannot fall on a public holiday (${startName}).`;
     }
-    if (startName) return `Start date cannot fall on a public holiday (${startName}).`;
-    if (endName) return `End date cannot fall on a public holiday (${endName}).`;
+    if (startName)
+      return `Start date cannot fall on a public holiday (${startName}).`;
+    if (endName)
+      return `End date cannot fall on a public holiday (${endName}).`;
     return null;
   }
 
@@ -1184,7 +1391,9 @@ export class LeaveApply implements OnInit, OnDestroy {
   private isWithinShortNoticeWindow(start: Date): boolean {
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const daysUntilStart = Math.round((start.getTime() - today.getTime()) / 86_400_000);
+    const daysUntilStart = Math.round(
+      (start.getTime() - today.getTime()) / 86_400_000,
+    );
     return daysUntilStart < 7;
   }
 
@@ -1196,7 +1405,9 @@ export class LeaveApply implements OnInit, OnDestroy {
   }
 
   private toIsoDate(d: Date): string {
-    return new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())).toISOString();
+    return new Date(
+      Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()),
+    ).toISOString();
   }
 
   private loadRequestForEdit(id: string): void {
@@ -1216,9 +1427,12 @@ export class LeaveApply implements OnInit, OnDestroy {
           }
           this.editOriginalLeaveTypeId = request.leaveTypeId;
           this.editOriginalTotalDays = request.totalDays ?? 0;
-          this.editOriginalAllocations = [...(request.balanceAllocations ?? [])];
+          this.editOriginalAllocations = [
+            ...(request.balanceAllocations ?? []),
+          ];
           const displayTypeId = request.isShortNoticeAnnual
-            ? (this.allLeaveTypes.find((t) => this.isAnnualLeaveName(t.name))?.id ?? request.leaveTypeId)
+            ? (this.allLeaveTypes.find((t) => this.isAnnualLeaveName(t.name))
+                ?.id ?? request.leaveTypeId)
             : request.leaveTypeId;
           this.form.patchValue({
             leaveTypeId: displayTypeId,
@@ -1229,7 +1443,8 @@ export class LeaveApply implements OnInit, OnDestroy {
             reason: request.reason,
             acceptShortNoticeAsUnpaid: !!request.isShortNoticeAnnual,
             acceptBalanceCascade:
-              !!request.isEmergency || (request.balanceAllocations?.length ?? 0) > 1,
+              !!request.isEmergency ||
+              (request.balanceAllocations?.length ?? 0) > 1,
           });
           this.leaveTypes = this.filterSelectableLeaveTypes(
             this.allLeaveTypes,
@@ -1244,7 +1459,11 @@ export class LeaveApply implements OnInit, OnDestroy {
           this.refreshChargeableDaysPreview();
         },
         error: () => {
-          this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Failed to load request for edit' });
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: 'Failed to load request for edit',
+          });
           this.router.navigate(['/leave']);
         },
       });

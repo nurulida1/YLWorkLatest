@@ -1,0 +1,236 @@
+:host {
+  display: block;
+  width: 100%;
+}
+
+.claim-page {
+  min-height: 100%;
+}
+
+/* Action buttons */
+:host ::ng-deep .claim-action-primary {
+  border-radius: 9px;
+  padding: 0.7rem 1rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  background: #2563eb;
+  border-color: #2563eb;
+}
+
+:host ::ng-deep .claim-action-primary:hover {
+  background: #1d4ed8;
+  border-color: #1d4ed8;
+}
+
+:host ::ng-deep .claim-action-secondary {
+  border-radius: 9px;
+  padding: 0.7rem 1rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+/* Filters */
+.claim-filter-label {
+  display: block;
+  margin-bottom: 0.45rem;
+  color: #475569;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.claim-search-box {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  min-height: 42px;
+  padding: 0 0.85rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 9px;
+  background: #fff;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
+}
+
+.claim-search-box:focus-within {
+  border-color: #93c5fd;
+  box-shadow: 0 0 0 3px rgb(59 130 246 / 10%);
+}
+
+.claim-search-input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #334155;
+  font-size: 0.8rem;
+}
+
+.claim-search-input::placeholder {
+  color: #94a3b8;
+}
+
+.claim-filter-select {
+  width: 100%;
+  min-height: 42px;
+  padding: 0 0.8rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 9px;
+  outline: none;
+  background: #fff;
+  color: #475569;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
+}
+
+.claim-filter-select:focus {
+  border-color: #93c5fd;
+  box-shadow: 0 0 0 3px rgb(59 130 246 / 10%);
+}
+
+.claim-reset-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.4rem 0.55rem;
+  border: 0;
+  background: transparent;
+  color: #64748b;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.claim-reset-button:hover {
+  color: #2563eb;
+}
+
+/* Claim type */
+.claim-type-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  border-radius: 9px;
+  background: #f1f5f9;
+}
+
+/* Table */
+.claim-table-wrapper {
+  width: 100%;
+}
+
+:host ::ng-deep .claim-table {
+  border: 0;
+}
+
+:host ::ng-deep .claim-table .p-datatable-table {
+  min-width: 850px;
+}
+
+:host ::ng-deep .claim-table .p-datatable-thead > tr > th {
+  padding: 0.9rem 1.25rem;
+  border-color: #f1f5f9;
+  background: #f8fafc;
+  color: #64748b;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.035em;
+  white-space: nowrap;
+}
+
+:host ::ng-deep .claim-table .p-datatable-tbody > tr > td {
+  padding: 1rem 1.25rem;
+  border-color: #f1f5f9;
+  color: #475569;
+  font-size: 0.8rem;
+  vertical-align: middle;
+}
+
+:host ::ng-deep .claim-table .p-datatable-tbody > tr {
+  transition: background 0.15s ease;
+}
+
+:host ::ng-deep .claim-table .p-datatable-tbody > tr:hover {
+  background: #f8fafc;
+}
+
+.claim-remarks {
+  display: inline-block;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.claim-view-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.4rem;
+  color: #2563eb;
+  font-size: 0.78rem;
+  font-weight: 600;
+  white-space: nowrap;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.claim-view-link:hover {
+  color: #1d4ed8;
+  text-decoration: underline;
+}
+
+/* Status tags */
+:host ::ng-deep .claim-table .p-tag {
+  padding: 0.3rem 0.6rem;
+  border-radius: 6px;
+  font-size: 0.68rem;
+  font-weight: 600;
+}
+
+/* Pagination */
+:host ::ng-deep .claim-table .p-paginator {
+  justify-content: flex-end;
+  gap: 0.2rem;
+  padding: 0.85rem 1.25rem;
+  border: 0;
+  border-top: 1px solid #f1f5f9;
+  background: #fff;
+  color: #64748b;
+  font-size: 0.75rem;
+}
+
+:host ::ng-deep .claim-table .p-paginator .p-paginator-page,
+:host ::ng-deep .claim-table .p-paginator .p-paginator-next,
+:host ::ng-deep .claim-table .p-paginator .p-paginator-prev {
+  min-width: 2rem;
+  height: 2rem;
+  border-radius: 7px;
+}
+
+:host ::ng-deep .claim-table .p-paginator .p-highlight {
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .claim-page {
+    padding: 1rem;
+  }
+
+  :host ::ng-deep .claim-table .p-paginator {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+}

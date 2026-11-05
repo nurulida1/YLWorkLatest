@@ -69,4 +69,37 @@ namespace YLWorks.Model {
 
         public string Color { get; set; } = "blue";
     }
+
+    public class StaffDashboardDto
+    {
+        public string EmployeeName { get; set; }
+        public string Department { get; set; }
+
+        public decimal AnnualLeaveBalance { get; set; }
+        public decimal AnnualLeaveEntitlement { get; set; }
+
+        public int MeetingsToday { get; set; }
+
+        public decimal PendingClaimsAmount { get; set; }
+        public int PendingClaimsCount { get; set; }
+
+        public int TeamMembers { get; set; }
+        public int TeamOnLeave { get; set; }
+
+        public List<LeaveCalendarEventDto> TeamAbsence { get; set; }
+        public List<ActivityLogDto> RecentActivities { get; set; }
+
+        public List<StaffDashboardNoticeDto> LatestNotices { get; set; }
+            = new();
+    }
+
+    public class StaffDashboardNoticeDto
+    {
+        public Guid Id { get; set; }
+        public string Title { get; set; } = string.Empty;
+        public string? Content { get; set; }
+        public DateTime PublishDate { get; set; }
+        public DateTime? ExpiryDate { get; set; }
+        public bool IsPinned { get; set; }
+    }
 }

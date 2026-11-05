@@ -16,27 +16,33 @@ import {
   Validators,
 } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+
 import { ButtonModule } from 'primeng/button';
 import { DatePickerModule } from 'primeng/datepicker';
 import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
 import { TableModule } from 'primeng/table';
-import { LoadingService } from '../../services/loading.service';
-import { StaffTaskService } from '../../services/staffTaskService';
+import { DialogModule } from 'primeng/dialog';
+import { TextareaModule } from 'primeng/textarea';
+import { CheckboxModule } from 'primeng/checkbox';
+
 import { MessageService } from 'primeng/api';
 import { map, Subject, switchMap, takeUntil, tap } from 'rxjs';
+
+import { LoadingService } from '../../services/loading.service';
+import { StaffTaskService } from '../../services/staffTaskService';
+import { UserService } from '../../services/userService.service';
+
 import {
   GridifyQueryExtend,
   PagingContent,
 } from '../../shared/helpers/helpers';
 import { StaffTask } from '../../models/StaffTask';
-import { DialogModule } from 'primeng/dialog';
-import { TextareaModule } from 'primeng/textarea';
-import { UserService } from '../../services/userService.service';
-import { CheckboxModule } from 'primeng/checkbox';
-
+import { ProjectDto } from '../../models/Project';
+import { ProjectService } from '../../services/ProjectService';
 @Component({
   selector: 'app-staff-tasks',
+  standalone: true,
   imports: [
     CommonModule,
     RouterLink,
@@ -50,8 +56,12 @@ import { CheckboxModule } from 'primeng/checkbox';
     TextareaModule,
     CheckboxModule,
   ],
-  template: `<div class="w-full min-h-[92.9vh] flex flex-col p-5">
-      <div class="flex flex-row items-center gap-1 text-gray-500 tracking-wide">
+  template: `
+    <div class="w-full min-h-[92.9vh] flex flex-col p-4 sm:p-5">
+      <!-- BREADCRUMB -->
+      <div
+        class="flex flex-wrap items-center gap-1 text-gray-500 tracking-wide text-sm"
+      >
         <div
           [routerLink]="'/dashboard'"
           class="cursor-pointer hover:text-gray-600"
@@ -64,9 +74,12 @@ import { CheckboxModule } from 'primeng/checkbox';
         <div class="text-gray-700 font-semibold">Tasks</div>
       </div>
 
-      <div class="mt-4 flex flex-row items-center justify-between">
+      <!-- PAGE HEADER -->
+      <div
+        class="mt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
+      >
         <div>
-          <div class="text-[22px] text-gray-800 font-semibold">Staff Tasks</div>
+          <div class="text-[22px] text-gray-800 font-semibold">Tasks</div>
 
           <div class="mt-1 text-sm text-gray-400">
             Create, assign and track tasks for yourself or other staff.
@@ -77,96 +90,96 @@ import { CheckboxModule } from 'primeng/checkbox';
           label="New Task"
           icon="pi pi-plus"
           severity="info"
-          styleClass="tracking-wide! bg-blue-700! border-none! rounded-sm! py-2! px-5!"
+          styleClass="tracking-wide! bg-blue-700! border-none! rounded-sm! py-2! px-5! w-full! sm:w-auto!"
           (onClick)="OpenTaskDialog()"
-        >
-        </p-button>
+        ></p-button>
       </div>
 
-      <div class="grid grid-cols-4 gap-4 mt-3">
-        <div
-          class="bg-white border border-gray-100 rounded-lg p-4 shadow-sm h-25"
-        >
+      <!-- SUMMARY CARDS -->
+      <div
+        class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4 mt-5"
+      >
+        <!-- MY TASKS -->
+        <div class="bg-white border border-gray-100 rounded-lg p-4 shadow-sm">
           <div class="flex items-center justify-between">
             <div>
               <div class="text-sm text-gray-400">My Tasks</div>
 
               <div class="text-3xl font-semibold text-gray-800 mt-1">
-                {{ summaryCount?.myTasks }}
+                {{ summaryCount?.myTasks ?? 0 }}
               </div>
             </div>
 
             <div
-              class="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center"
+              class="w-11 h-11 rounded-full bg-blue-50 flex items-center justify-center"
             >
-              <i class="pi pi-user text-blue-600"></i>
+              <i class="pi pi-user text-blue-600 text-lg"></i>
             </div>
           </div>
         </div>
 
-        <div
-          class="bg-white border border-gray-100 rounded-lg p-4 shadow-sm h-25"
-        >
+        <!-- ASSIGNED TO OTHERS -->
+        <div class="bg-white border border-gray-100 rounded-lg p-4 shadow-sm">
           <div class="flex items-center justify-between">
             <div>
               <div class="text-sm text-gray-400">Assigned to Others</div>
 
               <div class="text-3xl font-semibold text-gray-800 mt-1">
-                {{ summaryCount?.assignedToOthers }}
+                {{ summaryCount?.assignedToOthers ?? 0 }}
               </div>
             </div>
 
             <div
-              class="w-10 h-10 rounded-full bg-indigo-50 flex items-center justify-center"
+              class="w-11 h-11 rounded-full bg-indigo-50 flex items-center justify-center"
             >
-              <i class="pi pi-users text-indigo-600"></i>
+              <i class="pi pi-users text-indigo-600 text-lg"></i>
             </div>
           </div>
         </div>
 
-        <div
-          class="bg-white border border-gray-100 rounded-lg p-4 shadow-sm h-25"
-        >
+        <!-- IN PROGRESS -->
+        <div class="bg-white border border-gray-100 rounded-lg p-4 shadow-sm">
           <div class="flex items-center justify-between">
             <div>
               <div class="text-sm text-gray-400">In Progress</div>
 
               <div class="text-3xl font-semibold text-gray-800 mt-1">
-                {{ summaryCount?.inProgress }}
+                {{ summaryCount?.inProgress ?? 0 }}
               </div>
             </div>
 
             <div
-              class="w-10 h-10 rounded-full bg-amber-50 flex items-center justify-center"
+              class="w-11 h-11 rounded-full bg-amber-50 flex items-center justify-center"
             >
-              <i class="pi pi-spinner text-amber-600"></i>
+              <i class="pi pi-spinner text-amber-600 text-lg"></i>
             </div>
           </div>
         </div>
 
-        <div
-          class="bg-white border border-gray-100 rounded-lg p-4 shadow-sm h-25"
-        >
+        <!-- COMPLETED -->
+        <div class="bg-white border border-gray-100 rounded-lg p-4 shadow-sm">
           <div class="flex items-center justify-between">
             <div>
               <div class="text-sm text-gray-400">Completed</div>
 
               <div class="text-3xl font-semibold text-gray-800 mt-1">
-                {{ summaryCount?.completed }}
+                {{ summaryCount?.completed ?? 0 }}
               </div>
             </div>
 
             <div
-              class="w-10 h-10 rounded-full bg-green-50 flex items-center justify-center"
+              class="w-11 h-11 rounded-full bg-green-50 flex items-center justify-center"
             >
-              <i class="pi pi-check-circle text-green-600"></i>
+              <i class="pi pi-check-circle text-green-600 text-lg"></i>
             </div>
           </div>
         </div>
       </div>
 
+      <!-- TASK LIST -->
       <div class="mt-6 bg-white border border-gray-100 rounded-lg shadow-sm">
         <div class="task-list-card">
+          <!-- LIST HEADER -->
           <div class="task-list-header">
             <div class="task-list-heading">
               <div class="task-list-title">
@@ -212,7 +225,9 @@ import { CheckboxModule } from 'primeng/checkbox';
             </div>
           </div>
 
+          <!-- LIST CONTENT -->
           <div class="task-list-content">
+            <!-- EMPTY STATE -->
             <ng-container *ngIf="PagingSignal().totalElements === 0">
               <div class="task-empty-state flex flex-col gap-2">
                 <div class="task-empty-icon">
@@ -228,6 +243,7 @@ import { CheckboxModule } from 'primeng/checkbox';
               </div>
             </ng-container>
 
+            <!-- TASK ITEMS -->
             <ng-container *ngIf="PagingSignal().totalElements > 0">
               <div class="task-items">
                 <div
@@ -236,51 +252,32 @@ import { CheckboxModule } from 'primeng/checkbox';
                   [style.animation-delay]="i * 50 + 'ms'"
                   (click)="editTask(task)"
                 >
+                  <!-- PRIORITY INDICATOR -->
                   <div
                     class="task-priority-line"
                     [ngClass]="{
                       'priority-low': task.priority === 'Low',
-
                       'priority-medium': task.priority === 'Medium',
-
                       'priority-high': task.priority === 'High',
-
                       'priority-critical': task.priority === 'Critical',
                     }"
                   ></div>
 
+                  <!-- STATUS ICON -->
                   <div
                     class="task-status-icon"
                     [ngClass]="{
-                      'status-not-started': task.status === 'NotStarted',
-
+                      'status-not-started': task.status === 'Todo',
                       'status-in-progress': task.status === 'InProgress',
-
-                      'status-on-hold': task.status === 'OnHold',
-
-                      'status-review': task.status === 'Review',
-
+                      'status-on-hold': task.status === 'Pending',
                       'status-completed': task.status === 'Completed',
-
                       'status-cancelled': task.status === 'Cancelled',
                     }"
                   >
-                    <i
-                      [ngClass]="{
-                        'pi pi-circle': task.status === 'NotStarted',
-
-                        'pi pi-spinner': task.status === 'InProgress',
-
-                        'pi pi-pause': task.status === 'OnHold',
-
-                        'pi pi-eye': task.status === 'Review',
-
-                        'pi pi-check': task.status === 'Completed',
-
-                        'pi pi-times': task.status === 'Cancelled',
-                      }"
-                    ></i>
+                    <i [ngClass]="getStatusIcon(task.status)"></i>
                   </div>
+
+                  <!-- TASK INFORMATION -->
                   <div class="task-information">
                     <div class="task-title-row">
                       <div
@@ -292,15 +289,13 @@ import { CheckboxModule } from 'primeng/checkbox';
                         {{ task.title }}
                       </div>
 
+                      <!-- PRIORITY -->
                       <span
                         class="task-priority-badge"
                         [ngClass]="{
                           'priority-badge-low': task.priority === 'Low',
-
                           'priority-badge-medium': task.priority === 'Medium',
-
                           'priority-badge-high': task.priority === 'High',
-
                           'priority-badge-critical':
                             task.priority === 'Critical',
                         }"
@@ -313,23 +308,28 @@ import { CheckboxModule } from 'primeng/checkbox';
                       {{ task.description }}
                     </div>
 
+                    <!-- TASK META -->
                     <div class="task-meta">
+                      <!-- ASSIGNEE -->
                       <div class="task-meta-item">
                         <div class="task-avatar">
                           {{
-                            task.assignedTo.fullName
-                              ? task.assignedTo.fullName.charAt(0).toUpperCase()
+                            task.assignedTo?.fullName
+                              ? task.assignedTo?.fullName
+                                  ?.charAt(0)
+                                  ?.toUpperCase()
                               : 'ME'
                           }}
                         </div>
 
                         <span>
-                          {{ task.assignedTo.fullName || 'Own Task' }}
+                          {{ task.assignedTo?.fullName || 'Own Task' }}
                         </span>
                       </div>
 
                       <span class="task-meta-divider"></span>
 
+                      <!-- DUE DATE -->
                       <div class="task-meta-item">
                         <i class="pi pi-calendar"></i>
 
@@ -342,6 +342,7 @@ import { CheckboxModule } from 'primeng/checkbox';
                         </span>
                       </div>
 
+                      <!-- CHECKLIST PROGRESS -->
                       <ng-container
                         *ngIf="task.checklists && task.checklists.length > 0"
                       >
@@ -358,53 +359,36 @@ import { CheckboxModule } from 'primeng/checkbox';
                         </div>
                       </ng-container>
 
+                      <!-- ESTIMATED HOURS -->
                       <ng-container *ngIf="task.estimatedHours">
                         <span class="task-meta-divider"></span>
 
                         <div class="task-meta-item">
                           <i class="pi pi-clock"></i>
-
-                          <span> {{ task.estimatedHours }}h </span>
+                          <span>{{ task.estimatedHours }}h</span>
                         </div>
                       </ng-container>
                     </div>
                   </div>
+
+                  <!-- STATUS BADGE -->
                   <div class="task-status-wrapper">
                     <span
                       class="task-status-badge"
                       [ngClass]="{
-                        'task-status-not-started': task.status === 'NotStarted',
-
+                        'task-status-not-started': task.status === 'Todo',
                         'task-status-in-progress': task.status === 'InProgress',
-
-                        'task-status-on-hold': task.status === 'OnHold',
-
-                        'task-status-review': task.status === 'Review',
-
+                        'task-status-on-hold': task.status === 'Pending',
                         'task-status-completed': task.status === 'Completed',
-
                         'task-status-cancelled': task.status === 'Cancelled',
                       }"
                     >
                       <span class="status-dot"></span>
-
-                      {{
-                        task.status === 'NotStarted'
-                          ? 'Not Started'
-                          : task.status === 'InProgress'
-                            ? 'In Progress'
-                            : task.status === 'OnHold'
-                              ? 'On Hold'
-                              : task.status === 'Review'
-                                ? 'Review'
-                                : task.status === 'Completed'
-                                  ? 'Completed'
-                                  : task.status === 'Cancelled'
-                                    ? 'Cancelled'
-                                    : task.status
-                      }}
+                      {{ getStatusLabel(task.status) }}
                     </span>
                   </div>
+
+                  <!-- ACTION -->
                   <div class="task-action">
                     <button
                       type="button"
@@ -418,6 +402,8 @@ import { CheckboxModule } from 'primeng/checkbox';
               </div>
             </ng-container>
           </div>
+
+          <!-- LIST FOOTER -->
           <div
             class="task-list-footer"
             *ngIf="PagingSignal().totalElements > 0"
@@ -426,16 +412,9 @@ import { CheckboxModule } from 'primeng/checkbox';
               <i class="pi pi-list"></i>
 
               Showing
-              <strong>
-                {{ PagingSignal().data.length || 0 }}
-              </strong>
-
+              <strong>{{ PagingSignal().data.length || 0 }}</strong>
               of
-
-              <strong>
-                {{ PagingSignal().totalElements }}
-              </strong>
-
+              <strong>{{ PagingSignal().totalElements }}</strong>
               tasks
             </div>
 
@@ -448,23 +427,27 @@ import { CheckboxModule } from 'primeng/checkbox';
       </div>
     </div>
 
+    <!-- TASK DIALOG -->
     <p-dialog
       [(visible)]="visible"
       [modal]="true"
       [draggable]="false"
       [resizable]="false"
       [closable]="false"
+      [breakpoints]="{ '960px': '90vw', '640px': '98vw' }"
+      [style]="{ width: '900px', maxWidth: '96vw' }"
       styleClass="task-dialog"
     >
       <ng-template #headless>
         <div class="task-dialog-container">
+          <!-- DIALOG HEADER -->
           <div class="task-dialog-header">
-            <div class="flex items-center gap-3">
-              <div class="task-dialog-icon">
+            <div class="flex items-center gap-3 min-w-0">
+              <div class="task-dialog-icon shrink-0">
                 <i class="pi pi-clipboard"></i>
               </div>
 
-              <div>
+              <div class="min-w-0">
                 <h2 class="task-dialog-title">
                   {{
                     isAssigneeOnly
@@ -496,8 +479,10 @@ import { CheckboxModule } from 'primeng/checkbox';
             </button>
           </div>
 
+          <!-- DIALOG BODY -->
           <div class="task-dialog-body" [formGroup]="FG">
             <div class="task-main">
+              <!-- TASK DETAILS -->
               <div class="form-section">
                 <div class="section-header">
                   <div class="section-icon">
@@ -537,6 +522,7 @@ import { CheckboxModule } from 'primeng/checkbox';
                     </small>
                   </div>
 
+                  <!-- DESCRIPTION -->
                   <div class="form-field col-span-2">
                     <label>Description</label>
 
@@ -555,6 +541,8 @@ import { CheckboxModule } from 'primeng/checkbox';
                   </div>
                 </div>
               </div>
+
+              <!-- CHECKLIST -->
               <div class="form-section">
                 <div class="section-header">
                   <div class="section-icon">
@@ -609,7 +597,16 @@ import { CheckboxModule } from 'primeng/checkbox';
                   <i class="pi pi-plus"></i>
                   Add Checklist Item
                 </button>
+
+                <div
+                  *ngIf="checklists.length === 0"
+                  class="text-sm text-gray-400 py-3"
+                >
+                  No checklist items added yet.
+                </div>
               </div>
+
+              <!-- SCHEDULE -->
               <div class="form-section">
                 <div class="section-header">
                   <div class="section-icon">
@@ -625,6 +622,7 @@ import { CheckboxModule } from 'primeng/checkbox';
                 </div>
 
                 <div class="form-grid">
+                  <!-- START DATE -->
                   <div class="form-field">
                     <label>Start Date</label>
 
@@ -639,6 +637,7 @@ import { CheckboxModule } from 'primeng/checkbox';
                     ></p-datepicker>
                   </div>
 
+                  <!-- DUE DATE -->
                   <div class="form-field">
                     <label>
                       Due Date
@@ -654,8 +653,18 @@ import { CheckboxModule } from 'primeng/checkbox';
                       styleClass="w-full!"
                       inputStyleClass="w-full!"
                     ></p-datepicker>
+
+                    <small
+                      class="field-error"
+                      *ngIf="
+                        FG.get('dueDate')?.invalid && FG.get('dueDate')?.touched
+                      "
+                    >
+                      Due date is required.
+                    </small>
                   </div>
 
+                  <!-- ESTIMATED HOURS -->
                   <div class="form-field">
                     <label>Estimated Hours</label>
 
@@ -668,6 +677,7 @@ import { CheckboxModule } from 'primeng/checkbox';
                     />
                   </div>
 
+                  <!-- REMINDER -->
                   <div class="form-field">
                     <label>Reminder</label>
 
@@ -686,7 +696,9 @@ import { CheckboxModule } from 'primeng/checkbox';
               </div>
             </div>
 
+            <!-- SIDEBAR -->
             <aside class="task-sidebar">
+              <!-- ASSIGNMENT -->
               <div class="sidebar-section">
                 <div class="sidebar-section-title">
                   <i class="pi pi-users"></i>
@@ -705,7 +717,7 @@ import { CheckboxModule } from 'primeng/checkbox';
                       <div class="user-name">
                         {{
                           isUpdate
-                            ? selectedTask.assignedBy?.fullName
+                            ? selectedTask?.assignedBy?.fullName || '-'
                             : createdBy
                         }}
                       </div>
@@ -715,24 +727,46 @@ import { CheckboxModule } from 'primeng/checkbox';
                   </div>
                 </div>
 
-                <div class="form-field">
+                <div class="form-field mt-3">
                   <label>Assign To</label>
 
                   <p-select
                     appendTo="body"
                     formControlName="assignedToId"
-                    [options]="userSelection || []"
+                    [options]="userSelection"
                     [filter]="true"
                     filterPlaceholder="Search staff..."
                     placeholder="Select staff member"
                     styleClass="w-full!"
                   ></p-select>
+
                   <small *ngIf="isAssigneeOnly" class="field-hint">
                     Assignment can only be changed by the task creator.
                   </small>
                 </div>
+
+                <div class="form-field mt-3">
+                  <label>Project</label>
+
+                  <p-select
+                    appendTo="body"
+                    formControlName="projectId"
+                    [options]="projectSelection"
+                    [filter]="true"
+                    filterPlaceholder="Search projects..."
+                    [showClear]="true"
+                    placeholder="Select project (optional)"
+                    styleClass="w-full!"
+                  ></p-select>
+
+                  <small class="field-hint">
+                    You can leave this empty if the task is not associated with
+                    a project.
+                  </small>
+                </div>
               </div>
 
+              <!-- CLASSIFICATION -->
               <div class="sidebar-section">
                 <div class="sidebar-section-title">
                   <i class="pi pi-sliders-h"></i>
@@ -754,6 +788,20 @@ import { CheckboxModule } from 'primeng/checkbox';
                 </div>
 
                 <div class="form-field mt-2">
+                  <label>Status</label>
+
+                  <p-select
+                    appendTo="body"
+                    formControlName="status"
+                    [options]="statusOptions"
+                    optionLabel="label"
+                    optionValue="value"
+                    styleClass="w-full!"
+                    placeholder="Select status"
+                  ></p-select>
+                </div>
+
+                <div class="form-field mt-2">
                   <label>Category</label>
 
                   <p-select
@@ -768,6 +816,7 @@ import { CheckboxModule } from 'primeng/checkbox';
                 </div>
               </div>
 
+              <!-- RECURRING -->
               <div class="sidebar-section">
                 <div class="sidebar-section-title">
                   <i class="pi pi-refresh"></i>
@@ -809,6 +858,7 @@ import { CheckboxModule } from 'primeng/checkbox';
             </aside>
           </div>
 
+          <!-- DIALOG FOOTER -->
           <div class="task-dialog-footer">
             <div class="footer-info">
               <i class="pi pi-info-circle"></i>
@@ -820,13 +870,22 @@ import { CheckboxModule } from 'primeng/checkbox';
                     : 'Fields marked with'
                 }}
 
-                <span *ngIf="!isAssigneeOnly" class="required"> * </span>
+                <span *ngIf="!isAssigneeOnly" class="required">*</span>
 
-                <span *ngIf="!isAssigneeOnly"> are required. </span>
+                <span *ngIf="!isAssigneeOnly">are required.</span>
               </span>
             </div>
 
             <div class="footer-actions">
+              <p-button
+                *ngIf="isUpdate && isTaskCreator"
+                label="Delete"
+                icon="pi pi-trash"
+                severity="danger"
+                [outlined]="true"
+                styleClass="delete-button"
+                (onClick)="DeleteTask()"
+              ></p-button>
               <p-button
                 label="Cancel"
                 severity="secondary"
@@ -844,14 +903,56 @@ import { CheckboxModule } from 'primeng/checkbox';
                       : 'Create Task'
                 "
                 severity="info"
-                styleClass="save-button"
+                styleClass="save-button bg-blue-900! border-none! rounded-sm! py-2! px-5!"
                 (onClick)="SaveTask()"
               ></p-button>
             </div>
           </div>
         </div>
       </ng-template>
-    </p-dialog> `,
+    </p-dialog>
+
+    <p-dialog
+      header="Delete Task"
+      [(visible)]="showDeleteConfirm"
+      [modal]="true"
+      [closable]="false"
+      [draggable]="false"
+      [resizable]="false"
+      [style]="{ width: '420px', maxWidth: '95vw' }"
+    >
+      <div class="flex items-start gap-3">
+        <i class="pi pi-exclamation-triangle text-red-500 text-2xl"></i>
+
+        <div class="flex flex-col gap-1">
+          <span class="font-semibold text-gray-800">
+            Are you sure you want to delete this task?
+          </span>
+
+          <span class="text-sm text-gray-500">
+            "{{ selectedTask?.title }}" will be permanently deleted. This action
+            cannot be undone.
+          </span>
+        </div>
+      </div>
+
+      <ng-template pTemplate="footer">
+        <p-button
+          label="Cancel"
+          severity="secondary"
+          [outlined]="true"
+          (onClick)="CancelDelete()"
+        />
+
+        <p-button
+          label="Yes, Delete"
+          icon="pi pi-trash"
+          severity="danger"
+          (onClick)="ConfirmDelete()"
+        />
+      </ng-template>
+    </p-dialog>
+  `,
   styleUrl: './staffTasks.less',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -861,56 +962,70 @@ export class StaffTasks implements OnInit, OnDestroy {
   private readonly userService = inject(UserService);
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly messageService = inject(MessageService);
-
-  protected ngUnsubscribe: Subject<void> = new Subject<void>();
+  private readonly projectService = inject(ProjectService);
+  protected ngUnsubscribe = new Subject<void>();
 
   PagingSignal = signal<PagingContent<StaffTask>>(
     {} as PagingContent<StaffTask>,
   );
+
   Query: GridifyQueryExtend = {} as GridifyQueryExtend;
 
   FG!: FormGroup;
-  userSelection: any;
+
+  userSelection: { label: string; value: string }[] = [];
+  projectSelection: { label: string; value: string }[] = [];
+
   visible: boolean = false;
   isUpdate: boolean = false;
   isAssigneeOnly: boolean = false;
   isTaskCreator: boolean = false;
+  showDeleteConfirm: boolean = false;
 
   today = new Date();
-  summaryCount: any;
 
-  selectedTask: any;
-  createdBy = `${this.userService.currentUser?.fullName}`;
+  summaryCount: any = {
+    myTasks: 0,
+    assignedToOthers: 0,
+    inProgress: 0,
+    completed: 0,
+  };
 
-  statusOptions = [
-    { label: 'Not Started', value: 'NotStarted' },
-    { label: 'In Progress', value: 'InProgress' },
-    { label: 'On Hold', value: 'OnHold' },
-    { label: 'Review', value: 'Review' },
-    { label: 'Completed', value: 'Completed' },
-    { label: 'Cancelled', value: 'Cancelled' },
-  ];
+  selectedTask: StaffTask | null = null;
+
+  createdBy = this.userService.currentUser?.fullName ?? '';
+
   priorityOptions = [
     { label: 'Low', value: 'Low' },
     { label: 'Medium', value: 'Medium' },
     { label: 'High', value: 'High' },
     { label: 'Critical', value: 'Critical' },
   ];
+
   categoryOptions = [
-    { label: 'General', value: 'General' },
+    { label: 'Admin', value: 'Admin' },
+    { label: 'HR', value: 'HR' },
     { label: 'Development', value: 'Development' },
     { label: 'Documentation', value: 'Documentation' },
-    { label: 'Testing', value: 'Testing' },
+    { label: 'Maintenance', value: 'Maintenance' },
     { label: 'Meeting', value: 'Meeting' },
-    { label: 'Administrative', value: 'Administrative' },
-    { label: 'Support', value: 'Support' },
-    { label: 'Other', value: 'Other' },
+    { label: 'Training', value: 'Training' },
+    { label: 'Others', value: 'Others' },
   ];
+
   recurringOptions = [
-    { label: 'Does not repeat', value: null },
     { label: 'Daily', value: 'Daily' },
     { label: 'Weekly', value: 'Weekly' },
     { label: 'Monthly', value: 'Monthly' },
+    { label: 'Yearly', value: 'Yearly' },
+  ];
+
+  statusOptions = [
+    { label: 'To Do', value: 'Todo' },
+    { label: 'In Progress', value: 'InProgress' },
+    { label: 'Pending', value: 'Pending' },
+    { label: 'Completed', value: 'Completed' },
+    { label: 'Cancelled', value: 'Cancelled' },
   ];
 
   constructor() {
@@ -922,39 +1037,180 @@ export class StaffTasks implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    this.getCount();
     this.initForm();
     this.getUserSelection();
+    this.getProjectSelection();
     this.GetData();
   }
 
-  getCount() {
-    return this.staffTaskService.GetSummary().pipe(
-      takeUntil(this.ngUnsubscribe),
-      tap((res) => {
-        this.summaryCount = res;
-        this.cdr.markForCheck();
-      }),
-    );
+  getProjectSelection(): void {
+    const query: GridifyQueryExtend = {
+      Page: 1,
+      PageSize: 1000,
+      Select: null,
+      Filter: null,
+      OrderBy: null,
+    } as GridifyQueryExtend;
+
+    this.projectService
+      .GetMany(query)
+      .pipe(takeUntil(this.ngUnsubscribe))
+      .subscribe({
+        next: (res) => {
+          this.projectSelection = (res?.data ?? []).map(
+            (project: ProjectDto) => ({
+              label: `${project.projectCode} - ${project.projectTitle}`,
+              value: project.id,
+            }),
+          );
+
+          this.cdr.markForCheck();
+        },
+
+        error: (err) => {
+          console.error('Error loading projects:', err);
+
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: 'Failed to load projects.',
+          });
+        },
+      });
   }
 
-  initForm() {
+  // --------------------------------------------------
+  // FORM
+  // --------------------------------------------------
+
+  initForm(): void {
     this.FG = new FormGroup({
-      id: new FormControl<string | null>({ value: null, disabled: true }),
-      title: new FormControl<string | null>(null, Validators.required),
+      id: new FormControl<string | null>({
+        value: null,
+        disabled: true,
+      }),
+
+      title: new FormControl<string | null>(null, [
+        Validators.required,
+        Validators.maxLength(200),
+      ]),
+
       description: new FormControl<string | null>(null),
+
       assignedToId: new FormControl<string | null>(null),
-      priority: new FormControl<string | null>(null),
-      category: new FormControl<string | null>(null),
+      projectId: new FormControl<string | null>(null),
+      priority: new FormControl<string>('Medium', Validators.required),
+
+      category: new FormControl<string>('Others', Validators.required),
+
+      status: new FormControl<string>('Todo'),
+
       startDate: new FormControl<Date | null>(null),
+
       dueDate: new FormControl<Date | null>(null, Validators.required),
+
       reminderAt: new FormControl<Date | null>(null),
+
       isRecurring: new FormControl<boolean>(false),
+
       recurringType: new FormControl<string | null>(null),
-      estimatedHours: new FormControl<number | null>(null),
+
+      estimatedHours: new FormControl<number | null>(null, [Validators.min(0)]),
+
       checklists: new FormArray([]),
     });
   }
+
+  get checklists(): FormArray {
+    return this.FG.get('checklists') as FormArray;
+  }
+
+  createChecklistForm(item?: any, assigneeOnly = false): FormGroup {
+    return new FormGroup({
+      id: new FormControl<string | null>(item?.id ?? null),
+
+      title: new FormControl(
+        {
+          value: item?.title ?? '',
+          disabled: assigneeOnly,
+        },
+        Validators.required,
+      ),
+
+      isCompleted: new FormControl<boolean>(item?.isCompleted ?? false),
+
+      sequence: new FormControl({
+        value: item?.sequence ?? this.checklists.length,
+        disabled: assigneeOnly,
+      }),
+    });
+  }
+
+  clearChecklists(): void {
+    while (this.checklists.length > 0) {
+      this.checklists.removeAt(0);
+    }
+  }
+
+  enableTaskFields(): void {
+    const fields = [
+      'title',
+      'description',
+      'assignedToId',
+      'projectId',
+      'priority',
+      'category',
+      'status',
+      'startDate',
+      'dueDate',
+      'reminderAt',
+      'isRecurring',
+      'recurringType',
+      'estimatedHours',
+    ];
+
+    fields.forEach((field) => {
+      this.FG.get(field)?.enable({ emitEvent: false });
+    });
+
+    this.checklists.controls.forEach((control) => {
+      control.get('title')?.enable({ emitEvent: false });
+      control.get('sequence')?.enable({ emitEvent: false });
+      control.get('isCompleted')?.enable({ emitEvent: false });
+    });
+  }
+
+  disableTaskFieldsForAssignee(): void {
+    const fields = [
+      'title',
+      'description',
+      'assignedToId',
+      'projectId',
+      'priority',
+      'category',
+      'status',
+      'startDate',
+      'dueDate',
+      'reminderAt',
+      'isRecurring',
+      'recurringType',
+      'estimatedHours',
+    ];
+
+    fields.forEach((field) => {
+      this.FG.get(field)?.disable({ emitEvent: false });
+    });
+
+    this.checklists.controls.forEach((control) => {
+      control.get('title')?.disable({ emitEvent: false });
+      control.get('sequence')?.disable({ emitEvent: false });
+      control.get('isCompleted')?.enable({ emitEvent: false });
+    });
+  }
+
+  // --------------------------------------------------
+  // DATA
+  // --------------------------------------------------
 
   GetData(): void {
     this.loadingService.start();
@@ -972,39 +1228,111 @@ export class StaffTasks implements OnInit, OnDestroy {
         next: () => {
           this.cdr.markForCheck();
         },
+
         error: (err) => {
           console.error('Error loading tasks:', err);
+
           this.loadingService.stop();
+
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: 'Failed to load tasks.',
+          });
         },
+
         complete: () => {
           this.loadingService.stop();
         },
       });
   }
 
-  OpenTaskDialog() {
-    this.isUpdate = false;
+  getCount() {
+    return this.staffTaskService.GetSummary().pipe(
+      takeUntil(this.ngUnsubscribe),
+      tap((res) => {
+        this.summaryCount = {
+          myTasks: res?.myTasks ?? 0,
+          assignedToOthers: res?.assignedToOthers ?? 0,
+          inProgress: res?.inProgress ?? 0,
+          completed: res?.completed ?? 0,
+        };
 
+        this.cdr.markForCheck();
+      }),
+    );
+  }
+
+  getUserSelection(): void {
+    this.staffTaskService
+      .GetDropdown()
+      .pipe(takeUntil(this.ngUnsubscribe))
+      .subscribe({
+        next: (res) => {
+          this.userSelection = (res?.users ?? []).map((user: any) => ({
+            label:
+              user.fullName ??
+              user.displayName ??
+              user.name ??
+              user.email ??
+              'Unknown User',
+            value: user.id,
+          }));
+
+          this.cdr.markForCheck();
+        },
+
+        error: (err) => {
+          console.error('Error loading staff dropdown:', err);
+
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: 'Failed to load staff members.',
+          });
+        },
+      });
+  }
+
+  // --------------------------------------------------
+  // CREATE
+  // --------------------------------------------------
+
+  OpenTaskDialog(): void {
+    this.isUpdate = false;
+    this.isAssigneeOnly = false;
+    this.isTaskCreator = false;
+    this.selectedTask = null;
+
+    this.enableTaskFields();
     this.FG.reset();
+
+    this.clearChecklists();
 
     this.FG.patchValue({
       priority: 'Medium',
-      category: 'General',
-      status: 'NotStarted',
+      category: 'Others',
+      status: 'Todo',
       startDate: new Date(),
+      dueDate: null,
       isRecurring: false,
       recurringType: null,
+      estimatedHours: null,
+      assignedToId: null,
+      projectId: null,
     });
-    this.clearChecklists();
 
     this.visible = true;
     this.cdr.markForCheck();
   }
 
+  // --------------------------------------------------
+  // EDIT
+  // --------------------------------------------------
+
   editTask(task: StaffTask): void {
     this.isUpdate = true;
     this.selectedTask = task;
-    console.log(task);
 
     const currentUserId = this.userService.currentUser?.userId;
 
@@ -1015,29 +1343,19 @@ export class StaffTasks implements OnInit, OnDestroy {
       task.assignedToId === currentUserId &&
       task.assignedById !== currentUserId;
 
+    this.enableTaskFields();
     this.clearChecklists();
-    for (const item of task.checklists || []) {
-      this.checklists.push(
-        new FormGroup({
-          id: new FormControl(item.id),
-          title: new FormControl({
-            value: item.title,
-            disabled: this.isAssigneeOnly,
-          }),
-          isCompleted: new FormControl(item.isCompleted),
-          sequence: new FormControl({
-            value: item.sequence ?? 0,
-            disabled: this.isAssigneeOnly,
-          }),
-        }),
-      );
+
+    for (const item of task.checklists ?? []) {
+      this.checklists.push(this.createChecklistForm(item, this.isAssigneeOnly));
     }
 
     this.FG.patchValue({
       id: task.id,
       title: task.title,
       description: task.description,
-      assignedToId: task.assignedToId,
+      assignedToId: task.assignedToId ?? null,
+      projectId: task.projectId ?? null,
       priority: task.priority,
       category: task.category,
       status: task.status,
@@ -1052,88 +1370,96 @@ export class StaffTasks implements OnInit, OnDestroy {
     if (this.isAssigneeOnly) {
       this.disableTaskFieldsForAssignee();
     }
+
     this.visible = true;
     this.cdr.markForCheck();
   }
 
-  disableTaskFieldsForAssignee(): void {
-    const fields = [
-      'title',
-      'description',
-      'assignedToId',
-      'priority',
-      'category',
-      'startDate',
-      'dueDate',
-      'reminderAt',
-      'isRecurring',
-      'recurringType',
-      'estimatedHours',
-    ];
-
-    fields.forEach((field) => {
-      this.FG.get(field)?.disable();
-    });
-  }
-
-  clearChecklists(): void {
-    while (this.checklists.length) {
-      this.checklists.removeAt(0);
-    }
-  }
-
-  getUserSelection() {
-    this.staffTaskService
-      .GetDropdown()
-      .pipe(takeUntil(this.ngUnsubscribe))
-      .subscribe({
-        next: (res) => {
-          this.userSelection = res.users.map((user: any) => ({
-            label: user.name,
-            value: user.id,
-          }));
-        },
-      });
-  }
-
-  get checklists(): FormArray {
-    return this.FG.get('checklists') as FormArray;
-  }
-
-  CloseDialog() {
-    this.visible = false;
-  }
+  // --------------------------------------------------
+  // SAVE
+  // --------------------------------------------------
 
   SaveTask(): void {
-    if (this.FG.invalid && !this.isAssigneeOnly) {
-      this.FG.markAllAsTouched();
-      return;
-    }
-
     if (this.isAssigneeOnly) {
       this.saveChecklistOnly();
       return;
     }
 
+    if (this.FG.invalid) {
+      this.FG.markAllAsTouched();
+
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Incomplete Information',
+        detail: 'Please complete all required fields.',
+      });
+
+      return;
+    }
+
     const formValue = this.FG.getRawValue();
 
-    const request = {
-      ...formValue,
+    if (
+      formValue.startDate &&
+      formValue.dueDate &&
+      new Date(formValue.startDate) > new Date(formValue.dueDate)
+    ) {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Invalid Date',
+        detail: 'Start date cannot be later than the due date.',
+      });
 
-      checklists: (formValue.checklists || []).map(
+      return;
+    }
+
+    if (formValue.isRecurring && !formValue.recurringType) {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Recurring Frequency Required',
+        detail: 'Please select how often this task should repeat.',
+      });
+
+      return;
+    }
+
+    const request: any = {
+      title: formValue.title?.trim(),
+      description: formValue.description?.trim() || null,
+      assignedToId: formValue.assignedToId || null,
+      projectId: formValue.projectId || null,
+      priority: formValue.priority,
+      category: formValue.category,
+      startDate: formValue.startDate,
+      dueDate: formValue.dueDate,
+      reminderAt: formValue.reminderAt,
+      isRecurring: formValue.isRecurring,
+      recurringType: formValue.isRecurring ? formValue.recurringType : null,
+      estimatedHours: formValue.estimatedHours,
+
+      checklists: (formValue.checklists ?? []).map(
         (item: any, index: number) => ({
           id: item.id ?? null,
-          title: item.title,
+          title: item.title?.trim(),
           isCompleted: item.isCompleted ?? false,
           sequence: item.sequence ?? index,
         }),
       ),
-
-      recurringType: formValue.isRecurring ? formValue.recurringType : null,
     };
 
-    if (!this.isUpdate) {
-      delete request.id;
+    if (this.isUpdate) {
+      request.id = formValue.id;
+      request.status = formValue.status ?? 'Todo';
+    }
+
+    if (request.checklists.some((item: any) => !item.title)) {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Invalid Checklist',
+        detail: 'Please enter a title for every checklist item.',
+      });
+
+      return;
     }
 
     this.loadingService.start();
@@ -1149,57 +1475,17 @@ export class StaffTasks implements OnInit, OnDestroy {
       )
       .subscribe({
         next: (res: StaffTask) => {
-          const currentData = this.PagingSignal();
+          this.updateTaskInList(res);
 
-          if (this.isUpdate) {
-            const updatedData = (currentData.data || []).map(
-              (task: StaffTask) => (task.id === res.id ? res : task),
-            );
-
-            this.PagingSignal.set({
-              ...currentData,
-              data: updatedData,
-            });
-
-            this.messageService.add({
-              severity: 'success',
-              summary: 'Task Updated',
-              detail: 'Task has been updated successfully.',
-            });
-          } else {
-            this.PagingSignal.set({
-              ...currentData,
-              data: [res, ...(currentData.data || [])],
-              totalElements: (currentData.totalElements || 0) + 1,
-            });
-
-            this.messageService.add({
-              severity: 'success',
-              summary: 'Task Created',
-              detail: 'Task has been created successfully.',
-            });
-          }
-
-          this.visible = false;
-          this.isUpdate = false;
-          this.isAssigneeOnly = false;
-          this.isTaskCreator = false;
-          this.selectedTask = null;
-
-          this.FG.reset();
-
-          this.FG.patchValue({
-            priority: 'Medium',
-            category: 'General',
-            startDate: new Date(),
-            isRecurring: false,
-            recurringType: null,
-            checklists: [],
+          this.messageService.add({
+            severity: 'success',
+            summary: this.isUpdate ? 'Task Updated' : 'Task Created',
+            detail: this.isUpdate
+              ? 'Task has been updated successfully.'
+              : 'Task has been created successfully.',
           });
 
-          this.clearChecklists();
-
-          this.cdr.markForCheck();
+          this.resetDialog();
         },
 
         error: (err) => {
@@ -1212,13 +1498,14 @@ export class StaffTasks implements OnInit, OnDestroy {
             severity: 'error',
             summary: 'Error',
             detail:
-              err?.error?.Error ||
-              err?.error?.message ||
+              err?.error?.Error ??
+              err?.error?.message ??
               (this.isUpdate
                 ? 'Failed to update task.'
                 : 'Failed to create task.'),
           });
 
+          this.loadingService.stop();
           this.cdr.markForCheck();
         },
 
@@ -1228,13 +1515,17 @@ export class StaffTasks implements OnInit, OnDestroy {
       });
   }
 
+  // --------------------------------------------------
+  // ASSIGNEE CHECKLIST UPDATE
+  // --------------------------------------------------
+
   saveChecklistOnly(): void {
     const formValue = this.FG.getRawValue();
 
     const request = {
       id: formValue.id,
 
-      checklists: (formValue.checklists || []).map(
+      checklists: (formValue.checklists ?? []).map(
         (item: any, index: number) => ({
           id: item.id,
           isCompleted: item.isCompleted ?? false,
@@ -1253,14 +1544,7 @@ export class StaffTasks implements OnInit, OnDestroy {
       )
       .subscribe({
         next: (res: StaffTask) => {
-          const currentData = this.PagingSignal();
-
-          this.PagingSignal.set({
-            ...currentData,
-            data: (currentData.data || []).map((task: StaffTask) =>
-              task.id === res.id ? res : task,
-            ),
-          });
+          this.updateTaskInList(res);
 
           this.messageService.add({
             severity: 'success',
@@ -1268,11 +1552,7 @@ export class StaffTasks implements OnInit, OnDestroy {
             detail: 'Checklist progress has been updated.',
           });
 
-          this.visible = false;
-          this.isAssigneeOnly = false;
-          this.selectedTask = null;
-
-          this.cdr.markForCheck();
+          this.resetDialog();
         },
 
         error: (err) => {
@@ -1282,11 +1562,12 @@ export class StaffTasks implements OnInit, OnDestroy {
             severity: 'error',
             summary: 'Error',
             detail:
-              err?.error?.Error ||
-              err?.error?.message ||
+              err?.error?.Error ??
+              err?.error?.message ??
               'Failed to update checklist.',
           });
 
+          this.loadingService.stop();
           this.cdr.markForCheck();
         },
 
@@ -1296,8 +1577,35 @@ export class StaffTasks implements OnInit, OnDestroy {
       });
   }
 
+  // --------------------------------------------------
+  // LIST HELPERS
+  // --------------------------------------------------
+
+  updateTaskInList(task: StaffTask): void {
+    const currentData = this.PagingSignal();
+    const existingData = currentData.data ?? [];
+
+    const exists = existingData.some((item: StaffTask) => item.id === task.id);
+
+    this.PagingSignal.set({
+      ...currentData,
+
+      data: exists
+        ? existingData.map((item: StaffTask) =>
+            item.id === task.id ? task : item,
+          )
+        : [task, ...existingData].slice(0, this.Query.PageSize),
+
+      totalElements: exists
+        ? currentData.totalElements
+        : (currentData.totalElements ?? 0) + 1,
+    });
+
+    this.cdr.markForCheck();
+  }
+
   getCompletedChecklistCount(task: StaffTask): number {
-    return task.checklists?.filter((item: any) => item.isCompleted).length || 0;
+    return task.checklists?.filter((item: any) => item.isCompleted).length ?? 0;
   }
 
   isTaskOverdue(task: StaffTask): boolean {
@@ -1318,19 +1626,124 @@ export class StaffTasks implements OnInit, OnDestroy {
     return dueDate < today;
   }
 
+  getStatusLabel(status: string): string {
+    const option = this.statusOptions.find((item) => item.value === status);
+
+    return option?.label ?? status;
+  }
+
+  getStatusIcon(status: string): string {
+    const icons: Record<string, string> = {
+      Todo: 'pi pi-circle',
+      InProgress: 'pi pi-spinner',
+      Pending: 'pi pi-pause',
+      Completed: 'pi pi-check',
+      Cancelled: 'pi pi-times',
+    };
+
+    return icons[status] ?? 'pi pi-circle';
+  }
+
   addChecklist(): void {
     this.checklists.push(
-      new FormGroup({
-        id: new FormControl(null),
-        title: new FormControl('', Validators.required),
-        isCompleted: new FormControl(false),
-        sequence: new FormControl(this.checklists.length),
+      this.createChecklistForm({
+        sequence: this.checklists.length,
       }),
     );
   }
 
   removeChecklist(index: number): void {
     this.checklists.removeAt(index);
+
+    this.checklists.controls.forEach((control, i) => {
+      control.get('sequence')?.setValue(i);
+    });
+  }
+
+  // --------------------------------------------------
+  // DIALOG
+  // --------------------------------------------------
+
+  resetDialog(): void {
+    this.visible = false;
+    this.isUpdate = false;
+    this.isAssigneeOnly = false;
+    this.isTaskCreator = false;
+    this.selectedTask = null;
+
+    this.enableTaskFields();
+    this.FG.reset();
+
+    this.clearChecklists();
+
+    this.FG.patchValue({
+      priority: 'Medium',
+      category: 'Others',
+      status: 'Todo',
+      isRecurring: false,
+      recurringType: null,
+    });
+
+    this.cdr.markForCheck();
+  }
+
+  CloseDialog(): void {
+    this.resetDialog();
+  }
+
+  // --------------------------------------------------
+  // DELETE
+  // --------------------------------------------------
+
+  DeleteTask(): void {
+    if (!this.isUpdate || !this.isTaskCreator || !this.selectedTask?.id) {
+      return;
+    }
+
+    this.showDeleteConfirm = true;
+  }
+
+  CancelDelete(): void {
+    this.showDeleteConfirm = false;
+  }
+
+  ConfirmDelete(): void {
+    if (!this.selectedTask?.id) {
+      return;
+    }
+
+    const taskId = this.selectedTask.id;
+
+    this.staffTaskService
+      .Delete(taskId)
+      .pipe(takeUntil(this.ngUnsubscribe))
+      .subscribe({
+        next: () => {
+          this.showDeleteConfirm = false;
+
+          this.messageService.add({
+            severity: 'success',
+            summary: 'Task Deleted',
+            detail: 'Task has been deleted successfully.',
+          });
+
+          this.resetDialog();
+          this.GetData();
+          this.getCount();
+        },
+        error: (err) => {
+          console.error('Error deleting task:', err);
+
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Error',
+            detail:
+              err?.error?.Error ??
+              err?.error?.message ??
+              'Failed to delete task.',
+          });
+        },
+      });
   }
 
   ngOnDestroy(): void {

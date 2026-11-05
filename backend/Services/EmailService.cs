@@ -1,3 +1,4 @@
+
 using System.Net;
 using System.Net.Mail;
 
@@ -12,172 +13,174 @@ namespace YLWorks.Services
             _config = config;
         }
 
+        private SmtpClient CreateSmtpClient()
+        {
+            var smtpServer = _config["EmailSettings:SmtpServer"];
+            var port = int.Parse(_config["EmailSettings:Port"]!);
+            var username = _config["EmailSettings:Username"];
+            var password = _config["EmailSettings:Password"];
+
+            return new SmtpClient(smtpServer)
+            {
+                Port = port,
+                Credentials = new NetworkCredential(username, password),
+                EnableSsl = true
+            };
+        }
+
+        private MailMessage CreateMailMessage(
+            string toEmail,
+            string subject,
+            string body,
+            bool isHtml = false)
+        {
+            var senderEmail = _config["EmailSettings:SenderEmail"];
+            var senderName = _config["EmailSettings:SenderName"];
+
+            var mail = new MailMessage
+            {
+                From = new MailAddress(senderEmail!, senderName),
+                Subject = subject,
+                Body = body,
+                IsBodyHtml = isHtml
+            };
+
+            mail.To.Add(toEmail);
+
+            return mail;
+        }
+
+        // General asynchronous email method.
+        // Used by MeetingController for invitations, updates and cancellations.
+        public async Task SendEmailAsync(
+            string toEmail,
+            string subject,
+            string body)
+        {
+            using var smtp = CreateSmtpClient();
+            using var mail = CreateMailMessage(
+                toEmail,
+                subject,
+                body,
+                isHtml: true
+            );
+
+            await smtp.SendMailAsync(mail);
+        }
+
+        // Password reset email
         public void SendResetEmail(string toEmail, string resetLink)
         {
-            var smtpServer = _config["EmailSettings:SmtpServer"];
-            var port = int.Parse(_config["EmailSettings:Port"]);
-            var senderEmail = _config["EmailSettings:SenderEmail"];
-            var username = _config["EmailSettings:Username"];
-            var password = _config["EmailSettings:Password"];
-            var senderName = _config["EmailSettings:SenderName"];
+            var body = $"""
+                Hello,
 
-            using var smtp = new SmtpClient(smtpServer)
-            {
-                Port = port,
-                Credentials = new NetworkCredential(username, password),
-                EnableSsl = true
-            };
+                Click the link below to reset your password:
 
-            var mail = new MailMessage
-            {
-                From = new MailAddress(senderEmail, senderName),
-                Subject = "Password Reset Instructions",
-                Body = $"Hello,\n\nClick the link below to reset your password:\n{resetLink}\n\nThis link will expire in 1 hour.\n\nIf you didn’t request this, please ignore this email.",
-                IsBodyHtml = false
-            };
+                {resetLink}
 
-            mail.To.Add(toEmail);
+                This link will expire in 1 hour.
+
+                If you didn't request this, please ignore this email.
+                """;
+
+            using var smtp = CreateSmtpClient();
+            using var mail = CreateMailMessage(
+                toEmail,
+                "Password Reset Instructions",
+                body
+            );
 
             smtp.Send(mail);
         }
 
+        // Account approval email
         public void SendApprovalEmail(
-    string toEmail,
-    string fullName
-)
+            string toEmail,
+            string fullName)
         {
-            var smtpServer = _config["EmailSettings:SmtpServer"];
-            var port = int.Parse(_config["EmailSettings:Port"]);
-            var senderEmail = _config["EmailSettings:SenderEmail"];
-            var username = _config["EmailSettings:Username"];
-            var smtpPassword = _config["EmailSettings:Password"];
-            var senderName = _config["EmailSettings:SenderName"];
+            var body = $"""
+                Hello {fullName},
 
+                Your account registration has been approved.
 
-            using var smtp = new SmtpClient(smtpServer)
-            {
-                Port = port,
-                Credentials = new NetworkCredential(username, smtpPassword),
-                EnableSsl = true
-            };
+                You may now log in using the following email:
 
+                {toEmail}
 
-            var mail = new MailMessage
-            {
-                From = new MailAddress(senderEmail, senderName),
-                Subject = "Your Account Has Been Approved",
-                Body =
-                $"""
-        Hello {fullName},
+                Please change your password after your first login.
 
-        Your account registration has been approved.
+                Thank you.
+                """;
 
-        You may now login using the credentials below:
-
-        Email:
-        {toEmail}
-
-
-        Please change your password after your first login.
-
-        Thank you.
-        """,
-                IsBodyHtml = false
-            };
-
-
-            mail.To.Add(toEmail);
+            using var smtp = CreateSmtpClient();
+            using var mail = CreateMailMessage(
+                toEmail,
+                "Your Account Has Been Approved",
+                body
+            );
 
             smtp.Send(mail);
         }
 
-        public void SendRejectionEmail(string toEmail, string fullName, string reason)
+        // Account rejection email
+        public void SendRejectionEmail(
+            string toEmail,
+            string fullName,
+            string reason)
         {
-            var smtpServer = _config["EmailSettings:SmtpServer"];
-            var port = int.Parse(_config["EmailSettings:Port"]);
-            var senderEmail = _config["EmailSettings:SenderEmail"];
-            var username = _config["EmailSettings:Username"];
-            var password = _config["EmailSettings:Password"];
-            var senderName = _config["EmailSettings:SenderName"];
+            var body = $"""
+                Hello {fullName},
 
-            using var smtp = new SmtpClient(smtpServer)
-            {
-                Port = port,
-                Credentials = new NetworkCredential(username, password),
-                EnableSsl = true
-            };
+                Unfortunately, your account registration has been rejected.
 
-            var mail = new MailMessage
-            {
-                From = new MailAddress(senderEmail, senderName),
-                Subject = "Account Registration Rejected",
-                Body =
-                $"""
-        Hello {fullName},
+                Reason:
+                {reason}
 
-        Unfortunately, your account registration has been rejected.
+                If you believe this was a mistake, please contact the administrator.
 
-        Reason:
-        {reason}
+                Thank you.
+                """;
 
-        If you believe this was a mistake, please contact the administrator.
-
-        Thank you.
-        """,
-                IsBodyHtml = false
-            };
-
-            mail.To.Add(toEmail);
+            using var smtp = CreateSmtpClient();
+            using var mail = CreateMailMessage(
+                toEmail,
+                "Account Registration Rejected",
+                body
+            );
 
             smtp.Send(mail);
         }
 
+        // Account created email
         public void SendAccountCreatedEmail(
-    string toEmail,
-    string fullName,
-    string password
-)
+            string toEmail,
+            string fullName,
+            string password)
         {
-            var smtpServer = _config["EmailSettings:SmtpServer"];
-            var port = int.Parse(_config["EmailSettings:Port"]);
-            var senderEmail = _config["EmailSettings:SenderEmail"];
-            var username = _config["EmailSettings:Username"];
-            var smtpPassword = _config["EmailSettings:Password"];
-            var senderName = _config["EmailSettings:SenderName"];
+            var body = $"""
+                Hello {fullName},
 
-            using var smtp = new SmtpClient(smtpServer)
-            {
-                Port = port,
-                Credentials = new NetworkCredential(username, smtpPassword),
-                EnableSsl = true
-            };
+                Your account has been created by the administrator.
 
-            var mail = new MailMessage
-            {
-                From = new MailAddress(senderEmail, senderName),
-                Subject = "Your Account Has Been Created",
-                Body =
-                $"""
-        Hello {fullName},
+                You can now log in using the credentials below:
 
-        Your account has been created by the administrator.
+                Email:
+                {toEmail}
 
-        You can now login to the system using the credentials below:
+                Password:
+                {password}
 
-        Email:
-        {toEmail}
+                Please log in and change your password after your first login.
 
-        Password:
-        {password}
+                Thank you.
+                """;
 
-        Please login and change your password after your first login.
-
-        Thank you.
-        """,
-                IsBodyHtml = false
-            };
-
-            mail.To.Add(toEmail);
+            using var smtp = CreateSmtpClient();
+            using var mail = CreateMailMessage(
+                toEmail,
+                "Your Account Has Been Created",
+                body
+            );
 
             smtp.Send(mail);
         }

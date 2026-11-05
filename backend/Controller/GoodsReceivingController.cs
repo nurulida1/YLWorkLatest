@@ -456,29 +456,34 @@ string? includes = null)
                 .ThenInclude(x => x.ProductService)
                 .FirstOrDefaultAsync(x => x.Id == grn.PurchaseOrderId);
 
-            if (po == null) return;
+            if (po == null)
+                return;
 
             foreach (var item in grn.GoodsReceivingItems)
             {
                 var poItem = po.PurchaseOrderItems
                     .FirstOrDefault(x => x.Id == item.PurchaseOrderItemId);
 
-                if (poItem == null) continue;
+                if (poItem == null)
+                    continue;
 
                 poItem.ReceivedQuantity += item.ReceivedQuantity;
 
-                var inventoryId = poItem.ProductService?.InventoryId;
+                var productServiceId = poItem.ProductService?.Id;
 
-                if (inventoryId == null)
+                if (productServiceId == null)
                     continue;
 
                 var inventory = await _context.Inventories
-                    .FirstOrDefaultAsync(x => x.Id == inventoryId);
+                    .FirstOrDefaultAsync(x =>
+                        x.ProductServiceId == productServiceId);
 
                 if (inventory == null)
                     continue;
 
-                inventory.Quantity += item.ReceivedQuantity;
+                inventory.Quantity =
+                    (inventory.Quantity ?? 0m) + item.ReceivedQuantity;
+
                 inventory.Date = DateTime.UtcNow;
 
                 _context.StockTransactions.Add(new StockTransaction
@@ -493,13 +498,18 @@ string? includes = null)
                 });
             }
 
-            var totalOrdered = po.PurchaseOrderItems.Sum(x => x.Quantity);
-            var totalReceived = po.PurchaseOrderItems.Sum(x => x.ReceivedQuantity);
+            var totalOrdered = po.PurchaseOrderItems
+                .Sum(x => x.Quantity);
+
+            var totalReceived = po.PurchaseOrderItems
+                .Sum(x => x.ReceivedQuantity);
 
             po.Status =
-                totalReceived <= 0 ? po.Status :
-                totalReceived >= totalOrdered ? "Completed" :
-                "PartiallyReceived";
+                totalReceived <= 0
+                    ? po.Status
+                    : totalReceived >= totalOrdered
+                        ? "Completed"
+                        : "PartiallyReceived";
 
             await _context.SaveChangesAsync();
         }

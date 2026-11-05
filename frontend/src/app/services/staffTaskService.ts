@@ -5,11 +5,15 @@ import {
   StaffTaskSummary,
   UpdateChecklistOnlyRequest,
   UpdateStaffTaskRequest,
+  CompleteStaffTaskRequest,
 } from '../models/StaffTask';
+
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { MessageService } from 'primeng/api';
-import { Observable, retry, catchError, of, throwError } from 'rxjs';
+import { Observable, of, throwError, catchError } from 'rxjs';
+
 import { environment } from '../../environments/environment.development';
+
 import {
   GridifyQueryExtend,
   PagingContent,
@@ -27,6 +31,10 @@ export class StaffTaskService {
     private messageService: MessageService,
   ) {}
 
+  // ==========================================
+  // GET MANY
+  // ==========================================
+
   GetMany(query: GridifyQueryExtend): Observable<PagingContent<StaffTask>> {
     let params = new HttpParams()
       .set('page', query.Page.toString())
@@ -35,99 +43,145 @@ export class StaffTaskService {
     if (query.Select) {
       params = params.set('select', query.Select);
     }
+
     if (query.OrderBy) {
       params = params.set('orderBy', query.OrderBy);
     }
+
     if (query.Filter) {
       params = params.set('filter', query.Filter);
     }
+
     if (query.Includes) {
       params = params.set('includes', query.Includes);
     }
 
     return this.http
-      .get<PagingContent<StaffTask>>(this.url + '/GetMany', {
-        params,
-      })
-      .pipe(retry(1), catchError(this.handleError('GetMany')));
+      .get<PagingContent<StaffTask>>(`${this.url}/GetMany`, { params })
+      .pipe(catchError(this.handleError('GetMany')));
   }
 
+  // ==========================================
+  // GET ONE
+  // ==========================================
+
   GetOne(id: string): Observable<StaffTask | null> {
-    let params = new HttpParams();
+    const params = new HttpParams().set('id', id);
 
-    if (id) {
-      params = params.set('id', id);
-    }
-
-    return this.http.get<StaffTask>(this.url + '/GetOne', { params }).pipe(
-      retry(1),
+    return this.http.get<StaffTask>(`${this.url}/GetOne`, { params }).pipe(
       catchError((error) => {
         if (error.status === 404) {
           return of(null);
-        } else {
-          return this.handleError('GetOne')(error);
         }
+
+        return this.handleError('GetOne')(error);
       }),
     );
   }
 
+  // ==========================================
+  // CREATE
+  // ==========================================
+
   Create(request: CreateStaffTaskRequest): Observable<StaffTask> {
     return this.http
-      .post<StaffTask>(`${this.url}/Create`, request) // no { Data: ... }
-      .pipe(retry(1), catchError(this.handleError('Create')));
+      .post<StaffTask>(`${this.url}/Create`, request)
+      .pipe(catchError(this.handleError('Create')));
   }
+
+  // ==========================================
+  // UPDATE
+  // ==========================================
 
   Update(request: UpdateStaffTaskRequest): Observable<StaffTask> {
     return this.http
       .put<StaffTask>(`${this.url}/Update`, request)
-      .pipe(retry(1), catchError(this.handleError('Update')));
+      .pipe(catchError(this.handleError('Update')));
   }
+
+  // ==========================================
+  // UPDATE CHECKLIST
+  // ==========================================
 
   UpdateChecklist(request: UpdateChecklistOnlyRequest): Observable<StaffTask> {
     return this.http
       .put<StaffTask>(`${this.url}/UpdateChecklist`, request)
-      .pipe(retry(1), catchError(this.handleError('UpdateChecklist')));
+      .pipe(catchError(this.handleError('UpdateChecklist')));
   }
 
-  Delete(staff_id: string): Observable<BaseResponse> {
+  // ==========================================
+  // DELETE
+  // ==========================================
+
+  Delete(id: string): Observable<BaseResponse> {
     return this.http
-      .delete<BaseResponse>(`${this.url}/Delete`, { params: { id: staff_id } })
-      .pipe(retry(1), catchError(this.handleError('Delete')));
+      .delete<BaseResponse>(`${this.url}/Delete`, {
+        params: { id },
+      })
+      .pipe(catchError(this.handleError('Delete')));
   }
+
+  // ==========================================
+  // SUMMARY
+  // ==========================================
 
   GetSummary(): Observable<StaffTaskSummary> {
     return this.http
       .get<StaffTaskSummary>(`${this.url}/GetSummary`)
-      .pipe(retry(1), catchError(this.handleError('GetSummary')));
+      .pipe(catchError(this.handleError('GetSummary')));
   }
+
+  // ==========================================
+  // REOPEN
+  // ==========================================
 
   Reopen(id: string): Observable<StaffTask> {
     return this.http
       .put<StaffTask>(`${this.url}/${id}/Reopen`, {})
-      .pipe(retry(1), catchError(this.handleError('Reopen')));
+      .pipe(catchError(this.handleError('Reopen')));
   }
 
+  // ==========================================
+  // COMPLETE
+  // ==========================================
+
   Complete(id: string, actualHours?: number): Observable<StaffTask> {
-    const request = actualHours != null ? { actualHours } : null;
+    const request: CompleteStaffTaskRequest = {};
+
+    if (actualHours != null) {
+      request.actualHours = actualHours;
+    }
 
     return this.http
       .put<StaffTask>(`${this.url}/${id}/Complete`, request)
-      .pipe(retry(1), catchError(this.handleError('Complete')));
+      .pipe(catchError(this.handleError('Complete')));
   }
+
+  // ==========================================
+  // DROPDOWN
+  // ==========================================
 
   GetDropdown(): Observable<any> {
     return this.http
       .get<any>(`${this.url}/GetDropdown`)
-      .pipe(retry(1), catchError(this.handleError('GetDropdown')));
+      .pipe(catchError(this.handleError('GetDropdown')));
   }
+
+  // ==========================================
+  // ERROR HANDLING
+  // ==========================================
 
   private handleError = (context: string) => (error: any) => {
     this.messageService.add({
       severity: 'error',
-      summary: 'Error',
+      summary: `${context} Failed`,
       detail:
-        error?.error?.detail || error?.message || 'Unexpected error occurred.',
+        error?.error?.detail ||
+        error?.error?.message ||
+        error?.message ||
+        'Unexpected error occurred.',
     });
+
     return throwError(() => error);
   };
 }

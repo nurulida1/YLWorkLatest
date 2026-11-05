@@ -1,40 +1,127 @@
 :host {
   display: block;
 }
+
+.calendar-container {
+  width: 100%;
+  overflow: hidden;
+  border-radius: 12px;
+  background: white;
+  border: 1px solid #e5e7eb;
+}
+
+/* Calendar main area */
 ::ng-deep .fc {
-  font-size: 0.85rem;
+  font-family: Montserrat, sans-serif;
+  color: #51565d;
+}
+
+/* Remove outer border */
+::ng-deep .fc-theme-standard td,
+::ng-deep .fc-theme-standard th {
+  border-color: rgba(166, 168, 179, 0.12);
 }
 
 /* Header */
 ::ng-deep .fc-toolbar {
-  gap: 0.5rem;
-  flex-wrap: wrap;
+  padding: 16px;
+  margin-bottom: 0 !important;
 }
 
 ::ng-deep .fc-toolbar-title {
-  font-size: 1rem !important;
-  font-weight: 600;
+  font-size: 18px !important;
+  font-weight: 700;
+  color: #374151;
 }
 
-/* Buttons */
+/* Previous / Next buttons */
 ::ng-deep .fc-button {
-  padding: 0.35rem 0.6rem !important;
-  font-size: 0.75rem !important;
-  border-radius: 10px !important;
+  background: transparent !important;
+  border: none !important;
+  color: #6b7280 !important;
+  box-shadow: none !important;
 }
 
-/* Calendar cells */
-::ng-deep .fc-daygrid-day-frame {
-  min-height: 60px !important;
+::ng-deep .fc-button:hover {
+  background: #f3f4f6 !important;
+  color: #2563eb !important;
+}
+
+/* Day names */
+::ng-deep .fc-col-header-cell {
+  background: #fafbfc;
+}
+
+::ng-deep .fc-col-header-cell-cushion {
+  padding: 12px 0 !important;
+  font-size: 11px;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: #99a1a7;
+  text-decoration: none !important;
+}
+
+/* Calendar days */
+::ng-deep .fc-daygrid-day {
+  min-height: 90px;
 }
 
 ::ng-deep .fc-daygrid-day-number {
-  font-size: 0.75rem;
+  padding: 10px !important;
+  color: #98a0a6;
+  font-size: 12px;
+  text-decoration: none !important;
 }
 
-/* Event */
+/* Today */
+::ng-deep .fc-day-today {
+  background: rgba(37, 99, 235, 0.04) !important;
+}
+
+/* Events */
 ::ng-deep .fc-event {
-  border-radius: 6px;
-  padding: 1px 4px;
-  font-size: 0.7rem;
+  border: none !important;
+  border-radius: 5px !important;
+  padding: 4px 7px;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+/* More events */
+::ng-deep .fc-daygrid-more-link {
+  font-size: 11px;
+  color: #2563eb;
+}
+
+/* Mobile */
+@media (max-width: 640px) {
+  ::ng-deep .fc-toolbar {
+    padding: 12px;
+  }
+
+  ::ng-deep .fc-toolbar-title {
+    font-size: 16px !important;
+  }
+
+  ::ng-deep .fc-daygrid-day {
+    min-height: 65px;
+  }
+
+  ::ng-deep .fc-daygrid-day-number {
+    font-size: 11px;
+    padding: 6px !important;
+  }
+
+  ::ng-deep .fc-event-title {
+    font-size: 10px;
+  }
+
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
 }

@@ -13,29 +13,25 @@ const routes: Routes = [
     data: { moduleKey: 'claims' },
   },
   {
-    path: 'apply',
-    component: ClaimApply,
-    data: { moduleKey: 'claims' },
-  },
-  {
-    path: 'apply/:id',
-    component: ClaimApply,
-    data: { moduleKey: 'claims' },
-  },
-  {
     path: 'history',
     component: ClaimHistory,
-    data: { moduleKey: 'claims' },
+    data: { moduleKey: 'history' },
   },
+  {
+    path: 'apply',
+    component: ClaimApply,
+    data: { moduleKey: 'apply' },
+  },
+
   {
     path: 'approvals',
     component: ClaimApprovals,
-    data: { moduleKey: 'claims' },
+    data: { moduleKey: 'approvals' },
   },
   {
     path: ':id',
     component: ClaimDetail,
-    data: { moduleKey: 'claims' },
+    data: { moduleKey: 'view-claims' },
   },
 ];
 

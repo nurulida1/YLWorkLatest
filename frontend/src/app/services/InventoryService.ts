@@ -2,8 +2,10 @@ import { Injectable } from '@angular/core';
 import {
   CreateInventoryRequest,
   InventoryAuditDto,
+  InventoryDropdownItem,
   InventoryDropdownResponse,
   InventoryDto,
+  InventorySummary,
   UpdateInventoryRequest,
 } from '../models/Inventory';
 import { HttpClient, HttpParams } from '@angular/common/http';
@@ -77,15 +79,15 @@ export class InventoryService {
       .pipe(retry(1), catchError(this.handleError('GetAudit')));
   }
 
-  Create(request: CreateInventoryRequest): Observable<InventoryDto> {
+  Create(formData: FormData): Observable<InventoryDto> {
     return this.http
-      .post<InventoryDto>(`${this.url}/Create`, request) // no { Data: ... }
+      .post<InventoryDto>(`${this.url}/Create`, formData)
       .pipe(retry(1), catchError(this.handleError('Create')));
   }
 
-  Update(request: UpdateInventoryRequest): Observable<InventoryDto> {
+  Update(formData: FormData): Observable<InventoryDto> {
     return this.http
-      .put<InventoryDto>(`${this.url}/Update`, request)
+      .put<InventoryDto>(`${this.url}/Update`, formData)
       .pipe(retry(1), catchError(this.handleError('Update')));
   }
 
@@ -99,6 +101,18 @@ export class InventoryService {
     return this.http
       .get<InventoryDropdownResponse>(`${this.url}/dropdowns`)
       .pipe(retry(1), catchError(this.handleError('dropdowns')));
+  }
+
+  GetSummary(): Observable<InventorySummary> {
+    return this.http
+      .get<InventorySummary>(`${this.url}/GetSummary`)
+      .pipe(retry(1), catchError(this.handleError('GetSummary')));
+  }
+
+  GetRequestItems(): Observable<InventoryDropdownItem[]> {
+    return this.http
+      .get<InventoryDropdownItem[]>(`${this.url}/GetRequestItems`)
+      .pipe(retry(1), catchError(this.handleError('GetRequestItems')));
   }
 
   private handleError = (context: string) => (error: any) => {

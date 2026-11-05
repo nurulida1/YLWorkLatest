@@ -3,49 +3,74 @@ import { UserDto } from './User';
 
 export interface StaffTask extends BaseModel {
   title: string;
-  description?: string;
-  assignedToId: string;
-  assignedTo: UserDto;
+  description?: string | null;
+
+  assignedToId?: string | null;
+  assignedTo?: UserDto | null;
+
   assignedById: string;
-  assignedBy: UserDto;
+  assignedBy?: UserDto | null;
+
+  // Optional project association
+  projectId?: string | null;
+  project?: {
+    id: string;
+    projectCode: string;
+    projectTitle: string;
+  } | null;
+
   priority: string;
   category: string;
   status: string;
-  startDate: Date;
-  dueDate: Date;
-  reminderAt?: Date;
+
+  startDate?: string | Date | null;
+  dueDate: string | Date;
+  reminderAt?: string | Date | null;
+
   isRecurring: boolean;
-  recurringType?: string;
-  estimatedHours?: number;
-  actualHours?: number;
-  completedAt?: Date;
-  completedById?: string;
-  completedBy?: UserDto;
+  recurringType?: string | null;
+
+  estimatedHours?: number | null;
+  actualHours?: number | null;
+
+  completedAt?: string | Date | null;
+  completedById?: string | null;
+  completedBy?: UserDto | null;
+
   checklists: StaffTaskChecklist[];
 }
 
 export interface StaffTaskChecklist {
   id: string;
   staffTaskId: string;
-  staffTask: StaffTask;
   title: string;
   isCompleted: boolean;
-  completedAt?: Date;
+  completedAt?: string | Date | null;
   sequence?: number;
+
+  // Returned only if the API includes the parent task.
+  staffTask?: StaffTask;
 }
 
 export interface CreateStaffTaskRequest {
   title: string;
-  description?: string;
-  assignedToId?: string;
+  description?: string | null;
+  assignedToId?: string | null;
+
+  // Optional project association
+  projectId?: string | null;
+
   priority: string;
   category: string;
-  startDate?: Date;
-  dueDate: Date;
-  reminderAt?: Date;
+
+  startDate?: string | Date | null;
+  dueDate: string | Date;
+  reminderAt?: string | Date | null;
+
   isRecurring: boolean;
-  recurringType?: string;
-  estimatedHours?: number;
+  recurringType?: string | null;
+  estimatedHours?: number | null;
+
   checklists: CreateStaffTaskChecklistRequest[];
 }
 
@@ -57,17 +82,24 @@ export interface CreateStaffTaskChecklistRequest {
 export interface UpdateStaffTaskRequest {
   id: string;
   title: string;
-  description?: string;
-  assignedToId: string;
+  description?: string | null;
+  assignedToId?: string | null;
+
+  // Optional project association
+  projectId?: string | null;
+
   priority: string;
   category: string;
   status: string;
-  startDate?: Date;
-  dueDate: Date;
-  reminderAt?: Date;
+
+  startDate?: string | Date | null;
+  dueDate: string | Date;
+  reminderAt?: string | Date | null;
+
   isRecurring: boolean;
-  recurringType?: string;
-  estimatedHours?: number;
+  recurringType?: string | null;
+  estimatedHours?: number | null;
+
   checklists: UpdateStaffTaskChecklistItem[];
 }
 
@@ -88,11 +120,7 @@ export interface UpdateChecklistOnlyItem {
   isCompleted: boolean;
   sequence: number;
 }
-export interface UpdateChecklistItemRequest {
-  id: string;
-  isCompleted: boolean;
-  sequence: number;
-}
+
 export interface CompleteStaffTaskRequest {
   actualHours?: number;
 }

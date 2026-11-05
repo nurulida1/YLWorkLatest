@@ -57,9 +57,7 @@ import { PermissionContextService } from '../../services/permission-context.serv
           Dashboard
         </span>
         <span class="text-gray-300">/</span>
-        <span class="text-gray-600 font-semibold text-gray-700"
-          >Department</span
-        >
+        <span class="text-gray-600 font-semibold">Department</span>
       </div>
 
       <div
@@ -98,7 +96,7 @@ import { PermissionContextService } from '../../services/permission-context.serv
               (onClick)="ActionClick(null, 'add')"
               icon="pi pi-plus-circle"
               severity="info"
-              styleClass="py-2 px-4 rounded-lg text-sm font-medium tracking-wide shadow-sm"
+              styleClass="bg-blue-800! border-none! text-white! py-2 px-4 rounded-lg text-sm font-medium tracking-wide shadow-sm"
             ></p-button>
           </div>
         </div>
@@ -254,20 +252,50 @@ import { PermissionContextService } from '../../services/permission-context.serv
 
             <div class="grid grid-cols-2 gap-3">
               <div class="flex flex-col gap-1.5">
-                <label class="font-semibold text-gray-700">Work start (HH:mm)</label>
-                <input type="text" pInputText class="w-full py-2 px-3 rounded-lg border border-gray-200" placeholder="09:00" [(ngModel)]="workStartTime" />
+                <label class="font-semibold text-gray-700"
+                  >Work start (HH:mm)</label
+                >
+                <input
+                  type="text"
+                  pInputText
+                  class="w-full py-2 px-3 rounded-lg border border-gray-200"
+                  placeholder="09:00"
+                  [(ngModel)]="workStartTime"
+                />
               </div>
               <div class="flex flex-col gap-1.5">
-                <label class="font-semibold text-gray-700">Work end (HH:mm)</label>
-                <input type="text" pInputText class="w-full py-2 px-3 rounded-lg border border-gray-200" placeholder="18:00" [(ngModel)]="workEndTime" />
+                <label class="font-semibold text-gray-700"
+                  >Work end (HH:mm)</label
+                >
+                <input
+                  type="text"
+                  pInputText
+                  class="w-full py-2 px-3 rounded-lg border border-gray-200"
+                  placeholder="18:00"
+                  [(ngModel)]="workEndTime"
+                />
               </div>
               <div class="flex flex-col gap-1.5">
-                <label class="font-semibold text-gray-700">Half-day start</label>
-                <input type="text" pInputText class="w-full py-2 px-3 rounded-lg border border-gray-200" placeholder="08:00" [(ngModel)]="restDayHalfDayStart" />
+                <label class="font-semibold text-gray-700"
+                  >Half-day start</label
+                >
+                <input
+                  type="text"
+                  pInputText
+                  class="w-full py-2 px-3 rounded-lg border border-gray-200"
+                  placeholder="08:00"
+                  [(ngModel)]="restDayHalfDayStart"
+                />
               </div>
               <div class="flex flex-col gap-1.5">
                 <label class="font-semibold text-gray-700">Half-day end</label>
-                <input type="text" pInputText class="w-full py-2 px-3 rounded-lg border border-gray-200" placeholder="12:00" [(ngModel)]="restDayHalfDayEnd" />
+                <input
+                  type="text"
+                  pInputText
+                  class="w-full py-2 px-3 rounded-lg border border-gray-200"
+                  placeholder="12:00"
+                  [(ngModel)]="restDayHalfDayEnd"
+                />
               </div>
             </div>
           </div>

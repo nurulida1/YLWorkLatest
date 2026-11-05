@@ -1,6 +1,7 @@
 import { BaseModel } from './BaseModel';
 
 export interface NotificationDto extends BaseModel {
+  title?: string;
   message?: string;
   type?: string;
   link?: string;

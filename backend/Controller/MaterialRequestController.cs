@@ -148,16 +148,41 @@ namespace YLWorks.Controller
                         p.RequestDate,
                         p.RequestNo,
                         p.Remarks,
+                        p.Location,
+                        p.Priority,
                         p.DeliveryPlace,
                         RequestedBy = p.RequestedBy == null ? null : new
                         {
                             FullName = p.RequestedBy.FullName,
+                            DisplayName = p.RequestedBy.DisplayName,
+                            JobTitle = p.RequestedBy.JobTitle,
                         },
                         Client = p.Client == null ? null : new
                         {
                             Name = p.Client.Name
                         },
-                        p.Status
+                        p.Status,
+                        MaterialItems = p.MaterialItems
+    .Select(x => new
+    {
+        x.Id,
+        x.MaterialRequestId,
+        x.InventoryId,
+        x.Quantity,
+        x.Remarks,
+        x.Unit,
+
+        Inventory = x.Inventory == null ? null : new
+        {
+            x.Inventory.Id,
+            x.Inventory.ItemName,
+            x.Inventory.ItemCode,
+            x.Inventory.Attachment,
+            x.Inventory.Description,
+            x.Inventory.Unit
+        }
+    })
+    .ToList()
                     })
                     .ToListAsync();
 
@@ -194,6 +219,9 @@ namespace YLWorks.Controller
                     EffDate = request.EffDate,
 
                     ProjectId = request.ProjectId,
+                    Priority = request.Priority,
+
+                    Location = request.Location,
 
                     RequestDate = request.RequestDate ?? DateTime.Now,
 
@@ -216,6 +244,7 @@ namespace YLWorks.Controller
                     var items = request.MaterialItems.Select(x => new MaterialItem
                     {
                         MaterialRequestId = material.Id,
+                        InventoryId = x.InventoryId,
                         Description = x.Description,
                         Brand = x.Brand,
                         Unit = x.Unit,
@@ -261,6 +290,8 @@ namespace YLWorks.Controller
                 material.EffDate = request.EffDate;
                 material.RequestNo = request.RequestNo;
                 material.ProjectId = request.ProjectId;
+                material.Location = request.Location;
+                material.Priority = request.Priority;
                 material.RequestDate = request.RequestDate;
                 material.DeliveryDate = request.DeliveryDate;
                 material.DeliveryPlace = request.DeliveryPlace;
@@ -279,6 +310,7 @@ namespace YLWorks.Controller
                     var newItems = request.MaterialItems.Select(x => new MaterialItem
                     {
                         MaterialRequestId = material.Id,
+                        InventoryId = x.InventoryId,
                         Description = x.Description,
                         Brand = x.Brand,
                         Unit = x.Unit,
@@ -356,6 +388,22 @@ namespace YLWorks.Controller
                     Name = c.Name
                 }).ToListAsync();
 
+                var inventories = await _context.Inventories
+     .Select(c => new DropdownDto
+     {
+         Id = c.Id,
+         Name = c.ItemName,
+         Status = c.Status,
+         Quantity = c.Quantity,
+         Brand = c.Brand,
+         Model = c.Model,
+         Unit = c.Unit,
+         ItemCode = c.ItemCode,
+         Attachment = c.Attachment,
+         Category = c.Category != null ? c.Category.Name : null
+     })
+     .ToListAsync();
+
                 var users = await _context.Users
                     .Select(u => new DropdownDto
                     {
@@ -368,6 +416,7 @@ namespace YLWorks.Controller
                 {
                     Projects = projects,
                     Suppliers = suppliers,
+                    Inventories = inventories,
                     Users = users
                 });
             }

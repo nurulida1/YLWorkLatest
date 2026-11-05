@@ -1,0 +1,364 @@
+:host {
+  display: block;
+  width: 100%;
+}
+
+.claim-apply-page {
+  width: 100%;
+}
+
+/* Page status */
+.claim-form-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.8rem;
+  border: 1px solid #dbeafe;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #2563eb;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+/* Main sections */
+.claim-form-card {
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 1px 2px rgb(15 23 42 / 3%);
+}
+
+.claim-section-header {
+  padding: 1.15rem 1.35rem;
+  border-bottom: 1px solid #f1f5f9;
+  background: #fff;
+}
+
+.claim-section-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border-radius: 11px;
+  background: #eff6ff;
+  color: #2563eb;
+  font-size: 1rem;
+}
+
+.claim-section-icon--purple {
+  background: #f5f3ff;
+  color: #7c3aed;
+}
+
+.claim-section-icon--green {
+  background: #ecfdf5;
+  color: #059669;
+}
+
+.claim-section-title {
+  margin: 0;
+  color: #1e293b;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.claim-section-description {
+  margin: 0.3rem 0 0;
+  color: #94a3b8;
+  font-size: 0.72rem;
+}
+
+/* Form fields */
+.claim-field-label {
+  color: #475569;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.claim-field-hint {
+  color: #94a3b8;
+  font-size: 0.7rem;
+}
+
+:host ::ng-deep .claim-apply-page .p-inputtext,
+:host ::ng-deep .claim-apply-page .p-textarea,
+:host ::ng-deep .claim-apply-page .p-select,
+:host ::ng-deep .claim-apply-page .p-datepicker,
+:host ::ng-deep .claim-apply-page .p-inputnumber {
+  width: 100%;
+}
+
+:host ::ng-deep .claim-apply-page .p-inputtext,
+:host ::ng-deep .claim-apply-page .p-textarea,
+:host ::ng-deep .claim-apply-page .p-select,
+:host ::ng-deep .claim-apply-page .p-datepicker-input,
+:host ::ng-deep .claim-apply-page .p-inputnumber-input {
+  border-color: #e2e8f0;
+  border-radius: 8px;
+  color: #334155;
+  font-size: 0.8rem;
+}
+
+:host ::ng-deep .claim-apply-page .p-inputtext,
+:host ::ng-deep .claim-apply-page .p-datepicker-input,
+:host ::ng-deep .claim-apply-page .p-inputnumber-input {
+  min-height: 42px;
+}
+
+:host ::ng-deep .claim-apply-page .p-textarea {
+  min-height: 90px;
+  resize: vertical;
+}
+
+:host ::ng-deep .claim-apply-page .p-inputtext:enabled:focus,
+:host ::ng-deep .claim-apply-page .p-textarea:enabled:focus,
+:host ::ng-deep .claim-apply-page .p-select:not(.p-disabled).p-focus,
+:host ::ng-deep .claim-apply-page .p-datepicker:focus-within,
+:host ::ng-deep .claim-apply-page .p-inputnumber:focus-within {
+  border-color: #93c5fd;
+  box-shadow: 0 0 0 3px rgb(59 130 246 / 10%);
+}
+
+:host ::ng-deep .claim-apply-page .p-inputtext::placeholder,
+:host ::ng-deep .claim-apply-page .p-textarea::placeholder,
+:host ::ng-deep .claim-apply-page .p-inputnumber-input::placeholder {
+  color: #a1a1aa;
+}
+
+:host ::ng-deep .claim-apply-page .p-select-label {
+  font-size: 0.8rem;
+}
+
+/* Add line button */
+:host ::ng-deep .claim-add-line-button {
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+/* Individual line cards */
+.claim-line-card {
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.claim-line-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.9rem 1rem;
+  border-bottom: 1px solid #f1f5f9;
+  background: #f8fafc;
+}
+
+.claim-line-number {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: #dbeafe;
+  color: #1d4ed8;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+/* Medical balance */
+.claim-medical-info {
+  padding: 0.9rem 1rem;
+  border: 1px solid #bfdbfe;
+  border-radius: 9px;
+  background: #eff6ff;
+  color: #1e40af;
+}
+
+.claim-medical-info > div > i {
+  color: #2563eb;
+}
+
+/* Overtime preview */
+.claim-ot-preview {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding: 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 9px;
+  background: #f8fafc;
+}
+
+.claim-ot-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+/* Upload boxes */
+.claim-upload-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-height: 76px;
+  padding: 0.75rem;
+  border: 1px dashed #cbd5e1;
+  border-radius: 9px;
+  background: #fafcff;
+  transition:
+    border-color 0.2s,
+    background 0.2s;
+}
+
+.claim-upload-box:hover {
+  border-color: #93c5fd;
+  background: #f8fbff;
+}
+
+.claim-upload-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  border-radius: 9px;
+  background: #fff7ed;
+  color: #ea580c;
+}
+
+.claim-upload-icon--blue {
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+:host ::ng-deep .claim-upload-button {
+  flex-shrink: 0;
+  border-radius: 7px;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.claim-upload-box p {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 220px;
+}
+
+/* Meal allowance */
+.claim-meal-rate {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  padding: 0.7rem 0.85rem;
+  border-radius: 8px;
+  background: #f0fdf4;
+  color: #15803d;
+  font-size: 0.75rem;
+}
+
+/* Footer */
+.claim-form-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+  padding: 1rem 1.25rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #fff;
+}
+
+:host ::ng-deep .claim-cancel-button,
+:host ::ng-deep .claim-submit-button {
+  min-width: 125px;
+  justify-content: center;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+:host ::ng-deep .claim-submit-button {
+  background: #2563eb;
+  border-color: #2563eb;
+}
+
+:host ::ng-deep .claim-submit-button:hover {
+  background: #1d4ed8;
+  border-color: #1d4ed8;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .claim-apply-page {
+    padding: 1rem;
+  }
+
+  .claim-section-header {
+    padding: 1rem;
+  }
+
+  .claim-upload-box {
+    align-items: flex-start;
+  }
+
+  .claim-form-footer {
+    align-items: stretch;
+  }
+
+  .claim-form-footer > div:last-child {
+    width: 100%;
+  }
+
+  :host ::ng-deep .claim-cancel-button,
+  :host ::ng-deep .claim-submit-button {
+    width: 100%;
+  }
+}
+/* Claim select */
+:host ::ng-deep .claim-apply-page .claim-select {
+  width: 100%;
+}
+
+:host ::ng-deep .claim-apply-page .claim-select .p-select-label {
+  display: flex;
+  align-items: center;
+  min-height: 42px;
+  padding: 0.65rem 0.75rem;
+  color: #334155;
+  font-size: 0.8rem;
+}
+
+:host ::ng-deep .claim-apply-page .claim-select .p-select-dropdown {
+  width: 2.5rem;
+}
+
+:host ::ng-deep .claim-apply-page .claim-select:not(.p-disabled):hover {
+  border-color: #cbd5e1;
+}
+
+:host ::ng-deep .claim-apply-page .claim-select:not(.p-disabled).p-focus {
+  border-color: #93c5fd;
+  box-shadow: 0 0 0 3px rgb(59 130 246 / 10%);
+}
+
+:host ::ng-deep .claim-apply-page .claim-select .p-select-clear-icon {
+  color: #94a3b8;
+}

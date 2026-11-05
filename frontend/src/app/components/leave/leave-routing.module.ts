@@ -5,7 +5,6 @@ import { LeaveApprovals } from './leave-approvals/leave-approvals';
 import { LeaveDashboard } from './leave-dashboard/leave-dashboard';
 import { LeaveDetail } from './leave-detail/leave-detail';
 import { LeaveHistory } from './leave-history/leave-history';
-import { modulePermissionGuard } from '../../common/permission/module-permission.guard';
 
 const routes: Routes = [
   {
@@ -38,6 +37,7 @@ const routes: Routes = [
     // canActivate: [modulePermissionGuard],
     data: { moduleKey: 'leave-approvals' },
   },
+
   {
     path: ':id',
     component: LeaveDetail,

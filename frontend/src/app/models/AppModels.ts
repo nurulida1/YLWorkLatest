@@ -56,13 +56,10 @@ export interface SuperAdminDashboardDto {
   activeUsers: number;
   inactiveUsers: number;
   pendingApprovals: number;
-
   totalDepartments: number;
-
   totalInventoryItems: number;
   lowStockItems: number;
   faultyItems: number;
-
   pendingUsers: PendingUserDto[];
   activities: ActivityLogDto[];
 }

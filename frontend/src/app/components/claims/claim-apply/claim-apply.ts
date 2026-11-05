@@ -48,304 +48,801 @@ import { UserService } from '../../../services/userService.service';
     SelectModule,
     DatePickerModule,
   ],
+
   template: `
-    <div class="w-full min-h-screen bg-[#f4f6f8] p-6 flex flex-col gap-5">
-      <div class="flex items-center gap-1.5 text-sm text-gray-500">
-        <a routerLink="/claims" class="hover:text-blue-600">Claims</a>
-        <span>/</span>
-        <span class="text-gray-700 font-semibold">{{ editId ? 'Edit' : 'Apply' }}</span>
+    <div class="claim-apply-page min-h-screen bg-slate-50 p-4 sm:p-6 lg:p-8">
+      <!-- Breadcrumb -->
+      <div class="flex items-center gap-2 text-xs text-slate-400 mb-5">
+        <a routerLink="/claims" class="hover:text-blue-600 transition-colors">
+          Claims
+        </a>
+        <i class="pi pi-angle-right text-[10px]"></i>
+        <span class="font-medium text-slate-600">
+          {{ editId ? 'Edit claim' : 'Apply claim' }}
+        </span>
       </div>
 
-      <div class="bg-white rounded-lg shadow-sm p-5 flex flex-col gap-4" [formGroup]="form">
-        <h1 class="text-2xl font-bold m-0">{{ editId ? 'Edit claim' : 'Submit claim' }}</h1>
-
-        <div class="grid grid-cols-12 gap-4">
-          <div class="col-span-12 md:col-span-6 flex flex-col gap-1">
-            <label>Claim type</label>
-            <p-select
-              formControlName="claimType"
-              [options]="claimTypeOptions"
-              optionLabel="label"
-              optionValue="value"
-              appendTo="body"
-              styleClass="w-full"
-              (onChange)="onTypeChange()"
-            />
-          </div>
-          <div class="col-span-12 flex flex-col gap-1">
-            <label>Remarks</label>
-            <textarea pTextarea formControlName="remarks" rows="2" class="w-full"></textarea>
-          </div>
+      <!-- Page header -->
+      <div
+        class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6"
+      >
+        <div>
+          <h1
+            class="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 m-0"
+          >
+            {{ editId ? 'Edit claim' : 'Apply for a claim' }}
+          </h1>
+          <p class="text-sm text-slate-500 mt-2 mb-0">
+            {{
+              editId
+                ? 'Update your pending claim details before resubmitting.'
+                : 'Complete the information below to submit your reimbursement request.'
+            }}
+          </p>
         </div>
 
+        <div class="flex items-center gap-2">
+          <span class="claim-form-status">
+            <i class="pi pi-file-edit"></i>
+            {{ editId ? 'Editing draft' : 'New application' }}
+          </span>
+        </div>
+      </div>
+
+      <form
+        [formGroup]="form"
+        (ngSubmit)="submit()"
+        class="flex flex-col gap-5"
+      >
+        <!-- Claim information -->
+        <section class="claim-form-card">
+          <div class="claim-section-header">
+            <div class="flex items-center gap-3">
+              <div class="claim-section-icon">
+                <i class="pi pi-file"></i>
+              </div>
+              <div>
+                <h2 class="claim-section-title">Claim information</h2>
+                <p class="claim-section-description">
+                  Select the claim category and provide general information.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="p-5 sm:p-6 grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div class="flex flex-col gap-2">
+              <label class="claim-field-label">
+                Claim type <span class="text-red-500">*</span>
+              </label>
+              <p-select
+                formControlName="claimType"
+                [options]="claimTypeOptions"
+                optionLabel="label"
+                optionValue="value"
+                placeholder="Select claim type"
+                appendTo="body"
+                styleClass="w-full claim-select"
+                (onChange)="onTypeChange()"
+              />
+            </div>
+
+            <div class="flex flex-col gap-2 md:col-span-2">
+              <label class="claim-field-label">Remarks</label>
+              <textarea
+                pTextarea
+                formControlName="remarks"
+                rows="3"
+                class="w-full claim-textarea"
+                placeholder="Provide any additional information about this claim..."
+              ></textarea>
+              <span class="claim-field-hint">
+                Optional. Include any details that may help the approver
+                understand your request.
+              </span>
+            </div>
+          </div>
+        </section>
+
+        <!-- Outstation trip information -->
         @if (form.value.claimType === 'OutstationTravel') {
-          <div class="grid grid-cols-12 gap-4 border-t pt-4">
-            <div class="col-span-12 md:col-span-4 flex flex-col gap-1">
-              <label>Destination</label>
-              <input pInputText formControlName="destination" class="w-full" />
+          <section class="claim-form-card">
+            <div class="claim-section-header">
+              <div class="flex items-center gap-3">
+                <div class="claim-section-icon claim-section-icon--purple">
+                  <i class="pi pi-map-marker"></i>
+                </div>
+                <div>
+                  <h2 class="claim-section-title">Trip information</h2>
+                  <p class="claim-section-description">
+                    Provide the destination and travel period.
+                  </p>
+                </div>
+              </div>
             </div>
-            <div class="col-span-12 md:col-span-4 flex flex-col gap-1">
-              <label>Trip start</label>
-              <p-datepicker formControlName="tripStartDate" dateFormat="dd/mm/yy" [showIcon]="true" appendTo="body" styleClass="w-full" />
-            </div>
-            <div class="col-span-12 md:col-span-4 flex flex-col gap-1">
-              <label>Trip end</label>
-              <p-datepicker formControlName="tripEndDate" dateFormat="dd/mm/yy" [showIcon]="true" appendTo="body" styleClass="w-full" />
-            </div>
-          </div>
-        }
 
-        <div class="flex items-center justify-between border-t pt-4">
-          <h2 class="text-lg font-semibold m-0">Line items</h2>
-          <p-button label="Add line" icon="pi pi-plus" size="small" (onClick)="addLine()" />
-        </div>
-
-        <div formArrayName="lineItems" class="flex flex-col gap-4">
-          @for (ctrl of lineItems.controls; track $index; let i = $index) {
-            <div class="border rounded-lg p-4 grid grid-cols-12 gap-3" [formGroupName]="i">
-              <div class="col-span-12 flex justify-between items-center">
-                <span class="font-medium text-sm text-gray-600">Line {{ i + 1 }}</span>
-                <p-button
-                  icon="pi pi-trash"
-                  severity="danger"
-                  [text]="true"
-                  size="small"
-                  (onClick)="removeLine(i)"
-                  [disabled]="lineItems.length <= 1"
+            <div class="p-5 sm:p-6 grid grid-cols-1 md:grid-cols-3 gap-5">
+              <div class="flex flex-col gap-2">
+                <label class="claim-field-label">
+                  Destination <span class="text-red-500">*</span>
+                </label>
+                <input
+                  pInputText
+                  formControlName="destination"
+                  class="w-full"
+                  placeholder="Enter destination"
                 />
               </div>
 
-              @if (form.value.claimType === 'MonthlyReimbursement') {
-                <div class="col-span-12 md:col-span-4 flex flex-col gap-1">
-                  <label>Category</label>
-                  <p-select formControlName="category" [options]="categoryOptions" optionLabel="label" optionValue="value" appendTo="body" styleClass="w-full" (onChange)="onMedicalDraftChanged()" />
-                </div>
-                <div class="col-span-12 md:col-span-4 flex flex-col gap-1">
-                  <label>Purchase date</label>
-                  <p-datepicker formControlName="purchaseDate" dateFormat="dd/mm/yy" [showIcon]="true" appendTo="body" styleClass="w-full" />
-                </div>
-                <div class="col-span-12 md:col-span-4 flex flex-col gap-1">
-                  <label>Amount (RM)</label>
-                  <p-inputNumber formControlName="amount" mode="decimal" [minFractionDigits]="2" styleClass="w-full" (onInput)="onMedicalDraftChanged()" />
-                </div>
-                @if (ctrl.value.category === 'Medical' && medicalBalance) {
-                  <div
-                    class="col-span-12 text-sm rounded-md bg-blue-50 border border-blue-100 px-3 py-2 text-blue-900"
-                  >
-                    Medical balance ({{ medicalBalance.year }}):
-                    <span class="font-medium"
-                      >RM {{ medicalRemainingAfterDraft | number: '1.2-2' }} remaining</span
-                    >
-                    of RM {{ medicalBalance.annualLimit | number: '1.2-2' }}
-                    @if (medicalBalance.isProrated) {
-                      <span class="text-blue-700"> (pro-rated)</span>
-                    }
-                    · Max RM {{ medicalBalance.perReceiptLimit | number: '1.2-2' }} per receipt
-                  </div>
-                }
-                <div class="col-span-12 flex flex-col gap-1">
-                  <label>Description</label>
-                  <input pInputText formControlName="description" class="w-full" />
-                </div>
-                <div class="col-span-12 md:col-span-6 flex flex-col gap-1">
-                  <label>Receipt <span class="text-red-500">*</span></label>
-                  <div class="flex flex-row items-center gap-3">
-                    <input
-                      #lineReceiptFile
-                      type="file"
-                      accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
-                      (change)="onLineReceiptSelected(i, $event)"
-                      hidden
-                    />
-                    <p-button
-                      [label]="lineDocuments[i].receipt ? 'Reupload' : 'Upload'"
-                      severity="secondary"
-                      icon="pi pi-upload"
-                      styleClass="border-gray-200!"
-                      size="small"
-                      (onClick)="lineReceiptFile.click()"
-                    />
-                    @if (lineDocuments[i].receipt) {
-                      <div
-                        class="bg-gray-100 border border-gray-200 rounded-lg px-3 py-2 text-sm flex items-center gap-2"
-                      >
-                        <i class="pi pi-file text-yellow-600!"></i>
-                        <span class="truncate max-w-[220px]">{{
-                          lineDocuments[i].receipt!.name
-                        }}</span>
-                      </div>
-                    }
-                  </div>
-                </div>
-                <div class="col-span-12 md:col-span-6 flex flex-col gap-1">
-                  <label>E-invoice <span class="text-gray-400">(optional)</span></label>
-                  <div class="flex flex-row items-center gap-3">
-                    <input
-                      #lineEinvoiceFile
-                      type="file"
-                      accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
-                      (change)="onLineEinvoiceSelected(i, $event)"
-                      hidden
-                    />
-                    <p-button
-                      [label]="lineDocuments[i].einvoice ? 'Reupload' : 'Upload'"
-                      severity="secondary"
-                      icon="pi pi-upload"
-                      styleClass="border-gray-200!"
-                      size="small"
-                      (onClick)="lineEinvoiceFile.click()"
-                    />
-                    @if (lineDocuments[i].einvoice) {
-                      <div
-                        class="bg-gray-100 border border-gray-200 rounded-lg px-3 py-2 text-sm flex items-center gap-2"
-                      >
-                        <i class="pi pi-file text-yellow-600!"></i>
-                        <span class="truncate max-w-[220px]">{{
-                          lineDocuments[i].einvoice!.name
-                        }}</span>
-                      </div>
-                    }
-                  </div>
-                </div>
-              }
+              <div class="flex flex-col gap-2">
+                <label class="claim-field-label">
+                  Trip start date <span class="text-red-500">*</span>
+                </label>
+                <p-datepicker
+                  formControlName="tripStartDate"
+                  dateFormat="dd/mm/yy"
+                  [showIcon]="true"
+                  iconDisplay="input"
+                  placeholder="Select start date"
+                  appendTo="body"
+                  styleClass="w-full"
+                />
+              </div>
 
-              @if (form.value.claimType === 'Overtime') {
-                <div class="col-span-12 md:col-span-3 flex flex-col gap-1">
-                  <label>Work date</label>
-                  <p-datepicker formControlName="workDate" dateFormat="dd/mm/yy" [showIcon]="true" appendTo="body" styleClass="w-full" />
-                </div>
-                <div class="col-span-12 md:col-span-3 flex flex-col gap-1">
-                  <label>Day type</label>
-                  <p-select formControlName="dayType" [options]="dayTypeOptions" optionLabel="label" optionValue="value" appendTo="body" styleClass="w-full" (onChange)="previewOt(i)" />
-                </div>
-                <div class="col-span-12 md:col-span-3 flex flex-col gap-1">
-                  <label>Hours</label>
-                  <p-inputNumber formControlName="hours" mode="decimal" [minFractionDigits]="1" [maxFractionDigits]="2" styleClass="w-full" (onInput)="previewOt(i)" />
-                </div>
-                <div class="col-span-12 md:col-span-3 flex flex-col gap-1">
-                  <label>Est. amount</label>
-                  <input pInputText class="w-full" [value]="otPreviews[i] != null ? ('RM ' + (otPreviews[i] | number:'1.2-2')) : '—'" [readonly]="true" />
-                </div>
-                <div class="col-span-12 flex flex-col gap-1">
-                  <label>Description</label>
-                  <input pInputText formControlName="description" class="w-full" />
-                </div>
-              }
-
-              @if (form.value.claimType === 'OutstationTravel') {
-                <div class="col-span-12 md:col-span-3 flex flex-col gap-1">
-                  <label>Line kind</label>
-                  <p-select formControlName="lineKind" [options]="outstationKindOptions" optionLabel="label" optionValue="value" appendTo="body" styleClass="w-full" />
-                </div>
-
-                @if (ctrl.value.lineKind === 'Mileage') {
-                  <div class="col-span-12 md:col-span-3 flex flex-col gap-1">
-                    <label>Vehicle</label>
-                    <p-select formControlName="vehicleType" [options]="vehicleOptions" optionLabel="label" optionValue="value" appendTo="body" styleClass="w-full" />
-                  </div>
-                  <div class="col-span-12 md:col-span-3 flex flex-col gap-1">
-                    <label>Kilometers</label>
-                    <p-inputNumber formControlName="kilometers" mode="decimal" [minFractionDigits]="1" styleClass="w-full" />
-                  </div>
-                }
-
-                @if (ctrl.value.lineKind === 'Expense') {
-                  <div class="col-span-12 md:col-span-3 flex flex-col gap-1">
-                    <label>Amount (RM)</label>
-                    <p-inputNumber formControlName="amount" mode="decimal" [minFractionDigits]="2" styleClass="w-full" />
-                  </div>
-                  <div class="col-span-12 md:col-span-3 flex flex-col gap-1">
-                    <label>Purchase date</label>
-                    <p-datepicker formControlName="purchaseDate" dateFormat="dd/mm/yy" [showIcon]="true" appendTo="body" styleClass="w-full" />
-                  </div>
-                  <div class="col-span-12 md:col-span-6 flex flex-col gap-1">
-                    <label>Receipt <span class="text-red-500">*</span></label>
-                    <div class="flex flex-row items-center gap-3">
-                      <input
-                        #expenseReceiptFile
-                        type="file"
-                        accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
-                        (change)="onLineReceiptSelected(i, $event)"
-                        hidden
-                      />
-                      <p-button
-                        [label]="lineDocuments[i].receipt ? 'Reupload' : 'Upload'"
-                        severity="secondary"
-                        icon="pi pi-upload"
-                        styleClass="border-gray-200!"
-                        size="small"
-                        (onClick)="expenseReceiptFile.click()"
-                      />
-                      @if (lineDocuments[i].receipt) {
-                        <div
-                          class="bg-gray-100 border border-gray-200 rounded-lg px-3 py-2 text-sm flex items-center gap-2"
-                        >
-                          <i class="pi pi-file text-yellow-600!"></i>
-                          <span class="truncate max-w-[220px]">{{
-                            lineDocuments[i].receipt!.name
-                          }}</span>
-                        </div>
-                      }
-                    </div>
-                  </div>
-                  <div class="col-span-12 md:col-span-6 flex flex-col gap-1">
-                    <label>E-invoice <span class="text-gray-400">(optional)</span></label>
-                    <div class="flex flex-row items-center gap-3">
-                      <input
-                        #expenseEinvoiceFile
-                        type="file"
-                        accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
-                        (change)="onLineEinvoiceSelected(i, $event)"
-                        hidden
-                      />
-                      <p-button
-                        [label]="lineDocuments[i].einvoice ? 'Reupload' : 'Upload'"
-                        severity="secondary"
-                        icon="pi pi-upload"
-                        styleClass="border-gray-200!"
-                        size="small"
-                        (onClick)="expenseEinvoiceFile.click()"
-                      />
-                      @if (lineDocuments[i].einvoice) {
-                        <div
-                          class="bg-gray-100 border border-gray-200 rounded-lg px-3 py-2 text-sm flex items-center gap-2"
-                        >
-                          <i class="pi pi-file text-yellow-600!"></i>
-                          <span class="truncate max-w-[220px]">{{
-                            lineDocuments[i].einvoice!.name
-                          }}</span>
-                        </div>
-                      }
-                    </div>
-                  </div>
-                }
-
-                @if (ctrl.value.lineKind === 'MealAllowance') {
-                  <div class="col-span-12 md:col-span-3 flex flex-col gap-1">
-                    <label>Meal days</label>
-                    <p-inputNumber formControlName="mealDays" [min]="1" styleClass="w-full" />
-                  </div>
-                  <div class="col-span-12 md:col-span-6 text-sm text-gray-500 self-end pb-2">
-                    Rate RM {{ mealRate | number:'1.2-2' }}/day (optional claim)
-                  </div>
-                }
-
-                <div class="col-span-12 flex flex-col gap-1">
-                  <label>Description</label>
-                  <input pInputText formControlName="description" class="w-full" />
-                </div>
-              }
+              <div class="flex flex-col gap-2">
+                <label class="claim-field-label">
+                  Trip end date <span class="text-red-500">*</span>
+                </label>
+                <p-datepicker
+                  formControlName="tripEndDate"
+                  dateFormat="dd/mm/yy"
+                  [showIcon]="true"
+                  iconDisplay="input"
+                  placeholder="Select end date"
+                  appendTo="body"
+                  styleClass="w-full"
+                />
+              </div>
             </div>
-          }
-        </div>
+          </section>
+        }
 
-        <div class="flex justify-end gap-2 pt-2">
-          <p-button label="Cancel" severity="secondary" [outlined]="true" routerLink="/claims" />
-          <p-button label="Submit" icon="pi pi-send" (onClick)="submit()" [loading]="saving" />
+        <!-- Line items -->
+        <section class="claim-form-card">
+          <div class="claim-section-header">
+            <div
+              class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
+            >
+              <div class="flex items-center gap-3">
+                <div class="claim-section-icon claim-section-icon--green">
+                  <i class="pi pi-list"></i>
+                </div>
+                <div>
+                  <h2 class="claim-section-title">Claim line items</h2>
+                  <p class="claim-section-description">
+                    Add the expenses or details included in this claim.
+                  </p>
+                </div>
+              </div>
+
+              <p-button
+                label="Add line item"
+                icon="pi pi-plus"
+                size="small"
+                severity="secondary"
+                [outlined]="true"
+                styleClass="claim-add-line-button"
+                (onClick)="addLine()"
+              />
+            </div>
+          </div>
+
+          <div formArrayName="lineItems" class="p-5 sm:p-6 flex flex-col gap-5">
+            @for (ctrl of lineItems.controls; track $index; let i = $index) {
+              <div class="claim-line-card" [formGroupName]="i">
+                <!-- Line heading -->
+                <div class="claim-line-header">
+                  <div class="flex items-center gap-3">
+                    <div class="claim-line-number">{{ i + 1 }}</div>
+                    <div>
+                      <h3 class="text-sm font-bold text-slate-800 m-0">
+                        Line item {{ i + 1 }}
+                      </h3>
+                      <p class="text-xs text-slate-400 mt-1 mb-0">
+                        {{
+                          form.value.claimType === 'MonthlyReimbursement'
+                            ? 'Reimbursement details'
+                            : form.value.claimType === 'Overtime'
+                              ? 'Overtime details'
+                              : 'Travel expense details'
+                        }}
+                      </p>
+                    </div>
+                  </div>
+
+                  <p-button
+                    icon="pi pi-trash"
+                    severity="danger"
+                    [text]="true"
+                    [rounded]="true"
+                    size="small"
+                    pTooltip="Remove line item"
+                    (onClick)="removeLine(i)"
+                    [disabled]="lineItems.length <= 1"
+                  />
+                </div>
+
+                <div
+                  class="p-4 sm:p-5 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5"
+                >
+                  <!-- MONTHLY REIMBURSEMENT -->
+                  @if (form.value.claimType === 'MonthlyReimbursement') {
+                    <div class="flex flex-col gap-2">
+                      <label class="claim-field-label">
+                        Category <span class="text-red-500">*</span>
+                      </label>
+                      <p-select
+                        formControlName="category"
+                        [options]="categoryOptions"
+                        optionLabel="label"
+                        optionValue="value"
+                        placeholder="Select category"
+                        appendTo="body"
+                        styleClass="w-full claim-select"
+                        (onChange)="onMedicalDraftChanged()"
+                      />
+                    </div>
+
+                    <div class="flex flex-col gap-2">
+                      <label class="claim-field-label">
+                        Purchase date <span class="text-red-500">*</span>
+                      </label>
+                      <p-datepicker
+                        formControlName="purchaseDate"
+                        dateFormat="dd/mm/yy"
+                        [showIcon]="true"
+                        iconDisplay="input"
+                        placeholder="Select date"
+                        appendTo="body"
+                        styleClass="w-full"
+                      />
+                    </div>
+
+                    <div class="flex flex-col gap-2">
+                      <label class="claim-field-label">
+                        Amount (RM) <span class="text-red-500">*</span>
+                      </label>
+                      <p-inputNumber
+                        formControlName="amount"
+                        mode="decimal"
+                        [min]="0"
+                        [minFractionDigits]="2"
+                        [maxFractionDigits]="2"
+                        placeholder="0.00"
+                        styleClass="w-full"
+                        (onInput)="onMedicalDraftChanged()"
+                      />
+                    </div>
+
+                    @if (ctrl.value.category === 'Medical' && medicalBalance) {
+                      <div
+                        class="md:col-span-2 xl:col-span-3 claim-medical-info"
+                      >
+                        <div class="flex items-start gap-3">
+                          <i class="pi pi-info-circle mt-0.5"></i>
+                          <div class="flex-1">
+                            <p class="text-sm font-semibold m-0">
+                              Medical reimbursement balance ({{
+                                medicalBalance.year
+                              }})
+                            </p>
+                            <div
+                              class="flex flex-wrap gap-x-5 gap-y-2 mt-2 text-xs"
+                            >
+                              <span>
+                                Remaining:
+                                <strong>
+                                  RM
+                                  {{
+                                    medicalRemainingAfterDraft | number: '1.2-2'
+                                  }}
+                                </strong>
+                              </span>
+                              <span>
+                                Annual limit:
+                                <strong>
+                                  RM
+                                  {{
+                                    medicalBalance.annualLimit | number: '1.2-2'
+                                  }}
+                                </strong>
+                              </span>
+                              <span>
+                                Per receipt:
+                                <strong>
+                                  RM
+                                  {{
+                                    medicalBalance.perReceiptLimit
+                                      | number: '1.2-2'
+                                  }}
+                                </strong>
+                              </span>
+                            </div>
+                            @if (medicalBalance.isProrated) {
+                              <p class="text-xs mt-2 mb-0">
+                                <i class="pi pi-info-circle mr-1"></i>
+                                Your annual medical limit is pro-rated.
+                              </p>
+                            }
+                          </div>
+                        </div>
+                      </div>
+                    }
+
+                    <div
+                      class="md:col-span-2 xl:col-span-3 flex flex-col gap-2"
+                    >
+                      <label class="claim-field-label">Description</label>
+                      <input
+                        pInputText
+                        formControlName="description"
+                        class="w-full"
+                        placeholder="Describe the item or expense"
+                      />
+                    </div>
+
+                    <!-- Monthly receipt -->
+                    <div
+                      class="md:col-span-2 xl:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-4"
+                    >
+                      <div class="flex flex-col gap-2">
+                        <label class="claim-field-label">
+                          Receipt <span class="text-red-500">*</span>
+                        </label>
+
+                        <input
+                          #lineReceiptFile
+                          type="file"
+                          accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
+                          (change)="onLineReceiptSelected(i, $event)"
+                          hidden
+                        />
+
+                        <div class="claim-upload-box">
+                          <div class="flex items-center gap-3 min-w-0">
+                            <div class="claim-upload-icon">
+                              <i class="pi pi-file-pdf"></i>
+                            </div>
+                            <div class="min-w-0">
+                              <p
+                                class="text-sm font-semibold text-slate-700 m-0"
+                              >
+                                {{
+                                  lineDocuments[i].receipt
+                                    ? lineDocuments[i].receipt!.name
+                                    : 'No receipt selected'
+                                }}
+                              </p>
+                              <p class="text-xs text-slate-400 mt-1 mb-0">
+                                PDF, JPG or PNG
+                              </p>
+                            </div>
+                          </div>
+
+                          <p-button
+                            [label]="
+                              lineDocuments[i].receipt ? 'Change' : 'Upload'
+                            "
+                            severity="secondary"
+                            [outlined]="true"
+                            icon="pi pi-upload"
+                            size="small"
+                            styleClass="claim-upload-button"
+                            (onClick)="lineReceiptFile.click()"
+                          />
+                        </div>
+                      </div>
+
+                      <div class="flex flex-col gap-2">
+                        <label class="claim-field-label">
+                          E-invoice
+                          <span class="text-slate-400 font-normal"
+                            >(Optional)</span
+                          >
+                        </label>
+
+                        <input
+                          #lineEinvoiceFile
+                          type="file"
+                          accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
+                          (change)="onLineEinvoiceSelected(i, $event)"
+                          hidden
+                        />
+
+                        <div class="claim-upload-box">
+                          <div class="flex items-center gap-3 min-w-0">
+                            <div
+                              class="claim-upload-icon claim-upload-icon--blue"
+                            >
+                              <i class="pi pi-file"></i>
+                            </div>
+                            <div class="min-w-0">
+                              <p
+                                class="text-sm font-semibold text-slate-700 m-0"
+                              >
+                                {{
+                                  lineDocuments[i].einvoice
+                                    ? lineDocuments[i].einvoice!.name
+                                    : 'No e-invoice selected'
+                                }}
+                              </p>
+                              <p class="text-xs text-slate-400 mt-1 mb-0">
+                                PDF, JPG or PNG
+                              </p>
+                            </div>
+                          </div>
+
+                          <p-button
+                            [label]="
+                              lineDocuments[i].einvoice ? 'Change' : 'Upload'
+                            "
+                            severity="secondary"
+                            [outlined]="true"
+                            icon="pi pi-upload"
+                            size="small"
+                            styleClass="claim-upload-button"
+                            (onClick)="lineEinvoiceFile.click()"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  }
+
+                  <!-- OVERTIME -->
+                  @if (form.value.claimType === 'Overtime') {
+                    <div class="flex flex-col gap-2">
+                      <label class="claim-field-label">
+                        Work date <span class="text-red-500">*</span>
+                      </label>
+                      <p-datepicker
+                        formControlName="workDate"
+                        dateFormat="dd/mm/yy"
+                        [showIcon]="true"
+                        iconDisplay="input"
+                        placeholder="Select work date"
+                        appendTo="body"
+                        styleClass="w-full"
+                      />
+                    </div>
+
+                    <div class="flex flex-col gap-2">
+                      <label class="claim-field-label">
+                        Day type <span class="text-red-500">*</span>
+                      </label>
+                      <p-select
+                        formControlName="dayType"
+                        [options]="dayTypeOptions"
+                        optionLabel="label"
+                        optionValue="value"
+                        placeholder="Select day type"
+                        appendTo="body"
+                        styleClass="w-full"
+                        (onChange)="previewOt(i)"
+                      />
+                    </div>
+
+                    <div class="flex flex-col gap-2">
+                      <label class="claim-field-label">
+                        Hours <span class="text-red-500">*</span>
+                      </label>
+                      <p-inputNumber
+                        formControlName="hours"
+                        mode="decimal"
+                        [min]="0"
+                        [minFractionDigits]="1"
+                        [maxFractionDigits]="2"
+                        placeholder="Enter hours"
+                        styleClass="w-full"
+                        (onInput)="previewOt(i)"
+                      />
+                    </div>
+
+                    <div class="md:col-span-2 xl:col-span-3 claim-ot-preview">
+                      <div class="flex items-center gap-3">
+                        <div class="claim-ot-icon">
+                          <i class="pi pi-calculator"></i>
+                        </div>
+                        <div>
+                          <p class="text-xs text-slate-500 m-0">
+                            Estimated overtime amount
+                          </p>
+                          <p
+                            class="text-xl font-bold text-slate-900 mt-1 mb-0 tabular-nums"
+                          >
+                            {{
+                              otPreviews[i] != null
+                                ? 'RM ' + (otPreviews[i] | number: '1.2-2')
+                                : '—'
+                            }}
+                          </p>
+                        </div>
+                      </div>
+                      <span class="text-xs text-slate-400">
+                        Calculated based on your selected day type and hours.
+                      </span>
+                    </div>
+
+                    <div
+                      class="md:col-span-2 xl:col-span-3 flex flex-col gap-2"
+                    >
+                      <label class="claim-field-label">Description</label>
+                      <input
+                        pInputText
+                        formControlName="description"
+                        class="w-full"
+                        placeholder="Additional overtime details"
+                      />
+                    </div>
+                  }
+
+                  <!-- OUTSTATION -->
+                  @if (form.value.claimType === 'OutstationTravel') {
+                    <div class="flex flex-col gap-2">
+                      <label class="claim-field-label">
+                        Expense type <span class="text-red-500">*</span>
+                      </label>
+                      <p-select
+                        formControlName="lineKind"
+                        [options]="outstationKindOptions"
+                        optionLabel="label"
+                        optionValue="value"
+                        placeholder="Select expense type"
+                        appendTo="body"
+                        styleClass="w-full"
+                      />
+                    </div>
+
+                    @if (ctrl.value.lineKind === 'Mileage') {
+                      <div class="flex flex-col gap-2">
+                        <label class="claim-field-label">
+                          Vehicle <span class="text-red-500">*</span>
+                        </label>
+                        <p-select
+                          formControlName="vehicleType"
+                          [options]="vehicleOptions"
+                          optionLabel="label"
+                          optionValue="value"
+                          placeholder="Select vehicle"
+                          appendTo="body"
+                          styleClass="w-full"
+                        />
+                      </div>
+
+                      <div class="flex flex-col gap-2">
+                        <label class="claim-field-label">
+                          Distance (KM) <span class="text-red-500">*</span>
+                        </label>
+                        <p-inputNumber
+                          formControlName="kilometers"
+                          mode="decimal"
+                          [min]="0"
+                          [minFractionDigits]="1"
+                          placeholder="Enter distance"
+                          styleClass="w-full"
+                        />
+                      </div>
+                    }
+
+                    @if (ctrl.value.lineKind === 'Expense') {
+                      <div class="flex flex-col gap-2">
+                        <label class="claim-field-label">
+                          Amount (RM) <span class="text-red-500">*</span>
+                        </label>
+                        <p-inputNumber
+                          formControlName="amount"
+                          mode="decimal"
+                          [min]="0"
+                          [minFractionDigits]="2"
+                          [maxFractionDigits]="2"
+                          placeholder="0.00"
+                          styleClass="w-full"
+                        />
+                      </div>
+
+                      <div class="flex flex-col gap-2">
+                        <label class="claim-field-label">
+                          Purchase date <span class="text-red-500">*</span>
+                        </label>
+                        <p-datepicker
+                          formControlName="purchaseDate"
+                          dateFormat="dd/mm/yy"
+                          [showIcon]="true"
+                          iconDisplay="input"
+                          placeholder="Select date"
+                          appendTo="body"
+                          styleClass="w-full"
+                        />
+                      </div>
+
+                      <div
+                        class="md:col-span-2 xl:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-4"
+                      >
+                        <div class="flex flex-col gap-2">
+                          <label class="claim-field-label">
+                            Receipt <span class="text-red-500">*</span>
+                          </label>
+                          <input
+                            #expenseReceiptFile
+                            type="file"
+                            accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
+                            (change)="onLineReceiptSelected(i, $event)"
+                            hidden
+                          />
+
+                          <div class="claim-upload-box">
+                            <div class="flex items-center gap-3 min-w-0">
+                              <div class="claim-upload-icon">
+                                <i class="pi pi-file-pdf"></i>
+                              </div>
+                              <div class="min-w-0">
+                                <p
+                                  class="text-sm font-semibold text-slate-700 m-0"
+                                >
+                                  {{
+                                    lineDocuments[i].receipt
+                                      ? lineDocuments[i].receipt!.name
+                                      : 'No receipt selected'
+                                  }}
+                                </p>
+                                <p class="text-xs text-slate-400 mt-1 mb-0">
+                                  PDF, JPG or PNG
+                                </p>
+                              </div>
+                            </div>
+                            <p-button
+                              [label]="
+                                lineDocuments[i].receipt ? 'Change' : 'Upload'
+                              "
+                              severity="secondary"
+                              [outlined]="true"
+                              icon="pi pi-upload"
+                              size="small"
+                              styleClass="claim-upload-button"
+                              (onClick)="expenseReceiptFile.click()"
+                            />
+                          </div>
+                        </div>
+
+                        <div class="flex flex-col gap-2">
+                          <label class="claim-field-label">
+                            E-invoice
+                            <span class="text-slate-400 font-normal"
+                              >(Optional)</span
+                            >
+                          </label>
+                          <input
+                            #expenseEinvoiceFile
+                            type="file"
+                            accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
+                            (change)="onLineEinvoiceSelected(i, $event)"
+                            hidden
+                          />
+
+                          <div class="claim-upload-box">
+                            <div class="flex items-center gap-3 min-w-0">
+                              <div
+                                class="claim-upload-icon claim-upload-icon--blue"
+                              >
+                                <i class="pi pi-file"></i>
+                              </div>
+                              <div class="min-w-0">
+                                <p
+                                  class="text-sm font-semibold text-slate-700 m-0"
+                                >
+                                  {{
+                                    lineDocuments[i].einvoice
+                                      ? lineDocuments[i].einvoice!.name
+                                      : 'No e-invoice selected'
+                                  }}
+                                </p>
+                                <p class="text-xs text-slate-400 mt-1 mb-0">
+                                  PDF, JPG or PNG
+                                </p>
+                              </div>
+                            </div>
+                            <p-button
+                              [label]="
+                                lineDocuments[i].einvoice ? 'Change' : 'Upload'
+                              "
+                              severity="secondary"
+                              [outlined]="true"
+                              icon="pi pi-upload"
+                              size="small"
+                              styleClass="claim-upload-button"
+                              (onClick)="expenseEinvoiceFile.click()"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    }
+
+                    @if (ctrl.value.lineKind === 'MealAllowance') {
+                      <div class="flex flex-col gap-2">
+                        <label class="claim-field-label">
+                          Meal days <span class="text-red-500">*</span>
+                        </label>
+                        <p-inputNumber
+                          formControlName="mealDays"
+                          [min]="1"
+                          [showButtons]="true"
+                          placeholder="Number of days"
+                          styleClass="w-full"
+                        />
+                      </div>
+
+                      <div class="md:col-span-2 flex items-center">
+                        <div class="claim-meal-rate">
+                          <i class="pi pi-info-circle"></i>
+                          Meal allowance rate:
+                          <strong
+                            >RM {{ mealRate | number: '1.2-2' }}/day</strong
+                          >
+                        </div>
+                      </div>
+                    }
+
+                    <div
+                      class="md:col-span-2 xl:col-span-3 flex flex-col gap-2"
+                    >
+                      <label class="claim-field-label">Description</label>
+                      <input
+                        pInputText
+                        formControlName="description"
+                        class="w-full"
+                        placeholder="Describe this travel expense"
+                      />
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        </section>
+
+        <!-- Form actions -->
+        <div class="claim-form-footer">
+          <div class="flex items-start gap-2 text-xs text-slate-500">
+            <i class="pi pi-info-circle mt-0.5"></i>
+            <span>
+              Please check all information and required attachments before
+              submitting.
+            </span>
+          </div>
+
+          <div
+            class="flex flex-col-reverse sm:flex-row items-stretch sm:items-center gap-2"
+          >
+            <p-button
+              label="Cancel"
+              severity="secondary"
+              [outlined]="true"
+              routerLink="/claims"
+              styleClass="claim-cancel-button"
+            />
+
+            <p-button
+              [label]="editId ? 'Save changes' : 'Submit claim'"
+              [icon]="editId ? 'pi pi-save' : 'pi pi-send'"
+              type="submit"
+              styleClass="claim-submit-button"
+              [loading]="saving"
+            />
+          </div>
         </div>
-      </div>
+      </form>
     </div>
   `,
+  styleUrl: './claim-apply.less',
 })
 export class ClaimApply implements OnInit {
   private readonly fb = inject(FormBuilder);
@@ -369,7 +866,10 @@ export class ClaimApply implements OnInit {
   private medicalBalanceLoaded = false;
 
   claimTypeOptions = [
-    { label: CLAIM_TYPE_LABELS['MonthlyReimbursement'], value: 'MonthlyReimbursement' },
+    {
+      label: CLAIM_TYPE_LABELS['MonthlyReimbursement'],
+      value: 'MonthlyReimbursement',
+    },
     { label: CLAIM_TYPE_LABELS['Overtime'], value: 'Overtime' },
     { label: CLAIM_TYPE_LABELS['OutstationTravel'], value: 'OutstationTravel' },
   ];
@@ -414,7 +914,10 @@ export class ClaimApply implements OnInit {
 
   get medicalRemainingAfterDraft(): number {
     if (!this.medicalBalance) return 0;
-    return Math.max(0, this.medicalBalance.remainingAmount - this.draftMedicalTotal);
+    return Math.max(
+      0,
+      this.medicalBalance.remainingAmount - this.draftMedicalTotal,
+    );
   }
 
   ngOnInit(): void {
@@ -446,7 +949,9 @@ export class ClaimApply implements OnInit {
               claimType: req.claimType,
               remarks: req.remarks,
               destination: req.destination ?? '',
-              tripStartDate: req.tripStartDate ? new Date(req.tripStartDate) : null,
+              tripStartDate: req.tripStartDate
+                ? new Date(req.tripStartDate)
+                : null,
               tripEndDate: req.tripEndDate ? new Date(req.tripEndDate) : null,
             });
             this.lineItems.clear();
@@ -455,7 +960,9 @@ export class ClaimApply implements OnInit {
                 this.fb.group({
                   lineKind: [line.lineKind],
                   category: [line.category],
-                  purchaseDate: [line.purchaseDate ? new Date(line.purchaseDate) : null],
+                  purchaseDate: [
+                    line.purchaseDate ? new Date(line.purchaseDate) : null,
+                  ],
                   amount: [line.amount],
                   description: [line.description],
                   workDate: [line.workDate ? new Date(line.workDate) : null],
@@ -563,11 +1070,16 @@ export class ClaimApply implements OnInit {
     if (this.medicalBalanceLoaded) return;
 
     const user = this.users.currentUser;
-    if (!user?.userId || this.form.value.claimType !== 'MonthlyReimbursement') return;
+    if (!user?.userId || this.form.value.claimType !== 'MonthlyReimbursement')
+      return;
 
     this.medicalBalanceLoaded = true;
     this.api
-      .getMedicalBalance(user.userId, new Date().getFullYear(), this.editId ?? undefined)
+      .getMedicalBalance(
+        user.userId,
+        new Date().getFullYear(),
+        this.editId ?? undefined,
+      )
       .subscribe({
         next: (balance) => {
           this.medicalBalance = balance;
@@ -636,7 +1148,10 @@ export class ClaimApply implements OnInit {
     if (!this.editId) {
       for (let i = 0; i < this.lineItems.controls.length; i++) {
         const line = this.lineItems.at(i).value;
-        if (this.lineRequiresReceipt(type, line) && !this.lineDocuments[i].receipt) {
+        if (
+          this.lineRequiresReceipt(type, line) &&
+          !this.lineDocuments[i].receipt
+        ) {
           this.messages.add({
             severity: 'warn',
             summary: 'Receipt required',
@@ -648,13 +1163,17 @@ export class ClaimApply implements OnInit {
     }
 
     const dto = this.buildDto(user.userId);
-    if (this.form.value.claimType === 'MonthlyReimbursement' && this.medicalBalance) {
+    if (
+      this.form.value.claimType === 'MonthlyReimbursement' &&
+      this.medicalBalance
+    ) {
       const medicalLines = this.lineItems.controls.filter(
         (c) => c.value.category === 'Medical',
       );
       if (medicalLines.length > 0) {
         if (this.draftMedicalTotal > this.medicalBalance.remainingAmount) {
-          const overBy = this.draftMedicalTotal - this.medicalBalance.remainingAmount;
+          const overBy =
+            this.draftMedicalTotal - this.medicalBalance.remainingAmount;
           this.messages.add({
             severity: 'warn',
             summary: 'Medical limit exceeded',
@@ -682,41 +1201,43 @@ export class ClaimApply implements OnInit {
       ? this.api.update(this.editId, dto)
       : this.api.submit(dto);
 
-    req$.pipe(finalize(() => {
-      this.saving = false;
-      this.loading.stop();
-      this.cdr.markForCheck();
-    })).subscribe({
-      next: async (res) => {
-        try {
-          await this.uploadLineDocuments(res.requestId, type);
-        } catch {
+    req$
+      .pipe(
+        finalize(() => {
+          this.saving = false;
+          this.loading.stop();
+          this.cdr.markForCheck();
+        }),
+      )
+      .subscribe({
+        next: async (res) => {
+          try {
+            await this.uploadLineDocuments(res.requestId, type);
+          } catch {
+            this.messages.add({
+              severity: 'warn',
+              summary: 'Claim saved',
+              detail:
+                'Claim submitted but document upload failed. You can retry from the detail page.',
+            });
+          }
           this.messages.add({
-            severity: 'warn',
-            summary: 'Claim saved',
-            detail: 'Claim submitted but document upload failed. You can retry from the detail page.',
+            severity: 'success',
+            summary: 'Submitted',
+            detail: 'Claim submitted successfully.',
           });
-        }
-        this.messages.add({
-          severity: 'success',
-          summary: 'Submitted',
-          detail: 'Claim submitted successfully.',
-        });
-        void this.router.navigate(['/claims', res.requestId]);
-      },
-      error: (err) => {
-        const status = err?.status as number | undefined;
-        const detail = this.claimErrorMessage(
-          err,
-          'Unable to submit claim.',
-        );
-        this.messages.add({
-          severity: status === 400 ? 'warn' : 'error',
-          summary: status === 400 ? 'Cannot submit claim' : 'Submit failed',
-          detail,
-        });
-      },
-    });
+          void this.router.navigate(['/claims', res.requestId]);
+        },
+        error: (err) => {
+          const status = err?.status as number | undefined;
+          const detail = this.claimErrorMessage(err, 'Unable to submit claim.');
+          this.messages.add({
+            severity: status === 400 ? 'warn' : 'error',
+            summary: status === 400 ? 'Cannot submit claim' : 'Submit failed',
+            detail,
+          });
+        },
+      });
   }
 
   private claimErrorMessage(err: unknown, fallback: string): string {
@@ -742,7 +1263,10 @@ export class ClaimApply implements OnInit {
     return false;
   }
 
-  private async uploadLineDocuments(requestId: string, type: ClaimType): Promise<void> {
+  private async uploadLineDocuments(
+    requestId: string,
+    type: ClaimType,
+  ): Promise<void> {
     for (let i = 0; i < this.lineItems.controls.length; i++) {
       const line = this.lineItems.at(i).value;
       if (!this.lineRequiresReceipt(type, line)) continue;
@@ -768,49 +1292,51 @@ export class ClaimApply implements OnInit {
     const toIso = (d: Date | null | undefined) =>
       d ? new Date(d).toISOString() : undefined;
 
-    const lineItems: CreateClaimLineItemDto[] = this.lineItems.controls.map((c) => {
-      const v = c.value;
-      if (type === 'MonthlyReimbursement') {
+    const lineItems: CreateClaimLineItemDto[] = this.lineItems.controls.map(
+      (c) => {
+        const v = c.value;
+        if (type === 'MonthlyReimbursement') {
+          return {
+            lineKind: 'MonthlyItem',
+            category: v.category,
+            purchaseDate: toIso(v.purchaseDate),
+            amount: Number(v.amount),
+            description: v.description ?? '',
+          };
+        }
+        if (type === 'Overtime') {
+          return {
+            lineKind: 'OvertimeItem',
+            workDate: toIso(v.workDate),
+            dayType: v.dayType,
+            hours: Number(v.hours),
+            description: v.description ?? '',
+          };
+        }
+        const kind = v.lineKind as string;
+        if (kind === 'Mileage') {
+          return {
+            lineKind: 'Mileage',
+            vehicleType: v.vehicleType,
+            kilometers: Number(v.kilometers),
+            description: v.description ?? '',
+          };
+        }
+        if (kind === 'MealAllowance') {
+          return {
+            lineKind: 'MealAllowance',
+            mealDays: Number(v.mealDays),
+            description: v.description ?? '',
+          };
+        }
         return {
-          lineKind: 'MonthlyItem',
-          category: v.category,
-          purchaseDate: toIso(v.purchaseDate),
+          lineKind: 'Expense',
           amount: Number(v.amount),
+          purchaseDate: toIso(v.purchaseDate),
           description: v.description ?? '',
         };
-      }
-      if (type === 'Overtime') {
-        return {
-          lineKind: 'OvertimeItem',
-          workDate: toIso(v.workDate),
-          dayType: v.dayType,
-          hours: Number(v.hours),
-          description: v.description ?? '',
-        };
-      }
-      const kind = v.lineKind as string;
-      if (kind === 'Mileage') {
-        return {
-          lineKind: 'Mileage',
-          vehicleType: v.vehicleType,
-          kilometers: Number(v.kilometers),
-          description: v.description ?? '',
-        };
-      }
-      if (kind === 'MealAllowance') {
-        return {
-          lineKind: 'MealAllowance',
-          mealDays: Number(v.mealDays),
-          description: v.description ?? '',
-        };
-      }
-      return {
-        lineKind: 'Expense',
-        amount: Number(v.amount),
-        purchaseDate: toIso(v.purchaseDate),
-        description: v.description ?? '',
-      };
-    });
+      },
+    );
 
     return {
       employeeId,
@@ -819,9 +1345,13 @@ export class ClaimApply implements OnInit {
       destination:
         type === 'OutstationTravel' ? this.form.value.destination : undefined,
       tripStartDate:
-        type === 'OutstationTravel' ? toIso(this.form.value.tripStartDate) : undefined,
+        type === 'OutstationTravel'
+          ? toIso(this.form.value.tripStartDate)
+          : undefined,
       tripEndDate:
-        type === 'OutstationTravel' ? toIso(this.form.value.tripEndDate) : undefined,
+        type === 'OutstationTravel'
+          ? toIso(this.form.value.tripEndDate)
+          : undefined,
       lineItems,
     };
   }

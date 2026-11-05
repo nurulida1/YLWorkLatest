@@ -1,3 +1,42 @@
-:host {
-  display: block;
+:host ::ng-deep .yl-user-dialog {
+  position: fixed !important;
+
+  left: 50% !important;
+  bottom: 0 !important;
+
+  transform: translateX(-50%) !important;
+
+  margin: 0 !important;
+
+  border-radius: 1.5rem 1.5rem 0 0 !important;
+}
+
+@media (min-width: 1024px) {
+  :host ::ng-deep .yl-user-dialog {
+    top: 50% !important;
+    bottom: auto !important;
+
+    transform: translate(-50%, -50%) !important;
+
+    border-radius: 1.5rem !important;
+  }
+}
+
+:host ::ng-deep .yl-user-dialog ::-webkit-scrollbar {
+  width: 5px;
+}
+
+:host ::ng-deep .yl-user-dialog ::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+:host ::ng-deep .yl-user-dialog ::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 999px;
+}
+
+@media (max-width: 640px) {
+  :host ::ng-deep .yl-user-dialog {
+    padding-bottom: env(safe-area-inset-bottom) !important;
+  }
 }

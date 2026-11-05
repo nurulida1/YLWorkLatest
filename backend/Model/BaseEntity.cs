@@ -20,6 +20,14 @@ namespace YLWorks.Model
         public Guid? ClientId { get; set; }
         public string? JobTitle { get; set; }
         public string? Email { get; set; }
+        public string? Brand { get; set; }
+        public string? Model { get; set; }
+        public decimal? Quantity { get; set; }
+        public string? Unit { get; set; }
+        public string? Status { get; set; }
+        public string? Category { get; set; }
+        public string? ItemCode { get; set; }
+        public string? Attachment { get; set; }
     }
 
     public class PagedResponse<T>

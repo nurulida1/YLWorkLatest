@@ -383,342 +383,929 @@ import { Textarea } from 'primeng/textarea';
       [modal]="true"
       [draggable]="false"
       [resizable]="false"
+      [dismissableMask]="true"
       closable="true"
       (onHide)="visible = false"
-      styleClass="!border-0 !rounded-xl !shadow-2xl bg-white w-[95%] sm:w-[85%] md:w-[70%] lg:w-[50%] max-h-[90vh] flex flex-col"
+      styleClass="
+    yl-user-dialog
+    !border-0
+    !p-0
+    !shadow-2xl
+    !bg-white
+    w-full!
+    sm:w-[95%]!
+    md:w-[90%]!
+    lg:w-[900px]!
+    xl:w-[1050px]!
+    2xl:w-[1150px]!
+    max-h-[94dvh]!
+    sm:max-h-[90dvh]!
+    !rounded-t-3xl
+    lg:!rounded-3xl
+    !overflow-hidden
+  "
     >
       <ng-template #header>
-        <div class="flex flex-col gap-1 pr-6">
-          <h2 class="text-xl font-bold text-gray-800 tracking-tight m-0">
-            {{ title }}
-          </h2>
-          <p class="text-sm font-normal text-gray-500 tracking-wide m-0">
-            Provide account details and assign roles or departmental units.
-            fields marked with <span class="text-red-500">*</span> are required.
-          </p>
+        <div class="w-full px-5 sm:px-6 pt-1">
+          <div
+            class="flex items-start justify-between gap-4 border-b border-gray-100 pb-3"
+          >
+            <div class="flex items-start gap-3 min-w-0">
+              <div
+                class="
+              shrink-0
+              w-11 h-11
+              sm:w-12 sm:h-12
+              rounded-2xl
+              bg-blue-50
+              border border-blue-100
+              flex items-center justify-center
+            "
+              >
+                <i class="pi pi-user-plus text-blue-600! text-lg!"></i>
+              </div>
+
+              <div class="min-w-0">
+                <div class="flex items-center gap-2">
+                  <h2
+                    class="
+                  text-lg
+                  sm:text-xl
+                  font-bold
+                  text-gray-900
+                  tracking-tight
+                  m-0
+                "
+                  >
+                    {{ title }}
+                  </h2>
+
+                  <span
+                    class="
+                  hidden
+                  sm:inline-flex
+                  px-2
+                  py-0.5
+                  rounded-full
+                  bg-blue-50
+                  text-blue-600
+                  text-[10px]
+                  font-bold
+                  uppercase
+                  tracking-wider
+                "
+                  >
+                    Employee
+                  </span>
+                </div>
+
+                <p
+                  class="
+                text-xs
+                sm:text-sm
+                text-gray-500
+                mt-1
+                leading-relaxed
+              "
+                >
+                  Create an employee account and configure their organisational
+                  access.
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
       </ng-template>
 
-      <div class="py-4 overflow-y-auto px-1" [formGroup]="FG">
-        <div class="grid grid-cols-12 gap-x-5 gap-y-4 tracking-wide text-sm">
-          <div class="col-span-12 md:col-span-6 flex flex-col gap-1.5">
-            <label
-              class="text-xs font-semibold text-gray-600 uppercase tracking-wider"
-              >Full Name <span class="text-red-500">*</span></label
+      <div
+        class="
+      min-h-0
+      overflow-y-auto
+      px-5
+      sm:px-6
+      py-5
+    "
+        [formGroup]="FG"
+      >
+        <div class="flex flex-col gap-8">
+          <section>
+            <div
+              class="flex items-center gap-3 mb-4 border-b border-gray-100 pb-3"
             >
-            <input
-              type="text"
-              pInputText
-              class="w-full py-2! px-3! border border-gray-300 rounded-md focus:border-blue-500 text-gray-800 text-sm!"
-              placeholder="e.g. John Doe"
-              formControlName="fullName"
-            />
-            <small
-              class="text-red-500 font-medium text-xs mt-0.5"
-              *ngIf="
-                FG.get('fullName')?.errors?.['required'] &&
-                FG.get('fullName')?.touched
+              <div
+                class="
+              shrink-0
+              w-8 h-8
+              rounded-lg
+              bg-blue-50
+              text-blue-600
+              flex items-center justify-center
+            "
+              >
+                <i class="pi pi-user text-sm"></i>
+              </div>
+
+              <div>
+                <h3 class="text-sm font-bold text-gray-800 m-0">
+                  Personal Information
+                </h3>
+
+                <p class="text-xs text-gray-400 mt-0.5">
+                  Basic employee information
+                </p>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-12 gap-x-5 gap-y-4">
+              <div
+                class="
+              col-span-12
+              md:col-span-6
+              flex flex-col gap-1.5
+            "
+              >
+                <label class="text-xs font-semibold text-gray-700">
+                  Full Name
+                  <span class="text-red-500">*</span>
+                </label>
+
+                <input
+                  type="text"
+                  pInputText
+                  class="
+                w-full!
+                h-10!
+                px-3!
+                border-gray-200!
+                rounded-xl!
+                bg-gray-50/50!
+                text-gray-800!
+                text-sm!
+                transition-all
+                focus:bg-white!
+                focus:border-blue-500!
+                focus:ring-2!
+                focus:ring-blue-100!
               "
-            >
-              Full Name is required.
-            </small>
-          </div>
+                  placeholder="e.g. John Doe"
+                  formControlName="fullName"
+                />
 
-          <div class="col-span-12 md:col-span-6 flex flex-col gap-1.5">
-            <label
-              class="text-xs font-semibold text-gray-600 uppercase tracking-wider"
-              >Display Name</label
-            >
-            <input
-              type="text"
-              pInputText
-              class="w-full py-2! px-3! border border-gray-300 rounded-md text-gray-800 text-sm!"
-              placeholder="e.g. Johnny"
-              formControlName="displayName"
-            />
-          </div>
+                <small
+                  class="text-red-500 font-medium text-xs"
+                  *ngIf="
+                    FG.get('fullName')?.errors?.['required'] &&
+                    FG.get('fullName')?.touched
+                  "
+                >
+                  Full Name is required.
+                </small>
+              </div>
 
-          <div class="col-span-12 md:col-span-6 flex flex-col gap-1.5">
-            <label
-              class="text-xs font-semibold text-gray-600 uppercase tracking-wider"
-              >Email Address <span class="text-red-500">*</span></label
-            >
-            <input
-              type="text"
-              pInputText
-              class="w-full py-2! px-3! border border-gray-300 rounded-md text-gray-800 text-sm!"
-              placeholder="name@company.com"
-              formControlName="email"
-            />
-            <small
-              class="text-red-500 font-medium text-xs mt-0.5"
-              *ngIf="FG.get('email')?.errors?.['email']"
-            >
-              Invalid email format.
-            </small>
-            <small
-              class="text-red-500 font-medium text-xs mt-0.5"
-              *ngIf="
-                FG.get('email')?.errors?.['required'] &&
-                FG.get('email')?.touched
+              <div
+                class="
+              col-span-12
+              md:col-span-6
+              flex flex-col gap-1.5
+            "
+              >
+                <label class="text-xs font-semibold text-gray-700">
+                  Display Name
+                </label>
+
+                <input
+                  type="text"
+                  pInputText
+                  class="
+                w-full!
+                h-10!
+                px-3!
+                border-gray-200!
+                rounded-xl!
+                bg-gray-50/50!
+                text-gray-800!
+                text-sm!
+                focus:bg-white!
+                focus:border-blue-500!
+                focus:ring-2!
+                focus:ring-blue-100!
               "
-            >
-              Email is required.
-            </small>
-          </div>
+                  placeholder="e.g. Johnny"
+                  formControlName="displayName"
+                />
+              </div>
 
-          <div class="col-span-12 md:col-span-6 flex flex-col gap-1.5">
-            <label
-              class="text-xs font-semibold text-gray-600 uppercase tracking-wider"
-              >Contact No</label
-            >
-            <input
-              type="text"
-              pInputText
-              class="w-full py-2! px-3! border border-gray-300 rounded-md text-gray-800 text-sm!"
-              placeholder="+60123456789"
-              formControlName="contactNo"
-            />
-            <small
-              class="text-red-500 font-medium text-xs mt-0.5"
-              *ngIf="
-                FG.get('contactNo')?.errors?.['required'] &&
-                FG.get('contactNo')?.touched
+              <div
+                class="
+              col-span-12
+              md:col-span-6
+              flex flex-col gap-1.5
+            "
+              >
+                <label class="text-xs font-semibold text-gray-700">
+                  Email Address
+                  <span class="text-red-500">*</span>
+                </label>
+
+                <input
+                  type="text"
+                  pInputText
+                  class="
+                w-full!
+                h-10!
+                px-3!
+                border-gray-200!
+                rounded-xl!
+                bg-gray-50/50!
+                text-gray-800!
+                text-sm!
+                focus:bg-white!
+                focus:border-blue-500!
+                focus:ring-2!
+                focus:ring-blue-100!
               "
-            >
-              Contact No is required
-            </small>
-          </div>
+                  placeholder="name@company.com"
+                  formControlName="email"
+                />
 
-          <div class="col-span-12 md:col-span-6 flex flex-col gap-1.5">
-            <label
-              class="text-xs font-semibold text-gray-600 uppercase tracking-wider"
-              >Job Title</label
-            >
-            <input
-              type="text"
-              pInputText
-              class="w-full py-2! px-3! border border-gray-300 rounded-md text-gray-800 text-sm!"
-              placeholder="e.g. Software Engineer"
-              formControlName="jobTitle"
-            />
-          </div>
+                <small
+                  class="text-red-500 font-medium text-xs"
+                  *ngIf="FG.get('email')?.errors?.['email']"
+                >
+                  Invalid email format.
+                </small>
 
-          <div class="col-span-12 md:col-span-6 flex flex-col gap-1.5">
-            <label
-              class="text-xs font-semibold text-gray-600 uppercase tracking-wider"
-              >Assigned Departments</label
-            >
-            <p-multiSelect
-              class="w-full"
-              appendTo="body"
-              styleClass="w-full! border border-gray-300 rounded-md text-gray-800 min-h-[38px] flex items-center"
-              [options]="departmentSelection"
-              formControlName="departmentIds"
-              placeholder="Select operational divisions"
-              display="chip"
-            ></p-multiSelect>
-          </div>
+                <small
+                  class="text-red-500 font-medium text-xs"
+                  *ngIf="
+                    FG.get('email')?.errors?.['required'] &&
+                    FG.get('email')?.touched
+                  "
+                >
+                  Email is required.
+                </small>
+              </div>
 
-          <div class="col-span-12 md:col-span-6 flex flex-col gap-1.5">
-            <label
-              class="text-xs font-semibold text-gray-600 uppercase tracking-wider"
-              >Reporting Managers (HOD)</label
-            >
-            <p-multiSelect
-              appendTo="body"
-              class="w-full"
-              styleClass="w-full! border border-gray-300 rounded-md text-gray-800 min-h-[38px] flex items-center"
-              formControlName="hodIds"
-              [options]="hodSelection || []"
-              [filter]="true"
-              placeholder="Select reporting managers"
-              display="chip"
-            ></p-multiSelect>
-          </div>
+              <div
+                class="
+              col-span-12
+              md:col-span-6
+              flex flex-col gap-1.5
+            "
+              >
+                <label class="text-xs font-semibold text-gray-700">
+                  Contact No
+                </label>
 
-          <div class="col-span-12 md:col-span-6 flex flex-col gap-1.5">
-            <label
-              class="text-xs font-semibold text-gray-600 uppercase tracking-wider"
-              >Joined Date</label
-            >
-            <p-datepicker
-              class="w-full"
-              showIcon="true"
-              appendTo="body"
-              styleClass="w-full! rounded-md text-gray-800 h-[38px]!"
-              inputStyleClass="h-[38px]! text-sm!"
-              dateFormat="dd/mm/yy"
-              placeholder="Select effective date"
-              formControlName="joinedDate"
-            ></p-datepicker>
-          </div>
-
-          <div class="col-span-12 md:col-span-6 flex flex-col gap-1.5">
-            <label
-              class="text-xs font-semibold text-gray-600 uppercase tracking-wider"
-              >Gender</label
-            >
-            <p-select
-              class="w-full"
-              appendTo="body"
-              styleClass="w-full! border border-gray-300 rounded-md text-gray-800 h-[38px] flex items-center"
-              [options]="[
-                { label: 'Male', value: 'Male' },
-                { label: 'Female', value: 'Female' },
-              ]"
-              formControlName="gender"
-            ></p-select>
-          </div>
-
-          <div class="col-span-12 md:col-span-6 flex flex-col gap-1.5">
-            <label
-              class="text-xs font-semibold text-gray-600 uppercase tracking-wider"
-              >Monthly Salary (RM)</label
-            >
-            <p-inputNumber
-              formControlName="monthlySalary"
-              mode="decimal"
-              [minFractionDigits]="2"
-              styleClass="w-full"
-              inputStyleClass="w-full py-2! px-3! border border-gray-300 rounded-md text-sm!"
-              placeholder="Used for overtime claims"
-            />
-          </div>
-
-          <div class="col-span-12 md:col-span-3 flex flex-col gap-1.5">
-            <label
-              class="text-xs font-semibold text-gray-600 uppercase tracking-wider"
-              >Work start (HH:mm)</label
-            >
-            <input
-              type="text"
-              pInputText
-              class="w-full py-2! px-3! border border-gray-300 rounded-md text-sm!"
-              placeholder="09:00"
-              formControlName="workStartTime"
-            />
-          </div>
-          <div class="col-span-12 md:col-span-3 flex flex-col gap-1.5">
-            <label
-              class="text-xs font-semibold text-gray-600 uppercase tracking-wider"
-              >Work end (HH:mm)</label
-            >
-            <input
-              type="text"
-              pInputText
-              class="w-full py-2! px-3! border border-gray-300 rounded-md text-sm!"
-              placeholder="18:00"
-              formControlName="workEndTime"
-            />
-          </div>
-          <div class="col-span-12 md:col-span-3 flex flex-col gap-1.5">
-            <label
-              class="text-xs font-semibold text-gray-600 uppercase tracking-wider"
-              >Rest half-day start</label
-            >
-            <input
-              type="text"
-              pInputText
-              class="w-full py-2! px-3! border border-gray-300 rounded-md text-sm!"
-              placeholder="08:00"
-              formControlName="restDayHalfDayStart"
-            />
-          </div>
-          <div class="col-span-12 md:col-span-3 flex flex-col gap-1.5">
-            <label
-              class="text-xs font-semibold text-gray-600 uppercase tracking-wider"
-              >Rest half-day end</label
-            >
-            <input
-              type="text"
-              pInputText
-              class="w-full py-2! px-3! border border-gray-300 rounded-md text-sm!"
-              placeholder="12:00"
-              formControlName="restDayHalfDayEnd"
-            />
-          </div>
-
-          <div class="col-span-12 md:col-span-6 flex flex-col gap-1.5">
-            <label
-              class="text-xs font-semibold text-gray-600 uppercase tracking-wider"
-              >System Access Role</label
-            >
-            <p-select
-              class="w-full"
-              appendTo="body"
-              styleClass="w-full! border border-gray-300 rounded-md text-gray-800 h-[38px] flex items-center"
-              placeholder="Assign standard permission level"
-              [options]="systemRoles"
-              formControlName="systemRole"
-            ></p-select>
-          </div>
-
-          <div
-            class="col-span-12 md:col-span-6 flex flex-col gap-1.5"
-            *ngIf="!isUpdate"
-          >
-            <label
-              class="text-xs font-semibold text-gray-600 uppercase tracking-wider"
-              >Account Password <span class="text-red-500">*</span></label
-            >
-            <p-password
-              formControlName="password"
-              [feedback]="false"
-              autocomplete="off"
-              styleClass="w-full!"
-              placeholder="Min. 6 alphanumeric items"
-              inputStyleClass="w-full! py-2! px-3! border border-gray-300 rounded-md text-gray-800"
-              [toggleMask]="true"
-            />
-          </div>
-
-          <div
-            class="col-span-12 md:col-span-6 flex flex-col gap-1.5"
-            *ngIf="!isUpdate"
-          >
-            <label
-              class="text-xs font-semibold text-gray-600 uppercase tracking-wider"
-              >Confirm Password <span class="text-red-500">*</span></label
-            >
-            <p-password
-              formControlName="confirmPassword"
-              [feedback]="false"
-              autocomplete="off"
-              styleClass="w-full!"
-              placeholder="Re-enter verification password"
-              inputStyleClass="w-full! py-2! px-3! border border-gray-300 rounded-md text-gray-800"
-              [toggleMask]="true"
-            />
-            <small
-              class="text-red-500 font-medium text-xs mt-0.5"
-              *ngIf="
-                FG.errors?.['passwordMismatch'] &&
-                FG.get('confirmPassword')?.touched
+                <input
+                  type="text"
+                  pInputText
+                  class="
+                w-full!
+                h-10!
+                px-3!
+                border-gray-200!
+                rounded-xl!
+                bg-gray-50/50!
+                text-gray-800!
+                text-sm!
+                focus:bg-white!
+                focus:border-blue-500!
+                focus:ring-2!
+                focus:ring-blue-100!
               "
+                  placeholder="+60123456789"
+                  formControlName="contactNo"
+                />
+
+                <small
+                  class="text-red-500 font-medium text-xs"
+                  *ngIf="
+                    FG.get('contactNo')?.errors?.['required'] &&
+                    FG.get('contactNo')?.touched
+                  "
+                >
+                  Contact No is required.
+                </small>
+              </div>
+
+              <div
+                class="
+              col-span-12
+              md:col-span-6
+              flex flex-col gap-1.5
+            "
+              >
+                <label class="text-xs font-semibold text-gray-700">
+                  Job Title
+                </label>
+
+                <input
+                  type="text"
+                  pInputText
+                  class="
+                w-full!
+                h-10!
+                px-3!
+                border-gray-200!
+                rounded-xl!
+                bg-gray-50/50!
+                text-gray-800!
+                text-sm!
+                focus:bg-white!
+                focus:border-blue-500!
+                focus:ring-2!
+                focus:ring-blue-100!
+              "
+                  placeholder="e.g. Software Engineer"
+                  formControlName="jobTitle"
+                />
+              </div>
+
+              <div
+                class="
+              col-span-12
+              md:col-span-6
+              flex flex-col gap-1.5
+            "
+              >
+                <label class="text-xs font-semibold text-gray-700">
+                  Gender
+                </label>
+
+                <p-select
+                  class="w-full"
+                  appendTo="body"
+                  styleClass="
+                w-full!
+                !h-10
+                !border-gray-200
+                !rounded-xl
+                !bg-gray-50/50
+                !text-gray-800
+              "
+                  [options]="[
+                    { label: 'Male', value: 'Male' },
+                    { label: 'Female', value: 'Female' },
+                  ]"
+                  formControlName="gender"
+                  placeholder="Select gender"
+                ></p-select>
+              </div>
+            </div>
+          </section>
+
+          <section>
+            <div
+              class="flex items-center gap-3 mb-4 border-b border-gray-100 pb-3"
             >
-              Passwords do not match.
-            </small>
-          </div>
+              <div
+                class="
+              shrink-0
+              w-8 h-8
+              rounded-lg
+              bg-indigo-50
+              text-indigo-600
+              flex items-center justify-center
+            "
+              >
+                <i class="pi pi-briefcase text-sm"></i>
+              </div>
+
+              <div>
+                <h3 class="text-sm font-bold text-gray-800 m-0">
+                  Employment Details
+                </h3>
+
+                <p class="text-xs text-gray-400 mt-0.5">
+                  Organisation and reporting structure
+                </p>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-12 gap-x-5 gap-y-4">
+              <div
+                class="
+              col-span-12
+              md:col-span-6
+              flex flex-col gap-1.5
+            "
+              >
+                <label class="text-xs font-semibold text-gray-700">
+                  Joined Date
+                </label>
+
+                <p-datepicker
+                  class="w-full"
+                  showIcon="false"
+                  appendTo="body"
+                  styleClass="
+                w-full!
+                !h-10
+                !rounded-xl
+                !text-gray-800
+              "
+                  inputStyleClass="
+                !h-10
+                !text-sm
+                !rounded-xl border-gray-200!
+                !bg-gray-50/50
+              "
+                  dateFormat="dd/mm/yy"
+                  placeholder="Select effective date"
+                  formControlName="joinedDate"
+                ></p-datepicker>
+              </div>
+
+              <!-- Salary -->
+              <div
+                class="
+              col-span-12
+              md:col-span-6
+              flex flex-col gap-1.5
+            "
+              >
+                <label class="text-xs font-semibold text-gray-700">
+                  Monthly Salary
+                  <span class="text-gray-400 font-normal">(RM)</span>
+                </label>
+
+                <p-inputNumber
+                  formControlName="monthlySalary"
+                  mode="decimal"
+                  [minFractionDigits]="2"
+                  styleClass="w-full!"
+                  inputStyleClass="
+                w-full!
+                !h-10
+                !px-3
+                !border-gray-200
+                !rounded-xl
+                !bg-gray-50/50
+                !text-sm
+              "
+                  placeholder="0.00"
+                ></p-inputNumber>
+
+                <span class="text-[11px] text-gray-400">
+                  Used for overtime claims.
+                </span>
+              </div>
+
+              <!-- Departments -->
+              <div
+                class="
+              col-span-12
+              md:col-span-6
+              flex flex-col gap-1.5
+            "
+              >
+                <label class="text-xs font-semibold text-gray-700">
+                  Assigned Departments
+                </label>
+
+                <p-multiSelect
+                  class="w-full"
+                  appendTo="body"
+                  styleClass="
+                w-full!
+                !border-gray-200
+                !rounded-xl
+                !bg-gray-50/50
+                !text-gray-800
+              "
+                  [options]="departmentSelection"
+                  formControlName="departmentIds"
+                  placeholder="Select operational divisions"
+                  display="chip"
+                ></p-multiSelect>
+              </div>
+
+              <div
+                class="
+              col-span-12
+              md:col-span-6
+              flex flex-col gap-1.5
+            "
+              >
+                <label class="text-xs font-semibold text-gray-700">
+                  Reporting Managers
+                  <span class="text-gray-400 font-normal">(HOD)</span>
+                </label>
+
+                <p-multiSelect
+                  class="w-full"
+                  appendTo="body"
+                  styleClass="
+                w-full!
+                !border-gray-200
+                !rounded-xl
+                !bg-gray-50/50
+                !text-gray-800
+              "
+                  formControlName="hodIds"
+                  [options]="hodSelection || []"
+                  [filter]="true"
+                  placeholder="Select reporting managers"
+                  display="chip"
+                ></p-multiSelect>
+              </div>
+            </div>
+          </section>
+
+          <section>
+            <div
+              class="flex items-center gap-3 mb-4 border-b border-gray-100 pb-3"
+            >
+              <div
+                class="
+              shrink-0
+              w-8 h-8
+              rounded-lg
+              bg-emerald-50
+              text-emerald-600
+              flex items-center justify-center
+            "
+              >
+                <i class="pi pi-clock text-sm"></i>
+              </div>
+
+              <div>
+                <h3 class="text-sm font-bold text-gray-800 m-0">
+                  Working Hours
+                </h3>
+
+                <p class="text-xs text-gray-400 mt-0.5">
+                  Configure the standard working schedule
+                </p>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+              <!-- Work Start -->
+              <div
+                class="
+              p-3
+              rounded-xl
+              bg-gray-50
+              border border-gray-100
+            "
+              >
+                <label class="text-[11px] font-semibold text-gray-500">
+                  WORK START
+                </label>
+
+                <input
+                  type="text"
+                  pInputText
+                  class="
+                w-full!
+                mt-2
+                !h-9
+                !px-3
+                !border-gray-200
+                !rounded-lg
+                !bg-white
+                !text-sm
+              "
+                  placeholder="09:00"
+                  formControlName="workStartTime"
+                />
+              </div>
+
+              <!-- Work End -->
+              <div
+                class="
+              p-3
+              rounded-xl
+              bg-gray-50
+              border border-gray-100
+            "
+              >
+                <label class="text-[11px] font-semibold text-gray-500">
+                  WORK END
+                </label>
+
+                <input
+                  type="text"
+                  pInputText
+                  class="
+                w-full!
+                mt-2
+                !h-9
+                !px-3
+                !border-gray-200
+                !rounded-lg
+                !bg-white
+                !text-sm
+              "
+                  placeholder="18:00"
+                  formControlName="workEndTime"
+                />
+              </div>
+
+              <!-- Half Day Start -->
+              <div
+                class="
+              p-3
+              rounded-xl
+              bg-gray-50
+              border border-gray-100
+            "
+              >
+                <label class="text-[11px] font-semibold text-gray-500">
+                  HALF-DAY START
+                </label>
+
+                <input
+                  type="text"
+                  pInputText
+                  class="
+                w-full!
+                mt-2
+                !h-9
+                !px-3
+                !border-gray-200
+                !rounded-lg
+                !bg-white
+                !text-sm
+              "
+                  placeholder="08:00"
+                  formControlName="restDayHalfDayStart"
+                />
+              </div>
+
+              <!-- Half Day End -->
+              <div
+                class="
+              p-3
+              rounded-xl
+              bg-gray-50
+              border border-gray-100
+            "
+              >
+                <label class="text-[11px] font-semibold text-gray-500">
+                  HALF-DAY END
+                </label>
+
+                <input
+                  type="text"
+                  pInputText
+                  class="
+                w-full!
+                mt-2
+                !h-9
+                !px-3
+                !border-gray-200
+                !rounded-lg
+                !bg-white
+                !text-sm
+              "
+                  placeholder="12:00"
+                  formControlName="restDayHalfDayEnd"
+                />
+              </div>
+            </div>
+          </section>
+
+          <section>
+            <div
+              class="flex items-center gap-3 mb-4 border-b border-gray-100 pb-3"
+            >
+              <div
+                class="
+              shrink-0
+              w-8 h-8
+              rounded-lg
+              bg-violet-50
+              text-violet-600
+              flex items-center justify-center
+            "
+              >
+                <i class="pi pi-shield text-sm"></i>
+              </div>
+
+              <div>
+                <h3 class="text-sm font-bold text-gray-800 m-0">
+                  System Access
+                </h3>
+
+                <p class="text-xs text-gray-400 mt-0.5">
+                  Assign application permissions
+                </p>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-12 gap-4">
+              <div
+                class="
+              col-span-12
+              md:col-span-6
+              flex flex-col gap-1.5
+            "
+              >
+                <label class="text-xs font-semibold text-gray-700">
+                  System Access Role
+                </label>
+
+                <p-select
+                  class="w-full"
+                  appendTo="body"
+                  styleClass="
+                w-full!
+                !h-10
+                !border-gray-200
+                !rounded-xl
+                !bg-gray-50/50
+                !text-gray-800
+              "
+                  placeholder="Assign permission level"
+                  [options]="systemRoles"
+                  formControlName="systemRole"
+                ></p-select>
+              </div>
+            </div>
+          </section>
+
+          <section *ngIf="!isUpdate">
+            <div
+              class="flex items-center gap-3 mb-4 border-b border-gray-100 pb-3"
+            >
+              <div
+                class="
+              shrink-0
+              w-8 h-8
+              rounded-lg
+              bg-amber-50
+              text-amber-600
+              flex items-center justify-center
+            "
+              >
+                <i class="pi pi-lock text-sm"></i>
+              </div>
+
+              <div>
+                <h3 class="text-sm font-bold text-gray-800 m-0">
+                  Account Security
+                </h3>
+
+                <p class="text-xs text-gray-400 mt-0.5">
+                  Set the initial account password
+                </p>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-12 gap-x-5 gap-y-4">
+              <!-- Password -->
+              <div
+                class="
+              col-span-12
+              md:col-span-6
+              flex flex-col gap-1.5
+            "
+              >
+                <label class="text-xs font-semibold text-gray-700">
+                  Account Password
+                  <span class="text-red-500">*</span>
+                </label>
+
+                <p-password
+                  formControlName="password"
+                  [feedback]="false"
+                  autocomplete="off"
+                  styleClass="w-full!"
+                  placeholder="Enter password"
+                  inputStyleClass="
+                w-full!
+                !h-10
+                !px-3
+                !border-gray-200
+                !rounded-xl
+                !bg-gray-50/50
+                !text-gray-800
+              "
+                  [toggleMask]="true"
+                ></p-password>
+
+                <span class="text-[11px] text-gray-400">
+                  Minimum 6 alphanumeric characters.
+                </span>
+              </div>
+
+              <!-- Confirm Password -->
+              <div
+                class="
+              col-span-12
+              md:col-span-6
+              flex flex-col gap-1.5
+            "
+              >
+                <label class="text-xs font-semibold text-gray-700">
+                  Confirm Password
+                  <span class="text-red-500">*</span>
+                </label>
+
+                <p-password
+                  formControlName="confirmPassword"
+                  [feedback]="false"
+                  autocomplete="off"
+                  styleClass="w-full!"
+                  placeholder="Re-enter password"
+                  inputStyleClass="
+                w-full!
+                !h-10
+                !px-3
+                !border-gray-200
+                !rounded-xl
+                !bg-gray-50/50
+                !text-gray-800
+              "
+                  [toggleMask]="true"
+                ></p-password>
+
+                <small
+                  class="text-red-500 font-medium text-xs"
+                  *ngIf="
+                    FG.errors?.['passwordMismatch'] &&
+                    FG.get('confirmPassword')?.touched
+                  "
+                >
+                  Passwords do not match.
+                </small>
+              </div>
+            </div>
+          </section>
         </div>
       </div>
 
       <ng-template #footer>
         <div
-          class="flex flex-row justify-end items-center gap-3 pt-3 border-t border-gray-100 bg-gray-50/50 -mx-5 -mb-5 px-5 pb-5 rounded-b-xl"
+          class="w-full
+        flex
+        flex-col-reverse
+        sm:flex-row
+        justify-between
+        items-stretch
+        sm:items-center
+        gap-3
+        px-5
+        sm:px-6
+        py-4
+        border-t border-gray-200
+        bg-white
+      "
         >
-          <p-button
-            (onClick)="visible = false"
-            label="Cancel"
-            severity="secondary"
-            styleClass="!border-gray-300 !text-gray-700 hover:!bg-gray-100 !py-2 !px-4 font-medium transition-all rounded-md text-sm"
-          ></p-button>
-          <p-button
-            (onClick)="SaveUser()"
-            [label]="isUpdate ? 'Save Changes' : 'Create User'"
-            severity="info"
-            styleClass="!bg-blue-600 hover:!bg-blue-700 !border-blue-600 !py-2 !px-5 font-medium transition-all rounded-md text-sm shadow-sm"
-          ></p-button>
+          <div
+            class="
+          hidden
+          sm:flex
+          items-center
+          gap-2
+          text-xs
+          text-gray-400
+        "
+          >
+            <i class="pi pi-info-circle"></i>
+
+            <span> Changes will take effect immediately. </span>
+          </div>
+
+          <!-- Buttons -->
+          <div class="flex gap-2">
+            <p-button
+              (onClick)="visible = false"
+              label="Cancel"
+              severity="secondary"
+              styleClass="
+            !bg-white
+            !border-gray-200
+            !text-gray-600
+            hover:!bg-gray-50
+            !py-2.5
+            !px-5
+            !rounded-xl
+            font-medium
+            text-sm
+          "
+            ></p-button>
+
+            <p-button
+              (onClick)="SaveUser()"
+              [label]="isUpdate ? 'Save Changes' : 'Create User'"
+              iconPos="right"
+              styleClass="
+            !bg-[#2148BC]
+            hover:!bg-[#193A9E]
+            !border-[#2148BC]
+            !py-2.5
+            !px-5
+            !rounded-xl
+            font-semibold
+            text-sm
+            shadow-sm
+          "
+            ></p-button>
+          </div>
         </div>
       </ng-template>
     </p-dialog>
@@ -729,8 +1316,8 @@ import { Textarea } from 'primeng/textarea';
       [modal]="true"
       styleClass="w-[400px]"
     >
-      <div [formGroup]="approvalForm" class="flex flex-col gap-4">
-        <label>System Role *</label>
+      <div [formGroup]="approvalForm" class="flex flex-col gap-2">
+        <label>System Role <span class="text-red-500">*</span></label>
 
         <p-select
           appendTo="body"
@@ -859,7 +1446,7 @@ export class UserManagement implements OnInit, OnDestroy {
     this.Query.Page = 1;
     this.Query.PageSize = 10;
     this.Query.Filter = null;
-    this.Query.OrderBy = `FullName`;
+    this.Query.OrderBy = `CreatedAt desc`;
     this.Query.Select = null;
     this.Query.Includes = null;
   }
@@ -907,7 +1494,7 @@ export class UserManagement implements OnInit, OnDestroy {
     }
 
     const sortText = BuildSortText(event);
-    this.Query.OrderBy = sortText ? sortText : 'FullName';
+    this.Query.OrderBy = sortText ? sortText : 'CreatedAt desc';
 
     this.Query.Filter = BuildFilterText(event);
     this.GetData();
@@ -1288,7 +1875,10 @@ export class UserManagement implements OnInit, OnDestroy {
   }
 
   ApproveUser() {
-    if (this.approvalForm.invalid) return;
+    if (this.approvalForm.invalid || !this.selectedUser) {
+      this.approvalForm.markAllAsTouched();
+      return;
+    }
 
     const payload = {
       id: this.selectedUser.id,
@@ -1297,45 +1887,71 @@ export class UserManagement implements OnInit, OnDestroy {
       departmentIds: this.approvalForm.value.departmentIds,
     };
 
-    this.userService.UpdateApproval(payload).subscribe({
-      next: (res) => {
-        this.messageService.add({
-          severity: 'success',
-          summary: 'Approved',
-          detail: 'User approved successfully',
-        });
+    this.loadingService.start();
 
-        this.PagingSignal.update((state) => ({
-          ...state,
-          data: state.data.map((user: any) =>
-            user.id === this.selectedUser.id
-              ? {
-                  ...user,
-                  status: 'Approved',
-                  systemRole: payload.systemRole,
-                  departments: this.departmentSelection
-                    .filter((d) => payload.departmentIds?.includes(d.value))
-                    .map((d) => ({
-                      id: d.value,
-                      name: d.label,
-                    })),
-                }
-              : user,
-          ),
-        }));
+    this.userService
+      .UpdateApproval(payload)
+      .pipe(takeUntil(this.ngUnsubscribe))
+      .subscribe({
+        next: (res) => {
+          this.loadingService.stop();
 
-        if (this.dashboardCount) {
-          this.dashboardCount = {
-            ...this.dashboardCount,
-            pendingUsers: Math.max(0, this.dashboardCount.pendingUsers - 1),
-            activeUsers: this.dashboardCount.activeUsers + 1,
-          };
-        }
+          const approvedUserId = this.selectedUser.id;
 
-        this.approvalVisible = false;
-        this.cdr.markForCheck();
-      },
-    });
+          // Success message
+          this.messageService.add({
+            severity: 'success',
+            summary: 'Approved',
+            detail: 'User approved successfully',
+          });
+
+          // Update table row
+          this.PagingSignal.update((state) => ({
+            ...state,
+            data: state.data.map((user: any) =>
+              user.id === approvedUserId
+                ? {
+                    ...user,
+                    status: 'Approved',
+                    isActive: true,
+                    systemRole: payload.systemRole,
+                    departments: this.departmentSelection
+                      .filter((d) => payload.departmentIds?.includes(d.value))
+                      .map((d) => ({
+                        id: d.value,
+                        name: d.label,
+                      })),
+                  }
+                : user,
+            ),
+          }));
+
+          // Update dashboard counters
+          if (this.dashboardCount) {
+            this.dashboardCount = {
+              ...this.dashboardCount,
+              pendingUsers: Math.max(0, this.dashboardCount.pendingUsers - 1),
+              activeUsers: this.dashboardCount.activeUsers + 1,
+            };
+          }
+
+          this.approvalVisible = false;
+          this.cdr.markForCheck();
+        },
+
+        error: (err) => {
+          this.loadingService.stop();
+
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Error',
+            detail:
+              err.error?.message ||
+              err.error?.Message ||
+              'Failed to approve user. Please try again.',
+          });
+        },
+      });
   }
 
   RejectUser() {

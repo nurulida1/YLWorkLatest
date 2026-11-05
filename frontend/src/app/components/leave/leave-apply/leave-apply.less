@@ -1,0 +1,287 @@
+:host {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  color: #1e293b;
+}
+
+// Page layout
+:host > div {
+  max-width: 100%;
+}
+
+:host ::ng-deep {
+  // Form controls
+  .p-select,
+  .p-datepicker {
+    width: 100%;
+    min-height: 44px;
+    border: 1px solid #e2e8f0;
+    border-radius: 9px;
+    background: #fff;
+    box-shadow: none;
+    transition:
+      border-color 0.2s ease,
+      box-shadow 0.2s ease;
+
+    &:not(.p-disabled):hover {
+      border-color: #94a3b8;
+    }
+
+    &:not(.p-disabled).p-focus,
+    &:not(.p-disabled).p-inputwrapper-focus {
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgb(59 130 246 / 10%);
+    }
+  }
+
+  .p-select {
+    .p-select-label {
+      display: flex;
+      align-items: center;
+      padding: 0.65rem 0.8rem;
+      color: #334155;
+      font-size: 0.8125rem;
+    }
+
+    .p-select-label.p-placeholder {
+      color: #94a3b8;
+    }
+
+    .p-select-dropdown {
+      width: 2.5rem;
+      color: #64748b;
+    }
+  }
+
+  .p-datepicker {
+    input {
+      width: 100%;
+      min-height: 42px;
+      padding: 0.65rem 0.8rem;
+      border: 0;
+      border-radius: 9px;
+      color: #334155;
+      font-size: 0.8125rem;
+      box-shadow: none;
+    }
+
+    .p-datepicker-input-icon-container {
+      color: #64748b;
+      right: 0.8rem;
+    }
+  }
+
+  // Dropdown panel
+  .p-select-overlay {
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    box-shadow: 0 12px 30px rgb(15 23 42 / 12%);
+  }
+
+  .p-select-option {
+    padding: 0.7rem 0.85rem;
+    color: #475569;
+    font-size: 0.8125rem;
+
+    &.p-select-option-selected {
+      background: #eff6ff;
+      color: #1d4ed8;
+      font-weight: 650;
+    }
+
+    &:not(.p-select-option-selected):not(.p-disabled):hover {
+      background: #f8fafc;
+    }
+  }
+
+  // Textarea
+  textarea[pTextarea] {
+    min-height: 110px;
+    padding: 0.8rem 0.9rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 9px;
+    color: #334155;
+    font-size: 0.8125rem;
+    line-height: 1.6;
+    resize: vertical;
+    box-shadow: none;
+    transition:
+      border-color 0.2s ease,
+      box-shadow 0.2s ease;
+
+    &:hover {
+      border-color: #94a3b8;
+    }
+
+    &:focus {
+      border-color: #3b82f6;
+      outline: none;
+      box-shadow: 0 0 0 3px rgb(59 130 246 / 10%);
+    }
+
+    &::placeholder {
+      color: #94a3b8;
+    }
+  }
+
+  // Checkbox
+  .p-checkbox {
+    flex-shrink: 0;
+
+    .p-checkbox-box {
+      width: 18px;
+      height: 18px;
+      border-radius: 5px;
+      border-color: #cbd5e1;
+    }
+
+    &.p-checkbox-checked .p-checkbox-box {
+      border-color: #2563eb;
+      background: #2563eb;
+    }
+
+    &:not(.p-disabled):hover .p-checkbox-box {
+      border-color: #3b82f6;
+    }
+  }
+
+  // Buttons
+  .p-button {
+    min-height: 40px;
+    border-radius: 9px;
+    font-size: 0.8125rem;
+    font-weight: 650;
+    transition:
+      background 0.2s ease,
+      border-color 0.2s ease,
+      transform 0.15s ease;
+
+    &:active:not(:disabled) {
+      transform: scale(0.98);
+    }
+
+    &:focus-visible {
+      outline: 3px solid rgb(59 130 246 / 18%);
+      outline-offset: 2px;
+    }
+
+    &:disabled {
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
+  }
+
+  // Upload button
+  .p-button.p-button-secondary {
+    border-color: #e2e8f0;
+    background: #fff;
+    color: #475569;
+
+    &:hover:not(:disabled) {
+      border-color: #bfdbfe;
+      background: #eff6ff;
+      color: #1d4ed8;
+    }
+  }
+
+  // Datepicker overlay
+  .p-datepicker-panel {
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    box-shadow: 0 12px 30px rgb(15 23 42 / 12%);
+  }
+}
+
+// Main form card
+:host > div > div.bg-white {
+  width: 100%;
+  max-width: 850px;
+  padding: 28px;
+  border-color: #e5e7eb;
+  border-radius: 14px;
+  box-shadow: 0 2px 8px rgb(15 23 42 / 3%);
+}
+
+// Page heading
+:host h1 {
+  letter-spacing: -0.025em;
+}
+
+// Form labels
+:host label {
+  font-weight: 600;
+}
+
+// Feedback panels
+:host .bg-blue-50 {
+  border-color: #bfdbfe;
+  border-radius: 10px;
+}
+
+:host .bg-red-50 {
+  border-radius: 10px;
+}
+
+:host .bg-amber-50 {
+  border-radius: 10px;
+}
+
+:host .bg-amber-50 ul {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+:host .bg-amber-50 li {
+  padding-left: 2px;
+  line-height: 1.6;
+}
+
+// Supporting document
+:host input[type="file"] {
+  font-size: 0.8125rem;
+}
+
+// Breadcrumb
+:host a[routerLink] {
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+// Responsive
+@media (max-width: 768px) {
+  :host > div {
+    padding: 1rem;
+  }
+
+  :host > div > div.bg-white {
+    padding: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  :host > div {
+    padding: 0.75rem;
+    gap: 0.75rem;
+  }
+
+  :host > div > div.bg-white {
+    padding: 16px;
+    border-radius: 11px;
+  }
+
+  :host .flex.gap-2.pt-2 {
+    flex-direction: column-reverse;
+
+    .p-button {
+      width: 100%;
+    }
+  }
+
+  :host .flex.flex-row.items-center.gap-3 {
+    flex-wrap: wrap;
+  }
+}

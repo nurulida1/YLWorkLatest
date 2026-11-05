@@ -5,15 +5,9 @@
 }
 
 .nav-item {
-  @apply flex flex-col items-center justify-center gap-1 text-gray-300 transition-all duration-200;
-}
-
-.nav-item i {
-  @apply text-2xl;
-}
-
-.nav-item span {
-  @apply text-xs;
+  @apply flex flex-col items-center justify-center gap-1;
+  @apply text-gray-400 transition-all duration-200;
+  @apply no-underline;
 }
 
 .nav-item.active {
@@ -26,4 +20,13 @@
 
 .nav-item.active span {
   @apply font-semibold;
+}
+
+/* Keep the plus button blue even when active */
+.nav-item.new-item.active i {
+  @apply text-white;
+}
+
+.nav-item.new-item.active {
+  @apply text-blue-600;
 }

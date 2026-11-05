@@ -1,16 +1,13 @@
 import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
-  ChangeDetectorRef,
   Component,
-  computed,
   inject,
   OnDestroy,
   OnInit,
-  signal,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { RouterLink } from '@angular/router';
 import { AvatarModule } from 'primeng/avatar';
 import { AvatarGroupModule } from 'primeng/avatargroup';
 import { ButtonModule } from 'primeng/button';
@@ -19,16 +16,14 @@ import { InputTextModule } from 'primeng/inputtext';
 import { ProgressBarModule } from 'primeng/progressbar';
 import { TagModule } from 'primeng/tag';
 import { LoadingService } from '../../../services/loading.service';
-import { ProjectTaskService } from '../../../services/ProjectTaskService';
-import { ProjectTaskDto } from '../../../models/ProjectTask';
-import { MessageService } from 'primeng/api';
-import {
-  GridifyQueryExtend,
-  PagingContent,
-} from '../../../shared/helpers/helpers';
+import { GridifyQueryExtend } from '../../../shared/helpers/helpers';
 import { Subject, takeUntil } from 'rxjs';
 import { TooltipModule } from 'primeng/tooltip';
-
+import { CalendarOptions } from '@fullcalendar/core/index.js';
+import { StaffTaskService } from '../../../services/staffTaskService';
+import dayGridPlugin from '@fullcalendar/daygrid';
+import timeGridPlugin from '@fullcalendar/timegrid';
+import interactionPlugin from '@fullcalendar/interaction';
 @Component({
   selector: 'app-task-list-mobile',
   imports: [
@@ -44,342 +39,261 @@ import { TooltipModule } from 'primeng/tooltip';
     RouterLink,
     TooltipModule,
   ],
-  template: `<div class="w-full min-h-screen bg-gray-100 flex flex-col">
-      <div class="px-4 pt-4 pb-3 flex items-center justify-between">
-        <p-button [text]="true" severity="secondary">
-          <ng-template #icon>
-            <i class="pi pi-chevron-left text-xl"></i>
-          </ng-template>
-        </p-button>
+  template: ` <div class="w-full min-h-screen bg-gray-100">
+    <div
+      class="bg-[#0566D9] px-6 py-4 text-center text-white font-bold text-2xl rounded-b-2xl"
+    >
+      Schedule
+    </div>
 
-        <div class="text-xl font-semibold tracking-wide text-gray-800">
-          My Tasks
+    <div class="bg-white border-b border-gray-200 py-4 px-4 shadow-sm">
+      <div class="flex justify-between items-center mb-3">
+        <div class="text-xl font-semibold text-gray-800">
+          {{ currentMonthLabel }}
         </div>
 
-        <p-button [text]="true" severity="secondary">
-          <ng-template #icon>
-            <i class="pi pi-filter text-lg"></i>
-          </ng-template>
-        </p-button>
-      </div>
-
-      <div class="px-5">
-        <input
-          pInputText
-          [(ngModel)]="search"
-          class="w-full rounded-2xl border-none bg-white py-3.5 pl-11 shadow-sm"
-          placeholder="🔍︎ Search task..."
-          (keyup)="onKeyDown($event)"
-        />
-      </div>
-
-      <div
-        class="flex-1 mt-5 bg-white rounded-t-[30px] px-5 pt-5 overflow-y-auto"
-      >
-        <div class="bg-gray-100 rounded-2xl p-1 relative">
-          <div
-            class="absolute top-1 bottom-1 rounded-xl bg-white shadow transition-all duration-300"
-            [style.width.%]="100 / tabs.length"
-            [style.left.%]="selectedTab * (100 / tabs.length)"
-          ></div>
-
-          <div class="relative flex">
-            <button
-              *ngFor="let tab of tabs; let i = index"
-              (click)="changeTab(i)"
-              class="flex-1 py-3 text-sm font-semibold transition-colors duration-300"
-              [ngClass]="{
-                'text-gray-900': selectedTab === i,
-                'text-gray-400': selectedTab !== i,
-              }"
-            >
-              {{ tab }}
-            </button>
-          </div>
-        </div>
-
-        <div class="flex items-center justify-between mt-6 mb-5">
-          <div>
-            <div class="font-bold text-xl text-gray-800">Tasks</div>
-
-            <div class="text-sm text-gray-400">
-              {{ TaskSignal().totalElements }} Tasks
-            </div>
-          </div>
+        <div class="flex items-center gap-1">
+          <p-button
+            icon="pi pi-chevron-left"
+            [text]="true"
+            severity="secondary"
+            (onClick)="previousWeek()"
+          ></p-button>
 
           <p-button
-            label="New"
-            icon="pi pi-plus"
-            size="small"
-            styleClass="!rounded-full !px-4 !bg-blue-600 !border-blue-600 shadow-md"
-            [routerLink]="'/tasks/form'"
-          />
+            icon="pi pi-chevron-right"
+            [text]="true"
+            severity="secondary"
+            (onClick)="nextWeek()"
+          ></p-button>
         </div>
+      </div>
 
-        <div
-          class="flex flex-col gap-4 mb-5"
-          *ngFor="let item of FilteredTasks()"
-        >
-          <div
-            class="rounded-3xl bg-white shadow-sm border border-gray-100 overflow-hidden"
+      <div class="flex gap-2 overflow-x-auto pb-2 hide-scrollbar">
+        @for (day of weekDays; track day.date.getTime()) {
+          <button
+            type="button"
+            (click)="selectDate(day.date)"
+            class="flex flex-col items-center justify-center
+                     min-w-[58px] py-2 px-2 rounded-xl
+                     transition-all duration-200"
+            [class.bg-blue-600]="isSelected(day.date)"
+            [class.text-white]="isSelected(day.date)"
+            [class.shadow-md]="isSelected(day.date)"
+            [class.bg-gray-50]="!isSelected(day.date)"
+            [class.text-gray-600]="!isSelected(day.date)"
           >
-            <div class="h-1 bg-blue-500"></div>
+            <span
+              class="text-xs uppercase font-medium mb-1"
+              [class.text-white]="isSelected(day.date)"
+              [class.text-gray-400]="!isSelected(day.date)"
+            >
+              {{ day.date | date: 'EEE' }}
+            </span>
 
-            <div class="p-5">
-              <div class="flex justify-between items-start">
-                <div class="flex gap-2">
-                  <p-tag
-                    [value]="formatStatus(item.status)"
-                    [severity]="getStatusSeverity(item.status)"
-                    styleClass="rounded-full px-3!"
-                  >
-                  </p-tag>
-
-                  <p-tag
-                    [value]="item.priority"
-                    [severity]="getPrioritySeverity(item.priority)"
-                    styleClass="rounded-full px-3!"
-                  />
-                </div>
-
-                <button
-                  class="w-9 h-9 rounded-full hover:bg-gray-100 transition flex items-center justify-center"
-                  (click)="openTaskMenu(item)"
-                >
-                  <i class="pi pi-ellipsis-h text-gray-500"></i>
-                </button>
-              </div>
-
-              <div class="mt-5">
-                <h2 class="text-lg font-semibold text-gray-900">
-                  {{ item.title }}
-                </h2>
-
-                <p class="text-sm text-gray-500 leading-6 mt-2">
-                  {{ item.description }}
-                </p>
-              </div>
-
-              <div class="mt-6">
-                <div class="flex justify-between mb-2">
-                  <span class="text-sm text-gray-500"> Progress </span>
-
-                  <span class="text-sm font-semibold text-blue-600">
-                    {{ item.progress }}
-                  </span>
-                </div>
-
-                <p-progressBar
-                  [value]="item.progress"
-                  [showValue]="false"
-                  styleClass="h-2"
-                >
-                </p-progressBar>
-              </div>
-
-              <div
-                class="mt-6 pt-5 border-t border-gray-100 flex justify-between items-center"
-              >
-                <div>
-                  <div
-                    class="flex items-center gap-2 text-sm text-gray-500"
-                    *ngIf="item.dueDate"
-                  >
-                    <i class="pi pi-calendar"></i>
-
-                    <span>Due: {{ item.dueDate | date: 'dd MMM, yyyy' }}</span>
-                  </div>
-                </div>
-
-                <div>
-                  @if (item.assignedTaskMembers?.length) {
-                    <div class="flex items-center">
-                      @for (
-                        member of item.assignedTaskMembers;
-                        track member.userId
-                      ) {
-                        <div
-                          class="w-9 h-9 rounded-full bg-blue-100 text-blue-800 flex items-center justify-center text-sm font-semibold border-2 border-white -ml-2 first:ml-0"
-                          pTooltip="{{ member?.name }}"
-                          tooltipPosition="top"
-                        >
-                          {{ getInitials(member?.name) }}
-                        </div>
-                      }
-                    </div>
-                  } @else {
-                    <span class="text-gray-400 text-sm"> Unassigned </span>
-                  }
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        @if (totalPages() > 1) {
-          <div class="flex justify-center items-center gap-4 mt-6 mb-5">
-            <p-button
-              icon="pi pi-angle-left"
-              rounded
-              outlined
-              severity="secondary"
-              [disabled]="Query.Page <= 1"
-              (click)="previousPage()"
-            />
-
-            <div class="text-sm font-medium text-gray-600">
-              Page {{ Query.Page }} of {{ totalPages() }}
-            </div>
-
-            <p-button
-              icon="pi pi-angle-right"
-              rounded
-              outlined
-              severity="secondary"
-              [disabled]="Query.Page >= totalPages()"
-              (click)="nextPage()"
-            />
-          </div>
+            <span class="text-lg font-semibold">
+              {{ day.date | date: 'dd' }}
+            </span>
+          </button>
         }
       </div>
     </div>
 
-    <p-drawer
-      [(visible)]="showTaskMenu"
-      position="bottom"
-      styleClass="!rounded-t-3xl h-[70%]!"
-      [showCloseIcon]="false"
-    >
-      <div class="pb-6">
-        <div class="w-12 h-1 bg-gray-300 rounded-full mx-auto mb-6"></div>
+    <div class="p-5 flex flex-col">
+      <div class="font-bold text-lg text-gray-800">
+        Task for {{ selectedDate | date: 'MMMM dd, yyyy' }}
+      </div>
 
-        <div class="text-center mb-6">
-          <div class="text-xl font-semibold">Task Actions</div>
+      <div class="mt-4 flex flex-col gap-3">
+        <div
+          class="relative overflow-hidden bg-white rounded-lg
+                   border border-gray-200 p-4 shadow-sm"
+        >
+          <div class="absolute left-0 top-0 bottom-0 w-1 bg-red-500"></div>
 
-          <div class="text-sm text-gray-500">Choose an action</div>
-        </div>
+          <div class="pl-2 flex flex-col gap-3">
+            <div class="flex justify-between items-start">
+              <div>
+                <div class="font-bold text-gray-800">
+                  Review Project Proposal
+                </div>
 
-        <div class="space-y-2">
-          <button
-            *ngFor="let action of taskActions"
-            (click)="action.command()"
-            class="w-full flex items-center gap-4 p-4 rounded-2xl hover:bg-gray-50 transition"
-            [ngClass]="{
-              'text-red-600': action.danger,
-            }"
-          >
-            <div
-              class="w-11 h-11 rounded-xl flex items-center justify-center"
-              [ngClass]="{
-                'bg-red-100': action.danger,
-                'bg-blue-50': !action.danger,
-              }"
-            >
-              <i
-                [class]="action.icon"
-                [ngClass]="{
-                  'text-red-600': action.danger,
-                  'text-blue-600': !action.danger,
-                }"
-              >
-              </i>
+                <div
+                  class="text-sm text-gray-500
+                           flex items-center gap-2 mt-1"
+                >
+                  <i class="pi pi-clock"></i>
+                  10:00 AM - 11:30 AM
+                </div>
+              </div>
+
+              <i class="pi pi-ellipsis-v text-gray-400"></i>
             </div>
 
-            <span class="font-medium">
-              {{ action.label }}
-            </span>
-          </button>
+            <div class="flex gap-2">
+              <p-tag value="High Priority" severity="danger"></p-tag>
+
+              <p-tag value="Engineering" severity="secondary"></p-tag>
+            </div>
+          </div>
         </div>
+
+        <div
+          class="relative overflow-hidden bg-white rounded-lg
+                   border border-gray-200 p-4 shadow-sm"
+        >
+          <div class="absolute left-0 top-0 bottom-0 w-1 bg-blue-500"></div>
+
+          <div class="pl-2 flex flex-col gap-3">
+            <div class="flex justify-between items-start">
+              <div>
+                <div class="font-bold text-gray-800">Team Sync: Q4 Goals</div>
+
+                <div
+                  class="text-sm text-gray-500
+                           flex items-center gap-2 mt-1"
+                >
+                  <i class="pi pi-clock"></i>
+                  1:00 PM - 2:00 PM
+                </div>
+              </div>
+
+              <i class="pi pi-ellipsis-v text-gray-400"></i>
+            </div>
+
+            <div class="flex gap-2">
+              <p-tag value="Medium Priority" severity="warn"></p-tag>
+
+              <p-tag value="Management" severity="secondary"></p-tag>
+            </div>
+          </div>
+        </div>
+
+        <div
+          class="relative overflow-hidden bg-white rounded-lg
+                   border border-gray-200 p-4 shadow-sm"
+        >
+          <div class="absolute left-0 top-0 bottom-0 w-1 bg-gray-500"></div>
+
+          <div class="pl-2 flex flex-col gap-3">
+            <div class="flex justify-between items-start">
+              <div>
+                <div class="font-bold text-gray-800">
+                  Update Onboarding Docs
+                </div>
+
+                <div
+                  class="text-sm text-gray-500
+                           flex items-center gap-2 mt-1"
+                >
+                  <i class="pi pi-clock"></i>
+                  3:30 PM - 4:30 PM
+                </div>
+              </div>
+
+              <i class="pi pi-ellipsis-v text-gray-400"></i>
+            </div>
+
+            <div class="flex gap-2">
+              <p-tag value="Low Priority" severity="info"></p-tag>
+
+              <p-tag value="HR" severity="secondary"></p-tag>
+            </div>
+          </div>
+        </div>
+
+        <p-button
+          [routerLink]="'/tasks/form'"
+          label="Add New Task"
+          icon="pi pi-plus"
+          styleClass="w-full! py-3! mt-3 bg-blue-600! border-none!"
+        ></p-button>
       </div>
-    </p-drawer>`,
+    </div>
+  </div>`,
   styleUrl: './task-list-mobile.less',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TaskListMobile implements OnInit, OnDestroy {
+  private readonly staffTaskService = inject(StaffTaskService);
   private readonly loadingService = inject(LoadingService);
-  private readonly cdr = inject(ChangeDetectorRef);
-  private readonly projectTaskService = inject(ProjectTaskService);
-  private readonly messageService = inject(MessageService);
-  private readonly router = inject(Router);
+
   protected ngUnsubscribe: Subject<void> = new Subject<void>();
-
-  search: string = '';
-  showTaskMenu: boolean = false;
-  tabs = ['All', 'In Progress', 'Completed'];
-
-  TaskSignal = signal<PagingContent<any>>({} as PagingContent<any>);
 
   Query: GridifyQueryExtend = {} as GridifyQueryExtend;
 
-  selectedTab: number = 0;
-  selectedTask: any = null;
+  selectedDate: Date = new Date();
+  weekStart: Date = this.getWeekStart(new Date());
 
-  taskActions = [
-    {
-      label: 'View Details',
-      icon: 'pi pi-eye',
-      command: () => this.viewTask(),
+  calendarOptions: CalendarOptions = {
+    plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
+
+    initialView: 'dayGridMonth',
+
+    headerToolbar: {
+      left: 'prev,next',
+      center: 'title',
+      right: '',
     },
-    {
-      label: 'Edit Task',
-      icon: 'pi pi-pencil',
-      command: () => this.editTask(),
+
+    height: 'auto',
+
+    fixedWeekCount: false,
+
+    dayMaxEvents: 2,
+
+    events: [
+      {
+        title: 'Website Redesign',
+        start: '2026-07-10',
+        end: '2026-07-18',
+        backgroundColor: '#2563eb',
+        borderColor: '#2563eb',
+      },
+      {
+        title: 'Mobile App Development',
+        start: '2026-07-15',
+        end: '2026-07-30',
+        backgroundColor: '#16a34a',
+        borderColor: '#16a34a',
+      },
+      {
+        title: 'Testing Phase',
+        start: '2026-07-22',
+        backgroundColor: '#f59e0b',
+        borderColor: '#f59e0b',
+      },
+    ],
+
+    dateClick: (info) => {
+      this.selectedDate = info.date;
     },
-    {
-      label: 'Assign Members',
-      icon: 'pi pi-users',
-      command: () => {},
+
+    eventClick: (info) => {
+      this.selectedDate = info.event.start ?? new Date();
     },
-    {
-      label: 'Add Comment',
-      icon: 'pi pi-comment',
-      command: () => {},
-    },
-    {
-      label: 'Attach File',
-      icon: 'pi pi-paperclip',
-      command: () => {},
-    },
-    {
-      label: 'Duplicate',
-      icon: 'pi pi-copy',
-      command: () => {},
-    },
-    {
-      label: 'Mark Complete',
-      icon: 'pi pi-check-circle',
-      command: () => this.completeTask(),
-    },
-    {
-      label: 'Delete Task',
-      icon: 'pi pi-trash',
-      danger: true,
-      command: () => this.deleteTask(),
-    },
-  ];
+  };
 
   constructor() {
     this.Query.Page = 1;
-    this.Query.PageSize = 5;
-    this.Query.Filter = null;
+    this.Query.PageSize = 1000000;
     this.Query.Select = null;
-    this.Query.OrderBy = 'TaskCode';
+    this.Query.OrderBy = null;
+    this.Query.Filter = null;
     this.Query.Includes = null;
   }
 
-  ngOnInit(): void {
+  ngOnInit() {
     this.GetData();
   }
 
   GetData() {
     this.loadingService.start();
-    this.projectTaskService
+    this.staffTaskService
       .GetMany(this.Query)
       .pipe(takeUntil(this.ngUnsubscribe))
       .subscribe({
         next: (res) => {
-          this.TaskSignal.set(res);
-          this.cdr.markForCheck();
           this.loadingService.stop();
         },
         error: (err) => {
@@ -388,211 +302,72 @@ export class TaskListMobile implements OnInit, OnDestroy {
       });
   }
 
-  FilteredTasks = computed(() => {
-    const tasks = this.TaskSignal().data ?? [];
+  get weekDays(): { date: Date }[] {
+    return Array.from({ length: 7 }, (_, index) => {
+      const date = new Date(this.weekStart);
 
-    switch (this.selectedTab) {
-      case 1:
-        return tasks.filter((x) => x.status === 'InProgress');
+      date.setDate(this.weekStart.getDate() + index);
 
-      case 2:
-        return tasks.filter((x) => x.status === 'Completed');
-
-      default:
-        return tasks;
-    }
-  });
-
-  onKeyDown(event: KeyboardEvent) {
-    const isEnter = event.key === 'Enter';
-    const isBackspaceClear = event.key === 'Backspace' && this.search === '';
-
-    if (isEnter) {
-      this.Search(this.search);
-    } else if (isBackspaceClear) {
-      this.Search('');
-    }
+      return { date };
+    });
   }
 
-  Search(data: string) {
-    this.search = data;
+  get currentMonthLabel(): string {
+    return this.selectedDate.toLocaleDateString('en-US', {
+      month: 'long',
+      year: 'numeric',
+    });
+  }
 
-    const filters: string[] = [];
+  getWeekStart(date: Date): Date {
+    const result = new Date(date);
 
-    // keep selected tab filter
-    switch (this.selectedTab) {
-      case 1:
-        filters.push('Status=InProgress');
-        break;
+    const day = result.getDay();
 
-      case 2:
-        filters.push('Status=Completed');
-        break;
-    }
+    const diff = day === 0 ? -6 : 1 - day;
 
-    // search filter
-    if (data?.trim()) {
-      filters.push(`Title=${data.trim()}`);
-    }
+    result.setDate(result.getDate() + diff);
 
-    this.Query.Filter = filters.length ? filters.join(',') : null;
+    result.setHours(0, 0, 0, 0);
 
-    this.Query.Page = 1;
+    return result;
+  }
 
-    this.GetData();
+  previousWeek(): void {
+    const date = new Date(this.weekStart);
+
+    date.setDate(date.getDate() - 7);
+
+    this.weekStart = date;
+
+    this.selectedDate = new Date(date);
+  }
+
+  nextWeek(): void {
+    const date = new Date(this.weekStart);
+
+    date.setDate(date.getDate() + 7);
+
+    this.weekStart = date;
+
+    this.selectedDate = new Date(date);
+  }
+
+  selectDate(date: Date): void {
+    this.selectedDate = new Date(date);
+  }
+
+  isSelected(date: Date): boolean {
+    return (
+      date.getFullYear() === this.selectedDate.getFullYear() &&
+      date.getMonth() === this.selectedDate.getMonth() &&
+      date.getDate() === this.selectedDate.getDate()
+    );
   }
 
   ngOnDestroy(): void {
     this.ngUnsubscribe.next();
     this.ngUnsubscribe.complete();
     this.loadingService.stop();
-  }
-
-  getInitials(name: string | undefined | null) {
-    if (!name) return '';
-
-    return name
-      .split(' ')
-      .filter((n) => n)
-      .slice(0, 2)
-      .map((n) => n[0])
-      .join('')
-      .toUpperCase();
-  }
-
-  viewTask() {
-    if (!this.selectedTask) return;
-
-    this.showTaskMenu = false;
-
-    this.router.navigate(['/tasks/details'], {
-      queryParams: {
-        id: this.selectedTask.id,
-      },
-    });
-  }
-
-  editTask() {
-    if (!this.selectedTask) return;
-
-    this.showTaskMenu = false;
-
-    this.router.navigate(['/tasks/form'], {
-      queryParams: {
-        id: this.selectedTask.id,
-      },
-    });
-  }
-
-  completeTask() {
-    if (!this.selectedTask) return;
-
-    this.projectTaskService
-      .UpdateStatus({
-        projectTaskId: this.selectedTask.id,
-        status: 'Completed',
-      })
-      .subscribe({
-        next: () => {
-          this.messageService.add({
-            severity: 'success',
-            summary: 'Completed',
-            detail: 'Task marked as completed',
-          });
-
-          this.GetData();
-          this.showTaskMenu = false;
-        },
-      });
-  }
-
-  deleteTask() {
-    if (!this.selectedTask) return;
-
-    this.projectTaskService.Delete(this.selectedTask.id).subscribe({
-      next: () => {
-        this.messageService.add({
-          severity: 'success',
-          summary: 'Deleted',
-          detail: 'Task deleted',
-        });
-
-        this.GetData();
-        this.showTaskMenu = false;
-      },
-    });
-  }
-
-  openTaskMenu(task: any) {
-    this.selectedTask = task;
-    this.showTaskMenu = true;
-  }
-
-  formatStatus(status: string) {
-    return status?.replace(/([A-Z])/g, ' $1').trim();
-  }
-
-  getStatusSeverity(status: string) {
-    switch (status) {
-      case 'Completed':
-        return 'success';
-
-      case 'InProgress':
-        return 'info';
-
-      case 'OnHold':
-        return 'warning';
-
-      case 'Cancelled':
-        return 'danger';
-
-      default:
-        return 'secondary';
-    }
-  }
-
-  getPrioritySeverity(priority: string) {
-    switch (priority) {
-      case 'Critical':
-        return 'danger';
-
-      case 'High':
-        return 'warn';
-
-      case 'Medium':
-        return 'info';
-
-      case 'Low':
-        return 'success';
-
-      default:
-        return 'secondary';
-    }
-  }
-
-  changeTab(index: number) {
-    this.selectedTab = index;
-
-    this.Search(this.search);
-  }
-
-  totalPages = computed(() => {
-    const total = this.TaskSignal().totalElements ?? 0;
-
-    return Math.ceil(total / this.Query.PageSize);
-  });
-
-  nextPage() {
-    if (this.Query.Page < this.totalPages()) {
-      this.Query.Page++;
-      this.GetData();
-    }
-  }
-
-  previousPage() {
-    if (this.Query.Page > 1) {
-      this.Query.Page--;
-      this.GetData();
-    }
   }
 }

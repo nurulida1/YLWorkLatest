@@ -386,7 +386,7 @@ namespace WebApplication1.Controllers
         //login
         [AllowAnonymous]
         [HttpPost("Login")]
-        public IActionResult Login([FromBody] LoginRequest request)
+        public async Task<IActionResult> Login([FromBody] LoginRequest request)
         {
             if (!ModelState.IsValid)
             {
@@ -405,10 +405,44 @@ namespace WebApplication1.Controllers
                     return Ok(new { Success = false, Message = "User account not found" });
                 }
                 // Here you would normally verify the password hash
-                var hashedInput = HashPassword(request.Password);
-                if (user.Password != hashedInput) // Simplified for example
+                var passwordHasher = new PasswordHasher<User>();
+
+                var passwordResult = passwordHasher.VerifyHashedPassword(
+                    user,
+                    user.Password,
+                    request.Password
+                );
+
+                if (passwordResult == PasswordVerificationResult.Failed)
                 {
-                    return Ok(new { Success = false, Message = "Your password is incorrect" });
+                    // Check legacy SHA256 password
+                    var legacyHash = HashPassword(request.Password);
+
+                    if (user.Password != legacyHash)
+                    {
+                        return Ok(new
+                        {
+                            Success = false,
+                            Message = "Your password is incorrect"
+                        });
+                    }
+
+                    // Upgrade legacy SHA256 to ASP.NET Identity hash
+                    user.Password = passwordHasher.HashPassword(
+                        user,
+                        request.Password
+                    );
+
+                    await _context.SaveChangesAsync();
+                }
+                else if (passwordResult == PasswordVerificationResult.SuccessRehashNeeded)
+                {
+                    user.Password = passwordHasher.HashPassword(
+                        user,
+                        request.Password
+                    );
+
+                    await _context.SaveChangesAsync();
                 }
 
                 var token = GenerateJwtToken(user);
@@ -428,7 +462,7 @@ namespace WebApplication1.Controllers
                         user.JobTitle,
                         HodIds = user.ReportingManagers.Select(rm => rm.ManagerId).ToList(),
                         DepartmentIds = user.Departments.Select(d => d.Id).ToList(),
-                        Departments = user.Departments.Select(d => new {d.Id, d.Name }).ToList()
+                        Departments = user.Departments.Select(d => new { d.Id, d.Name }).ToList()
                     }
                 });
             }
@@ -437,7 +471,7 @@ namespace WebApplication1.Controllers
                 return StatusCode(500, new { Error = "Login failed." });
             }
         }
-       
+
         private string GenerateJwtToken(User user)
         {
             var claims = new[]
@@ -472,6 +506,8 @@ namespace WebApplication1.Controllers
             }
         }
 
+
+
         [AllowAnonymous]
         [HttpPost("Register")]
         public async Task<IActionResult> Register([FromBody] RegisterRequest request)
@@ -481,12 +517,27 @@ namespace WebApplication1.Controllers
 
             try
             {
+                // Validate password
                 if (request.Password != request.ConfirmPassword)
-                    return Ok(new { Success = false, Message = "Passwords do not match." });
+                {
+                    return Ok(new
+                    {
+                        Success = false,
+                        Message = "Passwords do not match."
+                    });
+                }
 
+                // Check duplicate email
                 if (await _context.Users.AnyAsync(u => u.Email == request.Email))
-                    return Ok(new { Success = false, Message = "Email already in use." });
+                {
+                    return Ok(new
+                    {
+                        Success = false,
+                        Message = "Email already in use."
+                    });
+                }
 
+                // Create new user
                 var newUser = new User
                 {
                     Id = Guid.NewGuid(),
@@ -504,6 +555,7 @@ namespace WebApplication1.Controllers
                     CreatedAt = DateTimeHelper.Now()
                 };
 
+                // Assign departments
                 if (request.DepartmentIds?.Any() == true)
                 {
                     var departments = await _context.Departments
@@ -513,12 +565,14 @@ namespace WebApplication1.Controllers
                     newUser.Departments = departments;
                 }
 
+                // Assign reporting managers / HOD
                 if (request.HodIds?.Any() == true)
                 {
                     var managerIds = request.HodIds
                         .Where(id => id != Guid.Empty && id != newUser.Id)
                         .Distinct()
                         .ToList();
+
                     foreach (var managerId in managerIds)
                     {
                         newUser.ReportingManagers.Add(new UserReportingManager
@@ -529,16 +583,22 @@ namespace WebApplication1.Controllers
                     }
                 }
 
+                // Hash password
                 var passwordHasher = new PasswordHasher<User>();
-                newUser.Password = passwordHasher.HashPassword(newUser, request.Password);
 
+                newUser.Password = passwordHasher.HashPassword(
+                    newUser,
+                    request.Password
+                );
+
+                // Add new user
                 _context.Users.Add(newUser);
 
                 // Activity Log
                 _context.ActivityLogs.Add(new ActivityLog
                 {
                     Id = Guid.NewGuid(),
-                    UserId = newUser.Id, // or null since this is anonymous
+                    UserId = newUser.Id,
                     Module = "User",
                     Action = "Register",
                     Description = $"{newUser.FullName} registered a new account.",
@@ -547,32 +607,101 @@ namespace WebApplication1.Controllers
                     CreatedAt = DateTimeHelper.Now()
                 });
 
+                // Save user and activity log first
                 await _context.SaveChangesAsync();
 
-                // SignalR notification
-                await _hub.Clients.All.SendAsync("ReceiveNotification", new
+
+                // =====================================================
+                // NOTIFICATION TO SUPERADMIN
+                // =====================================================
+
+                // Get all active SuperAdmins
+                var superAdmins = await _context.Users
+                    .Where(u =>
+                        u.SystemRole == "SuperAdmin" &&
+                        u.IsActive)
+                    .Select(u => u.Id)
+                    .ToListAsync();
+
+                var notificationMessage =
+                    $"{newUser.FullName} has requested to register as {newUser.JobTitle}.";
+
+                // Create persistent notifications
+                var notifications = new List<Notification>();
+
+                foreach (var adminId in superAdmins)
                 {
-                    Title = "New User Registration",
-                    Message = $"{newUser.FullName} has registered as {newUser.JobTitle}.",
-                    Type = "info",
-                    Time = DateTimeHelper.Now()
-                });
+                    notifications.Add(new Notification
+                    {
+                        Id = Guid.NewGuid(),
+                        UserId = adminId,
+                        Title = "New User Registration",
+                        Message = notificationMessage,
+                        Type = "Registration",
+                        Link = "/user-management",
+                        IsRead = false,
+                        CreatedAt = DateTimeHelper.Now()
+                    });
+                }
+
+                // Save notifications ONCE
+                if (notifications.Any())
+                {
+                    _context.Notifications.AddRange(notifications);
+                    await _context.SaveChangesAsync();
+                }
+
+
+                // =====================================================
+                // SIGNALR REAL-TIME NOTIFICATION
+                // =====================================================
+
+                foreach (var notification in notifications)
+                {
+                    await _hub.Clients
+                        .Group($"user-{notification.UserId}")
+                        .SendAsync("ReceiveNotification", new
+                        {
+                            id = notification.Id,
+                            userId = notification.UserId,
+                            title = notification.Title,
+                            message = notification.Message,
+                            type = notification.Type,
+                            link = notification.Link,
+                            isRead = notification.IsRead,
+                            createdAt = notification.CreatedAt
+                        });
+                }
+
+
+                // =====================================================
+                // RETURN SUCCESS
+                // =====================================================
 
                 return Ok(new
                 {
                     Success = true,
+                    Message = "Registration submitted successfully. Please wait for administrator approval.",
                     User = newUser
                 });
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
+                var innerException = ex;
+
+                while (innerException.InnerException != null)
+                {
+                    innerException = innerException.InnerException;
+                }
+
+                Console.WriteLine("REGISTRATION ERROR: " + ex);
+                Console.WriteLine("INNER EXCEPTION: " + innerException.Message);
 
                 return StatusCode(500, new
                 {
-                    Success = false,
-                    Error = "Registration failed.",
-                    Details = ex.Message
+                    success = false,
+                    error = "Registration failed.",
+                    details = innerException.Message
                 });
             }
         }
@@ -726,7 +855,12 @@ namespace WebApplication1.Controllers
                 if (request.NewPassword != request.ConfirmPassword)
                     return Ok(new { Success = false, Message = "Passwords do not match." });
 
-                user.Password = HashPassword(request.NewPassword);
+                var passwordHasher = new PasswordHasher<User>();
+
+                user.Password = passwordHasher.HashPassword(
+                    user,
+                    request.NewPassword
+                );
                 user.UpdatedAt = DateTimeHelper.Now();
 
                 // Activity Log
@@ -774,59 +908,90 @@ namespace WebApplication1.Controllers
 
         [AllowAnonymous]
         [HttpPost("ResetPassword")]
-        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
+        public async Task<IActionResult> ResetPassword(
+    [FromBody] ResetPasswordRequest request)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
             try
             {
+                await using var transaction =
+                    await _context.Database.BeginTransactionAsync();
+
+                var now = DateTimeHelper.Now();
+
                 var resetToken = await _context.PasswordResetTokens
                     .Include(t => t.User)
-                    .FirstOrDefaultAsync(t => t.Token == request.Token);
+                    .FirstOrDefaultAsync(t =>
+                        t.Token == request.Token &&
+                        t.ExpiryTime > now
+                    );
 
-                if (resetToken == null || resetToken.ExpiryTime < DateTime.UtcNow)
+                // Validate token
+                if (resetToken == null || !resetToken.User.IsActive)
+                {
                     return Ok(new
                     {
                         Success = false,
                         Message = "Invalid or expired token."
                     });
+                }
+
+                var user = resetToken.User;
 
                 // Update password
-                resetToken.User.Password = HashPassword(request.NewPassword);
-                resetToken.User.UpdatedAt = DateTimeHelper.Now();
+                var passwordHasher = new PasswordHasher<User>();
+
+                user.Password = passwordHasher.HashPassword(
+                    user,
+                    request.NewPassword
+                );
+                user.UpdatedAt = now;
 
                 // Activity Log
                 _context.ActivityLogs.Add(new ActivityLog
                 {
                     Id = Guid.NewGuid(),
-                    UserId = resetToken.User.Id,
+                    UserId = user.Id,
                     Module = "User",
                     Action = "Reset Password",
-                    Description = $"Password was reset for {resetToken.User.FullName}.",
+                    Description = $"Password was reset for {user.FullName}.",
                     Icon = "pi pi-refresh",
                     Color = "blue",
-                    CreatedAt = DateTimeHelper.Now()
+                    CreatedAt = now
                 });
 
-                // Remove used token
+                // Delete token so it cannot be reused
                 _context.PasswordResetTokens.Remove(resetToken);
 
+                // Save password, activity log and token deletion together
                 await _context.SaveChangesAsync();
 
-                // SignalR Notification
+                await transaction.CommitAsync();
+
+                // SignalR Notification (after successful commit)
                 await _hub.Clients.All.SendAsync("ReceiveNotification", new
                 {
                     Title = "Password Reset",
-                    Message = $"Password for {resetToken.User.Email} has been successfully reset.",
+                    Message = $"Password for {user.Email} has been successfully reset.",
                     Type = "info",
-                    Time = DateTimeHelper.Now()
+                    Time = now
                 });
 
                 return Ok(new
                 {
                     Success = true,
                     Message = "Password has been reset successfully."
+                });
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                // Another request has already consumed this token
+                return Ok(new
+                {
+                    Success = false,
+                    Message = "Invalid or expired token."
                 });
             }
             catch (Exception ex)
@@ -836,8 +1001,7 @@ namespace WebApplication1.Controllers
                 return StatusCode(500, new
                 {
                     Success = false,
-                    Error = "Failed to reset password.",
-                    Details = ex.Message
+                    Error = "Failed to reset password."
                 });
             }
         }
@@ -853,7 +1017,7 @@ namespace WebApplication1.Controllers
                 if (string.IsNullOrEmpty(userId))
                     return Unauthorized(new { Error = "User ID not found in token." });
 
-                var user = _context.Users.Find(int.Parse(userId));
+                var user = _context.Users.Find(Guid.Parse(userId));
                 if (user == null)
                     return NotFound(new { Error = "User not found." });
 
@@ -893,6 +1057,11 @@ namespace WebApplication1.Controllers
                     return Ok(new { Success = true, Message = "If your email is registered, you will receive reset instructions shortly." });
                 }
 
+                var previousTokens = _context.PasswordResetTokens.Where(x => x.UserId == user.Id);
+
+                _context.PasswordResetTokens.RemoveRange(previousTokens);
+                _context.SaveChanges();
+
                 var token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(48));
                 var expiry = DateTimeHelper.Now().AddHours(1);
 
@@ -900,7 +1069,8 @@ namespace WebApplication1.Controllers
                 {
                     UserId = user.Id,
                     Token = token,
-                    ExpiryTime = expiry
+                    ExpiryTime = expiry,
+                    UsedAt = null
                 };
 
                 _context.PasswordResetTokens.Add(resetToken);
@@ -908,8 +1078,6 @@ namespace WebApplication1.Controllers
 
                 var resetLink = $"http://localhost:4200/reset-password?token={Uri.EscapeDataString(token)}";
                 _emailService.SendResetEmail(user.Email, resetLink);
-
-                Console.WriteLine($"Password reset link for {user.Email}: {resetLink}");
 
                 return Ok(new
                 {
@@ -1188,52 +1356,76 @@ namespace WebApplication1.Controllers
             }
         }
 
+
+        [Authorize(Roles = "SuperAdmin,HR,Management")]
         [HttpPut("Approval/{id}")]
-        public IActionResult Approval(Guid id, ApprovalRequest request)
+        public async Task<IActionResult> Approval(
+            Guid id,
+            [FromBody] ApprovalRequest request)
         {
-            var user = _context.Users.FirstOrDefault(x => x.Id == id);
+            var user = await _context.Users
+                .Include(x => x.Departments)
+                .FirstOrDefaultAsync(x => x.Id == id);
 
             if (user == null)
-                return NotFound();
+                return NotFound(new { Error = "User not found." });
 
+            if (request.Status != "Approved" && request.Status != "Rejected")
+                return BadRequest(new { Error = "Invalid approval status." });
 
+            // Update status
             user.Status = request.Status;
-
 
             if (request.Status == "Approved")
             {
                 user.SystemRole = request.SystemRole;
-
                 user.IsActive = true;
+                user.RejectReason = null;
 
-                user.Departments = _context.Departments
+                user.Departments = await _context.Departments
                     .Where(x => request.DepartmentIds.Contains(x.Id))
-                    .ToList();
-
-                _emailService.SendApprovalEmail(
-         user.Email,
-         user.FullName);
+                    .ToListAsync();
             }
-
-
-            if (request.Status == "Rejected")
+            else
             {
+                user.IsActive = false;
                 user.RejectReason = request.Reason;
-                
-                _emailService.SendRejectionEmail(
-            user.Email,
-            user.FullName,
-            request.Reason
-        );
             }
 
+            await _context.SaveChangesAsync();
 
-            _context.SaveChanges();
+            bool emailSent = false;
 
+            try
+            {
+                if (request.Status == "Approved")
+                {
+                    _emailService.SendApprovalEmail(
+                        user.Email,
+                        user.FullName
+                    );
+                }
+                else
+                {
+                    _emailService.SendRejectionEmail(
+                        user.Email,
+                        user.FullName,
+                        request.Reason
+                    );
+                }
+
+                emailSent = true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Email sending failed: {ex}");
+            }
 
             return Ok(new
             {
-                success = true
+                Success = true,
+                Message = "User status updated successfully.",
+                EmailSent = emailSent
             });
         }
     }

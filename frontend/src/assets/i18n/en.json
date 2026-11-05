@@ -1,0 +1,27 @@
+{
+  "Account": "Account",
+  "Personal Information": "Personal Information",
+  "Change Password": "Change Password",
+  "Notifications": "Notifications",
+
+  "Preferences": "Preferences",
+  "Language": "Language",
+  "Dark Mode": "Dark Mode",
+  "App Theme": "App Theme",
+
+  "Support": "Support",
+  "Help Center": "Help Center",
+  "Report a bug": "Report a bug",
+  "Terms & Privacy": "Terms & Privacy",
+
+  "Sign Out": "Sign Out",
+  "Signing Out...": "Signing Out...",
+  "Please wait a moment": "Please wait a moment",
+
+  "Technical Support": "Technical Support",
+
+  "Home": "Home",
+  "Daily Tasks": "Daily Tasks",
+  "Schedule": "Schedule",
+  "Settings": "Settings"
+}

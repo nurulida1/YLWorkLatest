@@ -17,123 +17,188 @@ import { Subject, takeUntil } from 'rxjs';
 @Component({
   selector: 'app-personal-info',
   imports: [CommonModule, ReactiveFormsModule, ButtonModule, InputTextModule],
-  template: `<div
-    class="w-full min-h-[85vh] flex flex-col gap-5 px-6 py-4 items-center"
-  >
-    <div class="flex flex-col items-center justify-center gap-2">
-      <div class="w-25 h-25 border-3 border-white shadow-lg rounded-xl"></div>
-      <div class="font-bold text-2xl mt-3 tracking-wide">
-        {{ selectedUser?.fullName }}
-      </div>
-      <span class="text-gray-500 font-semibold">{{
-        selectedUser?.jobTitle
-      }}</span>
-    </div>
-
-    <div
-      class="p-6 flex flex-col bg-white border border-gray-300 shadow-sm rounded-lg w-full"
-    >
-      <div class="flex flex-row items-center gap-2">
-        <i class="pi pi-user text-xs text-sky-700!"></i>
-        <span class="font-bold text-lg text-gray-800">Basic Information</span>
-      </div>
-
-      <div class="flex flex-col gap-1 mt-6">
-        <div>Full Name</div>
-        <div
-          class="border text-gray-700 bg-gray-100 rounded-lg p-2 border-gray-300"
-        >
-          {{ selectedUser?.fullName }}
+  template: `
+    <div class="personal-info-page">
+      <div class="personal-info-container">
+        <!-- Page Heading -->
+        <div class="page-heading">
+          <div>
+            <h1>Personal Information</h1>
+            <p>View your personal details and employment information.</p>
+          </div>
         </div>
-      </div>
-      <div class="flex flex-col gap-1 mt-4">
-        <div>Display Name</div>
-        <div
-          class="border text-gray-700 bg-gray-100 rounded-lg p-2 border-gray-300"
-        >
-          {{ selectedUser?.displayName }}
-        </div>
-      </div>
-      <div class="flex flex-col gap-1 mt-4">
-        <div>Employee ID</div>
-        <div
-          class="border text-gray-700 bg-gray-100 rounded-lg p-2 border-gray-300"
-        >
-          {{ selectedUser?.employeeNo }}
-        </div>
-      </div>
-    </div>
 
-    <div
-      class="p-6 flex flex-col bg-white border border-gray-300 shadow-sm rounded-lg w-full"
-    >
-      <div class="flex flex-row items-center gap-2">
-        <i class="pi pi-id-card text-xl! text-sky-700!"></i>
-        <span class="font-bold text-lg text-gray-800">Contact Details</span>
-      </div>
+        <!-- Employee Profile Summary -->
+        <section class="employee-summary">
+          <div class="employee-avatar">
+            {{ selectedUser?.fullName?.charAt(0) || 'U' }}
+          </div>
 
-      <div class="flex flex-col gap-1 mt-6">
-        <div>Corporate Email</div>
-        <div
-          class="border text-gray-700 bg-gray-100 rounded-lg p-2 border-gray-300"
-        >
-          {{ selectedUser?.email }}
+          <div class="employee-summary-info">
+            <h2>{{ selectedUser?.fullName || 'Employee Name' }}</h2>
+            <p>{{ selectedUser?.jobTitle || 'Employee' }}</p>
+
+            <div class="employee-summary-meta">
+              <span>
+                <i class="pi pi-id-card"></i>
+                {{ selectedUser?.employeeNo || '—' }}
+              </span>
+              <span>
+                <i class="pi pi-envelope"></i>
+                {{ selectedUser?.email || '—' }}
+              </span>
+            </div>
+          </div>
+
+          <div class="employee-status">
+            <span class="status-dot"></span>
+            Employee
+          </div>
+        </section>
+
+        <!-- Information Sections -->
+        <div class="information-grid">
+          <!-- Basic Information -->
+          <section class="info-card">
+            <div class="info-card-header">
+              <div class="info-icon info-icon-blue">
+                <i class="pi pi-user"></i>
+              </div>
+              <div>
+                <h3>Basic Information</h3>
+                <p>Personal identification details</p>
+              </div>
+            </div>
+
+            <div class="info-card-body">
+              <div class="info-field">
+                <label>Full Name</label>
+                <span>{{ selectedUser?.fullName || '—' }}</span>
+              </div>
+
+              <div class="info-field">
+                <label>Display Name</label>
+                <span>{{ selectedUser?.displayName || '—' }}</span>
+              </div>
+
+              <div class="info-field">
+                <label>Employee ID</label>
+                <span>{{ selectedUser?.employeeNo || '—' }}</span>
+              </div>
+            </div>
+          </section>
+
+          <!-- Contact Details -->
+          <section class="info-card">
+            <div class="info-card-header">
+              <div class="info-icon info-icon-purple">
+                <i class="pi pi-address-book"></i>
+              </div>
+              <div>
+                <h3>Contact Details</h3>
+                <p>Your contact information</p>
+              </div>
+            </div>
+
+            <div class="info-card-body">
+              <div class="info-field">
+                <label>Corporate Email</label>
+                <span class="break-value">
+                  {{ selectedUser?.email || '—' }}
+                </span>
+              </div>
+
+              <div class="info-field">
+                <label>Phone Number</label>
+                <span>{{ selectedUser?.contactNo || '—' }}</span>
+              </div>
+            </div>
+          </section>
+
+          <!-- Professional Information -->
+          <section class="info-card">
+            <div class="info-card-header">
+              <div class="info-icon info-icon-green">
+                <i class="pi pi-briefcase"></i>
+              </div>
+              <div>
+                <h3>Professional Information</h3>
+                <p>Employment details</p>
+              </div>
+            </div>
+
+            <div class="info-card-body">
+              <div class="info-field">
+                <label>Job Title</label>
+                <span>{{ selectedUser?.jobTitle || '—' }}</span>
+              </div>
+
+              <div class="info-field">
+                <label>Reporting Manager</label>
+                <span>{{
+                  selectedUser?.hod?.displayName || 'Not assigned'
+                }}</span>
+              </div>
+
+              <div class="info-field">
+                <label>Date Joined</label>
+                <span>
+                  {{
+                    selectedUser?.joinedDate
+                      ? (selectedUser.joinedDate | date: 'dd MMM yyyy')
+                      : '—'
+                  }}
+                </span>
+              </div>
+            </div>
+          </section>
         </div>
-      </div>
-      <div class="flex flex-col gap-1 mt-4">
-        <div>Phone Number</div>
-        <div
-          class="border text-gray-700 bg-gray-100 rounded-lg p-2 border-gray-300"
-        >
-          {{ selectedUser?.contactNo }}
-        </div>
-      </div>
-    </div>
 
-    <div
-      class="p-6 flex flex-col bg-white border border-gray-300 shadow-sm rounded-lg w-full"
-    >
-      <div class="flex flex-row items-center gap-2">
-        <i class="pi pi-building text-xl! text-sky-700!"></i>
-        <span class="font-bold text-lg text-gray-800">Professional Info</span>
-      </div>
+        <!-- Department Information -->
+        <section class="info-card department-card">
+          <div class="info-card-header">
+            <div class="info-icon info-icon-orange">
+              <i class="pi pi-sitemap"></i>
+            </div>
+            <div>
+              <h3>Department Information</h3>
+              <p>Departments assigned to your employee profile</p>
+            </div>
+          </div>
 
-      <div class="flex flex-col border-b pb-4 border-gray-200 gap-2 mt-6">
-        <div>Departments</div>
-        <div class="grid grid-cols-2 gap-2 justify-end">
-          <ng-container *ngFor="let department of selectedUser?.departments"
-            ><div
-              class="text-center rounded-sm bg-gray-200 text-gray-700 font-semibold px-3 py-2 text-sm"
+          <div class="department-content">
+            <ng-container
+              *ngIf="selectedUser?.departments?.length; else noDepartments"
             >
-              {{ department?.name }}
-            </div></ng-container
-          >
-        </div>
-      </div>
-      <div
-        class="border-b border-gray-200 pb-4 flex flex-row items-center justify-between gap-1 mt-4"
-      >
-        <div>Reporting Managers</div>
-        <div class="text-sky-700 font-semibold">
-          {{ selectedUser?.hod?.displayName }}1
-        </div>
-      </div>
-      <div class="flex flex-row items-center justify-between gap-1 mt-4">
-        <div>Date Joined</div>
-        <div class="text-gray-700 font-semibold">
-          {{ selectedUser?.joinedDate | date }}
+              <span
+                class="department-tag"
+                *ngFor="let department of selectedUser.departments"
+              >
+                <i class="pi pi-building"></i>
+                {{ department?.name }}
+              </span>
+            </ng-container>
+
+            <ng-template #noDepartments>
+              <span class="empty-text">No department assigned.</span>
+            </ng-template>
+          </div>
+        </section>
+
+        <!-- Information Notice -->
+        <div class="profile-notice">
+          <i class="pi pi-info-circle"></i>
+          <div>
+            <strong>Need to update your information?</strong>
+            <p>
+              Please contact your HR administrator for assistance with updating
+              your employee details.
+            </p>
+          </div>
         </div>
       </div>
     </div>
-    <p-button
-      styleClass="w-full! py-3! shadow-lg! bg-sky-700! border-none!"
-      class="w-full"
-      severity="info"
-      iconPos="right"
-      label="Update Profile"
-      icon="pi pi-check-circle"
-    ></p-button>
-  </div>`,
+  `,
   styleUrl: './personal-info.less',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -175,5 +240,8 @@ export class PersonalInfo implements OnInit, OnDestroy {
       });
   }
 
-  ngOnDestroy(): void {}
+  ngOnDestroy(): void {
+    this.ngUnsubscribe.next();
+    this.ngUnsubscribe.complete();
+  }
 }

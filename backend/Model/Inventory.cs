@@ -34,7 +34,7 @@ namespace YLWorks.Model
         public Guid? SectionId { get; set; }
         public SectionInventory? Section { get; set; }
 
-        public int? ParLevel { get; set; }
+        public decimal? ParLevel { get; set; }
 
         public DateTime? Date { get; set; }
 
@@ -64,12 +64,12 @@ namespace YLWorks.Model
         public string? SerialNumber { get; set; }
         public Guid? LocationId { get; set; }
         public Guid? SectionId { get; set; }
-        public int? ParLevel { get; set; }
+        public decimal? ParLevel { get; set; }
         public DateTime? Date { get; set; }
         public string? Status { get; set; } // InStock, Issued, Damaged, Lost, FOC, Disposed, etc.
         public string? Remarks { get; set; }
         public decimal? Costs { get; set; }
-        public string? Attachment { get; set; }
+        public IFormFile? Attachment { get; set; }
         public decimal? ReservedQuantity { get; set; }
         public Guid? ProductServiceId { get; set; }
     }
@@ -88,12 +88,13 @@ namespace YLWorks.Model
         public string? SerialNumber { get; set; }
         public Guid? LocationId { get; set; }
         public Guid? SectionId { get; set; }
-        public int? ParLevel { get; set; }
+        public decimal? ParLevel { get; set; }
         public DateTime? Date { get; set; }
         public string? Status { get; set; } // InStock, Issued, Damaged, Lost, FOC, Disposed, etc.
         public string? Remarks { get; set; }
         public decimal? Costs { get; set; }
-        public string? Attachment { get; set; }
+        public decimal? ReservedQuantity { get; set; }
+        public IFormFile? Attachment { get; set; }
     }
 
     public class InventoryDropdownResponse
@@ -129,7 +130,7 @@ namespace YLWorks.Model
         public Guid Id { get; set; }
         public string Name { get; set; } = string.Empty;
         public decimal Quantity { get; set; }
-        public int ParLevel { get; set; }
+        public decimal ParLevel { get; set; }
         public SectionDto Section { get; set; }
         public string Brand { get; set; }
     }

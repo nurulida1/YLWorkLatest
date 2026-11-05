@@ -8,13 +8,13 @@ const routes: Routes = [
   {
     path: '',
     component: Client,
-    canActivate: [modulePermissionGuard],
+    // canActivate: [modulePermissionGuard],
     data: { moduleKey: 'clients' },
   },
   {
     path: 'form',
     component: ClientForm,
-    canActivate: [modulePermissionGuard],
+    // canActivate: [modulePermissionGuard],
     data: { moduleKey: 'clients' },
   },
 ];

@@ -1,6 +1,7 @@
 export const environment = {
   production: false,
-  ApiBaseUrl: 'https://localhost:5000/api',
-  RedirectUrl: 'http://192.168.1.79:4200', // your Angular app URL
+  ApiBaseUrl: 'http://localhost:5000/api',
+  RedirectUrl: 'http://localhost:4200',
+  AttachmentUrl: 'http://localhost:5000/',
   AuthServerUrl: '',
 };

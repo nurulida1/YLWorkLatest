@@ -13,12 +13,12 @@ namespace YLWorks.Services
             _context = context;
         }
 
-
         public async Task CreateAsync(
             Guid userId,
             string title,
             string message,
-            string type)
+            string type,
+            string? link = null)
         {
             var notification = new Notification
             {
@@ -27,13 +27,12 @@ namespace YLWorks.Services
                 Title = title,
                 Message = message,
                 Type = type,
+                Link = link,
                 IsRead = false,
                 CreatedAt = DateTimeHelper.Now()
             };
 
-
             _context.Notifications.Add(notification);
-
             await _context.SaveChangesAsync();
         }
     }

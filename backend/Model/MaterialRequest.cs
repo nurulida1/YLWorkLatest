@@ -9,6 +9,8 @@
         public string? RequestNo { get; set; } = string.Empty;
         public Guid? ProjectId { get; set; }
         public Project? Project { get; set; }
+        public string? Priority { get; set; }
+        public string? Location { get; set; }
         public DateTime? RequestDate { get; set; }
         public DateTime? DeliveryDate { get; set; }
         public string? DeliveryPlace { get; set; }
@@ -31,6 +33,8 @@
         public Guid Id { get; set;}
         public Guid MaterialRequestId { get; set; }
         public MaterialRequest MaterialRequest { get; set; }
+        public Guid? InventoryId { get; set; }
+        public Inventory? Inventory { get; set; }
         public string? Description { get; set; } = string.Empty;
         public string? Brand { get; set; } = string.Empty;
         public string Unit { get; set; } = string.Empty;
@@ -50,6 +54,8 @@
         public string? RequestNo { get; set; } = string.Empty;
         public Guid? ClientId { get; set; }
         public Guid? ProjectId { get; set; }
+        public string? Priority { get; set; }
+        public string? Location { get; set; }
         public DateTime? RequestDate { get; set; }
         public DateTime? DeliveryDate { get; set; }
         public string? DeliveryPlace { get; set; }
@@ -67,6 +73,7 @@
 
     public class MaterialItemRequest
     {
+        public Guid? InventoryId { get; set; }
         public string Description { get; set; } = string.Empty;
         public string? Brand { get; set; } = string.Empty;
         public string Unit { get; set; } = string.Empty;
@@ -89,6 +96,9 @@
         public string? RevNo { get; set; }
         public DateTime? EffDate { get; set; }
         public string RequestNo { get; set; }
+        public Guid? ProjectId { get; set; }
+        public string? Priority { get; set; }
+        public string? Location { get; set; }
         public DateTime? RequestDate { get; set; }
         public DateTime? DeliveryDate { get; set; }
         public string? DeliveryPlace { get; set; }

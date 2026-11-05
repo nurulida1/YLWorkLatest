@@ -22,7 +22,7 @@ export interface InventoryDto extends BaseModel {
   location: BaseOption;
   sectionId: string;
   section: BaseOption;
-  parLevel: string;
+  parLevel: number;
   date: Date;
   status: string;
   remarks: string;
@@ -117,4 +117,19 @@ export interface InventoryAuditDto {
   userName: string | null;
   createdAt: string;
   changes: InventoryAuditChangesPayload;
+}
+export interface InventorySummary {
+  totalItems: number;
+  lowStock: number;
+  outOfStock: number;
+  inStock: number;
+  reserved: number;
+  totalQuantity: number;
+  totalAvailableQuantity: number;
+}
+
+export interface InventoryDropdownItem {
+  id: string;
+  itemCode: string | null;
+  itemName: string;
 }

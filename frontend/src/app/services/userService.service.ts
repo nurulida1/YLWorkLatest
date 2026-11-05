@@ -106,12 +106,10 @@ export class UserService {
       .pipe(retry(1), catchError(this.handleError('Login')));
   }
 
-  Register(request: RegisterRequest): Observable<UserDto> {
-    return this.http.post<any>(`${this.url}/Register`, request).pipe(
-      map((res) => res.user),
-      retry(1),
-      catchError(this.handleError('Register')),
-    );
+  Register(request: RegisterRequest): Observable<any> {
+    return this.http
+      .post<any>(`${this.url}/Register`, request)
+      .pipe(retry(1), catchError(this.handleError('Register')));
   }
 
   AdminCreate(request: RegisterRequest): Observable<UserDto> {

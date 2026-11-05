@@ -75,6 +75,9 @@ import { ButtonModule } from 'primeng/button';
           <ng-container *ngFor="let item of management">
             <div
               class="flex flex-col gap-2 w-full"
+              [ngClass]="{
+                'lg:hidden': item.mobileOnly,
+              }"
               *ngIf="canView(item) || hasVisibleSubItems(item)"
             >
               <div
@@ -163,6 +166,17 @@ export class Sidemenu {
 
   management: any[] = [
     {
+      label: 'Activity Log',
+      route: '/activity-log',
+      icon: 'pi-history',
+      roles: ['SuperAdmin'],
+    },
+    {
+      label: 'Announcements',
+      route: '/announcements',
+      icon: 'pi-bell',
+    },
+    {
       label: 'Leave',
       route: '/leave',
       icon: 'pi-calendar',
@@ -175,10 +189,7 @@ export class Sidemenu {
         {
           label: 'Leave Approvals',
           route: '/leave/approvals',
-        },
-        {
-          label: 'Leave History',
-          route: '/leave/history',
+          roles: ['SuperAdmin', 'Management', 'HOD', 'HR'],
         },
       ],
     },
@@ -199,66 +210,118 @@ export class Sidemenu {
           label: 'Claim Approvals',
           route: '/claims/approvals',
         },
+      ],
+    },
+    {
+      label: 'My Work',
+      icon: 'pi-briefcase',
+      items: [
         {
-          label: 'Claim History',
-          route: '/claims/history',
+          label: 'Upcoming Meetings',
+          route: '/meeting',
+          icon: 'pi-calendar-clock',
+        },
+        {
+          label: 'My Tasks',
+          route: '/my-tasks',
+          icon: 'pi-list-check',
+        },
+        {
+          label: 'My Daily Reports',
+          route: '/daily-reports',
+          icon: 'pi-file-edit',
+        },
+        {
+          label: 'Team Daily Reports',
+          route: '/daily-reports/team',
+          icon: 'pi-users',
         },
       ],
     },
     {
-      label: 'Upcoming Meetings',
-      route: '/meeting',
-      icon: 'pi-calendar-clock',
+      label: 'Support & Requests',
+      icon: 'pi-desktop',
+      items: [
+        {
+          label: 'Hardware / IT Support',
+          route: '/hardware-request',
+          icon: 'pi-wrench',
+        },
+        {
+          label: 'Incoming Requests',
+          route: '/hardware-request/incoming',
+          icon: 'pi-inbox',
+          roles: ['SuperAdmin', 'Management', 'HOD'],
+          departments: ['IT', 'Purchasing & Logistic'],
+        },
+      ],
     },
     {
-      label: 'Tasks',
-      route: '/staff-tasks',
-      icon: 'pi-list-check',
+      label: 'Projects',
+      icon: 'pi-folder',
+      route: '/projects',
+      roles: ['SuperAdmin', 'Management', 'HOD'],
+      // roles: ['SuperAdmin', 'Admin'],
+    },
+    {
+      label: 'Work Orders',
+      icon: 'pi-wrench',
+      route: '/work-order',
+      roles: ['SuperAdmin', 'Management', 'HOD'],
+      // roles: ['SuperAdmin', 'Admin'],
     },
     {
       label: 'Quotations',
       route: '/quotations',
       icon: 'pi-file',
+      roles: ['SuperAdmin', 'Management', 'HOD'],
     },
     {
       label: 'Products Services',
       icon: 'pi-list',
       route: '/products-services',
+      roles: ['SuperAdmin', 'Management', 'HOD'],
     },
     {
       label: 'Sales Order',
       icon: 'pi-money-bill',
       route: '/sales-order',
+      roles: ['SuperAdmin', 'Management', 'HOD'],
     },
     {
       label: 'Delivery Orders',
       icon: 'pi-truck',
       route: '/delivery-orders',
+      roles: ['SuperAdmin', 'Management', 'HOD'],
     },
 
     {
       label: 'Purchase Orders',
       icon: 'pi-shopping-cart',
       route: '/purchase-orders',
+      roles: ['SuperAdmin', 'Management', 'HOD'],
     },
 
     {
       label: 'Goods Receiving',
       icon: 'pi-clipboard',
       route: '/goods-receiving',
+      roles: ['SuperAdmin', 'Management', 'HOD'],
     },
 
     {
       label: 'DO RMA',
       icon: 'pi-refresh',
       route: '/do-rma',
+      roles: ['SuperAdmin', 'Management', 'HOD'],
     },
 
-    {
-      label: 'Material Requests',
-      route: '/material-requests',
-      icon: 'pi-list',
-    },
+    // {
+    //   label: 'Material Requests',
+    //   route: '/material-requests',
+    //   icon: 'pi-list',
+    //   roles: ['SuperAdmin', 'Management', 'HOD'],
+    // },
 
     {
       label: 'Inventory',
@@ -267,33 +330,39 @@ export class Sidemenu {
         {
           label: 'Inventory Record',
           route: '/inventory/listing',
+          roles: ['SuperAdmin', 'Management', 'HOD'],
         },
         {
           label: 'Category',
           route: '/inventory/category',
+          roles: ['SuperAdmin', 'Management', 'HOD'],
         },
         {
           label: 'Location',
           route: '/inventory/location',
+          roles: ['SuperAdmin', 'Management', 'HOD'],
         },
         {
           label: 'Section',
           route: '/inventory/section',
+          roles: ['SuperAdmin', 'Management', 'HOD'],
         },
       ],
     },
-
     {
       label: 'Invoices',
       icon: 'pi-receipt',
+      roles: ['SuperAdmin', 'Management', 'HOD'],
       items: [
         {
           label: 'Sales Invoice',
           route: '/invoices/sales',
+          roles: ['SuperAdmin', 'Management', 'HOD'],
         },
         {
           label: 'Purchase Invoice',
           route: '/invoices/purchase',
+          roles: ['SuperAdmin', 'Management', 'HOD'],
         },
       ],
     },
@@ -301,19 +370,49 @@ export class Sidemenu {
       label: 'Expenses',
       route: '/expenses',
       icon: 'pi-wallet',
+      roles: ['SuperAdmin', 'Management', 'HOD'],
       // roles: ['Purchasing Executive', 'SuperAdmin'],
     },
     {
       label: 'Incomes',
       route: '/incomes',
       icon: 'pi-chart-line',
+      roles: ['SuperAdmin', 'Management', 'HOD'],
       // roles: ['Purchasing Executive', 'SuperAdmin'],
     },
     {
       label: 'Payments',
       route: '/payments',
       icon: 'pi-credit-card',
+      roles: ['SuperAdmin', 'Management', 'HOD'],
       // roles: ['Purchasing Executive', 'SuperAdmin'],
+    },
+
+    {
+      label: 'My Company',
+      route: '/company',
+      icon: 'pi-building',
+      roles: ['SuperAdmin', 'Management', 'HOD'],
+    },
+    {
+      label: 'Suppliers',
+      route: '/supplier',
+      icon: 'pi-shop',
+      roles: ['SuperAdmin', 'Management', 'HOD'],
+    },
+
+    {
+      label: 'Clients',
+      route: '/clients',
+      icon: 'pi-users',
+      roles: ['SuperAdmin', 'Management', 'HOD'],
+    },
+
+    {
+      label: 'User Management',
+      route: '/user-management',
+      icon: 'pi-users',
+      roles: ['SuperAdmin', 'HR'],
     },
     {
       label: 'Department',
@@ -321,65 +420,27 @@ export class Sidemenu {
       icon: 'pi-building',
       // roles: ['Purchasing Executive', 'SuperAdmin'],
     },
-    {
-      label: 'Projects',
-      icon: 'pi-folder',
-      route: '/projects',
-      // roles: ['SuperAdmin', 'Admin'],
-    },
-    {
-      label: 'Work Orders',
-      icon: 'pi-wrench',
-      route: '/work-order',
-      // roles: ['SuperAdmin', 'Admin'],
-    },
-
-    {
-      label: 'Tasks',
-      icon: 'pi-check-square',
-      route: '/tasks',
-      // roles: ['SuperAdmin', 'Admin'],
-    },
-    {
-      label: 'My Company',
-      route: '/company',
-      icon: 'pi-building',
-    },
-    {
-      label: 'Suppliers',
-      route: '/supplier',
-      icon: 'pi-shop',
-    },
-
-    {
-      label: 'Clients',
-      route: '/clients',
-      icon: 'pi-users',
-    },
-
-    {
-      label: 'Profile Settings',
-      route: '/profile-settings',
-      icon: 'pi-user',
-      roles: ['Support', 'Staff', 'Management', 'HOD', 'HR'],
-    },
 
     {
       label: 'Settings',
       icon: 'pi-cog',
       items: [
         {
-          label: 'User Management',
-          route: '/settings/user-management',
-          roles: ['HR'],
+          label: 'Profile Settings',
+          route: '/profile-settings',
+          icon: 'pi-user',
+          roles: ['Support', 'Staff', 'Management', 'HOD', 'HR'],
+          mobileOnly: true,
         },
         {
           label: 'System Module',
           route: '/settings/system-module',
+          roles: ['SuperAdmin'],
         },
         {
           label: 'Role Permissions',
           route: '/settings/role-permission',
+          roles: ['SuperAdmin'],
         },
         {
           label: 'Leave Types',
@@ -452,30 +513,43 @@ export class Sidemenu {
   }
 
   isActive(route?: string, item?: any): boolean {
-    if (route) {
-      return this.currentUrl.startsWith(route);
-    }
+    if (!route) return false;
 
+    // Parent menu: active only when the URL exactly matches its route.
     if (item?.items) {
-      return item.items.some((sub: any) =>
-        this.currentUrl.startsWith(sub.route),
-      );
+      return this.currentUrl === route;
     }
 
-    return false;
+    // Submenu or normal menu: exact route matching.
+    return this.currentUrl === route;
   }
 
   canView(item: any): boolean {
     const role = this.currentUser?.systemRole;
-    if (role === 'SuperAdmin') {
+    const normalizedRole = role?.trim().toLowerCase();
+
+    // SuperAdmin can view everything.
+    if (normalizedRole === 'superadmin') {
       return true;
     }
 
+    // Special access for Inventory.
+    if (item.label === 'Inventory' || item.route?.startsWith('/inventory/')) {
+      return (
+        normalizedRole === 'director' ||
+        normalizedRole === 'hod' ||
+        this.hasPurchasingLogisticDepartment()
+      );
+    }
+
+    // Normal role-based access.
     if (!item.roles) {
       return true;
     }
 
-    return item.roles.includes(role);
+    return item.roles.some(
+      (allowedRole: string) => allowedRole.toLowerCase() === normalizedRole,
+    );
   }
 
   signOutClick() {
@@ -493,5 +567,14 @@ export class Sidemenu {
 
   toggleMenu(label: string) {
     this.openMenu = this.openMenu === label ? null : label;
+  }
+
+  private hasPurchasingLogisticDepartment(): boolean {
+    const departments = this.currentUser?.departments ?? [];
+
+    return departments.some(
+      (department: any) =>
+        department.trim().toLowerCase() === 'purchasing & logistic',
+    );
   }
 }

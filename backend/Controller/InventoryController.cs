@@ -34,6 +34,68 @@ namespace YLWorks.Controller
 
         }
 
+        [HttpGet("GetSummary")]
+        public async Task<IActionResult> GetSummary()
+        {
+            try
+            {
+                var query = _context.Inventories.AsNoTracking();
+
+                var totalItems = await query.CountAsync();
+
+                var lowStock = await query.CountAsync(x =>
+                    x.ParLevel.HasValue &&
+                    (x.Quantity - x.ReservedQuantity) <= x.ParLevel.Value &&
+                    (x.Quantity - x.ReservedQuantity) > 0
+                );
+
+                var outOfStock = await query.CountAsync(x =>
+                    (x.Quantity - x.ReservedQuantity) <= 0
+                );
+
+                var inStock = await query.CountAsync(x =>
+                    !(
+                        (x.Quantity - x.ReservedQuantity) <= 0
+                    ) &&
+                    (
+                        !x.ParLevel.HasValue ||
+                        (x.Quantity - x.ReservedQuantity) > x.ParLevel.Value
+                    )
+                );
+
+                var reserved = await query.CountAsync(x =>
+                    x.ReservedQuantity > 0
+                );
+
+                // Optional: total quantity
+                var totalQuantity = await query
+                    .SumAsync(x => x.Quantity);
+
+                // Optional: total available quantity
+                var totalAvailableQuantity = await query
+                    .SumAsync(x => x.Quantity - x.ReservedQuantity);
+
+                return Ok(new
+                {
+                    TotalItems = totalItems,
+                    LowStock = lowStock,
+                    OutOfStock = outOfStock,
+                    InStock = inStock,
+                    Reserved = reserved,
+                    TotalQuantity = totalQuantity,
+                    TotalAvailableQuantity = totalAvailableQuantity
+                });
+            }
+            catch (Exception)
+            {
+                return StatusCode(500, new
+                {
+                    Error = "Failed to load inventory summary."
+                });
+            }
+        }
+
+
         [HttpGet("GetMany")]
         public async Task<ActionResult<object>> GetMany(
       int page = 1,
@@ -198,62 +260,126 @@ namespace YLWorks.Controller
         }
 
         [HttpGet("GetOne")]
-        public async Task<ActionResult<object>> GetOne([FromQuery] Guid id)
+        public async Task<IActionResult> GetOne(string? filter = null)
         {
             try
             {
-                var result = await _context.Inventories
-                    .Where(d => d.Id == id)
-                    .Select(d => new
+                if (string.IsNullOrWhiteSpace(filter))
+                    return BadRequest(new { Error = "Filter is required." });
+
+                var filterParts = filter.Split('=');
+
+                if (filterParts.Length != 2)
+                    return BadRequest(new { Error = "Invalid filter format." });
+
+                var filterValue = filterParts[1].Trim();
+
+                if (!Guid.TryParse(filterValue, out Guid id))
+                    return BadRequest(new { Error = "Invalid Id." });
+
+                var data = await _context.Inventories
+                    .AsNoTracking()
+                    .Where(x => x.Id == id)
+                    .Select(x => new
                     {
-                        d.Id,
-                        d.ItemCode,
-                        d.ItemName,
-                        d.Brand,
-                        d.Model,
-                        d.Description,
-                        d.Unit,
-                        d.Quantity,
-                        d.ReservedQuantity,
-                        AvailableQuantity = d.Quantity - d.ReservedQuantity,
-                        d.SerialNumber,
-                        d.LocationId,
-                        d.SectionId,
-                        d.CategoryId,
-                        d.ParLevel,
-                        d.Date,
-                        d.Status,
-                        d.Remarks,
-                        d.Costs,
-                        d.Attachment,
-                        Category = d.Category == null ? null : new
-                        {
-                            d.Category.Name
-                        },
-                        Location = d.Location == null ? null : new
-                        {
-                            d.Location.Name
-                        },
-                        Section = d.Section == null ? null : new
-                        {
-                            d.Section.Name
-                        }
+                        x.Id,
+                        x.ItemCode,
+                        x.ItemName,
+                        x.Brand,
+                        x.Model,
+                        x.Description,
+                        x.Unit,
+
+                        x.Quantity,
+                        x.ReservedQuantity,
+
+                        AvailableQuantity = x.Quantity - x.ReservedQuantity,
+
+                        x.SerialNumber,
+
+                        x.CategoryId,
+                        Category = x.Category == null
+                            ? null
+                            : new
+                            {
+                                x.Category.Id,
+                                x.Category.Name
+                            },
+
+                        x.LocationId,
+                        Location = x.Location == null
+                            ? null
+                            : new
+                            {
+                                x.Location.Id,
+                                x.Location.Name
+                            },
+
+                        x.SectionId,
+                        Section = x.Section == null
+                            ? null
+                            : new
+                            {
+                                x.Section.Id,
+                                x.Section.Name
+                            },
+
+                        x.ParLevel,
+                        x.Date,
+                        x.Status,
+                        x.Remarks,
+                        x.Costs,
+                        x.Attachment,
+
+                        x.ProductServiceId,
+
+                        IsLowStock =
+                            x.ParLevel.HasValue &&
+                            (x.Quantity - x.ReservedQuantity) > 0 &&
+                            (x.Quantity - x.ReservedQuantity) <= x.ParLevel.Value,
+
+                        IsOutOfStock =
+                            (x.Quantity - x.ReservedQuantity) <= 0,
+
+                        IsInStock =
+                            (x.Quantity - x.ReservedQuantity) > 0 &&
+                            (
+                                !x.ParLevel.HasValue ||
+                                (x.Quantity - x.ReservedQuantity) > x.ParLevel.Value
+                            ),
+
+                        x.CreatedById,
+                        CreatedBy = x.CreatedBy == null
+                            ? null
+                            : new
+                            {
+                                x.CreatedBy.Id,
+                                x.CreatedBy.FullName,
+                                x.CreatedBy.DisplayName,
+                                x.CreatedBy.Email
+                            },
+
+                        x.CreatedAt,
+                        x.UpdatedAt
                     })
                     .FirstOrDefaultAsync();
 
-                if (result == null)
+                if (data == null)
                     return NotFound(new { Error = "Inventory not found." });
 
-                return Ok(result);
+                return Ok(data);
             }
             catch (Exception)
             {
-                return StatusCode(500, new { Error = "An unexpected error occurred." });
+                return StatusCode(500, new
+                {
+                    Error = "Failed to load inventory."
+                });
             }
         }
 
         [HttpPost("Create")]
-        public async Task<ActionResult<Inventory>> AddInventory([FromBody] CreateInventoryRequest request)
+        public async Task<ActionResult<Inventory>> AddInventory([FromForm] CreateInventoryRequest request)
         {
             if (string.IsNullOrWhiteSpace(request.ItemName))
                 return BadRequest(new { Error = "Name is required." });
@@ -264,10 +390,79 @@ namespace YLWorks.Controller
 
             try
             {
+                var itemCode = request.ItemCode;
+
+                if (string.IsNullOrWhiteSpace(itemCode))
+                {
+                    var lastItemCode = await _context.Inventories
+                        .Where(x => x.ItemCode != null && x.ItemCode.StartsWith("YL-MAT-"))
+                        .OrderByDescending(x => x.ItemCode)
+                        .Select(x => x.ItemCode)
+                        .FirstOrDefaultAsync();
+
+                    int nextNumber = 1;
+
+                    if (!string.IsNullOrEmpty(lastItemCode))
+                    {
+                        var numberPart = lastItemCode.Replace("YL-MAT-", "");
+
+                        if (int.TryParse(numberPart, out int lastNumber))
+                        {
+                            nextNumber = lastNumber + 1;
+                        }
+                    }
+
+                    itemCode = $"YL-MAT-{nextNumber:D4}";
+                }
+
+                var reservedQuantity = request.ReservedQuantity ?? 0m;
+                var availableQuantity = request.Quantity - reservedQuantity;
+
+                string status;
+
+                if (availableQuantity <= 0)
+                {
+                    status = "Out of Stock";
+                }
+                else if (request.ParLevel.HasValue && availableQuantity < request.ParLevel.Value)
+                {
+                    status = "Low Stock";
+                }
+                else
+                {
+                    status = "In Stock";
+                }
+
+                string? attachmentPath = null;
+
+                if (request.Attachment != null)
+                {
+                    var uploadsFolder = Path.Combine(
+                        Directory.GetCurrentDirectory(),
+                        "wwwroot",
+                        "uploads",
+                        "inventory"
+                    );
+
+                    Directory.CreateDirectory(uploadsFolder);
+
+                    var extension = Path.GetExtension(request.Attachment.FileName);
+
+                    var fileName = $"{Guid.NewGuid()}{extension}";
+
+                    var filePath = Path.Combine(uploadsFolder, fileName);
+
+                    using var stream = new FileStream(filePath, FileMode.Create);
+
+                    await request.Attachment.CopyToAsync(stream);
+
+                    attachmentPath = $"/uploads/inventory/{fileName}";
+                }
+
                 var inventory = new Inventory
                 {
                     Id = Guid.NewGuid(),
-                    ItemCode = request.ItemCode,
+                    ItemCode = itemCode,
                     ItemName = request.ItemName,
                     Brand = request.Brand,
                     Model = request.Model,
@@ -281,10 +476,10 @@ namespace YLWorks.Controller
                     SectionId = request.SectionId,
                     ParLevel = request.ParLevel,
                     Date = request.Date,
-                    Status = request.Status,
+                    Status = request.Status ?? status,
                     Remarks = request.Remarks,
                     Costs = request.Costs,
-                    Attachment = request.Attachment,
+                    Attachment = attachmentPath,
                     ProductServiceId = request.ProductServiceId, 
                     CreatedById = Guid.Parse(userIdClaim),
                     CreatedAt = DateTimeHelper.Now()
@@ -363,7 +558,7 @@ namespace YLWorks.Controller
         }
 
         [HttpPut("Update")]
-        public async Task<ActionResult> UpdateInventory([FromBody] UpdateInventoryRequest request)
+        public async Task<ActionResult> UpdateInventory([FromForm] UpdateInventoryRequest request)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
@@ -378,9 +573,53 @@ namespace YLWorks.Controller
             if (inventory == null)
                 return NotFound(new { Error = "Inventory not found." });
 
+            var before = SnapshotTrackedFields(inventory);
+
             try
             {
-                var before = SnapshotTrackedFields(inventory);
+                string? attachmentPath = null;
+
+                if (request.Attachment != null)
+                {
+                    var uploadsFolder = Path.Combine(
+                        Directory.GetCurrentDirectory(),
+                        "wwwroot",
+                        "uploads",
+                        "inventory"
+                    );
+
+                    Directory.CreateDirectory(uploadsFolder);
+
+                    var extension = Path.GetExtension(request.Attachment.FileName);
+
+                    var fileName = $"{Guid.NewGuid()}{extension}";
+
+                    var filePath = Path.Combine(uploadsFolder, fileName);
+
+                    using var stream = new FileStream(filePath, FileMode.Create);
+
+                    await request.Attachment.CopyToAsync(stream);
+
+                    attachmentPath = $"/uploads/inventory/{fileName}";
+                }
+
+                var reservedQuantity = request.ReservedQuantity ?? 0m;
+                var availableQuantity = request.Quantity - reservedQuantity;
+
+                string status;
+
+                if (availableQuantity <= 0)
+                {
+                    status = "Out of Stock";
+                }
+                else if (request.ParLevel.HasValue && availableQuantity < request.ParLevel.Value)
+                {
+                    status = "Low Stock";
+                }
+                else
+                {
+                    status = "In Stock";
+                }
 
                 inventory.ItemCode = request.ItemCode;
                 inventory.ItemName = request.ItemName;
@@ -397,10 +636,13 @@ namespace YLWorks.Controller
                 inventory.SectionId = request.SectionId;
                 inventory.ParLevel = request.ParLevel;
                 inventory.Date = request.Date;
-                inventory.Status = request.Status;
+                inventory.Status = request.Status ?? status;
                 inventory.Remarks = request.Remarks;
                 inventory.Costs = request.Costs;
-                inventory.Attachment = request.Attachment;
+                if (request.Attachment != null)
+                {
+                    inventory.Attachment = attachmentPath;
+                }
 
                 var userId = Guid.Parse(userIdClaim);
                 inventory.UpdatedById = userId;
@@ -710,6 +952,33 @@ namespace YLWorks.Controller
                 };
             }
         }
+        [HttpGet("GetRequestItems")]
+        public async Task<ActionResult<List<InventoryDropdownItem>>> GetRequestItems()
+        {
+            try
+            {
+                var items = await _context.Inventories
+                    .AsNoTracking()
+                    .OrderBy(x => x.ItemName)
+                    .Select(x => new InventoryDropdownItem
+                    {
+                        Id = x.Id,
+                        ItemCode = x.ItemCode,
+                        ItemName = x.ItemName
+                    })
+                    .ToListAsync();
+
+                return Ok(items);
+            }
+            catch (Exception)
+            {
+                return StatusCode(500, new
+                {
+                    Error = "Failed to load inventory items."
+                });
+            }
+        }
+
 
     }
 }

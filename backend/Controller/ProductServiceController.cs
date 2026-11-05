@@ -150,10 +150,6 @@ namespace YLWorks.Controller
         u.Type,
         u.Unit,
         u.Price,
-        u.InventoryId,
-        AvailableStock = u.Inventory != null
-            ? u.Inventory.Quantity - u.Inventory.ReservedQuantity
-            : (decimal?)null
     })
     .ToList();
 
@@ -205,7 +201,6 @@ namespace YLWorks.Controller
                     Type = request.Type,
                     Unit = request.Unit,
                     Price = request.Price,
-                    InventoryId = request.InventoryId
                 };
 
                 product.CreatedAt = DateTimeHelper.Now();
@@ -221,7 +216,6 @@ namespace YLWorks.Controller
                     product.Type,
                     product.Unit,
                     product.Price,
-                    product.InventoryId,
                     AvailableStock = product.AvailableStock
                 };
 
@@ -249,7 +243,6 @@ namespace YLWorks.Controller
                 product.Type = request.Type;
                 product.Unit = request.Unit ?? product.Unit;
                 product.Price = request.Price ?? product.Price;
-                product.InventoryId = request.InventoryId;
                 product.UpdatedAt = DateTimeHelper.Now();
 
                 await _context.SaveChangesAsync();
@@ -262,7 +255,6 @@ namespace YLWorks.Controller
                     product.Type,
                     product.Unit,
                     product.Price,
-                    product.InventoryId,
                     AvailableStock = product.AvailableStock
                 };
 

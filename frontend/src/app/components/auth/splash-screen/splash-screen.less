@@ -1,0 +1,174 @@
+:host {
+  display: block;
+
+  /* Whole page */
+  .splash-page {
+    animation: splashFadeIn 500ms ease-out both;
+  }
+
+  /* Background glow */
+  .splash-page > div > div:nth-child(1),
+  .splash-page > div > div:nth-child(2) {
+    animation: backgroundEnter 1200ms ease-out both;
+  }
+
+  /* Platform badge */
+  .splash-item {
+    opacity: 0;
+    animation: itemEnter 600ms cubic-bezier(0.22, 1, 0.36, 1) 250ms forwards;
+  }
+
+  /* Logo */
+  .splash-logo {
+    opacity: 0;
+    animation: logoEnter 700ms cubic-bezier(0.34, 1.56, 0.64, 1) 400ms forwards;
+  }
+
+  /* Feature pills */
+  .splash-features > div {
+    opacity: 0;
+    animation: featureEnter 500ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+
+  .splash-features > div:nth-child(1) {
+    animation-delay: 700ms;
+  }
+
+  .splash-features > div:nth-child(2) {
+    animation-delay: 800ms;
+  }
+
+  .splash-features > div:nth-child(3) {
+    animation-delay: 900ms;
+  }
+
+  /* Progress container */
+  .splash-progress {
+    opacity: 0;
+    animation: progressEnter 500ms ease-out 900ms forwards;
+  }
+
+  /* Progress bar */
+  .splash-progress-bar {
+    transform: scaleX(0);
+    animation: progressFill 2500ms cubic-bezier(0.4, 0, 0.2, 1) 1200ms forwards;
+  }
+
+  /* Copyright */
+  .splash-copyright {
+    opacity: 0;
+    animation: copyrightEnter 600ms ease-out 1200ms forwards;
+  }
+
+  /* =========================================
+   KEYFRAMES
+   ========================================= */
+
+  @keyframes splashFadeIn {
+    from {
+      opacity: 0;
+    }
+
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes backgroundEnter {
+    from {
+      opacity: 0;
+      transform: scale(1.1);
+    }
+
+    to {
+      opacity: 0.4;
+      transform: scale(1);
+    }
+  }
+
+  @keyframes itemEnter {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes logoEnter {
+    from {
+      opacity: 0;
+      transform: scale(0.7);
+    }
+
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  @keyframes featureEnter {
+    from {
+      opacity: 0;
+      transform: translateY(15px) scale(0.95);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  @keyframes progressEnter {
+    from {
+      opacity: 0;
+      transform: scaleX(0.5);
+    }
+
+    to {
+      opacity: 1;
+      transform: scaleX(1);
+    }
+  }
+
+  @keyframes progressFill {
+    from {
+      transform: scaleX(0);
+    }
+
+    to {
+      transform: scaleX(1);
+    }
+  }
+
+  @keyframes copyrightEnter {
+    from {
+      opacity: 0;
+    }
+
+    to {
+      opacity: 0.6;
+    }
+  }
+
+  /* =========================================
+   ACCESSIBILITY
+   ========================================= */
+
+  @media (prefers-reduced-motion: reduce) {
+    .splash-page,
+    .splash-item,
+    .splash-logo,
+    .splash-features > div,
+    .splash-progress,
+    .splash-progress-bar,
+    .splash-copyright {
+      animation: none !important;
+      opacity: 1 !important;
+      transform: none !important;
+    }
+  }
+}

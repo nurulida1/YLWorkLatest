@@ -14,13 +14,8 @@ namespace YLWorks.Model
         public string? Unit { get; set; }
         public decimal? Price { get; set; }
 
-        public Guid? InventoryId { get; set; }
-        public Inventory? Inventory { get; set; }
-
         public decimal? AvailableStock =>
-            Inventory == null
-                ? null
-                : Inventory.Quantity - Inventory.ReservedQuantity;
+            Inventories?.Sum(x => (x.Quantity ?? 0m) - (x.ReservedQuantity ?? 0m));
 
         public ICollection<QuotationItems> QuotationItems { get; set; }
             = new List<QuotationItems>();
@@ -38,8 +33,6 @@ namespace YLWorks.Model
 
         public string? Unit { get; set; }
         public decimal? Price { get; set; }
-
-        public Guid? InventoryId { get; set; }
     }
 
     public class UpdateProductServiceRequest
@@ -53,8 +46,6 @@ namespace YLWorks.Model
 
         public string? Unit { get; set; }
         public decimal? Price { get; set; }
-
-        public Guid? InventoryId { get; set; }
     }
 
     public class ProductServiceDropdownItem

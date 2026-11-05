@@ -1,0 +1,27 @@
+{
+  "Account": "账户",
+  "Personal Information": "个人信息",
+  "Change Password": "更改密码",
+  "Notifications": "通知",
+
+  "Preferences": "偏好设置",
+  "Language": "语言",
+  "Dark Mode": "深色模式",
+  "App Theme": "应用主题",
+
+  "Support": "支持",
+  "Help Center": "帮助中心",
+  "Report a bug": "报告错误",
+  "Terms & Privacy": "条款与隐私",
+
+  "Sign Out": "退出登录",
+  "Signing Out...": "正在退出登录...",
+  "Please wait a moment": "请稍候",
+
+  "Technical Support": "技术支持",
+
+  "Home": "首页",
+  "Daily Tasks": "每日任务",
+  "Schedule": "日程安排",
+  "Settings": "设置"
+}

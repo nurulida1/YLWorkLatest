@@ -10,6 +10,9 @@ import { AuthInterceptorFn } from './common/interceptor/auth.interceptor';
 import { CsrfInterceptorFn } from './common/interceptor/csrf.interceptor';
 import { ErrorInterceptorFn } from './common/interceptor/error.interceptor';
 import { provideCharts, withDefaultRegisterables } from 'ng2-charts';
+import { provideTranslateService } from '@ngx-translate/core';
+
+import { provideTranslateHttpLoader } from '@ngx-translate/http-loader';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -23,6 +26,13 @@ export const appConfig: ApplicationConfig = {
         ErrorInterceptorFn,
       ]),
     ),
+    provideTranslateService({
+      loader: provideTranslateHttpLoader({
+        prefix: '/assets/i18n/',
+        suffix: '.json',
+      }),
+      fallbackLang: 'en',
+    }),
     provideCharts(withDefaultRegisterables()),
     ConfirmationService,
     MessageService,

@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using YLWorks.Data;
 using YLWorks.Hubs;
+using WebApplication1.Helpers;
 
 namespace WebApplication1.Controllers
 {
@@ -37,110 +38,89 @@ namespace WebApplication1.Controllers
             return Ok(notifications);
         }
 
-        [HttpGet("GetAll")]
-        public async Task<IActionResult> GetNotifications([FromQuery] Guid userId, [FromQuery] bool unreadOnly = false)
-        {
-
-            var query = _context.Notifications
-                .Where(n => n.UserId == userId)
-                .OrderByDescending(n => n.CreatedAt)
-                .AsQueryable();
-
-            if (unreadOnly)
-                query = query.Where(n => !n.IsRead);
-
-            var notifications = await query.Take(20).ToListAsync();
-
-            return Ok(notifications);
-        }
-
-
-        // GET: api/notification/unreadcount
         [HttpGet("UnreadCount")]
-        public async Task<IActionResult> GetUnreadCount(Guid? userId = null)
+        public async Task<IActionResult> GetUnreadCount()
         {
-            try
-            {
-                var query = _context.Notifications.AsQueryable();
+            var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-                if (userId.HasValue)
-                {
-                    query = query.Where(n => n.UserId == userId);
-                }
+            if (!Guid.TryParse(userIdValue, out var userId))
+                return Unauthorized();
 
-                var count = await query.CountAsync(n => !n.IsRead);
-                return Ok(new { success = true, unreadCount = count });
-            }
-            catch (Exception ex)
+            var count = await _context.Notifications
+                .CountAsync(n => n.UserId == userId && !n.IsRead);
+
+            return Ok(new
             {
-                return StatusCode(500, new { success = false, message = ex.Message });
-            }
+                success = true,
+                unreadCount = count
+            });
         }
 
         [HttpPut("MarkRead")]
         public async Task<IActionResult> MarkAsRead([FromQuery] Guid id)
         {
             if (id == Guid.Empty)
-                return BadRequest(new { Success = false, Message = "Invalid notification ID." });
+                return BadRequest(new { success = false, message = "Invalid notification ID." });
 
-            var notification = await _context.Notifications.FindAsync(id);
+            var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+            if (!Guid.TryParse(userIdValue, out var userId))
+                return Unauthorized();
+
+            var notification = await _context.Notifications
+                .FirstOrDefaultAsync(n => n.Id == id && n.UserId == userId);
+
             if (notification == null)
-                return NotFound(new { Success = false, Message = "Notification not found." });
+                return NotFound(new { success = false, message = "Notification not found." });
 
             if (!notification.IsRead)
             {
                 notification.IsRead = true;
-                notification.UpdatedAt = DateTime.UtcNow; // optional if you track update time
+                notification.UpdatedAt = DateTimeHelper.Now();
+
                 await _context.SaveChangesAsync();
             }
 
-            return Ok(new { Success = true, Message = "Notification marked as read." });
+            return Ok(new { success = true, message = "Notification marked as read." });
         }
 
-
         [HttpPut("MarkAllRead")]
-        public async Task<IActionResult> MarkAllAsRead([FromQuery] Guid userId)
+        public async Task<IActionResult> MarkAllAsRead()
         {
-            Console.WriteLine($"MarkAllRead triggered for userId={userId}");
+            var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-            // Find all unread notifications for the user
+            if (!Guid.TryParse(userIdValue, out var userId))
+                return Unauthorized();
+
             var notifications = await _context.Notifications
                 .Where(n => n.UserId == userId && !n.IsRead)
                 .ToListAsync();
 
-            Console.WriteLine($"Unread found: {notifications.Count}");
-
-            if (!notifications.Any())
-                return Ok(new { success = true, message = "No unread notifications.", unreadCount = 0 });
-
-            // Mark them all as read
-            foreach (var n in notifications)
+            foreach (var notification in notifications)
             {
-                n.IsRead = true;
-                n.UpdatedAt = DateTime.Now;
+                notification.IsRead = true;
+                notification.UpdatedAt = DateTimeHelper.Now();
             }
 
             await _context.SaveChangesAsync();
 
-            // Get updated unread count
             var unreadCount = await _context.Notifications
                 .CountAsync(n => n.UserId == userId && !n.IsRead);
 
-            // Notify front-end via SignalR
-            await _hub.Clients.All.SendAsync("UpdateUnreadCount", new
-            {
-                UserId = userId,
-                UnreadCount = unreadCount
-            });
+            await _hub.Clients.Group($"user-{userId}")
+                .SendAsync("UpdateUnreadCount", new
+                {
+                    userId = userId,
+                    unreadCount = unreadCount
+                });
 
             return Ok(new
             {
                 success = true,
-                message = "All notifications marked as read.",
+                message = "Notifications marked as read.",
                 unreadCount
             });
         }
-
 
     }
 }

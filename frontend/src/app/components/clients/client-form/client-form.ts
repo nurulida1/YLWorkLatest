@@ -467,40 +467,38 @@ export class ClientForm implements OnInit, OnDestroy {
     this.setupAddressSyncListener();
   }
 
-  setupAddressSyncListener() {
-    this.FG.get('sameAsBillingAddress')
-      ?.valueChanges.pipe(takeUntil(this.ngUnsubscribe))
+  setupAddressSyncListener(): void {
+    const sameAsBillingControl = this.FG.get('sameAsBillingAddress');
+    const billingGroup = this.FG.get('billingAddress') as FormGroup;
+    const deliveryGroup = this.FG.get('deliveryAddress') as FormGroup;
+
+    sameAsBillingControl?.valueChanges
+      .pipe(takeUntil(this.ngUnsubscribe))
       .subscribe((checked: boolean) => {
+        // Stop the previous subscription.
         this.addressSyncSub.next();
         this.addressSyncSub.complete();
         this.addressSyncSub = new Subject<void>();
 
         if (checked) {
-          const billingGroup = this.FG.get('billingAddress') as FormGroup;
-          const deliveryGroup = this.FG.get('deliveryAddress') as FormGroup;
-
-          deliveryGroup.patchValue(billingGroup.value, { emitEvent: false });
-
-          merge(
-            billingGroup.valueChanges.pipe(takeUntil(this.addressSyncSub)),
-            deliveryGroup.valueChanges.pipe(takeUntil(this.addressSyncSub)),
-          ).subscribe(() => {
-            const activeElement = document.activeElement;
-
-            if (activeElement?.closest('[formGroupName="billingAddress"]')) {
-              deliveryGroup.patchValue(billingGroup.value, {
-                emitEvent: false,
-              });
-            } else if (
-              activeElement?.closest('[formGroupName="deliveryAddress"]')
-            ) {
-              billingGroup.patchValue(deliveryGroup.value, {
-                emitEvent: false,
-              });
-            }
-            this.cdr.markForCheck();
+          // Immediately copy all billing values, including state.
+          deliveryGroup.patchValue(billingGroup.getRawValue(), {
+            emitEvent: false,
           });
+
+          // Keep delivery address synchronized with billing address.
+          billingGroup.valueChanges
+            .pipe(takeUntil(this.addressSyncSub))
+            .subscribe((billingValue) => {
+              deliveryGroup.patchValue(billingValue, {
+                emitEvent: false,
+              });
+
+              this.cdr.markForCheck();
+            });
         }
+
+        this.cdr.markForCheck();
       });
   }
 
@@ -520,10 +518,19 @@ export class ClientForm implements OnInit, OnDestroy {
           if (res) {
             this.loadingService.stop();
             this.FG.patchValue(res);
+
             this.FG.get('billingAddress')?.patchValue(res.billingAddress ?? {});
+
             this.FG.get('deliveryAddress')?.patchValue(
               res.deliveryAddress ?? {},
             );
+
+            if (this.FG.get('sameAsBillingAddress')?.value) {
+              this.FG.get('deliveryAddress')?.patchValue(
+                this.FG.get('billingAddress')?.getRawValue(),
+              );
+            }
+
             this.cdr.markForCheck();
           }
         },

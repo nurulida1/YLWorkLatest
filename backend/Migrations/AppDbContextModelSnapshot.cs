@@ -518,9 +518,10 @@ namespace YLWorks.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<decimal>("MedicalMonthlyTotalLimit")
+                    b.Property<decimal>("MedicalAnnualLimit")
                         .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("decimal(18,2)")
+                        .HasColumnName("MedicalMonthlyTotalLimit");
 
                     b.Property<decimal>("MedicalPerReceiptLimit")
                         .HasPrecision(18, 2)
@@ -766,6 +767,154 @@ namespace YLWorks.Migrations
                     b.HasIndex("DeliveryOrderRMAId");
 
                     b.ToTable("DORMAStatusHistories");
+                });
+
+            modelBuilder.Entity("YLWorks.Model.DailyReport", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("CompletedWork")
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("char(36)");
+
+                    b.Property<Guid>("EmployeeId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("InProgressWork")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Issues")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("NextDayPlan")
+                        .HasColumnType("longtext");
+
+                    b.Property<Guid?>("ProjectId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime>("ReportDate")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("ReviewRemarks")
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime?>("ReviewedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("ReviewedById")
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime?>("SubmittedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("char(36)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProjectId");
+
+                    b.HasIndex("ReviewedById");
+
+                    b.HasIndex("EmployeeId", "ReportDate")
+                        .IsUnique();
+
+                    b.ToTable("DailyReports");
+                });
+
+            modelBuilder.Entity("YLWorks.Model.DailyReportAttachment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("ContentType")
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("char(36)");
+
+                    b.Property<Guid>("DailyReportId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<long?>("FileSize")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("FileUrl")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("char(36)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DailyReportId");
+
+                    b.ToTable("DailyReportAttachments");
+                });
+
+            modelBuilder.Entity("YLWorks.Model.DailyReportTask", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("char(36)");
+
+                    b.Property<Guid>("DailyReportId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<decimal?>("HoursSpent")
+                        .HasColumnType("decimal(5,2)");
+
+                    b.Property<Guid>("StaffTaskId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("WorkDescription")
+                        .HasColumnType("longtext");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DailyReportId");
+
+                    b.HasIndex("StaffTaskId");
+
+                    b.ToTable("DailyReportTasks");
                 });
 
             modelBuilder.Entity("YLWorks.Model.DeliveryOrder", b =>
@@ -1271,6 +1420,181 @@ namespace YLWorks.Migrations
                     b.ToTable("GoodsReceivingItems");
                 });
 
+            modelBuilder.Entity("YLWorks.Model.HardwareRequest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("AdminRemarks")
+                        .HasMaxLength(2000)
+                        .HasColumnType("varchar(2000)");
+
+                    b.Property<DateTime?>("ApprovedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("ApprovedById")
+                        .HasColumnType("char(36)");
+
+                    b.Property<Guid?>("AssignedToId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("varchar(2000)");
+
+                    b.Property<string>("Location")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<string>("LocationDetails")
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
+
+                    b.Property<DateTime?>("NeededBy")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Priority")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("varchar(30)");
+
+                    b.Property<Guid?>("ProjectId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("ProjectName")
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
+
+                    b.Property<string>("RejectionReason")
+                        .HasMaxLength(2000)
+                        .HasColumnType("varchar(2000)");
+
+                    b.Property<string>("RequestType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<Guid>("RequestedById")
+                        .HasColumnType("char(36)");
+
+                    b.Property<Guid?>("ResponsibleDepartmentId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("SiteName")
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<string>("Subject")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("varchar(150)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("char(36)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ApprovedById");
+
+                    b.HasIndex("AssignedToId");
+
+                    b.HasIndex("RequestedById");
+
+                    b.HasIndex("ResponsibleDepartmentId");
+
+                    b.ToTable("HardwareRequests");
+                });
+
+            modelBuilder.Entity("YLWorks.Model.HardwareRequestItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<decimal>("ApprovedQuantity")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("CreatedById")
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<Guid>("HardwareRequestId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<Guid?>("InventoryId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<decimal>("IssuedQuantity")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("ItemCode")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<string>("ItemName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<string>("Remarks")
+                        .HasMaxLength(1000)
+                        .HasColumnType("varchar(1000)");
+
+                    b.Property<decimal>("RequestedQuantity")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("ReservedQuantity")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<string>("Unit")
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("char(36)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("HardwareRequestId");
+
+                    b.HasIndex("InventoryId");
+
+                    b.ToTable("HardwareRequestItems");
+                });
+
             modelBuilder.Entity("YLWorks.Model.Income", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1365,8 +1689,8 @@ namespace YLWorks.Migrations
                     b.Property<string>("Model")
                         .HasColumnType("longtext");
 
-                    b.Property<int?>("ParLevel")
-                        .HasColumnType("int");
+                    b.Property<decimal?>("ParLevel")
+                        .HasColumnType("decimal(65,30)");
 
                     b.Property<Guid?>("ProductServiceId")
                         .HasColumnType("char(36)");
@@ -2505,6 +2829,9 @@ namespace YLWorks.Migrations
                     b.Property<string>("Description")
                         .HasColumnType("longtext");
 
+                    b.Property<Guid?>("InventoryId")
+                        .HasColumnType("char(36)");
+
                     b.Property<Guid>("MaterialRequestId")
                         .HasColumnType("char(36)");
 
@@ -2534,6 +2861,8 @@ namespace YLWorks.Migrations
                         .HasColumnType("char(36)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("InventoryId");
 
                     b.HasIndex("MaterialRequestId");
 
@@ -2568,6 +2897,12 @@ namespace YLWorks.Migrations
 
                     b.Property<DateTime?>("EffDate")
                         .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Location")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Priority")
+                        .HasColumnType("longtext");
 
                     b.Property<Guid?>("ProjectId")
                         .HasColumnType("char(36)");
@@ -2749,6 +3084,50 @@ namespace YLWorks.Migrations
                     b.ToTable("MeetingParticipants");
                 });
 
+            modelBuilder.Entity("YLWorks.Model.Notice", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("Content")
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime?>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid>("CreatedById")
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime?>("ExpiryDate")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<bool>("IsPinned")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<DateTime>("PublishDate")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("char(36)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedById");
+
+                    b.ToTable("Notices");
+                });
+
             modelBuilder.Entity("YLWorks.Model.Notification", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2871,6 +3250,9 @@ namespace YLWorks.Migrations
                         .IsRequired()
                         .HasColumnType("longtext");
 
+                    b.Property<DateTime?>("UsedAt")
+                        .HasColumnType("datetime(6)");
+
                     b.Property<Guid>("UserId")
                         .HasColumnType("char(36)");
 
@@ -2991,12 +3373,6 @@ namespace YLWorks.Migrations
                     b.Property<string>("Description")
                         .HasColumnType("longtext");
 
-                    b.Property<Guid?>("InventoryId")
-                        .HasColumnType("char(36)");
-
-                    b.Property<Guid?>("InventoryId1")
-                        .HasColumnType("char(36)");
-
                     b.Property<string>("ItemCode")
                         .HasColumnType("longtext");
 
@@ -3017,8 +3393,6 @@ namespace YLWorks.Migrations
                         .HasColumnType("char(36)");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("InventoryId1");
 
                     b.ToTable("ProductServices");
                 });
@@ -4110,7 +4484,8 @@ namespace YLWorks.Migrations
 
                     b.Property<string>("Category")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
 
                     b.Property<DateTime?>("CompletedAt")
                         .HasColumnType("datetime(6)");
@@ -4125,7 +4500,8 @@ namespace YLWorks.Migrations
                         .HasColumnType("char(36)");
 
                     b.Property<string>("Description")
-                        .HasColumnType("longtext");
+                        .HasMaxLength(2000)
+                        .HasColumnType("varchar(2000)");
 
                     b.Property<DateTime>("DueDate")
                         .HasColumnType("datetime(6)");
@@ -4138,10 +4514,15 @@ namespace YLWorks.Migrations
 
                     b.Property<string>("Priority")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<Guid?>("ProjectId")
+                        .HasColumnType("char(36)");
 
                     b.Property<string>("RecurringType")
-                        .HasColumnType("longtext");
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
 
                     b.Property<DateTime?>("ReminderAt")
                         .HasColumnType("datetime(6)");
@@ -4151,11 +4532,13 @@ namespace YLWorks.Migrations
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
 
                     b.Property<string>("Title")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime(6)");
@@ -4170,6 +4553,8 @@ namespace YLWorks.Migrations
                     b.HasIndex("AssignedToId");
 
                     b.HasIndex("CompletedById");
+
+                    b.HasIndex("ProjectId");
 
                     b.ToTable("StaffTasks");
                 });
@@ -4194,7 +4579,8 @@ namespace YLWorks.Migrations
 
                     b.Property<string>("Title")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasMaxLength(300)
+                        .HasColumnType("varchar(300)");
 
                     b.HasKey("Id");
 
@@ -4841,6 +5227,60 @@ namespace YLWorks.Migrations
                         .HasForeignKey("DeliveryOrderRMAId");
                 });
 
+            modelBuilder.Entity("YLWorks.Model.DailyReport", b =>
+                {
+                    b.HasOne("YLWorks.Model.User", "Employee")
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("YLWorks.Model.Project", "Project")
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("YLWorks.Model.User", "ReviewedBy")
+                        .WithMany()
+                        .HasForeignKey("ReviewedById");
+
+                    b.Navigation("Employee");
+
+                    b.Navigation("Project");
+
+                    b.Navigation("ReviewedBy");
+                });
+
+            modelBuilder.Entity("YLWorks.Model.DailyReportAttachment", b =>
+                {
+                    b.HasOne("YLWorks.Model.DailyReport", "DailyReport")
+                        .WithMany("Attachments")
+                        .HasForeignKey("DailyReportId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("DailyReport");
+                });
+
+            modelBuilder.Entity("YLWorks.Model.DailyReportTask", b =>
+                {
+                    b.HasOne("YLWorks.Model.DailyReport", "DailyReport")
+                        .WithMany("DailyReportTasks")
+                        .HasForeignKey("DailyReportId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("YLWorks.Model.StaffTask", "StaffTask")
+                        .WithMany()
+                        .HasForeignKey("StaffTaskId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("DailyReport");
+
+                    b.Navigation("StaffTask");
+                });
+
             modelBuilder.Entity("YLWorks.Model.DeliveryOrder", b =>
                 {
                     b.HasOne("YLWorks.Model.Project", "Project")
@@ -4982,6 +5422,54 @@ namespace YLWorks.Migrations
                     b.Navigation("GoodsReceiving");
 
                     b.Navigation("PurchaseOrderItem");
+                });
+
+            modelBuilder.Entity("YLWorks.Model.HardwareRequest", b =>
+                {
+                    b.HasOne("YLWorks.Model.User", "ApprovedBy")
+                        .WithMany()
+                        .HasForeignKey("ApprovedById");
+
+                    b.HasOne("YLWorks.Model.User", "AssignedTo")
+                        .WithMany()
+                        .HasForeignKey("AssignedToId");
+
+                    b.HasOne("YLWorks.Model.User", "RequestedBy")
+                        .WithMany()
+                        .HasForeignKey("RequestedById")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("YLWorks.Model.Department", "ResponsibleDepartment")
+                        .WithMany()
+                        .HasForeignKey("ResponsibleDepartmentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("ApprovedBy");
+
+                    b.Navigation("AssignedTo");
+
+                    b.Navigation("RequestedBy");
+
+                    b.Navigation("ResponsibleDepartment");
+                });
+
+            modelBuilder.Entity("YLWorks.Model.HardwareRequestItem", b =>
+                {
+                    b.HasOne("YLWorks.Model.HardwareRequest", "HardwareRequest")
+                        .WithMany("Items")
+                        .HasForeignKey("HardwareRequestId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("YLWorks.Model.Inventory", "Inventory")
+                        .WithMany()
+                        .HasForeignKey("InventoryId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("HardwareRequest");
+
+                    b.Navigation("Inventory");
                 });
 
             modelBuilder.Entity("YLWorks.Model.Income", b =>
@@ -5343,6 +5831,10 @@ namespace YLWorks.Migrations
 
             modelBuilder.Entity("YLWorks.Model.MaterialItem", b =>
                 {
+                    b.HasOne("YLWorks.Model.Inventory", "Inventory")
+                        .WithMany()
+                        .HasForeignKey("InventoryId");
+
                     b.HasOne("YLWorks.Model.MaterialRequest", "MaterialRequest")
                         .WithMany("MaterialItems")
                         .HasForeignKey("MaterialRequestId")
@@ -5352,6 +5844,8 @@ namespace YLWorks.Migrations
                     b.HasOne("YLWorks.Model.Company", "Supplier")
                         .WithMany()
                         .HasForeignKey("SupplierId");
+
+                    b.Navigation("Inventory");
 
                     b.Navigation("MaterialRequest");
 
@@ -5432,6 +5926,17 @@ namespace YLWorks.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("YLWorks.Model.Notice", b =>
+                {
+                    b.HasOne("YLWorks.Model.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("CreatedBy");
+                });
+
             modelBuilder.Entity("YLWorks.Model.Notification", b =>
                 {
                     b.HasOne("YLWorks.Model.User", "User")
@@ -5503,15 +6008,6 @@ namespace YLWorks.Migrations
                     b.Navigation("ProcessedBy");
 
                     b.Navigation("Supplier");
-                });
-
-            modelBuilder.Entity("YLWorks.Model.ProductService", b =>
-                {
-                    b.HasOne("YLWorks.Model.Inventory", "Inventory")
-                        .WithMany()
-                        .HasForeignKey("InventoryId1");
-
-                    b.Navigation("Inventory");
                 });
 
             modelBuilder.Entity("YLWorks.Model.Project", b =>
@@ -5906,11 +6402,17 @@ namespace YLWorks.Migrations
                         .WithMany()
                         .HasForeignKey("CompletedById");
 
+                    b.HasOne("YLWorks.Model.Project", "Project")
+                        .WithMany()
+                        .HasForeignKey("ProjectId");
+
                     b.Navigation("AssignedBy");
 
                     b.Navigation("AssignedTo");
 
                     b.Navigation("CompletedBy");
+
+                    b.Navigation("Project");
                 });
 
             modelBuilder.Entity("YLWorks.Model.StaffTaskChecklist", b =>
@@ -6022,6 +6524,13 @@ namespace YLWorks.Migrations
                     b.Navigation("LineItems");
                 });
 
+            modelBuilder.Entity("YLWorks.Model.DailyReport", b =>
+                {
+                    b.Navigation("Attachments");
+
+                    b.Navigation("DailyReportTasks");
+                });
+
             modelBuilder.Entity("YLWorks.Model.DeliveryOrder", b =>
                 {
                     b.Navigation("DeliveryOrderItems");
@@ -6041,6 +6550,11 @@ namespace YLWorks.Migrations
             modelBuilder.Entity("YLWorks.Model.GoodsReceiving", b =>
                 {
                     b.Navigation("GoodsReceivingItems");
+                });
+
+            modelBuilder.Entity("YLWorks.Model.HardwareRequest", b =>
+                {
+                    b.Navigation("Items");
                 });
 
             modelBuilder.Entity("YLWorks.Model.Invoice", b =>

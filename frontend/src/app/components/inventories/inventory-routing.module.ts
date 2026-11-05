@@ -12,7 +12,7 @@ const routes: Routes = [
   {
     path: 'listing',
     component: Inventory,
-    canActivate: [modulePermissionGuard],
+    // canActivate: [modulePermissionGuard],
     data: { moduleKey: 'inventory-listing' },
   },
   {
@@ -24,19 +24,19 @@ const routes: Routes = [
   {
     path: 'category',
     component: CategoryInventory,
-    canActivate: [modulePermissionGuard],
+    // canActivate: [modulePermissionGuard],
     data: { moduleKey: 'inventory-category' },
   },
   {
     path: 'location',
     component: LocationInventory,
-    canActivate: [modulePermissionGuard],
+    // canActivate: [modulePermissionGuard],
     data: { moduleKey: 'inventory-location' },
   },
   {
     path: 'section',
     component: SectionInventory,
-    canActivate: [modulePermissionGuard],
+    // canActivate: [modulePermissionGuard],
     data: { moduleKey: 'inventory-section' },
   },
 ];

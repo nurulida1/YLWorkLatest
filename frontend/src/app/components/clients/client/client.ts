@@ -27,8 +27,8 @@ import {
 import { CompanyDto } from '../../../models/Company';
 import { ImageModule } from 'primeng/image';
 import { ClientService } from '../../../services/ClientService';
-import { HasPermissionActionDirective } from '../../../common/directives/hasPermission.directive';
 import { PermissionContextService } from '../../../services/permission-context.service';
+import { UserService } from '../../../services/userService.service';
 
 @Component({
   selector: 'app-client',
@@ -43,7 +43,64 @@ import { PermissionContextService } from '../../../services/permission-context.s
     MenuModule,
     ImageModule,
   ],
-  template: `<div class="w-full flex flex-col p-5">
+  template: `
+    <div class="flex flex-col lg:hidden">
+      <div class="p-5 border-b border-gray-200 flex flex-col gap-4">
+        <div class="flex flex-row items-center justify-between">
+          <div class="flex flex-row items-center gap-2">
+            <div
+              class="w-10 h-10 text-lg bg-blue-800 rounded-xl flex items-center justify-center font-bold text-white text-shadow-lg"
+            >
+              YL
+            </div>
+            <div class="flex flex-col">
+              <div class="font-bold text-blue-800">YL WORKS ENTERPRISE</div>
+              <span class="text-gray-500 text-sm">Petaling Jaya</span>
+            </div>
+          </div>
+          <div class="flex flex-row items-center gap-2">
+            <div
+              class="w-10 h-10 rounded-full flex items-center justify-center bg-gray-100"
+            >
+              <i class="pi pi-bell text-gray-800! text-lg!"></i>
+            </div>
+            <div
+              class="inset-shadow-sm w-10 h-10 rounded-full flex items-center justify-center bg-blue-100 text-blue-800 font-bold"
+            >
+              {{ getInitial(currentUser?.displayName) }}
+            </div>
+          </div>
+        </div>
+        <div class="flex flex-col">
+          <b class="text-2xl font-extrabold text-gray-800"
+            >Clients & Partners</b
+          >
+          <span class="text-gray-500 text-sm"
+            >Corporate brief directory & verified project partners</span
+          >
+        </div>
+        <div class="w-full relative">
+          <i class="pi pi-search text-gray-400! absolute! top-4! left-5!"></i>
+          <input
+            class="w-full rounded-full! py-3! pl-12! bg-gray-100! inset-shadow-sm!"
+            pInputText
+            placeholder="Search company..."
+          />
+        </div>
+      </div>
+      <div class="flex flex-row gap-3 max-w-screen overflow-x-auto p-5">
+        <div class="flex flex-col gap-1 items-center justify-center">
+          <div
+            class="shadow-lg border-3 border-gray-100 w-15 h-15 rounded-xl flex items-center justify-center bg-blue-800"
+          >
+            <i class="pi pi-building text-white! text-xl!"></i>
+          </div>
+          <span class="text-sm font-semibold text-blue-800">All (1)</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="w-full hidden lg:flex flex-col p-5">
       <div
         class="flex flex-row items-center gap-1 text-gray-500 tracking-wide text-sm"
       >
@@ -197,7 +254,8 @@ import { PermissionContextService } from '../../../services/permission-context.s
         </div>
       </div>
     </div>
-    <p-menu #menu [model]="menuItems" [popup]="true"></p-menu> `,
+    <p-menu #menu [model]="menuItems" [popup]="true"></p-menu>
+  `,
   styleUrl: './client.less',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -209,6 +267,7 @@ export class Client implements OnInit, OnDestroy {
   private readonly clientService = inject(ClientService);
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly router = inject(Router);
+  private readonly userService = inject(UserService);
   private readonly permissionContext = inject(PermissionContextService);
   readonly rights = this.permissionContext.rights;
   protected ngUnsubscribe: Subject<void> = new Subject<void>();
@@ -225,6 +284,8 @@ export class Client implements OnInit, OnDestroy {
   title: string = 'Add New Client';
   FG!: FormGroup;
   menuItems: MenuItem[] = [];
+
+  currentUser = this.userService.currentUser;
 
   constructor() {
     this.Query.Page = 1;
@@ -393,6 +454,18 @@ export class Client implements OnInit, OnDestroy {
 
       window.URL.revokeObjectURL(url);
     });
+  }
+
+  getInitial(fullName?: string): string {
+    if (!fullName?.trim()) return '?';
+
+    const names = fullName.trim().split(/\s+/).filter(Boolean);
+
+    if (names.length === 1) {
+      return names[0].substring(0, 2).toUpperCase();
+    }
+
+    return (names[0].charAt(0) + names[1].charAt(0)).toUpperCase();
   }
 
   ngOnDestroy(): void {

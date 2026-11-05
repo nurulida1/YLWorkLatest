@@ -22,6 +22,8 @@ import { TextareaModule } from 'primeng/textarea';
 import { ButtonModule } from 'primeng/button';
 import { DepartmentService } from '../../../services/departmentService';
 import { CheckboxModule } from 'primeng/checkbox';
+import { StaffTaskService } from '../../../services/staffTaskService';
+import { RouterLink } from '@angular/router';
 
 @Component({
   selector: 'app-mobile-dashboard',
@@ -35,217 +37,228 @@ import { CheckboxModule } from 'primeng/checkbox';
     TextareaModule,
     ButtonModule,
     CheckboxModule,
+    RouterLink,
   ],
-  template: `<div class="p-6 w-full min-h-[85vh] flex flex-col">
-      @if (currentUser?.systemRole === 'SuperAdmin') {
-        <div class="flex flex-col">
-          <div class="font-bold text-2xl">
-            Hello, {{ currentUser?.fullName }}
-          </div>
-          <span class="text-gray-500">System-wide oversight & operations.</span>
-        </div>
-        <div class="grid grid-cols-12 gap-3 mt-6">
-          <div
-            class="h-30 border border-gray-200 shadow-sm col-span-6 bg-white rounded-xl flex flex-col gap-2 justify-center p-4"
-          >
-            <div class="uppercase text-sm text-gray-500">Total Users</div>
-            <div class="font-bold text-gray-700 text-4xl">
-              {{ dashboard()?.totalUsers }}
-            </div>
-          </div>
-          <div
-            class="h-30 border border-gray-200 shadow-sm col-span-6 bg-white rounded-xl flex flex-col gap-2 justify-center p-4"
-          >
-            <div class="uppercase text-sm text-gray-500">Pending Approval</div>
-            <div class="font-bold text-sky-700 text-4xl">
-              {{ dashboard()?.pendingApprovals }}
-            </div>
-          </div>
-        </div>
-
-        <div class="mt-8 uppercase text-gray-700">Quick Actions</div>
-        <div class="grid grid-cols-12 gap-4 mt-3">
-          <div
-            class="h-30 bg-sky-950 text-white border border-gray-200 rounded-lg shadow-sm col-span-6 flex flex-col gap-2 items-center justify-center p-4"
-          >
-            <i class="pi pi-user-plus text-3xl!"></i>
-            <span>Add User</span>
-          </div>
-          <div
-            class="h-30 bg-white border border-gray-200 rounded-lg shadow-sm col-span-6 flex flex-col gap-2 items-center justify-center p-4"
-          >
-            <i class="pi pi-database text-3xl! text-sky-600"></i>
-            <span class="text-gray-600">System Logs</span>
-          </div>
-
-          <div
-            class="h-30 bg-white border border-gray-200 rounded-lg shadow-sm col-span-6 flex flex-col gap-2 items-center justify-center p-4"
-          >
-            <i class="pi pi-chart-scatter text-3xl! text-sky-600"></i>
-            <span class="text-gray-600">Reports</span>
-          </div>
-          <div
-            class="h-30 bg-white border border-gray-200 rounded-lg shadow-sm col-span-6 flex flex-col gap-2 items-center justify-center p-4"
-          >
-            <i class="pi pi-shield text-3xl! text-sky-600"></i>
-            <span class="text-gray-600">Policy Update</span>
-          </div>
-        </div>
-
-        <div class="mt-8 flex flex-row items-center justify-between">
-          <div class="uppercase text-gray-700">Registration Requests</div>
-          <span
-            class="uppercase bg-sky-600 px-4 py-1 text-white text-sm font-semibold"
-          >
-            {{ dashboard()?.pendingApprovals }} New</span
-          >
-        </div>
-        <div class="mt-4 flex flex-col gap-2">
-          @for (pending of dashboard()?.pendingUsers; track $index) {
-            <div
-              class="p-4 border w-full rounded-lg bg-white border-gray-200 flex flex-row items-center justify-between"
-            >
-              <div class="flex flex-row items-center gap-3">
-                <div
-                  class="font-bold text-sky-800 w-12 h-12 rounded-lg bg-sky-50 flex items-center justify-center"
-                >
-                  {{ getInitial(pending?.fullName) }}
-                </div>
-                <div class="flex flex-col">
-                  <div class="font-bold text-gray-700">
-                    {{ pending?.fullName }}
-                  </div>
-                  <div class="text-gray-500">{{ pending?.jobTitle }}</div>
-                </div>
-              </div>
-              <div class="flex flex-row items-center gap-5">
-                <i
-                  class="pi pi-times text-red-600! cursor-pointer hover:scale-102"
-                  (click)="openReject(pending)"
-                ></i>
-                <i
-                  class="pi pi-check text-sky-700! cursor-pointer hover:scale-102"
-                  (click)="openApprove(pending)"
-                ></i>
-              </div>
-            </div>
-          }
-        </div>
-
-        <div class="mt-8 flex flex-col gap-6">
-          <div class="uppercase text-gray-600">System Activity</div>
-        </div>
-      }
-    </div>
-
-    <p-dialog
-      [(visible)]="approveDialog"
-      [modal]="true"
-      [style]="{ width: '95vw', maxWidth: '420px' }"
-    >
-      <ng-template #headless>
-        <div class="flex flex-col gap-4 p-6">
-          <div class="flex flex-col gap-1 border-b border-gray-200 pb-3">
-            <div class="text-xl font-bold">Approve Registration</div>
-            <span class="text-gray-500"
-              >Set organizational details for
-              <strong class="text-gray-700">{{
-                selectedUser?.fullName
-              }}</strong></span
-            >
-          </div>
-
-          <div class="flex flex-col gap-2 text-gray-600 tracking-wide">
-            <label class="font-medium uppercase"> Departments</label>
-            <div class="grid grid-cols-12 justify-between gap-3 mt-3">
-              <ng-container *ngFor="let department of departments">
-                <div class="col-span-6 flex flex-row gap-2 items-center">
-                  <p-checkbox
-                    [binary]="true"
-                    [(ngModel)]="selectedDepartments"
-                  ></p-checkbox>
-                  <label for="">{{ department?.name }}</label>
-                </div>
-              </ng-container>
-            </div>
-          </div>
-
-          <div class="flex flex-col gap-2 text-gray-600">
-            <label class="font-medium"> System Role </label>
-
-            <p-select
-              [options]="roles"
-              optionLabel="label"
-              optionValue="value"
-              [(ngModel)]="selectedRole"
-            >
-            </p-select>
-          </div>
-        </div>
-        <div class="flex flex-col gap-2 bg-gray-100 p-6 rounded-b-xl">
-          <p-button
-            label="Confirm Approval"
-            size="small"
-            styleClass="w-full! bg-sky-950! py-3! border-none!"
-            severity="info"
-            (onClick)="approveUser()"
-          ></p-button>
-
-          <p-button
-            label="Cancel"
-            size="small"
-            [text]="true"
-            severity="secondary"
-            styleClass="w-full!"
-            (onClick)="approveDialog = false"
-          ></p-button>
-        </div>
-      </ng-template>
-    </p-dialog>
-
-    <p-dialog
-      header="Reject Registration"
-      [(visible)]="rejectDialog"
-      [modal]="true"
-      [style]="{ width: '95vw', maxWidth: '420px' }"
-    >
-      <textarea
-        pInputTextarea
-        rows="5"
-        maxlength="300"
-        [(ngModel)]="rejectReason"
-        class="w-full"
-        placeholder="Reason (optional)"
+  template: `
+    <div class="flex flex-col">
+      <div
+        class="relative bg-[#1D4ED8] rounded-b-[2.5rem] overflow-hidden pb-3"
       >
-      </textarea>
+        <div
+          class="absolute -top-20 -right-15 w-56 h-56 rounded-full border border-white/15"
+        ></div>
 
-      <div class="text-right text-sm text-gray-400">
-        {{ rejectReason.length }} / 300
+        <div
+          class="absolute -top-12 -right-8 w-44 h-44 rounded-full border border-white/20"
+        ></div>
+
+        <div
+          class="absolute top-8 -right-20 w-36 h-36 rounded-full bg-white/5"
+        ></div>
+
+        <div class="relative z-10 h-full px-6 py-6 flex flex-col">
+          <div class="flex flex-row items-center justify-between">
+            <div class="flex flex-row items-center gap-3">
+              <div
+                class="w-12 h-12 rounded-full flex items-center justify-center bg-white/10 border border-white/30"
+              >
+                <div class="font-semibold text-white">YL</div>
+              </div>
+              <div class="uppercase text-white mt-1">Works Enterprise</div>
+            </div>
+            <div class="flex flex-row items-center gap-2">
+              <div
+                class="w-11 h-11 rounded-full flex items-center justify-center bg-white/10 border border-white/30"
+              >
+                <i class="pi pi-bell text-white!"></i>
+              </div>
+              <div
+                class="w-11 h-11 rounded-full flex items-center justify-center bg-[#FCDF7B] border border-[#e5c85f]"
+              >
+                <div class="font-semibold">
+                  {{ getInitial(currentUser?.displayName) }}
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="flex flex-col mt-10">
+            <div class="font-semibold text-2xl text-white text-shadow-lg">
+              Welcome back, {{ currentUser?.displayName }}
+            </div>
+            <span class="font-light text-white/80 mt-1 tracking-wide">{{
+              currentUser?.jobTitle
+            }}</span>
+            <div class="mt-4 w-full relative">
+              <input
+                class="w-full p-3! pl-10! rounded-full!"
+                [(ngModel)]="searchTerm"
+                placeholder="Search tasks, materials, notices..."
+                pInputText
+              />
+              <i
+                class="pi pi-search absolute! top-4.5! left-4! text-gray-400!"
+              ></i>
+            </div>
+          </div>
+        </div>
       </div>
-
-      <ng-template pTemplate="footer">
-        <p-button
-          severity="secondary"
-          label="Cancel"
-          (click)="rejectDialog = false"
+      <div class="relative w-full px-5 h-30">
+        <div
+          class="absolute -top-5 left-1/2 -translate-x-1/2 w-[calc(100%-2.5rem)] py-5 px-7 bg-white rounded-2xl shadow-lg"
         >
-        </p-button>
-
-        <p-button
-          severity="danger"
-          label="Reject"
-          icon="pi pi-times"
-          (click)="rejectUser()"
-        >
-        </p-button>
-      </ng-template>
-    </p-dialog> `,
+          <div class="flex flex-row items-center justify-between px-3">
+            <div class="flex flex-col items-center gap-1">
+              <div
+                [routerLink]="'/claims'"
+                class="w-13 h-13 rounded-xl flex items-center justify-center bg-green-100"
+              >
+                <i class="pi pi-money-bill text-green-800! text-2xl!"></i>
+              </div>
+              <div class="text-sm font-semibold">Claims</div>
+            </div>
+            <div class="flex flex-col items-center gap-1">
+              <div
+                [routerLink]="'/tasks'"
+                class="w-13 h-13 rounded-xl flex items-center justify-center bg-blue-100"
+              >
+                <i class="pi pi-list-check text-blue-800! text-2xl!"></i>
+              </div>
+              <div class="text-sm font-semibold">Tasks</div>
+            </div>
+            <div class="flex flex-col items-center gap-1">
+              <div
+                [routerLink]="'/leave'"
+                class="w-13 h-13 rounded-xl flex items-center justify-center bg-yellow-100"
+              >
+                <i class="pi pi-calendar text-yellow-800! text-2xl!"></i>
+              </div>
+              <div class="text-sm font-semibold">Leave</div>
+            </div>
+            <div class="flex flex-col items-center gap-1">
+              <div
+                [routerLink]="'/notice'"
+                class="w-13 h-13 rounded-xl flex items-center justify-center bg-violet-100"
+              >
+                <i class="pi pi-megaphone text-violet-800! text-2xl!"></i>
+              </div>
+              <div class="text-sm font-semibold">Notices</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="flex flex-col gap-3 mt-2 px-6">
+        <div class="font-semibold tracking-wide uppercase text-gray-400">
+          Quick Access
+        </div>
+        <div class="grid grid-cols-12 gap-4 justify-between">
+          <div
+            [routerLink]="'/directory'"
+            class="col-span-6 flex flex-row gap-3 items-center p-5 bg-white border border-gray-100 rounded-xl shadow-md"
+          >
+            <div
+              class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center"
+            >
+              <i class="pi pi-users text-blue-700! text-xl!"></i>
+            </div>
+            <div class="flex flex-col">
+              <b>Directory</b
+              ><span class="text-gray-400 text-xs">See coworkers</span>
+            </div>
+          </div>
+          <div
+            [routerLink]="'/projects'"
+            class="col-span-6 flex flex-row gap-3 items-center p-5 bg-white border border-gray-100 rounded-xl shadow-md"
+          >
+            <div
+              class="w-10 h-10 bg-violet-100 rounded-lg flex items-center justify-center"
+            >
+              <i class="pi pi-list text-violet-700! text-xl!"></i>
+            </div>
+            <div class="flex flex-col">
+              <b>Projects</b
+              ><span class="text-gray-400 text-xs">Latest Projects</span>
+            </div>
+          </div>
+          <div
+            [routerLink]="'/inventory'"
+            class="col-span-6 flex flex-row gap-3 items-center p-5 bg-white border border-gray-100 rounded-xl shadow-md"
+          >
+            <div
+              class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center"
+            >
+              <i class="pi pi-box text-green-700! text-xl!"></i>
+            </div>
+            <div class="flex flex-col">
+              <b>Inventory</b
+              ><span class="text-gray-400 text-xs">Warehouse Stock</span>
+            </div>
+          </div>
+          <div
+            [routerLink]="'/material-requests'"
+            class="col-span-6 flex flex-row gap-3 items-center p-5 bg-white border border-gray-100 rounded-xl shadow-md"
+          >
+            <div
+              class="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center"
+            >
+              <i class="pi pi-file-o text-orange-700! text-xl!"></i>
+            </div>
+            <div class="flex flex-col">
+              <b>Materials</b
+              ><span class="text-gray-400 text-xs">Request materials</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="flex flex-col gap-5 px-5 mt-6">
+        <div class="flex flex-row items-center justify-between">
+          <div class="font-semibold text-lg">Tasks to Do</div>
+          <div
+            class="flex flex-row items-center gap-2 text-blue-700"
+            [routerLink]="['/tasks']"
+          >
+            <div class="text-sm">View All</div>
+            <i class="pi pi-chevron-right text-xs!"></i>
+          </div>
+        </div>
+        <div class="flex flex-col gap-3">
+          <ng-container *ngFor="let task of staffTask">
+            <div
+              class="flex flex-row bg-white rounded-lg border border-gray-100 p-4 shadow-sm border-l-4"
+              [ngClass]="{
+                'border-l-red-500': task.priority === 'Critical',
+                'border-l-orange-500': task.priority === 'High',
+                'border-l-yellow-500': task.priority === 'Medium',
+                'border-l-blue-500': task.priority === 'Low',
+              }"
+            >
+              <div class="flex flex-row gap-3">
+                <p-checkbox
+                  [binary]="true"
+                  [(ngModel)]="task.isCompleted"
+                ></p-checkbox>
+                <div class="flex flex-col gap-1">
+                  <div class="font-semibold">{{ task.title }}</div>
+                  <div class="flex flex-row items-center gap-2">
+                    <i class="pi pi-clock text-gray-400! text-xs! mt-1!"></i>
+                    <span class="text-gray-500 text-sm">{{
+                      task.dueDate | date
+                    }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </ng-container>
+        </div>
+      </div>
+    </div>
+  `,
   styleUrl: './mobile-dashboard.less',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class MobileDashboard implements OnInit, OnDestroy {
   private readonly loadingService = inject(LoadingService);
   private readonly appService = inject(AppService);
+  private readonly staffTaskService = inject(StaffTaskService);
   private readonly departmentService = inject(DepartmentService);
   private readonly userService = inject(UserService);
   private readonly cdr = inject(ChangeDetectorRef);
@@ -257,11 +270,13 @@ export class MobileDashboard implements OnInit, OnDestroy {
   rejectDialog: boolean = false;
 
   selectedUser: any = null;
+  staffTask: any;
 
   selectedDepartments: string[] = [];
   selectedRole: string = 'Staff';
 
   rejectReason: string = '';
+  searchTerm: string = '';
 
   departments: any[] = [];
 
@@ -293,7 +308,33 @@ export class MobileDashboard implements OnInit, OnDestroy {
         });
 
       this.LoadDepartments();
+    } else {
+      this.GetTask();
     }
+  }
+
+  GetTask() {
+    this.loadingService.start();
+    this.staffTaskService
+      .GetMany({
+        Page: 1,
+        PageSize: 3,
+        OrderBy: 'DueDate',
+        Select: null,
+        Includes: null,
+        Filter: `AssignedToId=${this.currentUser?.userId} | OrganizedById=${this.currentUser?.userId}`,
+      })
+      .pipe(takeUntil(this.ngUnsubscribe))
+      .subscribe({
+        next: (res) => {
+          this.loadingService.stop();
+          this.staffTask = res.data;
+          this.cdr.markForCheck();
+        },
+        error: (err) => {
+          this.loadingService.stop();
+        },
+      });
   }
 
   LoadDepartments() {
@@ -401,6 +442,21 @@ export class MobileDashboard implements OnInit, OnDestroy {
     //   },
     //   error: () => this.loadingService.stop()
     // });
+  }
+
+  get filteredTasks() {
+    const search = this.searchTerm.trim().toLowerCase();
+
+    if (!search) {
+      return this.staffTask ?? [];
+    }
+
+    return (this.staffTask ?? []).filter((task: any) => {
+      return (
+        task.title?.toLowerCase().includes(search) ||
+        task.description?.toLowerCase().includes(search)
+      );
+    });
   }
 
   ngOnDestroy(): void {

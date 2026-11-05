@@ -73,7 +73,7 @@ namespace YLWorks.Model
         public string ConfirmPassword { get; set; } = string.Empty;
 
         public string? ContactNo { get; set; }
-        public string JobTitle {  get; set; } = string.Empty;
+        public string? JobTitle {  get; set; } = string.Empty;
         public string? SystemRole { get; set; } = string.Empty;
         public string? Gender { get; set; } = string.Empty;
         public DateTime? JoinedDate { get; set; }
@@ -90,6 +90,7 @@ namespace YLWorks.Model
         public string Token { get; set; } = string.Empty;
         public DateTime ExpiryTime { get; set; }
         public User User { get; set; } = null!;
+        public DateTime? UsedAt { get; set; }
     }
 
 
@@ -208,17 +209,6 @@ namespace YLWorks.Model
         public string? RestDayHalfDayEnd { get; set; }
         /// <summary>When true, clears employee schedule overrides so department/company defaults apply.</summary>
         public bool? ClearWorkScheduleOverride { get; set; }
-    }
-
-    public class StaffDashboardDto
-    {
-        public int TotalStaff { get; set; }
-
-        public int ActiveNow { get; set; }
-
-        public int Inactive { get; set; }
-
-        public List<DepartmentDistributionDto> DepartmentDistribution { get; set; } = [];
     }
 
     public class DepartmentDistributionDto

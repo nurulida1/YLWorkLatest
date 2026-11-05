@@ -8,8 +8,9 @@ import {
   HrDashboardDto,
   SuperAdminDashboardDto,
 } from '../models/AppModels';
-import { Observable, retry, catchError, throwError } from 'rxjs';
+import { Observable, retry, catchError, throwError, map } from 'rxjs';
 import { InventoryDashboardResponseDto } from '../models/Inventory';
+import { HardwareRequestDto } from '../models/HardwareRequest';
 export type DataType = 'PO' | 'Quotation' | 'Invoice' | null;
 
 @Injectable({
@@ -48,15 +49,25 @@ export class AppService {
   }
 
   GetSuperAdminDashboard(): Observable<SuperAdminDashboardDto> {
-    return this.http
-      .get<SuperAdminDashboardDto>(`${this.url}/GetSuperAdminDashboard`)
-      .pipe(retry(1), catchError(this.handleError('GetSuperAdminDashboard')));
+    return this.http.get<any>(`${this.url}/GetSuperAdminDashboard`).pipe(
+      map((res) => res?.data ?? res),
+      retry(1),
+      catchError(this.handleError('GetSuperAdminDashboard')),
+    );
   }
 
   GetHrDashboard(): Observable<HrDashboardDto> {
     return this.http
       .get<HrDashboardDto>(`${this.url}/GetHrDashboard`)
       .pipe(retry(1), catchError(this.handleError('GetHrDashboard')));
+  }
+
+  GetStaffDashboard(): Observable<any> {
+    return this.http.get<any>(`${this.url}/GetStaffDashboard`).pipe(
+      map((res) => res.data),
+      retry(1),
+      catchError(this.handleError('GetStaffDashboard')),
+    );
   }
 
   private handleError = (context: string) => (error: any) => {
@@ -68,4 +79,10 @@ export class AppService {
     });
     return throwError(() => error);
   };
+
+  GetPendingHardwareApprovals(): Observable<HardwareRequestDto[]> {
+    return this.http.get<HardwareRequestDto[]>(
+      `${environment.ApiBaseUrl}/App/GetPendingHardwareApprovals`,
+    );
+  }
 }

@@ -1,5 +1,6 @@
 import { BaseModel } from './BaseModel';
 import { CompanyDto } from './Company';
+import { InventoryDto } from './Inventory';
 import { ProjectDto } from './Project';
 import { PurchaseOrderDto } from './PurchaseOrder';
 import { UserDto } from './User';
@@ -12,6 +13,8 @@ export interface MaterialRequestDto extends BaseModel {
   requestNo: string;
   projectId: string;
   project: ProjectDto;
+  location: string;
+  priority: string;
   requestDate: Date;
   deliveryDate: Date;
   deliveryPlace: string;
@@ -30,6 +33,8 @@ export interface MaterialRequestDto extends BaseModel {
 export interface MaterialItem extends BaseModel {
   materialRequestId: string;
   materialRequest: MaterialRequestDto;
+  inventoryId: string;
+  inventory: InventoryDto;
   description: string;
   brand: string;
   unit: string;
@@ -47,6 +52,8 @@ export interface CreateMaterialRequest {
   effDate: Date;
   requestNo: string;
   projectId: string;
+  location: string;
+  priority: string;
   clientId: string;
   requestDate: Date;
   deliveryDate: Date;
@@ -62,6 +69,7 @@ export interface UpdateMaterialRequest extends CreateMaterialRequest {
 }
 
 export interface MaterialItemRequest {
+  inventoryId: string;
   description: string;
   brand: string;
   unit: string;
@@ -84,6 +92,8 @@ export interface MaterialRequestDto {
   requestNo: string;
   projectId: string;
   project: ProjectDto;
+  priority: string;
+  location: string;
   requestDate: Date;
   deliveryDate: Date;
   deliveryPlace: string;
@@ -99,6 +109,7 @@ export interface MaterialRequestDto {
 
 export interface MaterialItemDto {
   id: string;
+  inventoryId: string;
   description: string;
   quantity: number;
   brand: string;

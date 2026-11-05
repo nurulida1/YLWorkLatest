@@ -22,7 +22,7 @@ import { MessageService } from 'primeng/api';
 export class NotificationService {
   private hubConnection!: signalR.HubConnection;
 
-  private messageSource = new BehaviorSubject<string | null>(null);
+  private messageSource = new BehaviorSubject<NotificationDto | null>(null);
   public message$ = this.messageSource.asObservable();
 
   private _unreadCount$ = new BehaviorSubject<number>(0);
@@ -74,12 +74,33 @@ export class NotificationService {
   }
 
   private listenForUpdates() {
-    this.hubConnection.on('ReceiveUpdate', (message: string) => {
-      this.zone.run(() => {
-        console.log('📢 Received:', message);
-        this.messageSource.next(message);
+    this.hubConnection.on(
+      'ReceiveNotification',
+      (notification: NotificationDto) => {
+        this.zone.run(() => {
+          console.log('📢 New notification:', notification);
 
-        this.refreshUnreadCount();
+          const current = this._notifications$.value;
+          const exists = current.some((x) => x.id === notification.id);
+
+          if (!exists) {
+            this._notifications$.next([notification, ...current]);
+          }
+
+          if (!notification.isRead) {
+            this._unreadCount$.next(
+              this._unreadCount$.value + (exists ? 0 : 1),
+            );
+          }
+
+          this.messageSource.next(notification);
+        });
+      },
+    );
+
+    this.hubConnection.on('UpdateUnreadCount', (data: any) => {
+      this.zone.run(() => {
+        this._unreadCount$.next(data.unreadCount);
       });
     });
   }
@@ -95,8 +116,8 @@ export class NotificationService {
       });
   }
 
-  refreshUnreadCount(userId?: string) {
-    this.UnreadCount(userId)
+  refreshUnreadCount(): void {
+    this.UnreadCount()
       .pipe(take(1))
       .subscribe((res) => {
         if (res.success) {
@@ -105,23 +126,19 @@ export class NotificationService {
       });
   }
 
-  GetNotifications(userId: string): Observable<NotificationDto[]> {
-    if (this.notificationsLoaded && this._notifications$.value.length > 0) {
+  GetNotifications(): Observable<NotificationDto[]> {
+    if (this.notificationsLoaded) {
       return of(this._notifications$.value);
     }
 
-    const params = new HttpParams().set('userId', userId.toString());
-
-    return this.http
-      .get<NotificationDto[]>(`${this.url}/GetAll`, { params })
-      .pipe(
-        retry(1),
-        tap((res) => {
-          this._notifications$.next(res);
-          this.notificationsLoaded = true;
-        }),
-        catchError(this.handleError('GetNotifications')),
-      );
+    return this.http.get<NotificationDto[]>(this.url).pipe(
+      retry(1),
+      tap((res) => {
+        this._notifications$.next(res);
+        this.notificationsLoaded = true;
+      }),
+      catchError(this.handleError('GetNotifications')),
+    );
   }
 
   RefreshNotifications(userId: number): void {
@@ -137,32 +154,60 @@ export class NotificationService {
       .subscribe();
   }
 
-  MarkAllAsRead(userId: string): Observable<{ success: boolean }> {
-    let params = new HttpParams().set('userId', userId);
+  MarkAllAsRead(): Observable<{ success: boolean; unreadCount?: number }> {
     return this.http
-      .put<{ success: boolean }>(`${this.url}/MarkAllRead`, {}, { params })
-      .pipe(retry(1), catchError(this.handleError('MarkAllAsRead')));
+      .put<{
+        success: boolean;
+        unreadCount?: number;
+      }>(`${this.url}/MarkAllRead`, {})
+      .pipe(
+        retry(1),
+        tap(() => {
+          // Update all notifications in shared state.
+          const updatedNotifications = this._notifications$.value.map(
+            (notification) => ({
+              ...notification,
+              isRead: true,
+            }),
+          );
+
+          this._notifications$.next(updatedNotifications);
+
+          // Update navbar unread count.
+          this._unreadCount$.next(0);
+        }),
+        catchError(this.handleError('MarkAllAsRead')),
+      );
   }
 
-  UnreadCount(
-    userId?: string,
-  ): Observable<{ success: boolean; unreadCount: number }> {
-    const params: any = {};
-    if (userId) params.userId = userId;
-
+  UnreadCount(): Observable<{ success: boolean; unreadCount: number }> {
     return this.http
-      .get<{
-        success: boolean;
-        unreadCount: number;
-      }>(`${this.url}/UnreadCount`, { params })
+      .get<{ success: boolean; unreadCount: number }>(`${this.url}/UnreadCount`)
       .pipe(retry(1), catchError(this.handleError('UnreadCount')));
   }
 
   MarkRead(id: string): Observable<BaseResponse> {
     const params = new HttpParams().set('id', id);
+
     return this.http
       .put<BaseResponse>(`${this.url}/MarkRead`, {}, { params })
-      .pipe(retry(1), catchError(this.handleError('MarkRead')));
+      .pipe(
+        retry(1),
+        tap(() => {
+          const current = this._notifications$.value;
+
+          const notification = current.find((x) => x.id === id);
+
+          if (notification && !notification.isRead) {
+            this._notifications$.next(
+              current.map((x) => (x.id === id ? { ...x, isRead: true } : x)),
+            );
+
+            this._unreadCount$.next(Math.max(0, this._unreadCount$.value - 1));
+          }
+        }),
+        catchError(this.handleError('MarkRead')),
+      );
   }
 
   private handleError = (context: string) => (error: any) => {

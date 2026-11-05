@@ -30,8 +30,9 @@ import { DialogModule } from 'primeng/dialog';
 import { SelectModule } from 'primeng/select';
 import { UserService } from '../../../services/userService.service';
 import { TextareaModule } from 'primeng/textarea';
-import { HasPermissionActionDirective } from '../../../common/directives/hasPermission.directive';
 import { PermissionContextService } from '../../../services/permission-context.service';
+import { ProgressBarModule } from 'primeng/progressbar';
+import { environment } from '../../../../environments/environment.development';
 
 @Component({
   selector: 'app-material-requests',
@@ -46,10 +47,408 @@ import { PermissionContextService } from '../../../services/permission-context.s
     DialogModule,
     SelectModule,
     TextareaModule,
-    HasPermissionActionDirective,
+    ProgressBarModule,
   ],
   template: `
-    <div class="w-full min-screen flex flex-col p-5">
+    <div class="flex flex-col lg:hidden">
+      <div
+        class="relative bg-[#1D4ED8] rounded-b-[2.5rem] overflow-hidden pb-3"
+      >
+        <div
+          class="absolute -top-20 -right-15 w-56 h-56 bg-white/10 rounded-full border border-white/15 flex items-center justify-center"
+        >
+          <div
+            class="w-44 h-44 rounded-full border border-white/20 bg-[#1D4ED8]"
+          ></div>
+        </div>
+
+        <div
+          class="absolute top-8 -right-20 w-36 h-36 rounded-full bg-white/5"
+        ></div>
+
+        <div class="relative z-10 h-full px-6 py-6 flex flex-col">
+          <div class="flex flex-row items-center justify-between">
+            <div
+              class="flex flex-row items-center px-3 py-1 rounded-full border border-white/20 bg-white/10 gap-2"
+            >
+              <i class="pi pi-circle-fill text-[4px]! text-green-500!"></i>
+              <span class="font-semibold text-white/80 text-sm"
+                >YL WORKS ENTERPRISE</span
+              >
+            </div>
+
+            <div class="flex flex-row items-center gap-2">
+              <div
+                class="w-11 h-11 rounded-full flex items-center justify-center bg-white/10 border border-white/30"
+              >
+                <i class="pi pi-bell text-white!"></i>
+              </div>
+              <div
+                class="w-11 h-11 rounded-full flex items-center justify-center bg-white/10 border border-white/20"
+              >
+                <div class="font-semibold text-white text-shadow-sm">
+                  {{ getInitial(currentUser?.displayName) }}
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="flex flex-row justify-between mt-5">
+            <div class="flex flex-col gap-1">
+              <b class="text-2xl text-white text-shadow-sm"
+                >Material Requests</b
+              >
+              <span class="text-sm text-white/80"
+                >Request site tools, raw materials & equipment</span
+              >
+            </div>
+            <p-button
+              [routerLink]="'/material-requests/form'"
+              label="Request"
+              size="small"
+              [rounded]="true"
+              icon="pi pi-plus"
+              styleClass="bg-white! border-none! text-blue-900! px-5! py-2! font-bold! shadow-lg!"
+            ></p-button>
+          </div>
+
+          <div
+            class="flex flex-row items-center gap-2 p-2 rounded-md bg-white/10 border border-white/20 mt-4"
+          >
+            <i class="pi pi-truck text-yellow-400!"></i>
+            <span
+              class="font-semibold text-sm text-white tracking-wide text-shadow-sm"
+              >5 active dispatches scheduled</span
+            >
+          </div>
+        </div>
+      </div>
+      <div class="flex flex-col px-7 py-4">
+        <div class="flex flex-row items-center justify-between">
+          <div class="font-bold text-xl">Overview Status</div>
+          <div class="flex flex-row items-center gap-1">
+            <div
+              class="text-sm text-blue-700 font-semibold"
+              [routerLink]="'/inventory'"
+            >
+              Site Inventory
+            </div>
+            <i class="pi pi-chevron-right text-xs! text-blue-700!"></i>
+          </div>
+        </div>
+        <div class="mt-4 grid grid-cols-12 gap-4">
+          <div
+            class="col-span-6 flex flex-col p-3 border border-gray-200 rounded-lg"
+          >
+            <div class="flex flex-row items-center justify-between">
+              <div class="text-gray-500 font-semibold text-xs tracking-wide">
+                ACTIVE REQS
+              </div>
+              <div
+                class="w-8 h-8 flex items-center justify-center rounded-lg bg-blue-50"
+              >
+                <i class="pi pi-truck text-blue-800!"></i>
+              </div>
+            </div>
+            <div class="text-gray-500 text-sm">
+              <b class="text-3xl text-gray-900">0</b> / 0 In Progress
+            </div>
+            <div class="py-2">
+              <p-progressbar
+                [style]="{ height: '6px' }"
+                [value]="50"
+                [showValue]="false"
+                [color]="'blue'"
+              ></p-progressbar>
+            </div>
+            <div class="flex flex-row items-center justify-between text-xs">
+              <div class="text-gray-500">Pending: 2</div>
+              <div class="text-blue-600 font-semibold">60% Active</div>
+            </div>
+          </div>
+          <div
+            class="col-span-6 flex flex-col p-3 border border-gray-200 rounded-lg"
+          >
+            <div class="flex flex-row items-center justify-between">
+              <div class="text-gray-500 font-semibold text-xs tracking-wide">
+                SITE DELIVERIES
+              </div>
+              <div
+                class="w-8 h-8 flex items-center justify-center rounded-lg bg-green-50"
+              >
+                <i class="pi pi-verified text-green-800!"></i>
+              </div>
+            </div>
+            <div class="text-gray-500 text-sm">
+              <b class="text-3xl text-gray-900">8</b> Delivered
+            </div>
+            <div class="py-2">
+              <p-progressbar
+                [style]="{ height: '6px' }"
+                [value]="100"
+                [showValue]="false"
+                [color]="'green'"
+              ></p-progressbar>
+            </div>
+            <div class="flex flex-row items-center justify-between text-xs">
+              <div class="text-gray-500">100% on time</div>
+              <div class="text-green-600 font-semibold">100% Fulfilled</div>
+            </div>
+          </div>
+        </div>
+        <div
+          class="text-sm bg-gray-200 rounded-lg p-1 grid grid-cols-12 w-full mt-4"
+        >
+          <div
+            class="col-span-3 bg-white text-blue-800 font-semibold text-center p-2 rounded-lg"
+          >
+            All
+          </div>
+          <div class="col-span-3 text-gray-700 font-semibold text-center p-2">
+            Pending
+          </div>
+          <div class="col-span-3 text-gray-700 font-semibold text-center p-2">
+            In Transit
+          </div>
+          <div class="col-span-3 text-gray-700 font-semibold text-center p-2">
+            Delivered
+          </div>
+        </div>
+        <div class="flex flex-row items-center justify-between text-sm py-4">
+          <div class="font-bold text-gray-500">REQUISITION RECORDS</div>
+          <span class="text-xs text-gray-400"
+            >{{ PagingSignal().totalElements ?? 0 }} Records</span
+          >
+        </div>
+        <div class="flex flex-col gap-3">
+          <ng-container *ngFor="let data of PagingSignal().data">
+            <div
+              class="p-4 bg-white border border-gray-200 rounded-xl flex flex-col shadow-sm"
+            >
+              <!-- TOP -->
+              <div class="flex items-start justify-between gap-3">
+                <div class="flex items-center gap-3 min-w-0">
+                  <!-- Icon -->
+                  <div
+                    class="shrink-0 rounded-xl w-11 h-11 flex items-center justify-center"
+                  >
+                    <i
+                      class="pi text-orange-600! bg-orange-50"
+                      [ngClass]="{ 'pi-file-o': data.status === 'Draft' }"
+                    ></i>
+                  </div>
+
+                  <!-- Request Info -->
+                  <div class="flex flex-col min-w-0">
+                    <b class="text-base text-gray-900">
+                      {{ data.requestNo }}
+                    </b>
+
+                    <span class="text-gray-500 text-xs truncate">
+                      Site:
+                      {{
+                        data.project
+                          ? data.project.projectTitle
+                          : data.location || 'No site specified'
+                      }}
+                    </span>
+                  </div>
+                </div>
+
+                <!-- PRIORITY BADGE -->
+                <div
+                  class="shrink-0 flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold"
+                  [ngClass]="{
+                    'bg-red-50 text-red-700 border border-red-200':
+                      data.priority === 'Urgent',
+                    'bg-orange-50 text-orange-700 border border-orange-200':
+                      data.priority === 'High',
+                    'bg-blue-50 text-blue-700 border border-blue-200':
+                      data.priority === 'Standard',
+                    'bg-gray-50 text-gray-600 border border-gray-200':
+                      !data.priority,
+                  }"
+                >
+                  <i
+                    class="pi text-[4px]!"
+                    [ngClass]="{
+                      'pi-bolt': data.priority === 'Urgent',
+                      'pi-arrow-up': data.priority === 'High',
+                      'pi-circle-fill': data.priority === 'Standard',
+                    }"
+                  ></i>
+
+                  {{ data.priority || 'Standard' }}
+                </div>
+              </div>
+
+              <!-- MATERIAL ITEMS -->
+              <div
+                class="mt-4 bg-gray-50 border border-gray-200 rounded-xl p-3"
+              >
+                <div class="flex items-center justify-between mb-3">
+                  <div class="flex items-center gap-2">
+                    <i class="pi pi-box text-gray-500! text-sm!"></i>
+                    <span class="text-xs font-bold text-gray-500 tracking-wide">
+                      REQUESTED ITEMS
+                    </span>
+                  </div>
+
+                  <div
+                    class="text-xs font-bold bg-white border border-gray-200 rounded-full px-2.5 py-1 text-gray-600"
+                  >
+                    {{ data.materialItems?.length || 0 }}
+                    {{ data.materialItems?.length === 1 ? 'Item' : 'Items' }}
+                  </div>
+                </div>
+
+                <!-- Item preview -->
+                <div
+                  *ngFor="
+                    let item of data.materialItems?.slice(0, 2);
+                    let last = last
+                  "
+                  class="flex items-center justify-between py-2"
+                  [ngClass]="{
+                    'border-b border-gray-200': !last,
+                  }"
+                >
+                  <div class="flex items-center gap-2 min-w-0">
+                    <div
+                      class="w-7 h-7 shrink-0 bg-white border border-gray-200 rounded-lg flex items-center justify-center"
+                    >
+                      <i
+                        *ngIf="!item.inventory?.attachment"
+                        class="pi pi-box text-gray-400! text-xs!"
+                      ></i>
+                      <img
+                        *ngIf="item.inventory?.attachment"
+                        [src]="attachmentUrl + item.inventory?.attachment"
+                        class="w-full h-full object-contain"
+                      />
+                    </div>
+
+                    <div class="flex flex-col">
+                      <span
+                        class="text-sm font-semibold text-gray-800 truncate"
+                      >
+                        {{ item.inventory?.itemName || 'Material Item' }}
+                      </span>
+                      <span class="text-xs text-gray-500 font-semibold">{{
+                        item.inventory?.itemCode
+                      }}</span>
+                    </div>
+                  </div>
+
+                  <span class="text-xs font-bold text-gray-500 ml-3">
+                    ×{{ item.quantity }} {{ item.unit }}
+                  </span>
+                </div>
+
+                <!-- More items -->
+                <div
+                  *ngIf="(data.materialItems?.length || 0) > 2"
+                  class="text-xs text-blue-700 font-semibold text-center pt-2"
+                >
+                  +{{ data.materialItems.length - 2 }} more items
+                </div>
+              </div>
+
+              <!-- META -->
+              <div class="grid grid-cols-2 gap-3 mt-3">
+                <!-- Requested Date -->
+                <div class="flex flex-col gap-1">
+                  <span class="text-[11px] text-gray-400 font-semibold">
+                    REQUESTED DATE
+                  </span>
+
+                  <div class="flex items-center gap-1.5">
+                    <i class="pi pi-calendar text-gray-400! text-xs!"></i>
+                    <span class="text-sm font-semibold text-gray-700">
+                      {{ data.requestDate | date: 'dd MMM yyyy' }}
+                    </span>
+                  </div>
+                </div>
+
+                <!-- Status -->
+                <div class="flex flex-col items-end gap-1">
+                  <span class="text-[11px] text-gray-400 font-semibold">
+                    STATUS
+                  </span>
+
+                  <div
+                    class="w-fit px-2.5 py-1 rounded-full text-xs font-semibold"
+                    [ngClass]="{
+                      'bg-amber-50 text-amber-700': data.status === 'Draft',
+                      'bg-orange-50 text-orange-700':
+                        data.status === 'PendingApproval',
+                      'bg-blue-50 text-blue-700': data.status === 'Approved',
+                      'bg-indigo-50 text-indigo-700': data.status === 'Issued',
+                      'bg-sky-50 text-sky-700': data.status === 'Partial',
+                      'bg-green-50 text-green-700': data.status === 'Completed',
+                      'bg-red-50 text-red-700': data.status === 'Rejected',
+                    }"
+                  >
+                    {{ data.status }}
+                  </div>
+                </div>
+              </div>
+
+              <!-- DIVIDER -->
+              <div class="border-t border-gray-100 my-4"></div>
+
+              <!-- REQUESTER + ACTION -->
+              <div class="flex items-center justify-between gap-3">
+                <div class="flex items-center gap-2 min-w-0">
+                  <div
+                    class="shrink-0 text-xs font-semibold text-white w-8 h-8 rounded-full bg-blue-700 flex items-center justify-center"
+                  >
+                    {{
+                      getInitial(
+                        data.requestedBy?.displayName ??
+                          data.requestedBy?.fullName
+                      )
+                    }}
+                  </div>
+
+                  <div class="flex flex-col min-w-0">
+                    <b class="text-xs text-gray-800 truncate">
+                      {{
+                        data.requestedBy?.displayName ??
+                          data.requestedBy?.fullName
+                      }}
+                    </b>
+
+                    <span class="text-[11px] text-gray-400 truncate">
+                      {{ data.requestedBy?.jobTitle }}
+                    </span>
+                  </div>
+                </div>
+
+                <div class="flex items-center gap-2 shrink-0">
+                  <p-button
+                    label="View Request"
+                    severity="secondary"
+                    size="small"
+                    styleClass="!px-3 !rounded-lg !bg-gray-100 rounded-none! !text-gray-700 !font-semibold"
+                  >
+                  </p-button>
+
+                  <p-button
+                    *ngIf="data.status === 'Draft'"
+                    label="Cancel"
+                    severity="danger"
+                    size="small"
+                    styleClass="!rounded-lg !bg-red-50 !text-red-600 border-none!"
+                  ></p-button>
+                </div>
+              </div>
+            </div>
+          </ng-container>
+        </div>
+      </div>
+    </div>
+
+    <div class="w-full min-screen hidden lg:flex flex-col p-5">
       <div class="flex flex-row items-center gap-1 text-gray-500 tracking-wide">
         <div
           [routerLink]="'/dashboard'"
@@ -221,6 +620,7 @@ import { PermissionContextService } from '../../../services/permission-context.s
         </div>
       </div>
     </div>
+
     <p-menu
       #menu
       [model]="menuItems"
@@ -353,6 +753,7 @@ export class MaterialRequests implements OnInit, OnDestroy {
   rejectReason: string | null = null;
   selectedApprovalUserId: string | null = null;
   menuItems: MenuItem[] = [];
+  attachmentUrl: string = environment.AttachmentUrl;
 
   selectedMaterial!: MaterialRequestDto | null;
   showApprovalDialog: boolean = false;
@@ -583,6 +984,18 @@ export class MaterialRequests implements OnInit, OnDestroy {
     // }
 
     menu.toggle(event);
+  }
+
+  getInitial(fullName?: string): string {
+    if (!fullName?.trim()) return '?';
+
+    const names = fullName.trim().split(/\s+/).filter(Boolean);
+
+    if (names.length === 1) {
+      return names[0].substring(0, 2).toUpperCase();
+    }
+
+    return (names[0].charAt(0) + names[1].charAt(0)).toUpperCase();
   }
 
   //   updateStatus(material: MaterialRequestDto, status: string) {

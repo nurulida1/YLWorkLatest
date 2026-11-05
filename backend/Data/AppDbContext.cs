@@ -55,6 +55,10 @@ namespace YLWorks.Data
         public DbSet<MeetingParticipant> MeetingParticipants { get; set; }
         public DbSet<StaffTaskChecklist> StaffTaskChecklists { get; set; }
 
+        public DbSet<DailyReport> DailyReports { get; set; }
+        public DbSet<DailyReportTask> DailyReportTasks { get; set; }
+        public DbSet<DailyReportAttachment> DailyReportAttachments { get; set; }
+
         // =======================
         // ORGANIZATION
         // =======================
@@ -96,6 +100,8 @@ namespace YLWorks.Data
         public DbSet<Company> Companies { get; set; }
         public DbSet<Address> Addresses { get; set; }
         public DbSet<AttachmentDto> Attachments { get; set; }
+
+        public DbSet<Notice> Notices { get; set; }
 
         // =======================
         // SALES / PROCUREMENT
@@ -142,6 +148,10 @@ namespace YLWorks.Data
 
         public DbSet<JobSheet> JobSheets { get; set; }
         public DbSet<JobSheetMember> JobSheetMembers { get; set; }
+
+        public DbSet<HardwareRequest> HardwareRequests { get; set; }
+
+        public DbSet<HardwareRequestItem> HardwareRequestItems { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -646,6 +656,53 @@ namespace YLWorks.Data
                 entity.Property(e => e.OtPublicHolidayAfter8HourlyMultiplier).HasPrecision(8, 4);
                 entity.HasIndex(e => e.IsActive);
             });
+
+            modelBuilder.Entity<DailyReport>()
+    .HasIndex(x => new { x.EmployeeId, x.ReportDate })
+    .IsUnique();
+
+            modelBuilder.Entity<DailyReport>()
+                .HasOne(x => x.Project)
+                .WithMany()
+                .HasForeignKey(x => x.ProjectId)
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<DailyReport>()
+                .HasMany(x => x.DailyReportTasks)
+                .WithOne(x => x.DailyReport)
+                .HasForeignKey(x => x.DailyReportId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<DailyReport>()
+                .HasMany(x => x.Attachments)
+                .WithOne(x => x.DailyReport)
+                .HasForeignKey(x => x.DailyReportId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<DailyReportTask>()
+                .HasOne(x => x.StaffTask)
+                .WithMany()
+                .HasForeignKey(x => x.StaffTaskId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<HardwareRequest>()
+    .HasMany(x => x.Items)
+    .WithOne(x => x.HardwareRequest)
+    .HasForeignKey(x => x.HardwareRequestId)
+    .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<HardwareRequest>()
+    .HasOne(r => r.ResponsibleDepartment)
+    .WithMany()
+    .HasForeignKey(r => r.ResponsibleDepartmentId)
+    .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<HardwareRequestItem>()
+                .HasOne(x => x.Inventory)
+                .WithMany()
+                .HasForeignKey(x => x.InventoryId)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

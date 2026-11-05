@@ -65,9 +65,103 @@ import { DrawerModule } from 'primeng/drawer';
           ></i>
         </div>
         <div
-          class="w-10 h-10 border rounded-full border-gray-300 flex items-center justify-center cursor-pointer"
+          id="notification-bell"
+          class="relative w-10 h-10 border rounded-full border-gray-300
+           flex items-center justify-center cursor-pointer"
+          (click)="onBellClick()"
         >
           <i class="pi pi-bell text-lg text-gray-500!"></i>
+
+          <span
+            *ngIf="unreadCount > 0"
+            class="absolute -top-1 -right-1 bg-red-500 text-white
+               text-[10px] rounded-full min-w-5 h-5
+               flex items-center justify-center px-1"
+          >
+            {{ unreadCount > 99 ? '99+' : unreadCount }}
+          </span>
+        </div>
+
+        <div
+          id="notification-panel"
+          #notificationPanel
+          *ngIf="notificationVisible && !isMobile"
+          class="absolute right-4 top-16 z-50 w-80
+         max-h-[min(32rem,calc(100vh-5rem))]
+         flex flex-col overflow-hidden
+         bg-white border border-gray-200 rounded-lg shadow-lg"
+        >
+          <div
+            class="flex justify-between items-center p-3 border-b border-gray-300"
+          >
+            <span class="font-semibold">Notifications</span>
+
+            <span class="text-sm text-gray-500">
+              {{ unreadCount }} unread
+            </span>
+          </div>
+
+          <!-- Scrollable notification list -->
+          <div class="flex-1 overflow-y-auto min-h-0">
+            <div
+              *ngIf="notificationLists.length === 0"
+              class="p-5 text-center text-gray-500"
+            >
+              No notifications yet.
+            </div>
+
+            <div
+              *ngFor="let notification of notificationLists | slice: 0 : 5"
+              class="p-3 border-b border-gray-200 hover:bg-gray-50"
+              [ngClass]="{ 'bg-blue-50': !notification.isRead }"
+            >
+              <div class="flex justify-between items-start gap-2">
+                <div class="text-sm text-gray-800 font-semibold">
+                  {{ notification.title }}
+                </div>
+
+                <span
+                  *ngIf="!notification.isRead"
+                  class="w-2 h-2 rounded-full bg-blue-500 mt-1.5 shrink-0"
+                ></span>
+              </div>
+
+              <div class="text-sm text-gray-600 mt-1">
+                {{ notification.message }}
+              </div>
+
+              <div class="flex justify-between items-center mt-2">
+                <span class="text-xs text-gray-400">
+                  {{ notification.createdAt | date: 'dd/MM/yyyy hh:mm a' }}
+                </span>
+
+                <button
+                  *ngIf="!notification.isRead"
+                  type="button"
+                  class="text-xs text-blue-600 hover:text-blue-800 font-medium"
+                  (click)="markNotificationAsRead(notification)"
+                >
+                  Mark as read
+                </button>
+
+                <span *ngIf="notification.isRead" class="text-xs text-gray-400">
+                  Read
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div
+            class="p-3 text-center border-t border-gray-200 bg-white shrink-0"
+          >
+            <a
+              routerLink="/notifications"
+              (click)="notificationVisible = false"
+              class="text-sm text-blue-600 hover:text-blue-800 cursor-pointer font-medium"
+            >
+              View all notifications
+            </a>
+          </div>
         </div>
 
         <div
@@ -256,31 +350,55 @@ import { DrawerModule } from 'primeng/drawer';
       [draggable]="false"
       [resizable]="false"
       [dismissableMask]="true"
-      styleClass="w-[80%] lg:w-[40%]! 2xl:w-[30%]! p-5"
+      [showHeader]="false"
+      styleClass="w-[90%] sm:w-[420px] !rounded-2xl"
+      contentStyleClass="!p-0 !rounded-2xl"
     >
       <ng-template #headless>
-        <div class="flex flex-col justify-center items-center">
-          <div><img src="assets/logout.png" alt="" class="w-20" /></div>
-          <div class="font-semibold text-lg pt-2">
-            Are you sure you want to logout ?
+        <div class="px-6 pt-8 pb-6 sm:px-8">
+          <!-- Icon -->
+          <div class="flex justify-center">
+            <div
+              class="flex h-20 w-20 items-center justify-center rounded-full bg-red-50 ring-8 ring-red-50/50"
+            >
+              <i class="pi pi-sign-out text-3xl text-red-500"></i>
+            </div>
+          </div>
+
+          <!-- Title & Description -->
+          <div class="mt-6 text-center">
+            <h2 class="text-xl font-bold tracking-tight text-gray-900">
+              Confirm Logout
+            </h2>
+
+            <p class="mt-2 text-sm leading-6 text-gray-500">
+              Are you sure you want to log out of your account? You'll need to
+              sign in again to access your workspace.
+            </p>
+          </div>
+
+          <!-- Actions -->
+          <div class="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
+            <p-button
+              label="Cancel"
+              icon="pi pi-times"
+              (onClick)="signOutDialog = false"
+              severity="secondary"
+              [outlined]="true"
+              styleClass="!w-full !justify-center !rounded-xl !py-3 !font-semibold"
+            ></p-button>
+
+            <p-button
+              label="Yes, Logout"
+              icon="pi pi-sign-out"
+              (onClick)="LogOut()"
+              severity="danger"
+              styleClass="!w-full !justify-center !rounded-xl !py-3 !font-semibold"
+            ></p-button>
           </div>
         </div>
-        <div class="pt-5 flex flex-row items-center gap-2 justify-center px-10">
-          <p-button
-            label="Cancel"
-            (onClick)="signOutDialog = false"
-            class="w-full"
-            styleClass="!flex-1 !w-full"
-            severity="secondary"
-          ></p-button>
-          <p-button
-            (onClick)="LogOut()"
-            label="Confirm"
-            class="w-full"
-            styleClass="!flex-1 !w-full !bg-[#4D46F7] !border-none"
-          ></p-button>
-        </div> </ng-template
-    ></p-dialog>
+      </ng-template>
+    </p-dialog>
   `,
   styleUrl: './navbar.component.less',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -294,11 +412,7 @@ export class NavbarComponent implements OnDestroy, OnInit {
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly router = inject(Router);
 
-  protected ngUnsubscribe: Subject<void> = new Subject<void>();
-
-  private notificationSub!: Subscription;
   private destroy$ = new Subject<void>();
-  notifications: { message: string; time: Date }[] = [];
 
   isDarkMode = computed(
     () => this.appConfigService.appState()?.darkTheme ?? false,
@@ -533,6 +647,25 @@ export class NavbarComponent implements OnDestroy, OnInit {
     },
   ];
 
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent) {
+    if (!this.notificationVisible || this.isMobile) return;
+
+    const target = event.target as HTMLElement;
+
+    const notificationPanel = document.getElementById('notification-panel');
+
+    const notificationBell = document.getElementById('notification-bell');
+
+    const clickedInsidePanel = notificationPanel?.contains(target);
+    const clickedBell = notificationBell?.contains(target);
+
+    if (!clickedInsidePanel && !clickedBell) {
+      this.notificationVisible = false;
+      this.cdr.markForCheck();
+    }
+  }
+
   @HostListener('window:resize', [])
   onResize() {
     this.isMobile = window.innerWidth < 770;
@@ -556,35 +689,32 @@ export class NavbarComponent implements OnDestroy, OnInit {
   }
 
   ngOnInit(): void {
-    // this.notificationService.unreadCount$
-    //   .pipe(takeUntil(this.destroy$))
-    //   .subscribe((count) => {
-    //     this.unreadCount = count;
-    //     this.cdr.markForCheck();
-    //   });
+    // Listen to the notification list maintained by NotificationService.
+    this.notificationService.notifications$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((notifications) => {
+        this.notificationLists = notifications;
+        this.cdr.markForCheck();
+      });
 
-    // this.notificationService.loadUnreadCount(
-    //   this.userService.currentUser?.userId,
-    // );
+    // Listen to the unread count maintained by NotificationService.
+    this.notificationService.unreadCount$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((count) => {
+        this.unreadCount = count;
+        this.cdr.markForCheck();
+      });
 
-    // this.notificationService.message$
-    //   .pipe(takeUntil(this.destroy$))
-    //   .subscribe((msg) => {
-    //     if (msg) {
-    //       this.addNotification(msg);
-    //       if (this.userId)
-    //         this.notificationService.refreshUnreadCount(this.userId);
-    //     }
-    //   });
+    // Load saved notifications from the database.
+    this.notificationService
+      .GetNotifications()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        error: (err) => console.error('Failed to load notifications:', err),
+      });
 
-    // if (!this.isMobile && this.userId) {
-    //   this.notificationService.GetNotifications(this.userId).subscribe({
-    //     next: (res) => (this.notificationLists = res),
-    //     error: (err) => console.error('Failed to load notifications', err),
-    //   });
-    // } else {
-    //   this.notificationLists = [];
-    // }
+    // Get the current unread count from the backend.
+    this.notificationService.refreshUnreadCount();
 
     this.items = [
       {
@@ -600,13 +730,22 @@ export class NavbarComponent implements OnDestroy, OnInit {
       },
     ];
 
-    this.router.events.subscribe(() => {
-      this.currentUrl = this.router.url;
-      this.syncOpenMenuWithRoute();
-      this.cdr.markForCheck();
-    });
-
     this.syncOpenMenuWithRoute();
+  }
+
+  loadNotifications() {
+    this.notificationService.GetNotifications().subscribe({
+      next: (res: NotificationDto[]) => {
+        this.notificationLists = res;
+
+        this.unreadCount = res.filter((x) => !x.isRead).length;
+
+        this.cdr.markForCheck();
+      },
+      error: (err) => {
+        console.error('Failed to load notifications:', err);
+      },
+    });
   }
 
   syncOpenMenuWithRoute() {
@@ -683,32 +822,11 @@ export class NavbarComponent implements OnDestroy, OnInit {
   onBellClick() {
     if (this.isMobile) {
       this.router.navigate(['/notifications']);
-    } else {
-      this.notificationVisible = !this.notificationVisible;
-      if (this.notificationVisible && this.visibleSetting) {
-        this.visibleSetting = false;
-      }
-      if (this.notificationLists.some((x) => !x.isRead)) {
-        setTimeout(() => {
-          if (this.userId) {
-            this.notificationService.MarkAllAsRead(this.userId).subscribe({
-              next: (res) => {
-                if (res.success) {
-                  this.notificationLists.forEach((x) => (x.isRead = true));
-
-                  this.notificationService['_unreadCount$'].next(0);
-                }
-              },
-              error: (err) => {
-                console.error(err);
-              },
-            });
-          }
-        }, 2000);
-      }
-
-      this.cdr.detectChanges();
+      return;
     }
+
+    this.notificationVisible = !this.notificationVisible;
+    this.cdr.markForCheck();
   }
 
   RoleRequestClick(notification: NotificationDto) {
@@ -726,14 +844,6 @@ export class NavbarComponent implements OnDestroy, OnInit {
     this.cdr.detectChanges();
   }
 
-  addNotification(message: string) {
-    const newNotification = { message, time: new Date() };
-    this.notifications = this.notifications
-      ? [newNotification, ...this.notifications]
-      : [newNotification];
-    this.cdr.detectChanges();
-  }
-
   getAllowedSubItems(item: any) {
     if (!item.items) return [];
 
@@ -748,10 +858,26 @@ export class NavbarComponent implements OnDestroy, OnInit {
     return this.getAllowedSubItems(item).length > 0;
   }
 
+  markNotificationAsRead(notification: NotificationDto) {
+    if (notification.isRead) return;
+
+    this.notificationService.MarkRead(notification.id).subscribe({
+      next: () => {
+        notification.isRead = true;
+
+        this.unreadCount = Math.max(0, this.unreadCount - 1);
+
+        this.cdr.markForCheck();
+      },
+      error: (err) => {
+        console.error('Failed to mark notification as read:', err);
+      },
+    });
+  }
+
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
-    if (this.notificationSub) this.notificationSub.unsubscribe();
     this.loadingService.stop();
   }
 }

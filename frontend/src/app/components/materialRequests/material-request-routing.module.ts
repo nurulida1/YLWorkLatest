@@ -9,19 +9,16 @@ const routes: Routes = [
   {
     path: '',
     component: MaterialRequests,
-    canActivate: [modulePermissionGuard],
     data: { moduleKey: 'material-requests' },
   },
   {
     path: 'form',
     component: MaterialRequestForm,
-    canActivate: [modulePermissionGuard],
     data: { moduleKey: 'material-requests' },
   },
   {
     path: 'create',
     component: MaterialRequestMobileForm,
-    canActivate: [modulePermissionGuard],
     data: { moduleKey: 'material-requests' },
   },
 ];

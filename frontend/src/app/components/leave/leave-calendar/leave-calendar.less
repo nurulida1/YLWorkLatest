@@ -1,0 +1,343 @@
+/* =====================================================
+   LEAVE CALENDAR
+===================================================== */
+
+:host {
+  display: block;
+  width: 100%;
+  min-width: 0;
+}
+
+/* =====================================================
+   HEADER
+===================================================== */
+
+.calendar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.calendar-navigation {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.calendar-nav-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border: 1px solid #e2e8f0;
+  border-radius: 9px;
+  background: #fff;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.calendar-nav-button:hover {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  color: #2563eb;
+}
+
+.calendar-title h1 {
+  margin: 0;
+  font-size: 21px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.calendar-title p {
+  margin: 3px 0 0;
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.today-button {
+  height: 38px;
+  padding: 0 16px;
+  border: 1px solid #bfdbfe;
+  border-radius: 9px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.today-button:hover {
+  background: #dbeafe;
+}
+
+/* =====================================================
+   MONTH CALENDAR
+===================================================== */
+
+.calendar-container {
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+}
+
+.calendar {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  background: #e2e8f0;
+  gap: 1px;
+}
+
+.day-name {
+  min-width: 0;
+  padding: 13px 6px;
+  background: #f8fafc;
+  color: #64748b;
+  text-align: center;
+  text-transform: uppercase;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.day {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 125px;
+  padding: 9px;
+  background: #fff;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.day:hover {
+  background: #f8fbff;
+}
+
+.day:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: -2px;
+  z-index: 1;
+}
+
+.day--disabled {
+  background: #fafafa;
+}
+
+.day--disabled .day-number {
+  color: #cbd5e1;
+}
+
+.day--today {
+  background: #eff6ff;
+}
+
+.day--today .day-number {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 27px;
+  height: 27px;
+  border-radius: 50%;
+  background: #2563eb;
+  color: #fff;
+}
+
+.day-number {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 27px;
+  height: 27px;
+  color: #334155;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* =====================================================
+   LEAVE EVENTS
+===================================================== */
+
+.day-meetings {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.task {
+  min-width: 0;
+  padding: 5px 7px;
+  border-left: 3px solid;
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.task--leave {
+  border-color: #3b82f6;
+  background: #eff6ff;
+  color: #1e40af;
+}
+
+.task--half-day {
+  border-color: #f59e0b;
+  background: #fffbeb;
+  color: #92400e;
+}
+
+.task--holiday {
+  border-color: #f43f5e;
+  background: #fff1f2;
+  color: #9f1239;
+}
+
+.task-title {
+  overflow: hidden;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.4;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.task-time {
+  margin-top: 2px;
+  font-size: 9px;
+  font-weight: 500;
+  opacity: 0.8;
+}
+
+.more-meetings {
+  width: fit-content;
+  padding: 2px 4px;
+  border: 0;
+  background: transparent;
+  color: #2563eb;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.more-meetings:hover {
+  text-decoration: underline;
+}
+
+/* =====================================================
+   WEEK / DAY VIEW
+===================================================== */
+
+.calendar-container + section {
+  min-width: 0;
+}
+
+section.bg-white {
+  min-width: 0;
+}
+
+/* =====================================================
+   DIALOG
+===================================================== */
+
+:host ::ng-deep .leave-calendar-dialog {
+  max-width: 95vw;
+}
+
+:host ::ng-deep .leave-calendar-dialog .p-dialog-header {
+  padding: 18px 20px;
+  border-bottom: 1px solid #e2e8f0;
+  font-size: 16px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+:host ::ng-deep .leave-calendar-dialog .p-dialog-content {
+  padding: 20px;
+}
+
+/* =====================================================
+   RESPONSIVE
+===================================================== */
+
+@media (max-width: 768px) {
+  .calendar-header {
+    align-items: flex-start;
+  }
+
+  .calendar-navigation {
+    gap: 8px;
+  }
+
+  .calendar-title h1 {
+    font-size: 18px;
+  }
+
+  .day {
+    min-height: 95px;
+    padding: 5px;
+  }
+
+  .day-name {
+    padding: 10px 2px;
+    font-size: 9px;
+  }
+
+  .task {
+    padding: 4px;
+  }
+
+  .task-title {
+    font-size: 9px;
+  }
+
+  .task-time {
+    font-size: 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  .calendar {
+    gap: 1px;
+  }
+
+  .day {
+    min-height: 78px;
+    padding: 4px 3px;
+  }
+
+  .day-number {
+    min-width: 22px;
+    height: 22px;
+    font-size: 10px;
+  }
+
+  .day--today .day-number {
+    width: 22px;
+    height: 22px;
+  }
+
+  .task {
+    padding: 3px;
+    border-left-width: 2px;
+  }
+
+  .task-title {
+    font-size: 8px;
+  }
+
+  .task-time {
+    font-size: 7px;
+  }
+
+  .more-meetings {
+    font-size: 8px;
+  }
+}

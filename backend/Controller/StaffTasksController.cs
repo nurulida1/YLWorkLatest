@@ -1,17 +1,17 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
+using System.Security.Claims;
 using YLWorks.Data;
 using YLWorks.Hubs;
 using YLWorks.Model;
-using System.Security.Claims;
 using WebApplication1.Helpers;
-using System.Reflection;
 
 namespace YLWorks.Controller
 {
+    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class StaffTaskController : ControllerBase
@@ -19,12 +19,539 @@ namespace YLWorks.Controller
         private readonly AppDbContext _context;
         private readonly IHubContext<NotificationHub> _hub;
 
-        public StaffTaskController(AppDbContext context, IHubContext<NotificationHub> hub)
+        private static readonly string[] AllowedPriorities =
+        {
+            "Low",
+            "Medium",
+            "High",
+            "Urgent"
+        };
+
+        private static readonly string[] AllowedCategories =
+        {
+            "Admin",
+            "HR",
+            "Development",
+            "Documentation",
+            "Maintenance",
+            "Meeting",
+            "Training",
+            "Others"
+        };
+
+        private static readonly string[] AllowedStatuses =
+        {
+            "Todo",
+            "InProgress",
+            "Pending",
+            "Completed",
+            "Cancelled"
+        };
+
+        private static readonly string[] AllowedRecurringTypes =
+        {
+            "Daily",
+            "Weekly",
+            "Monthly",
+            "Yearly"
+        };
+
+        public StaffTaskController(
+            AppDbContext context,
+            IHubContext<NotificationHub> hub)
         {
             _context = context;
             _hub = hub;
-
         }
+
+        // ================================================================
+        // CURRENT USER
+        // ================================================================
+
+        private bool TryGetCurrentUserId(out Guid userId)
+        {
+            userId = Guid.Empty;
+
+            var userIdClaim =
+                User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            return Guid.TryParse(userIdClaim, out userId);
+        }
+
+        // ================================================================
+        // VALIDATION HELPERS
+        // ================================================================
+
+        private static string NormalizeValue(
+            string? value,
+            string defaultValue)
+        {
+            return string.IsNullOrWhiteSpace(value)
+                ? defaultValue
+                : value.Trim();
+        }
+
+        private static bool IsValidValue(
+            string value,
+            string[] allowedValues)
+        {
+            return allowedValues.Any(x =>
+                x.Equals(value, StringComparison.OrdinalIgnoreCase));
+        }
+
+        private static string NormalizeAllowedValue(
+            string? value,
+            string defaultValue,
+            string[] allowedValues)
+        {
+            var normalized = NormalizeValue(value, defaultValue);
+
+            var matched = allowedValues.FirstOrDefault(x =>
+                x.Equals(
+                    normalized,
+                    StringComparison.OrdinalIgnoreCase));
+
+            return matched ?? normalized;
+        }
+
+        private IActionResult? ValidateTaskDetails(
+            string? title,
+            DateTime? startDate,
+            DateTime dueDate,
+            bool isRecurring,
+            string? recurringType,
+            decimal? estimatedHours)
+        {
+            if (string.IsNullOrWhiteSpace(title))
+            {
+                return BadRequest(new
+                {
+                    Error = "Title is required."
+                });
+            }
+
+            if (title.Trim().Length > 200)
+            {
+                return BadRequest(new
+                {
+                    Error = "Title cannot exceed 200 characters."
+                });
+            }
+
+            if (startDate.HasValue &&
+                dueDate < startDate.Value)
+            {
+                return BadRequest(new
+                {
+                    Error = "Due date cannot be earlier than start date."
+                });
+            }
+
+            if (dueDate == DateTime.MinValue)
+            {
+                return BadRequest(new
+                {
+                    Error = "Due date is required."
+                });
+            }
+
+            if (estimatedHours < 0)
+            {
+                return BadRequest(new
+                {
+                    Error = "Estimated hours cannot be negative."
+                });
+            }
+
+            if (isRecurring)
+            {
+                if (string.IsNullOrWhiteSpace(recurringType) ||
+                    !IsValidValue(
+                        recurringType,
+                        AllowedRecurringTypes))
+                {
+                    return BadRequest(new
+                    {
+                        Error = "A valid recurring type is required."
+                    });
+                }
+            }
+
+            return null;
+        }
+
+        private IActionResult? ValidatePriorityAndCategory(
+            string? priority,
+            string? category)
+        {
+            var normalizedPriority =
+                NormalizeValue(priority, "Medium");
+
+            var normalizedCategory =
+                NormalizeValue(category, "Others");
+
+            if (!IsValidValue(
+                normalizedPriority,
+                AllowedPriorities))
+            {
+                return BadRequest(new
+                {
+                    Error = "Invalid task priority."
+                });
+            }
+
+            if (!IsValidValue(
+                normalizedCategory,
+                AllowedCategories))
+            {
+                return BadRequest(new
+                {
+                    Error = "Invalid task category."
+                });
+            }
+
+            return null;
+        }
+
+        private static string GetTaskStatusFromChecklist(
+            int total,
+            int completed)
+        {
+            if (total == 0)
+                return "Todo";
+
+            if (completed == total)
+                return "Completed";
+
+            if (completed > 0)
+                return "InProgress";
+
+            return "Todo";
+        }
+
+        private static void SetTaskCompletion(
+            StaffTask task,
+            string status,
+            Guid currentUserId)
+        {
+            task.Status = status;
+
+            if (status == "Completed")
+            {
+                task.CompletedAt ??= DateTimeHelper.Now();
+                task.CompletedById ??= currentUserId;
+            }
+            else
+            {
+                task.CompletedAt = null;
+                task.CompletedById = null;
+            }
+        }
+
+        private async Task<IActionResult> GetTaskNotFoundResponse()
+        {
+            return NotFound(new
+            {
+                Error = "Task not found."
+            });
+        }
+
+        // ================================================================
+        // FILTER EXPRESSION
+        //
+        // Supported:
+        // Status=Todo
+        // Priority=High
+        // Status=Todo,Priority=High
+        // Status=Todo|Status=InProgress
+        // Title=report
+        // ================================================================
+
+        private static Expression<Func<StaffTask, bool>>?
+            BuildFilterExpression(string filter)
+        {
+            var parameter =
+                Expression.Parameter(typeof(StaffTask), "t");
+
+            Expression? finalExpression = null;
+
+            var allowedProperties = new HashSet<string>(
+                StringComparer.OrdinalIgnoreCase)
+            {
+                "Title",
+                "Description",
+                "Priority",
+                "Category",
+                "Status",
+                "AssignedToId",
+                "AssignedById",
+                "ProjectId",
+                "IsRecurring",
+                "DueDate",
+                "StartDate",
+                "ReminderAt"
+            };
+
+            var orParts = filter.Split(
+                '|',
+                StringSplitOptions.RemoveEmptyEntries);
+
+            foreach (var orPart in orParts)
+            {
+                Expression? orExpression = null;
+
+                var andParts = orPart.Split(
+                    ',',
+                    StringSplitOptions.RemoveEmptyEntries);
+
+                foreach (var andPart in andParts)
+                {
+                    var isNotEqual = andPart.Contains("!=");
+
+                    var parts = isNotEqual
+                        ? andPart.Split(
+                            new[] { "!=" },
+                            2,
+                            StringSplitOptions.None)
+                        : andPart.Split(
+                            new[] { '=' },
+                            2,
+                            StringSplitOptions.None);
+
+                    if (parts.Length != 2)
+                        continue;
+
+                    var propertyName = parts[0].Trim();
+                    var value = parts[1].Trim();
+
+                    if (!allowedProperties.Contains(propertyName))
+                        continue;
+
+                    var propertyInfo =
+                        typeof(StaffTask).GetProperty(
+                            propertyName,
+                            System.Reflection.BindingFlags.Public |
+                            System.Reflection.BindingFlags.Instance |
+                            System.Reflection.BindingFlags.IgnoreCase);
+
+                    if (propertyInfo == null)
+                        continue;
+
+                    var propertyAccess =
+                        Expression.Property(parameter, propertyInfo);
+
+                    var actualType =
+                        Nullable.GetUnderlyingType(
+                            propertyInfo.PropertyType)
+                        ?? propertyInfo.PropertyType;
+
+                    Expression condition;
+
+                    // STRING
+                    if (actualType == typeof(string))
+                    {
+                        var notNull =
+                            Expression.NotEqual(
+                                propertyAccess,
+                                Expression.Constant(null));
+
+                        var toLowerMethod =
+                            typeof(string).GetMethod(
+                                nameof(string.ToLower),
+                                Type.EmptyTypes)!;
+
+                        var containsMethod =
+                            typeof(string).GetMethod(
+                                nameof(string.Contains),
+                                new[] { typeof(string) })!;
+
+                        var loweredProperty =
+                            Expression.Call(
+                                propertyAccess,
+                                toLowerMethod);
+
+                        var loweredValue =
+                            Expression.Constant(value.ToLower());
+
+                        var contains =
+                            Expression.Call(
+                                loweredProperty,
+                                containsMethod,
+                                loweredValue);
+
+                        condition = Expression.AndAlso(
+                            notNull,
+                            isNotEqual
+                                ? Expression.Not(contains)
+                                : contains);
+                    }
+
+                    // GUID / NULLABLE GUID
+                    else if (actualType == typeof(Guid))
+                    {
+                        if (!Guid.TryParse(value, out var guidValue))
+                            continue;
+
+                        var constant =
+                            Expression.Constant(guidValue, actualType);
+
+                        Expression right =
+                            propertyInfo.PropertyType == typeof(Guid?)
+                                ? Expression.Convert(
+                                    constant,
+                                    propertyInfo.PropertyType)
+                                : constant;
+
+                        var equal =
+                            Expression.Equal(propertyAccess, right);
+
+                        condition = isNotEqual
+                            ? Expression.Not(equal)
+                            : equal;
+                    }
+
+                    // BOOLEAN
+                    else if (actualType == typeof(bool))
+                    {
+                        if (!bool.TryParse(value, out var boolValue))
+                            continue;
+
+                        var equal = Expression.Equal(
+                            propertyAccess,
+                            Expression.Constant(boolValue));
+
+                        condition = isNotEqual
+                            ? Expression.Not(equal)
+                            : equal;
+                    }
+
+                    // DATE / NULLABLE DATE
+                    else if (actualType == typeof(DateTime))
+                    {
+                        if (!DateTime.TryParse(
+                            value,
+                            out var dateValue))
+                        {
+                            continue;
+                        }
+
+                        var constant =
+                            Expression.Constant(dateValue);
+
+                        Expression right =
+                            propertyInfo.PropertyType == typeof(DateTime?)
+                                ? Expression.Convert(
+                                    constant,
+                                    propertyInfo.PropertyType)
+                                : constant;
+
+                        var equal =
+                            Expression.Equal(propertyAccess, right);
+
+                        condition = isNotEqual
+                            ? Expression.Not(equal)
+                            : equal;
+                    }
+                    else
+                    {
+                        continue;
+                    }
+
+                    orExpression = orExpression == null
+                        ? condition
+                        : Expression.AndAlso(
+                            orExpression,
+                            condition);
+                }
+
+                if (orExpression != null)
+                {
+                    finalExpression = finalExpression == null
+                        ? orExpression
+                        : Expression.OrElse(
+                            finalExpression,
+                            orExpression);
+                }
+            }
+
+            if (finalExpression == null)
+                return null;
+
+            return Expression.Lambda<Func<StaffTask, bool>>(
+                finalExpression,
+                parameter);
+        }
+
+        // ================================================================
+        // SORTING
+        // ================================================================
+
+        private static IQueryable<StaffTask> ApplySorting(
+            IQueryable<StaffTask> query,
+            string? orderBy)
+        {
+            if (string.IsNullOrWhiteSpace(orderBy))
+            {
+                return query
+                    .OrderBy(t =>
+                        t.Status == "Completed" ||
+                        t.Status == "Cancelled")
+                    .ThenBy(t => t.DueDate);
+            }
+
+            var parts = orderBy.Trim().Split(
+                ' ',
+                StringSplitOptions.RemoveEmptyEntries);
+
+            var property = parts[0];
+
+            var descending =
+                parts.Length > 1 &&
+                parts[1].Equals(
+                    "desc",
+                    StringComparison.OrdinalIgnoreCase);
+
+            return property.ToLowerInvariant() switch
+            {
+                "title" => descending
+                    ? query.OrderByDescending(t => t.Title)
+                    : query.OrderBy(t => t.Title),
+
+                "priority" => descending
+                    ? query.OrderByDescending(t => t.Priority)
+                    : query.OrderBy(t => t.Priority),
+
+                "category" => descending
+                    ? query.OrderByDescending(t => t.Category)
+                    : query.OrderBy(t => t.Category),
+
+                "status" => descending
+                    ? query.OrderByDescending(t => t.Status)
+                    : query.OrderBy(t => t.Status),
+
+                "duedate" => descending
+                    ? query.OrderByDescending(t => t.DueDate)
+                    : query.OrderBy(t => t.DueDate),
+
+                "startdate" => descending
+                    ? query.OrderByDescending(t => t.StartDate)
+                    : query.OrderBy(t => t.StartDate),
+
+                "createdat" => descending
+                    ? query.OrderByDescending(t => t.CreatedAt)
+                    : query.OrderBy(t => t.CreatedAt),
+
+                _ => query
+                    .OrderBy(t =>
+                        t.Status == "Completed" ||
+                        t.Status == "Cancelled")
+                    .ThenBy(t => t.DueDate)
+            };
+        }
+
+        // ================================================================
+        // GET MANY
+        // ================================================================
 
         [HttpGet("GetMany")]
         public async Task<ActionResult> GetMany(
@@ -34,38 +561,12 @@ namespace YLWorks.Controller
             string? orderBy = null,
             string? includes = null)
         {
+            if (!TryGetCurrentUserId(out var currentUserId))
+                return Unauthorized(new { Error = "Invalid user." });
+
             try
             {
-                // =========================================================
-                // GET CURRENT USER
-                // =========================================================
-
-                var userIdClaim =
-                    User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-
-                if (string.IsNullOrEmpty(userIdClaim))
-                {
-                    return Unauthorized(new
-                    {
-                        Error = "Invalid token."
-                    });
-                }
-
-                if (!Guid.TryParse(userIdClaim, out Guid currentUserId))
-                {
-                    return Unauthorized(new
-                    {
-                        Error = "Invalid user ID."
-                    });
-                }
-
-
-                // =========================================================
-                // PAGINATION VALIDATION
-                // =========================================================
-
-                page = page < 1 ? 1 : page;
-
+                page = Math.Max(1, page);
                 pageSize = pageSize switch
                 {
                     <= 0 => 10,
@@ -73,666 +574,136 @@ namespace YLWorks.Controller
                     _ => pageSize
                 };
 
-
-                // =========================================================
-                // BASE QUERY
-                // =========================================================
-
                 var query = _context.StaffTasks
                     .AsNoTracking()
                     .Where(t =>
                         t.AssignedById == currentUserId ||
-                        t.AssignedToId == currentUserId
-                    )
-                    .AsQueryable();
-
-
-                // =========================================================
-                // FILTER
-                //
-                // Example:
-                //
-                // Status=Todo
-                //
-                // Status=Todo,Priority=High
-                //
-                // Status=Todo|Status=InProgress
-                //
-                // =========================================================
+                        t.AssignedToId == currentUserId);
 
                 if (!string.IsNullOrWhiteSpace(filter))
                 {
-                    var parameter =
-                        Expression.Parameter(
-                            typeof(StaffTask),
-                            "t"
-                        );
-
-                    Expression? finalExpression = null;
-
-                    var orParts = filter.Split(
-                        '|',
-                        StringSplitOptions.RemoveEmptyEntries
-                    );
-
-                    foreach (var orPart in orParts)
-                    {
-                        Expression? orExpression = null;
-
-                        var andParts = orPart.Split(
-                            ',',
-                            StringSplitOptions.RemoveEmptyEntries
-                        );
-
-                        foreach (var andPart in andParts)
-                        {
-                            bool isNotEqual =
-                                andPart.Contains("!=");
-
-                            var kv = isNotEqual
-                                ? andPart.Split(
-                                    new[] { "!=" },
-                                    StringSplitOptions.None
-                                )
-                                : andPart.Split(
-                                    new[] { '=' },
-                                    StringSplitOptions.None
-                                );
-
-                            if (kv.Length != 2)
-                                continue;
-
-                            var propertyName = kv[0].Trim();
-                            var valueStr = kv[1].Trim();
-
-                            // ---------------------------------------------
-                            // Validate property
-                            // ---------------------------------------------
-
-                            var propertyInfo =
-                                typeof(StaffTask).GetProperty(
-                                    propertyName,
-                                    BindingFlags.Public |
-                                    BindingFlags.Instance |
-                                    BindingFlags.IgnoreCase
-                                );
-
-                            if (propertyInfo == null)
-                                continue;
-
-                            var propertyAccess =
-                                Expression.Property(
-                                    parameter,
-                                    propertyInfo
-                                );
-
-                            var propertyType =
-                                Nullable.GetUnderlyingType(
-                                    propertyInfo.PropertyType
-                                ) ?? propertyInfo.PropertyType;
-
-                            Expression condition;
-
-
-                            // ---------------------------------------------
-                            // STRING
-                            // ---------------------------------------------
-
-                            if (propertyType == typeof(string))
-                            {
-                                var toLowerMethod =
-                                    typeof(string).GetMethod(
-                                        nameof(string.ToLower),
-                                        Type.EmptyTypes
-                                    )!;
-
-                                var propertyToLower =
-                                    Expression.Call(
-                                        propertyAccess,
-                                        toLowerMethod
-                                    );
-
-                                var valueToLower =
-                                    Expression.Constant(
-                                        valueStr.ToLower()
-                                    );
-
-                                var containsMethod =
-                                    typeof(string).GetMethod(
-                                        nameof(string.Contains),
-                                        new[] { typeof(string) }
-                                    )!;
-
-                                var containsExpression =
-                                    Expression.Call(
-                                        propertyToLower,
-                                        containsMethod,
-                                        valueToLower
-                                    );
-
-                                condition = isNotEqual
-                                    ? Expression.Not(
-                                        containsExpression
-                                    )
-                                    : containsExpression;
-                            }
-
-
-                            // ---------------------------------------------
-                            // GUID
-                            // ---------------------------------------------
-
-                            else if (propertyType == typeof(Guid))
-                            {
-                                if (!Guid.TryParse(
-                                    valueStr,
-                                    out var guidValue))
-                                {
-                                    continue;
-                                }
-
-                                var guidConstant =
-                                    Expression.Constant(
-                                        guidValue,
-                                        propertyType
-                                    );
-
-                                Expression guidExpression;
-
-                                if (propertyInfo.PropertyType ==
-                                    typeof(Guid?))
-                                {
-                                    guidExpression =
-                                        Expression.Equal(
-                                            propertyAccess,
-                                            Expression.Convert(
-                                                guidConstant,
-                                                propertyInfo.PropertyType
-                                            )
-                                        );
-                                }
-                                else
-                                {
-                                    guidExpression =
-                                        Expression.Equal(
-                                            propertyAccess,
-                                            guidConstant
-                                        );
-                                }
-
-                                condition = isNotEqual
-                                    ? Expression.Not(guidExpression)
-                                    : guidExpression;
-                            }
-
-
-                            // ---------------------------------------------
-                            // ENUM
-                            // ---------------------------------------------
-
-                            else if (propertyType.IsEnum)
-                            {
-                                if (!Enum.TryParse(
-                                    propertyType,
-                                    valueStr,
-                                    true,
-                                    out var enumValue))
-                                {
-                                    continue;
-                                }
-
-                                var enumConstant =
-                                    Expression.Constant(
-                                        enumValue,
-                                        propertyType
-                                    );
-
-                                var enumExpression =
-                                    Expression.Equal(
-                                        propertyAccess,
-                                        enumConstant
-                                    );
-
-                                condition = isNotEqual
-                                    ? Expression.Not(enumExpression)
-                                    : enumExpression;
-                            }
-
-
-                            // ---------------------------------------------
-                            // DATE
-                            // ---------------------------------------------
-
-                            else if (propertyType == typeof(DateTime))
-                            {
-                                if (!DateTime.TryParse(
-                                    valueStr,
-                                    out var dateValue))
-                                {
-                                    continue;
-                                }
-
-                                var dateConstant =
-                                    Expression.Constant(
-                                        dateValue,
-                                        propertyType
-                                    );
-
-                                Expression dateExpression;
-
-                                if (propertyInfo.PropertyType ==
-                                    typeof(DateTime?))
-                                {
-                                    dateExpression =
-                                        Expression.Equal(
-                                            propertyAccess,
-                                            Expression.Convert(
-                                                dateConstant,
-                                                propertyInfo.PropertyType
-                                            )
-                                        );
-                                }
-                                else
-                                {
-                                    dateExpression =
-                                        Expression.Equal(
-                                            propertyAccess,
-                                            dateConstant
-                                        );
-                                }
-
-                                condition = isNotEqual
-                                    ? Expression.Not(dateExpression)
-                                    : dateExpression;
-                            }
-
-
-                            // ---------------------------------------------
-                            // BOOLEAN
-                            // ---------------------------------------------
-
-                            else if (propertyType == typeof(bool))
-                            {
-                                if (!bool.TryParse(
-                                    valueStr,
-                                    out var boolValue))
-                                {
-                                    continue;
-                                }
-
-                                var boolConstant =
-                                    Expression.Constant(
-                                        boolValue,
-                                        propertyType
-                                    );
-
-                                var boolExpression =
-                                    Expression.Equal(
-                                        propertyAccess,
-                                        boolConstant
-                                    );
-
-                                condition = isNotEqual
-                                    ? Expression.Not(boolExpression)
-                                    : boolExpression;
-                            }
-
-
-                            // ---------------------------------------------
-                            // DECIMAL / INT / OTHER
-                            // ---------------------------------------------
-
-                            else
-                            {
-                                try
-                                {
-                                    var convertedValue =
-                                        Convert.ChangeType(
-                                            valueStr,
-                                            propertyType
-                                        );
-
-                                    var valueConstant =
-                                        Expression.Constant(
-                                            convertedValue,
-                                            propertyType
-                                        );
-
-                                    var equalExpression =
-                                        Expression.Equal(
-                                            propertyAccess,
-                                            valueConstant
-                                        );
-
-                                    condition = isNotEqual
-                                        ? Expression.Not(
-                                            equalExpression
-                                        )
-                                        : equalExpression;
-                                }
-                                catch
-                                {
-                                    continue;
-                                }
-                            }
-
-
-                            // ---------------------------------------------
-                            // AND
-                            // ---------------------------------------------
-
-                            orExpression =
-                                orExpression == null
-                                    ? condition
-                                    : Expression.AndAlso(
-                                        orExpression,
-                                        condition
-                                    );
-                        }
-
-
-                        // ---------------------------------------------
-                        // OR
-                        // ---------------------------------------------
-
-                        if (orExpression != null)
-                        {
-                            finalExpression =
-                                finalExpression == null
-                                    ? orExpression
-                                    : Expression.OrElse(
-                                        finalExpression,
-                                        orExpression
-                                    );
-                        }
-                    }
-
-
-                    // ---------------------------------------------
-                    // APPLY FILTER
-                    // ---------------------------------------------
-
-                    if (finalExpression != null)
-                    {
-                        var lambda =
-                            Expression.Lambda<Func<StaffTask, bool>>(
-                                finalExpression,
-                                parameter
-                            );
-
-                        query = query.Where(lambda);
-                    }
+                    var expression =
+                        BuildFilterExpression(filter);
+
+                    if (expression != null)
+                        query = query.Where(expression);
                 }
 
+                query = ApplySorting(query, orderBy);
 
-                // =========================================================
-                // SORTING
-                // =========================================================
-
-                if (!string.IsNullOrWhiteSpace(orderBy))
-                {
-                    var orderParts = orderBy.Trim().Split(
-                        ' ',
-                        StringSplitOptions.RemoveEmptyEntries
-                    );
-
-                    var propertyName = orderParts[0];
-
-                    var propertyInfo =
-                        typeof(StaffTask).GetProperty(
-                            propertyName,
-                            BindingFlags.Public |
-                            BindingFlags.Instance |
-                            BindingFlags.IgnoreCase
-                        );
-
-                    if (propertyInfo != null)
-                    {
-                        var isDescending =
-                            orderParts.Length > 1 &&
-                            orderParts[1].Equals(
-                                "desc",
-                                StringComparison.OrdinalIgnoreCase
-                            );
-
-                        query = isDescending
-                            ? query.OrderByDescending(
-                                q => EF.Property<object>(
-                                    q,
-                                    propertyInfo.Name
-                                )
-                            )
-                            : query.OrderBy(
-                                q => EF.Property<object>(
-                                    q,
-                                    propertyInfo.Name
-                                )
-                            );
-                    }
-                }
-                else
-                {
-                    // Default:
-                    // incomplete tasks first,
-                    // then earliest due date.
-
-                    query = query
-                        .OrderBy(t =>
-                            t.Status == "Completed" ||
-                            t.Status == "Cancelled")
-                        .ThenBy(t => t.DueDate);
-                }
-
-
-                // =========================================================
-                // TOTAL
-                // =========================================================
-
-                var totalElements =
-                    await query.CountAsync();
-
-
-                // =========================================================
-                // DATA
-                // =========================================================
+                var totalElements = await query.CountAsync();
 
                 var items = await query
                     .Skip((page - 1) * pageSize)
                     .Take(pageSize)
                     .Select(t => new
                     {
-                        // -------------------------------------------------
-                        // Basic
-                        // -------------------------------------------------
-
                         t.Id,
-
                         t.Title,
-
                         t.Description,
-
-
-                        // -------------------------------------------------
-                        // Assignment
-                        // -------------------------------------------------
+                        t.ProjectId,
+                        Project = t.Project == null ? null : new
+                        {
+                            t.Project.Id,
+                            t.Project.ProjectCode,
+                            t.Project.ProjectTitle
+                        },
                         t.AssignedToId,
-                        AssignedTo =
-                            t.AssignedTo == null
-                                ? null
-                                : new
-                                {
-                                    t.AssignedTo.Id,
-                                    t.AssignedTo.FullName
-                                },
+
+                        AssignedTo = t.AssignedTo == null
+                            ? null
+                            : new
+                            {
+                                t.AssignedTo.Id,
+                                t.AssignedTo.FullName
+                            },
+
                         t.AssignedById,
-                        AssignedBy =
-                            t.AssignedBy == null
-                                ? null
-                                : new
-                                {
-                                    t.AssignedBy.Id,
-                                    t.AssignedBy.FullName
-                                },
 
-
-                        // -------------------------------------------------
-                        // Task
-                        // -------------------------------------------------
+                        AssignedBy = t.AssignedBy == null
+                            ? null
+                            : new
+                            {
+                                t.AssignedBy.Id,
+                                t.AssignedBy.FullName
+                            },
 
                         t.Priority,
-
                         t.Category,
-
                         t.Status,
 
-
-                        // -------------------------------------------------
-                        // Dates
-                        // -------------------------------------------------
-
                         t.StartDate,
-
                         t.DueDate,
-
                         t.ReminderAt,
 
-
-                        // -------------------------------------------------
-                        // Recurring
-                        // -------------------------------------------------
-
                         t.IsRecurring,
-
                         t.RecurringType,
 
-
-                        // -------------------------------------------------
-                        // Time
-                        // -------------------------------------------------
-
                         t.EstimatedHours,
-
                         t.ActualHours,
-
-
-                        // -------------------------------------------------
-                        // Completion
-                        // -------------------------------------------------
 
                         t.CompletedAt,
 
-                        CompletedBy =
-                            t.CompletedBy == null
-                                ? null
-                                : new
-                                {
-                                    t.CompletedBy.Id,
-                                    t.CompletedBy.FullName
-                                },
-
-
-                        // -------------------------------------------------
-                        // Checklist
-                        // -------------------------------------------------
+                        CompletedBy = t.CompletedBy == null
+                            ? null
+                            : new
+                            {
+                                t.CompletedBy.Id,
+                                t.CompletedBy.FullName
+                            },
 
                         Checklists = t.Checklists
                             .OrderBy(c => c.Sequence)
                             .Select(c => new
                             {
                                 c.Id,
-
                                 c.StaffTaskId,
-
                                 c.Title,
-
                                 c.IsCompleted,
-
                                 c.CompletedAt,
-
                                 c.Sequence
                             })
                             .ToList(),
 
-                        ChecklistTotal =
-                            t.Checklists.Count(),
+                        ChecklistTotal = t.Checklists.Count(),
 
                         ChecklistCompleted =
-                            t.Checklists.Count(
-                                c => c.IsCompleted
-                            )
+                            t.Checklists.Count(c => c.IsCompleted)
                     })
                     .ToListAsync();
-
-
-                // =========================================================
-                // RESPONSE
-                // =========================================================
 
                 return Ok(new
                 {
                     Data = items,
-
                     TotalElements = totalElements,
-
                     Page = page,
-
                     PageSize = pageSize,
-
-                    TotalPages =
-                        (int)Math.Ceiling(
-                            totalElements /
-                            (double)pageSize
-                        )
+                    TotalPages = (int)Math.Ceiling(
+                        totalElements / (double)pageSize)
                 });
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return StatusCode(
-                    500,
-                    new
-                    {
-                        Error =
-                            "An unexpected error occurred.",
-
-                        Detail = ex.Message
-                    }
-                );
+                return StatusCode(500, new
+                {
+                    Error = "Failed to load tasks."
+                });
             }
         }
 
+        // ================================================================
+        // GET ONE
+        // ================================================================
+
         [HttpGet("GetOne")]
-        public async Task<IActionResult> GetOne([FromQuery] Guid id)
+        public async Task<IActionResult> GetOne(
+            [FromQuery] Guid id)
         {
+            if (!TryGetCurrentUserId(out var currentUserId))
+                return Unauthorized(new { Error = "Invalid user." });
+
             try
             {
-                // =========================================================
-                // GET CURRENT USER
-                // =========================================================
-
-                var userIdClaim =
-                    User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-
-                if (string.IsNullOrEmpty(userIdClaim))
-                {
-                    return Unauthorized(new
-                    {
-                        Error = "Invalid token."
-                    });
-                }
-
-                if (!Guid.TryParse(userIdClaim, out Guid currentUserId))
-                {
-                    return Unauthorized(new
-                    {
-                        Error = "Invalid user ID."
-                    });
-                }
-
-
-                // =========================================================
-                // GET TASK
-                // =========================================================
-
                 var data = await _context.StaffTasks
                     .AsNoTracking()
                     .Where(x =>
@@ -740,25 +711,19 @@ namespace YLWorks.Controller
                         (
                             x.AssignedById == currentUserId ||
                             x.AssignedToId == currentUserId
-                        )
-                    )
+                        ))
                     .Select(x => new
                     {
-                        // =================================================
-                        // BASIC
-                        // =================================================
-
                         x.Id,
-
                         x.Title,
-
                         x.Description,
-
-
-                        // =================================================
-                        // ASSIGNMENT
-                        // =================================================
-
+                        x.ProjectId,
+                        Project = x.Project == null ? null : new
+                        {
+                            x.Project.Id,
+                            x.Project.ProjectCode,
+                            x.Project.ProjectTitle
+                        },
                         x.AssignedById,
 
                         AssignedBy = x.AssignedBy == null
@@ -770,7 +735,6 @@ namespace YLWorks.Controller
                                 x.AssignedBy.DisplayName,
                                 x.AssignedBy.Email
                             },
-
 
                         x.AssignedToId,
 
@@ -784,53 +748,21 @@ namespace YLWorks.Controller
                                 x.AssignedTo.Email
                             },
 
-
-                        // =================================================
-                        // TASK DETAILS
-                        // =================================================
-
                         x.Priority,
-
                         x.Category,
-
                         x.Status,
 
-
-                        // =================================================
-                        // DATE / TIME
-                        // =================================================
-
                         x.StartDate,
-
                         x.DueDate,
-
                         x.ReminderAt,
 
-
-                        // =================================================
-                        // RECURRING
-                        // =================================================
-
                         x.IsRecurring,
-
                         x.RecurringType,
 
-
-                        // =================================================
-                        // TIME TRACKING
-                        // =================================================
-
                         x.EstimatedHours,
-
                         x.ActualHours,
 
-
-                        // =================================================
-                        // COMPLETION
-                        // =================================================
-
                         x.CompletedAt,
-
                         x.CompletedById,
 
                         CompletedBy = x.CompletedBy == null
@@ -843,132 +775,91 @@ namespace YLWorks.Controller
                                 x.CompletedBy.Email
                             },
 
-
-                        // =================================================
-                        // CHECKLIST
-                        // =================================================
-
                         Checklists = x.Checklists
                             .OrderBy(c => c.Sequence)
                             .Select(c => new
                             {
                                 c.Id,
-
                                 c.StaffTaskId,
-
                                 c.Title,
-
                                 c.IsCompleted,
-
                                 c.CompletedAt,
-
                                 c.Sequence
                             })
                             .ToList(),
 
-                        ChecklistTotal =
-                            x.Checklists.Count(),
+                        ChecklistTotal = x.Checklists.Count(),
 
                         ChecklistCompleted =
-                            x.Checklists.Count(
-                                c => c.IsCompleted
-                            )
+                            x.Checklists.Count(c => c.IsCompleted)
                     })
                     .FirstOrDefaultAsync();
 
-
-                // =========================================================
-                // NOT FOUND
-                // =========================================================
-
                 if (data == null)
-                {
-                    return NotFound(new
-                    {
-                        Error = "Task not found."
-                    });
-                }
-
-
-                // =========================================================
-                // RESPONSE
-                // =========================================================
+                    return NotFound(new { Error = "Task not found." });
 
                 return Ok(data);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return StatusCode(
-                    500,
-                    new
-                    {
-                        Error =
-                            "An unexpected error occurred.",
-
-                        Detail = ex.Message
-                    }
-                );
+                return StatusCode(500, new
+                {
+                    Error = "Failed to load task."
+                });
             }
         }
 
+        // ================================================================
+        // CREATE
+        // ================================================================
+
+
         [HttpPost("Create")]
-        public async Task<ActionResult> AddTask(
+        public async Task<IActionResult> AddTask(
     [FromBody] CreateStaffTaskRequest request)
         {
+            if (!TryGetCurrentUserId(out var currentUserId))
+                return Unauthorized(new { Error = "Invalid user." });
+
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            if (string.IsNullOrWhiteSpace(request.Title))
-            {
-                return BadRequest(new
-                {
-                    Error = "Title is required."
-                });
-            }
+            var validation = ValidateTaskDetails(
+                request.Title,
+                request.StartDate,
+                request.DueDate,
+                request.IsRecurring,
+                request.RecurringType,
+                request.EstimatedHours);
 
-            var userIdClaim =
-                User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (validation != null)
+                return validation;
 
-            if (string.IsNullOrEmpty(userIdClaim))
-            {
-                return Unauthorized(new
-                {
-                    Error = "Invalid token."
-                });
-            }
+            validation = ValidatePriorityAndCategory(
+                request.Priority,
+                request.Category);
 
-            if (!Guid.TryParse(userIdClaim, out Guid currentUserId))
-            {
-                return Unauthorized(new
-                {
-                    Error = "Invalid user ID."
-                });
-            }
+            if (validation != null)
+                return validation;
 
             try
             {
-                // =========================================================
-                // ASSIGN TO
-                //
-                // If AssignedToId is null:
-                //     Create personal task
-                //     AssignedTo = current user
-                //
-                // Otherwise:
-                //     Assign task to selected staff
-                // =========================================================
+                // Validate optional project.
+                if (!await IsValidProject(request.ProjectId))
+                {
+                    return BadRequest(new
+                    {
+                        Error = "Project not found."
+                    });
+                }
 
+                // Null means personal task.
                 var assignedToId =
                     request.AssignedToId ?? currentUserId;
 
-
-                // =========================================================
-                // VALIDATE ASSIGNED USER
-                // =========================================================
-
                 var assignedUserExists =
-                    await _context.Users
-                        .AnyAsync(x => x.Id == assignedToId);
+                    await _context.Users.AnyAsync(
+                        x => x.Id == assignedToId);
 
                 if (!assignedUserExists)
                 {
@@ -978,55 +869,50 @@ namespace YLWorks.Controller
                     });
                 }
 
-
-                // =========================================================
-                // CREATE TASK
-                // =========================================================
-
                 var task = new StaffTask
                 {
                     Id = Guid.NewGuid(),
 
                     Title = request.Title.Trim(),
-
-                    Description = request.Description,
+                    Description = request.Description?.Trim(),
 
                     AssignedToId = assignedToId,
-
                     AssignedById = currentUserId,
 
-                    Priority = string.IsNullOrWhiteSpace(request.Priority)
-                        ? "Medium"
-                        : request.Priority,
+                    Priority = NormalizeAllowedValue(
+                        request.Priority,
+                        "Medium",
+                        AllowedPriorities),
 
-                    Category = string.IsNullOrWhiteSpace(request.Category)
-                        ? "Others"
-                        : request.Category,
+                    Category = NormalizeAllowedValue(
+                        request.Category,
+                        "Others",
+                        AllowedCategories),
 
-                    Status = "Todo",
+                    Status = StaffTaskStatus.Todo,
 
                     StartDate = request.StartDate,
-
                     DueDate = request.DueDate,
-
                     ReminderAt = request.ReminderAt,
 
                     IsRecurring = request.IsRecurring,
 
                     RecurringType = request.IsRecurring
-                        ? request.RecurringType
+                        ? NormalizeAllowedValue(
+                            request.RecurringType,
+                            "Daily",
+                            AllowedRecurringTypes)
                         : null,
 
                     EstimatedHours = request.EstimatedHours,
 
+                    // OPTIONAL PROJECT
+                    ProjectId = request.ProjectId,
+
                     CreatedAt = DateTimeHelper.Now()
                 };
 
-
-                // =========================================================
-                // CHECKLIST
-                // =========================================================
-
+                // Add checklists.
                 if (request.Checklists?.Any() == true)
                 {
                     var sequence = 1;
@@ -1040,75 +926,62 @@ namespace YLWorks.Controller
                             new StaffTaskChecklist
                             {
                                 Id = Guid.NewGuid(),
-
                                 StaffTaskId = task.Id,
-
                                 Title = item.Title.Trim(),
-
                                 IsCompleted = false,
-
                                 CompletedAt = null,
 
-                                Sequence =
-                                    item.Sequence > 0
-                                        ? item.Sequence
-                                        : sequence
+                                Sequence = item.Sequence > 0
+                                    ? item.Sequence
+                                    : sequence
                             });
 
                         sequence++;
                     }
                 }
 
-
-                // =========================================================
-                // SAVE
-                // =========================================================
-
                 _context.StaffTasks.Add(task);
 
                 await _context.SaveChangesAsync();
 
-
-                // =========================================================
-                // GET FULL DTO
-                // =========================================================
+                // Notify assigned employee.
+                if (assignedToId != currentUserId)
+                {
+                    await SendTaskNotification(
+                        assignedToId,
+                        "New Task Assigned",
+                        $"You have been assigned a new task: {task.Title}",
+                        task.Id);
+                }
 
                 var result = await GetStaffTaskDto(task.Id);
 
-
-                // =========================================================
-                // SIGNALR
-                // =========================================================
-
                 await _hub.Clients.All.SendAsync(
                     "StaffTaskAdded",
-                    result
-                );
-
+                    result);
 
                 return Ok(result);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return StatusCode(
-                    500,
-                    new
-                    {
-                        Error = "Failed to add task.",
-
-                        Detail = ex.Message,
-
-                        InnerException =
-                            ex.InnerException?.Message
-                    }
-                );
+                return StatusCode(500, new
+                {
+                    Error = "Failed to create task."
+                });
             }
         }
 
+        // ================================================================
+        // UPDATE
+        // ================================================================
+
         [HttpPut("Update")]
         public async Task<IActionResult> Update(
-     [FromBody] UpdateStaffTaskRequest request)
+    [FromBody] UpdateStaffTaskRequest request)
         {
+            if (!TryGetCurrentUserId(out var currentUserId))
+                return Unauthorized(new { Error = "Invalid user." });
+
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
@@ -1120,573 +993,414 @@ namespace YLWorks.Controller
                 });
             }
 
-            if (string.IsNullOrWhiteSpace(request.Title))
-            {
-                return BadRequest(new
-                {
-                    Error = "Title is required."
-                });
-            }
+            var validation = ValidateTaskDetails(
+                request.Title,
+                request.StartDate,
+                request.DueDate,
+                request.IsRecurring,
+                request.RecurringType,
+                request.EstimatedHours);
 
-            // =========================================================
-            // GET CURRENT USER
-            // =========================================================
+            if (validation != null)
+                return validation;
 
-            var userIdClaim =
-                User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            validation = ValidatePriorityAndCategory(
+                request.Priority,
+                request.Category);
 
-            if (string.IsNullOrEmpty(userIdClaim))
-            {
-                return Unauthorized(new
-                {
-                    Error = "Invalid token."
-                });
-            }
-
-            if (!Guid.TryParse(userIdClaim, out Guid currentUserId))
-            {
-                return Unauthorized(new
-                {
-                    Error = "Invalid user ID."
-                });
-            }
+            if (validation != null)
+                return validation;
 
             try
             {
-                // =========================================================
-                // GET TASK
-                // =========================================================
-
-                var task = await _context.StaffTasks
-                    .FirstOrDefaultAsync(x => x.Id == request.Id);
-
-                if (task == null)
+                // Validate optional project.
+                if (!await IsValidProject(request.ProjectId))
                 {
-                    return NotFound(new
+                    return BadRequest(new
                     {
-                        Error = "Task not found."
+                        Error = "Project not found."
                     });
                 }
 
+                var task = await _context.StaffTasks
+                    .Include(x => x.Checklists)
+                    .FirstOrDefaultAsync(x => x.Id == request.Id);
 
-                // =========================================================
-                // PERMISSION
-                //
+                if (task == null)
+                    return NotFound(new { Error = "Task not found." });
+
                 // Only creator / assigner can edit task details.
-                // =========================================================
-
                 if (task.AssignedById != currentUserId)
-                {
                     return Forbid();
+
+                var previousAssignedToId = task.AssignedToId;
+
+                var assignedToId =
+                    request.AssignedToId ?? currentUserId;
+
+                var assignedUserExists =
+                    await _context.Users.AnyAsync(
+                        x => x.Id == assignedToId);
+
+                if (!assignedUserExists)
+                {
+                    return BadRequest(new
+                    {
+                        Error = "Assigned user not found."
+                    });
                 }
 
-
-                // =========================================================
-                // VALIDATE ASSIGNED USER
-                // =========================================================
-
-                if (request.AssignedToId.HasValue)
+                if (!IsValidValue(
+                    NormalizeValue(request.Status, "Todo"),
+                    AllowedStatuses))
                 {
-                    var assignedUserExists =
-                        await _context.Users
-                            .AnyAsync(x =>
-                                x.Id == request.AssignedToId.Value);
-
-                    if (!assignedUserExists)
+                    return BadRequest(new
                     {
-                        return BadRequest(new
-                        {
-                            Error = "Assigned user not found."
-                        });
-                    }
+                        Error = "Invalid task status."
+                    });
                 }
 
+                // UPDATE TASK DETAILS
 
-                // =========================================================
-                // UPDATE BASIC TASK INFORMATION
-                // =========================================================
+                task.Title = request.Title.Trim();
+                task.Description = request.Description?.Trim();
 
-                task.Title =
-                    request.Title.Trim();
+                task.AssignedToId = assignedToId;
 
-                task.Description =
-                    request.Description;
+                task.Priority = NormalizeAllowedValue(
+                    request.Priority,
+                    "Medium",
+                    AllowedPriorities);
 
-                task.AssignedToId =
-                    request.AssignedToId;
+                task.Category = NormalizeAllowedValue(
+                    request.Category,
+                    "Others",
+                    AllowedCategories);
 
-                task.Priority =
-                    string.IsNullOrWhiteSpace(request.Priority)
-                        ? "Medium"
-                        : request.Priority;
+                task.StartDate = request.StartDate;
+                task.DueDate = request.DueDate;
+                task.ReminderAt = request.ReminderAt;
 
-                task.Category =
-                    string.IsNullOrWhiteSpace(request.Category)
-                        ? "Others"
-                        : request.Category;
+                task.IsRecurring = request.IsRecurring;
 
-                task.StartDate =
-                    request.StartDate;
+                task.RecurringType = request.IsRecurring
+                    ? NormalizeAllowedValue(
+                        request.RecurringType,
+                        "Daily",
+                        AllowedRecurringTypes)
+                    : null;
 
-                task.DueDate =
-                    request.DueDate;
+                task.EstimatedHours = request.EstimatedHours;
 
-                task.ReminderAt =
-                    request.ReminderAt;
+                // OPTIONAL PROJECT
+                // Null clears the project's association.
 
-                task.IsRecurring =
-                    request.IsRecurring;
+                task.ProjectId = request.ProjectId;
 
-                task.RecurringType =
-                    request.IsRecurring
-                        ? request.RecurringType
-                        : null;
+                // SYNC CHECKLISTS
 
-                task.EstimatedHours =
-                    request.EstimatedHours;
+                var requestedChecklists =
+                    request.Checklists ??
+                    new List<UpdateStaffTaskChecklistItemRequest>();
 
+                var existingById = task.Checklists
+                    .ToDictionary(x => x.Id);
 
-                // =========================================================
-                // REMOVE EXISTING CHECKLIST
-                // =========================================================
+                var submittedIds = requestedChecklists
+                    .Where(x => x.Id.HasValue)
+                    .Select(x => x.Id!.Value)
+                    .ToList();
 
-                var existingChecklists =
-                    await _context.StaffTaskChecklists
-                        .Where(x =>
-                            x.StaffTaskId == task.Id)
-                        .ToListAsync();
-
-                _context.StaffTaskChecklists
-                    .RemoveRange(existingChecklists);
-
-
-                // =========================================================
-                // CREATE UPDATED CHECKLIST
-                // =========================================================
-
-                var newChecklists =
-                    new List<StaffTaskChecklist>();
-
-                if (request.Checklists?.Any() == true)
+                if (submittedIds.Any(id => !existingById.ContainsKey(id)))
                 {
-                    var sequence = 1;
-
-                    foreach (var item in request.Checklists)
+                    return BadRequest(new
                     {
-                        if (string.IsNullOrWhiteSpace(item.Title))
-                            continue;
-
-                        newChecklists.Add(
-                            new StaffTaskChecklist
-                            {
-                                Id = Guid.NewGuid(),
-
-                                StaffTaskId =
-                                    task.Id,
-
-                                Title =
-                                    item.Title.Trim(),
-
-                                IsCompleted =
-                                    item.IsCompleted,
-
-                                CompletedAt =
-                                    item.IsCompleted
-                                        ? DateTimeHelper.Now()
-                                        : null,
-
-                                Sequence =
-                                    item.Sequence > 0
-                                        ? item.Sequence
-                                        : sequence
-                            });
-
-                        sequence++;
-                    }
-
-                    if (newChecklists.Any())
-                    {
-                        _context.StaffTaskChecklists
-                            .AddRange(newChecklists);
-                    }
+                        Error = "One or more checklist items do not belong to this task."
+                    });
                 }
 
+                var now = DateTimeHelper.Now();
+                var sequence = 1;
 
-                // =========================================================
-                // DETERMINE TASK STATUS
-                //
-                // IMPORTANT:
-                // Status is determined from checklist if checklist exists.
-                //
-                // All completed  -> Completed
-                // Some completed  -> InProgress
-                // None completed  -> Todo
-                //
-                // If there is no checklist, use request.Status.
-                // =========================================================
-
-                var checklistTotal =
-                    newChecklists.Count;
-
-                var checklistCompleted =
-                    newChecklists.Count(x =>
-                        x.IsCompleted);
-
-
-                if (checklistTotal > 0)
+                foreach (var item in requestedChecklists)
                 {
-                    // -----------------------------------------------------
-                    // ALL CHECKLIST COMPLETED
-                    // -----------------------------------------------------
+                    if (string.IsNullOrWhiteSpace(item.Title))
+                        continue;
 
-                    if (checklistCompleted == checklistTotal)
+                    StaffTaskChecklist checklist;
+
+                    if (item.Id.HasValue)
                     {
-                        task.Status =
-                            "Completed";
+                        checklist = existingById[item.Id.Value];
                     }
-
-                    // -----------------------------------------------------
-                    // SOME CHECKLIST COMPLETED
-                    // -----------------------------------------------------
-
-                    else if (checklistCompleted > 0)
-                    {
-                        task.Status =
-                            "InProgress";
-                    }
-
-                    // -----------------------------------------------------
-                    // NO CHECKLIST COMPLETED
-                    // -----------------------------------------------------
-
                     else
                     {
-                        task.Status =
-                            "Todo";
-                    }
-                }
-                else
-                {
-                    // -----------------------------------------------------
-                    // NO CHECKLIST
-                    //
-                    // Use status selected from frontend.
-                    // -----------------------------------------------------
+                        checklist = new StaffTaskChecklist
+                        {
+                            Id = Guid.NewGuid(),
+                            StaffTaskId = task.Id
+                        };
 
-                    task.Status =
-                        string.IsNullOrWhiteSpace(request.Status)
-                            ? "Todo"
-                            : request.Status;
-                }
-
-
-                // =========================================================
-                // HANDLE COMPLETION
-                // =========================================================
-
-                if (task.Status == "Completed")
-                {
-                    // -----------------------------------------------------
-                    // Preserve existing CompletedAt if already completed.
-                    // Otherwise create new completion date.
-                    // -----------------------------------------------------
-
-                    if (task.CompletedAt == null)
-                    {
-                        task.CompletedAt =
-                            DateTimeHelper.Now();
+                        task.Checklists.Add(checklist);
                     }
 
-                    // -----------------------------------------------------
-                    // Preserve existing CompletedById if available.
-                    // Otherwise current user becomes completer.
-                    // -----------------------------------------------------
+                    checklist.Title = item.Title.Trim();
 
-                    if (task.CompletedById == null)
-                    {
-                        task.CompletedById =
-                            currentUserId;
-                    }
+                    checklist.IsCompleted = item.IsCompleted;
+
+                    checklist.CompletedAt = item.IsCompleted
+                        ? checklist.CompletedAt ?? now
+                        : null;
+
+                    checklist.Sequence = item.Sequence > 0
+                        ? item.Sequence
+                        : sequence;
+
+                    sequence++;
                 }
-                else
+
+                // REMOVE CHECKLISTS NOT SUBMITTED
+
+                var retainedIds = requestedChecklists
+                    .Where(x => x.Id.HasValue)
+                    .Select(x => x.Id!.Value)
+                    .ToHashSet();
+
+                var removedChecklists = task.Checklists
+                    .Where(x =>
+                        existingById.ContainsKey(x.Id) &&
+                        !retainedIds.Contains(x.Id))
+                    .ToList();
+
+                if (removedChecklists.Any())
                 {
-                    // -----------------------------------------------------
-                    // Task is no longer completed
-                    // -----------------------------------------------------
-
-                    task.CompletedAt =
-                        null;
-
-                    task.CompletedById =
-                        null;
+                    _context.StaffTaskChecklists.RemoveRange(
+                        removedChecklists);
                 }
 
+                // DETERMINE STATUS
 
-                // =========================================================
-                // SAVE
-                // =========================================================
+                var activeChecklists = task.Checklists
+                    .Where(x =>
+                        !removedChecklists.Any(r => r.Id == x.Id))
+                    .ToList();
+
+                var checklistTotal = activeChecklists.Count;
+
+                var checklistCompleted = activeChecklists.Count(
+                    x => x.IsCompleted);
+
+                var newStatus = checklistTotal > 0
+                    ? GetTaskStatusFromChecklist(
+                        checklistTotal,
+                        checklistCompleted)
+                    : NormalizeAllowedValue(
+                        request.Status,
+                        "Todo",
+                        AllowedStatuses);
+
+                SetTaskCompletion(
+                    task,
+                    newStatus,
+                    currentUserId);
 
                 await _context.SaveChangesAsync();
 
+                // Notify assigned employee when the task is assigned or updated.
+                if (assignedToId != currentUserId)
+                {
+                    if (assignedToId != previousAssignedToId)
+                    {
+                        // New employee assigned.
+                        await SendTaskNotification(
+                            assignedToId,
+                            "Task Assigned to You",
+                            $"You have been assigned a task: {task.Title}",
+                            task.Id);
+                    }
+                    else
+                    {
+                        // Existing assignee: task details have been updated.
+                        await SendTaskNotification(
+                            assignedToId,
+                            "Task Updated",
+                            $"The task '{task.Title}' assigned to you has been updated.",
+                            task.Id);
+                    }
+                }
 
-                // =========================================================
-                // GET UPDATED DTO
-                // =========================================================
+                // Notify previous assignee.
+                if (previousAssignedToId.HasValue &&
+                    previousAssignedToId.Value != currentUserId &&
+                    previousAssignedToId.Value != assignedToId)
+                {
+                    await SendTaskNotification(
+                        previousAssignedToId.Value,
+                        "Task Reassigned",
+                        $"The task '{task.Title}' has been reassigned to another employee.",
+                        task.Id);
+                }
 
-                var result =
-                    await GetStaffTaskDto(task.Id);
-
-
-                // =========================================================
-                // SIGNALR
-                // =========================================================
+                var result = await GetStaffTaskDto(task.Id);
 
                 await _hub.Clients.All.SendAsync(
                     "StaffTaskUpdated",
-                    result
-                );
-
-
-                // =========================================================
-                // RESPONSE
-                // =========================================================
+                    result);
 
                 return Ok(result);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return StatusCode(
-                    500,
-                    new
-                    {
-                        Error =
-                            "Failed to update task.",
-
-                        Detail =
-                            ex.Message,
-
-                        InnerException =
-                            ex.InnerException?.Message
-                    }
-                );
+                return StatusCode(500, new
+                {
+                    Error = "Failed to update task."
+                });
             }
         }
+        // ================================================================
+        // REOPEN
+        // ================================================================
 
         [HttpPut("{id}/Reopen")]
         public async Task<IActionResult> ReopenTask(Guid id)
         {
-            var userIdClaim =
-                User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-
-            if (string.IsNullOrEmpty(userIdClaim))
-            {
-                return Unauthorized(new
-                {
-                    Error = "Invalid token."
-                });
-            }
-
-            if (!Guid.TryParse(
-                userIdClaim,
-                out Guid currentUserId))
-            {
-                return Unauthorized(new
-                {
-                    Error = "Invalid user ID."
-                });
-            }
+            if (!TryGetCurrentUserId(out var currentUserId))
+                return Unauthorized(new { Error = "Invalid user." });
 
             try
             {
                 var task = await _context.StaffTasks
+                    .Include(x => x.Checklists)
                     .FirstOrDefaultAsync(x => x.Id == id);
 
                 if (task == null)
-                {
-                    return NotFound(new
-                    {
-                        Error = "Task not found."
-                    });
-                }
+                    return NotFound(new { Error = "Task not found." });
 
-
-                // Only assigned staff can reopen
+                // Only assigned staff can reopen.
                 if (task.AssignedToId != currentUserId)
-                {
                     return Forbid();
-                }
-
 
                 task.Status = "Todo";
-
                 task.CompletedAt = null;
-
                 task.CompletedById = null;
 
+                // Reset checklist completion to keep the task consistent.
+                foreach (var checklist in task.Checklists)
+                {
+                    checklist.IsCompleted = false;
+                    checklist.CompletedAt = null;
+                }
 
                 await _context.SaveChangesAsync();
 
+                // Notify the creator / assigner.
+                if (task.AssignedById != currentUserId)
+                {
+                    await SendTaskNotification(
+                        task.AssignedById,
+                        "Task Reopened",
+                        $"'{task.Title}' has been reopened.",
+                        task.Id);
+                }
 
-                var result =
-                    await GetStaffTaskDto(task.Id);
-
+                var result = await GetStaffTaskDto(task.Id);
 
                 await _hub.Clients.All.SendAsync(
                     "StaffTaskUpdated",
-                    result
-                );
-
+                    result);
 
                 return Ok(result);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return StatusCode(
-                    500,
-                    new
-                    {
-                        Error =
-                            "Failed to reopen task.",
-
-                        Detail =
-                            ex.Message
-                    }
-                );
+                return StatusCode(500, new
+                {
+                    Error = "Failed to reopen task."
+                });
             }
         }
 
+        // ================================================================
+        // DELETE
+        // ================================================================
+
         [HttpDelete("Delete")]
         public async Task<ActionResult> DeleteTask(
-    [FromQuery] Guid id)
+            [FromQuery] Guid id)
         {
-            var userIdClaim =
-                User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-
-            if (string.IsNullOrEmpty(userIdClaim))
-            {
-                return Unauthorized(new
-                {
-                    Error = "Invalid token."
-                });
-            }
-
-            if (!Guid.TryParse(
-                userIdClaim,
-                out Guid currentUserId))
-            {
-                return Unauthorized(new
-                {
-                    Error = "Invalid user ID."
-                });
-            }
+            if (!TryGetCurrentUserId(out var currentUserId))
+                return Unauthorized(new { Error = "Invalid user." });
 
             try
             {
                 var task = await _context.StaffTasks
+                    .Include(x => x.Checklists)
                     .FirstOrDefaultAsync(x => x.Id == id);
 
                 if (task == null)
-                {
-                    return NotFound(new
-                    {
-                        Error = "Task not found."
-                    });
-                }
+                    return NotFound(new { Error = "Task not found." });
 
-
-                // =========================================================
-                // ONLY CREATOR CAN DELETE
-                // =========================================================
-
+                // Only creator / assigner can delete.
                 if (task.AssignedById != currentUserId)
-                {
                     return Forbid();
-                }
 
-
-                // =========================================================
-                // DELETE CHECKLIST FIRST
-                // =========================================================
-
-                var checklists =
-                    await _context.StaffTaskChecklists
-                        .Where(x =>
-                            x.StaffTaskId == task.Id)
-                        .ToListAsync();
-
-                if (checklists.Any())
+                if (task.Checklists.Any())
                 {
-                    _context.StaffTaskChecklists
-                        .RemoveRange(checklists);
+                    _context.StaffTaskChecklists.RemoveRange(
+                        task.Checklists);
                 }
 
-
-                // =========================================================
-                // DELETE TASK
-                // =========================================================
+                // Notify assigned employee before deleting the task.
+                if (task.AssignedToId.HasValue &&
+                    task.AssignedToId.Value != currentUserId)
+                {
+                    await SendTaskNotification(
+                        task.AssignedToId.Value,
+                        "Task Deleted",
+                        $"The task '{task.Title}' assigned to you has been deleted.",
+                        task.Id);
+                }
 
                 _context.StaffTasks.Remove(task);
 
                 await _context.SaveChangesAsync();
 
-
-                // =========================================================
-                // SIGNALR
-                // =========================================================
-
                 await _hub.Clients.All.SendAsync(
                     "StaffTaskDeleted",
-                    id
-                );
-
+                    id);
 
                 return Ok(new
                 {
-                    Message =
-                        "Task deleted successfully.",
-
+                    Message = "Task deleted successfully.",
                     Id = id
                 });
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return StatusCode(
-                    500,
-                    new
-                    {
-                        Error =
-                            "Failed to delete task.",
-
-                        Detail =
-                            ex.Message
-                    }
-                );
+                return StatusCode(500, new
+                {
+                    Error = "Failed to delete task."
+                });
             }
         }
 
+        // ================================================================
+        // COMPLETE
+        // ================================================================
+
         [HttpPut("{id}/Complete")]
         public async Task<IActionResult> CompleteTask(
-    Guid id,
-    [FromBody] CompleteStaffTaskRequest? request)
+            Guid id,
+            [FromBody] CompleteStaffTaskRequest? request)
         {
-            var userIdClaim =
-                User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!TryGetCurrentUserId(out var currentUserId))
+                return Unauthorized(new { Error = "Invalid user." });
 
-            if (string.IsNullOrEmpty(userIdClaim))
+            if (request?.ActualHours < 0)
             {
-                return Unauthorized(new
+                return BadRequest(new
                 {
-                    Error = "Invalid token."
-                });
-            }
-
-            if (!Guid.TryParse(
-                userIdClaim,
-                out Guid currentUserId))
-            {
-                return Unauthorized(new
-                {
-                    Error = "Invalid user ID."
+                    Error = "Actual hours cannot be negative."
                 });
             }
 
@@ -1696,100 +1410,69 @@ namespace YLWorks.Controller
                     .FirstOrDefaultAsync(x => x.Id == id);
 
                 if (task == null)
-                {
-                    return NotFound(new
-                    {
-                        Error = "Task not found."
-                    });
-                }
+                    return NotFound(new { Error = "Task not found." });
 
-
-                // =========================================================
-                // ONLY ASSIGNEE CAN COMPLETE
-                // =========================================================
-
+                // Only assigned staff can complete.
                 if (task.AssignedToId != currentUserId)
-                {
                     return Forbid();
-                }
-
-
-                // =========================================================
-                // COMPLETE
-                // =========================================================
 
                 task.Status = "Completed";
+                task.CompletedAt = DateTimeHelper.Now();
+                task.CompletedById = currentUserId;
 
-                task.CompletedAt =
-                    DateTimeHelper.Now();
-
-                task.CompletedById =
-                    currentUserId;
-
-                if (request?.ActualHours != null)
+                if (request?.ActualHours.HasValue == true)
                 {
-                    task.ActualHours =
-                        request.ActualHours;
+                    task.ActualHours = request.ActualHours.Value;
                 }
-
-
-                // =========================================================
-                // SAVE
-                // =========================================================
 
                 await _context.SaveChangesAsync();
 
+                // Notify the creator / assigner.
+                if (task.AssignedById != currentUserId)
+                {
+                    await SendTaskNotification(
+                        task.AssignedById,
+                        "Task Completed",
+                        $"'{task.Title}' has been completed.",
+                        task.Id);
+                }
 
-                // =========================================================
-                // GET UPDATED TASK
-                // =========================================================
-
-                var result =
-                    await GetStaffTaskDto(task.Id);
-
-
-                // =========================================================
-                // SIGNALR
-                // =========================================================
+                var result = await GetStaffTaskDto(task.Id);
 
                 await _hub.Clients.All.SendAsync(
                     "StaffTaskCompleted",
-                    result
-                );
-
+                    result);
 
                 return Ok(result);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return StatusCode(
-                    500,
-                    new
-                    {
-                        Error =
-                            "Failed to complete task.",
-
-                        Detail =
-                            ex.Message
-                    }
-                );
+                return StatusCode(500, new
+                {
+                    Error = "Failed to complete task."
+                });
             }
         }
+
+        // ================================================================
+        // GET DROPDOWN
+        // ================================================================
 
         [HttpGet("GetDropdown")]
         public async Task<IActionResult> GetDropdown()
         {
             try
             {
-
-                var users = await _context.Users.OrderBy(u => u.FullName)
+                var users = await _context.Users
+                    .AsNoTracking()
+                    .OrderBy(u => u.FullName)
                     .Select(u => new DropdownDto
                     {
                         Id = u.Id,
                         Name = u.FullName,
                         DisplayName = u.DisplayName,
                         Email = u.Email,
-                        JobTitle = u.JobTitle,
+                        JobTitle = u.JobTitle
                     })
                     .ToListAsync();
 
@@ -1800,9 +1483,16 @@ namespace YLWorks.Controller
             }
             catch (Exception)
             {
-                return StatusCode(500, new { Error = "Failed to load dropdown data." });
+                return StatusCode(500, new
+                {
+                    Error = "Failed to load dropdown data."
+                });
             }
         }
+
+        // ================================================================
+        // GET TASK DTO
+        // ================================================================
 
         private async Task<object?> GetStaffTaskDto(Guid id)
         {
@@ -1812,438 +1502,293 @@ namespace YLWorks.Controller
                 .Select(x => new
                 {
                     x.Id,
-
                     x.Title,
-
                     x.Description,
 
+                    // PROJECT
+                    x.ProjectId,
 
-                    // =====================================================
-                    // ASSIGNED BY
-                    // =====================================================
+                    Project = x.Project == null
+                        ? null
+                        : new
+                        {
+                            x.Project.Id,
+                            x.Project.ProjectCode,
+                            x.Project.ProjectTitle
+                        },
 
+                    // ASSIGNMENT
                     x.AssignedById,
 
-                    AssignedBy =
-                        x.AssignedBy == null
-                            ? null
-                            : new
-                            {
-                                x.AssignedBy.Id,
-                                x.AssignedBy.FullName,
-                                x.AssignedBy.DisplayName,
-                                x.AssignedBy.Email
-                            },
-
-
-                    // =====================================================
-                    // ASSIGNED TO
-                    // =====================================================
+                    AssignedBy = x.AssignedBy == null
+                        ? null
+                        : new
+                        {
+                            x.AssignedBy.Id,
+                            x.AssignedBy.FullName,
+                            x.AssignedBy.DisplayName,
+                            x.AssignedBy.Email
+                        },
 
                     x.AssignedToId,
 
-                    AssignedTo =
-                        x.AssignedTo == null
-                            ? null
-                            : new
-                            {
-                                x.AssignedTo.Id,
-                                x.AssignedTo.FullName,
-                                x.AssignedTo.DisplayName,
-                                x.AssignedTo.Email
-                            },
+                    AssignedTo = x.AssignedTo == null
+                        ? null
+                        : new
+                        {
+                            x.AssignedTo.Id,
+                            x.AssignedTo.FullName,
+                            x.AssignedTo.DisplayName,
+                            x.AssignedTo.Email
+                        },
 
-
-                    // =====================================================
                     // TASK DETAILS
-                    // =====================================================
-
                     x.Priority,
-
                     x.Category,
-
                     x.Status,
 
-
-                    // =====================================================
-                    // DATES
-                    // =====================================================
-
+                    // SCHEDULE
                     x.StartDate,
-
                     x.DueDate,
-
                     x.ReminderAt,
 
-
-                    // =====================================================
                     // RECURRING
-                    // =====================================================
-
                     x.IsRecurring,
-
                     x.RecurringType,
 
-
-                    // =====================================================
-                    // HOURS
-                    // =====================================================
-
+                    // TIME
                     x.EstimatedHours,
-
                     x.ActualHours,
 
-
-                    // =====================================================
                     // COMPLETION
-                    // =====================================================
-
                     x.CompletedAt,
-
                     x.CompletedById,
 
-                    CompletedBy =
-                        x.CompletedBy == null
-                            ? null
-                            : new
-                            {
-                                x.CompletedBy.Id,
-                                x.CompletedBy.FullName,
-                                x.CompletedBy.DisplayName,
-                                x.CompletedBy.Email
-                            },
+                    CompletedBy = x.CompletedBy == null
+                        ? null
+                        : new
+                        {
+                            x.CompletedBy.Id,
+                            x.CompletedBy.FullName,
+                            x.CompletedBy.DisplayName,
+                            x.CompletedBy.Email
+                        },
 
-
-                    // =====================================================
                     // CHECKLIST
-                    // =====================================================
-
                     Checklists = x.Checklists
                         .OrderBy(c => c.Sequence)
                         .Select(c => new
                         {
                             c.Id,
-
                             c.StaffTaskId,
-
                             c.Title,
-
                             c.IsCompleted,
-
                             c.CompletedAt,
-
                             c.Sequence
                         })
                         .ToList(),
 
-                    ChecklistTotal =
-                        x.Checklists.Count(),
+                    ChecklistTotal = x.Checklists.Count(),
 
                     ChecklistCompleted =
-                        x.Checklists.Count(
-                            c => c.IsCompleted
-                        )
+                        x.Checklists.Count(c => c.IsCompleted)
                 })
                 .FirstOrDefaultAsync();
         }
+        // ================================================================
+        // GET SUMMARY
+        // ================================================================
 
         [HttpGet("GetSummary")]
         public async Task<IActionResult> GetSummary()
         {
+            if (!TryGetCurrentUserId(out var currentUserId))
+                return Unauthorized(new { Error = "Invalid user." });
+
             try
             {
-                // =========================================================
-                // GET CURRENT USER
-                // =========================================================
-
-                var userIdClaim =
-                    User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-
-                if (string.IsNullOrEmpty(userIdClaim))
-                {
-                    return Unauthorized(new
-                    {
-                        Error = "Invalid token."
-                    });
-                }
-
-                if (!Guid.TryParse(
-                    userIdClaim,
-                    out Guid currentUserId))
-                {
-                    return Unauthorized(new
-                    {
-                        Error = "Invalid user ID."
-                    });
-                }
-
-
-                // =========================================================
-                // BASE QUERY
-                //
-                // User is involved when:
-                //
-                // 1. AssignedToId = current user
-                //
-                // OR
-                //
-                // 2. AssignedToId is NULL
-                //    AND AssignedById = current user
-                //
-                // NULL AssignedToId means PERSONAL / OWN TASK.
-                //
-                // OR
-                //
-                // 3. AssignedById = current user
-                //    for tasks assigned to someone else.
-                // =========================================================
-
                 var query = _context.StaffTasks
                     .AsNoTracking()
                     .Where(t =>
                         t.AssignedToId == currentUserId ||
-                        t.AssignedById == currentUserId
-                    );
+                        t.AssignedById == currentUserId);
 
+                // Tasks assigned to the current user.
+                // Personal tasks are also assigned to the current user
+                // when created or updated through this controller.
+                var myTasksQuery = query.Where(t =>
+                    t.AssignedToId == currentUserId);
 
-                // =========================================================
-                // MY TASKS
-                //
-                // Includes:
-                //
-                // 1. Task assigned to me
-                //
-                // 2. Personal task:
-                //    AssignedToId == null
-                //    AND AssignedById == current user
-                //
-                // Does NOT include tasks I assigned to other people.
-                // =========================================================
+                var myTasks = await myTasksQuery.CountAsync();
 
-                var myTasks = await query
-                    .CountAsync(t =>
-                        t.AssignedToId == currentUserId
-                        ||
-                        (
-                            t.AssignedToId == null &&
-                            t.AssignedById == currentUserId
-                        )
-                    );
+                var assignedToOthers = await query.CountAsync(t =>
+                    t.AssignedById == currentUserId &&
+                    t.AssignedToId != null &&
+                    t.AssignedToId != currentUserId);
 
+                var inProgress = await myTasksQuery.CountAsync(t =>
+                    t.Status == "InProgress");
 
-                // =========================================================
-                // ASSIGNED TO OTHERS
-                //
-                // Created by me and assigned to another user.
-                //
-                // Example:
-                //
-                // AssignedById = Me
-                // AssignedToId = John
-                //
-                // This does NOT include personal tasks.
-                // =========================================================
-
-                var assignedToOthers = await query
-                    .CountAsync(t =>
-                        t.AssignedById == currentUserId &&
-                        t.AssignedToId != null &&
-                        t.AssignedToId != currentUserId
-                    );
-
-
-                // =========================================================
-                // IN PROGRESS
-                //
-                // My task means:
-                //
-                // 1. Assigned to me
-                //
-                // OR
-                //
-                // 2. Personal task
-                //    AssignedToId == null
-                //    AND AssignedById == me
-                //
-                // Then status must be InProgress.
-                // =========================================================
-
-                var inProgress = await query
-                    .CountAsync(t =>
-                        (
-                            t.AssignedToId == currentUserId
-                            ||
-                            (
-                                t.AssignedToId == null &&
-                                t.AssignedById == currentUserId
-                            )
-                        )
-                        &&
-                        t.Status == "InProgress"
-                    );
-
-
-                // =========================================================
-                // COMPLETED
-                //
-                // My task means:
-                //
-                // 1. Assigned to me
-                //
-                // OR
-                //
-                // 2. Personal task
-                //    AssignedToId == null
-                //    AND AssignedById = me
-                //
-                // Then status must be Completed.
-                // =========================================================
-
-                var completed = await query
-                    .CountAsync(t =>
-                        (
-                            t.AssignedToId == currentUserId
-                            ||
-                            (
-                                t.AssignedToId == null &&
-                                t.AssignedById == currentUserId
-                            )
-                        )
-                        &&
-                        t.Status == "Completed"
-                    );
-
-
-                // =========================================================
-                // RESPONSE
-                // =========================================================
+                var completed = await myTasksQuery.CountAsync(t =>
+                    t.Status == "Completed");
 
                 return Ok(new
                 {
                     MyTasks = myTasks,
-
                     AssignedToOthers = assignedToOthers,
-
                     InProgress = inProgress,
-
                     Completed = completed
                 });
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                return StatusCode(
-                    500,
-                    new
-                    {
-                        Error =
-                            "Failed to load task summary.",
-
-                        Detail =
-                            ex.Message,
-
-                        InnerException =
-                            ex.InnerException?.Message
-                    }
-                );
+                return StatusCode(500, new
+                {
+                    Error = "Failed to load task summary."
+                });
             }
         }
+
+        // ================================================================
+        // UPDATE CHECKLIST
+        // ================================================================
 
         [HttpPut("UpdateChecklist")]
         public async Task<IActionResult> UpdateChecklist(
-    [FromBody] UpdateStaffTaskChecklistRequest request)
+            [FromBody] UpdateStaffTaskChecklistRequest request)
         {
-            var userIdClaim =
-                User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!TryGetCurrentUserId(out var currentUserId))
+                return Unauthorized(new { Error = "Invalid user." });
 
-            if (!Guid.TryParse(userIdClaim, out Guid currentUserId))
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            if (request.Id == Guid.Empty)
             {
-                return Unauthorized(new
+                return BadRequest(new
                 {
-                    Error = "Invalid user."
+                    Error = "Task ID is required."
                 });
             }
 
-            var task = await _context.StaffTasks
-                .FirstOrDefaultAsync(x => x.Id == request.Id);
-
-            if (task == null)
+            try
             {
-                return NotFound(new
+                var task = await _context.StaffTasks
+                    .Include(x => x.Checklists)
+                    .FirstOrDefaultAsync(x => x.Id == request.Id);
+
+                if (task == null)
+                    return NotFound(new { Error = "Task not found." });
+
+                // Only assigned staff can update checklist.
+                if (task.AssignedToId != currentUserId)
+                    return Forbid();
+
+                var checklists = request.Checklists
+                    ?? new List<UpdateStaffTaskChecklistItemOnlyRequest>();
+
+                var now = DateTimeHelper.Now();
+
+                foreach (var item in checklists)
                 {
-                    Error = "Task not found."
+                    var checklist = task.Checklists.FirstOrDefault(x =>
+                        x.Id == item.Id);
+
+                    // Ignore IDs that do not belong to this task.
+                    if (checklist == null)
+                        continue;
+
+                    checklist.IsCompleted = item.IsCompleted;
+
+                    checklist.CompletedAt = item.IsCompleted
+                        ? checklist.CompletedAt ?? now
+                        : null;
+
+                    if (item.Sequence > 0)
+                        checklist.Sequence = item.Sequence;
+                }
+
+                var total = task.Checklists.Count;
+
+                var completed = task.Checklists.Count(
+                    x => x.IsCompleted);
+
+                var status = GetTaskStatusFromChecklist(
+                    total,
+                    completed);
+
+                SetTaskCompletion(
+                    task,
+                    status,
+                    currentUserId);
+
+                await _context.SaveChangesAsync();
+
+                var result = await GetStaffTaskDto(task.Id);
+
+                await _hub.Clients.All.SendAsync(
+                    "StaffTaskUpdated",
+                    result);
+
+                return Ok(result);
+            }
+            catch (Exception)
+            {
+                return StatusCode(500, new
+                {
+                    Error = "Failed to update checklist."
                 });
             }
+        }
 
-            // Only assigned staff can update checklist
-            if (task.AssignedToId != currentUserId)
+
+        private async Task SendTaskNotification(
+            Guid userId,
+            string title,
+            string message,
+            Guid taskId)
+        {
+            var notification = new Notification
             {
-                return Forbid();
-            }
+                Id = Guid.NewGuid(),
+                UserId = userId,
+                Title = title,
+                Message = message,
+                Type = "Task",
+                Link = $"/staff-tasks/{taskId}",
+                IsRead = false,
+                CreatedAt = DateTimeHelper.Now()
+            };
 
-            foreach (var item in request.Checklists)
-            {
-                var checklist = await _context.StaffTaskChecklists
-                    .FirstOrDefaultAsync(x =>
-                        x.Id == item.Id &&
-                        x.StaffTaskId == task.Id);
-
-                if (checklist == null)
-                    continue;
-
-                checklist.IsCompleted = item.IsCompleted;
-
-                checklist.CompletedAt = item.IsCompleted
-                    ? DateTimeHelper.Now()
-                    : null;
-            }
-
-
-            // =========================================================
-            // UPDATE TASK STATUS BASED ON CHECKLIST
-            // =========================================================
-
-            var total = await _context.StaffTaskChecklists
-                .CountAsync(x => x.StaffTaskId == task.Id);
-
-            var completed = await _context.StaffTaskChecklists
-                .CountAsync(x =>
-                    x.StaffTaskId == task.Id &&
-                    x.IsCompleted);
-
-
-            if (total > 0 && completed == total)
-            {
-                // ALL completed
-                task.Status = "Completed";
-                task.CompletedAt = DateTimeHelper.Now();
-                task.CompletedById = currentUserId;
-            }
-            else if (completed > 0)
-            {
-                // SOME completed
-                task.Status = "InProgress";
-                task.CompletedAt = null;
-                task.CompletedById = null;
-            }
-            else
-            {
-                // NONE completed
-                task.Status = "Todo";
-                task.CompletedAt = null;
-                task.CompletedById = null;
-            }
-
+            // Save notification to database.
+            _context.Notifications.Add(notification);
 
             await _context.SaveChangesAsync();
 
-            var result = await GetStaffTaskDto(task.Id);
-
-            await _hub.Clients.All.SendAsync(
-                "StaffTaskUpdated",
-                result
-            );
-
-            return Ok(result);
+            // Send real-time notification to the intended user.
+            await _hub.Clients
+                .Group($"user-{userId}")
+                .SendAsync("ReceiveNotification", new
+                {
+                    id = notification.Id,
+                    userId = notification.UserId,
+                    title = notification.Title,
+                    message = notification.Message,
+                    type = notification.Type,
+                    link = notification.Link,
+                    isRead = notification.IsRead,
+                    createdAt = notification.CreatedAt
+                });
         }
+
+        private async Task<bool> IsValidProject(Guid? projectId)
+        {
+            if (!projectId.HasValue)
+                return true;
+
+            return await _context.Projects
+                .AnyAsync(x => x.Id == projectId.Value);
+        }
+
     }
 }

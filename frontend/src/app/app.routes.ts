@@ -2,7 +2,7 @@ import { Routes } from '@angular/router';
 import { Unauthorized } from './common/components/unauthorized/unauthorized';
 import { authGuard } from './common/auth.guard';
 import { modulePermissionGuard } from './common/permission/module-permission.guard';
-import { SplashScreen } from './components/splash-screen/splash-screen';
+import { SplashScreen } from './components/auth/splash-screen/splash-screen';
 import { deviceRedirectGuard } from './common/device-redirect.guard';
 
 const protectedGuards = [authGuard, modulePermissionGuard] as const;
@@ -13,6 +13,35 @@ export const routes: Routes = [
     pathMatch: 'full',
     canMatch: [deviceRedirectGuard],
     component: SplashScreen,
+  },
+  {
+    path: 'get-started',
+    loadComponent: () =>
+      import('./components/get-started/get-started').then((m) => m.GetStarted),
+  },
+  {
+    path: 'login',
+    loadComponent: () =>
+      import('./components/auth/login/login').then((m) => m.Login),
+  },
+  {
+    path: 'register',
+    loadComponent: () =>
+      import('./components/auth/register/register').then((m) => m.Register),
+  },
+  {
+    path: 'forgot-password',
+    loadComponent: () =>
+      import('./components/auth/forgot-password/forgot-password').then(
+        (m) => m.ForgotPassword,
+      ),
+  },
+  {
+    path: 'email-link',
+    loadComponent: () =>
+      import('./components/auth/email-link/email-link').then(
+        (m) => m.EmailLink,
+      ),
   },
   {
     path: 'dashboard',
@@ -41,26 +70,92 @@ export const routes: Routes = [
     ],
   },
   {
-    path: 'notifications',
-    canActivate: [...protectedGuards],
-    data: { moduleKey: 'notifications' },
+    path: 'notice',
+    data: { moduleKey: 'notice' },
     loadComponent: () =>
-      import('./components/notifications/notifications').then(
-        (m) => m.Notifications,
+      import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
+        (m) => m.ResponsiveLayout,
       ),
+    children: [
+      {
+        path: '',
+        data: { moduleKey: 'notice' },
+        loadComponent: () =>
+          import('./components/notice/notice').then((m) => m.Notice),
+      },
+    ],
   },
   {
-    path: 'change-password-internal',
+    path: 'announcements',
+    data: { moduleKey: 'announcements' },
+    loadComponent: () =>
+      import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
+        (m) => m.ResponsiveLayout,
+      ),
+    children: [
+      {
+        path: '',
+        data: { moduleKey: 'announcements' },
+        loadComponent: () =>
+          import('./components/announcements/announcements').then(
+            (m) => m.Announcements,
+          ),
+      },
+    ],
+  },
+  {
+    path: 'directory',
+    data: { moduleKey: 'directory' },
+    loadComponent: () =>
+      import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
+        (m) => m.ResponsiveLayout,
+      ),
+    children: [
+      {
+        path: '',
+        data: { moduleKey: 'directory' },
+        loadComponent: () => {
+          const isMobile = window.innerWidth < 768;
+
+          return isMobile
+            ? import('./components/directory/directory').then(
+                (m) => m.Directory,
+              )
+            : import('./components/main-dashboard/dashboard/dashboard').then(
+                (m) => m.Dashboard,
+              );
+        },
+      },
+    ],
+  },
+
+  {
+    path: 'notifications',
+    data: { moduleKey: 'notifications' },
+    loadComponent: () =>
+      import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
+        (m) => m.ResponsiveLayout,
+      ),
+    children: [
+      {
+        path: '',
+        data: { moduleKey: 'notifications' },
+        loadComponent: () =>
+          import('./components/notifications/notifications').then(
+            (m) => m.Notifications,
+          ),
+      },
+    ],
+  },
+
+  {
+    path: 'change-password',
     loadComponent: () =>
       import('./components/change-password-internal/change-password-internal').then(
         (m) => m.ChangePasswordInternal,
       ),
   },
-  {
-    path: 'login',
-    loadComponent: () =>
-      import('./components/login/login').then((m) => m.Login),
-  },
+
   {
     path: 'confirm-email',
     loadComponent: () =>
@@ -83,11 +178,6 @@ export const routes: Routes = [
       ),
   },
   {
-    path: 'register',
-    loadComponent: () =>
-      import('./components/register/register').then((m) => m.Register),
-  },
-  {
     path: 'settings',
     canActivate: [...protectedGuards],
     loadComponent: () =>
@@ -106,7 +196,7 @@ export const routes: Routes = [
   },
   {
     path: 'clients',
-    canActivate: [...protectedGuards],
+    // canActivate: [...protectedGuards],
     data: { moduleKey: 'clients' },
     loadComponent: () =>
       import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
@@ -177,7 +267,6 @@ export const routes: Routes = [
   },
   {
     path: 'projects',
-    canActivate: [...protectedGuards],
     data: { moduleKey: 'projects' },
     loadComponent: () =>
       import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
@@ -195,7 +284,6 @@ export const routes: Routes = [
   },
   {
     path: 'material-requests',
-    canActivate: [...protectedGuards],
     data: { moduleKey: 'material-requests' },
     loadComponent: () =>
       import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
@@ -248,7 +336,6 @@ export const routes: Routes = [
   },
   {
     path: 'user-management',
-    canActivate: [...protectedGuards],
     data: { moduleKey: 'user-management' },
     loadComponent: () =>
       import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
@@ -390,7 +477,6 @@ export const routes: Routes = [
   },
   {
     path: 'department',
-    canActivate: [...protectedGuards],
     data: { moduleKey: 'department' },
     loadComponent: () =>
       import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
@@ -403,6 +489,24 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./components/department/department').then(
             (m) => m.Department,
+          ),
+      },
+    ],
+  },
+  {
+    path: 'activity-log',
+    data: { moduleKey: 'activity-log' },
+    loadComponent: () =>
+      import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
+        (m) => m.ResponsiveLayout,
+      ),
+    children: [
+      {
+        path: '',
+        data: { moduleKey: 'activity-log' },
+        loadComponent: () =>
+          import('./components/activity-log/activity-log').then(
+            (m) => m.ActivityLog,
           ),
       },
     ],
@@ -446,7 +550,7 @@ export const routes: Routes = [
   },
   {
     path: 'inventory',
-    canActivate: [...protectedGuards],
+    // canActivate: [...protectedGuards],
     loadComponent: () =>
       import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
         (m) => m.ResponsiveLayout,
@@ -486,7 +590,6 @@ export const routes: Routes = [
   },
   {
     path: 'profile-settings',
-    canActivate: [...protectedGuards],
     data: { moduleKey: 'profile-settings' },
     loadComponent: () =>
       import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
@@ -497,16 +600,15 @@ export const routes: Routes = [
         path: '',
         data: { moduleKey: 'profile-settings' },
         loadComponent: () =>
-          import('./components/mobile-settings/mobile-settings').then(
-            (m) => m.MobileSettings,
+          import('./components/personal-info/personal-info').then(
+            (m) => m.PersonalInfo,
           ),
       },
     ],
   },
   {
-    path: 'tasks',
-    canActivate: [...protectedGuards],
-    data: { moduleKey: 'tasks' },
+    path: 'my-tasks',
+    data: { moduleKey: 'my-tasks' },
     loadComponent: () =>
       import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
         (m) => m.ResponsiveLayout,
@@ -523,7 +625,6 @@ export const routes: Routes = [
   },
   {
     path: 'schedule',
-    canActivate: [...protectedGuards],
     data: { moduleKey: 'schedule' },
     loadComponent: () =>
       import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
@@ -574,7 +675,6 @@ export const routes: Routes = [
   },
   {
     path: 'claims',
-    canActivate: [...protectedGuards],
     data: { moduleKey: 'claims' },
     loadComponent: () =>
       import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
@@ -610,7 +710,6 @@ export const routes: Routes = [
   },
   {
     path: 'profile-settings/personal-info',
-    canActivate: [...protectedGuards],
     data: { moduleKey: 'profile-settings' },
     loadComponent: () =>
       import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
@@ -629,8 +728,8 @@ export const routes: Routes = [
   },
 
   {
-    path: 'staff-tasks',
-    data: { moduleKey: 'staff-tasks' },
+    path: 'task-management',
+    data: { moduleKey: 'task-management' },
     loadComponent: () =>
       import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
         (m) => m.ResponsiveLayout,
@@ -638,13 +737,93 @@ export const routes: Routes = [
     children: [
       {
         path: '',
-        data: { moduleKey: 'staff-tasks' },
-        loadComponent: () =>
-          import('./components/staffTasks/staffTasks').then(
-            (m) => m.StaffTasks,
+        data: { moduleKey: 'task-management' },
+        loadChildren: () =>
+          import('./components/task-management/tasks-management-routing.module').then(
+            (m) => m.TaskManagementRoutingModule,
           ),
       },
     ],
+  },
+
+  {
+    path: 'daily-reports',
+    data: { moduleKey: 'daily-reports' },
+    loadComponent: () =>
+      import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
+        (m) => m.ResponsiveLayout,
+      ),
+    children: [
+      {
+        path: '',
+        data: { moduleKey: 'daily-reports' },
+        loadComponent: () =>
+          import('./components/daily-report/daily-report').then(
+            (m) => m.DailyReport,
+          ),
+      },
+    ],
+  },
+  {
+    path: 'daily-reports/team',
+    data: { moduleKey: 'daily-reports/team' },
+    loadComponent: () =>
+      import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
+        (m) => m.ResponsiveLayout,
+      ),
+    children: [
+      {
+        path: '',
+        data: { moduleKey: 'daily-reports/team' },
+        loadComponent: () =>
+          import('./components/team-daily-report/team-daily-report').then(
+            (m) => m.TeamDailyReport,
+          ),
+      },
+    ],
+  },
+
+  {
+    path: 'hardware-request',
+    data: { moduleKey: 'hardware-request' },
+    loadComponent: () =>
+      import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
+        (m) => m.ResponsiveLayout,
+      ),
+    children: [
+      {
+        path: '',
+        data: { moduleKey: 'hardware-request' },
+        loadComponent: () =>
+          import('./components/hardware-requests/hardware-request/hardware-request').then(
+            (m) => m.HardwareRequest,
+          ),
+      },
+      {
+        path: ':id',
+        data: { moduleKey: 'hardware-request' },
+        loadComponent: () =>
+          import('./components/hardware-requests/hardware-request-details/hardware-request-details').then(
+            (m) => m.HardwareRequestDetails,
+          ),
+      },
+      {
+        path: 'incoming',
+        data: { moduleKey: 'incoming' },
+        loadComponent: () =>
+          import('./components/hardware-requests/incoming-hardware-request/incoming-hardware-request').then(
+            (m) => m.IncomingHardwareRequest,
+          ),
+      },
+    ],
+  },
+
+  {
+    path: 'task-management/form',
+    loadComponent: () =>
+      import('./components/task-management/task-form/task-form').then(
+        (m) => m.TaskForm,
+      ),
   },
 
   { path: 'unauthorized', component: Unauthorized },

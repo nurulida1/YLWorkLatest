@@ -20,7 +20,6 @@ import { LoadingService } from '../../../services/loading.service';
 
 @Component({
   selector: 'app-claim-settings',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     CommonModule,
     FormsModule,
@@ -31,110 +30,414 @@ import { LoadingService } from '../../../services/loading.service';
     CheckboxModule,
   ],
   template: `
-    <div class="w-full min-h-screen bg-[#f4f6f8] p-6 flex flex-col gap-5" *ngIf="settings">
-      <div class="flex items-center gap-1.5 text-sm text-gray-500">
-        <a routerLink="/dashboard" class="hover:text-blue-600">Dashboard</a>
-        <span>/</span>
-        <span class="text-gray-700 font-semibold">Claim settings</span>
-      </div>
+    <div
+      class="min-h-screen w-full bg-slate-50 p-4 sm:p-6 lg:p-8"
+      *ngIf="settings as s"
+    >
+      <div class="flex flex-col gap-6">
+        <!-- Breadcrumb -->
+        <div class="flex items-center gap-2 text-sm">
+          <a
+            routerLink="/dashboard"
+            class="text-slate-400 hover:text-blue-600 transition-colors"
+          >
+            Dashboard
+          </a>
+          <i class="pi pi-angle-right text-xs text-slate-300"></i>
+          <span class="font-medium text-slate-700">Claim Settings</span>
+        </div>
 
-      <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-        <div>
-          <h1 class="text-2xl font-bold m-0">Claim settings</h1>
-          <p class="text-sm text-gray-500 mt-1 m-0">
-            Configure reimbursement caps, mileage/meal rates, OT multipliers, and default hours.
+        <!-- Page Header -->
+        <div
+          class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
+        >
+          <div>
+            <div class="flex items-center gap-3">
+              <div
+                class="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-100 text-blue-600"
+              >
+                <i class="pi pi-sliders-h text-xl"></i>
+              </div>
+              <div>
+                <h1 class="m-0 text-2xl font-bold text-slate-800">
+                  Claim Settings
+                </h1>
+                <p class="mt-1 mb-0 text-sm text-slate-500">
+                  Manage company reimbursement rates and claim calculation
+                  rules.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Information -->
+        <div
+          class="flex items-start gap-3 rounded-xl border border-blue-100 bg-blue-50 p-4"
+        >
+          <i class="pi pi-info-circle mt-0.5 text-blue-600"></i>
+          <div>
+            <p class="m-0 text-sm font-semibold text-blue-800">
+              Company-wide configuration
+            </p>
+            <p class="mt-1 mb-0 text-sm text-blue-700">
+              Changes made here will be used as the default rates and
+              calculation rules when employees submit claims.
+            </p>
+          </div>
+        </div>
+
+        <!-- Reimbursement Limits -->
+        <section class="settings-card">
+          <div class="section-header">
+            <div class="section-icon bg-emerald-100 text-emerald-600">
+              <i class="pi pi-wallet"></i>
+            </div>
+            <div>
+              <h2 class="section-title">Reimbursement Limits</h2>
+              <p class="section-description">
+                Configure the maximum reimbursable amounts for employee claims.
+              </p>
+            </div>
+          </div>
+
+          <div class="form-grid">
+            <div class="form-field">
+              <label>Medical per receipt</label>
+              <p-inputNumber
+                [(ngModel)]="s.medicalPerReceiptLimit"
+                mode="decimal"
+                [min]="0"
+                [minFractionDigits]="2"
+                styleClass="w-full"
+              />
+              <small>Maximum amount per medical receipt.</small>
+            </div>
+
+            <div class="form-field">
+              <label>Medical annual limit</label>
+              <p-inputNumber
+                [(ngModel)]="s.medicalAnnualLimit"
+                mode="decimal"
+                [min]="0"
+                [minFractionDigits]="2"
+                styleClass="w-full"
+              />
+              <small>Maximum medical reimbursement per year.</small>
+            </div>
+
+            <div class="form-field">
+              <label>Safety shoes limit</label>
+              <p-inputNumber
+                [(ngModel)]="s.safetyShoesLimit"
+                mode="decimal"
+                [min]="0"
+                [minFractionDigits]="2"
+                styleClass="w-full"
+              />
+              <small>Maximum safety shoes reimbursement.</small>
+            </div>
+          </div>
+        </section>
+
+        <!-- Outstation Rates -->
+        <section class="settings-card">
+          <div class="section-header">
+            <div class="section-icon bg-orange-100 text-orange-600">
+              <i class="pi pi-car"></i>
+            </div>
+            <div>
+              <h2 class="section-title">Outstation Rates</h2>
+              <p class="section-description">
+                Set mileage reimbursement and daily meal allowance rates.
+              </p>
+            </div>
+          </div>
+
+          <div class="form-grid">
+            <div class="form-field">
+              <label>Car mileage rate</label>
+              <p-inputNumber
+                [(ngModel)]="s.mileageCarRatePerKm"
+                mode="decimal"
+                [min]="0"
+                [minFractionDigits]="2"
+                [maxFractionDigits]="4"
+                suffix=" / km"
+                styleClass="w-full"
+              />
+              <small>Reimbursement for each kilometre travelled by car.</small>
+            </div>
+
+            <div class="form-field">
+              <label>Motorcycle mileage rate</label>
+              <p-inputNumber
+                [(ngModel)]="s.mileageMotorcycleRatePerKm"
+                mode="decimal"
+                [min]="0"
+                [minFractionDigits]="2"
+                [maxFractionDigits]="4"
+                suffix=" / km"
+                styleClass="w-full"
+              />
+              <small
+                >Reimbursement for each kilometre travelled by
+                motorcycle.</small
+              >
+            </div>
+
+            <div class="form-field">
+              <label>Meal allowance</label>
+              <p-inputNumber
+                [(ngModel)]="s.mealAllowancePerDay"
+                mode="decimal"
+                [min]="0"
+                [minFractionDigits]="2"
+                suffix=" / day"
+                styleClass="w-full"
+              />
+              <small>Daily meal allowance for eligible outstation trips.</small>
+            </div>
+          </div>
+        </section>
+
+        <!-- Overtime -->
+        <section class="settings-card">
+          <div class="section-header">
+            <div class="section-icon bg-purple-100 text-purple-600">
+              <i class="pi pi-clock"></i>
+            </div>
+            <div>
+              <h2 class="section-title">Overtime Calculation</h2>
+              <p class="section-description">
+                Configure the multipliers used to calculate employee overtime
+                payments.
+              </p>
+            </div>
+          </div>
+
+          <div class="form-grid">
+            <div class="form-field">
+              <label>Ordinary rate divisor</label>
+              <p-inputNumber
+                [(ngModel)]="s.ordinaryRateDivisorDays"
+                [min]="1"
+                styleClass="w-full"
+              />
+              <small>Number of days used to calculate the ordinary rate.</small>
+            </div>
+
+            <div class="form-field">
+              <label>Ordinary day hours</label>
+              <p-inputNumber
+                [(ngModel)]="s.ordinaryDayHours"
+                [min]="1"
+                styleClass="w-full"
+              />
+              <small>Standard working hours per day.</small>
+            </div>
+
+            <div class="form-field">
+              <label>Normal day OT</label>
+              <p-inputNumber
+                [(ngModel)]="s.otNormalMultiplier"
+                mode="decimal"
+                [min]="0"
+                [minFractionDigits]="2"
+                suffix=" × hourly"
+                styleClass="w-full"
+              />
+              <small>Multiplier for overtime on normal working days.</small>
+            </div>
+
+            <div class="form-field">
+              <label>Rest day — first band</label>
+              <p-inputNumber
+                [(ngModel)]="s.otRestDayFirstBandMultiplier"
+                mode="decimal"
+                [min]="0"
+                [minFractionDigits]="2"
+                suffix=" × ordinary"
+                styleClass="w-full"
+              />
+              <small>Multiplier for the first rest-day overtime band.</small>
+            </div>
+
+            <div class="form-field">
+              <label>Rest day — second band</label>
+              <p-inputNumber
+                [(ngModel)]="s.otRestDaySecondBandMultiplier"
+                mode="decimal"
+                [min]="0"
+                [minFractionDigits]="2"
+                suffix=" × ordinary"
+                styleClass="w-full"
+              />
+              <small>Multiplier for the second rest-day overtime band.</small>
+            </div>
+
+            <div class="form-field">
+              <label>Rest day — after 8 hours</label>
+              <p-inputNumber
+                [(ngModel)]="s.otRestDayAfter8HourlyMultiplier"
+                mode="decimal"
+                [min]="0"
+                [minFractionDigits]="2"
+                suffix=" × hourly"
+                styleClass="w-full"
+              />
+              <small>Multiplier for rest-day overtime exceeding 8 hours.</small>
+            </div>
+
+            <div class="form-field">
+              <label>Public holiday — up to 8 hours</label>
+              <p-inputNumber
+                [(ngModel)]="s.otPublicHolidayUpTo8Multiplier"
+                mode="decimal"
+                [min]="0"
+                [minFractionDigits]="2"
+                suffix=" × ordinary"
+                styleClass="w-full"
+              />
+              <small
+                >Multiplier for the first 8 hours on a public holiday.</small
+              >
+            </div>
+
+            <div class="form-field">
+              <label>Public holiday — after 8 hours</label>
+              <p-inputNumber
+                [(ngModel)]="s.otPublicHolidayAfter8HourlyMultiplier"
+                mode="decimal"
+                [min]="0"
+                [minFractionDigits]="2"
+                suffix=" × hourly"
+                styleClass="w-full"
+              />
+              <small
+                >Multiplier for public holiday overtime exceeding 8
+                hours.</small
+              >
+            </div>
+          </div>
+        </section>
+
+        <!-- Working Hours -->
+        <section class="settings-card">
+          <div class="section-header">
+            <div class="section-icon bg-blue-100 text-blue-600">
+              <i class="pi pi-calendar-clock"></i>
+            </div>
+            <div>
+              <h2 class="section-title">Default Company Working Hours</h2>
+              <p class="section-description">
+                Set the standard working schedule and optional rest-day half-day
+                hours.
+              </p>
+            </div>
+          </div>
+
+          <div class="form-grid">
+            <div class="form-field">
+              <label>Work start time</label>
+              <input
+                pInputText
+                type="time"
+                [(ngModel)]="s.defaultWorkStartTime"
+                class="w-full"
+              />
+              <small>Default start time (HH:mm).</small>
+            </div>
+
+            <div class="form-field">
+              <label>Work end time</label>
+              <input
+                pInputText
+                type="time"
+                [(ngModel)]="s.defaultWorkEndTime"
+                class="w-full"
+              />
+              <small>Default end time (HH:mm).</small>
+            </div>
+          </div>
+
+          <div class="mt-6 rounded-xl border border-slate-200 bg-slate-50 p-4">
+            <div
+              class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
+            >
+              <div>
+                <p class="m-0 font-semibold text-slate-800">
+                  Rest day half-day schedule
+                </p>
+                <p class="mt-1 mb-0 text-sm text-slate-500">
+                  Enable a separate working schedule for rest-day half days.
+                </p>
+              </div>
+
+              <div class="flex items-center gap-2">
+                <p-checkbox
+                  [(ngModel)]="s.defaultUsesRestDayHalfDay"
+                  [binary]="true"
+                  inputId="half"
+                />
+                <label
+                  for="half"
+                  class="cursor-pointer text-sm font-medium text-slate-700"
+                >
+                  Enable schedule
+                </label>
+              </div>
+            </div>
+
+            <div
+              class="mt-4 grid grid-cols-1 gap-4 border-t border-slate-200 pt-4 sm:grid-cols-2"
+              *ngIf="s.defaultUsesRestDayHalfDay"
+            >
+              <div class="form-field">
+                <label>Half-day start time</label>
+                <input
+                  pInputText
+                  type="time"
+                  [(ngModel)]="s.defaultRestDayHalfDayStart"
+                  class="w-full"
+                />
+              </div>
+
+              <div class="form-field">
+                <label>Half-day end time</label>
+                <input
+                  pInputText
+                  type="time"
+                  [(ngModel)]="s.defaultRestDayHalfDayEnd"
+                  class="w-full"
+                />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Bottom Save -->
+        <div
+          class="flex flex-col-reverse gap-3 border-t border-slate-200 pt-5 sm:flex-row sm:items-center sm:justify-between"
+        >
+          <p class="m-0 text-xs text-slate-400">
+            Make sure all rates and working hours are correct before saving.
           </p>
-        </div>
-        <p-button label="Save" icon="pi pi-save" (onClick)="save()" [loading]="saving" />
-      </div>
 
-      <div class="bg-white rounded-lg shadow-sm p-5 grid grid-cols-12 gap-4">
-        <h2 class="col-span-12 text-lg font-semibold m-0">Monthly reimbursement limits</h2>
-        <div class="col-span-12 md:col-span-4 flex flex-col gap-1">
-          <label>Medical per receipt (RM)</label>
-          <p-inputNumber [(ngModel)]="settings.medicalPerReceiptLimit" mode="decimal" [minFractionDigits]="2" styleClass="w-full" />
-        </div>
-        <div class="col-span-12 md:col-span-4 flex flex-col gap-1">
-          <label>Medical annual limit (RM)</label>
-          <p-inputNumber [(ngModel)]="settings.medicalAnnualLimit" mode="decimal" [minFractionDigits]="2" styleClass="w-full" />
-        </div>
-        <div class="col-span-12 md:col-span-4 flex flex-col gap-1">
-          <label>Safety shoes limit (RM)</label>
-          <p-inputNumber [(ngModel)]="settings.safetyShoesLimit" mode="decimal" [minFractionDigits]="2" styleClass="w-full" />
-        </div>
-
-        <h2 class="col-span-12 text-lg font-semibold m-0 mt-2">Outstation rates</h2>
-        <div class="col-span-12 md:col-span-4 flex flex-col gap-1">
-          <label>Car mileage (RM/km)</label>
-          <p-inputNumber [(ngModel)]="settings.mileageCarRatePerKm" mode="decimal" [minFractionDigits]="2" [maxFractionDigits]="4" styleClass="w-full" />
-        </div>
-        <div class="col-span-12 md:col-span-4 flex flex-col gap-1">
-          <label>Motorcycle mileage (RM/km)</label>
-          <p-inputNumber [(ngModel)]="settings.mileageMotorcycleRatePerKm" mode="decimal" [minFractionDigits]="2" [maxFractionDigits]="4" styleClass="w-full" />
-        </div>
-        <div class="col-span-12 md:col-span-4 flex flex-col gap-1">
-          <label>Meal allowance (RM/day)</label>
-          <p-inputNumber [(ngModel)]="settings.mealAllowancePerDay" mode="decimal" [minFractionDigits]="2" styleClass="w-full" />
-        </div>
-
-        <h2 class="col-span-12 text-lg font-semibold m-0 mt-2">Overtime calculation</h2>
-        <div class="col-span-12 md:col-span-3 flex flex-col gap-1">
-          <label>Ordinary rate divisor (days)</label>
-          <p-inputNumber [(ngModel)]="settings.ordinaryRateDivisorDays" [min]="1" styleClass="w-full" />
-        </div>
-        <div class="col-span-12 md:col-span-3 flex flex-col gap-1">
-          <label>Ordinary day hours</label>
-          <p-inputNumber [(ngModel)]="settings.ordinaryDayHours" [min]="1" styleClass="w-full" />
-        </div>
-        <div class="col-span-12 md:col-span-3 flex flex-col gap-1">
-          <label>Normal day OT × hourly</label>
-          <p-inputNumber [(ngModel)]="settings.otNormalMultiplier" mode="decimal" [minFractionDigits]="2" styleClass="w-full" />
-        </div>
-        <div class="col-span-12 md:col-span-3 flex flex-col gap-1">
-          <label>Rest day first band × ordinary</label>
-          <p-inputNumber [(ngModel)]="settings.otRestDayFirstBandMultiplier" mode="decimal" [minFractionDigits]="2" styleClass="w-full" />
-        </div>
-        <div class="col-span-12 md:col-span-3 flex flex-col gap-1">
-          <label>Rest day second band × ordinary</label>
-          <p-inputNumber [(ngModel)]="settings.otRestDaySecondBandMultiplier" mode="decimal" [minFractionDigits]="2" styleClass="w-full" />
-        </div>
-        <div class="col-span-12 md:col-span-3 flex flex-col gap-1">
-          <label>Rest day after 8h × hourly</label>
-          <p-inputNumber [(ngModel)]="settings.otRestDayAfter8HourlyMultiplier" mode="decimal" [minFractionDigits]="2" styleClass="w-full" />
-        </div>
-        <div class="col-span-12 md:col-span-3 flex flex-col gap-1">
-          <label>PH up to 8h × ordinary</label>
-          <p-inputNumber [(ngModel)]="settings.otPublicHolidayUpTo8Multiplier" mode="decimal" [minFractionDigits]="2" styleClass="w-full" />
-        </div>
-        <div class="col-span-12 md:col-span-3 flex flex-col gap-1">
-          <label>PH after 8h × hourly</label>
-          <p-inputNumber [(ngModel)]="settings.otPublicHolidayAfter8HourlyMultiplier" mode="decimal" [minFractionDigits]="2" styleClass="w-full" />
-        </div>
-
-        <h2 class="col-span-12 text-lg font-semibold m-0 mt-2">Default company working hours</h2>
-        <div class="col-span-12 md:col-span-3 flex flex-col gap-1">
-          <label>Work start (HH:mm)</label>
-          <input pInputText [(ngModel)]="settings.defaultWorkStartTime" class="w-full" />
-        </div>
-        <div class="col-span-12 md:col-span-3 flex flex-col gap-1">
-          <label>Work end (HH:mm)</label>
-          <input pInputText [(ngModel)]="settings.defaultWorkEndTime" class="w-full" />
-        </div>
-        <div class="col-span-12 md:col-span-3 flex items-center gap-2 pt-6">
-          <p-checkbox [(ngModel)]="settings.defaultUsesRestDayHalfDay" [binary]="true" inputId="half" />
-          <label for="half">Rest day half-day schedule</label>
-        </div>
-        <div class="col-span-12 md:col-span-3 flex flex-col gap-1">
-          <label>Half-day start</label>
-          <input pInputText [(ngModel)]="settings.defaultRestDayHalfDayStart" class="w-full" />
-        </div>
-        <div class="col-span-12 md:col-span-3 flex flex-col gap-1">
-          <label>Half-day end</label>
-          <input pInputText [(ngModel)]="settings.defaultRestDayHalfDayEnd" class="w-full" />
+          <p-button
+            label="Save Changes"
+            icon="pi pi-save"
+            (onClick)="save()"
+            [loading]="saving"
+            [disabled]="saving"
+            styleClass="!px-6 !py-2.5 !rounded-lg bg-blue-900! border-none!"
+          />
         </div>
       </div>
     </div>
   `,
+  styleUrl: './claim-settings.less',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ClaimSettingsPage implements OnInit {
   private readonly api = inject(ClaimSettingsService);
@@ -147,6 +450,7 @@ export class ClaimSettingsPage implements OnInit {
 
   ngOnInit(): void {
     this.loading.start();
+
     this.api
       .get()
       .pipe(finalize(() => this.loading.stop()))
@@ -155,13 +459,24 @@ export class ClaimSettingsPage implements OnInit {
           this.settings = s;
           this.cdr.markForCheck();
         },
+        error: () => {
+          this.messages.add({
+            severity: 'error',
+            summary: 'Failed',
+            detail: 'Unable to load claim settings.',
+          });
+          this.cdr.markForCheck();
+        },
       });
   }
 
   save(): void {
-    if (!this.settings) return;
+    if (!this.settings || this.saving) return;
+
     this.saving = true;
+
     const { id: _id, ...dto } = this.settings;
+
     this.api
       .upsert(dto)
       .pipe(
@@ -180,12 +495,13 @@ export class ClaimSettingsPage implements OnInit {
           });
           this.cdr.markForCheck();
         },
-        error: (err) =>
+        error: (err) => {
           this.messages.add({
             severity: 'error',
             summary: 'Failed',
             detail: err?.error?.message ?? 'Save failed.',
-          }),
+          });
+        },
       });
   }
 }

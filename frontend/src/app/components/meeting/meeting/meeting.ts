@@ -57,428 +57,468 @@ interface CalendarDay {
     TextareaModule,
     SelectModule,
   ],
-  template: `<div class="w-full min-h-[92.9vh] flex flex-col p-5">
-    <div class="flex flex-row items-center justify-between">
-      <div class="flex flex-row items-center gap-1 text-gray-500 tracking-wide">
-        <div
-          [routerLink]="'/dashboard'"
-          class="cursor-pointer hover:text-gray-600"
-        >
-          Dashboard
+  template: ` <div class="lg:hidden flex flex-col min-h-screen">
+      <div class="p-6 bg-[#0566D9] flex flex-row items-center justify-between">
+        <div class="text-3xl font-bold text-white" [routerLink]="'/dashboard'">
+          YL Works
         </div>
-        <i class="pi pi-chevron-right text-[8px]! text-gray-500!"></i>
-        <div class="text-gray-700 font-semibold">Upcoming Meetings</div>
+        <div class="flex flex-row items-center gap-4">
+          <i class="pi pi-bell text-3xl! text-white!"></i>
+          <div
+            class="bg-white w-8 h-8 rounded-full flex items-center justify-center p-2"
+          >
+            <i class="pi pi-user text-xl! text-[#0566D9]!"></i>
+          </div>
+        </div>
       </div>
-    </div>
-    <div class="mt-3 tracking-wide flex flex-col">
-      <div class="flex flex-row items-center justify-between">
-        <div class="text-[20px] text-gray-700 font-semibold">
-          Upcoming Meetings
-        </div>
 
+      <div class="flex flex-col gap-3 px-6 py-4">
+        <div class="font-semibold text-2xl">Upcoming Meetings</div>
         <p-button
           label="New Meeting"
           icon="pi pi-plus"
           severity="info"
-          (onClick)="OpenDialog()"
-          styleClass="tracking-wide! bg-blue-700! border-none! rounded-none! py-2! px-5!"
+          [rounded]="true"
+          styleClass="bg-[#0566D9]! border-none! px-5! shadow-md!"
         ></p-button>
-      </div>
-      <div class="calendar-container mt-4">
-        <div class="calendar-header">
-          <div class="calendar-navigation">
-            <button
-              type="button"
-              class="calendar-nav-button"
-              (click)="previousMonth()"
-            >
-              <i class="pi pi-chevron-left"></i>
-            </button>
-
-            <div class="calendar-title">
-              <h1>{{ currentMonthName }}</h1>
-              <p>{{ currentYear }}</p>
-            </div>
-
-            <button
-              type="button"
-              class="calendar-nav-button"
-              (click)="nextMonth()"
-            >
-              <i class="pi pi-chevron-right"></i>
-            </button>
-          </div>
-
-          <button type="button" class="today-button" (click)="goToToday()">
-            Today
-          </button>
-        </div>
-
-        <div class="calendar">
-          <ng-container *ngFor="let dayName of dayNames">
-            <span class="day-name">
-              {{ dayName }}
-            </span>
-          </ng-container>
-
-          <div
-            *ngFor="let day of calendarDays; let i = index"
-            class="day"
-            [class.day--disabled]="!day.isCurrentMonth"
-            [class.day--today]="day.isToday"
-            [class.day--last-column]="i % 7 === 6"
-          >
-            <div class="day-number">
-              {{ day.date }}
-            </div>
-
-            <div class="day-meetings">
-              <div
-                *ngFor="let meeting of getVisibleMeetings(day.meetings)"
-                class="task"
-                [ngClass]="getMeetingTaskClass(meeting)"
-                [class.task--past]="isMeetingPast(meeting)"
-                [class.task--now]="isMeetingNow(meeting)"
-              >
-                <div class="task-title">
-                  {{ meeting.title }}
-                </div>
-
-                <div class="task-time">
-                  {{ formatMeetingTime(meeting.meetingTime) }}
-                </div>
-
-                <div class="task__detail">
-                  <h2>
-                    {{ meeting.title }}
-                  </h2>
-
-                  <p class="task-date">
-                    {{ formatMeetingDate(meeting.meetingDate) }}
-                  </p>
-
-                  <p *ngIf="meeting.meetingTime" class="task-time-detail">
-                    <i class="pi pi-clock"></i>
-                    {{ formatMeetingTime(meeting.meetingTime) }}
-                  </p>
-
-                  <p *ngIf="meeting.location" class="task-location">
-                    <i class="pi pi-map-marker"></i>
-                    {{ meeting.location }}
-                  </p>
-
-                  <p *ngIf="meeting.meetingLink" class="task-location">
-                    <i class="pi pi-video"></i>
-                    <a
-                      [href]="meeting.meetingLink"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      class="text-blue-600 hover:underline"
-                    >
-                      Join Meeting
-                    </a>
-                  </p>
-
-                  <p *ngIf="meeting.description" class="task-description">
-                    {{ meeting.description }}
-                  </p>
-
-                  <div
-                    *ngIf="isOrganizer(meeting) && !isMeetingPast(meeting)"
-                    class="flex gap-2 mt-3 pt-3 border-t border-gray-200"
-                  >
-                    <p-button
-                      label="Edit"
-                      icon="pi pi-pencil"
-                      size="small"
-                      severity="info"
-                      [outlined]="true"
-                      (onClick)="EditMeeting(meeting)"
-                    ></p-button>
-
-                    <p-button
-                      label="Cancel Meeting"
-                      icon="pi pi-times"
-                      size="small"
-                      severity="danger"
-                      [outlined]="true"
-                      (onClick)="CancelMeeting(meeting)"
-                    ></p-button>
-                  </div>
-                </div>
-              </div>
-              <button
-                *ngIf="getMoreMeetingsCount(day) > 0"
-                type="button"
-                class="more-meetings"
-                (click)="showMoreMeetings(day)"
-              >
-                +{{ getMoreMeetingsCount(day) }} more
-              </button>
-            </div>
-          </div>
+        <div class="mt-4">
+          <p-datepicker
+            [inline]="true"
+            styleClass="w-full!"
+            panelStyleClass="w-full"
+          ></p-datepicker>
         </div>
       </div>
     </div>
-
-    <p-dialog
-      [(visible)]="dialogVisible"
-      [modal]="true"
-      [draggable]="false"
-      [resizable]="false"
-      styleClass="backdrop-blur-lg! w-[600px]! max-w-[90vw]!"
-      ><ng-template #headless>
-        <div class="flex flex-col gap-3 p-5">
-          <strong class="text-lg">
-            {{ isUpdate ? 'Edit Meeting' : 'New Meeting' }}
-          </strong>
-          <div class="grid grid-cols-12 gap-5" [formGroup]="FG">
-            <div class="col-span-12 flex flex-col gap-1">
-              <div>Meeting Title</div>
-              <input
-                type="text"
-                pInputText
-                formControlName="title"
-                class="w-full"
-                placeholder="e.g. Meeting HOD"
-              />
-            </div>
-            <div class="col-span-6 flex flex-col gap-1">
-              <div>Date</div>
-              <p-datepicker
-                [showIcon]="true"
-                formControlName="meetingDate"
-                appendTo="body"
-                dateFormat="dd/mm/yy"
-                placeholder="dd/mm/yyyy"
-                inputStyleClass="w-full!"
-                styleClass="w-full!"
-              ></p-datepicker>
-            </div>
-            <div class="col-span-6 flex flex-col gap-1">
-              <div>Time</div>
-              <p-datepicker
-                [showIcon]="true"
-                formControlName="meetingTime"
-                appendTo="body"
-                [showTime]="true"
-                [timeOnly]="true"
-                hourFormat="24"
-                placeholder="HH:mm"
-                inputStyleClass="w-full!"
-                styleClass="w-full!"
-              ></p-datepicker>
-            </div>
-
-            <div class="col-span-12 flex flex-col gap-1">
-              <div>Meeting Method</div>
-              <p-select
-                appendTo="body"
-                styleClass="w-full!"
-                formControlName="meetingMethod"
-                [options]="[
-                  { label: 'Face to Face', value: 'face-to-face' },
-                  { label: 'Online', value: 'online' },
-                ]"
-              ></p-select>
-            </div>
-            <div
-              class="col-span-12 flex flex-col gap-1"
-              *ngIf="FG.get('meetingMethod')?.value === 'face-to-face'"
-            >
-              <div>Meeting Location</div>
-              <input
-                type="text"
-                pInputText
-                formControlName="location"
-                class="w-full"
-                placeholder="e.g. Meeting Room - Floor 2"
-              />
-            </div>
-            <div
-              class="col-span-12 flex flex-col gap-1"
-              *ngIf="FG.get('meetingMethod')?.value === 'online'"
-            >
-              <div>Meeting Url</div>
-              <input
-                type="text"
-                pInputText
-                formControlName="meetingLink"
-                class="w-full"
-                placeholder="e.g. https://zooom.com/meeting"
-              />
-            </div>
-
-            <div class="col-span-12 flex flex-col gap-1">
-              <div>Add Participants</div>
-
-              <p-multiselect
-                appendTo="body"
-                styleClass="w-full!"
-                formControlName="participantIds"
-                [options]="userSelection || []"
-                [filter]="true"
-                [maxSelectedLabels]="2"
-                selectedItemsLabel="{0} participants selected"
-              ></p-multiselect>
-
-              <div class="flex flex-wrap gap-2 max-h-[80px] overflow-y-auto">
-                <ng-container *ngFor="let user of selectedUsers">
-                  <div
-                    class="py-1 px-3 rounded-full bg-blue-100 text-blue-700 tracking-wide text-sm whitespace-nowrap"
-                  >
-                    {{ user.label }}
-                  </div>
-                </ng-container>
-              </div>
-            </div>
-
-            <div class="col-span-12 flex flex-col gap-1">
-              <div>Description</div>
-              <textarea
-                pTextarea
-                formControlName="description"
-                class="w-full"
-                placeholder="Briefly describe the meeting..."
-              ></textarea>
-            </div>
-          </div>
-
+    <div class="w-full min-h-[92.9vh] hidden lg:flex flex-col p-5">
+      <div class="flex flex-row items-center justify-between">
+        <div
+          class="flex flex-row items-center gap-1 text-gray-500 tracking-wide"
+        >
           <div
-            class="flex flex-row items-center gap-2 border-t border-gray-200 pt-3 justify-end"
+            [routerLink]="'/dashboard'"
+            class="cursor-pointer hover:text-gray-600"
           >
-            <p-button
-              label="Cancel"
-              severity="secondary"
-              [text]="true"
-              (onClick)="CloseDialog()"
-            ></p-button>
-            <p-button
-              [label]="isUpdate ? 'Update' : 'Save'"
-              severity="info"
-              styleClass="tracking-wide! bg-blue-700! border-none! rounded-sm! py-2! px-5!"
-              (onClick)="SaveMeeting()"
-            ></p-button>
+            Dashboard
+          </div>
+          <i class="pi pi-chevron-right text-[8px]! text-gray-500!"></i>
+          <div class="text-gray-700 font-semibold">Upcoming Meetings</div>
+        </div>
+      </div>
+      <div class="mt-3 tracking-wide flex flex-col">
+        <div class="flex flex-row items-center justify-between">
+          <div class="text-[20px] text-gray-700 font-semibold">
+            Upcoming Meetings
+          </div>
+
+          <p-button
+            label="New Meeting"
+            icon="pi pi-plus"
+            severity="info"
+            (onClick)="OpenDialog()"
+            styleClass="tracking-wide! bg-blue-700! border-none! rounded-none! py-2! px-5!"
+          ></p-button>
+        </div>
+        <div class="calendar-container mt-4">
+          <div class="calendar-header">
+            <div class="calendar-navigation">
+              <button
+                type="button"
+                class="calendar-nav-button"
+                (click)="previousMonth()"
+              >
+                <i class="pi pi-chevron-left"></i>
+              </button>
+
+              <div class="calendar-title">
+                <h1>{{ currentMonthName }}</h1>
+                <p>{{ currentYear }}</p>
+              </div>
+
+              <button
+                type="button"
+                class="calendar-nav-button"
+                (click)="nextMonth()"
+              >
+                <i class="pi pi-chevron-right"></i>
+              </button>
+            </div>
+
+            <button type="button" class="today-button" (click)="goToToday()">
+              Today
+            </button>
+          </div>
+
+          <div class="calendar">
+            <ng-container *ngFor="let dayName of dayNames">
+              <span class="day-name">
+                {{ dayName }}
+              </span>
+            </ng-container>
+
+            <div
+              *ngFor="let day of calendarDays; let i = index"
+              class="day"
+              [class.day--disabled]="!day.isCurrentMonth"
+              [class.day--today]="day.isToday"
+              [class.day--last-column]="i % 7 === 6"
+            >
+              <div class="day-number">
+                {{ day.date }}
+              </div>
+
+              <div class="day-meetings">
+                <div
+                  *ngFor="let meeting of getVisibleMeetings(day.meetings)"
+                  class="task"
+                  [ngClass]="getMeetingTaskClass(meeting)"
+                  [class.task--past]="isMeetingPast(meeting)"
+                  [class.task--now]="isMeetingNow(meeting)"
+                >
+                  <div class="task-title">
+                    {{ meeting.title }}
+                  </div>
+
+                  <div class="task-time">
+                    {{ formatMeetingTime(meeting.meetingTime) }}
+                  </div>
+
+                  <div class="task__detail">
+                    <h2>
+                      {{ meeting.title }}
+                    </h2>
+
+                    <p class="task-date">
+                      {{ formatMeetingDate(meeting.meetingDate) }}
+                    </p>
+
+                    <p *ngIf="meeting.meetingTime" class="task-time-detail">
+                      <i class="pi pi-clock"></i>
+                      {{ formatMeetingTime(meeting.meetingTime) }}
+                    </p>
+
+                    <p *ngIf="meeting.location" class="task-location">
+                      <i class="pi pi-map-marker"></i>
+                      {{ meeting.location }}
+                    </p>
+
+                    <p *ngIf="meeting.meetingLink" class="task-location">
+                      <i class="pi pi-video"></i>
+                      <a
+                        [href]="meeting.meetingLink"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class="text-blue-600 hover:underline"
+                      >
+                        Join Meeting
+                      </a>
+                    </p>
+
+                    <p *ngIf="meeting.description" class="task-description">
+                      {{ meeting.description }}
+                    </p>
+
+                    <div
+                      *ngIf="isOrganizer(meeting) && !isMeetingPast(meeting)"
+                      class="flex gap-2 mt-3 pt-3 border-t border-gray-200"
+                    >
+                      <p-button
+                        label="Edit"
+                        icon="pi pi-pencil"
+                        size="small"
+                        severity="info"
+                        [outlined]="true"
+                        (onClick)="EditMeeting(meeting)"
+                      ></p-button>
+
+                      <p-button
+                        label="Cancel Meeting"
+                        icon="pi pi-times"
+                        size="small"
+                        severity="danger"
+                        [outlined]="true"
+                        (onClick)="CancelMeeting(meeting)"
+                      ></p-button>
+                    </div>
+                  </div>
+                </div>
+                <button
+                  *ngIf="getMoreMeetingsCount(day) > 0"
+                  type="button"
+                  class="more-meetings"
+                  (click)="showMoreMeetings(day)"
+                >
+                  +{{ getMoreMeetingsCount(day) }} more
+                </button>
+              </div>
+            </div>
           </div>
         </div>
-      </ng-template>
-    </p-dialog>
+      </div>
 
-    <p-dialog
-      [(visible)]="cancelDialogVisible"
-      [modal]="true"
-      [draggable]="false"
-      [resizable]="false"
-      [closable]="false"
-      [dismissableMask]="true"
-      styleClass="cancel-dialog"
-    >
-      <ng-template #headless>
-        <div class="p-6">
-          <div class="flex justify-center mb-4">
+      <p-dialog
+        [(visible)]="dialogVisible"
+        [modal]="true"
+        [draggable]="false"
+        [resizable]="false"
+        styleClass="backdrop-blur-lg! w-[600px]! max-w-[90vw]!"
+        ><ng-template #headless>
+          <div class="flex flex-col gap-3 p-5">
+            <strong class="text-lg">
+              {{ isUpdate ? 'Edit Meeting' : 'New Meeting' }}
+            </strong>
+            <div class="grid grid-cols-12 gap-5" [formGroup]="FG">
+              <div class="col-span-12 flex flex-col gap-1">
+                <div>Meeting Title</div>
+                <input
+                  type="text"
+                  pInputText
+                  formControlName="title"
+                  class="w-full"
+                  placeholder="e.g. Meeting HOD"
+                />
+              </div>
+              <div class="col-span-6 flex flex-col gap-1">
+                <div>Date</div>
+                <p-datepicker
+                  [showIcon]="true"
+                  formControlName="meetingDate"
+                  appendTo="body"
+                  dateFormat="dd/mm/yy"
+                  placeholder="dd/mm/yyyy"
+                  inputStyleClass="w-full!"
+                  styleClass="w-full!"
+                ></p-datepicker>
+              </div>
+              <div class="col-span-6 flex flex-col gap-1">
+                <div>Time</div>
+                <p-datepicker
+                  [showIcon]="true"
+                  formControlName="meetingTime"
+                  appendTo="body"
+                  [showTime]="true"
+                  [timeOnly]="true"
+                  hourFormat="24"
+                  placeholder="HH:mm"
+                  inputStyleClass="w-full!"
+                  styleClass="w-full!"
+                ></p-datepicker>
+              </div>
+
+              <div class="col-span-12 flex flex-col gap-1">
+                <div>Meeting Method</div>
+                <p-select
+                  appendTo="body"
+                  styleClass="w-full!"
+                  formControlName="meetingMethod"
+                  [options]="[
+                    { label: 'Face to Face', value: 'face-to-face' },
+                    { label: 'Online', value: 'online' },
+                  ]"
+                ></p-select>
+              </div>
+              <div
+                class="col-span-12 flex flex-col gap-1"
+                *ngIf="FG.get('meetingMethod')?.value === 'face-to-face'"
+              >
+                <div>Meeting Location</div>
+                <input
+                  type="text"
+                  pInputText
+                  formControlName="location"
+                  class="w-full"
+                  placeholder="e.g. Meeting Room - Floor 2"
+                />
+              </div>
+              <div
+                class="col-span-12 flex flex-col gap-1"
+                *ngIf="FG.get('meetingMethod')?.value === 'online'"
+              >
+                <div>Meeting Url</div>
+                <input
+                  type="text"
+                  pInputText
+                  formControlName="meetingLink"
+                  class="w-full"
+                  placeholder="e.g. https://zooom.com/meeting"
+                />
+              </div>
+
+              <div class="col-span-12 flex flex-col gap-1">
+                <div>Add Participants</div>
+
+                <p-multiselect
+                  appendTo="body"
+                  styleClass="w-full!"
+                  formControlName="participantIds"
+                  [options]="userSelection || []"
+                  [filter]="true"
+                  [maxSelectedLabels]="2"
+                  selectedItemsLabel="{0} participants selected"
+                ></p-multiselect>
+
+                <div class="flex flex-wrap gap-2 max-h-[80px] overflow-y-auto">
+                  <ng-container *ngFor="let user of selectedUsers">
+                    <div
+                      class="py-1 px-3 rounded-full bg-blue-100 text-blue-700 tracking-wide text-sm whitespace-nowrap"
+                    >
+                      {{ user.label }}
+                    </div>
+                  </ng-container>
+                </div>
+              </div>
+
+              <div class="col-span-12 flex flex-col gap-1">
+                <div>Description</div>
+                <textarea
+                  pTextarea
+                  formControlName="description"
+                  class="w-full"
+                  [autoResize]="true"
+                  placeholder="Briefly describe the meeting..."
+                ></textarea>
+              </div>
+            </div>
+
             <div
-              class="w-14 h-14 rounded-full bg-red-100 flex items-center justify-center"
+              class="flex flex-row items-center gap-2 border-t border-gray-200 pt-3 justify-end"
             >
-              <i class="pi pi-exclamation-triangle text-red-500 text-2xl!"></i>
+              <p-button
+                label="Cancel"
+                severity="secondary"
+                [text]="true"
+                (onClick)="CloseDialog()"
+              ></p-button>
+              <p-button
+                [label]="isUpdate ? 'Update' : 'Save'"
+                severity="info"
+                styleClass="tracking-wide! bg-blue-700! border-none! rounded-sm! py-2! px-5!"
+                (onClick)="SaveMeeting()"
+              ></p-button>
             </div>
           </div>
+        </ng-template>
+      </p-dialog>
 
-          <div class="text-center">
-            <div class="text-lg font-semibold text-gray-800">
-              Cancel Meeting?
+      <p-dialog
+        [(visible)]="cancelDialogVisible"
+        [modal]="true"
+        [draggable]="false"
+        [resizable]="false"
+        [closable]="false"
+        [dismissableMask]="true"
+        styleClass="cancel-dialog"
+      >
+        <ng-template #headless>
+          <div class="p-6">
+            <div class="flex justify-center mb-4">
+              <div
+                class="w-14 h-14 rounded-full bg-red-100 flex items-center justify-center"
+              >
+                <i
+                  class="pi pi-exclamation-triangle text-red-500 text-2xl!"
+                ></i>
+              </div>
             </div>
 
-            <div class="mt-2 text-sm text-gray-500">
-              Are you sure you want to cancel this meeting?
+            <div class="text-center">
+              <div class="text-lg font-semibold text-gray-800">
+                Cancel Meeting?
+              </div>
+
+              <div class="mt-2 text-sm text-gray-500">
+                Are you sure you want to cancel this meeting?
+              </div>
+
+              <div
+                *ngIf="meetingToCancel"
+                class="mt-3 px-4 py-3 bg-gray-50 rounded-md text-sm font-medium text-gray-700"
+              >
+                {{ meetingToCancel.title }}
+              </div>
             </div>
 
-            <div
-              *ngIf="meetingToCancel"
-              class="mt-3 px-4 py-3 bg-gray-50 rounded-md text-sm font-medium text-gray-700"
-            >
-              {{ meetingToCancel.title }}
+            <div class="flex justify-center gap-2 mt-6">
+              <p-button
+                label="No, Keep It"
+                severity="secondary"
+                [text]="true"
+                (onClick)="CloseCancelDialog()"
+              ></p-button>
+
+              <p-button
+                label="Yes, Cancel"
+                severity="danger"
+                icon="pi pi-times"
+                styleClass="rounded-sm!"
+                (onClick)="ConfirmCancelMeeting()"
+              ></p-button>
             </div>
           </div>
+        </ng-template>
+      </p-dialog>
 
-          <div class="flex justify-center gap-2 mt-6">
-            <p-button
-              label="No, Keep It"
-              severity="secondary"
-              [text]="true"
-              (onClick)="CloseCancelDialog()"
-            ></p-button>
+      <p-dialog
+        [(visible)]="moreMeetingsDialogVisible"
+        [modal]="true"
+        [draggable]="false"
+        [resizable]="false"
+        [dismissableMask]="true"
+        [closeOnEscape]="true"
+        styleClass="w-[60%]! lg:w-[40%]!"
+      >
+        <ng-template #headless>
+          <div class="flex flex-col">
+            <div class="px-6 pt-5 pb-4 border-b border-gray-100">
+              <div class="flex items-start justify-between gap-4">
+                <div>
+                  <div class="text-lg font-semibold text-gray-800">
+                    {{ selectedDay?.fullDate | date: 'EEEE, d MMMM yyyy' }}
+                  </div>
 
-            <p-button
-              label="Yes, Cancel"
-              severity="danger"
-              icon="pi pi-times"
-              styleClass="rounded-sm!"
-              (onClick)="ConfirmCancelMeeting()"
-            ></p-button>
-          </div>
-        </div>
-      </ng-template>
-    </p-dialog>
-
-    <p-dialog
-      [(visible)]="moreMeetingsDialogVisible"
-      [modal]="true"
-      [draggable]="false"
-      [resizable]="false"
-      [dismissableMask]="true"
-      [closeOnEscape]="true"
-      styleClass="w-[60%]! lg:w-[40%]!"
-    >
-      <ng-template #headless>
-        <div class="flex flex-col">
-          <div class="px-6 pt-5 pb-4 border-b border-gray-100">
-            <div class="flex items-start justify-between gap-4">
-              <div>
-                <div class="text-lg font-semibold text-gray-800">
-                  {{ selectedDay?.fullDate | date: 'EEEE, d MMMM yyyy' }}
+                  <div class="text-sm text-gray-400 mt-1">
+                    {{ selectedDay?.meetings?.length || 0 }}
+                    {{
+                      selectedDay?.meetings?.length === 1
+                        ? 'meeting'
+                        : 'meetings'
+                    }}
+                  </div>
                 </div>
 
-                <div class="text-sm text-gray-400 mt-1">
-                  {{ selectedDay?.meetings?.length || 0 }}
-                  {{
-                    selectedDay?.meetings?.length === 1 ? 'meeting' : 'meetings'
-                  }}
+                <div
+                  class="w-9 h-9 rounded-full bg-blue-50 flex items-center justify-center shrink-0"
+                >
+                  <i class="pi pi-calendar text-blue-600"></i>
+                </div>
+              </div>
+            </div>
+
+            <div class="px-6 py-5">
+              <div
+                *ngIf="!selectedDay?.meetings?.length"
+                class="flex flex-col items-center justify-center py-10 text-center"
+              >
+                <div
+                  class="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mb-3"
+                >
+                  <i class="pi pi-calendar-times text-gray-400 text-lg"></i>
+                </div>
+
+                <div class="text-sm font-medium text-gray-600">No meetings</div>
+
+                <div class="text-xs text-gray-400 mt-1">
+                  There are no meetings scheduled for this day.
                 </div>
               </div>
 
               <div
-                class="w-9 h-9 rounded-full bg-blue-50 flex items-center justify-center shrink-0"
+                *ngIf="selectedDay?.meetings?.length"
+                class="flex flex-col gap-3"
               >
-                <i class="pi pi-calendar text-blue-600"></i>
-              </div>
-            </div>
-          </div>
-
-          <div class="px-6 py-5">
-            <div
-              *ngIf="!selectedDay?.meetings?.length"
-              class="flex flex-col items-center justify-center py-10 text-center"
-            >
-              <div
-                class="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mb-3"
-              >
-                <i class="pi pi-calendar-times text-gray-400 text-lg"></i>
-              </div>
-
-              <div class="text-sm font-medium text-gray-600">No meetings</div>
-
-              <div class="text-xs text-gray-400 mt-1">
-                There are no meetings scheduled for this day.
-              </div>
-            </div>
-
-            <div
-              *ngIf="selectedDay?.meetings?.length"
-              class="flex flex-col gap-3"
-            >
-              <div
-                *ngFor="let meeting of selectedDay?.meetings"
-                class="
+                <div
+                  *ngFor="let meeting of selectedDay?.meetings"
+                  class="
               group
               relative
               p-4
@@ -492,11 +532,11 @@ interface CalendarDay {
               hover:border-gray-200
               hover:shadow-md
             "
-                [class.bg-gray-50]="isMeetingPast(meeting)"
-                [class.opacity-70]="isMeetingPast(meeting)"
-              >
-                <div
-                  class="
+                  [class.bg-gray-50]="isMeetingPast(meeting)"
+                  [class.opacity-70]="isMeetingPast(meeting)"
+                >
+                  <div
+                    class="
                 absolute
                 left-0
                 top-3
@@ -504,73 +544,73 @@ interface CalendarDay {
                 w-1
                 rounded-r-full
               "
-                  [ngClass]="{
-                    'bg-gray-300': isMeetingPast(meeting),
-                    'bg-blue-500': isMeetingNow(meeting),
-                    'bg-indigo-500':
-                      !isMeetingPast(meeting) && !isMeetingNow(meeting),
-                  }"
-                ></div>
+                    [ngClass]="{
+                      'bg-gray-300': isMeetingPast(meeting),
+                      'bg-blue-500': isMeetingNow(meeting),
+                      'bg-indigo-500':
+                        !isMeetingPast(meeting) && !isMeetingNow(meeting),
+                    }"
+                  ></div>
 
-                <div class="flex items-start justify-between gap-4 pl-2">
-                  <div class="min-w-0">
-                    <div class="flex items-center gap-2 mb-1">
-                      <i
-                        class="pi pi-clock text-xs!"
-                        [ngClass]="{
-                          'text-gray-400': isMeetingPast(meeting),
-                          'text-blue-500': isMeetingNow(meeting),
-                          'text-indigo-500':
-                            !isMeetingPast(meeting) && !isMeetingNow(meeting),
-                        }"
-                      ></i>
+                  <div class="flex items-start justify-between gap-4 pl-2">
+                    <div class="min-w-0">
+                      <div class="flex items-center gap-2 mb-1">
+                        <i
+                          class="pi pi-clock text-xs!"
+                          [ngClass]="{
+                            'text-gray-400': isMeetingPast(meeting),
+                            'text-blue-500': isMeetingNow(meeting),
+                            'text-indigo-500':
+                              !isMeetingPast(meeting) && !isMeetingNow(meeting),
+                          }"
+                        ></i>
 
-                      <span
-                        class="text-xs font-semibold"
+                        <span
+                          class="text-xs font-semibold"
+                          [ngClass]="{
+                            'text-gray-400': isMeetingPast(meeting),
+                            'text-gray-600': !isMeetingPast(meeting),
+                          }"
+                        >
+                          {{ formatMeetingTime(meeting.meetingTime) }}
+                        </span>
+                      </div>
+
+                      <div
+                        class="font-semibold truncate"
                         [ngClass]="{
-                          'text-gray-400': isMeetingPast(meeting),
-                          'text-gray-600': !isMeetingPast(meeting),
+                          'text-gray-400 line-through': isMeetingPast(meeting),
+                          'text-gray-800': !isMeetingPast(meeting),
                         }"
                       >
-                        {{ formatMeetingTime(meeting.meetingTime) }}
-                      </span>
+                        {{ meeting.title }}
+                      </div>
+
+                      <div
+                        *ngIf="meeting.location || meeting.meetingLink"
+                        class="flex items-center gap-2 mt-2 text-sm text-gray-400"
+                      >
+                        <i
+                          class="pi"
+                          [ngClass]="
+                            meeting.meetingLink ? 'pi-video' : 'pi-map-marker'
+                          "
+                        ></i>
+
+                        <span class="truncate">
+                          {{
+                            meeting.meetingLink
+                              ? 'Online Meeting'
+                              : meeting.location
+                          }}
+                        </span>
+                      </div>
                     </div>
 
-                    <div
-                      class="font-semibold truncate"
-                      [ngClass]="{
-                        'text-gray-400 line-through': isMeetingPast(meeting),
-                        'text-gray-800': !isMeetingPast(meeting),
-                      }"
-                    >
-                      {{ meeting.title }}
-                    </div>
-
-                    <div
-                      *ngIf="meeting.location || meeting.meetingLink"
-                      class="flex items-center gap-2 mt-2 text-sm text-gray-400"
-                    >
-                      <i
-                        class="pi"
-                        [ngClass]="
-                          meeting.meetingLink ? 'pi-video' : 'pi-map-marker'
-                        "
-                      ></i>
-
-                      <span class="truncate">
-                        {{
-                          meeting.meetingLink
-                            ? 'Online Meeting'
-                            : meeting.location
-                        }}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div class="shrink-0">
-                    <span
-                      *ngIf="isMeetingPast(meeting)"
-                      class="
+                    <div class="shrink-0">
+                      <span
+                        *ngIf="isMeetingPast(meeting)"
+                        class="
                     inline-flex
                     items-center
                     gap-1
@@ -582,13 +622,13 @@ interface CalendarDay {
                     text-[10px]
                     font-semibold
                   "
-                    >
-                      Completed
-                    </span>
+                      >
+                        Completed
+                      </span>
 
-                    <span
-                      *ngIf="isMeetingNow(meeting)"
-                      class="
+                      <span
+                        *ngIf="isMeetingNow(meeting)"
+                        class="
                     inline-flex
                     items-center
                     gap-1
@@ -600,14 +640,18 @@ interface CalendarDay {
                     text-[10px]
                     font-semibold
                   "
-                    >
-                      <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
-                      Now
-                    </span>
+                      >
+                        <span
+                          class="w-1.5 h-1.5 rounded-full bg-blue-500"
+                        ></span>
+                        Now
+                      </span>
 
-                    <span
-                      *ngIf="!isMeetingPast(meeting) && !isMeetingNow(meeting)"
-                      class="
+                      <span
+                        *ngIf="
+                          !isMeetingPast(meeting) && !isMeetingNow(meeting)
+                        "
+                        class="
                     inline-flex
                     items-center
                     gap-1
@@ -619,18 +663,18 @@ interface CalendarDay {
                     text-[10px]
                     font-semibold
                   "
-                    >
-                      Upcoming
-                    </span>
+                      >
+                        Upcoming
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-      </ng-template>
-    </p-dialog>
-  </div>`,
+        </ng-template>
+      </p-dialog>
+    </div>`,
   styleUrl: './meeting.less',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

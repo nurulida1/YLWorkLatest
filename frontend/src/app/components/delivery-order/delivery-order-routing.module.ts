@@ -6,10 +6,15 @@ import { DeliveryOrders } from './delivery-orders/delivery-orders';
 import { modulePermissionGuard } from '../../common/permission/module-permission.guard';
 
 const routes: Routes = [
+  // {
+  //   path: '',
+  //   redirectTo: 'goods-receiving',
+  //   pathMatch: 'full',
+  // },
   {
     path: '',
-    redirectTo: 'goods-receiving',
-    pathMatch: 'full',
+    component: DeliveryOrders,
+    data: { moduleKey: 'delivery-orders' },
   },
   {
     path: 'goods-receiving',

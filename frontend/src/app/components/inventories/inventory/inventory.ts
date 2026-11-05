@@ -525,10 +525,10 @@ import { environment } from '../../../../environments/environment.development';
                   Model <p-sortIcon field="Model"></p-sortIcon>
                 </th>
                 <th>Section</th>
-                <th class="text-center">Balance</th>
-                <th class="text-center">Par Level</th>
-                <th>Status</th>
-                <th class="text-center w-24">Actions</th>
+                <th class="text-center!">Balance</th>
+                <th class="text-center!">Par Level</th>
+                <th class="text-center!">Status</th>
+                <th class="text-center! w-24">Actions</th>
               </tr>
             </ng-template>
 
@@ -570,7 +570,7 @@ import { environment } from '../../../../environments/environment.development';
                 </td>
 
                 <td
-                  class="text-center font-semibold"
+                  class="text-center! font-semibold"
                   [ngClass]="
                     data.quantity <= data.parLevel
                       ? 'text-red-600'
@@ -580,9 +580,9 @@ import { environment } from '../../../../environments/environment.development';
                   {{ data.quantity | number: '1.0-3' }}
                 </td>
 
-                <td class="text-center">{{ data.parLevel }}</td>
+                <td class="text-center!">{{ data.parLevel }}</td>
 
-                <td>
+                <td class="text-center!">
                   <span
                     class="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold"
                     [ngClass]="getStatusClass(data.status)"
@@ -1286,11 +1286,11 @@ export class Inventory implements OnInit, OnDestroy {
   currentUser = this.userService.currentUser ?? null;
 
   sectionSelection: { label: string; value: string }[] = [];
-  categorySelection: { label: string; value: string }[] = [];
+  categorySelection: { label: string; value: string | null }[] = [];
   locationSelection: { label: string; value: string }[] = [];
 
   sectionFilter: { label: string; value: string }[] = [];
-  categoryFilter: { label: string; value: string }[] = [];
+  categoryFilter: { label: string; value: string | null }[] = [];
 
   statusOptions = [
     { label: 'All Status', value: 'All' },
@@ -1823,7 +1823,10 @@ export class Inventory implements OnInit, OnDestroy {
       .subscribe({
         next: (res) => {
           this.sectionSelection = this.mapToDropdown(res.sections);
-          this.categorySelection = this.mapToDropdown(res.categories);
+          this.categorySelection = [
+            ...this.mapToDropdown(res.categories),
+            { label: 'Others', value: null },
+          ];
           this.locationSelection = this.mapToDropdown(res.locations);
 
           this.sectionFilter = [
@@ -2078,7 +2081,7 @@ export class Inventory implements OnInit, OnDestroy {
 
       case 'Low Stock':
       case 'Restock':
-        return 'bg-red-100 text-red-700 blink';
+        return 'bg-red-100 text-red-700 animate-pulse';
 
       case 'Faulty':
       case 'Faulty/Repair':

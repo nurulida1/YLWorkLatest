@@ -377,6 +377,59 @@ namespace YLWorks.Controller
                 })
                 .ToListAsync();
 
+            // Team members from the same department
+            var departmentIds = employee.Departments
+                .Select(d => d.Id)
+                .ToList();
+
+            var teamAbsences = new List<object>();
+
+            if (departmentIds.Any())
+            {
+                var absenceRows = await _context.LeaveRequests
+                    .AsNoTracking()
+                    .Where(r =>
+                        r.Status == LeaveRequestStatus.Approved &&
+                        r.StartDate.Date <= today &&
+                        r.EndDate.Date >= today &&
+                        r.Employee.IsActive &&
+                        r.Employee.Status == "Approved" &&
+                        r.Employee.Departments.Any(d =>
+                            departmentIds.Contains(d.Id)))
+                    .Select(r => new
+                    {
+                        r.EmployeeId,
+                        EmployeeName = r.Employee.FullName,
+                        Department = r.Employee.Departments
+                            .Where(d => departmentIds.Contains(d.Id))
+                            .Select(d => d.Name)
+                            .FirstOrDefault() ?? "-",
+                        LeaveTypeName = r.LeaveType.Name,
+                        r.StartDate,
+                        r.EndDate
+                    })
+                    .ToListAsync();
+
+                // One entry per employee, even if they have overlapping leave records.
+                teamAbsences = absenceRows
+                    .GroupBy(r => r.EmployeeId)
+                    .Select(g =>
+                    {
+                        var absence = g.First();
+
+                        return (object)new
+                        {
+                            employeeId = absence.EmployeeId,
+                            employeeName = absence.EmployeeName,
+                            department = absence.Department,
+                            leaveTypeName = absence.LeaveTypeName,
+                            startDate = absence.StartDate,
+                            endDate = absence.EndDate
+                        };
+                    })
+                    .ToList();
+            }
+
             return Ok(new
             {
                 success = true,
@@ -390,8 +443,8 @@ namespace YLWorks.Controller
 
                     pendingLeave,
                     onLeaveToday,
-
-                    latestNotices
+                    latestNotices,
+                    teamAbsences
                 }
             });
         }

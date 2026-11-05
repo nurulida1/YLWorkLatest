@@ -17,6 +17,7 @@ import { finalize } from 'rxjs/operators';
 import {
   HrDashboardDto,
   SuperAdminDashboardDto,
+  TeamAbsence,
 } from '../../../models/AppModels';
 import { LeaveCalendarEventDto } from '../../../models/Leave';
 import { AppService } from '../../../services/appService.service';
@@ -1037,32 +1038,202 @@ interface WeekDayCell {
           <!-- Team Absence -->
           <div class="lg:col-span-5">
             <div
-              class="border border-gray-200 rounded-lg shadow-sm p-5 flex flex-col bg-white h-full"
+              class="h-full bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden"
             >
-              <div
-                class="flex flex-row items-center gap-2 border-b border-gray-100 pb-2"
-              >
-                <b>TEAM ABSENCE</b>
+              <!-- Header -->
+              <div class="px-5 py-4 border-b border-slate-100">
+                <div class="flex items-center justify-between gap-3">
+                  <div class="flex items-center gap-3 min-w-0">
+                    <div
+                      class="w-10 h-10 shrink-0 rounded-xl bg-orange-50 flex items-center justify-center"
+                    >
+                      <i
+                        class="pi pi-calendar-times text-orange-600 text-lg"
+                      ></i>
+                    </div>
 
-                <span
-                  class="px-3 py-1 text-center font-semibold bg-gray-100 rounded-full text-sm text-gray-600"
+                    <div class="min-w-0">
+                      <h3
+                        class="text-sm font-bold tracking-wide text-slate-800"
+                      >
+                        Team Absence
+                      </h3>
+                      <p class="text-xs text-slate-400 mt-0.5">
+                        Approved leave · Today
+                      </p>
+                    </div>
+                  </div>
+
+                  <div class="flex items-center gap-2 shrink-0">
+                    <!-- Count -->
+                    <div
+                      class="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold"
+                      [ngClass]="
+                        teamAbsenceCount > 0
+                          ? 'bg-orange-50 text-orange-700'
+                          : 'bg-emerald-50 text-emerald-700'
+                      "
+                    >
+                      <span
+                        class="w-1.5 h-1.5 rounded-full"
+                        [ngClass]="
+                          teamAbsenceCount > 0
+                            ? 'bg-orange-500'
+                            : 'bg-emerald-500'
+                        "
+                      ></span>
+                      {{ teamAbsenceCount }} away
+                    </div>
+                  </div>
+                </div>
+
+                <!-- View Calendar -->
+                <!-- <div class="mt-3 flex justify-end">
+                  <a
+                    routerLink="/leave/calendar"
+                    class="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-700 transition-colors"
+                  >
+                    View full leave calendar
+                    <i class="pi pi-arrow-up-right text-[10px]!"></i>
+                  </a>
+                </div> -->
+              </div>
+
+              <!-- Absence List -->
+              <div class="p-4">
+                @if (teamAbsences.length > 0) {
+                  <div class="space-y-2">
+                    @for (
+                      person of displayedTeamAbsences;
+                      track person.employeeId + person.startDate
+                    ) {
+                      <div
+                        class="flex items-center gap-3 p-3 rounded-xl border border-slate-100 bg-slate-50/70 hover:bg-slate-50 transition-colors"
+                      >
+                        <!-- Avatar -->
+                        <div
+                          class="w-11 h-11 shrink-0 rounded-full bg-orange-100 text-orange-700 flex items-center justify-center font-bold"
+                        >
+                          {{
+                            (person.employeeName || 'U').charAt(0).toUpperCase()
+                          }}
+                        </div>
+
+                        <!-- Employee Details -->
+                        <div class="flex-1 min-w-0">
+                          <div
+                            class="text-sm font-semibold text-slate-800 truncate"
+                          >
+                            {{ person.employeeName }}
+                          </div>
+
+                          <div
+                            class="flex flex-wrap items-center gap-1.5 mt-1.5"
+                          >
+                            <span
+                              class="inline-flex items-center px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 text-[10px] font-semibold"
+                            >
+                              <i class="pi pi-building text-[9px]! mr-1"></i>
+                              {{ person.department || 'No department' }}
+                            </span>
+
+                            <span
+                              class="inline-flex items-center px-2 py-0.5 rounded-md bg-slate-200/70 text-slate-600 text-[10px] font-medium"
+                            >
+                              {{ person.leaveTypeName || 'Leave' }}
+                            </span>
+                          </div>
+
+                          <div
+                            class="flex items-center gap-1.5 text-xs text-slate-400 mt-2"
+                          >
+                            <i class="pi pi-calendar text-[10px]!"></i>
+                            <span>
+                              {{ person.startDate | date: 'dd MMM' }}
+                              –
+                              {{ person.endDate | date: 'dd MMM yyyy' }}
+                            </span>
+                          </div>
+                        </div>
+
+                        <!-- Status -->
+                        <div class="shrink-0">
+                          <span
+                            class="px-2.5 py-1 rounded-lg bg-orange-100 text-orange-700 text-[10px] font-bold uppercase tracking-wide"
+                          >
+                            Away
+                          </span>
+                        </div>
+                      </div>
+                    }
+                  </div>
+
+                  <!-- View All / Show Less -->
+                  @if (teamAbsences.length > 5) {
+                    <button
+                      type="button"
+                      (click)="toggleTeamAbsences()"
+                      class="w-full mt-3 py-2.5 flex items-center justify-center gap-2 rounded-xl border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-slate-50 hover:text-slate-800 transition-colors"
+                    >
+                      {{
+                        showAllTeamAbsences ? 'Show less' : 'View all employees'
+                      }}
+
+                      <i
+                        class="pi"
+                        [ngClass]="
+                          showAllTeamAbsences
+                            ? 'pi-chevron-up'
+                            : 'pi-chevron-down'
+                        "
+                      ></i>
+
+                      @if (!showAllTeamAbsences) {
+                        <span class="text-xs text-slate-400">
+                          (+{{ teamAbsences.length - 5 }})
+                        </span>
+                      }
+                    </button>
+                  }
+                } @else {
+                  <!-- Empty State -->
+                  <div
+                    class="flex flex-col items-center justify-center py-10 text-center"
+                  >
+                    <div
+                      class="w-14 h-14 rounded-2xl bg-emerald-50 flex items-center justify-center mb-3"
+                    >
+                      <i
+                        class="pi pi-check-circle text-emerald-600 text-2xl"
+                      ></i>
+                    </div>
+
+                    <p class="text-sm font-semibold text-slate-700">
+                      Everyone is in!
+                    </p>
+
+                    <p class="text-xs text-slate-400 mt-1">
+                      No approved leave recorded for today.
+                    </p>
+                  </div>
+                }
+              </div>
+
+              <!-- Footer -->
+              @if (teamAbsences.length > 0) {
+                <div
+                  class="px-5 py-3 border-t border-slate-100 bg-slate-50/50 flex items-center justify-between"
                 >
-                  0 away
-                </span>
-              </div>
-
-              <div
-                class="flex flex-col items-center justify-center py-8 text-center"
-              >
-                <i class="pi pi-users text-3xl text-gray-300 mb-3"></i>
-                <b class="text-gray-600">Everyone is in</b>
-                <span class="text-sm text-gray-400 mt-1">
-                  No team absences today.
-                </span>
-              </div>
+                  <span class="text-xs text-slate-400">
+                    Total employees away today
+                  </span>
+                  <span class="text-xs font-bold text-slate-700">
+                    {{ teamAbsenceCount }}
+                  </span>
+                </div>
+              }
             </div>
           </div>
-
           <!-- Recent Claims -->
           <div class="lg:col-span-7">
             <div
@@ -1462,7 +1633,6 @@ export class Dashboard implements OnInit, OnDestroy {
   private readonly userService = inject(UserService);
   private readonly appService = inject(AppService);
   private readonly leaveRequestService = inject(LeaveRequestService);
-  private readonly hardwareRequestService = inject(HardwareRequestService);
   private readonly loadingService = inject(LoadingService);
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly fb = inject(FormBuilder);
@@ -1474,6 +1644,7 @@ export class Dashboard implements OnInit, OnDestroy {
   hardwareRequestLoading: boolean = false;
   dashboardLoading: boolean = false;
   showReceipt: boolean = false;
+  showAllTeamAbsences: boolean = false;
 
   announcements: Notice[] = [];
 
@@ -1493,6 +1664,7 @@ export class Dashboard implements OnInit, OnDestroy {
 
   claimForm!: FormGroup;
   medicalBalance: MedicalBalanceDto | null = null;
+  teamAbsences: TeamAbsence[] = [];
 
   personalTasks: PersonalTask[] = [
     {
@@ -1638,9 +1810,8 @@ export class Dashboard implements OnInit, OnDestroy {
           const dashboard = res?.data ?? res;
 
           this.staffDashboard = dashboard;
-
-          // Load latest notices
           this.announcements = dashboard?.latestNotices ?? [];
+          this.teamAbsences = dashboard?.teamAbsences ?? [];
 
           this.cdr.markForCheck();
         },
@@ -1709,6 +1880,16 @@ export class Dashboard implements OnInit, OnDestroy {
             this.buildWeekDays(from, to, calendar.events ?? []),
           );
           this.lastRefreshed.set(new Date());
+
+          this.teamAbsences = normalized.todayLeaveEvents.map((ev) => ({
+            employeeId: ev.employeeId,
+            employeeName: ev.employeeName,
+            department: '',
+            leaveTypeName: ev.leaveTypeName || 'Leave',
+            startDate: ev.startDate,
+            endDate: ev.endDate,
+          }));
+
           this.cdr.markForCheck();
         },
         error: () => {
@@ -1920,5 +2101,19 @@ export class Dashboard implements OnInit, OnDestroy {
 
   get displayedActivities() {
     return (this.superAdminDashboard()?.activities ?? []).slice(0, 5);
+  }
+
+  get teamAbsenceCount(): number {
+    return this.teamAbsences.length;
+  }
+
+  get displayedTeamAbsences(): TeamAbsence[] {
+    return this.showAllTeamAbsences
+      ? this.teamAbsences
+      : this.teamAbsences.slice(0, 5);
+  }
+
+  toggleTeamAbsences(): void {
+    this.showAllTeamAbsences = !this.showAllTeamAbsences;
   }
 }

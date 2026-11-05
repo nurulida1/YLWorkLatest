@@ -14,6 +14,7 @@ import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 import { SelectModule } from 'primeng/select';
 import { Subject, forkJoin, catchError, of, takeUntil, finalize } from 'rxjs';
+
 import {
   normalizeLeaveSession,
   formatLeaveDurationLabel,
@@ -40,7 +41,9 @@ const APPROVER_ROLES = [
   'HOD',
   'Management',
 ];
+
 const CALENDAR_SYNC_ROLES = ['SuperAdmin', 'Admin', 'HR'];
+
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 type CalendarView = 'month' | 'week' | 'day' | 'list';
@@ -52,6 +55,20 @@ interface CalendarDayCell {
   isToday: boolean;
   events: LeaveCalendarEventDto[];
   holidayName: string | null;
+}
+
+interface CalendarWeekRow {
+  key: string;
+  days: CalendarDayCell[];
+  events: CalendarWeekEvent[];
+}
+
+interface CalendarWeekEvent {
+  event: LeaveCalendarEventDto;
+  startColumn: number;
+  span: number;
+  continuesBefore: boolean;
+  continuesAfter: boolean;
 }
 
 @Component({
@@ -120,6 +137,7 @@ interface CalendarDayCell {
                 >
                   Department
                 </label>
+
                 <p-select
                   [options]="departmentOptions"
                   [(ngModel)]="departmentId"
@@ -139,6 +157,7 @@ interface CalendarDayCell {
                   >
                     Leave Type
                   </label>
+
                   <p-select
                     [options]="leaveTypeOptions"
                     [(ngModel)]="leaveTypeId"
@@ -159,6 +178,7 @@ interface CalendarDayCell {
               >
                 Calendar View
               </label>
+
               <div
                 class="flex items-center gap-1 p-1 rounded-xl bg-slate-100 border border-slate-200"
               >
@@ -189,14 +209,17 @@ interface CalendarDayCell {
             <span class="w-2.5 h-2.5 rounded-full bg-blue-600"></span>
             <span class="text-xs text-slate-500">Full-day leave</span>
           </div>
+
           <div class="flex items-center gap-2">
             <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
             <span class="text-xs text-slate-500">Half-day leave</span>
           </div>
+
           <div class="flex items-center gap-2">
             <span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
             <span class="text-xs text-slate-500">Public holiday</span>
           </div>
+
           <div class="flex items-center gap-2">
             <span class="w-2.5 h-2.5 rounded-full bg-blue-200"></span>
             <span class="text-xs text-slate-500">Today</span>
@@ -220,108 +243,115 @@ interface CalendarDayCell {
             </div>
 
             <!-- CALENDAR GRID -->
-            <div class="grid grid-cols-7">
-              @for (cell of monthCells; track cell.key; let i = $index) {
+            <div class="flex flex-col">
+              @for (week of monthWeeks; track week.key) {
+                <!-- WEEK ROW -->
                 <div
-                  class="min-h-[135px] p-2 border-b border-r border-slate-100 cursor-pointer transition hover:bg-blue-50/40"
-                  [class.bg-slate-50]="!cell.inCurrentMonth"
-                  [class.bg-blue-50]="cell.isToday"
-                  [class.border-r-0]="i % 7 === 6"
-                  (click)="openDay(cell)"
-                  (keydown.enter)="openDay(cell)"
-                  (keydown.space)="$event.preventDefault(); openDay(cell)"
-                  tabindex="0"
-                  role="button"
-                  [attr.aria-label]="
-                    (cell.date | date: 'fullDate') +
-                    ', ' +
-                    cell.events.length +
-                    ' leave entries'
-                  "
+                  class="relative grid grid-cols-7 border-b border-slate-100 min-h-[135px]"
                 >
-                  <!-- DATE NUMBER -->
-                  <div class="flex items-center justify-between gap-1 mb-2">
-                    <span
-                      class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold"
-                      [class.bg-blue-600]="cell.isToday"
-                      [class.text-white]="cell.isToday"
-                      [class.text-slate-400]="
-                        !cell.inCurrentMonth && !cell.isToday
-                      "
-                      [class.text-slate-700]="
-                        cell.inCurrentMonth && !cell.isToday
+                  <!-- DATE CELLS -->
+                  @for (cell of week.days; track cell.key; let i = $index) {
+                    <div
+                      class="relative min-h-[135px] p-2 pb-10 border-r border-slate-100 cursor-pointer transition hover:bg-blue-50/40"
+                      [class.bg-slate-50]="!cell.inCurrentMonth"
+                      [class.bg-blue-50]="cell.isToday"
+                      [class.border-r-0]="i === 6"
+                      (click)="openDay(cell)"
+                      (keydown.enter)="openDay(cell)"
+                      (keydown.space)="$event.preventDefault(); openDay(cell)"
+                      tabindex="0"
+                      role="button"
+                      [attr.aria-label]="
+                        (cell.date | date: 'fullDate') +
+                        ', ' +
+                        cell.events.length +
+                        ' leave entries'
                       "
                     >
-                      {{ cell.date.getDate() }}
-                    </span>
+                      <!-- DATE NUMBER -->
+                      <div class="flex items-center justify-between gap-1 mb-2">
+                        <span
+                          class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold"
+                          [class.bg-blue-600]="cell.isToday"
+                          [class.text-white]="cell.isToday"
+                          [class.text-slate-400]="
+                            !cell.inCurrentMonth && !cell.isToday
+                          "
+                          [class.text-slate-700]="
+                            cell.inCurrentMonth && !cell.isToday
+                          "
+                        >
+                          {{ cell.date.getDate() }}
+                        </span>
 
-                    <div class="flex items-center gap-1">
+                        @if (cell.holidayName) {
+                          <span
+                            class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-rose-100 text-rose-700"
+                          >
+                            PH
+                          </span>
+                        }
+                      </div>
+
+                      <!-- PUBLIC HOLIDAY -->
                       @if (cell.holidayName) {
-                        <span
-                          class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-rose-100 text-rose-700"
+                        <div
+                          class="rounded-md bg-rose-50 border-l-2 border-rose-500 px-2 py-1.5 mb-1"
+                          [title]="cell.holidayName"
                         >
-                          PH
-                        </span>
-                      }
-                      @if (cell.events.length) {
-                        <span
-                          class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-blue-100 text-blue-700"
-                        >
-                          {{ cell.events.length }}
-                        </span>
+                          <div
+                            class="text-[10px] font-bold text-rose-800 truncate"
+                          >
+                            <i class="pi pi-flag mr-1"></i>
+                            {{ cell.holidayName }}
+                          </div>
+                        </div>
                       }
                     </div>
-                  </div>
+                  }
 
-                  <!-- EVENTS -->
-                  <div class="flex flex-col gap-1">
-                    @if (cell.holidayName) {
+                  <!-- CONTINUOUS LEAVE EVENTS -->
+                  <div
+                    class="absolute inset-x-0 top-1/2 -translate-y-1/2 grid grid-cols-7 auto-rows-[28px] gap-y-1 px-1 pointer-events-none z-10"
+                  >
+                    @for (item of week.events; track item.event.requestId) {
                       <div
-                        class="rounded-md bg-rose-50 border-l-2 border-rose-500 px-2 py-1.5"
-                        [title]="cell.holidayName"
+                        class="min-w-0 h-7 flex items-center px-2 border-y border-l-2 pointer-events-none"
+                        [style.grid-column]="
+                          item.startColumn + 1 + ' / span ' + item.span
+                        "
+                        [style.background-color]="
+                          leaveTypeColor(item.event).background
+                        "
+                        [style.border-left-color]="
+                          leaveTypeColor(item.event).border
+                        "
+                        [style.border-top-color]="
+                          leaveTypeColor(item.event).background
+                        "
+                        [style.border-bottom-color]="
+                          leaveTypeColor(item.event).background
+                        "
+                        [class.rounded-l-md]="!item.continuesBefore"
+                        [class.rounded-r-md]="!item.continuesAfter"
+                        [class.border-r-2]="!item.continuesAfter"
+                        [style.border-right-color]="
+                          leaveTypeColor(item.event).border
+                        "
+                        [title]="eventTitle(item.event)"
                       >
-                        <div
-                          class="text-[10px] font-bold text-rose-800 truncate"
-                        >
-                          <i class="pi pi-flag mr-1"></i>{{ cell.holidayName }}
-                        </div>
+                        @if (!item.continuesBefore) {
+                          <div
+                            class="text-[10px] font-semibold truncate"
+                            [style.color]="leaveTypeColor(item.event).text"
+                          >
+                            {{ item.event.employeeName }}
+                            <span class="font-normal">
+                              · {{ item.event.leaveTypeName || 'Leave' }}
+                            </span>
+                          </div>
+                        }
                       </div>
-                    }
-
-                    @for (
-                      ev of cell.events.slice(0, cell.holidayName ? 2 : 3);
-                      track ev.requestId
-                    ) {
-                      <div
-                        class="rounded-md px-2 py-1.5 border-l-2"
-                        [class.bg-amber-50]="isHalfDayEvent(ev)"
-                        [class.border-amber-400]="isHalfDayEvent(ev)"
-                        [class.bg-blue-50]="!isHalfDayEvent(ev)"
-                        [class.border-blue-500]="!isHalfDayEvent(ev)"
-                        [title]="eventTitle(ev)"
-                      >
-                        <div
-                          class="text-[10px] font-semibold truncate"
-                          [class.text-amber-900]="isHalfDayEvent(ev)"
-                          [class.text-blue-900]="!isHalfDayEvent(ev)"
-                        >
-                          {{ ev.employeeName }}
-                        </div>
-                        <div
-                          class="text-[9px] mt-0.5 truncate"
-                          [class.text-amber-700]="isHalfDayEvent(ev)"
-                          [class.text-blue-600]="!isHalfDayEvent(ev)"
-                        >
-                          {{ halfDayMarker(ev) || formatEventDuration(ev) }}
-                        </div>
-                      </div>
-                    }
-
-                    @if (cell.events.length > (cell.holidayName ? 2 : 3)) {
-                      <span class="text-[10px] font-bold text-blue-600 px-1">
-                        +{{ cell.events.length - (cell.holidayName ? 2 : 3) }}
-                        more
-                      </span>
                     }
                   </div>
                 </div>
@@ -330,12 +360,14 @@ interface CalendarDayCell {
           </div>
         </div>
 
+        <!-- MONTH FOOTER -->
         <div
           class="px-4 py-3 bg-slate-50 border-t border-slate-100 flex items-center justify-between"
         >
           <span class="text-xs text-slate-500">
             Select a date to view its leave details.
           </span>
+
           <span class="text-xs font-medium text-slate-400">
             {{ monthCells.length }} days displayed
           </span>
@@ -368,6 +400,7 @@ interface CalendarDayCell {
                   >
                     {{ weekdays[cell.date.getDay()] }}
                   </p>
+
                   <p class="text-lg font-bold text-slate-800 mt-1">
                     {{ cell.date | date: 'd MMM' }}
                   </p>
@@ -397,23 +430,28 @@ interface CalendarDayCell {
                 @for (ev of cell.events; track ev.requestId) {
                   <div
                     class="p-2.5 rounded-lg border"
-                    [class.bg-amber-50]="isHalfDayEvent(ev)"
-                    [class.border-amber-200]="isHalfDayEvent(ev)"
-                    [class.bg-blue-50]="!isHalfDayEvent(ev)"
-                    [class.border-blue-200]="!isHalfDayEvent(ev)"
+                    [style.background-color]="leaveTypeColor(ev).background"
+                    [style.border-color]="leaveTypeColor(ev).border"
                     [title]="eventTitle(ev)"
                   >
                     <p
                       class="text-xs font-bold truncate"
-                      [class.text-amber-900]="isHalfDayEvent(ev)"
-                      [class.text-blue-900]="!isHalfDayEvent(ev)"
+                      [style.color]="leaveTypeColor(ev).text"
                     >
                       {{ ev.employeeName }}
                     </p>
+
                     <p
-                      class="text-[10px] mt-1"
+                      class="text-[10px] font-medium mt-1 truncate"
+                      [style.color]="leaveTypeColor(ev).text"
+                    >
+                      {{ ev.leaveTypeName || 'Leave' }}
+                    </p>
+
+                    <p
+                      class="text-[10px] mt-0.5"
                       [class.text-amber-700]="isHalfDayEvent(ev)"
-                      [class.text-blue-600]="!isHalfDayEvent(ev)"
+                      [class.text-slate-500]="!isHalfDayEvent(ev)"
                     >
                       {{ halfDayMarker(ev) || formatEventDuration(ev) }}
                     </p>
@@ -442,10 +480,12 @@ interface CalendarDayCell {
           >
             <div>
               <h3 class="text-sm font-bold text-slate-800">Schedule Details</h3>
+
               <p class="text-xs text-slate-400 mt-1">
                 Leave activities for {{ rangeLabel }}
               </p>
             </div>
+
             <div
               class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center"
             >
@@ -457,11 +497,13 @@ interface CalendarDayCell {
             <div class="p-5 bg-rose-50/60 border-b border-rose-100">
               <div class="flex items-center gap-2 mb-3">
                 <i class="pi pi-flag text-rose-600"></i>
+
                 <span
                   class="text-xs font-bold uppercase tracking-wide text-rose-800"
                 >
                   Public Holidays
                 </span>
+
                 <span
                   class="text-[10px] font-bold bg-rose-100 text-rose-700 px-2 py-0.5 rounded-full"
                 >
@@ -480,14 +522,17 @@ interface CalendarDayCell {
                       >
                         {{ h.date | date: 'MMM' }}
                       </span>
+
                       <span class="text-sm font-bold text-rose-800">
                         {{ h.date | date: 'd' }}
                       </span>
                     </div>
+
                     <div class="min-w-0">
                       <p class="text-xs font-semibold text-rose-900">
                         {{ h.name }}
                       </p>
+
                       <p class="text-[10px] text-rose-600 mt-0.5">
                         {{ h.date | date: 'fullDate' }}
                       </p>
@@ -505,9 +550,11 @@ interface CalendarDayCell {
               >
                 <i class="pi pi-calendar-times text-2xl text-slate-400"></i>
               </div>
+
               <h3 class="text-sm font-bold text-slate-800 mt-4">
                 No approved leave found
               </h3>
+
               <p class="text-xs text-slate-400 mt-1">
                 There are no leave activities in this period.
               </p>
@@ -521,10 +568,8 @@ interface CalendarDayCell {
                   <div class="flex items-start gap-3 min-w-0">
                     <div
                       class="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
-                      [class.bg-amber-50]="isHalfDayEvent(ev)"
-                      [class.text-amber-700]="isHalfDayEvent(ev)"
-                      [class.bg-blue-50]="!isHalfDayEvent(ev)"
-                      [class.text-blue-700]="!isHalfDayEvent(ev)"
+                      [style.background-color]="leaveTypeColor(ev).background"
+                      [style.color]="leaveTypeColor(ev).text"
                     >
                       <i class="pi pi-calendar text-lg"></i>
                     </div>
@@ -534,6 +579,7 @@ interface CalendarDayCell {
                         <p class="text-sm font-bold text-slate-800">
                           {{ ev.employeeName }}
                         </p>
+
                         @if (isHalfDayEvent(ev)) {
                           <span
                             class="text-[10px] font-bold px-2 py-1 rounded-full bg-amber-100 text-amber-800"
@@ -549,7 +595,7 @@ interface CalendarDayCell {
                         {{ ev.endDate | date: 'mediumDate' }}
                       </p>
 
-                      @if (canViewDetails && ev.leaveTypeName) {
+                      @if (ev.leaveTypeName) {
                         <p class="text-xs text-slate-600 mt-1">
                           <i class="pi pi-tag text-[10px] mr-1"></i>
                           {{ ev.leaveTypeName }}
@@ -608,8 +654,10 @@ interface CalendarDayCell {
             >
               <i class="pi pi-flag text-rose-600"></i>
             </div>
+
             <div>
               <p class="text-xs font-bold text-rose-800">Public Holiday</p>
+
               <p class="text-sm text-rose-900 mt-0.5">
                 {{ selectedDayHoliday }}
               </p>
@@ -620,9 +668,11 @@ interface CalendarDayCell {
         @if (!selectedDayEvents.length) {
           <div class="py-8 text-center">
             <i class="pi pi-calendar-times text-3xl text-slate-300"></i>
+
             <p class="text-sm font-semibold text-slate-700 mt-3">
               No leave scheduled
             </p>
+
             <p class="text-xs text-slate-400 mt-1">
               There are no leave entries for this date.
             </p>
@@ -634,10 +684,8 @@ interface CalendarDayCell {
                 <div class="flex items-start gap-3">
                   <div
                     class="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
-                    [class.bg-amber-50]="isHalfDayEvent(ev)"
-                    [class.text-amber-700]="isHalfDayEvent(ev)"
-                    [class.bg-blue-50]="!isHalfDayEvent(ev)"
-                    [class.text-blue-700]="!isHalfDayEvent(ev)"
+                    [style.background-color]="leaveTypeColor(ev).background"
+                    [style.color]="leaveTypeColor(ev).text"
                   >
                     <i class="pi pi-user"></i>
                   </div>
@@ -646,19 +694,20 @@ interface CalendarDayCell {
                     <p class="text-sm font-bold text-slate-800">
                       {{ ev.employeeName }}
                     </p>
+
                     <p class="text-xs text-slate-500 mt-1">
                       {{ ev.startDate | date: 'mediumDate' }}
                       –
                       {{ ev.endDate | date: 'mediumDate' }}
                     </p>
 
-                    @if (canViewDetails) {
-                      @if (ev.leaveTypeName) {
-                        <p class="text-xs text-slate-600 mt-2">
-                          {{ ev.leaveTypeName }}
-                        </p>
-                      }
+                    @if (ev.leaveTypeName) {
+                      <p class="text-xs text-slate-600 mt-2">
+                        {{ ev.leaveTypeName }}
+                      </p>
+                    }
 
+                    @if (canViewDetails) {
                       @if (halfDayMarker(ev); as mark) {
                         <span
                           class="inline-block mt-2 text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-1 rounded-full"
@@ -708,6 +757,7 @@ export class LeaveCalendar implements OnInit, OnDestroy {
   private readonly destroy$ = new Subject<void>();
 
   readonly weekdays = WEEKDAYS;
+
   readonly viewOptions: { label: string; value: CalendarView }[] = [
     { label: 'Month', value: 'month' },
     { label: 'Week', value: 'week' },
@@ -715,67 +765,59 @@ export class LeaveCalendar implements OnInit, OnDestroy {
     { label: 'List', value: 'list' },
   ];
 
+  monthWeeks: CalendarWeekRow[] = [];
+
   view: CalendarView = 'month';
   anchorDate = new Date();
+
   events: LeaveCalendarEventDto[] = [];
   holidays: PublicHolidayDto[] = [];
+
   canViewDetails = false;
   canManageCalendarSync = false;
 
   departmentId: string | null = null;
   leaveTypeId: string | null = null;
+
   departmentOptions: { label: string; value: string }[] = [];
   leaveTypeOptions: { label: string; value: string }[] = [];
 
   monthCells: CalendarDayCell[] = [];
   periodCells: CalendarDayCell[] = [];
+
   listEvents: LeaveCalendarEventDto[] = [];
   listHolidays: PublicHolidayDto[] = [];
+
   rangeLabel = '';
 
   dayDialogVisible = false;
   dayDialogTitle = '';
+
   selectedDayEvents: LeaveCalendarEventDto[] = [];
   selectedDayHoliday: string | null = null;
-
-  isHalfDayEvent(ev: LeaveCalendarEventDto): boolean {
-    const start = normalizeLeaveSession(ev.startSession);
-    const end = normalizeLeaveSession(ev.endSession);
-    return start !== 'Full' || end !== 'Full';
-  }
-
-  halfDayMarker(ev: LeaveCalendarEventDto): string | null {
-    if (!this.isHalfDayEvent(ev)) return null;
-    const start = normalizeLeaveSession(ev.startSession);
-    const end = normalizeLeaveSession(ev.endSession);
-    if (start === end) return start;
-    return `${start}-${end}`;
-  }
-
-  formatEventDuration(ev: LeaveCalendarEventDto): string | null {
-    if (ev.totalDays == null && !this.isHalfDayEvent(ev)) return null;
-    return formatLeaveDurationLabel({
-      totalDays: ev.totalDays ?? 0,
-      startSession: ev.startSession,
-      endSession: ev.endSession,
-    });
-  }
-
-  eventTitle(ev: LeaveCalendarEventDto): string {
-    const parts = [ev.employeeName];
-    if (ev.leaveTypeName) parts.push(ev.leaveTypeName);
-    const dur = this.formatEventDuration(ev);
-    if (dur) parts.push(dur);
-    return parts.join(' · ');
-  }
 
   private eventsByDay = new Map<string, LeaveCalendarEventDto[]>();
   private holidayByDay = new Map<string, string>();
 
+  private readonly leaveTypePalette = [
+    { background: '#eff6ff', border: '#3b82f6', text: '#1d4ed8' },
+    { background: '#f0fdf4', border: '#22c55e', text: '#15803d' },
+    { background: '#faf5ff', border: '#a855f7', text: '#7e22ce' },
+    { background: '#fff7ed', border: '#f97316', text: '#c2410c' },
+    { background: '#fdf2f8', border: '#ec4899', text: '#be185d' },
+    { background: '#ecfeff', border: '#06b6d4', text: '#0e7490' },
+    { background: '#fefce8', border: '#eab308', text: '#a16207' },
+    { background: '#f1f5f9', border: '#64748b', text: '#334155' },
+    { background: '#fff1f2', border: '#f43f5e', text: '#be123c' },
+    { background: '#eef2ff', border: '#6366f1', text: '#4338ca' },
+  ];
+
   ngOnInit(): void {
     const role = String(this.userService.currentUser?.systemRole ?? '');
+
     this.canViewDetails = APPROVER_ROLES.includes(role);
     this.canManageCalendarSync = CALENDAR_SYNC_ROLES.includes(role);
+
     this.loadFilterOptions();
     this.reload();
   }
@@ -785,14 +827,84 @@ export class LeaveCalendar implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
+  // --------------------------------------------------
+  // LEAVE DISPLAY HELPERS
+  // --------------------------------------------------
+
+  isHalfDayEvent(ev: LeaveCalendarEventDto): boolean {
+    const start = normalizeLeaveSession(ev.startSession);
+    const end = normalizeLeaveSession(ev.endSession);
+
+    return start !== 'Full' || end !== 'Full';
+  }
+
+  halfDayMarker(ev: LeaveCalendarEventDto): string | null {
+    if (!this.isHalfDayEvent(ev)) return null;
+
+    const start = normalizeLeaveSession(ev.startSession);
+    const end = normalizeLeaveSession(ev.endSession);
+
+    if (start === end) return start;
+
+    return `${start}-${end}`;
+  }
+
+  formatEventDuration(ev: LeaveCalendarEventDto): string | null {
+    if (ev.totalDays == null && !this.isHalfDayEvent(ev)) {
+      return null;
+    }
+
+    return formatLeaveDurationLabel({
+      totalDays: ev.totalDays ?? 0,
+      startSession: ev.startSession,
+      endSession: ev.endSession,
+    });
+  }
+
+  eventTitle(ev: LeaveCalendarEventDto): string {
+    const parts = [ev.employeeName];
+
+    if (ev.leaveTypeName) {
+      parts.push(ev.leaveTypeName);
+    }
+
+    const duration = this.formatEventDuration(ev);
+
+    if (duration) {
+      parts.push(duration);
+    }
+
+    return parts.join(' · ');
+  }
+
+  leaveTypeColor(ev: LeaveCalendarEventDto) {
+    const key = String(
+      ev.leaveTypeId || ev.leaveTypeName || 'default-leave',
+    ).toLowerCase();
+
+    let hash = 0;
+
+    for (let i = 0; i < key.length; i++) {
+      hash = (hash * 31 + key.charCodeAt(i)) >>> 0;
+    }
+
+    return this.leaveTypePalette[hash % this.leaveTypePalette.length];
+  }
+
+  // --------------------------------------------------
+  // CALENDAR NAVIGATION
+  // --------------------------------------------------
+
   setView(view: CalendarView): void {
     if (this.view === view) return;
+
     this.view = view;
     this.reload();
   }
 
   shift(delta: number): void {
     const d = new Date(this.anchorDate);
+
     if (this.view === 'month' || this.view === 'list') {
       d.setMonth(d.getMonth() + delta);
     } else if (this.view === 'week') {
@@ -800,6 +912,7 @@ export class LeaveCalendar implements OnInit, OnDestroy {
     } else {
       d.setDate(d.getDate() + delta);
     }
+
     this.anchorDate = d;
     this.reload();
   }
@@ -812,19 +925,27 @@ export class LeaveCalendar implements OnInit, OnDestroy {
   openDay(cell: CalendarDayCell): void {
     this.selectedDayEvents = cell.events;
     this.selectedDayHoliday = cell.holidayName;
+
     this.dayDialogTitle = cell.date.toLocaleDateString(undefined, {
       weekday: 'long',
       day: 'numeric',
       month: 'long',
       year: 'numeric',
     });
+
     this.dayDialogVisible = true;
     this.cdr.markForCheck();
   }
 
+  // --------------------------------------------------
+  // DATA LOADING
+  // --------------------------------------------------
+
   reload(): void {
     const { from, to } = this.fetchRange();
+
     this.loadingService.start();
+
     forkJoin({
       calendar: this.leaveRequestService.getCalendar(
         this.toIsoDate(from),
@@ -834,6 +955,7 @@ export class LeaveCalendar implements OnInit, OnDestroy {
           leaveTypeId: this.canViewDetails ? this.leaveTypeId : null,
         },
       ),
+
       holidays: this.leaveHolidayService
         .getInRange(from, to)
         .pipe(catchError(() => of([] as PublicHolidayDto[]))),
@@ -845,19 +967,24 @@ export class LeaveCalendar implements OnInit, OnDestroy {
       .subscribe({
         next: ({ calendar, holidays }) => {
           this.canViewDetails = calendar.canViewDetails;
+
           this.events = calendar.events ?? [];
           this.holidays = holidays ?? [];
+
           this.indexEvents();
           this.indexHolidays();
           this.rebuildCells();
+
           this.cdr.markForCheck();
         },
+
         error: (e) => {
           this.messageService.add({
             severity: 'error',
             summary: 'Error',
             detail: e.error?.message || 'Failed to load team calendar',
           });
+
           this.cdr.markForCheck();
         },
       });
@@ -872,18 +999,21 @@ export class LeaveCalendar implements OnInit, OnDestroy {
       Filter: 'IsActive=true',
       Includes: null,
     };
+
     this.departmentService
       .GetMany(query)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (page) => {
           const rows = (page?.data ?? []) as DepartmentDto[];
+
           this.departmentOptions = rows
             .map((d) => ({
               label: d.name,
               value: String(d.id ?? ''),
             }))
             .filter((o) => o.value);
+
           this.cdr.markForCheck();
         },
       });
@@ -898,36 +1028,52 @@ export class LeaveCalendar implements OnInit, OnDestroy {
               label: t.name,
               value: t.id,
             }));
+
             this.cdr.markForCheck();
           },
         });
     }
   }
 
+  // --------------------------------------------------
+  // DATE RANGE
+  // --------------------------------------------------
+
   private fetchRange(): { from: Date; to: Date } {
     if (this.view === 'month' || this.view === 'list') {
       return this.monthGridRange(this.anchorDate);
     }
+
     if (this.view === 'week') {
       const start = this.startOfWeek(this.anchorDate);
       const end = new Date(start);
+
       end.setDate(end.getDate() + 6);
+
       return { from: start, to: end };
     }
+
     const day = this.stripTime(this.anchorDate);
+
     return { from: day, to: day };
   }
 
   private rebuildCells(): void {
     if (this.view === 'month') {
       const { from, to } = this.monthGridRange(this.anchorDate);
+
       this.monthCells = this.buildDayCells(
         from,
         to,
         this.anchorDate.getMonth(),
       );
+
+      this.buildMonthWeeks();
+
       this.periodCells = [];
+      this.listEvents = [];
       this.listHolidays = [];
+
       this.rangeLabel = this.anchorDate.toLocaleDateString(undefined, {
         month: 'long',
         year: 'numeric',
@@ -935,16 +1081,34 @@ export class LeaveCalendar implements OnInit, OnDestroy {
     } else if (this.view === 'week') {
       const from = this.startOfWeek(this.anchorDate);
       const to = new Date(from);
+
       to.setDate(to.getDate() + 6);
+
       this.periodCells = this.buildDayCells(from, to, null);
+
       this.monthCells = [];
+      this.monthWeeks = [];
+      this.listEvents = [];
       this.listHolidays = [];
-      this.rangeLabel = `${from.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })} – ${to.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}`;
+
+      this.rangeLabel = `${from.toLocaleDateString(undefined, {
+        day: 'numeric',
+        month: 'short',
+      })} – ${to.toLocaleDateString(undefined, {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+      })}`;
     } else if (this.view === 'day') {
       const day = this.stripTime(this.anchorDate);
+
       this.periodCells = this.buildDayCells(day, day, null);
+
       this.monthCells = [];
+      this.monthWeeks = [];
+      this.listEvents = [];
       this.listHolidays = [];
+
       this.rangeLabel = day.toLocaleDateString(undefined, {
         weekday: 'long',
         day: 'numeric',
@@ -953,8 +1117,11 @@ export class LeaveCalendar implements OnInit, OnDestroy {
       });
     } else {
       this.monthCells = [];
+      this.monthWeeks = [];
       this.periodCells = [];
+
       const { from, to } = this.monthGridRange(this.anchorDate);
+
       this.listEvents = this.events
         .filter((e) => this.overlaps(e, from, to))
         .slice()
@@ -962,9 +1129,11 @@ export class LeaveCalendar implements OnInit, OnDestroy {
           (a, b) =>
             new Date(a.startDate).getTime() - new Date(b.startDate).getTime(),
         );
+
       this.listHolidays = this.holidays
         .slice()
         .sort((a, b) => a.date.localeCompare(b.date));
+
       this.rangeLabel = this.anchorDate.toLocaleDateString(undefined, {
         month: 'long',
         year: 'numeric',
@@ -972,16 +1141,25 @@ export class LeaveCalendar implements OnInit, OnDestroy {
     }
   }
 
+  // --------------------------------------------------
+  // EVENT AND HOLIDAY INDEXING
+  // --------------------------------------------------
+
   private indexEvents(): void {
     this.eventsByDay.clear();
+
     for (const ev of this.events) {
       const start = this.stripTime(new Date(ev.startDate));
       const end = this.stripTime(new Date(ev.endDate));
-      if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()))
+
+      if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
         continue;
+      }
+
       for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
         const key = this.dayKey(d);
         const list = this.eventsByDay.get(key) ?? [];
+
         list.push(ev);
         this.eventsByDay.set(key, list);
       }
@@ -990,11 +1168,19 @@ export class LeaveCalendar implements OnInit, OnDestroy {
 
   private indexHolidays(): void {
     this.holidayByDay.clear();
+
     for (const h of this.holidays) {
       const key = h.date.slice(0, 10);
-      if (key) this.holidayByDay.set(key, h.name);
+
+      if (key) {
+        this.holidayByDay.set(key, h.name);
+      }
     }
   }
+
+  // --------------------------------------------------
+  // CALENDAR CELL BUILDING
+  // --------------------------------------------------
 
   private buildDayCells(
     from: Date,
@@ -1003,9 +1189,11 @@ export class LeaveCalendar implements OnInit, OnDestroy {
   ): CalendarDayCell[] {
     const todayKey = this.dayKey(new Date());
     const cells: CalendarDayCell[] = [];
+
     for (let d = new Date(from); d <= to; d.setDate(d.getDate() + 1)) {
       const date = this.stripTime(d);
       const key = this.dayKey(date);
+
       cells.push({
         date,
         key,
@@ -1016,21 +1204,103 @@ export class LeaveCalendar implements OnInit, OnDestroy {
         holidayName: this.holidayByDay.get(key) ?? null,
       });
     }
+
     return cells;
   }
 
-  private monthGridRange(anchor: Date): { from: Date; to: Date } {
+  private monthGridRange(anchor: Date): {
+    from: Date;
+    to: Date;
+  } {
     const first = new Date(anchor.getFullYear(), anchor.getMonth(), 1);
+
     const last = new Date(anchor.getFullYear(), anchor.getMonth() + 1, 0);
+
     const from = this.startOfWeek(first);
     const to = this.startOfWeek(last);
+
     to.setDate(to.getDate() + 6);
+
     return { from, to };
   }
 
+  // --------------------------------------------------
+  // CONTINUOUS MONTH EVENT BARS
+  // --------------------------------------------------
+
+  private buildMonthWeeks(): void {
+    const weeks: CalendarWeekRow[] = [];
+
+    for (let i = 0; i < this.monthCells.length; i += 7) {
+      const days = this.monthCells.slice(i, i + 7);
+
+      if (days.length !== 7) {
+        continue;
+      }
+
+      const weekStart = days[0].date;
+      const weekEnd = days[6].date;
+
+      const weekEvents: CalendarWeekEvent[] = [];
+
+      // Collect unique events for this week.
+      const uniqueEvents = new Map<string, LeaveCalendarEventDto>();
+
+      for (const day of days) {
+        for (const ev of day.events) {
+          uniqueEvents.set(ev.requestId, ev);
+        }
+      }
+
+      // Build a continuous segment for each event.
+      for (const ev of uniqueEvents.values()) {
+        const eventStart = this.stripTime(new Date(ev.startDate));
+        const eventEnd = this.stripTime(new Date(ev.endDate));
+
+        const segmentStart = eventStart > weekStart ? eventStart : weekStart;
+
+        const segmentEnd = eventEnd < weekEnd ? eventEnd : weekEnd;
+
+        const startColumn = segmentStart.getDay();
+
+        const span =
+          Math.round(
+            (segmentEnd.getTime() - segmentStart.getTime()) / 86400000,
+          ) + 1;
+
+        weekEvents.push({
+          event: ev,
+          startColumn,
+          span,
+          continuesBefore: eventStart < weekStart,
+          continuesAfter: eventEnd > weekEnd,
+        });
+      }
+
+      // Sort events by start date, then longer events first.
+      weekEvents.sort(
+        (a, b) => a.startColumn - b.startColumn || b.span - a.span,
+      );
+
+      weeks.push({
+        key: this.dayKey(weekStart),
+        days,
+        events: weekEvents,
+      });
+    }
+
+    this.monthWeeks = weeks;
+  }
+
+  // --------------------------------------------------
+  // DATE HELPERS
+  // --------------------------------------------------
+
   private startOfWeek(date: Date): Date {
     const d = this.stripTime(date);
+
     d.setDate(d.getDate() - d.getDay());
+
     return d;
   }
 
@@ -1042,6 +1312,7 @@ export class LeaveCalendar implements OnInit, OnDestroy {
     const y = date.getFullYear();
     const m = String(date.getMonth() + 1).padStart(2, '0');
     const d = String(date.getDate()).padStart(2, '0');
+
     return `${y}-${m}-${d}`;
   }
 
@@ -1052,6 +1323,7 @@ export class LeaveCalendar implements OnInit, OnDestroy {
   private overlaps(ev: LeaveCalendarEventDto, from: Date, to: Date): boolean {
     const start = this.stripTime(new Date(ev.startDate));
     const end = this.stripTime(new Date(ev.endDate));
+
     return start <= to && end >= from;
   }
 }

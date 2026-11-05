@@ -112,3 +112,12 @@ export interface HrDashboardDto {
   departmentDistribution: HrDepartmentDistribution[];
   todayLeaveEvents: HrTodayLeaveEvent[];
 }
+
+export interface TeamAbsence {
+  employeeId: string;
+  employeeName: string;
+  department: string;
+  leaveTypeName: string;
+  startDate: string;
+  endDate: string;
+}

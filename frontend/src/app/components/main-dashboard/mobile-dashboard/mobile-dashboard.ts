@@ -217,7 +217,7 @@ import { InputTextModule } from 'primeng/inputtext';
               <div class="dashboard-stat-card">
                 <div class="stat-card-top">
                   <div class="stat-icon stat-green">
-                    <i class="pi pi-user-check"></i>
+                    <i class="pi pi-check-circle"></i>
                   </div>
                   <span class="text-xs text-slate-400">Active</span>
                 </div>
@@ -365,13 +365,10 @@ import { InputTextModule } from 'primeng/inputtext';
                           }}
                         </div>
                         <div class="text-[10px] text-slate-400 mt-1">
-                          {{ activity.actionUser?.displayName ?? '' }}
-                          @if (activity.createdAt || activity.actionAt) {
+                          {{ activity.user }}
+                          @if (activity.date) {
                             ·
-                            {{
-                              activity.createdAt || activity.actionAt
-                                | date: 'dd MMM yyyy, hh:mm aa'
-                            }}
+                            {{ activity.date | date: 'dd MMM yyyy, hh:mm aa' }}
                           }
                         </div>
                       </div>

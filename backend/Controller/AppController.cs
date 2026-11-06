@@ -306,15 +306,21 @@ namespace YLWorks.Controller
             return await _context.ActivityLogs
                 .Include(x => x.User)
                 .OrderByDescending(x => x.CreatedAt)
-                .Take(10)
+                .Take(5)
                 .Select(x => new ActivityLogDto
                 {
                     Title = x.Action,
                     Description = x.Description,
-                    User = x.User == null ? "System" : x.User.FullName,
+                    User = x.User == null
+    ? "System"
+    : !string.IsNullOrWhiteSpace(x.User.DisplayName)
+        ? x.User.DisplayName
+        : !string.IsNullOrWhiteSpace(x.User.FullName)
+            ? x.User.FullName
+            : "System",
                     Date = x.CreatedAt,
                     Icon = x.Icon,
-                    Color = x.Color
+                    Color = x.Color,
                 })
                 .ToListAsync();
         }

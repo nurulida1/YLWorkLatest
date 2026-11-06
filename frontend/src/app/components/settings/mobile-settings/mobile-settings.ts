@@ -317,9 +317,11 @@ import { UserService } from '../../../services/userService.service';
           <div class="h-px bg-slate-100 ml-[68px]"></div>
 
           <!-- Report a Bug -->
-          <div
+          <a
+            routerLink="/hardware-request"
+            [queryParams]="{ type: 'BugReport' }"
             class="flex items-center gap-3.5 p-4
-                 active:bg-slate-50 transition-colors"
+       active:bg-slate-50 transition-colors"
           >
             <div
               class="w-11 h-11 rounded-xl bg-rose-50
@@ -338,7 +340,7 @@ import { UserService } from '../../../services/userService.service';
             </div>
 
             <i class="pi pi-chevron-right text-xs text-slate-400"></i>
-          </div>
+          </a>
 
           <div class="h-px bg-slate-100 ml-[68px]"></div>
 

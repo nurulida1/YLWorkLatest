@@ -260,22 +260,17 @@ namespace YLWorks.Controller
         }
 
         [HttpGet("GetOne")]
-        public async Task<IActionResult> GetOne(string? filter = null)
+        public async Task<IActionResult> GetOne(Guid id)
         {
             try
             {
-                if (string.IsNullOrWhiteSpace(filter))
-                    return BadRequest(new { Error = "Filter is required." });
-
-                var filterParts = filter.Split('=');
-
-                if (filterParts.Length != 2)
-                    return BadRequest(new { Error = "Invalid filter format." });
-
-                var filterValue = filterParts[1].Trim();
-
-                if (!Guid.TryParse(filterValue, out Guid id))
-                    return BadRequest(new { Error = "Invalid Id." });
+                if (id == Guid.Empty)
+                {
+                    return BadRequest(new
+                    {
+                        Error = "Invalid Id."
+                    });
+                }
 
                 var data = await _context.Inventories
                     .AsNoTracking()
@@ -365,7 +360,12 @@ namespace YLWorks.Controller
                     .FirstOrDefaultAsync();
 
                 if (data == null)
-                    return NotFound(new { Error = "Inventory not found." });
+                {
+                    return NotFound(new
+                    {
+                        Error = "Inventory not found."
+                    });
+                }
 
                 return Ok(data);
             }

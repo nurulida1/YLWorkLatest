@@ -1426,9 +1426,17 @@ namespace YLWorks.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("char(36)");
 
+                    b.Property<string>("ActualResult")
+                        .HasMaxLength(2000)
+                        .HasColumnType("varchar(2000)");
+
                     b.Property<string>("AdminRemarks")
                         .HasMaxLength(2000)
                         .HasColumnType("varchar(2000)");
+
+                    b.Property<string>("AffectedModule")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
 
                     b.Property<DateTime?>("ApprovedAt")
                         .HasColumnType("datetime(6)");
@@ -1438,6 +1446,10 @@ namespace YLWorks.Migrations
 
                     b.Property<Guid?>("AssignedToId")
                         .HasColumnType("char(36)");
+
+                    b.Property<string>("BugCategory")
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
 
                     b.Property<DateTime?>("CompletedAt")
                         .HasColumnType("datetime(6)");
@@ -1450,6 +1462,10 @@ namespace YLWorks.Migrations
 
                     b.Property<string>("Description")
                         .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("varchar(2000)");
+
+                    b.Property<string>("ExpectedResult")
                         .HasMaxLength(2000)
                         .HasColumnType("varchar(2000)");
 
@@ -1499,6 +1515,10 @@ namespace YLWorks.Migrations
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("varchar(50)");
+
+                    b.Property<string>("StepsToReproduce")
+                        .HasMaxLength(4000)
+                        .HasColumnType("varchar(4000)");
 
                     b.Property<string>("Subject")
                         .IsRequired()

@@ -27,12 +27,13 @@ import { SelectModule } from 'primeng/select';
 import { ProjectDto } from '../../../models/Project';
 import { ProjectService } from '../../../services/ProjectService';
 import { UserService } from '../../../services/userService.service';
+import { DatePickerModule } from 'primeng/datepicker';
 @Component({
   selector: 'app-daily-report',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, SelectModule],
+  imports: [CommonModule, ReactiveFormsModule, SelectModule, DatePickerModule],
   template: `
-    <div class="w-full min-h-[92vh] bg-slate-50 p-4 sm:p-6 lg:p-8">
+    <div class="w-full min-h-[92vh] bg-slate-50 p-3 sm:p-6 lg:p-8">
       <!-- HEADER -->
       <div
         class="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-center"
@@ -48,7 +49,7 @@ import { UserService } from '../../../services/userService.service';
         <button
           type="button"
           (click)="openCreate()"
-          class="rounded-lg cursor-pointer! bg-blue-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-blue-700"
+          class="w-full rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-blue-700 sm:w-auto"
         >
           <i class="pi pi-plus mr-2"></i>
           Create Daily Report
@@ -70,7 +71,7 @@ import { UserService } from '../../../services/userService.service';
           <button
             type="button"
             (click)="GetData()"
-            class="cursor-pointer! text-sm text-blue-600 hover:text-blue-700"
+            class="text-sm text-blue-600 hover:text-blue-700"
           >
             <i class="pi pi-refresh mr-1"></i>
             Refresh
@@ -92,7 +93,7 @@ import { UserService } from '../../../services/userService.service';
           </div>
         } @else {
           <div class="overflow-x-auto">
-            <table class="w-full text-left text-sm">
+            <table class="w-full min-w-[900px] text-left text-sm">
               <thead class="bg-gray-50 text-gray-600">
                 <tr>
                   <th class="px-5 py-3 font-semibold">Report Date</th>
@@ -111,9 +112,11 @@ import { UserService } from '../../../services/userService.service';
                     <td class="whitespace-nowrap px-5 py-4 text-gray-700">
                       {{ report.reportDate | date: 'dd MMM yyyy' }}
                     </td>
+
                     <td class="whitespace-nowrap px-5 py-4 text-gray-700">
                       {{ report.employeeName || 'Unknown Employee' }}
                     </td>
+
                     <td class="px-5 py-4 text-gray-600">
                       {{ report.projectName || 'No project' }}
                     </td>
@@ -149,10 +152,11 @@ import { UserService } from '../../../services/userService.service';
                           type="button"
                           title="View"
                           (click)="viewReport(report)"
-                          class="cursor-pointer! rounded-lg p-2 text-gray-500 hover:bg-blue-50 hover:text-blue-600"
+                          class="rounded-lg p-2 text-gray-500 hover:bg-blue-50 hover:text-blue-600"
                         >
                           <i class="pi pi-eye"></i>
                         </button>
+
                         @if (
                           report.canReview && report.status === 'Submitted'
                         ) {
@@ -161,7 +165,7 @@ import { UserService } from '../../../services/userService.service';
                             title="Approve"
                             [disabled]="reviewingReportId === report.id"
                             (click)="approveReport(report)"
-                            class="cursor-pointer! rounded-lg p-2 text-gray-500 hover:bg-green-50 hover:text-green-600 disabled:cursor-not-allowed! disabled:opacity-50"
+                            class="rounded-lg p-2 text-gray-500 hover:bg-green-50 hover:text-green-600 disabled:opacity-50"
                           >
                             <i class="pi pi-check"></i>
                           </button>
@@ -171,11 +175,12 @@ import { UserService } from '../../../services/userService.service';
                             title="Reject"
                             [disabled]="reviewingReportId === report.id"
                             (click)="openReject(report)"
-                            class="cursor-pointer! rounded-lg p-2 text-gray-500 hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed! disabled:opacity-50"
+                            class="rounded-lg p-2 text-gray-500 hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
                           >
                             <i class="pi pi-times"></i>
                           </button>
                         }
+
                         @if (
                           isReportOwner(report) && report.status === 'Draft'
                         ) {
@@ -183,7 +188,7 @@ import { UserService } from '../../../services/userService.service';
                             type="button"
                             title="Edit"
                             (click)="openEdit(report)"
-                            class="cursor-pointer! rounded-lg p-2 text-gray-500 hover:bg-amber-50 hover:text-amber-600"
+                            class="rounded-lg p-2 text-gray-500 hover:bg-amber-50 hover:text-amber-600"
                           >
                             <i class="pi pi-pencil"></i>
                           </button>
@@ -192,7 +197,7 @@ import { UserService } from '../../../services/userService.service';
                             type="button"
                             title="Submit"
                             (click)="submitReport(report)"
-                            class="cursor-pointer! rounded-lg p-2 text-gray-500 hover:bg-green-50 hover:text-green-600"
+                            class="rounded-lg p-2 text-gray-500 hover:bg-green-50 hover:text-green-600"
                           >
                             <i class="pi pi-send"></i>
                           </button>
@@ -201,7 +206,7 @@ import { UserService } from '../../../services/userService.service';
                             type="button"
                             title="Delete"
                             (click)="openDelete(report)"
-                            class="cursor-pointer! rounded-lg p-2 text-gray-500 hover:bg-red-50 hover:text-red-600"
+                            class="rounded-lg p-2 text-gray-500 hover:bg-red-50 hover:text-red-600"
                           >
                             <i class="pi pi-trash"></i>
                           </button>
@@ -219,13 +224,14 @@ import { UserService } from '../../../services/userService.service';
       <!-- CREATE / EDIT DIALOG -->
       @if (showFormDialog) {
         <div
-          class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-3 sm:p-5"
+          class="fixed inset-0 z-[1000] flex items-center justify-center overflow-y-auto bg-black/50 p-2 sm:p-5"
         >
           <div
-            class="flex max-h-[95vh] w-full max-w-4xl flex-col overflow-hidden rounded-xl bg-white shadow-xl"
+            class="my-auto flex max-h-[calc(100dvh-1rem)] w-full max-w-4xl flex-col overflow-hidden rounded-xl bg-white shadow-2xl sm:max-h-[95dvh]"
           >
+            <!-- HEADER -->
             <div
-              class="flex items-center justify-between border-b border-gray-200 px-5 py-4"
+              class="flex shrink-0 items-center justify-between border-b border-gray-200 px-4 py-3 sm:px-5 sm:py-4"
             >
               <div>
                 <h2 class="text-lg font-semibold text-gray-800">
@@ -245,22 +251,32 @@ import { UserService } from '../../../services/userService.service';
               </button>
             </div>
 
+            <!-- SCROLLABLE FORM BODY -->
             <form
               [formGroup]="reportForm"
               (ngSubmit)="saveReport()"
-              class="flex-1 space-y-5 overflow-y-auto p-5"
+              class="min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain p-4 sm:p-5"
             >
               <!-- GENERAL DETAILS -->
-              <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
                   <label class="mb-1 block text-sm font-medium text-gray-700">
                     Report Date <span class="text-red-500">*</span>
                   </label>
-                  <input
-                    type="date"
+
+                  <p-datepicker
                     formControlName="reportDate"
-                    class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
-                  />
+                    dateFormat="dd M yy"
+                    placeholder="Select report date"
+                    [showIcon]="true"
+                    iconDisplay="input"
+                    [showButtonBar]="true"
+                    [touchUI]="false"
+                    appendTo="body"
+                    styleClass="w-full"
+                    inputStyleClass="w-full !text-base sm:!text-sm py-3!"
+                  ></p-datepicker>
+
                   @if (
                     reportForm.controls.reportDate.touched &&
                     reportForm.controls.reportDate.invalid
@@ -275,16 +291,17 @@ import { UserService } from '../../../services/userService.service';
                   <label class="mb-1 block text-sm font-medium text-gray-700">
                     Project <span class="text-gray-400">(Optional)</span>
                   </label>
+
                   <p-select
                     formControlName="projectId"
                     [options]="projects"
                     optionLabel="name"
                     optionValue="id"
                     placeholder="Select Project"
-                    [showClear]="reportForm.get('projectId')?.value"
+                    [showClear]="!!reportForm.get('projectId')?.value"
                     [filter]="true"
                     filterBy="name"
-                    styleClass="w-full"
+                    styleClass="w-full py-0.5!"
                     appendTo="body"
                   ></p-select>
                 </div>
@@ -295,11 +312,12 @@ import { UserService } from '../../../services/userService.service';
                 <label class="mb-1 block text-sm font-medium text-gray-700">
                   Completed Work
                 </label>
+
                 <textarea
                   formControlName="completedWork"
                   rows="3"
                   placeholder="Describe the work completed today..."
-                  class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
+                  class="w-full rounded-lg border border-gray-300 px-3 py-2 text-base outline-none focus:border-blue-500 sm:text-sm"
                 ></textarea>
               </div>
 
@@ -308,11 +326,12 @@ import { UserService } from '../../../services/userService.service';
                 <label class="mb-1 block text-sm font-medium text-gray-700">
                   In Progress Work
                 </label>
+
                 <textarea
                   formControlName="inProgressWork"
                   rows="3"
                   placeholder="Describe work that is still ongoing..."
-                  class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
+                  class="w-full rounded-lg border border-gray-300 px-3 py-2 text-base outline-none focus:border-blue-500 sm:text-sm"
                 ></textarea>
               </div>
 
@@ -321,11 +340,12 @@ import { UserService } from '../../../services/userService.service';
                 <label class="mb-1 block text-sm font-medium text-gray-700">
                   Issues / Blockers
                 </label>
+
                 <textarea
                   formControlName="issues"
                   rows="3"
                   placeholder="Describe any issues encountered..."
-                  class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
+                  class="w-full rounded-lg border border-gray-300 px-3 py-2 text-base outline-none focus:border-blue-500 sm:text-sm"
                 ></textarea>
               </div>
 
@@ -334,17 +354,20 @@ import { UserService } from '../../../services/userService.service';
                 <label class="mb-1 block text-sm font-medium text-gray-700">
                   Next Day Plan
                 </label>
+
                 <textarea
                   formControlName="nextDayPlan"
                   rows="3"
                   placeholder="What do you plan to do next?"
-                  class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
+                  class="w-full rounded-lg border border-gray-300 px-3 py-2 text-base outline-none focus:border-blue-500 sm:text-sm"
                 ></textarea>
               </div>
 
               <!-- TASKS -->
               <div>
-                <div class="mb-3 flex items-center justify-between">
+                <div
+                  class="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
+                >
                   <div>
                     <h3 class="font-semibold text-gray-800">Linked Tasks</h3>
                     <p class="mt-1 text-xs text-gray-500">
@@ -355,7 +378,7 @@ import { UserService } from '../../../services/userService.service';
                   <button
                     type="button"
                     (click)="addTask()"
-                    class="rounded-lg border border-blue-200 px-3 py-2 text-xs font-medium text-blue-600 hover:bg-blue-50"
+                    class="w-full rounded-lg border border-blue-200 px-3 py-2 text-xs font-medium text-blue-600 hover:bg-blue-50 sm:w-auto"
                   >
                     <i class="pi pi-plus mr-1"></i>
                     Add Task
@@ -366,30 +389,31 @@ import { UserService } from '../../../services/userService.service';
                   @for (task of tasks.controls; track $index; let i = $index) {
                     <div
                       [formGroupName]="i"
-                      class="rounded-lg border border-gray-200 bg-gray-50 p-4"
+                      class="rounded-lg border border-gray-200 bg-gray-50 p-3 sm:p-4"
                     >
                       <div class="mb-3 flex items-center justify-between">
-                        <span class="text-sm font-semibold text-gray-700">
+                        <span class="font-semibold text-gray-700">
                           Task {{ i + 1 }}
                         </span>
 
                         <button
                           type="button"
                           (click)="removeTask(i)"
-                          class="text-xs text-red-500 hover:text-red-700"
+                          class="text-xs! text-red-500 hover:text-red-700"
                         >
-                          <i class="pi pi-trash mr-1"></i>
+                          <i class="pi pi-trash text-xs! mr-1"></i>
                           Remove
                         </button>
                       </div>
 
-                      <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
-                        <div class="md:col-span-2">
+                      <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        <div class="sm:col-span-2">
                           <label
                             class="mb-1 block text-xs font-medium text-gray-600"
                           >
                             Task
                           </label>
+
                           <p-select
                             formControlName="staffTaskId"
                             [options]="staffTasks"
@@ -397,10 +421,11 @@ import { UserService } from '../../../services/userService.service';
                             optionValue="id"
                             placeholder="Select Task"
                             [filter]="true"
-                            [showClear]="true"
+                            [showClear]="reportForm.get('staffTaskId')?.value"
                             styleClass="w-full"
                             appendTo="body"
                           ></p-select>
+
                           @if (
                             task.get('staffTaskId')?.touched &&
                             task.get('staffTaskId')?.invalid
@@ -417,27 +442,29 @@ import { UserService } from '../../../services/userService.service';
                           >
                             Hours Spent
                           </label>
+
                           <input
                             type="number"
                             min="0"
                             step="0.5"
                             formControlName="hoursSpent"
                             placeholder="e.g. 2.5"
-                            class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500"
+                            class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-base outline-none focus:border-blue-500 sm:text-sm"
                           />
                         </div>
 
-                        <div class="md:col-span-2">
+                        <div class="sm:col-span-2">
                           <label
                             class="mb-1 block text-xs font-medium text-gray-600"
                           >
                             Work Description
                           </label>
+
                           <textarea
                             formControlName="workDescription"
                             rows="2"
                             placeholder="Describe the work done for this task..."
-                            class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500"
+                            class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-base outline-none focus:border-blue-500 sm:text-sm"
                           ></textarea>
                         </div>
                       </div>
@@ -447,14 +474,14 @@ import { UserService } from '../../../services/userService.service';
               </div>
             </form>
 
-            <!-- FOOTER -->
+            <!-- FIXED FOOTER -->
             <div
-              class="flex flex-col-reverse justify-end gap-2 border-t border-gray-200 px-5 py-4 sm:flex-row"
+              class="flex shrink-0 flex-col-reverse gap-2 border-t border-gray-200 bg-white px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:flex-row sm:justify-end sm:px-5 sm:py-4"
             >
               <button
                 type="button"
                 (click)="closeForm()"
-                class="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50"
+                class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 sm:w-auto"
               >
                 Cancel
               </button>
@@ -463,7 +490,7 @@ import { UserService } from '../../../services/userService.service';
                 type="button"
                 [disabled]="isSaving"
                 (click)="saveReport()"
-                class="rounded-lg bg-blue-600 px-5 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                class="w-full rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 sm:w-auto"
               >
                 @if (isSaving) {
                   <i class="pi pi-spin pi-spinner mr-2"></i>
@@ -481,17 +508,18 @@ import { UserService } from '../../../services/userService.service';
       <!-- VIEW DIALOG -->
       @if (showViewDialog && selectedReport) {
         <div
-          class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-3 sm:p-5"
+          class="fixed inset-0 z-[1000] flex items-center justify-center overflow-y-auto bg-black/50 p-2 sm:p-5"
         >
           <div
-            class="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-xl bg-white shadow-xl"
+            class="my-auto flex max-h-[calc(100dvh-1rem)] w-full max-w-3xl flex-col overflow-hidden rounded-xl bg-white shadow-2xl sm:max-h-[90dvh]"
           >
             <div
-              class="flex items-center justify-between border-b border-gray-200 p-5"
+              class="flex shrink-0 items-center justify-between border-b border-gray-200 p-4 sm:p-5"
             >
               <h2 class="text-lg font-semibold text-gray-800">
                 Daily Report Details
               </h2>
+
               <button
                 type="button"
                 (click)="showViewDialog = false"
@@ -501,17 +529,21 @@ import { UserService } from '../../../services/userService.service';
               </button>
             </div>
 
-            <div class="space-y-5 p-5">
+            <div
+              class="min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain p-4 sm:p-5"
+            >
               <div>
                 <h3 class="text-xl font-semibold text-gray-800">
                   {{ selectedReport.reportDate | date: 'dd MMMM yyyy' }}
                 </h3>
+
                 <p class="mt-1 text-sm text-gray-500">
                   Submitted by:
                   <span class="font-medium text-gray-700">
                     {{ selectedReport.employeeName || 'Unknown Employee' }}
                   </span>
                 </p>
+
                 <span
                   class="mt-2 inline-block rounded-full px-2.5 py-1 text-xs font-medium"
                   [ngClass]="getStatusClass(selectedReport.status)"
@@ -564,11 +596,13 @@ import { UserService } from '../../../services/userService.service';
                         <p class="font-medium text-gray-800">
                           {{ task.taskTitle || 'Staff Task' }}
                         </p>
+
                         <p
                           class="mt-2 whitespace-pre-wrap text-sm text-gray-600"
                         >
                           {{ task.workDescription || 'No work description.' }}
                         </p>
+
                         <p class="mt-2 text-xs text-gray-500">
                           Hours spent: {{ task.hoursSpent }}
                         </p>
@@ -598,9 +632,11 @@ import { UserService } from '../../../services/userService.service';
       <!-- REJECT CONFIRMATION -->
       @if (showRejectDialog) {
         <div
-          class="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4"
+          class="fixed inset-0 z-[1100] flex items-center justify-center overflow-y-auto bg-black/60 p-3 sm:p-4"
         >
-          <div class="w-full max-w-md rounded-xl bg-white p-5 shadow-xl">
+          <div
+            class="my-auto w-full max-w-md rounded-xl bg-white p-4 shadow-2xl sm:p-5"
+          >
             <div class="flex items-start gap-3">
               <div
                 class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-red-50 text-red-500"
@@ -628,16 +664,18 @@ import { UserService } from '../../../services/userService.service';
                 [value]="rejectRemarks"
                 (input)="rejectRemarks = $any($event.target).value"
                 placeholder="Explain why this report is rejected..."
-                class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-red-500"
+                class="w-full rounded-lg border border-gray-300 px-3 py-2 text-base outline-none focus:border-red-500 sm:text-sm"
               ></textarea>
             </div>
 
-            <div class="mt-5 flex justify-end gap-2">
+            <div
+              class="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end"
+            >
               <button
                 type="button"
                 (click)="closeReject()"
                 [disabled]="isReviewing"
-                class="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-600"
+                class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm text-gray-600 sm:w-auto"
               >
                 Cancel
               </button>
@@ -646,7 +684,7 @@ import { UserService } from '../../../services/userService.service';
                 type="button"
                 (click)="confirmReject()"
                 [disabled]="isReviewing || !rejectRemarks.trim()"
-                class="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+                class="w-full rounded-lg bg-red-600 px-4 py-2.5 text-sm font-medium text-white disabled:opacity-50 sm:w-auto"
               >
                 {{ isReviewing ? 'Rejecting...' : 'Confirm Reject' }}
               </button>
@@ -658,9 +696,11 @@ import { UserService } from '../../../services/userService.service';
       <!-- DELETE CONFIRMATION -->
       @if (showDeleteDialog) {
         <div
-          class="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4"
+          class="fixed inset-0 z-[1100] flex items-center justify-center overflow-y-auto bg-black/60 p-3 sm:p-4"
         >
-          <div class="w-full max-w-md rounded-xl bg-white p-5 shadow-xl">
+          <div
+            class="my-auto w-full max-w-md rounded-xl bg-white p-4 shadow-2xl sm:p-5"
+          >
             <div class="flex items-start gap-3">
               <div
                 class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-red-50 text-red-500"
@@ -672,6 +712,7 @@ import { UserService } from '../../../services/userService.service';
                 <h3 class="font-semibold text-gray-800">
                   Delete Daily Report?
                 </h3>
+
                 <p class="mt-2 text-sm text-gray-500">
                   Are you sure you want to delete this report for
                   <strong class="text-gray-700">
@@ -683,11 +724,13 @@ import { UserService } from '../../../services/userService.service';
               </div>
             </div>
 
-            <div class="mt-6 flex justify-end gap-2">
+            <div
+              class="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end"
+            >
               <button
                 type="button"
                 (click)="showDeleteDialog = false"
-                class="rounded-lg border border-gray-300 px-4 py-2 text-sm text-gray-600"
+                class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm text-gray-600 sm:w-auto"
               >
                 Cancel
               </button>
@@ -696,7 +739,7 @@ import { UserService } from '../../../services/userService.service';
                 type="button"
                 [disabled]="isDeleting"
                 (click)="confirmDelete()"
-                class="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+                class="w-full rounded-lg bg-red-600 px-4 py-2.5 text-sm font-medium text-white disabled:opacity-50 sm:w-auto"
               >
                 {{ isDeleting ? 'Deleting...' : 'Yes, Delete' }}
               </button>
@@ -708,7 +751,7 @@ import { UserService } from '../../../services/userService.service';
       <!-- SUCCESS MESSAGE -->
       @if (successMessage) {
         <div
-          class="fixed right-5 top-5 z-[70] rounded-lg bg-green-600 px-4 py-3 text-sm text-white shadow-lg"
+          class="fixed inset-x-3 top-3 z-[1200] rounded-lg bg-green-600 px-4 py-3 text-sm text-white shadow-lg sm:inset-x-auto sm:right-5 sm:top-5"
         >
           <i class="pi pi-check-circle mr-2"></i>
           {{ successMessage }}

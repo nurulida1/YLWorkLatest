@@ -1,3 +1,4 @@
+
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -11,7 +12,7 @@ namespace YLWorks.Model
         [Required]
         [MaxLength(50)]
         public string RequestType { get; set; } = "Hardware";
-        // Hardware, SiteMaterial, ITSupport
+        // Hardware, SiteMaterial, ITSupport, BugReport
 
         [Required]
         [MaxLength(150)]
@@ -84,6 +85,22 @@ namespace YLWorks.Model
         [ForeignKey(nameof(ResponsibleDepartmentId))]
         public Department? ResponsibleDepartment { get; set; }
 
+        // Bug Report Information
+        [MaxLength(100)]
+        public string? AffectedModule { get; set; }
+
+        [MaxLength(50)]
+        public string? BugCategory { get; set; }
+
+        [MaxLength(4000)]
+        public string? StepsToReproduce { get; set; }
+
+        [MaxLength(2000)]
+        public string? ExpectedResult { get; set; }
+
+        [MaxLength(2000)]
+        public string? ActualResult { get; set; }
+
         // Navigation
         public ICollection<HardwareRequestItem> Items { get; set; }
             = new List<HardwareRequestItem>();
@@ -142,22 +159,42 @@ namespace YLWorks.Model
         public string? Remarks { get; set; }
     }
 
+    // Create Request
     public class CreateHardwareRequestDto
     {
         public string RequestType { get; set; } = "Hardware";
+
         public string Subject { get; set; } = string.Empty;
+
         public string Description { get; set; } = string.Empty;
+
         public string Priority { get; set; } = "Normal";
 
+        // Project / Site
         public Guid? ProjectId { get; set; }
+
         public string? ProjectName { get; set; }
+
         public string? SiteName { get; set; }
 
         public string? Location { get; set; }
+
         public string? LocationDetails { get; set; }
 
         public DateTime? NeededBy { get; set; }
 
+        // Bug Report Information
+        public string? AffectedModule { get; set; }
+
+        public string? BugCategory { get; set; }
+
+        public string? StepsToReproduce { get; set; }
+
+        public string? ExpectedResult { get; set; }
+
+        public string? ActualResult { get; set; }
+
+        // Hardware / Site Material Items
         public List<CreateHardwareRequestItemDto> Items { get; set; }
             = new();
     }
@@ -165,14 +202,21 @@ namespace YLWorks.Model
     public class CreateHardwareRequestItemDto
     {
         public Guid? InventoryId { get; set; }
+
         public string? ItemName { get; set; }
+
         public string? ItemCode { get; set; }
+
         public string? Description { get; set; }
+
         public string? Unit { get; set; }
+
         public decimal RequestedQuantity { get; set; }
+
         public string? Remarks { get; set; }
     }
 
+    // Approve Request
     public class ApproveHardwareRequestDto
     {
         public string? Remarks { get; set; }
@@ -186,20 +230,25 @@ namespace YLWorks.Model
     public class ApproveHardwareRequestItemDto
     {
         public Guid RequestItemId { get; set; }
+
         public decimal ApprovedQuantity { get; set; }
+
         public string? Remarks { get; set; }
     }
 
+    // Reject Request
     public class RejectHardwareRequestDto
     {
         public string? Reason { get; set; }
     }
 
+    // Assign Request
     public class AssignHardwareRequestDto
     {
         public Guid AssignedToId { get; set; }
     }
 
+    // Issue Request
     public class IssueHardwareRequestDto
     {
         public List<IssueHardwareRequestItemDto> Items { get; set; }
@@ -209,13 +258,17 @@ namespace YLWorks.Model
     public class IssueHardwareRequestItemDto
     {
         public Guid RequestItemId { get; set; }
+
         public decimal IssuedQuantity { get; set; }
+
         public string? Remarks { get; set; }
     }
 
+    // Update Request Status
     public class UpdateHardwareRequestStatusDto
     {
         public string Status { get; set; } = string.Empty;
+
         public string? Remarks { get; set; }
     }
 }

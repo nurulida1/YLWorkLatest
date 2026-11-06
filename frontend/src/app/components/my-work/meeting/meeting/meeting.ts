@@ -59,24 +59,6 @@ interface CalendarDay {
     SelectModule,
   ],
   template: ` <div class="meeting-mobile lg:hidden">
-      <!-- Mobile header -->
-      <div class="mobile-header">
-        <div>
-          <div class="mobile-brand" [routerLink]="'/dashboard'">YL Works</div>
-          <div class="mobile-header-subtitle">Your work calendar</div>
-        </div>
-
-        <div class="mobile-header-actions">
-          <button type="button" class="mobile-icon-button">
-            <i class="pi pi-bell"></i>
-          </button>
-
-          <div class="mobile-avatar">
-            <i class="pi pi-user"></i>
-          </div>
-        </div>
-      </div>
-
       <div class="mobile-content">
         <!-- Page heading -->
         <div class="mobile-page-heading">
@@ -426,19 +408,43 @@ interface CalendarDay {
           </div>
         </div>
       </div>
-
-      <p-dialog
-        [(visible)]="dialogVisible"
-        [modal]="true"
-        [draggable]="false"
-        [resizable]="false"
-        styleClass="backdrop-blur-lg! w-[600px]! max-w-[90vw]!"
-        ><ng-template #headless>
-          <div class="flex flex-col gap-3 p-5">
+    </div>
+    <p-dialog
+      [(visible)]="dialogVisible"
+      [modal]="true"
+      [draggable]="false"
+      [resizable]="false"
+      [dismissableMask]="true"
+      [closeOnEscape]="true"
+      [breakpoints]="{
+        '1024px': '90vw',
+        '640px': '95vw',
+      }"
+      [style]="{
+        width: '600px',
+        'max-width': '95vw',
+        'max-height': '90dvh',
+      }"
+      [contentStyle]="{
+        padding: '0',
+        overflow: 'hidden',
+      }"
+      appendTo="body"
+      styleClass="meeting-dialog"
+    >
+      <ng-template #headless>
+        <div class="meeting-dialog-layout">
+          <!-- Fixed header -->
+          <div class="meeting-dialog-header">
             <strong class="text-lg">
               {{ isUpdate ? 'Edit Meeting' : 'New Meeting' }}
             </strong>
-            <div class="grid grid-cols-12 gap-5" [formGroup]="FG">
+          </div>
+
+          <!-- Scrollable content -->
+          <div class="meeting-dialog-body">
+            <div class="grid grid-cols-12 gap-4 sm:gap-5" [formGroup]="FG">
+              <!-- Meeting Title -->
               <div class="col-span-12 flex flex-col gap-1">
                 <div>Meeting Title</div>
                 <input
@@ -449,6 +455,8 @@ interface CalendarDay {
                   placeholder="e.g. Meeting HOD"
                 />
               </div>
+
+              <!-- Date -->
               <div class="col-span-6 flex flex-col gap-1">
                 <div>Date</div>
                 <p-datepicker
@@ -461,6 +469,8 @@ interface CalendarDay {
                   styleClass="w-full!"
                 ></p-datepicker>
               </div>
+
+              <!-- Time -->
               <div class="col-span-6 flex flex-col gap-1">
                 <div>Time</div>
                 <p-datepicker
@@ -476,6 +486,7 @@ interface CalendarDay {
                 ></p-datepicker>
               </div>
 
+              <!-- Meeting Method -->
               <div class="col-span-12 flex flex-col gap-1">
                 <div>Meeting Method</div>
                 <p-select
@@ -488,6 +499,8 @@ interface CalendarDay {
                   ]"
                 ></p-select>
               </div>
+
+              <!-- Location -->
               <div
                 class="col-span-12 flex flex-col gap-1"
                 *ngIf="FG.get('meetingMethod')?.value === 'face-to-face'"
@@ -501,20 +514,23 @@ interface CalendarDay {
                   placeholder="e.g. Meeting Room - Floor 2"
                 />
               </div>
+
+              <!-- Meeting URL -->
               <div
                 class="col-span-12 flex flex-col gap-1"
                 *ngIf="FG.get('meetingMethod')?.value === 'online'"
               >
-                <div>Meeting Url</div>
+                <div>Meeting URL</div>
                 <input
                   type="text"
                   pInputText
                   formControlName="meetingLink"
                   class="w-full"
-                  placeholder="e.g. https://zooom.com/meeting"
+                  placeholder="e.g. https://zoom.com/meeting"
                 />
               </div>
 
+              <!-- Participants -->
               <div class="col-span-12 flex flex-col gap-1">
                 <div>Add Participants</div>
 
@@ -525,20 +541,34 @@ interface CalendarDay {
                   [options]="userSelection || []"
                   [filter]="true"
                   [maxSelectedLabels]="2"
+                  filterBy="label,displayName"
                   selectedItemsLabel="{0} participants selected"
-                ></p-multiselect>
+                >
+                  <ng-template #item let-user>
+                    <div class="flex flex-col gap-1 py-1">
+                      <span class="font-medium">{{ user.label }}</span>
+                      <span
+                        class="text-xs text-gray-500"
+                        *ngIf="user.displayName"
+                      >
+                        {{ '@' }} {{ user.displayName }}
+                      </span>
+                    </div>
+                  </ng-template>
+                </p-multiselect>
 
                 <div class="flex flex-wrap gap-2 max-h-[80px] overflow-y-auto">
                   <ng-container *ngFor="let user of selectedUsers">
                     <div
                       class="py-1 px-3 rounded-full bg-blue-100 text-blue-700 tracking-wide text-sm whitespace-nowrap"
                     >
-                      {{ user.label }}
+                      {{ user.displayName || user.label }}
                     </div>
                   </ng-container>
                 </div>
               </div>
 
+              <!-- Description -->
               <div class="col-span-12 flex flex-col gap-1">
                 <div>Description</div>
                 <textarea
@@ -550,146 +580,164 @@ interface CalendarDay {
                 ></textarea>
               </div>
             </div>
+          </div>
+
+          <!-- Fixed footer -->
+          <div class="meeting-dialog-footer">
+            <p-button
+              label="Cancel"
+              severity="secondary"
+              [text]="true"
+              (onClick)="CloseDialog()"
+            ></p-button>
+
+            <p-button
+              [label]="isUpdate ? 'Update' : 'Save'"
+              severity="info"
+              styleClass="tracking-wide! bg-blue-700! border-none! rounded-sm! py-2! px-5!"
+              (onClick)="SaveMeeting()"
+            ></p-button>
+          </div>
+        </div>
+      </ng-template>
+    </p-dialog>
+
+    <p-dialog
+      [(visible)]="cancelDialogVisible"
+      [modal]="true"
+      [draggable]="false"
+      [resizable]="false"
+      [closable]="false"
+      [dismissableMask]="true"
+      [breakpoints]="{
+        '640px': '95vw',
+      }"
+      [style]="{
+        width: '420px',
+        'max-width': '95vw',
+      }"
+      appendTo="body"
+      styleClass="cancel-dialog"
+    >
+      <ng-template #headless>
+        <div class="p-6">
+          <div class="flex justify-center mb-4">
+            <div
+              class="w-14 h-14 rounded-full bg-red-100 flex items-center justify-center"
+            >
+              <i class="pi pi-exclamation-triangle text-red-500 text-2xl!"></i>
+            </div>
+          </div>
+
+          <div class="text-center">
+            <div class="text-lg font-semibold text-gray-800">
+              Cancel Meeting?
+            </div>
+
+            <div class="mt-2 text-sm text-gray-500">
+              Are you sure you want to cancel this meeting?
+            </div>
 
             <div
-              class="flex flex-row items-center gap-2 border-t border-gray-200 pt-3 justify-end"
+              *ngIf="meetingToCancel"
+              class="mt-3 px-4 py-3 bg-gray-50 rounded-md text-sm font-medium text-gray-700"
             >
-              <p-button
-                label="Cancel"
-                severity="secondary"
-                [text]="true"
-                (onClick)="CloseDialog()"
-              ></p-button>
-              <p-button
-                [label]="isUpdate ? 'Update' : 'Save'"
-                severity="info"
-                styleClass="tracking-wide! bg-blue-700! border-none! rounded-sm! py-2! px-5!"
-                (onClick)="SaveMeeting()"
-              ></p-button>
+              {{ meetingToCancel.title }}
             </div>
           </div>
-        </ng-template>
-      </p-dialog>
 
-      <p-dialog
-        [(visible)]="cancelDialogVisible"
-        [modal]="true"
-        [draggable]="false"
-        [resizable]="false"
-        [closable]="false"
-        [dismissableMask]="true"
-        styleClass="cancel-dialog"
-      >
-        <ng-template #headless>
-          <div class="p-6">
-            <div class="flex justify-center mb-4">
+          <div class="flex justify-center gap-2 mt-6">
+            <p-button
+              label="No, Keep It"
+              severity="secondary"
+              [text]="true"
+              (onClick)="CloseCancelDialog()"
+            ></p-button>
+
+            <p-button
+              label="Yes, Cancel"
+              severity="danger"
+              icon="pi pi-times"
+              styleClass="rounded-sm!"
+              (onClick)="ConfirmCancelMeeting()"
+            ></p-button>
+          </div>
+        </div>
+      </ng-template>
+    </p-dialog>
+
+    <p-dialog
+      [(visible)]="moreMeetingsDialogVisible"
+      [modal]="true"
+      [draggable]="false"
+      [resizable]="false"
+      [dismissableMask]="true"
+      [closeOnEscape]="true"
+      [breakpoints]="{
+        '1024px': '80vw',
+        '640px': '95vw',
+      }"
+      [style]="{
+        width: '60%',
+        'max-width': '95vw',
+        'max-height': '90dvh',
+      }"
+      [contentStyle]="{
+        'max-height': '80dvh',
+        'overflow-y': 'auto',
+      }"
+      appendTo="body"
+    >
+      <ng-template #headless>
+        <div class="flex flex-col">
+          <div class="px-6 pt-5 pb-4 border-b border-gray-100">
+            <div class="flex items-start justify-between gap-4">
+              <div>
+                <div class="text-lg font-semibold text-gray-800">
+                  {{ selectedDay?.fullDate | date: 'EEEE, d MMMM yyyy' }}
+                </div>
+
+                <div class="text-sm text-gray-400 mt-1">
+                  {{ selectedDay?.meetings?.length || 0 }}
+                  {{
+                    selectedDay?.meetings?.length === 1 ? 'meeting' : 'meetings'
+                  }}
+                </div>
+              </div>
+
               <div
-                class="w-14 h-14 rounded-full bg-red-100 flex items-center justify-center"
+                class="w-9 h-9 rounded-full bg-blue-50 flex items-center justify-center shrink-0"
               >
-                <i
-                  class="pi pi-exclamation-triangle text-red-500 text-2xl!"
-                ></i>
+                <i class="pi pi-calendar text-blue-600"></i>
               </div>
-            </div>
-
-            <div class="text-center">
-              <div class="text-lg font-semibold text-gray-800">
-                Cancel Meeting?
-              </div>
-
-              <div class="mt-2 text-sm text-gray-500">
-                Are you sure you want to cancel this meeting?
-              </div>
-
-              <div
-                *ngIf="meetingToCancel"
-                class="mt-3 px-4 py-3 bg-gray-50 rounded-md text-sm font-medium text-gray-700"
-              >
-                {{ meetingToCancel.title }}
-              </div>
-            </div>
-
-            <div class="flex justify-center gap-2 mt-6">
-              <p-button
-                label="No, Keep It"
-                severity="secondary"
-                [text]="true"
-                (onClick)="CloseCancelDialog()"
-              ></p-button>
-
-              <p-button
-                label="Yes, Cancel"
-                severity="danger"
-                icon="pi pi-times"
-                styleClass="rounded-sm!"
-                (onClick)="ConfirmCancelMeeting()"
-              ></p-button>
             </div>
           </div>
-        </ng-template>
-      </p-dialog>
 
-      <p-dialog
-        [(visible)]="moreMeetingsDialogVisible"
-        [modal]="true"
-        [draggable]="false"
-        [resizable]="false"
-        [dismissableMask]="true"
-        [closeOnEscape]="true"
-        styleClass="w-[60%]! lg:w-[40%]!"
-      >
-        <ng-template #headless>
-          <div class="flex flex-col">
-            <div class="px-6 pt-5 pb-4 border-b border-gray-100">
-              <div class="flex items-start justify-between gap-4">
-                <div>
-                  <div class="text-lg font-semibold text-gray-800">
-                    {{ selectedDay?.fullDate | date: 'EEEE, d MMMM yyyy' }}
-                  </div>
+          <div class="px-6 py-5">
+            <div
+              *ngIf="!selectedDay?.meetings?.length"
+              class="flex flex-col items-center justify-center py-10 text-center"
+            >
+              <div
+                class="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mb-3"
+              >
+                <i class="pi pi-calendar-times text-gray-400 text-lg"></i>
+              </div>
 
-                  <div class="text-sm text-gray-400 mt-1">
-                    {{ selectedDay?.meetings?.length || 0 }}
-                    {{
-                      selectedDay?.meetings?.length === 1
-                        ? 'meeting'
-                        : 'meetings'
-                    }}
-                  </div>
-                </div>
+              <div class="text-sm font-medium text-gray-600">No meetings</div>
 
-                <div
-                  class="w-9 h-9 rounded-full bg-blue-50 flex items-center justify-center shrink-0"
-                >
-                  <i class="pi pi-calendar text-blue-600"></i>
-                </div>
+              <div class="text-xs text-gray-400 mt-1">
+                There are no meetings scheduled for this day.
               </div>
             </div>
 
-            <div class="px-6 py-5">
+            <div
+              *ngIf="selectedDay?.meetings?.length"
+              class="flex flex-col gap-3"
+            >
               <div
-                *ngIf="!selectedDay?.meetings?.length"
-                class="flex flex-col items-center justify-center py-10 text-center"
-              >
-                <div
-                  class="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mb-3"
-                >
-                  <i class="pi pi-calendar-times text-gray-400 text-lg"></i>
-                </div>
-
-                <div class="text-sm font-medium text-gray-600">No meetings</div>
-
-                <div class="text-xs text-gray-400 mt-1">
-                  There are no meetings scheduled for this day.
-                </div>
-              </div>
-
-              <div
-                *ngIf="selectedDay?.meetings?.length"
-                class="flex flex-col gap-3"
-              >
-                <div
-                  *ngFor="let meeting of selectedDay?.meetings"
-                  class="
+                *ngFor="let meeting of selectedDay?.meetings"
+                class="
               group
               relative
               p-4
@@ -703,11 +751,11 @@ interface CalendarDay {
               hover:border-gray-200
               hover:shadow-md
             "
-                  [class.bg-gray-50]="isMeetingPast(meeting)"
-                  [class.opacity-70]="isMeetingPast(meeting)"
-                >
-                  <div
-                    class="
+                [class.bg-gray-50]="isMeetingPast(meeting)"
+                [class.opacity-70]="isMeetingPast(meeting)"
+              >
+                <div
+                  class="
                 absolute
                 left-0
                 top-3
@@ -715,73 +763,73 @@ interface CalendarDay {
                 w-1
                 rounded-r-full
               "
-                    [ngClass]="{
-                      'bg-gray-300': isMeetingPast(meeting),
-                      'bg-blue-500': isMeetingNow(meeting),
-                      'bg-indigo-500':
-                        !isMeetingPast(meeting) && !isMeetingNow(meeting),
-                    }"
-                  ></div>
+                  [ngClass]="{
+                    'bg-gray-300': isMeetingPast(meeting),
+                    'bg-blue-500': isMeetingNow(meeting),
+                    'bg-indigo-500':
+                      !isMeetingPast(meeting) && !isMeetingNow(meeting),
+                  }"
+                ></div>
 
-                  <div class="flex items-start justify-between gap-4 pl-2">
-                    <div class="min-w-0">
-                      <div class="flex items-center gap-2 mb-1">
-                        <i
-                          class="pi pi-clock text-xs!"
-                          [ngClass]="{
-                            'text-gray-400': isMeetingPast(meeting),
-                            'text-blue-500': isMeetingNow(meeting),
-                            'text-indigo-500':
-                              !isMeetingPast(meeting) && !isMeetingNow(meeting),
-                          }"
-                        ></i>
-
-                        <span
-                          class="text-xs font-semibold"
-                          [ngClass]="{
-                            'text-gray-400': isMeetingPast(meeting),
-                            'text-gray-600': !isMeetingPast(meeting),
-                          }"
-                        >
-                          {{ formatMeetingTime(meeting.meetingTime) }}
-                        </span>
-                      </div>
-
-                      <div
-                        class="font-semibold truncate"
+                <div class="flex items-start justify-between gap-4 pl-2">
+                  <div class="min-w-0">
+                    <div class="flex items-center gap-2 mb-1">
+                      <i
+                        class="pi pi-clock text-xs!"
                         [ngClass]="{
-                          'text-gray-400 line-through': isMeetingPast(meeting),
-                          'text-gray-800': !isMeetingPast(meeting),
+                          'text-gray-400': isMeetingPast(meeting),
+                          'text-blue-500': isMeetingNow(meeting),
+                          'text-indigo-500':
+                            !isMeetingPast(meeting) && !isMeetingNow(meeting),
+                        }"
+                      ></i>
+
+                      <span
+                        class="text-xs font-semibold"
+                        [ngClass]="{
+                          'text-gray-400': isMeetingPast(meeting),
+                          'text-gray-600': !isMeetingPast(meeting),
                         }"
                       >
-                        {{ meeting.title }}
-                      </div>
-
-                      <div
-                        *ngIf="meeting.location || meeting.meetingLink"
-                        class="flex items-center gap-2 mt-2 text-sm text-gray-400"
-                      >
-                        <i
-                          class="pi"
-                          [ngClass]="
-                            meeting.meetingLink ? 'pi-video' : 'pi-map-marker'
-                          "
-                        ></i>
-
-                        <span class="truncate">
-                          {{
-                            meeting.meetingLink
-                              ? 'Online Meeting'
-                              : meeting.location
-                          }}
-                        </span>
-                      </div>
+                        {{ formatMeetingTime(meeting.meetingTime) }}
+                      </span>
                     </div>
 
-                    <div class="shrink-0">
-                      <span
-                        *ngIf="isMeetingPast(meeting)"
-                        class="
+                    <div
+                      class="font-semibold truncate"
+                      [ngClass]="{
+                        'text-gray-400 line-through': isMeetingPast(meeting),
+                        'text-gray-800': !isMeetingPast(meeting),
+                      }"
+                    >
+                      {{ meeting.title }}
+                    </div>
+
+                    <div
+                      *ngIf="meeting.location || meeting.meetingLink"
+                      class="flex items-center gap-2 mt-2 text-sm text-gray-400"
+                    >
+                      <i
+                        class="pi"
+                        [ngClass]="
+                          meeting.meetingLink ? 'pi-video' : 'pi-map-marker'
+                        "
+                      ></i>
+
+                      <span class="truncate">
+                        {{
+                          meeting.meetingLink
+                            ? 'Online Meeting'
+                            : meeting.location
+                        }}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div class="shrink-0">
+                    <span
+                      *ngIf="isMeetingPast(meeting)"
+                      class="
                     inline-flex
                     items-center
                     gap-1
@@ -793,13 +841,13 @@ interface CalendarDay {
                     text-[10px]
                     font-semibold
                   "
-                      >
-                        Completed
-                      </span>
+                    >
+                      Completed
+                    </span>
 
-                      <span
-                        *ngIf="isMeetingNow(meeting)"
-                        class="
+                    <span
+                      *ngIf="isMeetingNow(meeting)"
+                      class="
                     inline-flex
                     items-center
                     gap-1
@@ -811,18 +859,14 @@ interface CalendarDay {
                     text-[10px]
                     font-semibold
                   "
-                      >
-                        <span
-                          class="w-1.5 h-1.5 rounded-full bg-blue-500"
-                        ></span>
-                        Now
-                      </span>
+                    >
+                      <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                      Now
+                    </span>
 
-                      <span
-                        *ngIf="
-                          !isMeetingPast(meeting) && !isMeetingNow(meeting)
-                        "
-                        class="
+                    <span
+                      *ngIf="!isMeetingPast(meeting) && !isMeetingNow(meeting)"
+                      class="
                     inline-flex
                     items-center
                     gap-1
@@ -834,18 +878,17 @@ interface CalendarDay {
                     text-[10px]
                     font-semibold
                   "
-                      >
-                        Upcoming
-                      </span>
-                    </div>
+                    >
+                      Upcoming
+                    </span>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-        </ng-template>
-      </p-dialog>
-    </div>`,
+        </div>
+      </ng-template>
+    </p-dialog>`,
   styleUrl: './meeting.less',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -954,11 +997,16 @@ export class Meeting implements OnInit, OnDestroy {
   OpenDialog(): void {
     this.isUpdate = false;
 
-    this.FG.reset();
-
-    this.FG.patchValue({
-      reminderMinutes: 30,
+    this.FG.reset({
+      id: null,
+      title: null,
+      description: null,
+      meetingDate: null,
+      meetingTime: null,
+      location: null,
+      meetingLink: null,
       meetingMethod: 'face-to-face',
+      reminderMinutes: 30,
       participantIds: [],
     });
 
@@ -967,6 +1015,8 @@ export class Meeting implements OnInit, OnDestroy {
     this.dialogVisible = true;
 
     this.getUserSelection();
+
+    this.cdr.markForCheck();
   }
 
   getUserSelection() {
@@ -978,6 +1028,7 @@ export class Meeting implements OnInit, OnDestroy {
           this.userSelection = res.users.map((user: any) => ({
             label: user.name,
             value: user.id,
+            displayName: user.displayName,
           }));
         },
       });
@@ -1016,12 +1067,28 @@ export class Meeting implements OnInit, OnDestroy {
       : this.meetingService.Create(request);
 
     request$.pipe(takeUntil(this.ngUnsubscribe)).subscribe({
-      next: (res) => {
+      next: (response) => {
+        const res = response.data;
+
+        if (!res) {
+          console.error('Meeting response does not contain data:', response);
+
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Error',
+            detail:
+              'Meeting was saved, but the meeting details could not be retrieved.',
+          });
+
+          return;
+        }
+
         const currentData = this.PagingSignal();
+        const existingMeetings = currentData.data || [];
 
         if (this.isUpdate) {
-          const updatedData = (currentData.data || []).map(
-            (meeting: MeetingDto) => (meeting.id === res.id ? res : meeting),
+          const updatedData = existingMeetings.map((meeting: MeetingDto) =>
+            meeting.id === res.id ? res : meeting,
           );
 
           this.PagingSignal.set({
@@ -1037,7 +1104,12 @@ export class Meeting implements OnInit, OnDestroy {
         } else {
           this.PagingSignal.set({
             ...currentData,
-            data: [res, ...(currentData.data || [])],
+            data: [
+              res,
+              ...existingMeetings.filter(
+                (meeting: MeetingDto) => meeting.id !== res.id,
+              ),
+            ],
             totalElements: (currentData.totalElements || 0) + 1,
           });
 
@@ -1058,15 +1130,14 @@ export class Meeting implements OnInit, OnDestroy {
             savedMeetingDate.getMonth(),
             1,
           );
+
+          this.mobileSelectedDate = new Date(
+            savedMeetingDate.getFullYear(),
+            savedMeetingDate.getMonth(),
+            savedMeetingDate.getDate(),
+          );
         }
 
-        this.mobileSelectedDate = new Date(
-          savedMeetingDate.getFullYear(),
-          savedMeetingDate.getMonth(),
-          savedMeetingDate.getDate(),
-        );
-
-        // Refresh calendar using the latest data.
         this.generateCalendar();
         this.cdr.markForCheck();
 
@@ -1087,7 +1158,6 @@ export class Meeting implements OnInit, OnDestroy {
 
         this.cdr.markForCheck();
       },
-
       error: (err) => {
         console.error(
           this.isUpdate ? 'Error updating meeting:' : 'Error saving meeting:',

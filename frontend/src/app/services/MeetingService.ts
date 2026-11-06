@@ -6,6 +6,7 @@ import { Observable, retry, catchError, of, throwError } from 'rxjs';
 import {
   CreateMeetingRequest,
   MeetingDto,
+  MeetingSaveResponse,
   UpdateMeetingRequest,
 } from '../models/Meeting';
 import {
@@ -69,15 +70,15 @@ export class MeetingService {
     );
   }
 
-  Create(request: CreateMeetingRequest): Observable<MeetingDto> {
+  Create(request: CreateMeetingRequest): Observable<MeetingSaveResponse> {
     return this.http
-      .post<MeetingDto>(`${this.url}/Create`, request) // no { Data: ... }
+      .post<MeetingSaveResponse>(`${this.url}/Create`, request)
       .pipe(retry(1), catchError(this.handleError('Create')));
   }
 
-  Update(request: UpdateMeetingRequest): Observable<MeetingDto> {
+  Update(request: UpdateMeetingRequest): Observable<MeetingSaveResponse> {
     return this.http
-      .put<MeetingDto>(`${this.url}/Update`, request)
+      .put<MeetingSaveResponse>(`${this.url}/Update`, request)
       .pipe(retry(1), catchError(this.handleError('Update')));
   }
 

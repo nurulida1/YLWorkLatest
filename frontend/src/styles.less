@@ -1,4 +1,4 @@
-/* You can add global styles to this file, and also import other style files */
+/* Global Styles */
 @import "../node_modules/primeicons/primeicons.css";
 @import "./themes/dark-mode.less";
 
@@ -6,6 +6,10 @@ html,
 body {
   font-family: "Inter", sans-serif;
   font-size: 13px;
+  width: 100%;
+  max-width: 100%;
+  min-height: 100%;
+  overflow-x: hidden;
 }
 
 body {
@@ -13,9 +17,43 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
-/* Global scrollbar */
+
+/* Prevent iOS Safari / Installed PWA Auto Zoom */
+input,
+textarea,
+select,
+button,
+.p-inputtext,
+.p-inputnumber-input,
+.p-select,
+.p-dropdown,
+.p-multiselect,
+.p-datepicker-input,
+.p-password-input,
+.p-textarea,
+.p-inputmask {
+  font-size: 13px !important;
+}
+
+/* Prevent form controls from overflowing */
+input,
+textarea,
+select {
+  max-width: 100%;
+}
+
+/* Better touch interaction on mobile */
+input,
+textarea,
+select,
+button {
+  touch-action: manipulation;
+}
+
+/* Global Scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {

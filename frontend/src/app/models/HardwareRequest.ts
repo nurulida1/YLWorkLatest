@@ -1,4 +1,8 @@
-export type HardwareRequestType = 'Hardware' | 'SiteMaterial' | 'ITSupport';
+export type HardwareRequestType =
+  | 'Hardware'
+  | 'SiteMaterial'
+  | 'ITSupport'
+  | 'BugReport';
 
 export type HardwareRequestPriority = 'Low' | 'Normal' | 'High' | 'Urgent';
 
@@ -21,6 +25,19 @@ export type HardwareRequestItemStatus =
   | 'Cancelled';
 
 // =====================================================
+// BUG REPORT OPTIONS
+// =====================================================
+
+export type BugReportCategory =
+  | 'Functional'
+  | 'UI'
+  | 'Performance'
+  | 'Validation'
+  | 'Data'
+  | 'Security'
+  | 'Other';
+
+// =====================================================
 // CREATE REQUEST
 // =====================================================
 
@@ -38,6 +55,13 @@ export interface CreateHardwareRequest {
   locationDetails?: string | null;
 
   neededBy?: string | null;
+
+  // Bug Report fields
+  affectedModule?: string | null;
+  bugCategory?: BugReportCategory | string | null;
+  stepsToReproduce?: string | null;
+  expectedResult?: string | null;
+  actualResult?: string | null;
 
   items: CreateHardwareRequestItem[];
 }
@@ -111,6 +135,13 @@ export interface HardwareRequestDto {
   adminRemarks?: string | null;
   rejectionReason?: string | null;
 
+  // Bug Report fields
+  affectedModule?: string | null;
+  bugCategory?: BugReportCategory | string | null;
+  stepsToReproduce?: string | null;
+  expectedResult?: string | null;
+  actualResult?: string | null;
+
   items: HardwareRequestItem[];
 }
 
@@ -121,11 +152,7 @@ export interface HardwareRequestDto {
 export interface ApproveHardwareRequest {
   remarks?: string | null;
   assignedToId?: string | null;
-  items: {
-    requestItemId: string;
-    approvedQuantity: number;
-    remarks?: string | null;
-  }[];
+  items: ApproveHardwareRequestItem[];
 }
 
 export interface ApproveHardwareRequestItem {

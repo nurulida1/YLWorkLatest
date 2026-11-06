@@ -15,6 +15,8 @@ import {
 
 import { CommonModule } from '@angular/common';
 import { MessageService } from 'primeng/api';
+import { DatePickerModule } from 'primeng/datepicker';
+import { SelectModule } from 'primeng/select';
 
 import {
   HardwareRequestType,
@@ -26,8 +28,7 @@ import {
 import { HardwareRequestService } from '../../../../services/HardwareRequestService';
 import { InventoryService } from '../../../../services/InventoryService';
 import { InventoryDropdownItem } from '../../../../models/Inventory';
-import { DatePickerModule } from 'primeng/datepicker';
-import { SelectModule } from 'primeng/select';
+import { ActivatedRoute } from '@angular/router';
 
 @Component({
   selector: 'app-hardware-request',
@@ -40,8 +41,8 @@ import { SelectModule } from 'primeng/select';
         <div>
           <h2>Hardware / IT Support</h2>
           <p>
-            Submit equipment requests, site material requests or technical
-            support tickets.
+            Submit equipment requests, site material requests, technical support
+            tickets or report an OfficeHub bug.
           </p>
         </div>
       </div>
@@ -132,8 +133,7 @@ import { SelectModule } from 'primeng/select';
                     placeholder="Select Priority"
                     appendTo="body"
                     styleClass="w-full"
-                  >
-                  </p-select>
+                  />
                 </div>
 
                 <!-- NEEDED BY -->
@@ -254,7 +254,7 @@ import { SelectModule } from 'primeng/select';
                             optionValue="id"
                             placeholder="-- Select Inventory or Enter Manually --"
                             [disabled]="inventoryLoading"
-                            [showClear]="form.get('inventoryId')?.value"
+                            [showClear]="!!item.get('inventoryId')?.value"
                             [filter]="true"
                             filterBy="itemName,itemCode"
                             appendTo="body"
@@ -263,13 +263,14 @@ import { SelectModule } from 'primeng/select';
                           >
                             <ng-template let-inventory pTemplate="item">
                               <div class="flex flex-col">
-                                <span class="font-medium">{{
-                                  inventory.itemName
-                                }}</span>
+                                <span class="font-medium">
+                                  {{ inventory.itemName }}
+                                </span>
+
                                 @if (inventory.itemCode) {
-                                  <small class="text-gray-500">{{
-                                    inventory.itemCode
-                                  }}</small>
+                                  <small class="text-gray-500">
+                                    {{ inventory.itemCode }}
+                                  </small>
                                 }
                               </div>
                             </ng-template>
@@ -367,7 +368,7 @@ import { SelectModule } from 'primeng/select';
                   }
                 </div>
 
-                <!-- STICKY ADD BUTTON -->
+                <!-- ADD ITEM -->
                 <div class="add-item-sticky">
                   <button
                     type="button"
@@ -391,6 +392,130 @@ import { SelectModule } from 'primeng/select';
                   the affected computer, software, network or device so the IT
                   team can investigate.
                 </p>
+              </div>
+            }
+
+            <!-- BUG REPORT INFORMATION -->
+            @if (isBugReport) {
+              <div class="form-section">
+                <h4>Bug Report Details</h4>
+
+                <p class="section-description">
+                  Help us understand what went wrong so our development team can
+                  investigate.
+                </p>
+
+                <div class="form-grid">
+                  <!-- AFFECTED MODULE -->
+                  <div class="form-field">
+                    <label>Module Affected <span>*</span></label>
+
+                    <p-select
+                      formControlName="affectedModule"
+                      [options]="affectedModuleOptions"
+                      optionLabel="label"
+                      optionValue="value"
+                      placeholder="Select Module"
+                      [showClear]="form.get('affectedModule')?.value"
+                      styleClass="w-full"
+                      appendTo="body"
+                    ></p-select>
+
+                    @if (
+                      form.get('affectedModule')?.touched &&
+                      form.get('affectedModule')?.invalid
+                    ) {
+                      <small class="error-text">
+                        Please select the affected module.
+                      </small>
+                    }
+                  </div>
+
+                  <!-- BUG CATEGORY -->
+                  <div class="form-field">
+                    <label>Issue Category <span>*</span></label>
+
+                    <p-select
+                      formControlName="bugCategory"
+                      [options]="bugCategoryOptions"
+                      optionLabel="label"
+                      optionValue="value"
+                      placeholder="Select Category"
+                      [showClear]="form.get('bugCategory')?.value"
+                      styleClass="w-full"
+                      appendTo="body"
+                    ></p-select>
+
+                    @if (
+                      form.get('bugCategory')?.touched &&
+                      form.get('bugCategory')?.invalid
+                    ) {
+                      <small class="error-text">
+                        Please select the issue category.
+                      </small>
+                    }
+                  </div>
+
+                  <!-- STEPS TO REPRODUCE -->
+                  <div class="form-field full-width">
+                    <label>Steps to Reproduce <span>*</span></label>
+
+                    <textarea
+                      formControlName="stepsToReproduce"
+                      rows="3"
+                      placeholder="1. Open the module&#10;2. Click the button&#10;3. Describe what happens..."
+                    ></textarea>
+
+                    @if (
+                      form.get('stepsToReproduce')?.touched &&
+                      form.get('stepsToReproduce')?.invalid
+                    ) {
+                      <small class="error-text">
+                        Please provide the steps to reproduce the issue.
+                      </small>
+                    }
+                  </div>
+
+                  <!-- EXPECTED RESULT -->
+                  <div class="form-field full-width">
+                    <label>Expected Result <span>*</span></label>
+
+                    <textarea
+                      formControlName="expectedResult"
+                      rows="2"
+                      placeholder="What should happen?"
+                    ></textarea>
+
+                    @if (
+                      form.get('expectedResult')?.touched &&
+                      form.get('expectedResult')?.invalid
+                    ) {
+                      <small class="error-text">
+                        Please describe the expected result.
+                      </small>
+                    }
+                  </div>
+
+                  <!-- ACTUAL RESULT -->
+                  <div class="form-field full-width">
+                    <label>Actual Result <span>*</span></label>
+
+                    <textarea
+                      formControlName="actualResult"
+                      rows="2"
+                      placeholder="What actually happened?"
+                    ></textarea>
+
+                    @if (
+                      form.get('actualResult')?.touched &&
+                      form.get('actualResult')?.invalid
+                    ) {
+                      <small class="error-text">
+                        Please describe the actual result.
+                      </small>
+                    }
+                  </div>
+                </div>
               </div>
             }
 
@@ -464,6 +589,46 @@ import { SelectModule } from 'primeng/select';
                     {{ request.description }}
                   </p>
 
+                  <!-- BUG REPORT SUMMARY -->
+                  @if (request.requestType === 'BugReport') {
+                    <div class="request-meta">
+                      @if (request.affectedModule) {
+                        <span>
+                          <strong>Module:</strong>
+                          {{ request.affectedModule }}
+                        </span>
+                      }
+
+                      @if (request.bugCategory) {
+                        <span>
+                          <strong>Category:</strong>
+                          {{ getBugCategoryLabel(request.bugCategory) }}
+                        </span>
+                      }
+                    </div>
+
+                    @if (request.stepsToReproduce) {
+                      <div class="remarks-box">
+                        <strong>Steps to Reproduce</strong>
+                        <p>{{ request.stepsToReproduce }}</p>
+                      </div>
+                    }
+
+                    @if (request.expectedResult) {
+                      <div class="remarks-box">
+                        <strong>Expected Result</strong>
+                        <p>{{ request.expectedResult }}</p>
+                      </div>
+                    }
+
+                    @if (request.actualResult) {
+                      <div class="remarks-box">
+                        <strong>Actual Result</strong>
+                        <p>{{ request.actualResult }}</p>
+                      </div>
+                    }
+                  }
+
                   <div class="request-meta">
                     <span>
                       <strong>Priority:</strong>
@@ -492,15 +657,13 @@ import { SelectModule } from 'primeng/select';
                     }
                   </div>
 
-                  @if (request.items.length) {
+                  @if (request.items?.length) {
                     <div class="request-items">
                       <strong>Items:</strong>
 
                       @for (item of request.items; track item.id) {
                         <div class="request-item-line">
-                          <span>
-                            {{ item.itemName }}
-                          </span>
+                          <span>{{ item.itemName }}</span>
 
                           <span>
                             {{ item.issuedQuantity }} /
@@ -561,14 +724,40 @@ export class HardwareRequest implements OnInit {
   private hardwareRequestService = inject(HardwareRequestService);
   private messageService = inject(MessageService);
   private inventoryService = inject(InventoryService);
+  private readonly route = inject(ActivatedRoute);
 
-  loading = false;
-  submitting = false;
+  loading: boolean = false;
+  submitting: boolean = false;
 
-  inventoryLoading = false;
+  inventoryLoading: boolean = false;
   inventoryItems: InventoryDropdownItem[] = [];
 
   requests: HardwareRequestDto[] = [];
+
+  affectedModuleOptions = [
+    { label: 'Dashboard', value: 'Dashboard' },
+    { label: 'User Management', value: 'User Management' },
+    { label: 'Leave Management', value: 'Leave Management' },
+    { label: 'Claims', value: 'Claims' },
+    { label: 'Meetings', value: 'Meetings' },
+    { label: 'Projects', value: 'Projects' },
+    { label: 'Inventory', value: 'Inventory' },
+    { label: 'Announcements', value: 'Announcements' },
+    { label: 'Other', value: 'Other' },
+  ];
+
+  bugCategoryOptions = [
+    { label: 'Feature Not Working', value: 'Functional' },
+    { label: 'UI / Display Issue', value: 'Display' },
+    { label: 'Performance Issue', value: 'Performance' },
+    { label: 'Login / Permission Issue', value: 'Access' },
+    { label: 'Incorrect Data', value: 'Data' },
+    { label: 'Other', value: 'Other' },
+  ];
+
+  // =====================================================
+  // REQUEST TYPES
+  // =====================================================
 
   requestTypes: {
     label: string;
@@ -589,6 +778,12 @@ export class HardwareRequest implements OnInit {
       label: 'IT Support',
       value: 'ITSupport',
       description: 'Report computer, network, software or technical issues.',
+    },
+    {
+      label: 'Bug Report',
+      value: 'BugReport',
+      description:
+        'Report errors, broken features or unexpected behaviour in OfficeHub.',
     },
   ];
 
@@ -614,7 +809,14 @@ export class HardwareRequest implements OnInit {
     location: [''],
     locationDetails: [''],
 
-    neededBy: [''],
+    neededBy: [null as Date | null],
+
+    // Bug Report fields
+    affectedModule: [''],
+    bugCategory: [''],
+    stepsToReproduce: [''],
+    expectedResult: [''],
+    actualResult: [''],
 
     items: this.fb.array([]),
   });
@@ -624,10 +826,24 @@ export class HardwareRequest implements OnInit {
   // =====================================================
 
   ngOnInit(): void {
+    this.route.queryParamMap.subscribe((params) => {
+      const type = params.get('type');
+
+      if (type === 'BugReport') {
+        this.form.patchValue({
+          requestType: 'BugReport',
+        });
+
+        this.onRequestTypeChange();
+      }
+    });
+
     this.loadMyRequests();
     this.loadInventoryItems();
 
-    if (this.showItems) {
+    this.updateConditionalValidators();
+
+    if (this.showItems && this.items.length === 0) {
       this.addItem();
     }
   }
@@ -685,10 +901,50 @@ export class HardwareRequest implements OnInit {
     return this.requestType === 'SiteMaterial';
   }
 
+  get isBugReport(): boolean {
+    return this.requestType === 'BugReport';
+  }
+
   get showItems(): boolean {
     return (
       this.requestType === 'Hardware' || this.requestType === 'SiteMaterial'
     );
+  }
+
+  // =====================================================
+  // CONDITIONAL VALIDATORS
+  // =====================================================
+
+  private updateConditionalValidators(): void {
+    const bugReportFields = [
+      'affectedModule',
+      'bugCategory',
+      'stepsToReproduce',
+      'expectedResult',
+      'actualResult',
+    ];
+
+    for (const fieldName of bugReportFields) {
+      const control = this.form.get(fieldName);
+
+      if (!control) {
+        continue;
+      }
+
+      if (this.isBugReport) {
+        control.setValidators([
+          Validators.required,
+          Validators.maxLength(fieldName === 'stepsToReproduce' ? 4000 : 2000),
+        ]);
+      } else {
+        control.clearValidators();
+        control.setValue('');
+      }
+
+      control.updateValueAndValidity({
+        emitEvent: false,
+      });
+    }
   }
 
   // =====================================================
@@ -718,13 +974,16 @@ export class HardwareRequest implements OnInit {
   // =====================================================
 
   addItem(): void {
+    if (!this.showItems) {
+      return;
+    }
+
     this.items.push(this.createItemForm());
 
     this.cdr.detectChanges();
 
     setTimeout(() => {
       const itemCards = document.querySelectorAll('.item-card');
-
       const lastItem = itemCards[itemCards.length - 1];
 
       lastItem?.scrollIntoView({
@@ -763,13 +1022,12 @@ export class HardwareRequest implements OnInit {
 
     const inventoryId = itemGroup.get('inventoryId')?.value;
 
-    // User wants to enter a custom item
+    // User wants to enter a custom item.
     if (!inventoryId) {
       itemGroup.patchValue({
         inventoryId: null,
       });
 
-      // Allow manual editing
       this.cdr.markForCheck();
       return;
     }
@@ -780,7 +1038,7 @@ export class HardwareRequest implements OnInit {
       return;
     }
 
-    // Populate from existing inventory
+    // Populate from existing inventory.
     itemGroup.patchValue({
       itemName: selectedItem.itemName,
       itemCode: selectedItem.itemCode ?? '',
@@ -794,11 +1052,15 @@ export class HardwareRequest implements OnInit {
   // =====================================================
 
   onRequestTypeChange(): void {
-    if (this.isITSupport) {
+    // Clear or restore inventory items depending on request type.
+    if (!this.showItems) {
       this.items.clear();
     } else if (this.items.length === 0) {
       this.addItem();
     }
+
+    // Bug-report fields are required only for BugReport.
+    this.updateConditionalValidators();
 
     this.cdr.markForCheck();
   }
@@ -813,7 +1075,6 @@ export class HardwareRequest implements OnInit {
     this.hardwareRequestService.GetMyRequests().subscribe({
       next: (response) => {
         this.requests = response ?? [];
-
         this.loading = false;
 
         this.cdr.markForCheck();
@@ -823,7 +1084,6 @@ export class HardwareRequest implements OnInit {
         console.error('Failed to load requests:', error);
 
         this.loading = false;
-
         this.cdr.markForCheck();
       },
     });
@@ -834,6 +1094,8 @@ export class HardwareRequest implements OnInit {
   // =====================================================
 
   submitRequest(): void {
+    this.updateConditionalValidators();
+
     if (this.form.invalid) {
       this.form.markAllAsTouched();
 
@@ -871,16 +1133,36 @@ export class HardwareRequest implements OnInit {
 
       projectId: value.projectId || null,
 
-      projectName: value.projectName || null,
+      projectName: value.projectName?.trim() || null,
 
-      siteName: value.siteName || null,
+      siteName: value.siteName?.trim() || null,
 
-      location: value.location || null,
+      location: value.location?.trim() || null,
 
-      locationDetails: value.locationDetails || null,
+      locationDetails: value.locationDetails?.trim() || null,
 
-      neededBy: value.neededBy || null,
+      neededBy: value.neededBy ? value.neededBy.toISOString() : null,
 
+      // Bug Report fields.
+      affectedModule: this.isBugReport
+        ? value.affectedModule?.trim() || null
+        : null,
+
+      bugCategory: this.isBugReport ? value.bugCategory || null : null,
+
+      stepsToReproduce: this.isBugReport
+        ? value.stepsToReproduce?.trim() || null
+        : null,
+
+      expectedResult: this.isBugReport
+        ? value.expectedResult?.trim() || null
+        : null,
+
+      actualResult: this.isBugReport
+        ? value.actualResult?.trim() || null
+        : null,
+
+      // Only Hardware and SiteMaterial contain inventory items.
       items: this.showItems
         ? value.items.map((item: any) => ({
             inventoryId: item.inventoryId || null,
@@ -911,7 +1193,6 @@ export class HardwareRequest implements OnInit {
         });
 
         this.resetForm();
-
         this.loadMyRequests();
 
         this.cdr.markForCheck();
@@ -949,21 +1230,29 @@ export class HardwareRequest implements OnInit {
       priority: 'Normal',
 
       projectId: '',
-
       projectName: '',
-
       siteName: '',
 
       location: '',
-
       locationDetails: '',
 
-      neededBy: '',
+      neededBy: null,
+
+      affectedModule: '',
+      bugCategory: '',
+      stepsToReproduce: '',
+      expectedResult: '',
+      actualResult: '',
     });
 
     this.items.clear();
 
+    this.updateConditionalValidators();
+
     this.addItem();
+
+    this.form.markAsPristine();
+    this.form.markAsUntouched();
 
     this.cdr.markForCheck();
   }
@@ -1013,8 +1302,36 @@ export class HardwareRequest implements OnInit {
       case 'ITSupport':
         return 'IT Support';
 
+      case 'BugReport':
+        return 'Bug Report';
+
       default:
         return type;
+    }
+  }
+
+  getBugCategoryLabel(category: string): string {
+    switch (category) {
+      case 'Functional':
+        return 'Feature Not Working';
+
+      case 'Display':
+        return 'UI / Display Issue';
+
+      case 'Performance':
+        return 'Performance Issue';
+
+      case 'Access':
+        return 'Login / Permission Issue';
+
+      case 'Data':
+        return 'Incorrect Data';
+
+      case 'Other':
+        return 'Other';
+
+      default:
+        return category;
     }
   }
 

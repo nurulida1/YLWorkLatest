@@ -40,3 +40,11 @@ export interface CreateMeetingRequest {
 export interface UpdateMeetingRequest extends CreateMeetingRequest {
   id: string;
 }
+
+export interface MeetingSaveResponse {
+  message: string;
+  data: MeetingDto;
+  notificationsSent: number;
+  emailsSent: number;
+  emailsFailed: number;
+}

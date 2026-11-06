@@ -39,7 +39,6 @@ namespace YLWorks.Controller
             return Guid.TryParse(userId, out var id) ? id : null;
         }
 
-        // Existing manager roles retain their permissions.
         private bool IsRequestManager()
         {
             return User.IsInRole("Admin") ||
@@ -58,17 +57,23 @@ namespace YLWorks.Controller
                 .Include(x => x.ResponsibleDepartment);
         }
 
+        private bool IsNonInventoryRequest(string requestType)
+        {
+            return requestType == "ITSupport" ||
+                   requestType == "BugReport";
+        }
+
         // =========================================================
         // 2. DEPARTMENT ROUTING
         // =========================================================
 
-        // Change these names if your Department.Name values differ.
         private string? GetResponsibleDepartment(string requestType)
         {
             return requestType switch
             {
                 "Hardware" => "IT",
                 "ITSupport" => "IT",
+                "BugReport" => "IT",
                 "SiteMaterial" => "Purchasing & Logistic",
                 _ => null
             };
@@ -96,15 +101,12 @@ namespace YLWorks.Controller
             HardwareRequest request,
             Guid userId)
         {
-            // Admin, IT and Inventory retain existing access.
             if (IsRequestManager())
                 return true;
 
             if (!request.ResponsibleDepartmentId.HasValue)
                 return false;
 
-            // Only the HOD of the responsible department
-            // can manage this request.
             return await _context.Departments.AnyAsync(d =>
                 d.Id == request.ResponsibleDepartmentId.Value &&
                 d.IsActive &&
@@ -150,7 +152,6 @@ namespace YLWorks.Controller
             if (!hodId.HasValue)
                 return;
 
-            // Do not notify the requester if they are also the HOD.
             if (hodId.Value == request.RequestedById)
                 return;
 
@@ -184,8 +185,9 @@ namespace YLWorks.Controller
             {
                 "SiteMaterial" => "Site Material",
                 "ITSupport" => "IT Support",
+                "BugReport" => "Bug Report",
                 "Hardware" => "Hardware",
-                _ => "Hardware"
+                _ => "Request"
             };
         }
 
@@ -210,7 +212,8 @@ namespace YLWorks.Controller
             {
                 "Hardware",
                 "SiteMaterial",
-                "ITSupport"
+                "ITSupport",
+                "BugReport"
             };
 
             if (!allowedTypes.Contains(dto.RequestType))
@@ -222,11 +225,32 @@ namespace YLWorks.Controller
             if (string.IsNullOrWhiteSpace(dto.Description))
                 return BadRequest("Description is required.");
 
-            if (dto.RequestType != "ITSupport" &&
+            // Hardware and Site Material require items.
+            // IT Support and Bug Report do not.
+            if (!IsNonInventoryRequest(dto.RequestType) &&
                 (dto.Items == null || !dto.Items.Any()))
             {
                 return BadRequest(
                     "Please add at least one item for hardware or site material requests.");
+            }
+
+            // Bug Report validation.
+            if (dto.RequestType == "BugReport")
+            {
+                if (string.IsNullOrWhiteSpace(dto.AffectedModule))
+                    return BadRequest("Affected module is required.");
+
+                if (string.IsNullOrWhiteSpace(dto.BugCategory))
+                    return BadRequest("Bug category is required.");
+
+                if (string.IsNullOrWhiteSpace(dto.StepsToReproduce))
+                    return BadRequest("Steps to reproduce are required.");
+
+                if (string.IsNullOrWhiteSpace(dto.ExpectedResult))
+                    return BadRequest("Expected result is required.");
+
+                if (string.IsNullOrWhiteSpace(dto.ActualResult))
+                    return BadRequest("Actual result is required.");
             }
 
             // Automatically determine responsible department.
@@ -266,7 +290,6 @@ namespace YLWorks.Controller
 
                     RequestedById = currentUserId.Value,
 
-                    // Department routing
                     ResponsibleDepartmentId = responsibleDepartment.Id,
 
                     ProjectId = dto.ProjectId,
@@ -276,10 +299,33 @@ namespace YLWorks.Controller
                     LocationDetails = dto.LocationDetails,
                     NeededBy = dto.NeededBy,
 
+                    // Bug Report Information
+                    AffectedModule = dto.RequestType == "BugReport"
+                        ? dto.AffectedModule?.Trim()
+                        : null,
+
+                    BugCategory = dto.RequestType == "BugReport"
+                        ? dto.BugCategory?.Trim()
+                        : null,
+
+                    StepsToReproduce = dto.RequestType == "BugReport"
+                        ? dto.StepsToReproduce?.Trim()
+                        : null,
+
+                    ExpectedResult = dto.RequestType == "BugReport"
+                        ? dto.ExpectedResult?.Trim()
+                        : null,
+
+                    ActualResult = dto.RequestType == "BugReport"
+                        ? dto.ActualResult?.Trim()
+                        : null,
+
                     Items = new List<HardwareRequestItem>()
                 };
 
-                if (dto.Items != null)
+                // Only process items for Hardware and Site Material.
+                if (!IsNonInventoryRequest(dto.RequestType) &&
+                    dto.Items != null)
                 {
                     foreach (var itemDto in dto.Items)
                     {
@@ -341,11 +387,10 @@ namespace YLWorks.Controller
                     .Select(x => x.FullName)
                     .FirstOrDefaultAsync() ?? "An employee";
 
-                // Notify the responsible HOD.
                 await NotifyHodsAsync(
                     request,
                     $"New {GetTypeLabel(request.RequestType)} Request",
-                    $"{requesterName} submitted a new request: {request.Subject}.",
+                    $"{requesterName} submitted a new {GetTypeLabel(request.RequestType).ToLower()} request: {request.Subject}.",
                     "HardwareRequest"
                 );
 
@@ -357,6 +402,7 @@ namespace YLWorks.Controller
                     message = "Request submitted successfully.",
                     requestId = request.Id,
                     status = request.Status,
+                    requestType = request.RequestType,
                     responsibleDepartment = responsibleDepartment.Name
                 });
             }
@@ -397,6 +443,13 @@ namespace YLWorks.Controller
                     x.Description,
                     x.Priority,
                     x.Status,
+
+                    // Bug Report Information
+                    x.AffectedModule,
+                    x.BugCategory,
+                    x.StepsToReproduce,
+                    x.ExpectedResult,
+                    x.ActualResult,
 
                     x.ResponsibleDepartmentId,
                     ResponsibleDepartment = x.ResponsibleDepartment != null
@@ -464,6 +517,13 @@ namespace YLWorks.Controller
                     x.Description,
                     x.Priority,
                     x.Status,
+
+                    // Bug Report Information
+                    x.AffectedModule,
+                    x.BugCategory,
+                    x.StepsToReproduce,
+                    x.ExpectedResult,
+                    x.ActualResult,
 
                     x.ResponsibleDepartmentId,
                     ResponsibleDepartment = x.ResponsibleDepartment != null
@@ -537,10 +597,6 @@ namespace YLWorks.Controller
             if (request == null)
                 return NotFound("Request not found.");
 
-            // Check whether the current user is:
-            // 1. The original requester
-            // 2. An authorized manager or responsible HOD
-            // 3. The staff member assigned to this request
             var isRequester =
                 request.RequestedById == currentUserId.Value;
 
@@ -563,6 +619,13 @@ namespace YLWorks.Controller
                 request.Description,
                 request.Priority,
                 request.Status,
+
+                // Bug Report Information
+                request.AffectedModule,
+                request.BugCategory,
+                request.StepsToReproduce,
+                request.ExpectedResult,
+                request.ActualResult,
 
                 request.ResponsibleDepartmentId,
                 ResponsibleDepartment =
@@ -615,6 +678,7 @@ namespace YLWorks.Controller
         // POST: api/HardwareRequest/{id}/Approve
         // =========================================================
 
+
         [HttpPost("{id:guid}/Approve")]
         public async Task<IActionResult> Approve(
             Guid id,
@@ -638,7 +702,6 @@ namespace YLWorks.Controller
                 if (request == null)
                     return NotFound("Request not found.");
 
-                // Manager or responsible HOD.
                 if (!await CanManageRequestAsync(request, currentUserId.Value))
                     return Forbid();
 
@@ -646,20 +709,20 @@ namespace YLWorks.Controller
                     return BadRequest("Only pending requests can be approved.");
 
                 // ==========================================
-                // IT SUPPORT APPROVAL
+                // IT SUPPORT / BUG REPORT APPROVAL
                 // ==========================================
 
-                if (request.RequestType == "ITSupport")
+                if (IsNonInventoryRequest(request.RequestType))
                 {
                     var assignedToId = dto.AssignedToId ?? currentUserId.Value;
 
-                    var itAssignedStaff = await _context.Users
+                    var supportAssignedStaff = await _context.Users
                         .FirstOrDefaultAsync(x =>
                             x.Id == assignedToId &&
                             x.IsActive &&
                             x.Status == "Approved");
 
-                    if (itAssignedStaff == null)
+                    if (supportAssignedStaff == null)
                     {
                         return BadRequest(
                             "Assigned staff was not found or is inactive.");
@@ -669,22 +732,34 @@ namespace YLWorks.Controller
                     request.ApprovedById = currentUserId.Value;
                     request.ApprovedAt = DateTimeHelper.Now();
                     request.AdminRemarks = dto.Remarks;
-                    request.AssignedToId = itAssignedStaff.Id;
+                    request.AssignedToId = supportAssignedStaff.Id;
 
                     await _context.SaveChangesAsync();
 
+                    var isBugReport = request.RequestType == "BugReport";
+
+                    // Notify assigned staff.
                     await NotifyUserAsync(
-                        itAssignedStaff.Id,
-                        "New Request Assigned",
-                        $"You have been assigned to IT support request '{request.Subject}'.",
+                        supportAssignedStaff.Id,
+                        isBugReport
+                            ? "New Bug Report Assigned"
+                            : "New IT Support Request Assigned",
+                        isBugReport
+                            ? $"You have been assigned to bug report '{request.Subject}'."
+                            : $"You have been assigned to IT support request '{request.Subject}'.",
                         "HardwareRequest",
                         request.Id
                     );
 
+                    // Notify requester.
                     await NotifyRequesterAsync(
                         request,
-                        "IT Support Request Approved",
-                        $"Your IT support request '{request.Subject}' has been approved.",
+                        isBugReport
+                            ? "Bug Report Accepted"
+                            : "IT Support Request Approved",
+                        isBugReport
+                            ? $"Your bug report '{request.Subject}' has been accepted and assigned for investigation."
+                            : $"Your IT support request '{request.Subject}' has been approved.",
                         "Approval"
                     );
 
@@ -693,11 +768,14 @@ namespace YLWorks.Controller
                     return Ok(new
                     {
                         success = true,
-                        message = $"IT support request approved and assigned to {itAssignedStaff.FullName}.",
+                        message = isBugReport
+                            ? $"Bug report accepted and assigned to {supportAssignedStaff.FullName}."
+                            : $"IT support request approved and assigned to {supportAssignedStaff.FullName}.",
                         status = request.Status,
-                        assignedTo = itAssignedStaff.FullName
+                        assignedTo = supportAssignedStaff.FullName
                     });
                 }
+
                 // ==========================================
                 // HARDWARE / SITE MATERIAL APPROVAL
                 // ==========================================
@@ -768,15 +846,14 @@ namespace YLWorks.Controller
                 request.ApprovedAt = DateTimeHelper.Now();
                 request.AdminRemarks = dto.Remarks;
 
-                User? assignedStaff = null;
-
                 // ==========================================
                 // ASSIGN STAFF IF APPROVED
                 // ==========================================
 
+                User? assignedStaff = null;
+
                 if (request.Status == "Approved")
                 {
-                    // If no staff is selected, assign to the approver.
                     var assignedToId = dto.AssignedToId ?? currentUserId.Value;
 
                     assignedStaff = await _context.Users
@@ -812,7 +889,7 @@ namespace YLWorks.Controller
                 }
 
                 // ==========================================
-                // NOTIFY REQUESTER (ONLY ONCE)
+                // NOTIFY REQUESTER
                 // ==========================================
 
                 await NotifyRequesterAsync(
@@ -879,8 +956,7 @@ namespace YLWorks.Controller
                 return Forbid();
 
             if (request.Status != "Pending")
-                return BadRequest(
-                    "Only pending requests can be rejected.");
+                return BadRequest("Only pending requests can be rejected.");
 
             if (string.IsNullOrWhiteSpace(dto.Reason))
                 return BadRequest("Rejection reason is required.");
@@ -894,8 +970,10 @@ namespace YLWorks.Controller
 
             await NotifyRequesterAsync(
                 request,
-                "Request Rejected",
-                $"Your request '{request.Subject}' has been rejected. Reason: {request.RejectionReason}",
+                request.RequestType == "BugReport"
+                    ? "Bug Report Rejected"
+                    : "Request Rejected",
+                $"Your {GetTypeLabel(request.RequestType).ToLower()} '{request.Subject}' has been rejected. Reason: {request.RejectionReason}",
                 "Rejection"
             );
 
@@ -934,8 +1012,7 @@ namespace YLWorks.Controller
                 request.Status == "Cancelled" ||
                 request.Status == "Resolved")
             {
-                return BadRequest(
-                    "This request cannot be assigned.");
+                return BadRequest("This request cannot be assigned.");
             }
 
             var staff = await _context.Users
@@ -954,8 +1031,10 @@ namespace YLWorks.Controller
 
             await NotifyUserAsync(
                 staff.Id,
-                "New Request Assigned",
-                $"You have been assigned to request '{request.Subject}'.",
+                request.RequestType == "BugReport"
+                    ? "Bug Report Assigned"
+                    : "New Request Assigned",
+                $"You have been assigned to {GetTypeLabel(request.RequestType).ToLower()} '{request.Subject}'.",
                 "HardwareRequest",
                 request.Id
             );
@@ -963,14 +1042,15 @@ namespace YLWorks.Controller
             await NotifyRequesterAsync(
                 request,
                 "Request Assigned",
-                $"Your request '{request.Subject}' has been assigned to {staff.FullName}.",
+                $"Your {GetTypeLabel(request.RequestType).ToLower()} '{request.Subject}' has been assigned to {staff.FullName}.",
                 "HardwareRequest"
             );
 
             return Ok(new
             {
                 success = true,
-                message = "Request assigned successfully."
+                message = "Request assigned successfully.",
+                assignedTo = staff.FullName
             });
         }
 
@@ -984,7 +1064,6 @@ namespace YLWorks.Controller
             Guid id,
             [FromBody] IssueHardwareRequestDto dto)
         {
-            // Stock issuing remains restricted to existing managers.
             if (!IsRequestManager())
                 return Forbid();
 
@@ -1001,10 +1080,10 @@ namespace YLWorks.Controller
                 if (request == null)
                     return NotFound("Request not found.");
 
-                if (request.RequestType == "ITSupport")
+                if (IsNonInventoryRequest(request.RequestType))
                 {
                     return BadRequest(
-                        "IT support requests do not use the stock issuing process.");
+                        $"{GetTypeLabel(request.RequestType)} requests do not use the stock issuing process.");
                 }
 
                 if (request.Status != "Approved" &&
@@ -1015,8 +1094,7 @@ namespace YLWorks.Controller
                 }
 
                 if (dto.Items == null || !dto.Items.Any())
-                    return BadRequest(
-                        "Please provide the items to issue.");
+                    return BadRequest("Please provide the items to issue.");
 
                 foreach (var issueDto in dto.Items)
                 {
@@ -1027,10 +1105,8 @@ namespace YLWorks.Controller
                         return BadRequest("Request item not found.");
 
                     if (issueDto.IssuedQuantity <= 0)
-                    {
                         return BadRequest(
                             "Issued quantity must be greater than zero.");
-                    }
 
                     var remainingApproved =
                         item.ApprovedQuantity - item.IssuedQuantity;
@@ -1124,10 +1200,9 @@ namespace YLWorks.Controller
         }
 
         // =========================================================
-        // 13. UPDATE IT SUPPORT STATUS
+        // 13. UPDATE IT SUPPORT / BUG REPORT STATUS
         // POST: api/HardwareRequest/{id}/UpdateStatus
         // =========================================================
-
 
         [HttpPost("{id:guid}/UpdateStatus")]
         public async Task<IActionResult> UpdateStatus(
@@ -1141,9 +1216,9 @@ namespace YLWorks.Controller
 
             var allowedStatuses = new[]
             {
-        "InProgress",
-        "Resolved"
-    };
+                "InProgress",
+                "Resolved"
+            };
 
             if (!allowedStatuses.Contains(dto.Status))
                 return BadRequest("Invalid status.");
@@ -1154,17 +1229,13 @@ namespace YLWorks.Controller
             if (request == null)
                 return NotFound("Request not found.");
 
-            // This endpoint is only for IT Support requests.
-            if (request.RequestType != "ITSupport")
+            // This endpoint is only for IT Support and Bug Reports.
+            if (!IsNonInventoryRequest(request.RequestType))
             {
                 return BadRequest(
-                    "This status update endpoint is for IT support requests.");
+                    "This status update endpoint is for IT support and bug report requests.");
             }
 
-            // Check whether the user is:
-            // 1. An authorized manager
-            // 2. The responsible HOD
-            // 3. The staff member assigned to this request
             var canManage = await CanManageRequestAsync(
                 request,
                 currentUserId.Value
@@ -1176,34 +1247,45 @@ namespace YLWorks.Controller
             if (!canManage && !isAssignedStaff)
                 return Forbid();
 
-            // Prevent updates to closed requests.
             if (request.Status == "Rejected" ||
                 request.Status == "Cancelled" ||
                 request.Status == "Resolved")
             {
+                return BadRequest("This request cannot be updated.");
+            }
+
+            if (request.Status != "Approved" &&
+                request.Status != "InProgress")
+            {
                 return BadRequest(
-                    "This request cannot be updated.");
+                    "Only approved or in-progress requests can be updated.");
             }
 
             request.Status = dto.Status;
 
             if (!string.IsNullOrWhiteSpace(dto.Remarks))
-                request.AdminRemarks = dto.Remarks;
+                request.AdminRemarks = dto.Remarks.Trim();
 
             if (dto.Status == "Resolved")
                 request.CompletedAt = DateTimeHelper.Now();
 
             await _context.SaveChangesAsync();
 
+            var isBugReport = request.RequestType == "BugReport";
+
             await NotifyRequesterAsync(
                 request,
                 dto.Status == "Resolved"
-                    ? "IT Support Request Resolved"
-                    : "IT Support Request In Progress",
+                    ? (isBugReport
+                        ? "Bug Report Resolved"
+                        : "IT Support Request Resolved")
+                    : (isBugReport
+                        ? "Bug Report In Progress"
+                        : "IT Support Request In Progress"),
 
                 dto.Status == "Resolved"
-                    ? $"Your IT support request '{request.Subject}' has been resolved."
-                    : $"Your IT support request '{request.Subject}' is now in progress.",
+                    ? $"Your {GetTypeLabel(request.RequestType).ToLower()} '{request.Subject}' has been resolved."
+                    : $"Your {GetTypeLabel(request.RequestType).ToLower()} '{request.Subject}' is now in progress.",
 
                 "HardwareRequest"
             );
@@ -1211,11 +1293,10 @@ namespace YLWorks.Controller
             return Ok(new
             {
                 success = true,
-                message = "Request status updated.",
+                message = $"{GetTypeLabel(request.RequestType)} status updated.",
                 status = request.Status
             });
         }
-
 
         // =========================================================
         // 14. CANCEL REQUEST
@@ -1275,24 +1356,22 @@ namespace YLWorks.Controller
 
                 await _context.SaveChangesAsync();
 
-                // Notify assigned staff.
                 if (request.AssignedToId.HasValue &&
                     request.AssignedToId.Value != currentUserId.Value)
                 {
                     await NotifyUserAsync(
                         request.AssignedToId.Value,
                         "Request Cancelled",
-                        $"Request '{request.Subject}' has been cancelled.",
+                        $"{GetTypeLabel(request.RequestType)} '{request.Subject}' has been cancelled.",
                         "HardwareRequest",
                         request.Id
                     );
                 }
 
-                // Notify the responsible HOD.
                 await NotifyHodsAsync(
                     request,
                     "Request Cancelled",
-                    $"Request '{request.Subject}' has been cancelled.",
+                    $"{GetTypeLabel(request.RequestType)} '{request.Subject}' has been cancelled.",
                     "HardwareRequest"
                 );
 
@@ -1317,7 +1396,7 @@ namespace YLWorks.Controller
         }
 
         // =========================================================
-        // GET INCOMING REQUESTS
+        // 15. GET INCOMING REQUESTS
         // GET: api/HardwareRequest/Incoming
         // =========================================================
 
@@ -1331,17 +1410,13 @@ namespace YLWorks.Controller
 
             var query = RequestQuery();
 
-            // Existing Admin, IT and Inventory managers
-            // can view all incoming requests.
             if (!IsRequestManager())
             {
                 query = query.Where(x =>
-                    // Assigned staff can view their assigned requests.
                     x.AssignedToId == currentUserId.Value
 
                     ||
 
-                    // Active HOD can view requests belonging to their department.
                     (
                         x.ResponsibleDepartmentId.HasValue &&
                         _context.Departments.Any(d =>
@@ -1364,6 +1439,13 @@ namespace YLWorks.Controller
                     x.Description,
                     x.Priority,
                     x.Status,
+
+                    // Bug Report Information
+                    x.AffectedModule,
+                    x.BugCategory,
+                    x.StepsToReproduce,
+                    x.ExpectedResult,
+                    x.ActualResult,
 
                     x.ResponsibleDepartmentId,
 

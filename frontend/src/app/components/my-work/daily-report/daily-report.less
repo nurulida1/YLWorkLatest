@@ -23,3 +23,17 @@ textarea:focus,
 select:focus {
   outline: none;
 }
+
+/* Mobile-friendly modal scrolling */
+@media (max-width: 640px) {
+  :host {
+    min-width: 0;
+    overflow-x: clip;
+  }
+
+  input,
+  textarea,
+  select {
+    font-size: 16px;
+  }
+}

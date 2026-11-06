@@ -77,13 +77,6 @@ const APPROVER_ROLES = [
             </div>
 
             <div class="flex items-center gap-2">
-              <button
-                type="button"
-                class="w-10 h-10 rounded-full flex items-center justify-center bg-white/10 border border-white/15 text-white"
-              >
-                <i class="pi pi-bell"></i>
-              </button>
-
               <div
                 class="w-10 h-10 rounded-full flex items-center justify-center bg-white/15 border border-white/20"
               >

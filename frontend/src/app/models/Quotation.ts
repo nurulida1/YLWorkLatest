@@ -29,6 +29,7 @@ export interface QuotationDto extends BaseModel {
   termsAndConditions: QuotationTermsAndCondition[];
   otherInformations: QuotationOtherInformation[];
   createdBy: UserDto;
+  dueDate: Date;
 }
 
 export interface QuotationStatusHistory extends BaseModel {

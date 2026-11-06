@@ -50,504 +50,598 @@ import { ProjectService } from '../../../../services/ProjectService';
     EditorModule,
     TableModule,
   ],
-  template: `<div class="w-full p-6 flex flex-col bg-gray-50 min-h-screen">
+  template: `
     <div
-      class="flex flex-row items-center gap-2 text-sm text-gray-500 tracking-wide font-medium"
+      class="delivery-order-page min-h-screen w-full bg-slate-50/70 p-3 sm:p-4 lg:p-6"
     >
-      <div
-        [routerLink]="'/dashboard'"
-        class="cursor-pointer hover:text-primary transition-colors"
-      >
-        Dashboard
-      </div>
-      <span class="text-gray-300">/</span>
-      <div
-        [routerLink]="'/delivery-orders/outbound'"
-        class="cursor-pointer hover:text-primary transition-colors"
-      >
-        Delivery Orders
-      </div>
-      <span class="text-gray-300">/</span>
-      <div class="text-gray-800 font-semibold">
-        {{ currentId ? doForm.get('deliveryOrderNo')?.value : 'New DO' }}
-      </div>
-    </div>
-
-    <div
-      class="sticky top-0 z-10 px-6 py-4 flex flex-row items-center justify-between border border-gray-200 bg-white shadow-sm rounded-lg mt-4"
-    >
-      <div
-        class="flex flex-row items-center gap-3 font-bold text-gray-800 text-lg"
-      >
-        <i class="pi pi-file text-primary text-xl"></i>
-        <h1>
-          {{ currentId ? 'Update Delivery Order' : 'Create Delivery Order' }}
-        </h1>
-      </div>
-      <div class="flex flex-row items-center gap-3">
-        <p-button
-          label="Cancel"
-          severity="secondary"
-          [outlined]="true"
-          styleClass="py-2 px-4"
-          [routerLink]="'/delivery-orders'"
-        ></p-button>
-        <p-button
-          (onClick)="onSave()"
-          [label]="currentId ? 'Save Changes' : 'Create'"
-          severity="info"
-          styleClass="py-2 px-4 shadow-sm"
-        ></p-button>
-      </div>
-    </div>
-
-    <div
-      class="mt-4 border border-gray-200 bg-white rounded-lg shadow-sm p-6 flex flex-col"
-      [formGroup]="doForm"
-    >
-      <div class="grid grid-cols-12 gap-x-6 gap-y-5 items-start">
-        <div
-          class="col-span-12 font-bold text-gray-900 text-xl border-b border-gray-100 pb-2"
+      <div class="mx-auto flex w-full max-w-[1600px] flex-col">
+        <!-- Breadcrumb -->
+        <nav
+          class="mb-4 flex flex-wrap items-center gap-2 text-xs font-medium text-gray-500 sm:text-sm"
         >
-          Delivery Order Information
-        </div>
-
-        <div class="col-span-12 flex flex-col gap-1.5">
-          <label
-            class="text-sm font-semibold text-gray-700 flex items-center gap-1.5"
+          <a
+            routerLink="/dashboard"
+            class="transition-colors hover:text-blue-600"
           >
-            DO No
-            <span class="text-gray-400 text-xs font-normal italic">
-              (Optional – auto-generated if left blank)
-            </span>
-          </label>
-          <input
-            type="text"
-            pInputText
-            class="w-full font-medium placeholder:font-normal"
-            formControlName="deliveryOrderNo"
-            placeholder="Leave blank for auto-generated DO number"
-          />
-        </div>
+            Dashboard
+          </a>
 
-        <div class="col-span-12 lg:col-span-6 flex flex-col gap-1.5">
-          <label class="text-sm font-semibold text-gray-700">
-            Sender <span class="text-red-500">*</span>
-          </label>
-          <p-select
-            appendTo="body"
-            styleClass="w-full"
-            formControlName="senderCompanyId"
-            [options]="companySelection"
-            [filter]="true"
-          ></p-select>
-          <div
-            class="mt-2 bg-gray-50 p-5 rounded-lg border border-gray-200 text-sm text-gray-600 space-y-3"
+          <i class="pi pi-angle-right text-[10px] text-gray-400"></i>
+
+          <a
+            routerLink="/delivery-orders/outbound"
+            class="transition-colors hover:text-blue-600"
           >
-            <div>
-              <div
-                class="text-xs uppercase tracking-wider font-bold text-gray-400 mb-1"
+            Delivery Orders
+          </a>
+
+          <i class="pi pi-angle-right text-[10px] text-gray-400"></i>
+
+          <span class="font-semibold text-gray-800">
+            {{
+              currentId
+                ? doForm.get('deliveryOrderNo')?.value || 'Update DO'
+                : 'New DO'
+            }}
+          </span>
+        </nav>
+
+        <!-- Sticky Action Header -->
+        <div
+          class="delivery-order-actionbar sticky top-2 z-20 mb-5 flex flex-col gap-4 rounded-xl border border-gray-200 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:px-5"
+        >
+          <div class="flex min-w-0 items-center gap-3">
+            <div
+              class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600"
+            >
+              <i class="pi pi-file-edit text-xl"></i>
+            </div>
+
+            <div class="min-w-0">
+              <h1
+                class="truncate text-base font-bold tracking-tight text-gray-800 sm:text-lg"
               >
-                Sender Address
-              </div>
-              <address
-                class="not-italic text-gray-800 font-medium space-y-0.5 leading-relaxed"
-              >
-                <div *ngIf="selectedSenderAddress?.addressLine1">
-                  {{ selectedSenderAddress.addressLine1 }}
-                </div>
-                <div *ngIf="selectedSenderAddress?.addressLine2">
-                  {{ selectedSenderAddress.addressLine2 }}
-                </div>
-                <div
-                  *ngIf="
-                    selectedSenderAddress?.postcode ||
-                    selectedSenderAddress?.city
-                  "
-                >
-                  {{ selectedSenderAddress.postcode
-                  }}{{
-                    selectedSenderAddress.postcode && selectedSenderAddress.city
-                      ? ' '
-                      : ''
-                  }}{{ selectedSenderAddress.city }}
-                </div>
-                <div
-                  *ngIf="
-                    selectedSenderAddress?.state ||
-                    selectedSenderAddress?.country
-                  "
-                >
-                  {{ selectedSenderAddress.state
-                  }}{{
-                    selectedSenderAddress.state && selectedSenderAddress.country
-                      ? ', '
-                      : ''
-                  }}{{ selectedSenderAddress.country }}
-                </div>
-                <div
-                  *ngIf="!selectedSenderAddress"
-                  class="text-gray-400 font-normal italic"
-                >
-                  No sender address details available.
-                </div>
-              </address>
+                {{
+                  currentId ? 'Update Delivery Order' : 'Create Delivery Order'
+                }}
+              </h1>
+
+              <p class="mt-0.5 text-xs text-gray-500 sm:text-sm">
+                {{
+                  currentId
+                    ? 'Update delivery order information and items.'
+                    : 'Fill in the details to create a new delivery order.'
+                }}
+              </p>
             </div>
           </div>
-        </div>
-
-        <div class="col-span-12 lg:col-span-6 flex flex-col gap-1.5">
-          <div class="flex flex-row justify-between items-center h-5">
-            <label class="text-sm font-semibold text-gray-700">
-              Receiver <span class="text-red-500">*</span>
-            </label>
-          </div>
-          <p-select
-            appendTo="body"
-            styleClass="w-full"
-            [options]="companySelection"
-            [filter]="true"
-            formControlName="receiverCompanyId"
-          ></p-select>
 
           <div
-            class="mt-2 bg-gray-50 p-5 rounded-lg border border-gray-200 text-sm text-gray-600 space-y-3"
+            class="flex w-full flex-col-reverse gap-2 sm:w-auto sm:flex-row sm:items-center"
           >
-            <div>
-              <div
-                class="text-xs uppercase tracking-wider font-bold text-gray-400 mb-1"
-              >
-                Shipping Address
-              </div>
-              <address
-                class="not-italic text-gray-800 font-medium space-y-0.5 leading-relaxed"
-              >
-                <div *ngIf="selectedReceiverAddress?.addressLine1">
-                  {{ selectedReceiverAddress.addressLine1 }}
-                </div>
-                <div *ngIf="selectedReceiverAddress?.addressLine2">
-                  {{ selectedReceiverAddress.addressLine2 }}
-                </div>
-                <div
-                  *ngIf="
-                    selectedReceiverAddress?.postcode ||
-                    selectedReceiverAddress?.city
-                  "
-                >
-                  {{ selectedReceiverAddress.postcode
-                  }}{{
-                    selectedReceiverAddress.postcode &&
-                    selectedReceiverAddress.city
-                      ? ' '
-                      : ''
-                  }}{{ selectedReceiverAddress.city }}
-                </div>
-                <div
-                  *ngIf="
-                    selectedReceiverAddress?.state ||
-                    selectedReceiverAddress?.country
-                  "
-                >
-                  {{ selectedReceiverAddress.state
-                  }}{{
-                    selectedReceiverAddress.state &&
-                    selectedReceiverAddress.country
-                      ? ', '
-                      : ''
-                  }}{{ selectedReceiverAddress.country }}
-                </div>
-                <div
-                  *ngIf="!selectedReceiverAddress"
-                  class="text-gray-400 font-normal italic"
-                >
-                  No address details available.
-                </div>
-              </address>
-            </div>
-
-            <div class="grid grid-cols-2 gap-4 border-t border-gray-100 pt-3">
-              <div>
-                <span
-                  class="text-xs uppercase tracking-wider font-bold text-gray-400 block mb-0.5"
-                  >Contact Person</span
-                >
-                <span class="font-semibold text-gray-800">{{
-                  doForm.get('receiverContactPerson')?.value || '—'
-                }}</span>
-              </div>
-              <div>
-                <span
-                  class="text-xs uppercase tracking-wider font-bold text-gray-400 block mb-0.5"
-                  >Phone Number</span
-                >
-                <span class="font-semibold text-gray-800">{{
-                  doForm.get('receiverContactNo')?.value || '—'
-                }}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="col-span-12 lg:col-span-6 flex flex-col gap-1.5">
-          <label class="text-sm font-semibold text-gray-700 py-1.5"
-            >SO No</label
-          >
-          <p-select
-            appendTo="body"
-            styleClass="w-full"
-            formControlName="salesOrderId"
-            [options]="salesOrderSelection"
-            [filter]="true"
-          ></p-select>
-        </div>
-
-        <div class="col-span-12 lg:col-span-6 flex flex-col gap-1.5">
-          <div class="flex flex-row items-center justify-between">
-            <label class="text-sm font-semibold text-gray-700">Project</label>
             <p-button
-              label="Add New Project"
-              icon="pi pi-plus-circle"
-              size="small"
+              label="Cancel"
+              severity="secondary"
+              [outlined]="true"
+              styleClass="w-full sm:w-auto rounded-lg px-4 py-2.5"
+              [routerLink]="'/delivery-orders'"
+            ></p-button>
+
+            <p-button
+              (onClick)="onSave()"
+              [label]="currentId ? 'Save Changes' : 'Create Delivery Order'"
+              [icon]="currentId ? 'pi pi-save' : 'pi pi-plus'"
               severity="info"
-              [text]="true"
-              styleClass="p-0 text-xs font-semibold"
-              (onClick)="AddProject()"
+              styleClass="w-full sm:w-auto rounded-lg px-4 py-2.5 shadow-sm bg-blue-700! hover:bg-blue-500! border-none!"
             ></p-button>
           </div>
-          <p-select
-            appendTo="body"
-            styleClass="w-full"
-            formControlName="projectId"
-            [options]="projectSelection"
-            [filter]="true"
-          ></p-select>
         </div>
 
-        <div class="col-span-12 lg:col-span-6 flex flex-col gap-1.5">
-          <label class="text-sm font-semibold text-gray-700"
-            >Payment Terms</label
-          >
-          <input
-            pInputText
-            formControlName="paymentTerms"
-            class="w-full"
-            placeholder="Specify payment terms..."
-          />
-        </div>
-
-        <div class="col-span-12 lg:col-span-6 flex flex-col gap-1.5">
-          <label class="text-sm font-semibold text-gray-700"
-            >Delivery Method</label
-          >
-          <p-select
-            appendTo="body"
-            styleClass="w-full"
-            formControlName="deliveryMethod"
-            [options]="[
-              { label: 'Self Pickup', value: 'Self Pickup' },
-              {
-                label: 'Standard Courier (J&T, DHL, Pos Laju)',
-                value: 'Courier',
-              },
-              { label: '3rd Party Logistics (Grab, Lalamove)', value: '3PL' },
-              { label: 'Air Freight', value: 'Air Freight' },
-              { label: 'Sea Freight', value: 'Sea Freight' },
-              { label: 'Other (Specify)', value: 'Other' },
-            ]"
-          ></p-select>
-          <input
-            *ngIf="doForm.get('deliveryMethod')?.value === 'Other'"
-            pInputText
-            formControlName="deliveryMethodOther"
-            class="w-full mt-1.5"
-            placeholder="Specify delivery method..."
-          />
-        </div>
-
-        <div class="col-span-12 flex flex-col gap-1.5">
-          <label class="text-sm font-semibold text-gray-700">Remarks</label>
-          <textarea
-            pTextarea
-            formControlName="remarks"
-            class="w-full"
-            rows="3"
-            placeholder="Enter remarks here..."
-          ></textarea>
-        </div>
-
-        <div
-          class="col-span-12 font-bold text-gray-900 text-xl border-b border-gray-100 pb-2 mt-4"
-        >
-          Items Details
-        </div>
-
-        <div class="col-span-12 overflow-x-auto">
-          <p-table
-            [showGridlines]="true"
-            [tableStyle]="{ 'min-width': '65rem', 'table-layout': 'fixed' }"
-            [value]="Items.controls"
-            styleClass="p-datatable-sm"
-          >
-            <ng-template #header>
-              <tr class="bg-gray-50">
-                <th
-                  class="text-left font-semibold text-gray-700 text-xs uppercase tracking-wider w-[35%]"
-                >
-                  Description
-                </th>
-                <th
-                  class="text-center! font-semibold text-gray-700 text-xs uppercase tracking-wider w-[13%]"
-                >
-                  Qty Ordered
-                </th>
-                <th
-                  class="text-center! font-semibold text-gray-700 text-xs uppercase tracking-wider w-[13%]"
-                >
-                  Qty Delivered
-                </th>
-                <th
-                  class="text-center! font-semibold text-gray-700 text-xs uppercase tracking-wider w-[10%]"
-                >
-                  Unit
-                </th>
-                <th
-                  class="text-left font-semibold text-gray-700 text-xs uppercase tracking-wider w-[21%]"
-                >
-                  Remarks
-                </th>
-                <th
-                  class="text-center! font-semibold text-gray-700 text-xs uppercase tracking-wider w-[8%]"
-                >
-                  Action
-                </th>
-              </tr>
-            </ng-template>
-
-            <ng-template #body let-row let-i="rowIndex">
-              <tr
-                [formGroup]="row"
-                class="hover:bg-gray-50/50 transition-colors"
+        <!-- Form -->
+        <div [formGroup]="doForm" class="flex min-w-0 flex-col gap-5">
+          <!-- Delivery Order Information -->
+          <section class="form-section">
+            <div class="form-section-heading">
+              <div
+                class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600"
               >
-                <td class="p-2 align-top">
-                  <p-editor
-                    formControlName="description"
-                    [style]="{ height: '80px' }"
-                  >
-                    <ng-template #header>
-                      <span class="ql-formats">
-                        <button
-                          type="button"
-                          class="ql-bold"
-                          aria-label="Bold"
-                        ></button>
-                        <button
-                          type="button"
-                          class="ql-italic"
-                          aria-label="Italic"
-                        ></button>
-                        <button
-                          type="button"
-                          class="ql-underline"
-                          aria-label="Underline"
-                        ></button>
-                      </span>
-                    </ng-template>
-                  </p-editor>
-                </td>
-                <td class="p-2 align-top">
-                  <p-inputNumber
-                    formControlName="quantityOrdered"
-                    styleClass="w-full"
-                    inputStyleClass="w-full text-center"
-                  ></p-inputNumber>
-                </td>
-                <td class="p-2 align-top">
-                  <p-inputNumber
-                    formControlName="quantityDelivered"
-                    styleClass="w-full"
-                    inputStyleClass="w-full text-center"
-                  ></p-inputNumber>
-                </td>
-                <td class="p-2 align-top">
-                  <input
-                    pInputText
-                    class="w-full text-center"
-                    formControlName="unit"
-                  />
-                </td>
-                <td class="p-2 align-top">
-                  <input pInputText formControlName="remarks" class="w-full" />
-                </td>
-                <td class="p-2 align-top text-center">
-                  <div class="flex justify-center">
-                    <p-button
-                      icon="pi pi-trash"
-                      severity="danger"
-                      size="small"
-                      [text]="true"
-                      styleClass="mx-auto"
-                      (onClick)="removeItem(i)"
-                    ></p-button>
+                <i class="pi pi-info-circle"></i>
+              </div>
+
+              <div>
+                <h2 class="text-sm font-bold text-gray-800 sm:text-base">
+                  Delivery Order Information
+                </h2>
+
+                <p class="mt-0.5 text-xs text-gray-500">
+                  General information about this delivery order.
+                </p>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 gap-5 p-4 sm:p-5 lg:grid-cols-2">
+              <!-- DO Number -->
+              <div class="form-field lg:col-span-2">
+                <label class="form-label">
+                  DO Number
+                  <span class="font-normal text-gray-400">(Optional)</span>
+                </label>
+
+                <input
+                  type="text"
+                  pInputText
+                  formControlName="deliveryOrderNo"
+                  class="w-full"
+                  placeholder="Delivery order number will be generated automatically"
+                />
+
+                <p class="field-hint">
+                  Leave blank to use the automatically generated number.
+                </p>
+              </div>
+
+              <!-- Sender -->
+              <div class="form-field">
+                <label class="form-label">
+                  Sender <span class="text-red-500">*</span>
+                </label>
+
+                <p-select
+                  appendTo="body"
+                  styleClass="w-full"
+                  formControlName="senderCompanyId"
+                  [options]="companySelection"
+                  [filter]="true"
+                  filterBy="label"
+                  [showClear]="true"
+                  placeholder="Select sender company"
+                ></p-select>
+
+                <!-- Sender Address Card -->
+                <div class="address-card mt-3">
+                  <div class="mb-3 flex items-center gap-2">
+                    <i class="pi pi-building text-blue-500"></i>
+                    <span class="address-card-title">Sender Address</span>
                   </div>
-                </td>
-              </tr>
-            </ng-template>
 
-            <ng-template #emptymessage>
-              <tr>
-                <td
-                  colspan="6"
-                  class="p-8 text-center text-sm text-gray-400 font-medium"
+                  <address
+                    class="not-italic text-sm leading-relaxed text-gray-700"
+                  >
+                    <div *ngIf="selectedSenderAddress?.addressLine1">
+                      {{ selectedSenderAddress.addressLine1 }}
+                    </div>
+
+                    <div *ngIf="selectedSenderAddress?.addressLine2">
+                      {{ selectedSenderAddress.addressLine2 }}
+                    </div>
+
+                    <div
+                      *ngIf="
+                        selectedSenderAddress?.postcode ||
+                        selectedSenderAddress?.city
+                      "
+                    >
+                      {{ selectedSenderAddress.postcode }}
+                      {{ selectedSenderAddress.city }}
+                    </div>
+
+                    <div
+                      *ngIf="
+                        selectedSenderAddress?.state ||
+                        selectedSenderAddress?.country
+                      "
+                    >
+                      {{ selectedSenderAddress.state }}
+                      {{
+                        selectedSenderAddress.state &&
+                        selectedSenderAddress.country
+                          ? ', '
+                          : ''
+                      }}
+                      {{ selectedSenderAddress.country }}
+                    </div>
+
+                    <div
+                      *ngIf="!selectedSenderAddress"
+                      class="text-xs italic text-gray-400"
+                    >
+                      Select a sender to view its address.
+                    </div>
+                  </address>
+                </div>
+              </div>
+
+              <!-- Receiver -->
+              <div class="form-field">
+                <label class="form-label">
+                  Receiver <span class="text-red-500">*</span>
+                </label>
+
+                <p-select
+                  appendTo="body"
+                  styleClass="w-full"
+                  [options]="companySelection"
+                  [filter]="true"
+                  filterBy="label"
+                  [showClear]="true"
+                  formControlName="receiverCompanyId"
+                  placeholder="Select receiver company"
+                ></p-select>
+
+                <!-- Receiver Address Card -->
+                <div class="address-card mt-3">
+                  <div class="mb-3 flex items-center gap-2">
+                    <i class="pi pi-map-marker text-emerald-600"></i>
+                    <span class="address-card-title">Shipping Address</span>
+                  </div>
+
+                  <address
+                    class="not-italic text-sm leading-relaxed text-gray-700"
+                  >
+                    <div *ngIf="selectedReceiverAddress?.addressLine1">
+                      {{ selectedReceiverAddress.addressLine1 }}
+                    </div>
+
+                    <div *ngIf="selectedReceiverAddress?.addressLine2">
+                      {{ selectedReceiverAddress.addressLine2 }}
+                    </div>
+
+                    <div
+                      *ngIf="
+                        selectedReceiverAddress?.postcode ||
+                        selectedReceiverAddress?.city
+                      "
+                    >
+                      {{ selectedReceiverAddress.postcode }}
+                      {{ selectedReceiverAddress.city }}
+                    </div>
+
+                    <div
+                      *ngIf="
+                        selectedReceiverAddress?.state ||
+                        selectedReceiverAddress?.country
+                      "
+                    >
+                      {{ selectedReceiverAddress.state }}
+                      {{
+                        selectedReceiverAddress.state &&
+                        selectedReceiverAddress.country
+                          ? ', '
+                          : ''
+                      }}
+                      {{ selectedReceiverAddress.country }}
+                    </div>
+
+                    <div
+                      *ngIf="!selectedReceiverAddress"
+                      class="text-xs italic text-gray-400"
+                    >
+                      Select a receiver to view its address.
+                    </div>
+                  </address>
+
+                  <div
+                    class="mt-4 grid grid-cols-1 gap-3 border-t border-gray-200 pt-3 sm:grid-cols-2"
+                  >
+                    <div class="min-w-0">
+                      <span class="address-meta-label">Contact Person</span>
+                      <p
+                        class="break-words text-sm font-semibold text-gray-800"
+                      >
+                        {{ doForm.get('receiverContactPerson')?.value || '—' }}
+                      </p>
+                    </div>
+
+                    <div class="min-w-0">
+                      <span class="address-meta-label">Phone Number</span>
+                      <p
+                        class="break-words text-sm font-semibold text-gray-800"
+                      >
+                        {{ doForm.get('receiverContactNo')?.value || '—' }}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Sales Order -->
+              <div class="form-field">
+                <label class="form-label">Sales Order</label>
+
+                <p-select
+                  appendTo="body"
+                  styleClass="w-full"
+                  formControlName="salesOrderId"
+                  [options]="salesOrderSelection"
+                  [filter]="true"
+                  filterBy="label"
+                  [showClear]="true"
+                  placeholder="Select sales order"
+                ></p-select>
+
+                <p class="field-hint">
+                  Selecting a sales order can populate its project and item
+                  details.
+                </p>
+              </div>
+
+              <!-- Project -->
+              <div class="form-field">
+                <div
+                  class="mb-1 flex flex-wrap items-center justify-between gap-2"
                 >
-                  <i class="pi pi-box text-2xl block mb-2 text-gray-300"></i>
-                  No items have been added yet.
-                </td>
-              </tr>
-            </ng-template>
-          </p-table>
-        </div>
+                  <label class="form-label mb-0">Project</label>
 
-        <div class="col-span-12 flex justify-start">
-          <p-button
-            label="Add Item"
-            styleClass="rounded-full px-4 py-2"
-            icon="pi pi-plus-circle"
-            size="small"
-            (onClick)="addItem()"
-          ></p-button>
-        </div>
+                  <p-button
+                    label="Add Project"
+                    icon="pi pi-plus"
+                    size="small"
+                    severity="info"
+                    [text]="true"
+                    styleClass="p-0 text-xs font-semibold"
+                    (onClick)="AddProject()"
+                  ></p-button>
+                </div>
 
-        <!-- <div
-          class="col-span-12 flex justify-end mt-4 border-t border-gray-100 pt-6"
-        >
-          <div
-            class="w-[320px] bg-gray-50 p-4 rounded-xl border border-gray-200 space-y-3 text-sm text-gray-600"
-          >
-            <div class="flex justify-between items-center">
-              <span>Subtotal</span>
-              <span class="font-medium text-gray-900">{{
-                doForm.get('subTotal')?.value | number: '1.2-2'
-              }}</span>
+                <p-select
+                  appendTo="body"
+                  styleClass="w-full"
+                  formControlName="projectId"
+                  [options]="projectSelection"
+                  [filter]="true"
+                  filterBy="label"
+                  [showClear]="true"
+                  placeholder="Select project"
+                ></p-select>
+              </div>
+
+              <!-- Payment Terms -->
+              <div class="form-field">
+                <label class="form-label">Payment Terms</label>
+
+                <input
+                  pInputText
+                  formControlName="paymentTerms"
+                  class="w-full"
+                  placeholder="e.g. 30 days"
+                />
+              </div>
+
+              <!-- Delivery Method -->
+              <div class="form-field">
+                <label class="form-label">Delivery Method</label>
+
+                <p-select
+                  appendTo="body"
+                  styleClass="w-full"
+                  formControlName="deliveryMethod"
+                  [options]="[
+                    { label: 'Self Pickup', value: 'Self Pickup' },
+                    {
+                      label: 'Standard Courier (J&T, DHL, Pos Laju)',
+                      value: 'Courier',
+                    },
+                    {
+                      label: '3rd Party Logistics (Grab, Lalamove)',
+                      value: '3PL',
+                    },
+                    { label: 'Air Freight', value: 'Air Freight' },
+                    { label: 'Sea Freight', value: 'Sea Freight' },
+                    { label: 'Other (Specify)', value: 'Other' },
+                  ]"
+                  placeholder="Select delivery method"
+                ></p-select>
+
+                <input
+                  *ngIf="doForm.get('deliveryMethod')?.value === 'Other'"
+                  pInputText
+                  formControlName="deliveryMethodOther"
+                  class="mt-2 w-full"
+                  placeholder="Specify delivery method..."
+                />
+              </div>
+
+              <!-- Remarks -->
+              <div class="form-field lg:col-span-2">
+                <label class="form-label">Remarks</label>
+
+                <textarea
+                  pTextarea
+                  formControlName="remarks"
+                  class="w-full"
+                  rows="4"
+                  [autoResize]="true"
+                  placeholder="Enter any additional delivery instructions or remarks..."
+                ></textarea>
+              </div>
             </div>
-            <div class="flex justify-between items-center">
-              <span>Tax</span>
-              <span class="font-medium text-gray-900">{{
-                doForm.get('taxAmount')?.value | number: '1.2-2'
-              }}</span>
-            </div>
+          </section>
+
+          <!-- Items Details -->
+          <section class="form-section">
             <div
-              class="flex justify-between items-center border-t border-gray-200 pt-2 font-bold text-base text-gray-900"
+              class="flex flex-col gap-3 border-b border-gray-100 p-4 sm:flex-row sm:items-center sm:justify-between sm:px-5"
             >
-              <span>Total</span>
-              <span class="text-primary">{{
-                doForm.get('totalAmount')?.value | number: '1.2-2'
-              }}</span>
+              <div class="flex items-center gap-3">
+                <div
+                  class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600"
+                >
+                  <i class="pi pi-box"></i>
+                </div>
+
+                <div>
+                  <h2 class="text-sm font-bold text-gray-800 sm:text-base">
+                    Delivery Items
+                  </h2>
+
+                  <p class="mt-0.5 text-xs text-gray-500">
+                    Manage the items and quantities included in this delivery.
+                  </p>
+                </div>
+              </div>
+
+              <span
+                class="w-fit rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700"
+              >
+                {{ Items.length }} {{ Items.length === 1 ? 'Item' : 'Items' }}
+              </span>
             </div>
-          </div>
-        </div> -->
+
+            <!-- Items Table -->
+            <div class="delivery-items-table w-full min-w-0">
+              <p-table
+                [showGridlines]="false"
+                [tableStyle]="{ 'min-width': '65rem', 'table-layout': 'fixed' }"
+                [value]="Items.controls"
+                styleClass="p-datatable-sm"
+              >
+                <ng-template #header>
+                  <tr>
+                    <th class="w-[35%]">Description</th>
+                    <th class="w-[13%] text-center!">Qty Ordered</th>
+                    <th class="w-[13%] text-center!">Qty Delivered</th>
+                    <th class="w-[10%] text-center!">Unit</th>
+                    <th class="w-[21%]">Remarks</th>
+                    <th class="w-[8%] text-center!">Action</th>
+                  </tr>
+                </ng-template>
+
+                <ng-template #body let-row let-i="rowIndex">
+                  <tr [formGroup]="row">
+                    <!-- Description -->
+                    <td class="p-3 align-top">
+                      <p-editor
+                        formControlName="description"
+                        [style]="{ height: '100px' }"
+                      >
+                        <ng-template #header>
+                          <span class="ql-formats">
+                            <button
+                              type="button"
+                              class="ql-bold"
+                              aria-label="Bold"
+                            ></button>
+
+                            <button
+                              type="button"
+                              class="ql-italic"
+                              aria-label="Italic"
+                            ></button>
+
+                            <button
+                              type="button"
+                              class="ql-underline"
+                              aria-label="Underline"
+                            ></button>
+                          </span>
+                        </ng-template>
+                      </p-editor>
+                    </td>
+
+                    <!-- Quantity Ordered -->
+                    <td class="p-3 align-top">
+                      <p-inputNumber
+                        formControlName="quantityOrdered"
+                        styleClass="w-full"
+                        inputStyleClass="w-full text-center"
+                        [min]="0"
+                      ></p-inputNumber>
+                    </td>
+
+                    <!-- Quantity Delivered -->
+                    <td class="p-3 align-top">
+                      <p-inputNumber
+                        formControlName="quantityDelivered"
+                        styleClass="w-full"
+                        inputStyleClass="w-full text-center"
+                        [min]="0"
+                      ></p-inputNumber>
+                    </td>
+
+                    <!-- Unit -->
+                    <td class="p-3 align-top">
+                      <input
+                        pInputText
+                        class="w-full text-center"
+                        formControlName="unit"
+                        placeholder="Unit"
+                      />
+                    </td>
+
+                    <!-- Remarks -->
+                    <td class="p-3 align-top">
+                      <input
+                        pInputText
+                        formControlName="remarks"
+                        class="w-full"
+                        placeholder="Remarks..."
+                      />
+                    </td>
+
+                    <!-- Action -->
+                    <td class="p-3 text-center align-top">
+                      <p-button
+                        icon="pi pi-trash"
+                        severity="danger"
+                        size="small"
+                        [text]="true"
+                        [rounded]="true"
+                        styleClass="mx-auto"
+                        (onClick)="removeItem(i)"
+                      ></p-button>
+                    </td>
+                  </tr>
+                </ng-template>
+
+                <!-- Empty State -->
+                <ng-template #emptymessage>
+                  <tr>
+                    <td colspan="6" class="px-4 py-12">
+                      <div
+                        class="flex flex-col items-center justify-center text-center"
+                      >
+                        <div
+                          class="mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-slate-100"
+                        >
+                          <i class="pi pi-inbox text-2xl text-gray-400"></i>
+                        </div>
+
+                        <p class="text-sm font-semibold text-gray-700">
+                          No items added yet
+                        </p>
+
+                        <p class="mt-1 text-xs text-gray-500">
+                          Add items to this delivery order to get started.
+                        </p>
+                      </div>
+                    </td>
+                  </tr>
+                </ng-template>
+              </p-table>
+            </div>
+
+            <!-- Add Item -->
+            <div
+              class="flex flex-col gap-3 border-t border-gray-100 p-4 sm:flex-row sm:items-center sm:justify-between sm:px-5"
+            >
+              <p class="text-xs text-gray-500">
+                Make sure the delivered quantities are correct before saving.
+              </p>
+
+              <p-button
+                label="Add Item"
+                icon="pi pi-plus"
+                severity="info"
+                [outlined]="true"
+                styleClass="w-full rounded-lg px-4 py-2 sm:w-auto"
+                (onClick)="addItem()"
+              ></p-button>
+            </div>
+          </section>
+        </div>
       </div>
     </div>
-  </div>`,
+  `,
   styleUrl: './delivery-order-form.less',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -608,6 +702,7 @@ export class DeliveryOrderForm implements OnInit, OnDestroy {
         Validators.required,
       ),
       deliveryMethod: new FormControl<string | null>(null),
+      deliveryMethodOther: new FormControl<string | null>(null),
       notes: new FormControl<string | null>(null),
       remarks: new FormControl<string | null>(null),
       paymentTerms: new FormControl<string | null>(null),
@@ -713,33 +808,6 @@ export class DeliveryOrderForm implements OnInit, OnDestroy {
       this.selectedSenderAddress = company.deliveryAddress || null;
       this.cdr.markForCheck();
     });
-
-    // this.Items.valueChanges.subscribe((items) => {
-    //   let subTotal = 0;
-    //   let taxTotal = 0;
-
-    //   items.forEach((item: any) => {
-    //     const lineTotal = item.quantityDelivered * item.unitPrice;
-    //     const tax = (lineTotal * item.taxRate) / 100;
-
-    //     item.total = lineTotal + tax;
-    //     item.taxAmount = tax;
-
-    //     subTotal += lineTotal;
-    //     taxTotal += tax;
-    //   });
-
-    //   this.doForm.patchValue(
-    //     {
-    //       subTotal,
-    //       taxAmount: taxTotal,
-    //       totalAmount: subTotal + taxTotal,
-    //     },
-    //     { emitEvent: false },
-    //   );
-
-    //   this.cdr.markForCheck();
-    // });
   }
 
   generateDONo() {
@@ -762,14 +830,16 @@ export class DeliveryOrderForm implements OnInit, OnDestroy {
         next: (res) => {
           this.loadingService.stop();
 
-          this.salesOrderSelection = res.salesOrders?.map((q: any) => ({
-            label: q.salesOrderNo,
-            value: q.id,
-            clientId: q.clientId,
-            supplierId: q.supplierId,
-            projectId: q.projectId,
-            salesOrderItems: q.salesOrderItems,
-          }));
+          this.salesOrderSelection =
+            res.salesOrders?.map((q: any) => ({
+              label: q.salesOrderNo,
+              value: q.id,
+              clientId: q.clientId,
+              supplierId: q.supplierId,
+              projectId: q.projectId,
+              terms: q.terms,
+              salesOrderItems: q.salesOrderItems,
+            })) || [];
 
           this.companySelection = res.companies.map((c: any) => ({
             label: c.name,

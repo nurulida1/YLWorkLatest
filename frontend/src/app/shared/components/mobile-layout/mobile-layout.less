@@ -1,3 +1,7 @@
+/* ==========================================
+   HOST
+========================================== */
+
 :host {
   display: block;
   width: 100%;
@@ -5,57 +9,100 @@
   min-height: 0;
 }
 
+/* ==========================================
+   GLOBAL
+========================================== */
+
+* {
+  box-sizing: border-box;
+}
+
+/* ==========================================
+   MOBILE LAYOUT
+========================================== */
+
 .mobile-layout {
   display: flex;
   flex-direction: column;
+
   width: 100%;
   height: 100vh;
   height: 100dvh;
+
   overflow: hidden;
   background: #f8fafc;
 }
 
+/* ==========================================
+   MAIN CONTENT
+========================================== */
+
 .mobile-content {
   flex: 1;
   min-height: 0;
+
   overflow-x: hidden;
   overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
+
   padding-bottom: 8px;
+
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
 }
 
-// Bottom navigation
+/* ==========================================
+   BOTTOM NAVIGATION
+========================================== */
+
 .bottom-navigation {
   position: relative;
   z-index: 100;
+
   display: flex;
   flex-shrink: 0;
   align-items: center;
   justify-content: space-around;
-  height: 76px;
+
+  width: 100%;
+  height: calc(76px + env(safe-area-inset-bottom));
+
   padding: 5px 8px calc(5px + env(safe-area-inset-bottom));
-  background: #fff;
+
+  background: #ffffff;
   border-top: 1px solid #e2e8f0;
+
   box-shadow: 0 -4px 20px rgb(15 23 42 / 5%);
 }
 
+/* ==========================================
+   NAVIGATION ITEMS
+========================================== */
+
 .nav-item {
   position: relative;
+
   display: flex;
   flex: 1;
   flex-direction: column;
   align-items: center;
   justify-content: center;
+
   gap: 6px;
+
   min-width: 0;
   height: 100%;
   padding: 0;
+
   border: 0;
   background: transparent;
+
   color: #94a3b8;
   text-decoration: none;
+
   cursor: pointer;
+
   -webkit-tap-highlight-color: transparent;
+
   transition: color 0.2s ease;
 
   i {
@@ -63,7 +110,7 @@
     transition: transform 0.2s ease;
   }
 
-  span {
+  > span {
     font-size: 10px;
     font-weight: 600;
     white-space: nowrap;
@@ -75,14 +122,18 @@
     &::before {
       position: absolute;
       top: 0;
+
       width: 28px;
       height: 3px;
+
       border-radius: 0 0 5px 5px;
       background: #2563eb;
+
       content: "";
     }
 
-    i {
+    > i,
+    .notification-icon-wrapper > i {
       transform: translateY(-1px);
     }
   }
@@ -92,14 +143,19 @@
   }
 }
 
-// Create button
+/* ==========================================
+   CREATE BUTTON
+========================================== */
+
 .quick-action-wrapper {
   display: flex;
   flex: 1;
   flex-direction: column;
   align-items: center;
   justify-content: center;
+
   gap: 4px;
+
   height: 100%;
   min-width: 0;
 }
@@ -108,15 +164,22 @@
   display: flex;
   align-items: center;
   justify-content: center;
+
   width: 48px;
   height: 48px;
+
   margin-top: -22px;
-  border: 4px solid #fff;
+
+  border: 4px solid #ffffff;
   border-radius: 50%;
+
   background: #2563eb;
-  color: #fff;
+  color: #ffffff;
+
   box-shadow: 0 5px 14px rgb(37 99 235 / 30%);
+
   cursor: pointer;
+
   transition:
     transform 0.2s ease,
     background 0.2s ease;
@@ -141,64 +204,155 @@
   font-weight: 600;
 }
 
-// Shared backdrop
+/* ==========================================
+   NOTIFICATION BADGE
+========================================== */
+
+.notification-nav-item {
+  position: relative;
+}
+
+.notification-icon-wrapper {
+  position: relative;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.notification-badge {
+  position: absolute;
+  top: -9px;
+  right: -12px;
+  z-index: 5;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+
+  border: 2px solid #ffffff;
+  border-radius: 999px;
+
+  background: #ef4444;
+  color: #ffffff;
+
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/* ==========================================
+   SHARED BACKDROP
+========================================== */
+
 .mobile-sheet-backdrop {
   position: fixed;
   z-index: 200;
   inset: 0;
+
   visibility: hidden;
+  pointer-events: none;
+
   background: rgb(15 23 42 / 45%);
   opacity: 0;
+
   transition:
     opacity 0.25s ease,
     visibility 0.25s ease;
 
   &.show {
     visibility: visible;
+    pointer-events: auto;
     opacity: 1;
   }
 }
 
-// Shared bottom sheet
+/* ==========================================
+   SHARED BOTTOM SHEET
+========================================== */
+
 .mobile-bottom-sheet {
   position: fixed;
   z-index: 201;
+
   right: 0;
   bottom: 0;
   left: 0;
+
   max-height: 80vh;
   max-height: 80dvh;
+
+  overflow-x: hidden;
   overflow-y: auto;
+
   padding: 10px 20px calc(24px + env(safe-area-inset-bottom));
+
   border-radius: 24px 24px 0 0;
-  background: #fff;
+
+  background: #ffffff;
+
   box-shadow: 0 -8px 30px rgb(15 23 42 / 12%);
+
   transform: translateY(105%);
-  transition: transform 0.3s ease;
+
+  visibility: hidden;
+  pointer-events: none;
+
+  transition:
+    transform 0.3s ease,
+    visibility 0s linear 0.3s;
+
   -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
 
   &.show {
     transform: translateY(0);
+
+    visibility: visible;
+    pointer-events: auto;
+
+    transition:
+      transform 0.3s ease,
+      visibility 0s;
   }
 }
+
+/* ==========================================
+   SHEET HANDLE
+========================================== */
 
 .sheet-handle {
   width: 40px;
   height: 4px;
+
   margin: 0 auto 20px;
+
   border-radius: 10px;
   background: #cbd5e1;
 }
+
+/* ==========================================
+   SHEET HEADER
+========================================== */
 
 .sheet-header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
+
   gap: 12px;
   margin-bottom: 20px;
 
   h3 {
     margin: 0;
+
     color: #0f172a;
     font-size: 20px;
     font-weight: 700;
@@ -206,22 +360,31 @@
 
   p {
     margin: 5px 0 0;
+
     color: #94a3b8;
     font-size: 13px;
   }
 }
+
+/* ==========================================
+   SHEET CLOSE BUTTON
+========================================== */
 
 .sheet-close-button {
   display: flex;
   flex-shrink: 0;
   align-items: center;
   justify-content: center;
+
   width: 34px;
   height: 34px;
+
   border: 0;
   border-radius: 50%;
+
   background: #f1f5f9;
   color: #64748b;
+
   cursor: pointer;
 
   i {
@@ -233,78 +396,332 @@
   }
 }
 
-// My Work menu
+/* ==========================================
+   MY WORK SHEET
+========================================== */
+
+.work-menu-sheet {
+  max-height: 85vh;
+  max-height: 85dvh;
+
+  padding-bottom: calc(24px + env(safe-area-inset-bottom));
+}
+
 .work-menu-list {
   display: flex;
   flex-direction: column;
   gap: 8px;
+
+  padding-bottom: 8px;
 }
+
+/* ==========================================
+   MENU SECTIONS
+========================================== */
+
+.menu-section {
+  margin-bottom: 24px;
+}
+
+.menu-section-heading {
+  display: flex;
+  align-items: center;
+
+  gap: 12px;
+
+  padding: 12px 8px;
+  margin-bottom: 8px;
+}
+
+.menu-section-heading-icon {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+
+  width: 38px;
+  height: 38px;
+
+  border-radius: 12px;
+
+  background: #eff6ff;
+  color: #2563eb;
+
+  i {
+    font-size: 17px;
+  }
+}
+
+.menu-section-heading h4 {
+  margin: 0;
+
+  color: #1e293b;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.menu-section-heading p {
+  margin: 3px 0 0;
+
+  color: #94a3b8;
+  font-size: 11px;
+}
+
+.all-modules-section {
+  padding-top: 12px;
+
+  border-top: 1px solid #e2e8f0;
+
+  .menu-section-heading-icon {
+    background: #f1f5f9;
+    color: #475569;
+  }
+}
+
+.menu-section-items {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+/* ==========================================
+   MENU ITEMS
+========================================== */
 
 .work-menu-item {
   display: flex;
   align-items: center;
+
+  gap: 12px;
+
   width: 100%;
-  min-height: 68px;
+  min-height: 66px;
+
   padding: 10px 12px;
+
   border: 1px solid #f1f5f9;
   border-radius: 14px;
-  background: #fff;
+
+  background: #ffffff;
+  color: #334155;
+
   text-align: left;
+  text-decoration: none;
+
   cursor: pointer;
+
   transition:
     background 0.2s ease,
     border-color 0.2s ease;
+
+  &:hover {
+    background: #f8fafc;
+  }
 
   &:active {
     border-color: #bfdbfe;
     background: #eff6ff;
   }
+
+  &.active {
+    border-color: #bfdbfe;
+    background: #eff6ff;
+
+    .work-menu-icon {
+      background: #dbeafe;
+      color: #2563eb;
+    }
+
+    .work-menu-title {
+      color: #1d4ed8;
+    }
+
+    .work-menu-arrow {
+      color: #2563eb;
+    }
+  }
 }
+
+/* ==========================================
+   MENU ITEM ICON
+========================================== */
 
 .work-menu-icon {
   display: flex;
   flex-shrink: 0;
   align-items: center;
   justify-content: center;
-  width: 42px;
-  height: 42px;
-  margin-right: 12px;
-  border-radius: 12px;
-  background: #eff6ff;
-  color: #2563eb;
+
+  width: 40px;
+  height: 40px;
+
+  border-radius: 11px;
+
+  background: #f1f5f9;
+  color: #64748b;
 
   i {
-    font-size: 18px;
+    font-size: 16px;
   }
 }
+
+/* ==========================================
+   MENU ITEM TEXT
+========================================== */
 
 .work-menu-text {
   display: flex;
   flex: 1;
   flex-direction: column;
+
   gap: 4px;
+
   min-width: 0;
 }
 
 .work-menu-title {
-  color: #1e293b;
-  font-size: 14px;
+  color: #334155;
+
+  font-size: 13px;
   font-weight: 600;
 }
 
 .work-menu-description {
   color: #94a3b8;
+
   font-size: 11px;
+  line-height: 1.4;
 }
 
 .work-menu-arrow {
   flex-shrink: 0;
+
   margin-left: 8px;
+
   color: #94a3b8;
-  font-size: 14px;
+  font-size: 13px;
 }
 
-// Create menu
+/* ==========================================
+   EXPANDABLE MODULE GROUPS
+========================================== */
+
+.work-menu-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.work-menu-parent {
+  font-family: inherit;
+  font-size: inherit;
+
+  background: #f8fafc;
+  border-color: #e2e8f0;
+
+  &.expanded {
+    border-color: #bfdbfe;
+    background: #eff6ff;
+
+    .work-menu-icon {
+      background: #dbeafe;
+      color: #2563eb;
+    }
+
+    .work-menu-title {
+      color: #1d4ed8;
+    }
+
+    .work-menu-arrow {
+      color: #2563eb;
+    }
+  }
+
+  &.menu-group-active {
+    border-color: #bfdbfe;
+  }
+}
+
+/* ==========================================
+   WORK SUBMENU
+========================================== */
+
+.work-submenu {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  margin: 4px 0 10px 20px;
+  padding: 5px 0 5px 18px;
+
+  border-left: 2px solid #e2e8f0;
+}
+
+.work-submenu-item {
+  display: flex;
+  align-items: center;
+
+  gap: 11px;
+
+  width: 100%;
+  min-height: 43px;
+
+  padding: 9px 12px;
+
+  border-radius: 9px;
+
+  color: #64748b;
+  background: #ffffff;
+
+  font-size: 12px;
+  font-weight: 500;
+  text-decoration: none;
+
+  transition:
+    color 0.2s ease,
+    background 0.2s ease;
+
+  > i:first-child {
+    flex-shrink: 0;
+
+    width: 18px;
+
+    color: #94a3b8;
+    font-size: 13px;
+    text-align: center;
+  }
+
+  span {
+    flex: 1;
+    min-width: 0;
+  }
+
+  &:hover {
+    background: #f8fafc;
+  }
+
+  &:active,
+  &.active {
+    background: #eff6ff;
+    color: #2563eb;
+
+    > i:first-child {
+      color: #2563eb;
+    }
+  }
+}
+
+.submenu-active-icon {
+  flex-shrink: 0;
+
+  color: #2563eb;
+  font-size: 12px;
+}
+
+/* ==========================================
+   CREATE MENU
+========================================== */
+
 .quick-action-grid {
   display: flex;
   flex-direction: column;
@@ -314,14 +731,22 @@
 .quick-action-card {
   display: flex;
   align-items: center;
+
+  gap: 0;
+
   width: 100%;
   min-height: 68px;
+
   padding: 10px 12px;
+
   border: 1px solid #f1f5f9;
   border-radius: 14px;
-  background: #fff;
+
+  background: #ffffff;
+
   text-align: left;
   cursor: pointer;
+
   transition:
     background 0.2s ease,
     border-color 0.2s ease;
@@ -337,9 +762,12 @@
   flex-shrink: 0;
   align-items: center;
   justify-content: center;
+
   width: 42px;
   height: 42px;
+
   margin-right: 12px;
+
   border-radius: 12px;
 
   i {
@@ -351,29 +779,38 @@
   display: flex;
   flex: 1;
   flex-direction: column;
+
   gap: 4px;
+
   min-width: 0;
 }
 
 .action-title {
   color: #1e293b;
+
   font-size: 14px;
   font-weight: 600;
 }
 
 .action-description {
   color: #94a3b8;
+
   font-size: 11px;
 }
 
 .action-arrow {
   flex-shrink: 0;
+
   margin-left: 8px;
+
   color: #94a3b8;
   font-size: 14px;
 }
 
-// Small screens
+/* ==========================================
+   SMALL SCREENS
+========================================== */
+
 @media (max-width: 360px) {
   .bottom-navigation {
     padding-right: 4px;
@@ -381,7 +818,7 @@
   }
 
   .nav-item {
-    span {
+    > span {
       font-size: 9px;
     }
 
@@ -399,8 +836,45 @@
     padding-right: 16px;
     padding-left: 16px;
   }
+
+  .notification-badge {
+    top: -8px;
+    right: -10px;
+
+    min-width: 16px;
+    height: 16px;
+
+    font-size: 9px;
+  }
+
+  .work-submenu {
+    margin-left: 14px;
+    padding-left: 12px;
+  }
+
+  .work-submenu-item {
+    gap: 8px;
+
+    padding-right: 8px;
+    padding-left: 8px;
+
+    font-size: 12px;
+  }
 }
 
-* {
-  box-sizing: border-box;
+/* ==========================================
+   REDUCED MOTION
+========================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .nav-item,
+  .nav-item i,
+  .quick-action-button,
+  .mobile-sheet-backdrop,
+  .mobile-bottom-sheet,
+  .work-menu-item,
+  .work-submenu-item,
+  .quick-action-card {
+    transition: none;
+  }
 }

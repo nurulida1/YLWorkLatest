@@ -1,3 +1,274 @@
 :host {
   display: block;
+  width: 100%;
+  min-width: 0;
+}
+
+.delivery-order-page {
+  width: 100%;
+  min-width: 0;
+  overflow-x: hidden;
+}
+
+.delivery-order-actionbar {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.form-section {
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.875rem;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+}
+
+.form-section-heading {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.form-field {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.form-label {
+  display: block;
+  margin-bottom: 0.1rem;
+  color: #374151;
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.field-hint {
+  color: #9ca3af;
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+
+.address-card {
+  min-width: 0;
+  padding: 1rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  background: #f8fafc;
+}
+
+.address-card-title {
+  color: #475569;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.address-meta-label {
+  display: block;
+  margin-bottom: 0.25rem;
+  color: #9ca3af;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* PrimeNG controls */
+:host ::ng-deep {
+  .p-inputtext,
+  .p-select,
+  .p-textarea,
+  .p-inputnumber,
+  .p-inputnumber-input {
+    max-width: 100%;
+  }
+
+  .p-inputtext,
+  .p-select,
+  .p-textarea {
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+  }
+
+  .p-inputtext,
+  .p-select {
+    min-height: 42px;
+  }
+
+  .p-select {
+    width: 100%;
+  }
+
+  .p-inputtext:enabled:focus,
+  .p-textarea:enabled:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+
+  .p-select:not(.p-disabled).p-focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  }
+
+  .p-button {
+    justify-content: center;
+    font-size: 0.8125rem;
+    font-weight: 600;
+  }
+}
+
+/* Items table */
+.delivery-items-table {
+  width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.delivery-items-table ::ng-deep .p-datatable-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.delivery-items-table ::ng-deep .p-datatable-table {
+  min-width: 65rem;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.delivery-items-table ::ng-deep .p-datatable-thead > tr > th {
+  padding: 0.9rem 0.75rem;
+  border-bottom: 1px solid #e5e7eb;
+  background: #f8fafc;
+  color: #64748b;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.delivery-items-table ::ng-deep .p-datatable-tbody > tr > td {
+  border-bottom: 1px solid #f1f5f9;
+  background: #ffffff;
+  vertical-align: top;
+}
+
+.delivery-items-table ::ng-deep .p-datatable-tbody > tr:hover > td {
+  background: #f8fafc;
+}
+
+/* Rich text editor */
+.delivery-items-table ::ng-deep .p-editor {
+  width: 100%;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+}
+
+.delivery-items-table ::ng-deep .p-editor-toolbar {
+  border-bottom: 1px solid #e5e7eb;
+  background: #f8fafc;
+}
+
+.delivery-items-table ::ng-deep .p-editor-content {
+  background: #ffffff;
+}
+
+.delivery-items-table ::ng-deep .ql-editor {
+  min-height: 80px;
+  font-size: 0.8125rem;
+}
+
+/* Number inputs */
+.delivery-items-table ::ng-deep .p-inputnumber {
+  width: 100%;
+}
+
+.delivery-items-table ::ng-deep .p-inputnumber-input {
+  width: 100%;
+  min-width: 0;
+  text-align: center;
+}
+
+/* Text inputs in item table */
+.delivery-items-table ::ng-deep .p-inputtext {
+  width: 100%;
+  min-width: 0;
+}
+
+/* Tablet */
+@media (max-width: 1024px) {
+  .form-section-heading {
+    padding: 0.9rem 1rem;
+  }
+
+  .delivery-items-table ::ng-deep .p-datatable-thead > tr > th {
+    padding: 0.75rem 0.6rem;
+  }
+}
+
+/* Mobile */
+@media (max-width: 640px) {
+  .delivery-order-page {
+    padding: 0.75rem;
+  }
+
+  .delivery-order-actionbar {
+    top: 0.5rem;
+    gap: 0.875rem;
+    padding: 0.875rem;
+  }
+
+  .form-section {
+    border-radius: 0.75rem;
+  }
+
+  .form-section-heading {
+    padding: 0.875rem;
+  }
+
+  .address-card {
+    padding: 0.875rem;
+  }
+
+  .delivery-items-table {
+    overflow-x: auto;
+  }
+
+  .delivery-items-table ::ng-deep .p-datatable-table {
+    min-width: 65rem;
+  }
+
+  .delivery-items-table ::ng-deep .p-editor {
+    min-width: 200px;
+  }
+
+  .delivery-items-table ::ng-deep .p-inputtext,
+  .delivery-items-table ::ng-deep .p-inputnumber-input {
+    font-size: 0.8125rem;
+  }
+}
+
+/* Very small phones */
+@media (max-width: 380px) {
+  .delivery-order-page {
+    padding: 0.5rem;
+  }
+
+  .delivery-order-actionbar {
+    padding: 0.75rem;
+  }
+
+  .form-section-heading {
+    gap: 0.625rem;
+    padding: 0.75rem;
+  }
 }

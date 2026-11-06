@@ -1,47 +1,428 @@
 :host {
   display: block;
+  width: 100%;
+  min-width: 0;
+}
 
+* {
+  box-sizing: border-box;
+}
+
+// ==========================================
+// PAGE LAYOUT
+// ==========================================
+
+.quotation-editor-page {
+  width: 100%;
+  min-width: 0;
+  overflow-x: hidden;
+}
+
+.quotation-editor-container {
+  width: 100%;
+  min-width: 0;
+}
+
+.quotation-editor-header {
+  min-width: 0;
+}
+
+.quotation-editor-card {
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.quotation-party-card {
+  min-width: 0;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+
+  &:hover {
+    border-color: #cbd5e1;
+  }
+}
+
+.quotation-empty-party {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 110px;
+  padding: 1rem;
+  border: 1px dashed #cbd5e1;
+  border-radius: 0.75rem;
+  background: #f8fafc;
+  color: #94a3b8;
+  font-size: 0.8rem;
+  text-align: center;
+}
+
+// ==========================================
+// SUBJECT FIELD
+// ==========================================
+
+.quotation-subject-field {
+  min-width: 0;
+
+  input {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+// ==========================================
+// ORDER ITEMS TABLE
+// ==========================================
+
+.quotation-items-table {
+  width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 0.75rem;
+
+  ::ng-deep .p-datatable {
+    width: 100%;
+  }
+
+  ::ng-deep .p-datatable-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  ::ng-deep .p-datatable-table {
+    min-width: 1050px;
+    width: 100%;
+  }
+
+  ::ng-deep .p-datatable-thead > tr > th {
+    padding: 0.85rem 0.75rem;
+    white-space: nowrap;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #475569;
+  }
+
+  ::ng-deep .p-datatable-tbody > tr > td {
+    padding: 0.65rem 0.75rem;
+    vertical-align: middle;
+    font-size: 0.8125rem;
+  }
+
+  ::ng-deep .p-datatable-tfoot > tr > td {
+    padding: 0.75rem;
+    font-size: 0.8125rem;
+  }
+
+  ::ng-deep .p-inputnumber {
+    width: 100%;
+    min-width: 80px;
+  }
+
+  ::ng-deep .p-inputnumber-input {
+    width: 100%;
+    min-width: 0;
+  }
+
+  ::ng-deep .p-inputtext {
+    min-width: 0;
+  }
+
+  ::ng-deep .p-editor-container {
+    min-width: 220px;
+  }
+
+  ::ng-deep .p-editor-content {
+    min-height: 80px;
+  }
+
+  ::ng-deep .p-editor-toolbar {
+    padding: 0.35rem;
+  }
+
+  ::ng-deep .p-editor-content .ql-editor {
+    min-height: 80px;
+    font-size: 0.8125rem;
+  }
+
+  ::ng-deep .p-button {
+    flex-shrink: 0;
+  }
+}
+
+// ==========================================
+// ADD ITEM / SECTION / NOTES BUTTONS
+// ==========================================
+
+.quotation-add-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 40px;
+  padding: 0.6rem 1rem;
+  border: 1px solid #bfdbfe;
+  border-radius: 0.65rem;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease;
+
+  i {
+    font-size: 0.875rem;
+  }
+
+  &:hover {
+    background: #dbeafe;
+    border-color: #93c5fd;
+  }
+
+  &:active {
+    transform: scale(0.98);
+  }
+
+  &:focus-visible {
+    outline: 2px solid #3b82f6;
+    outline-offset: 2px;
+  }
+}
+
+// ==========================================
+// TERMS & CONDITIONS
+// ==========================================
+
+.quotation-terms-grid {
+  width: 100%;
+  min-width: 0;
+
+  > div {
+    min-width: 0;
+  }
+
+  input {
+    max-width: 100%;
+  }
+}
+
+// ==========================================
+// COMPANY / CLIENT DIALOG
+// ==========================================
+
+.quotation-company-dialog {
+  width: min(900px, calc(100vw - 2rem));
+  max-width: 900px;
+  max-height: calc(100dvh - 2rem);
+  overflow: hidden;
+  border-radius: 1rem;
+
+  ::ng-deep .p-dialog {
+    width: min(900px, calc(100vw - 2rem));
+    max-width: 900px;
+    max-height: calc(100dvh - 2rem);
+    margin: 1rem;
+    overflow: hidden;
+    border-radius: 1rem;
+  }
+
+  ::ng-deep .p-dialog-content {
+    padding: 0;
+    overflow: hidden;
+  }
+
+  ::ng-deep .p-dialog-header {
+    display: none;
+  }
+}
+
+.quotation-company-dialog-content {
+  width: 100%;
+  min-width: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+// ==========================================
+// PRIME NG INPUTS
+// ==========================================
+
+:host {
   ::ng-deep {
-    .p-orderlist-controls {
-      display: none !important;
+    .p-inputtext,
+    .p-textarea,
+    .p-select,
+    .p-datepicker,
+    .p-inputnumber {
+      max-width: 100%;
     }
-    .p-listbox {
-      border: none !important;
-      width: 100% !important;
+
+    .p-datepicker,
+    .p-select {
+      width: 100%;
+    }
+
+    .p-datepicker-input {
+      min-width: 0;
+    }
+
+    .p-inputnumber {
+      min-width: 0;
+    }
+
+    .p-checkbox {
+      flex-shrink: 0;
     }
   }
 }
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(-10px);
+
+// ==========================================
+// TABLET
+// ==========================================
+
+@media (max-width: 1024px) {
+  .quotation-editor-card {
+    padding: 1.5rem;
   }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+
+  .quotation-party-card {
+    padding: 1rem;
   }
 }
 
-.animate-fadeIn {
-  animation: fadeIn 0.3s ease-out;
+// ==========================================
+// MOBILE
+// ==========================================
+
+@media (max-width: 640px) {
+  .quotation-editor-page {
+    padding: 0.75rem;
+  }
+
+  .quotation-editor-container {
+    gap: 1rem;
+  }
+
+  .quotation-editor-header {
+    align-items: stretch;
+
+    h1 {
+      font-size: 1.5rem;
+      line-height: 1.25;
+    }
+  }
+
+  .quotation-editor-card {
+    padding: 1rem;
+    border-radius: 1rem;
+  }
+
+  .quotation-subject-field {
+    align-items: stretch;
+
+    > span {
+      white-space: normal;
+      line-height: 1.4;
+    }
+  }
+
+  .quotation-party-card {
+    padding: 0.875rem;
+  }
+
+  .quotation-empty-party {
+    min-height: 90px;
+  }
+
+  // Keep table readable by allowing horizontal scrolling.
+  .quotation-items-table {
+    border-radius: 0.65rem;
+
+    ::ng-deep .p-datatable-table {
+      min-width: 1050px;
+    }
+
+    ::ng-deep .p-datatable-thead > tr > th {
+      padding: 0.65rem;
+      font-size: 0.7rem;
+    }
+
+    ::ng-deep .p-datatable-tbody > tr > td {
+      padding: 0.5rem;
+    }
+  }
+
+  .quotation-add-action {
+    flex: 1 1 calc(50% - 0.5rem);
+    min-height: 42px;
+    padding: 0.65rem 0.75rem;
+  }
+
+  .quotation-terms-grid {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: 0.65rem;
+
+    > .col-span-2,
+    > .col-span-3,
+    > .col-span-10,
+    > .col-span-9 {
+      grid-column: span 12 / span 12;
+    }
+  }
+
+  .quotation-company-dialog {
+    width: calc(100vw - 1rem);
+    max-height: calc(100dvh - 1rem);
+    border-radius: 0.875rem;
+
+    ::ng-deep .p-dialog {
+      width: calc(100vw - 1rem);
+      max-width: none;
+      max-height: calc(100dvh - 1rem);
+      margin: 0.5rem;
+      border-radius: 0.875rem;
+    }
+
+    ::ng-deep .p-dialog-content {
+      padding: 0;
+      overflow: hidden;
+    }
+  }
+
+  .quotation-company-dialog-content {
+    max-height: calc(100dvh - 9rem);
+  }
 }
 
-/* Custom scrollbar */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
+// ==========================================
+// VERY SMALL MOBILE
+// ==========================================
 
-::-webkit-scrollbar-track {
-  background: #f1f5f9;
-  border-radius: 10px;
-}
+@media (max-width: 380px) {
+  .quotation-editor-page {
+    padding: 0.5rem;
+  }
 
-::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 10px;
-}
+  .quotation-editor-card {
+    padding: 0.75rem;
+  }
 
-::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  .quotation-editor-header h1 {
+    font-size: 1.35rem;
+  }
+
+  .quotation-add-action {
+    flex: 1 1 100%;
+  }
+
+  .quotation-company-dialog-content {
+    max-height: calc(100dvh - 8.5rem);
+  }
 }

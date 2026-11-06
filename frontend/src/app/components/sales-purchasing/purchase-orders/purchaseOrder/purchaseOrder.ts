@@ -58,297 +58,383 @@ import {
     ReactiveFormsModule,
     DatePickerModule,
   ],
-  template: `<div class="w-full min-h-[92.9vh] flex flex-col p-5">
-      <div class="flex flex-row items-center gap-1 text-gray-500 tracking-wide">
-        <div
-          [routerLink]="'/dashboard'"
-          class="cursor-pointer hover:text-gray-600"
-        >
-          Dashboard
-        </div>
-        /
-        <div class="text-gray-700 font-semibold">Purchase Orders</div>
+  template: `
+    <div class="purchase-order-page">
+      <!-- Breadcrumb -->
+      <div class="breadcrumb">
+        <a routerLink="/dashboard">Dashboard</a>
+        <i class="pi pi-angle-right"></i>
+        <span>Purchase Orders</span>
       </div>
-      <div
-        class="mt-3 border border-gray-200 rounded-md tracking-wide bg-white p-5 flex flex-col"
-      >
-        <div
-          class="flex flex-col gap-3 xl:gap-0 xl:flex-row xl:items-center justify-between"
-        >
-          <div class="flex flex-col">
-            <div class="text-[18px] text-gray-700 font-semibold">
-              Purchase Orders
-            </div>
-            <div class="text-gray-500">
-              View, create, and track all purchase orders
+
+      <!-- Main content -->
+      <section class="po-container">
+        <!-- Page header -->
+        <div class="po-header">
+          <div class="po-heading">
+            <div class="po-title-row">
+              <div class="po-title-icon">
+                <i class="pi pi-file-edit"></i>
+              </div>
+
+              <div>
+                <h1>Purchase Orders</h1>
+                <p>View, create, and track all purchase orders</p>
+              </div>
             </div>
           </div>
-          <div class="flex flex-row items-center gap-2">
-            <div class="w-full xl:min-w-[100px] relative">
+
+          <div class="po-toolbar">
+            <div class="po-search">
+              <i class="pi pi-search"></i>
               <input
-                type="text"
                 pInputText
+                type="text"
                 [(ngModel)]="search"
-                class="w-full!"
-                placeholder="Search by PO No"
+                placeholder="Search PO number..."
                 (keydown)="onKeyDown($event)"
               />
-              <i
-                class="pi pi-search absolute! top-3! right-2! text-gray-500!"
-              ></i>
+
+              <button
+                *ngIf="search"
+                type="button"
+                class="search-clear"
+                (click)="ResetTable()"
+                aria-label="Clear search"
+              >
+                <i class="pi pi-times"></i>
+              </button>
             </div>
 
             <p-button
               *ngIf="isPurchasing()"
               label="Generate PO"
-              [routerLink]="'/purchase-orders/form'"
-              icon="pi pi-file-pdf"
+              icon="pi pi-plus"
               severity="info"
-              styleClass="py-2! whitespace-nowrap!"
+              styleClass="generate-po-btn"
+              [routerLink]="'/purchase-orders/form'"
             ></p-button>
           </div>
         </div>
-        <div class="mt-3">
+
+        <!-- Table heading -->
+        <div class="po-list-heading">
+          <div>
+            <h2>Purchase Order List</h2>
+            <p>Manage and monitor your purchase orders</p>
+          </div>
+
+          <div
+            class="po-record-count"
+            *ngIf="PagingSignal().totalElements !== undefined"
+          >
+            <i class="pi pi-list"></i>
+            <span>{{ PagingSignal().totalElements || 0 }} records</span>
+          </div>
+        </div>
+
+        <!-- Table -->
+        <div class="po-table-wrapper">
           <p-table
             #fTable
             dataKey="id"
-            [value]="PagingSignal().data"
+            [value]="PagingSignal().data || []"
             [paginator]="true"
             [rows]="Query.PageSize"
-            [totalRecords]="PagingSignal().totalElements"
-            [tableStyle]="{ 'min-width': '60rem' }"
-            [showGridlines]="true"
+            [totalRecords]="PagingSignal().totalElements || 0"
+            [tableStyle]="{ 'min-width': '850px' }"
+            [showGridlines]="false"
             [rowsPerPageOptions]="[10, 20, 30, 50]"
             [lazy]="true"
+            [loading]="false"
             (onLazyLoad)="NextPage($event)"
+            styleClass="po-table"
           >
             <ng-template #header>
               <tr>
-                <th
-                  *ngIf="isPurchasing()"
-                  ssss
-                  class="w-[5%]! bg-gray-100!"
-                ></th>
+                <th *ngIf="isPurchasing()" class="expand-column"></th>
 
-                <th
-                  pSortableColumn="PurchaseOrderNo"
-                  class="bg-gray-100! text-center! w-[15%]!"
-                >
-                  <div class="flex flex-row justify-center items-center gap-2">
-                    <div>PO No</div>
-                    <p-sortIcon field="PurchaseOrderNo" />
+                <th pSortableColumn="PurchaseOrderNo" class="po-number-column">
+                  <div class="table-header-content">
+                    <span>PO Number</span>
+                    <p-sortIcon field="PurchaseOrderNo"></p-sortIcon>
                   </div>
                 </th>
-                <th class="bg-gray-100! w-[30%]">Company</th>
 
-                <th
-                  pSortableColumn="PODate"
-                  class="bg-gray-100! text-center! w-[10%]"
-                >
-                  <div class="flex flex-row justify-center items-center gap-2">
-                    <div class="whitespace-nowrap">PO Date</div>
-                    <p-sortIcon field="PODate" />
+                <th class="company-column">Supplier</th>
+
+                <th pSortableColumn="PODate" class="date-column">
+                  <div class="table-header-content">
+                    <span>PO Date</span>
+                    <p-sortIcon field="PODate"></p-sortIcon>
                   </div>
                 </th>
-                <th class="bg-gray-100! text-center! w-[15%]">Amount</th>
 
-                <th
-                  pSortableColumn="Status"
-                  class="bg-gray-100! text-center! w-[10%]!"
-                >
-                  <div class="flex flex-row justify-center items-center gap-2">
-                    <div>Status</div>
-                    <p-sortIcon field="Status" />
+                <th class="amount-column">
+                  <div class="table-header-content">
+                    <span>Amount</span>
                   </div>
                 </th>
-                <th class="bg-gray-100! text-center! w-[10%]">Action</th>
+
+                <th pSortableColumn="Status" class="status-column">
+                  <div class="table-header-content">
+                    <span>Status</span>
+                    <p-sortIcon field="Status"></p-sortIcon>
+                  </div>
+                </th>
+
+                <th class="action-column">
+                  <div class="table-header-content">
+                    <span>Action</span>
+                  </div>
+                </th>
               </tr>
             </ng-template>
-            <ng-template
-              #body
-              let-data
-              let-rowIndex="rowIndex"
-              let-expanded="expanded"
-            >
+
+            <ng-template #body let-data let-expanded="expanded">
               <tr>
-                <td *ngIf="isPurchasing()">
-                  <div
-                    class="flex items-center justify-center cursor-pointer"
+                <td *ngIf="isPurchasing()" class="expand-cell">
+                  <button
+                    type="button"
+                    class="expand-button"
                     (click)="onRowExpand(data, fTable)"
+                    [attr.aria-label]="
+                      'Toggle timeline for ' + data.purchaseOrderNo
+                    "
                   >
                     <i
                       [class]="
                         expanded ? 'pi pi-chevron-down' : 'pi pi-chevron-right'
                       "
                     ></i>
-                  </div>
-                </td>
-                <td class="text-center! font-semibold!">
-                  {{ data.purchaseOrderNo }}
-                </td>
-                <td>
-                  {{ data.supplier?.name }}
+                  </button>
                 </td>
 
-                <td class="text-center!">
-                  {{ data.poDate | date: 'dd/MM/yyyy' }}
+                <td>
+                  <div class="po-number-cell">
+                    <span class="po-number">
+                      {{ data.purchaseOrderNo || '-' }}
+                    </span>
+                  </div>
                 </td>
-                <td class="text-center!">
+
+                <td>
+                  <div class="supplier-cell">
+                    <div class="supplier-avatar">
+                      {{ (data.supplier?.name || 'S').charAt(0).toUpperCase() }}
+                    </div>
+
+                    <span class="supplier-name">
+                      {{ data.supplier?.name || '-' }}
+                    </span>
+                  </div>
+                </td>
+
+                <td class="date-cell">
+                  <i class="pi pi-calendar"></i>
+                  {{ data.poDate | date: 'dd MMM yyyy' }}
+                </td>
+
+                <td class="amount-cell">
                   {{ data.totalAmount | currency: 'RM ' }}
                 </td>
-                <td class="text-center!">
-                  <div class="flex justify-center">
-                    <div
-                      class="rounded-full px-4 text-[13px] py-0.5 font-medium w-fit whitespace-nowrap"
+
+                <td>
+                  <div class="status-cell">
+                    <span
+                      class="po-status"
                       [ngClass]="{
-                        'bg-orange-100 text-orange-600':
-                          data.status === 'Draft',
-
-                        'bg-yellow-100 text-yellow-600':
-                          data.status === 'Reviewed',
-
-                        'bg-blue-100 text-blue-600':
-                          data.status === 'Approved' ||
-                          data.status === 'InProgress',
-
-                        'bg-indigo-100 text-indigo-600':
+                        'status-draft': data.status === 'Draft',
+                        'status-reviewed': data.status === 'Reviewed',
+                        'status-approved': data.status === 'Approved',
+                        'status-in-progress': data.status === 'InProgress',
+                        'status-sent':
                           data.status === 'Sent' || data.status === 'Issued',
-
-                        'bg-teal-100 text-teal-600':
-                          data.status === 'PartiallyReceived',
-
-                        'bg-green-100 text-green-600':
-                          data.status === 'Completed',
-
-                        'bg-red-100 text-red-600':
-                          data.status === 'Rejected' ||
-                          data.status === 'Cancelled',
+                        'status-partial': data.status === 'PartiallyReceived',
+                        'status-completed': data.status === 'Completed',
+                        'status-rejected': data.status === 'Rejected',
+                        'status-cancelled': data.status === 'Cancelled',
                       }"
                     >
-                      {{ data.status }}
-                    </div>
+                      <span class="status-dot"></span>
+                      {{ data.status || 'Unknown' }}
+                    </span>
                   </div>
                 </td>
 
-                <td class="text-center!">
-                  <div class="flex items-center justify-center">
-                    <i
+                <td>
+                  <div class="action-cell">
+                    <button
+                      type="button"
+                      class="action-menu-button"
                       (click)="onEllipsisClick($event, data, menu)"
-                      class="pi pi-ellipsis-h cursor-pointer"
-                    ></i>
+                      aria-label="Purchase order actions"
+                    >
+                      <i class="pi pi-ellipsis-h"></i>
+                    </button>
                   </div>
                 </td>
               </tr>
             </ng-template>
+
+            <!-- Expanded timeline -->
             <ng-template #expandedrow let-item>
-              <tr>
-                <td colspan="100%">
-                  <div class="px-5">
-                    <div class="overflow-x-auto pb-2">
-                      <div class="min-w-max">
-                        <p-timeline
-                          [value]="timelineMap[item.id]"
-                          align="top"
-                          layout="horizontal"
-                          class="customized-timeline"
-                        >
-                          <ng-template #marker let-event>
-                            <div
-                              class="w-6 h-6 p-1 flex items-center justify-center rounded-full shadow-sm text-white"
-                              [ngClass]="
-                                event.actionAt ? 'bg-blue-500' : 'bg-gray-300'
-                              "
-                            >
-                              <i
-                                class="pi text-xs"
-                                [ngClass]="
-                                  event.verified ? 'pi-check' : 'pi-circle-fill'
-                                "
-                              ></i>
-                            </div>
-                          </ng-template>
+              <tr class="timeline-row">
+                <td [attr.colspan]="isPurchasing() ? 7 : 6">
+                  <div class="timeline-container">
+                    <div class="timeline-heading">
+                      <div class="timeline-heading-icon">
+                        <i class="pi pi-history"></i>
+                      </div>
 
-                          <ng-template #content let-event>
-                            <div class="flex flex-col min-h-[70px]">
-                              <div
-                                class="font-semibold text-sm whitespace-nowrap"
-                              >
-                                {{ event.status }}
-                              </div>
-
-                              <small
-                                class="text-gray-500 text-xs w-[120px]"
-                                *ngIf="event.actionUser"
-                              >
-                                {{ event.actionUser }}
-                              </small>
-
-                              <small
-                                class="text-gray-400 text-xs"
-                                *ngIf="event.actionAt"
-                              >
-                                {{
-                                  event.actionAt | date: 'dd MMM yyyy hh:mm aa'
-                                }}
-                              </small>
-                            </div>
-                          </ng-template>
-                        </p-timeline>
+                      <div>
+                        <h3>Purchase Order History</h3>
+                        <p>{{ item.purchaseOrderNo }}</p>
                       </div>
                     </div>
+
+                    <div class="timeline-scroll">
+                      <p-timeline
+                        [value]="timelineMap[item.id] || []"
+                        align="top"
+                        layout="horizontal"
+                        class="customized-timeline"
+                      >
+                        <ng-template #marker let-event>
+                          <div
+                            class="timeline-marker"
+                            [ngClass]="{
+                              'timeline-marker-complete': event.verified,
+                              'timeline-marker-pending': !event.verified,
+                            }"
+                          >
+                            <i
+                              class="pi"
+                              [ngClass]="
+                                event.verified ? 'pi-check' : 'pi-circle'
+                              "
+                            ></i>
+                          </div>
+                        </ng-template>
+
+                        <ng-template #content let-event>
+                          <div class="timeline-event-content">
+                            <div class="timeline-event-status">
+                              {{ event.status }}
+                            </div>
+
+                            <div
+                              class="timeline-event-user"
+                              *ngIf="event.actionUser"
+                            >
+                              <i class="pi pi-user"></i>
+                              {{ event.actionUser }}
+                            </div>
+
+                            <div
+                              class="timeline-event-date"
+                              *ngIf="event.actionAt"
+                            >
+                              <i class="pi pi-clock"></i>
+                              {{
+                                event.actionAt | date: 'dd MMM yyyy, hh:mm aa'
+                              }}
+                            </div>
+
+                            <span
+                              *ngIf="!event.actionAt"
+                              class="timeline-event-pending-text"
+                            >
+                              Pending
+                            </span>
+                          </div>
+                        </ng-template>
+                      </p-timeline>
+                    </div>
                   </div>
                 </td>
               </tr>
             </ng-template>
+
+            <!-- Empty state -->
             <ng-template #emptymessage>
               <tr>
-                <td colspan="100%" class="border-x!">
-                  <div class="text-center text-gray-500">
-                    No purchase order found in records.
+                <td [attr.colspan]="isPurchasing() ? 7 : 6">
+                  <div class="po-empty-state">
+                    <div class="po-empty-icon">
+                      <i class="pi pi-inbox"></i>
+                    </div>
+
+                    <h3>No purchase orders found</h3>
+                    <p>There are no purchase orders matching your search.</p>
+
+                    <button
+                      *ngIf="search"
+                      type="button"
+                      class="clear-search-button"
+                      (click)="ResetTable()"
+                    >
+                      Clear search
+                    </button>
                   </div>
                 </td>
               </tr>
             </ng-template>
           </p-table>
         </div>
-      </div>
+      </section>
     </div>
-    <p-menu #menu [model]="menuItems" [popup]="true"></p-menu>
 
+    <!-- Action menu -->
+    <p-menu #menu [model]="menuItems" [popup]="true" appendTo="body"></p-menu>
+
+    <!-- Generate invoice dialog -->
     <p-dialog
       [(visible)]="displayInvoiceDialog"
       header="Create Purchase Invoice"
-      styleClass="w-[92%] lg:w-[45%] rounded-xl"
       [modal]="true"
       [draggable]="false"
       [resizable]="false"
+      [closable]="true"
+      appendTo="body"
+      styleClass="po-invoice-dialog"
+      [style]="{ width: 'min(560px, 94vw)' }"
+      [breakpoints]="{ '640px': '94vw' }"
     >
-      <div class="flex flex-col gap-5">
-        <div
-          class="bg-gray-50 border border-gray-200 rounded-lg p-4 flex flex-col gap-2"
-        >
-          <div class="flex justify-between text-gray-600">
-            <span>Total PO</span>
-            <span class="font-semibold text-gray-800">
-              {{ poTotalAmount | currency: 'RM ' }}
-            </span>
+      <div class="invoice-dialog-content">
+        <!-- Summary -->
+        <div class="invoice-summary">
+          <div class="invoice-summary-header">
+            <div class="invoice-summary-icon">
+              <i class="pi pi-file"></i>
+            </div>
+
+            <div>
+              <h3>Purchase Order Summary</h3>
+              <p>{{ selectedPO?.purchaseOrderNo || '-' }}</p>
+            </div>
           </div>
 
-          <div class="flex justify-between text-gray-600">
-            <span>Remaining</span>
-            <span class="font-bold text-green-600 text-base">
-              {{ poRemainingAmount | currency: 'RM ' }}
-            </span>
+          <div class="invoice-summary-row">
+            <span>Total PO Amount</span>
+            <strong>{{ poTotalAmount | currency: 'RM ' }}</strong>
+          </div>
+
+          <div class="invoice-summary-row invoice-remaining-row">
+            <span>Remaining Amount</span>
+            <strong>{{ poRemainingAmount | currency: 'RM ' }}</strong>
           </div>
         </div>
 
-        <div class="flex flex-col gap-2">
-          <label class="font-medium text-gray-700"> Invoice Amount </label>
+        <!-- Invoice amount -->
+        <div class="invoice-amount-section">
+          <label for="invoiceAmount">Invoice Amount</label>
 
           <p-inputnumber
+            inputId="invoiceAmount"
             appendTo="body"
             styleClass="w-full"
-            inputStyleClass="w-full p-2 text-lg"
+            inputStyleClass="w-full invoice-amount-input"
             [(ngModel)]="invoiceAmount"
             mode="currency"
             currency="MYR"
@@ -356,50 +442,71 @@ import {
             [useGrouping]="true"
             [minFractionDigits]="2"
             [maxFractionDigits]="2"
-          >
-          </p-inputnumber>
+            [min]="0"
+            [max]="poRemainingAmount"
+          ></p-inputnumber>
 
-          <small class="text-gray-400">
-            You can partially invoice or fully settle remaining amount
+          <small>
+            Enter the amount you want to invoice. You can invoice partially or
+            settle the remaining amount.
           </small>
         </div>
 
-        <div class="flex flex-wrap gap-2 pt-1">
-          <p-button
-            label="Full"
-            severity="success"
-            styleClass="px-4 py-2 rounded-lg"
-            (onClick)="invoiceAmount = poRemainingAmount"
-          ></p-button>
+        <!-- Quick amount selection -->
+        <div class="invoice-shortcuts">
+          <span class="invoice-shortcuts-label">Quick amount</span>
 
-          <p-button
-            label="75%"
-            severity="info"
-            styleClass="px-4 py-2 rounded-lg"
-            (onClick)="invoiceAmount = poRemainingAmount * 0.75"
-          ></p-button>
+          <div class="invoice-shortcut-buttons">
+            <button
+              type="button"
+              class="invoice-shortcut"
+              (click)="invoiceAmount = poRemainingAmount"
+            >
+              Full
+            </button>
 
-          <p-button
-            label="50%"
-            severity="warn"
-            styleClass="px-4 py-2 rounded-lg"
-            (onClick)="invoiceAmount = poRemainingAmount / 2"
-          ></p-button>
+            <button
+              type="button"
+              class="invoice-shortcut"
+              (click)="invoiceAmount = poRemainingAmount * 0.75"
+            >
+              75%
+            </button>
 
-          <p-button
-            label="25%"
-            severity="secondary"
-            styleClass="px-4 py-2 rounded-lg"
-            (onClick)="invoiceAmount = poRemainingAmount * 0.25"
-          ></p-button>
+            <button
+              type="button"
+              class="invoice-shortcut"
+              (click)="invoiceAmount = poRemainingAmount * 0.5"
+            >
+              50%
+            </button>
+
+            <button
+              type="button"
+              class="invoice-shortcut"
+              (click)="invoiceAmount = poRemainingAmount * 0.25"
+            >
+              25%
+            </button>
+          </div>
+        </div>
+
+        <div
+          class="invoice-validation"
+          *ngIf="invoiceAmount > poRemainingAmount"
+        >
+          <i class="pi pi-exclamation-circle"></i>
+          Invoice amount cannot exceed the remaining PO amount.
         </div>
       </div>
 
       <ng-template pTemplate="footer">
-        <div class="flex justify-end gap-2 w-full">
+        <div class="invoice-dialog-footer">
           <p-button
-            severity="secondary"
             label="Cancel"
+            severity="secondary"
+            [outlined]="true"
+            styleClass="cancel-invoice-button"
             (onClick)="displayInvoiceDialog = false"
           ></p-button>
 
@@ -407,12 +514,14 @@ import {
             label="Generate Invoice"
             icon="pi pi-receipt"
             severity="info"
-            [disabled]="invoiceAmount <= 0"
+            styleClass="generate-invoice-button"
+            [disabled]="invoiceAmount <= 0 || invoiceAmount > poRemainingAmount"
             (onClick)="GeneratePurchaseInvoice()"
           ></p-button>
         </div>
       </ng-template>
-    </p-dialog> `,
+    </p-dialog>
+  `,
   styleUrl: './purchaseOrder.less',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -744,8 +853,9 @@ export class PurchaseOrder implements OnDestroy {
       }
     }
 
-    const reachedIndex =
-      Math.max(...histories.map((h) => statusOrder.indexOf(h.status))) ?? -1;
+    const reachedIndex = histories.length
+      ? Math.max(...histories.map((h) => statusOrder.indexOf(h.status)))
+      : -1;
 
     return statusOrder.map((status, index) => {
       const item = latestByStatus.get(status);
@@ -864,7 +974,7 @@ export class PurchaseOrder implements OnDestroy {
         command: () => this.ActionClick(po, 'Delete'),
       });
     }
-    if (!inStatus('Rejected') || !inStatus('Cancelled')) {
+    if (!inStatus('Rejected', 'Cancelled')) {
       add({
         label: 'Download PO',
         icon: 'pi pi-file',
@@ -878,19 +988,16 @@ export class PurchaseOrder implements OnDestroy {
   openInvoiceDialog(po: any) {
     this.selectedPO = po;
 
-    this.poTotalAmount = po.totalAmount;
-
-    const invoiced =
-      po.purchaseOrderItems?.reduce(
-        (sum: number, x: any) => sum + x.invoicedQuantity * x.unitPrice,
-        0,
-      ) || 0;
-
-    this.poRemainingAmount = this.poTotalAmount - po.invoicedAmount;
+    this.poTotalAmount = po.totalAmount || 0;
+    this.poRemainingAmount = Math.max(
+      0,
+      this.poTotalAmount - (po.invoicedAmount || 0),
+    );
 
     this.invoiceAmount = this.poRemainingAmount;
-
     this.displayInvoiceDialog = true;
+
+    this.cdr.markForCheck();
   }
 
   updateStatus(id: string, newStatus: string) {

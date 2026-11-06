@@ -41,8 +41,17 @@ export function AuthInterceptorFn(
 
   return next(authReq).pipe(
     catchError((error: HttpErrorResponse) => {
+      // 403 - Forbidden: User does not have permission.
+      if (error.status === 403) {
+        if (router.url !== '/unauthorized') {
+          router.navigate(['/unauthorized']);
+        }
+
+        return throwError(() => error);
+      }
+
       // Only handle 401 Unauthorized.
-      // Do not refresh for 403 Forbidden.
+      // Do not refresh for authentication endpoints.
       if (error.status !== 401 || isAuthEndpoint) {
         return throwError(() => error);
       }
@@ -73,7 +82,6 @@ export function AuthInterceptorFn(
         }),
 
         catchError((refreshError) => {
-          // Refresh failed. Clear session and redirect.
           authService.clearAuth();
 
           router.navigate(['/login'], {

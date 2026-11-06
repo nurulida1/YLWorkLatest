@@ -1,3 +1,409 @@
 :host {
   display: block;
+  width: 100%;
+  min-width: 0;
+}
+
+// ==========================================
+// PAGE
+// ==========================================
+
+.products-page {
+  width: 100%;
+  min-width: 0;
+  overflow-x: hidden;
+}
+
+.products-container {
+  width: 100%;
+  min-width: 0;
+}
+
+.products-main-card {
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.products-header {
+  min-width: 0;
+}
+
+.products-toolbar {
+  min-width: 0;
+}
+
+.products-search {
+  min-width: 0;
+}
+
+// ==========================================
+// TABLE
+// ==========================================
+
+.products-table-section {
+  min-width: 0;
+}
+
+.products-table-wrapper {
+  width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.products-table-wrapper ::ng-deep .p-datatable {
+  width: 100%;
+}
+
+.products-table-wrapper ::ng-deep .p-datatable-table-container {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.products-table-wrapper ::ng-deep .p-datatable-table {
+  width: 100%;
+  min-width: 850px;
+}
+
+.products-table-wrapper ::ng-deep .p-datatable-thead > tr > th {
+  padding: 0.9rem 0.75rem;
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+  color: #475569;
+  font-size: 0.75rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.products-table-wrapper ::ng-deep .p-datatable-tbody > tr > td {
+  padding: 0.85rem 0.75rem;
+  border-bottom: 1px solid #f1f5f9;
+  color: #475569;
+  font-size: 0.8125rem;
+  vertical-align: middle;
+}
+
+.products-table-wrapper ::ng-deep .p-datatable-tbody > tr:last-child > td {
+  border-bottom: none;
+}
+
+.products-table-wrapper ::ng-deep .p-datatable-tbody > tr {
+  transition: background-color 0.15s ease;
+}
+
+.products-table-wrapper ::ng-deep .p-datatable-tbody > tr:hover {
+  background-color: #f8fafc;
+}
+
+.products-table-wrapper ::ng-deep .p-paginator {
+  justify-content: flex-end;
+  gap: 0.25rem;
+  padding: 0.85rem 0.5rem;
+  border-top: 1px solid #e2e8f0;
+  background: #fff;
+}
+
+.products-table-wrapper ::ng-deep .p-paginator .p-paginator-current {
+  margin-right: auto;
+  color: #64748b;
+  font-size: 0.75rem;
+}
+
+.products-table-wrapper ::ng-deep .p-paginator .p-paginator-page,
+.products-table-wrapper ::ng-deep .p-paginator .p-paginator-next,
+.products-table-wrapper ::ng-deep .p-paginator .p-paginator-prev {
+  min-width: 2rem;
+  height: 2rem;
+  border-radius: 0.5rem;
+  font-size: 0.8rem;
+}
+
+.products-th {
+  white-space: nowrap;
+}
+
+.products-description {
+  min-width: 180px;
+  max-width: 500px;
+  overflow-wrap: anywhere;
+  line-height: 1.6;
+}
+
+.products-description p {
+  margin: 0;
+}
+
+.products-description ul,
+.products-description ol {
+  padding-left: 1.25rem;
+}
+
+// ==========================================
+// DIALOG
+// ==========================================
+
+.products-form-dialog {
+  width: min(760px, calc(100vw - 2rem));
+  max-width: 760px;
+  max-height: calc(100dvh - 2rem);
+  overflow: hidden;
+  border-radius: 1rem;
+
+  ::ng-deep .p-dialog {
+    width: min(760px, calc(100vw - 2rem));
+    max-width: 760px;
+    max-height: calc(100dvh - 2rem);
+    margin: 1rem;
+    overflow: hidden;
+    border-radius: 1rem;
+  }
+
+  ::ng-deep .p-dialog-content {
+    padding: 0;
+    overflow: hidden;
+  }
+
+  ::ng-deep .p-dialog-header {
+    display: none;
+  }
+}
+
+.products-dialog-content {
+  display: flex;
+  width: 100%;
+  max-height: calc(100dvh - 2rem);
+  min-width: 0;
+  flex-direction: column;
+  overflow: hidden;
+  background: #f8fafc;
+}
+
+.products-dialog-header {
+  flex-shrink: 0;
+}
+
+.products-dialog-body {
+  min-height: 0;
+  padding: 1.25rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.products-dialog-footer {
+  flex-shrink: 0;
+}
+
+// ==========================================
+// EDITOR
+// ==========================================
+
+.products-editor {
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  background: #fff;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+
+  &:focus-within {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgb(59 130 246 / 10%);
+  }
+
+  ::ng-deep .p-editor-container {
+    border: none;
+  }
+
+  ::ng-deep .p-editor-toolbar {
+    border: none;
+    border-bottom: 1px solid #e2e8f0;
+    background: #f8fafc;
+  }
+
+  ::ng-deep .p-editor-content {
+    border: none;
+  }
+
+  ::ng-deep .ql-editor {
+    min-height: 140px;
+    font-size: 0.875rem;
+    line-height: 1.6;
+  }
+}
+
+// ==========================================
+// INPUTS
+// ==========================================
+
+:host ::ng-deep {
+  .p-inputtext,
+  .p-inputnumber,
+  .p-inputnumber-input {
+    max-width: 100%;
+  }
+
+  .p-inputnumber {
+    width: 100%;
+  }
+
+  .p-inputnumber-input {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .p-button {
+    transition:
+      background-color 0.2s ease,
+      border-color 0.2s ease,
+      box-shadow 0.2s ease;
+  }
+}
+
+// ==========================================
+// TABLET
+// ==========================================
+
+@media (max-width: 1024px) {
+  .products-header {
+    align-items: flex-start;
+  }
+
+  .products-toolbar {
+    width: 100%;
+  }
+
+  .products-search {
+    flex: 1;
+  }
+}
+
+// ==========================================
+// MOBILE
+// ==========================================
+
+@media (max-width: 640px) {
+  .products-page {
+    padding: 0.75rem;
+  }
+
+  .products-main-card {
+    border-radius: 1rem;
+  }
+
+  .products-header {
+    padding: 1rem;
+  }
+
+  .products-toolbar {
+    flex-direction: column;
+  }
+
+  .products-search {
+    width: 100%;
+  }
+
+  .products-add-button {
+    width: 100%;
+  }
+
+  .products-table-section {
+    padding: 0.75rem;
+  }
+
+  .products-table-wrapper {
+    border-radius: 0.75rem;
+  }
+
+  .products-table-wrapper ::ng-deep .p-datatable-table {
+    min-width: 850px;
+  }
+
+  .products-table-wrapper ::ng-deep .p-datatable-thead > tr > th {
+    padding: 0.7rem 0.6rem;
+    font-size: 0.7rem;
+  }
+
+  .products-table-wrapper ::ng-deep .p-datatable-tbody > tr > td {
+    padding: 0.7rem 0.6rem;
+    font-size: 0.75rem;
+  }
+
+  .products-table-wrapper ::ng-deep .p-paginator {
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    padding: 0.75rem 0.25rem;
+  }
+
+  .products-table-wrapper ::ng-deep .p-paginator .p-paginator-current {
+    flex-basis: 100%;
+    margin: 0 0 0.5rem;
+    text-align: center;
+  }
+
+  .products-form-dialog {
+    width: calc(100vw - 1rem);
+    max-height: calc(100dvh - 1rem);
+    border-radius: 0.875rem;
+
+    ::ng-deep .p-dialog {
+      width: calc(100vw - 1rem);
+      max-width: none;
+      max-height: calc(100dvh - 1rem);
+      margin: 0.5rem;
+      border-radius: 0.875rem;
+    }
+
+    ::ng-deep .p-dialog-content {
+      padding: 0;
+    }
+  }
+
+  .products-dialog-content {
+    max-height: calc(100dvh - 1rem);
+  }
+
+  .products-dialog-header {
+    padding: 1rem;
+  }
+
+  .products-dialog-body {
+    padding: 0.875rem;
+  }
+
+  .products-dialog-footer {
+    padding: 0.875rem;
+  }
+
+  .products-editor ::ng-deep .ql-editor {
+    min-height: 120px;
+  }
+}
+
+// ==========================================
+// VERY SMALL MOBILE
+// ==========================================
+
+@media (max-width: 380px) {
+  .products-page {
+    padding: 0.5rem;
+  }
+
+  .products-header {
+    padding: 0.875rem;
+  }
+
+  .products-dialog-header h2 {
+    font-size: 1rem;
+    line-height: 1.4;
+  }
+
+  .products-dialog-body {
+    padding: 0.65rem;
+  }
 }

@@ -78,565 +78,759 @@ import {
     OrderListModule,
     CheckboxModule,
   ],
-  template: `<div class="min-h-screen bg-slate-50/50 p-6">
-    <div class="mx-auto space-y-6">
-      <div class="flex items-center justify-between">
-        <div>
-          <h1 class="text-3xl font-bold text-slate-900 tracking-tight">
-            {{ currentId ? 'Update Quotation' : 'Create New Quotation' }}
-          </h1>
-          <p class="text-slate-500">
-            Manage your business quotations with precision.
-          </p>
-        </div>
-        <div class="flex items-center gap-3">
-          <p-button
-            label="Cancel"
-            severity="secondary"
-            [outlined]="true"
-            [routerLink]="'/quotations'"
-            styleClass="px-6 rounded-xl"
-          />
-          <p-button
-            (onClick)="SaveQuotation()"
-            [label]="currentId ? 'Save Changes' : 'Generate Quotation'"
-            icon="pi pi-check-circle"
-            styleClass="!bg-blue-600 hover:bg-blue-700 !border-0 px-6 rounded-xl shadow-lg shadow-blue-600/20"
-          />
-        </div>
-      </div>
-
+  template: `
+    <div
+      class="quotation-editor-page min-h-screen bg-slate-50/70 p-3 sm:p-4 lg:p-6"
+    >
       <div
-        [formGroup]="FG"
-        class="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm"
+        class="quotation-editor-container mx-auto w-full max-w-[1600px] space-y-5 sm:space-y-6"
       >
-        <div class="grid grid-cols-12 items-center gap-5">
-          <div class="col-span-12 lg:col-span-6 flex flex-col gap-2">
-            <label class="block font-medium text-slate-700"
-              >Quotation No.</label
-            >
-            <input
-              pInputText
-              class="w-full"
-              formControlName="quotationNo"
-              placeholder="e.g. QT-2026-001"
-            />
-          </div>
-          <div class="col-span-12 lg:col-span-6 flex flex-col gap-2">
-            <label class="block font-medium text-slate-700">Date</label>
-            <p-datepicker
-              [showIcon]="true"
-              formControlName="quotationDate"
-              styleClass="w-full"
-              dateFormat="dd/mm/yy"
-            />
-          </div>
-          <div class="col-span-12 flex flex-col gap-2">
-            <label class="block font-medium text-slate-700"> Subject </label>
-
-            <div
-              class="flex items-center gap-2 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 focus-within:ring-2 focus-within:ring-blue-500"
-            >
-              <span class="whitespace-nowrap text-black font-bold">
-                Re: Request for quotation -
+        <!-- PAGE HEADER -->
+        <div
+          class="quotation-editor-header flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
+        >
+          <div class="min-w-0">
+            <div class="flex items-center gap-2 mb-1">
+              <span
+                class="flex items-center justify-center w-9 h-9 rounded-xl bg-blue-100 text-blue-600"
+              >
+                <i class="pi pi-file-edit text-lg"></i>
               </span>
-
-              <input
-                pInputText
-                formControlName="subject"
-                placeholder="What is this quotation for?"
-                class="flex-1 min-w-0 border-0 shadow-none focus:shadow-none focus:ring-0 bg-transparent font-bold! text-slate-800!"
-              />
+              <span
+                class="text-xs font-semibold uppercase tracking-wider text-blue-600"
+              >
+                Sales Management
+              </span>
             </div>
-          </div>
-        </div>
 
-        <hr class="border-slate-100 my-6" />
+            <h1
+              class="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight"
+            >
+              {{ currentId ? 'Update Quotation' : 'Create New Quotation' }}
+            </h1>
 
-        <!-- Company & Client Selection -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <!-- From Section -->
-          <div class="space-y-4">
-            <div class="flex flex-row justify-between items-center">
-              <h3 class="font-semibold text-slate-900 flex items-center gap-2">
-                <i class="pi pi-building text-blue-600"></i> Select From
-              </h3>
-              <p-button
-                [text]="true"
-                label="Add Company Profile"
-                icon="pi pi-plus-circle"
-                severity="info"
-                size="small"
-                styleClass="p-0! text-blue-600!"
-                (onClick)="AddCompanyClick()"
-              ></p-button>
-            </div>
-            <p-select
-              [options]="filteredCompanies()"
-              formControlName="fromCompanyId"
-              [filter]="true"
-              optionLabel="name"
-              optionValue="id"
-              placeholder="Select Company"
-              styleClass="w-full"
-            />
-
-            <div class="grid grid-cols-2 gap-4 text-sm" *ngIf="selectedCompany">
-              <!-- Billing -->
-              <div class="bg-slate-50 p-4 rounded-xl border border-slate-100">
-                <p class="font-bold text-slate-900 mb-2">Billing</p>
-
-                <p class="text-slate-600 leading-relaxed">
-                  {{ selectedCompany.billingAddress?.addressLine1 }}
-                  <span *ngIf="selectedCompany.billingAddress?.addressLine2">
-                    , {{ selectedCompany.billingAddress?.addressLine2 }}
-                  </span>
-                  <br />
-                  {{ selectedCompany.billingAddress?.postcode }}
-                  {{ selectedCompany.billingAddress?.city }},
-                  {{ selectedCompany.billingAddress?.state }}
-                </p>
-              </div>
-
-              <!-- Delivery -->
-              <div class="bg-slate-50 p-4 rounded-xl border border-slate-100">
-                <p class="font-bold text-slate-900 mb-2">Delivery</p>
-
-                <p class="text-slate-600 leading-relaxed">
-                  {{ selectedCompany.deliveryAddress?.addressLine1 }}
-                  <span *ngIf="selectedCompany.deliveryAddress?.addressLine2">
-                    , {{ selectedCompany.deliveryAddress?.addressLine2 }}
-                  </span>
-                  <br />
-                  {{ selectedCompany.deliveryAddress?.postcode }}
-                  {{ selectedCompany.deliveryAddress?.city }},
-                  {{ selectedCompany.deliveryAddress?.state }}
-                </p>
-              </div>
-            </div>
+            <p class="text-sm text-slate-500 mt-1">
+              Manage your business quotations with precision.
+            </p>
           </div>
 
-          <!-- Client Section -->
-          <div class="space-y-4">
-            <div class="flex flex-row items-center justify-between">
-              <h3 class="font-semibold text-slate-900 flex items-center gap-2">
-                <i class="pi pi-user text-blue-600"></i> Select Client
-              </h3>
-              <p-button
-                [text]="true"
-                label="Add Client"
-                icon="pi pi-plus-circle"
-                severity="info"
-                size="small"
-                styleClass="p-0! text-blue-600!"
-                (onClick)="AddClientClick()"
-              ></p-button>
-            </div>
-            <p-select
-              [options]="filteredClients()"
-              formControlName="clientId"
-              [filter]="true"
-              optionLabel="name"
-              optionValue="id"
-              placeholder="Select Client"
-              styleClass="w-full"
-            />
-
-            <div class="grid grid-cols-2 gap-4 text-sm" *ngIf="selectedClient">
-              <!-- Billing -->
-              <div class="bg-slate-50 p-4 rounded-xl border border-slate-100">
-                <p class="font-bold text-slate-900 mb-2">Billing</p>
-
-                <p class="text-slate-700 font-medium mb-1">
-                  Attn:
-                  {{ selectedClient.contactPerson1 }}
-                  <span *ngIf="selectedClient.contactPerson2">
-                    / {{ selectedClient.contactPerson2 }}
-                  </span>
-                </p>
-
-                <p class="text-slate-600 leading-relaxed">
-                  {{ selectedClient.billingAddress?.addressLine1 }}
-                  <span *ngIf="selectedClient.billingAddress?.addressLine2">
-                    , {{ selectedClient.billingAddress?.addressLine2 }}
-                  </span>
-                  <br />
-                  {{ selectedClient.billingAddress?.postcode }}
-                  {{ selectedClient.billingAddress?.city }},
-                  {{ selectedClient.billingAddress?.state }}
-                </p>
-              </div>
-
-              <!-- Delivery -->
-              <div class="bg-slate-50 p-4 rounded-xl border border-slate-100">
-                <p class="font-bold text-slate-900 mb-2">Delivery</p>
-
-                <p class="text-slate-600 leading-relaxed">
-                  {{ selectedClient.deliveryAddress?.addressLine1 }}
-                  <span *ngIf="selectedClient.deliveryAddress?.addressLine2">
-                    , {{ selectedClient.deliveryAddress?.addressLine2 }}
-                  </span>
-                  <br />
-                  {{ selectedClient.deliveryAddress?.postcode }}
-                  {{ selectedClient.deliveryAddress?.city }},
-                  {{ selectedClient.deliveryAddress?.state }}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Order Lines -->
-        <div class="flex flex-col gap-2 border-t border-gray-100 my-5 pt-5">
-          <div class="flex flex-row items-center justify-between">
-            <div class="flex flex-row items-center gap-2">
-              <div class="pi pi-list text-blue-600!"></div>
-              <div class="font-semibold">Order Lines</div>
-            </div>
-          </div>
-          <p-table
-            [value]="Items.controls"
-            [showGridlines]="true"
-            [paginator]="false"
-            [scrollable]="true"
-            scrollHeight="flex"
-            responsiveLayout="scroll"
-            size="small"
+          <div
+            class="flex w-full flex-col-reverse gap-2 sm:w-auto sm:flex-row sm:items-center sm:gap-3"
           >
-            <ng-template #header>
-              <tr>
-                <th class="bg-gray-100! w-[5%]! text-center!">Item</th>
-                <th class="bg-gray-100! w-[25%]!">Description</th>
-                <th class="bg-gray-100! w-[10%]! text-center!">Unit</th>
-                <th class="bg-gray-100! w-[10%]! text-center!">Qty</th>
-                <th class="bg-gray-100! w-[10%]! text-center!">Disc (%)</th>
-                <th class="bg-gray-100! w-[15%]! text-right!">
-                  Unit Price (RM)
-                </th>
-                <th class="bg-gray-100! w-[15%]! text-right!">
-                  Total Amount (RM)
-                </th>
-                <th class="bg-gray-100! w-[5%]!"></th>
-              </tr>
-            </ng-template>
-            <ng-template pTemplate="body" let-row let-rowIndex="rowIndex">
-              <tr [formGroup]="row">
-                <!--  EDIT MODE -->
-                <ng-container *ngIf="row.get('isEdit')?.value; else viewMode">
-                  <!-- LINE ITEM -->
-                  <ng-container
-                    *ngIf="row.get('rowType')?.value === 'LineItem'"
+            <p-button
+              label="Cancel"
+              severity="secondary"
+              [outlined]="true"
+              [routerLink]="'/quotations'"
+              styleClass="w-full sm:w-auto px-6 rounded-xl"
+            />
+
+            <p-button
+              (onClick)="SaveQuotation()"
+              [label]="currentId ? 'Save Changes' : 'Generate Quotation'"
+              icon="pi pi-check-circle"
+              styleClass="w-full sm:w-auto !bg-blue-600 hover:bg-blue-700 !border-0 px-6 rounded-xl shadow-lg shadow-blue-600/20"
+            />
+          </div>
+        </div>
+
+        <!-- MAIN FORM -->
+        <div
+          [formGroup]="FG"
+          class="quotation-editor-card bg-white p-4 sm:p-6 lg:p-8 rounded-2xl border border-slate-200 shadow-sm space-y-6"
+        >
+          <!-- BASIC INFORMATION -->
+          <section>
+            <div class="flex items-center gap-2 mb-5">
+              <span
+                class="flex items-center justify-center w-8 h-8 rounded-lg bg-blue-50 text-blue-600"
+              >
+                <i class="pi pi-info-circle"></i>
+              </span>
+              <div>
+                <h2 class="font-bold text-slate-900">Quotation Information</h2>
+                <p class="text-xs text-slate-500">
+                  Enter the basic quotation details.
+                </p>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-12 gap-4 sm:gap-5">
+              <div class="col-span-12 lg:col-span-6 flex flex-col gap-2">
+                <label class="text-sm font-semibold text-slate-700">
+                  Quotation No.
+                </label>
+                <input
+                  pInputText
+                  class="w-full"
+                  formControlName="quotationNo"
+                  placeholder="e.g. QT-2026-001"
+                />
+              </div>
+
+              <div class="col-span-12 lg:col-span-6 flex flex-col gap-2">
+                <label class="text-sm font-semibold text-slate-700">Date</label>
+                <p-datepicker
+                  [showIcon]="true"
+                  formControlName="quotationDate"
+                  styleClass="w-full"
+                  dateFormat="dd/mm/yy"
+                />
+              </div>
+
+              <div class="col-span-12 flex flex-col gap-2">
+                <label class="text-sm font-semibold text-slate-700"
+                  >Subject</label
+                >
+
+                <div
+                  class="quotation-subject-field flex flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-blue-500"
+                >
+                  <span class="text-xs sm:text-sm text-slate-700 font-bold">
+                    Re: Request for quotation -
+                  </span>
+
+                  <input
+                    pInputText
+                    formControlName="subject"
+                    placeholder="What is this quotation for?"
+                    class="flex-1 min-w-0 border-0 shadow-none focus:shadow-none focus:ring-0 bg-transparent font-bold! text-slate-800!"
+                  />
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <div class="border-t border-slate-100"></div>
+
+          <!-- COMPANY & CLIENT SELECTION -->
+          <section>
+            <div class="flex items-center gap-2 mb-5">
+              <span
+                class="flex items-center justify-center w-8 h-8 rounded-lg bg-blue-50 text-blue-600"
+              >
+                <i class="pi pi-building"></i>
+              </span>
+              <div>
+                <h2 class="font-bold text-slate-900">Company & Client</h2>
+                <p class="text-xs text-slate-500">
+                  Select the issuing company and quotation recipient.
+                </p>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 xl:grid-cols-2 gap-6 lg:gap-8">
+              <!-- FROM COMPANY -->
+              <div
+                class="quotation-party-card rounded-xl border border-slate-200 p-4 sm:p-5 space-y-4"
+              >
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                  <h3
+                    class="font-semibold text-slate-900 flex items-center gap-2"
                   >
-                    <td>
-                      <input
-                        pInputText
-                        formControlName="item"
-                        class="w-full text-center"
-                      />
-                    </td>
+                    <i class="pi pi-building text-blue-600"></i>
+                    Select From
+                  </h3>
 
-                    <td>
-                      <div class="relative w-full">
-                        <p-editor
-                          formControlName="description"
-                          [style]="{ 'min-height': '80px' }"
-                          (onInit)="onEditorInit($event, rowIndex)"
-                          ><ng-template #header>
-                            <span class="ql-formats">
-                              <button
-                                type="button"
-                                class="ql-bold"
-                                aria-label="Bold"
-                              ></button>
-                              <button
-                                type="button"
-                                class="ql-italic"
-                                aria-label="Italic"
-                              ></button>
-                              <button
-                                type="button"
-                                class="ql-underline"
-                                aria-label="Underline"
-                              ></button>
-                            </span> </ng-template
-                        ></p-editor>
+                  <p-button
+                    [text]="true"
+                    label="Add Company Profile"
+                    icon="pi pi-plus-circle"
+                    severity="info"
+                    size="small"
+                    styleClass="p-0! text-blue-600!"
+                    (onClick)="AddCompanyClick()"
+                  />
+                </div>
 
-                        <div
-                          *ngIf="
-                            activeSuggestionIndex === rowIndex &&
-                            rowSuggestions[rowIndex]?.length
-                          "
-                          class="absolute z-[9999] mt-1 w-full bg-white border border-gray-200 rounded-xl shadow-lg max-h-64 overflow-auto"
-                        >
-                          <div
-                            *ngFor="let product of rowSuggestions[rowIndex]"
-                            (click)="insertProduct(product, row, rowIndex)"
-                            class="p-3 hover:bg-blue-50 cursor-pointer flex flex-col gap-1"
-                          >
-                            <!-- <div class="font-semibold text-gray-800">
-                              {{ product.name }}
-                            </div> -->
+                <p-select
+                  [options]="filteredCompanies()"
+                  formControlName="fromCompanyId"
+                  [filter]="true"
+                  optionLabel="name"
+                  optionValue="id"
+                  placeholder="Select Company"
+                  styleClass="w-full"
+                />
+
+                <div
+                  class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 text-sm"
+                  *ngIf="selectedCompany"
+                >
+                  <!-- BILLING -->
+                  <div
+                    class="bg-slate-50 p-4 rounded-xl border border-slate-100 min-w-0"
+                  >
+                    <div class="flex items-center gap-2 mb-3">
+                      <i class="pi pi-credit-card text-blue-600"></i>
+                      <p class="font-bold text-slate-900">Billing Address</p>
+                    </div>
+
+                    <p class="text-slate-600 leading-relaxed break-words">
+                      {{ selectedCompany.billingAddress?.addressLine1 }}
+                      <span
+                        *ngIf="selectedCompany.billingAddress?.addressLine2"
+                      >
+                        , {{ selectedCompany.billingAddress?.addressLine2 }}
+                      </span>
+                      <br />
+                      {{ selectedCompany.billingAddress?.postcode }}
+                      {{ selectedCompany.billingAddress?.city }},
+                      {{ selectedCompany.billingAddress?.state }}
+                    </p>
+                  </div>
+
+                  <!-- DELIVERY -->
+                  <div
+                    class="bg-slate-50 p-4 rounded-xl border border-slate-100 min-w-0"
+                  >
+                    <div class="flex items-center gap-2 mb-3">
+                      <i class="pi pi-truck text-blue-600"></i>
+                      <p class="font-bold text-slate-900">Delivery Address</p>
+                    </div>
+
+                    <p class="text-slate-600 leading-relaxed break-words">
+                      {{ selectedCompany.deliveryAddress?.addressLine1 }}
+                      <span
+                        *ngIf="selectedCompany.deliveryAddress?.addressLine2"
+                      >
+                        , {{ selectedCompany.deliveryAddress?.addressLine2 }}
+                      </span>
+                      <br />
+                      {{ selectedCompany.deliveryAddress?.postcode }}
+                      {{ selectedCompany.deliveryAddress?.city }},
+                      {{ selectedCompany.deliveryAddress?.state }}
+                    </p>
+                  </div>
+                </div>
+
+                <div *ngIf="!selectedCompany" class="quotation-empty-party">
+                  <i class="pi pi-building text-2xl text-slate-300"></i>
+                  <span>Select a company to view its address.</span>
+                </div>
+              </div>
+
+              <!-- CLIENT -->
+              <div
+                class="quotation-party-card rounded-xl border border-slate-200 p-4 sm:p-5 space-y-4"
+              >
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                  <h3
+                    class="font-semibold text-slate-900 flex items-center gap-2"
+                  >
+                    <i class="pi pi-user text-blue-600"></i>
+                    Select Client
+                  </h3>
+
+                  <p-button
+                    [text]="true"
+                    label="Add Client"
+                    icon="pi pi-plus-circle"
+                    severity="info"
+                    size="small"
+                    styleClass="p-0! text-blue-600!"
+                    (onClick)="AddClientClick()"
+                  />
+                </div>
+
+                <p-select
+                  [options]="filteredClients()"
+                  formControlName="clientId"
+                  [filter]="true"
+                  optionLabel="name"
+                  optionValue="id"
+                  placeholder="Select Client"
+                  styleClass="w-full"
+                />
+
+                <div
+                  class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 text-sm"
+                  *ngIf="selectedClient"
+                >
+                  <!-- BILLING -->
+                  <div
+                    class="bg-slate-50 p-4 rounded-xl border border-slate-100 min-w-0"
+                  >
+                    <div class="flex items-center gap-2 mb-3">
+                      <i class="pi pi-credit-card text-blue-600"></i>
+                      <p class="font-bold text-slate-900">Billing Address</p>
+                    </div>
+
+                    <p class="text-slate-700 font-medium mb-2 break-words">
+                      Attn:
+                      {{ selectedClient.contactPerson1 }}
+                      <span *ngIf="selectedClient.contactPerson2">
+                        / {{ selectedClient.contactPerson2 }}
+                      </span>
+                    </p>
+
+                    <p class="text-slate-600 leading-relaxed break-words">
+                      {{ selectedClient.billingAddress?.addressLine1 }}
+                      <span *ngIf="selectedClient.billingAddress?.addressLine2">
+                        , {{ selectedClient.billingAddress?.addressLine2 }}
+                      </span>
+                      <br />
+                      {{ selectedClient.billingAddress?.postcode }}
+                      {{ selectedClient.billingAddress?.city }},
+                      {{ selectedClient.billingAddress?.state }}
+                    </p>
+                  </div>
+
+                  <!-- DELIVERY -->
+                  <div
+                    class="bg-slate-50 p-4 rounded-xl border border-slate-100 min-w-0"
+                  >
+                    <div class="flex items-center gap-2 mb-3">
+                      <i class="pi pi-truck text-blue-600"></i>
+                      <p class="font-bold text-slate-900">Delivery Address</p>
+                    </div>
+
+                    <p class="text-slate-600 leading-relaxed break-words">
+                      {{ selectedClient.deliveryAddress?.addressLine1 }}
+                      <span
+                        *ngIf="selectedClient.deliveryAddress?.addressLine2"
+                      >
+                        , {{ selectedClient.deliveryAddress?.addressLine2 }}
+                      </span>
+                      <br />
+                      {{ selectedClient.deliveryAddress?.postcode }}
+                      {{ selectedClient.deliveryAddress?.city }},
+                      {{ selectedClient.deliveryAddress?.state }}
+                    </p>
+                  </div>
+                </div>
+
+                <div *ngIf="!selectedClient" class="quotation-empty-party">
+                  <i class="pi pi-user text-2xl text-slate-300"></i>
+                  <span>Select a client to view its address.</span>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <div class="border-t border-slate-100"></div>
+
+          <!-- ORDER LINES -->
+          <section class="space-y-4">
+            <div
+              class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
+            >
+              <div class="flex items-center gap-3">
+                <span
+                  class="flex items-center justify-center w-9 h-9 rounded-xl bg-blue-50 text-blue-600"
+                >
+                  <i class="pi pi-list"></i>
+                </span>
+                <div>
+                  <h2 class="font-bold text-slate-900">Order Lines</h2>
+                  <p class="text-xs text-slate-500">
+                    Add and manage quotation items.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- TABLE SCROLL WRAPPER -->
+            <div
+              class="quotation-items-table w-full overflow-x-auto rounded-xl border border-slate-200"
+            >
+              <p-table
+                [value]="Items.controls"
+                [showGridlines]="true"
+                [paginator]="false"
+                [scrollable]="true"
+                scrollHeight="flex"
+                responsiveLayout="scroll"
+                size="small"
+              >
+                <ng-template #header>
+                  <tr>
+                    <th class="bg-gray-100! w-[5%]! text-center!">Item</th>
+                    <th class="bg-gray-100! w-[25%]!">Description</th>
+                    <th class="bg-gray-100! w-[10%]! text-center!">Unit</th>
+                    <th class="bg-gray-100! w-[10%]! text-center!">Qty</th>
+                    <th class="bg-gray-100! w-[10%]! text-center!">Disc (%)</th>
+                    <th class="bg-gray-100! w-[15%]! text-right!">
+                      Unit Price (RM)
+                    </th>
+                    <th class="bg-gray-100! w-[15%]! text-right!">
+                      Total Amount (RM)
+                    </th>
+                    <th class="bg-gray-100! w-[5%]!"></th>
+                  </tr>
+                </ng-template>
+
+                <ng-template pTemplate="body" let-row let-rowIndex="rowIndex">
+                  <tr [formGroup]="row">
+                    <!-- EDIT MODE -->
+                    <ng-container
+                      *ngIf="row.get('isEdit')?.value; else viewMode"
+                    >
+                      <!-- LINE ITEM -->
+                      <ng-container
+                        *ngIf="row.get('rowType')?.value === 'LineItem'"
+                      >
+                        <td>
+                          <input
+                            pInputText
+                            formControlName="item"
+                            class="w-full text-center"
+                          />
+                        </td>
+
+                        <td>
+                          <div class="relative w-full">
+                            <p-editor
+                              formControlName="description"
+                              [style]="{ 'min-height': '80px' }"
+                              (onInit)="onEditorInit($event, rowIndex)"
+                            >
+                              <ng-template #header>
+                                <span class="ql-formats">
+                                  <button
+                                    type="button"
+                                    class="ql-bold"
+                                    aria-label="Bold"
+                                  ></button>
+                                  <button
+                                    type="button"
+                                    class="ql-italic"
+                                    aria-label="Italic"
+                                  ></button>
+                                  <button
+                                    type="button"
+                                    class="ql-underline"
+                                    aria-label="Underline"
+                                  ></button>
+                                </span>
+                              </ng-template>
+                            </p-editor>
 
                             <div
-                              class="text-xs text-gray-500 line-clamp-2"
-                              [innerHtml]="product.description"
-                            ></div>
-
-                            <div class="flex gap-2 text-xs mt-1">
-                              <span class="bg-gray-100 px-2 py-1 rounded">
-                                Unit: {{ product.unit }}
-                              </span>
-                              <span class="bg-gray-100 px-2 py-1 rounded">
-                                Quantity: {{ product.quantity }}
-                              </span>
-
-                              <span
-                                class="bg-blue-50 text-blue-700 px-2 py-1 rounded"
+                              *ngIf="
+                                activeSuggestionIndex === rowIndex &&
+                                rowSuggestions[rowIndex]?.length
+                              "
+                              class="absolute z-[9999] mt-1 w-full bg-white border border-gray-200 rounded-xl shadow-lg max-h-64 overflow-auto"
+                            >
+                              <div
+                                *ngFor="let product of rowSuggestions[rowIndex]"
+                                (click)="insertProduct(product, row, rowIndex)"
+                                class="p-3 hover:bg-blue-50 cursor-pointer flex flex-col gap-1"
                               >
-                                RM {{ product.price }}
-                              </span>
+                                <div
+                                  class="text-xs text-gray-500 line-clamp-2"
+                                  [innerHtml]="product.description"
+                                ></div>
+
+                                <div class="flex flex-wrap gap-2 text-xs mt-1">
+                                  <span class="bg-gray-100 px-2 py-1 rounded">
+                                    Unit: {{ product.unit }}
+                                  </span>
+                                  <span class="bg-gray-100 px-2 py-1 rounded">
+                                    Quantity: {{ product.quantity }}
+                                  </span>
+                                  <span
+                                    class="bg-blue-50 text-blue-700 px-2 py-1 rounded"
+                                  >
+                                    RM {{ product.price }}
+                                  </span>
+                                </div>
+                              </div>
                             </div>
                           </div>
+                        </td>
+
+                        <td>
+                          <input
+                            pInputText
+                            formControlName="unit"
+                            class="w-full text-center"
+                          />
+                        </td>
+
+                        <td>
+                          <p-inputnumber
+                            formControlName="quantity"
+                            inputStyleClass="w-full text-center"
+                          />
+                        </td>
+
+                        <td>
+                          <p-inputnumber
+                            formControlName="discount"
+                            suffix="%"
+                            inputStyleClass="w-full text-center"
+                          />
+                        </td>
+
+                        <td>
+                          <p-inputnumber
+                            formControlName="unitPrice"
+                            mode="currency"
+                            currency="MYR"
+                            locale="ms-MY"
+                            inputStyleClass="w-full text-right"
+                          />
+                        </td>
+
+                        <td>
+                          <p-inputnumber
+                            formControlName="totalPrice"
+                            mode="currency"
+                            currency="MYR"
+                            locale="ms-MY"
+                            [readonly]="true"
+                            inputStyleClass="w-full text-right bg-gray-50 font-semibold"
+                          />
+                        </td>
+                      </ng-container>
+
+                      <!-- SECTION -->
+                      <ng-container
+                        *ngIf="row.get('rowType')?.value === 'CategoryHeader'"
+                      >
+                        <td colspan="7">
+                          <input
+                            pInputText
+                            formControlName="description"
+                            class="w-full font-bold"
+                          />
+                        </td>
+                      </ng-container>
+
+                      <!-- NOTES -->
+                      <ng-container
+                        *ngIf="row.get('rowType')?.value === 'NoteRow'"
+                      >
+                        <td>
+                          <input
+                            pInputText
+                            formControlName="item"
+                            class="w-full text-center italic"
+                          />
+                        </td>
+
+                        <td colspan="6">
+                          <textarea
+                            pTextarea
+                            formControlName="description"
+                            rows="3"
+                            class="w-full italic"
+                          ></textarea>
+                        </td>
+                      </ng-container>
+
+                      <!-- EDIT ACTIONS -->
+                      <td class="text-center">
+                        <div class="flex items-center justify-center">
+                          <p-button
+                            icon="pi pi-check-circle"
+                            [text]="true"
+                            severity="success"
+                            (onClick)="row.get('isEdit')?.setValue(false)"
+                          />
+                          <p-button
+                            icon="pi pi-trash"
+                            severity="danger"
+                            [text]="true"
+                            (onClick)="removeItem(rowIndex)"
+                          />
                         </div>
+                      </td>
+                    </ng-container>
+
+                    <!-- VIEW MODE -->
+                    <ng-template #viewMode>
+                      <ng-container [ngSwitch]="row.get('rowType')?.value">
+                        <!-- LINE -->
+                        <ng-container *ngSwitchCase="'LineItem'">
+                          <td class="text-center!">
+                            {{ row.get('item')?.value }}
+                          </td>
+                          <td>
+                            <div
+                              [innerHTML]="row.get('description')?.value"
+                            ></div>
+                          </td>
+                          <td class="text-center!">
+                            {{ row.get('unit')?.value }}
+                          </td>
+                          <td class="text-center!">
+                            {{ row.get('quantity')?.value }}
+                          </td>
+                          <td class="text-center!">
+                            {{ row.get('discount')?.value }}
+                          </td>
+                          <td class="text-right!">
+                            {{ row.get('unitPrice')?.value | number: '1.2-2' }}
+                          </td>
+                          <td class="text-right! font-semibold">
+                            {{ row.get('totalPrice')?.value | number: '1.2-2' }}
+                          </td>
+                        </ng-container>
+
+                        <!-- SECTION -->
+                        <ng-container *ngSwitchCase="'CategoryHeader'">
+                          <td colspan="7" class="font-bold">
+                            {{ row.get('description')?.value }}
+                          </td>
+                        </ng-container>
+
+                        <!-- NOTE -->
+                        <ng-container *ngSwitchCase="'NoteRow'">
+                          <td class="text-center! italic">
+                            {{ row.get('item')?.value }}
+                          </td>
+                          <td colspan="6" class="italic">
+                            {{ row.get('description')?.value }}
+                          </td>
+                        </ng-container>
+                      </ng-container>
+
+                      <!-- VIEW ACTIONS -->
+                      <td class="text-center">
+                        <div class="flex items-center justify-center">
+                          <p-button
+                            icon="pi pi-pencil"
+                            [text]="true"
+                            severity="info"
+                            (onClick)="row.get('isEdit')?.setValue(true)"
+                          />
+                          <p-button
+                            icon="pi pi-trash"
+                            [text]="true"
+                            severity="danger"
+                            (onClick)="removeProductService(rowIndex)"
+                          />
+                        </div>
+                      </td>
+                    </ng-template>
+                  </tr>
+                </ng-template>
+
+                <!-- FOOTER -->
+                <ng-template #footer>
+                  <tr>
+                    <td colspan="6" class="text-right! font-semibold">
+                      SubTotal
+                    </td>
+                    <td colspan="1" class="text-right!">
+                      {{ subTotal() | number: '1.2' }}
+                    </td>
+                    <td></td>
+                  </tr>
+
+                  <tr>
+                    <td colspan="6" class="text-right! text-red-500!">
+                      - Discount (RM)
+                    </td>
+                    <td colspan="1" class="text-right!">
+                      <p-inputnumber
+                        mode="decimal"
+                        [minFractionDigits]="2"
+                        [maxFractionDigits]="5"
+                        inputStyleClass="w-full! min-w-0! text-right! text-red-500!"
+                        formControlName="discount"
+                      />
+                    </td>
+                    <td></td>
+                  </tr>
+
+                  <tr>
+                    <td colspan="6" class="text-right! font-bold! bg-blue-50!">
+                      Total Amount
+                    </td>
+                    <td
+                      colspan="1"
+                      class="text-right! font-bold! bg-blue-50! text-blue-700!"
+                    >
+                      {{ totalAmount() | number: '1.2' }}
+                    </td>
+                    <td class="bg-blue-50!"></td>
+                  </tr>
+                </ng-template>
+
+                <!-- EMPTY -->
+                <ng-template #emptymessage>
+                  <tr>
+                    <td colspan="100%">
+                      <div
+                        class="flex flex-col items-center text-sm py-8 justify-center text-gray-400 gap-2"
+                      >
+                        <i class="pi pi-box text-3xl"></i>
+                        <span>No order found</span>
+                        <span class="text-xs"
+                          >Add an item to start your quotation.</span
+                        >
                       </div>
                     </td>
-                    <td>
-                      <input
-                        pInputText
-                        formControlName="unit"
-                        class="w-full text-center"
-                      />
-                    </td>
-
-                    <td>
-                      <p-inputnumber
-                        formControlName="quantity"
-                        inputStyleClass="w-full text-center"
-                      />
-                    </td>
-
-                    <td>
-                      <p-inputnumber
-                        formControlName="discount"
-                        suffix="%"
-                        inputStyleClass="w-full text-center"
-                      />
-                    </td>
-
-                    <td>
-                      <p-inputnumber
-                        formControlName="unitPrice"
-                        mode="currency"
-                        currency="MYR"
-                        locale="ms-MY"
-                        inputStyleClass="w-full text-right"
-                      />
-                    </td>
-
-                    <td>
-                      <p-inputnumber
-                        formControlName="totalPrice"
-                        mode="currency"
-                        currency="MYR"
-                        locale="ms-MY"
-                        [readonly]="true"
-                        inputStyleClass="w-full text-right bg-gray-50 font-semibold"
-                      />
-                    </td>
-                  </ng-container>
-
-                  <!-- SECTION -->
-                  <ng-container
-                    *ngIf="row.get('rowType')?.value === 'CategoryHeader'"
-                  >
-                    <td colspan="7">
-                      <input
-                        pInputText
-                        formControlName="description"
-                        class="w-full font-bold"
-                      />
-                    </td>
-                  </ng-container>
-
-                  <!-- NOTES -->
-                  <ng-container *ngIf="row.get('rowType')?.value === 'NoteRow'">
-                    <td>
-                      <input
-                        pInputText
-                        formControlName="item"
-                        class="w-full text-center italic"
-                      />
-                    </td>
-
-                    <td colspan="6">
-                      <textarea
-                        pTextarea
-                        formControlName="description"
-                        rows="3"
-                        class="w-full italic"
-                      ></textarea>
-                    </td>
-                  </ng-container>
-
-                  <!-- ACTION -->
-                  <td class="text-center">
-                    <div class="flex flex-row items-center justify-center">
-                      <p-button
-                        icon="pi pi-check-circle"
-                        [text]="true"
-                        (onClick)="row.get('isEdit')?.setValue(false)"
-                      />
-                      <p-button
-                        icon="pi pi-trash"
-                        severity="danger"
-                        [text]="true"
-                        (onClick)="removeItem(rowIndex)"
-                      />
-                    </div>
-                  </td>
-                </ng-container>
-
-                <!--  VIEW MODE -->
-                <ng-template #viewMode>
-                  <ng-container [ngSwitch]="row.get('rowType')?.value">
-                    <!-- LINE -->
-                    <ng-container *ngSwitchCase="'LineItem'">
-                      <td class="text-center!">{{ row.get('item')?.value }}</td>
-                      <td>
-                        <div [innerHTML]="row.get('description')?.value"></div>
-                      </td>
-                      <td class="text-center!">{{ row.get('unit')?.value }}</td>
-                      <td class="text-center!">
-                        {{ row.get('quantity')?.value }}
-                      </td>
-                      <td class="text-center!">
-                        {{ row.get('discount')?.value }}
-                      </td>
-                      <td class="text-right!">
-                        {{ row.get('unitPrice')?.value | number: '1.2-2' }}
-                      </td>
-                      <td class="text-right! font-semibold">
-                        {{ row.get('totalPrice')?.value | number: '1.2-2' }}
-                      </td>
-                    </ng-container>
-
-                    <!-- SECTION -->
-                    <ng-container *ngSwitchCase="'CategoryHeader'">
-                      <td colspan="7" class="font-bold">
-                        {{ row.get('description')?.value }}
-                      </td>
-                    </ng-container>
-
-                    <!-- NOTE -->
-                    <ng-container *ngSwitchCase="'NoteRow'">
-                      <td class="text-center! italic">
-                        {{ row.get('item')?.value }}
-                      </td>
-                      <td colspan="6" class="italic">
-                        {{ row.get('description')?.value }}
-                      </td>
-                    </ng-container>
-                  </ng-container>
-
-                  <td class="text-center">
-                    <div class="flex items-center justify-center">
-                      <p-button
-                        icon="pi pi-pencil"
-                        [text]="true"
-                        severity="info"
-                        (onClick)="row.get('isEdit')?.setValue(true)"
-                      />
-                      <p-button
-                        icon="pi pi-trash"
-                        [text]="true"
-                        severity="danger"
-                        (onClick)="removeProductService(rowIndex)"
-                      />
-                    </div>
-                  </td>
+                  </tr>
                 </ng-template>
-              </tr>
-            </ng-template>
-            <ng-template #footer>
-              <tr>
-                <td colspan="6" class="text-right!">SubTotal</td>
-                <td colspan="1" class="text-right!">
-                  {{ subTotal() | number: '1.2' }}
-                </td>
-                <td colspan="1" class="text-sm"></td>
-              </tr>
-              <tr>
-                <td colspan="6" class="text-right! text-red-500!">
-                  - Discount (RM)
-                </td>
-                <td colspan="1" class="text-right!">
-                  <p-inputnumber
-                    mode="decimal"
-                    [minFractionDigits]="2"
-                    [maxFractionDigits]="5"
-                    inputStyleClass="w-full! min-w-0! text-right! text-red-500!"
-                    formControlName="discount"
-                  ></p-inputnumber>
-                </td>
-                <td colspan="1" class="text-sm"></td>
-              </tr>
-              <tr>
-                <td colspan="6" class="text-right! font-bold! bg-gray-50!">
-                  Total Amount
-                </td>
-                <td colspan="1" class="text-right! font-bold! bg-gray-50!">
-                  {{ totalAmount() | number: '1.2' }}
-                </td>
-                <td colspan="1" class="bg-gray-50!"></td>
-              </tr>
-            </ng-template>
-            <ng-template #emptymessage>
-              <tr>
-                <td colspan="100%">
-                  <div
-                    class="flex flex-col items-center text-sm py-2 justify-center text-gray-400 gap-2"
-                  >
-                    <i class="pi pi-box"></i>
-                    <span>No order found</span>
-                  </div>
-                </td>
-              </tr>
-            </ng-template>
-          </p-table>
-          <div class="flex flex-wrap gap-3 mt-2">
-            <div
-              (click)="ItemTypeClick('lines')"
-              class="p-2 bg-blue-50 border text-sm border-blue-100 rounded-lg cursor-pointer hover:bg-gray-50 hover:scale-101"
-            >
-              Add Item
+              </p-table>
             </div>
-            <div
-              (click)="ItemTypeClick('section')"
-              class="p-2 bg-blue-50 border text-sm border-blue-100 rounded-lg cursor-pointer hover:bg-gray-50 hover:scale-101"
-            >
-              Add Section
-            </div>
-            <div
-              (click)="ItemTypeClick('notes')"
-              class="p-2 bg-blue-50 border text-sm border-blue-100 rounded-lg cursor-pointer hover:bg-gray-50 hover:scale-101"
-            >
-              Add Notes
-            </div>
-          </div>
-        </div>
 
-        <div class="flex flex-col gap-2 border-t border-gray-100 my-5 pt-5">
-          <div class="flex flex-row items-center justify-between">
-            <div class="flex flex-row items-center gap-2">
-              <div class="pi pi-file text-blue-600"></div>
-              <div class="font-semibold">Terms & Conditions</div>
-            </div>
-          </div>
+            <!-- ADD ACTIONS -->
+            <div class="flex flex-wrap gap-2 sm:gap-3">
+              <button
+                type="button"
+                (click)="ItemTypeClick('lines')"
+                class="quotation-add-action"
+              >
+                <i class="pi pi-plus-circle"></i>
+                Add Item
+              </button>
 
-          <div class="flex flex-col gap-2 mt-2" #termBox>
-            <div class="grid grid-cols-12 gap-4 items-center">
-              <div class="col-span-2 font-semibold">Terms:</div>
-              <div class="col-span-10">
+              <button
+                type="button"
+                (click)="ItemTypeClick('section')"
+                class="quotation-add-action"
+              >
+                <i class="pi pi-folder-plus"></i>
+                Add Section
+              </button>
+
+              <button
+                type="button"
+                (click)="ItemTypeClick('notes')"
+                class="quotation-add-action"
+              >
+                <i class="pi pi-file-edit"></i>
+                Add Notes
+              </button>
+            </div>
+          </section>
+
+          <div class="border-t border-slate-100"></div>
+
+          <!-- TERMS & CONDITIONS -->
+          <section class="space-y-4">
+            <div class="flex items-center gap-3">
+              <span
+                class="flex items-center justify-center w-9 h-9 rounded-xl bg-blue-50 text-blue-600"
+              >
+                <i class="pi pi-file"></i>
+              </span>
+              <div>
+                <h2 class="font-bold text-slate-900">Terms & Conditions</h2>
+                <p class="text-xs text-slate-500">
+                  Set payment terms and quotation validity.
+                </p>
+              </div>
+            </div>
+
+            <div
+              class="quotation-terms-grid grid grid-cols-12 gap-3 sm:gap-4 items-center mt-2"
+              #termBox
+            >
+              <!-- PAYMENT TERMS -->
+              <div
+                class="col-span-12 sm:col-span-3 lg:col-span-2 font-semibold text-sm text-slate-700"
+              >
+                Terms:
+              </div>
+
+              <div class="col-span-12 sm:col-span-9 lg:col-span-10">
                 <input
                   formControlName="paymentTerms"
                   pInputText
@@ -645,32 +839,36 @@ import {
                 />
               </div>
 
-              <div class="col-span-2 font-semibold">Validity:</div>
+              <!-- VALIDITY -->
+              <div
+                class="col-span-12 sm:col-span-3 lg:col-span-2 font-semibold text-sm text-slate-700"
+              >
+                Validity:
+              </div>
 
-              <div class="col-span-10 flex items-center gap-3 flex-wrap">
-                <!-- Checkbox -->
+              <div
+                class="col-span-12 sm:col-span-9 lg:col-span-10 flex flex-col sm:flex-row sm:items-center gap-3 flex-wrap"
+              >
                 <div class="flex items-center gap-2">
                   <p-checkbox
                     binary="true"
                     formControlName="noValidity"
                     inputId="noValidity"
                     class="mb-1"
-                  ></p-checkbox>
+                  />
                   <label for="noValidity" class="text-sm whitespace-nowrap">
                     No expiry
                   </label>
                 </div>
 
-                <!-- OR divider -->
-                <span class="text-gray-400 text-sm">or</span>
+                <span class="text-gray-400 text-sm hidden sm:inline">or</span>
 
-                <!-- Input group -->
                 <div class="flex items-center gap-2">
                   <p-inputnumber
                     formControlName="validity"
                     [disabled]="FG.get('noValidity')?.value"
                     inputStyleClass="w-24!"
-                  ></p-inputnumber>
+                  />
 
                   <p-select
                     formControlName="validityType"
@@ -682,32 +880,40 @@ import {
                     ]"
                     class="w-auto min-w-[90px]"
                     [disabled]="FG.get('noValidity')?.value"
-                  ></p-select>
+                  />
                 </div>
 
-                <!-- Description -->
-                <span class="text-sm text-gray-500">
+                <span class="text-xs text-gray-500">
                   (with effect from the date of this quotation)
                 </span>
               </div>
 
+              <!-- SELECTED TERMS -->
               <ng-container *ngFor="let term of selectedTerms; let i = index">
-                <div class="col-span-2 font-semibold">{{ term.title }}:</div>
                 <div
-                  class="col-span-10 flex flex-row items-center justify-between"
+                  class="col-span-12 sm:col-span-3 lg:col-span-2 font-semibold text-sm text-slate-700"
                 >
-                  <span>{{ term.description }}</span
-                  ><p-button
+                  {{ term.title }}:
+                </div>
+
+                <div
+                  class="col-span-12 sm:col-span-9 lg:col-span-10 flex items-start justify-between gap-3 rounded-lg bg-slate-50 border border-slate-100 px-3 py-2"
+                >
+                  <span class="text-sm text-slate-700 break-words min-w-0">
+                    {{ term.description }}
+                  </span>
+
+                  <p-button
                     icon="pi pi-times"
                     [text]="true"
                     severity="danger"
                     (onClick)="removeSelectedTerm(i)"
-                  >
-                  </p-button>
+                  />
                 </div>
               </ng-container>
 
-              <div class="col-span-2 relative">
+              <!-- ADD TERM TITLE -->
+              <div class="col-span-12 sm:col-span-3 lg:col-span-2 relative">
                 <input
                   pInputText
                   [ngModel]="title()"
@@ -715,45 +921,51 @@ import {
                   (focus)="activeField.set('title')"
                   [ngModelOptions]="{ standalone: true }"
                   class="w-full font-semibold!"
+                  placeholder="Term title"
                 />
 
                 <div
                   *ngIf="activeField() === 'title' && filteredTerms().length"
-                  class="z-50 absolute flex flex-col max-h-[150px] overflow-y-auto font-semibold border border-gray-300 rounded-b-lg bg-white w-full"
+                  class="z-50 absolute top-full left-0 mt-1 flex flex-col max-h-[150px] overflow-y-auto font-semibold border border-gray-200 rounded-lg bg-white shadow-lg w-full"
                 >
                   <div
                     *ngFor="let term of filteredTerms()"
-                    class="cursor-pointer hover:bg-gray-100 p-3"
+                    class="cursor-pointer hover:bg-blue-50 p-3 text-sm"
                     (click)="SelectTerm(term)"
                   >
                     {{ term.title }}
                   </div>
                 </div>
               </div>
-              <div
-                class="col-span-10 flex flex-row gap-3 items-center relative"
-              >
-                <input
-                  pInputText
-                  [ngModel]="description()"
-                  (ngModelChange)="description.set($event)"
-                  (focus)="activeField.set('description')"
-                  class="w-full!"
-                  [ngModelOptions]="{ standalone: true }"
-                />
 
-                <div
-                  *ngIf="
-                    activeField() === 'description' && filteredTerms().length
-                  "
-                  class="z-50 absolute top-full left-0 mt-1 flex flex-col max-h-[150px] overflow-y-auto font-semibold border border-gray-300 rounded-b-lg bg-white w-full"
-                >
+              <!-- ADD TERM DESCRIPTION -->
+              <div
+                class="col-span-12 sm:col-span-9 lg:col-span-10 flex flex-col sm:flex-row gap-2 sm:items-center relative"
+              >
+                <div class="relative flex-1 min-w-0">
+                  <input
+                    pInputText
+                    [ngModel]="description()"
+                    (ngModelChange)="description.set($event)"
+                    (focus)="activeField.set('description')"
+                    class="w-full!"
+                    [ngModelOptions]="{ standalone: true }"
+                    placeholder="Enter term description"
+                  />
+
                   <div
-                    *ngFor="let term of filteredTerms()"
-                    class="cursor-pointer hover:bg-gray-100 p-3"
-                    (click)="SelectTerm(term)"
+                    *ngIf="
+                      activeField() === 'description' && filteredTerms().length
+                    "
+                    class="z-50 absolute top-full left-0 mt-1 flex flex-col max-h-[150px] overflow-y-auto font-semibold border border-gray-200 rounded-lg bg-white shadow-lg w-full"
                   >
-                    {{ term.description }}
+                    <div
+                      *ngFor="let term of filteredTerms()"
+                      class="cursor-pointer hover:bg-blue-50 p-3 text-sm"
+                      (click)="SelectTerm(term)"
+                    >
+                      {{ term.description }}
+                    </div>
                   </div>
                 </div>
 
@@ -761,431 +973,474 @@ import {
                   icon="pi pi-plus-circle"
                   label="Add"
                   severity="info"
-                  styleClass="border-none! bg-blue-600! text-white! text-sm! py-2! px-4!"
+                  styleClass="w-full sm:w-auto border-none! bg-blue-600! text-white! text-sm! py-2! px-4!"
                   (onClick)="addInlineTerm()"
                 />
               </div>
             </div>
-          </div>
+          </section>
         </div>
-      </div>
 
-      <p-dialog
-        [(visible)]="visible"
-        [modal]="true"
-        [closable]="true"
-        [draggable]="false"
-        styleClass="w-[95%] max-w-[900px] rounded-2xl overflow-hidden shadow-2xl border-none!"
-        [maskStyle]="{
-          'overflow-y': 'auto',
-          'background-color': 'rgba(15, 23, 42, 0.5)',
-          'backdrop-filter': 'blur(8px)',
-        }"
-        appendTo="body"
-      >
-        <ng-template #headless>
-          <div
-            class="bg-gray-100 px-8 py-4 relative overflow-hidden border-b border-gray-200"
-          >
+        <!-- ADD COMPANY / CLIENT DIALOG -->
+        <p-dialog
+          [(visible)]="visible"
+          [modal]="true"
+          [closable]="true"
+          [draggable]="false"
+          styleClass="quotation-company-dialog rounded-2xl overflow-hidden shadow-2xl border-none!"
+          [maskStyle]="{
+            'overflow-y': 'auto',
+            'background-color': 'rgba(15, 23, 42, 0.5)',
+            'backdrop-filter': 'blur(8px)',
+          }"
+          appendTo="body"
+        >
+          <ng-template #headless>
+            <!-- DIALOG HEADER -->
             <div
-              class="absolute inset-0 bg-grid-white/[0.05] bg-[length:20px_20px]"
-            ></div>
-            <div class="relative flex justify-between items-start gap-2">
-              <div class="flex items-center gap-4">
-                <div
-                  class="w-14 h-14 rounded-xl bg-white/20 backdrop-blur-sm border border-gray-200 flex items-center justify-center"
-                >
-                  <i class="pi pi-building text-2xl"></i>
+              class="bg-gray-100 px-4 py-4 sm:px-6 lg:px-8 relative overflow-hidden border-b border-gray-200"
+            >
+              <div
+                class="absolute inset-0 bg-grid-white/[0.05] bg-[length:20px_20px]"
+              ></div>
+
+              <div class="relative flex justify-between items-start gap-3">
+                <div class="flex items-center gap-3 sm:gap-4 min-w-0">
+                  <div
+                    class="w-11 h-11 sm:w-14 sm:h-14 shrink-0 rounded-xl bg-white/70 border border-gray-200 flex items-center justify-center"
+                  >
+                    <i
+                      class="pi pi-building text-xl sm:text-2xl text-blue-600"
+                    ></i>
+                  </div>
+
+                  <div class="min-w-0">
+                    <h2
+                      class="text-xl sm:text-2xl font-bold tracking-tight m-0 text-slate-900"
+                    >
+                      {{
+                        mode === 'company'
+                          ? 'Add New Company'
+                          : 'Add New Client'
+                      }}
+                    </h2>
+
+                    <p
+                      class="text-xs sm:text-sm text-slate-500 mt-1 leading-relaxed"
+                    >
+                      Complete the form below to create a new
+                      {{ mode === 'company' ? 'company' : 'client' }} record.
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h2 class="text-2xl font-bold tracking-tight m-0">
-                    {{
-                      mode === 'company' ? 'Add New Company' : 'Add New Client'
-                    }}
-                  </h2>
-                  <p class=" text-sm mt-1 leading-relaxed">
-                    Complete the form below to create a new
-                    {{ mode === 'company' ? 'company' : 'client' }} record
-                  </p>
-                </div>
+
+                <p-button
+                  icon="pi pi-times"
+                  [rounded]="true"
+                  [text]="true"
+                  severity="secondary"
+                  styleClass="shrink-0"
+                  (onClick)="visible = false"
+                />
               </div>
-              <p-button
-                icon="pi pi-times"
-                [rounded]="true"
-                [text]="true"
-                severity="secondary"
-                styleClass="text-white hover:bg-white/20 transition-all duration-200 backdrop-blur-sm"
-                (onClick)="visible = false"
-              ></p-button>
             </div>
-          </div>
 
-          <div class="max-h-[70vh] overflow-y-auto bg-slate-50">
-            <div [formGroup]="companyForm" class="p-8 space-y-8">
+            <!-- DIALOG CONTENT -->
+            <div
+              class="quotation-company-dialog-content max-h-[calc(100dvh-150px)] sm:max-h-[70vh] overflow-y-auto bg-slate-50"
+            >
               <div
-                class="bg-white rounded-xl border-2 border-slate-200 p-6 space-y-5"
+                [formGroup]="companyForm"
+                class="p-4 sm:p-6 lg:p-8 space-y-5 sm:space-y-8"
               >
+                <!-- BASIC INFORMATION -->
                 <div
-                  class="flex items-center gap-2.5 pb-3 border-b-2 border-slate-100"
+                  class="bg-white rounded-xl border border-slate-200 p-4 sm:p-6 space-y-5"
                 >
-                  <i class="pi pi-briefcase text-blue-600"></i>
-                  <h3 class="font-bold text-slate-900 text-base">
-                    Basic Information
-                  </h3>
-                </div>
-
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
-                  <div class="lg:col-span-2 space-y-2">
-                    <label class="text-sm font-semibold text-slate-700">
-                      Company Name <span class="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      pInputText
-                      class="w-full px-4 py-3 border-2 border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 rounded-xl text-slate-900 placeholder:text-slate-400 font-medium transition-all duration-200"
-                      formControlName="name"
-                      placeholder="e.g. Acme Corp Bhd"
-                    />
-                  </div>
-
-                  <div class="space-y-2">
-                    <label class="text-sm font-semibold text-slate-700"
-                      >Account Ref No.</label
-                    >
-                    <input
-                      type="text"
-                      pInputText
-                      class="w-full px-4 py-3 border-2 border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 rounded-xl text-slate-900 placeholder:text-slate-400 transition-all duration-200"
-                      formControlName="acNo"
-                      placeholder="ACC-2026-89"
-                    />
-                  </div>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
-                  <div class="space-y-2">
-                    <label class="text-sm font-semibold text-slate-700"
-                      >Email Address</label
-                    >
-                    <input
-                      type="email"
-                      pInputText
-                      class="w-full px-4 py-3 border-2 border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 rounded-xl text-slate-900 placeholder:text-slate-400 transition-all duration-200"
-                      formControlName="email"
-                      placeholder="info@acme.com"
-                    />
-                  </div>
-
-                  <div class="space-y-2">
-                    <label class="text-sm font-semibold text-slate-700"
-                      >Phone Number</label
-                    >
-                    <input
-                      type="tel"
-                      pInputText
-                      class="w-full px-4 py-3 border-2 border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 rounded-xl text-slate-900 placeholder:text-slate-400 transition-all duration-200"
-                      formControlName="contactNo"
-                      placeholder="+60 3-XXXX XXXX"
-                    />
-                  </div>
-
-                  <div class="space-y-2">
-                    <label class="text-sm font-semibold text-slate-700"
-                      >Fax Number</label
-                    >
-                    <input
-                      type="tel"
-                      pInputText
-                      class="w-full px-4 py-3 border-2 border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 rounded-xl text-slate-900 placeholder:text-slate-400 transition-all duration-200"
-                      formControlName="faxNo"
-                      placeholder="+60 3-XXXX XXXX"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div
-                class="bg-white rounded-xl border-2 border-slate-200 p-6 space-y-5"
-              >
-                <div
-                  class="flex items-center gap-2.5 pb-3 border-b-2 border-slate-100"
-                >
-                  <i class="pi pi-users text-blue-600"></i>
-                  <h3 class="font-bold text-slate-900 text-base">
-                    Contact People
-                  </h3>
-                </div>
-
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
                   <div
-                    class="bg-blue-50/50 rounded-xl border-2 border-blue-200 p-5 space-y-2"
+                    class="flex items-center gap-2.5 pb-3 border-b border-slate-100"
                   >
-                    <div class="flex items-center gap-2 mb-2">
-                      <div class="w-2 h-2 rounded-full bg-blue-600"></div>
-                      <span class="text-sm font-bold text-blue-900"
-                        >Primary Contact</span
-                      >
-                    </div>
-                    <label class="text-sm font-medium text-slate-600"
-                      >Full Name</label
-                    >
-                    <input
-                      type="text"
-                      pInputText
-                      class="w-full px-4 py-2.5 border-2 border-blue-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 rounded-lg bg-white transition-all duration-200"
-                      formControlName="contactPerson1"
-                      placeholder="e.g. Mr. John Doe"
-                    />
-                  </div>
-
-                  <div
-                    class="bg-slate-50 rounded-xl border-2 border-slate-200 p-5 space-y-2"
-                  >
-                    <div class="flex items-center gap-2 mb-2">
-                      <div class="w-2 h-2 rounded-full bg-slate-400"></div>
-                      <span class="text-sm font-bold text-slate-700"
-                        >Secondary Contact</span
-                      >
-                      <span class="text-xs text-slate-400 italic"
-                        >(Optional)</span
-                      >
-                    </div>
-                    <label class="text-sm font-medium text-slate-600"
-                      >Full Name</label
-                    >
-                    <input
-                      type="text"
-                      pInputText
-                      class="w-full px-4 py-2.5 border-2 border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 rounded-lg bg-white transition-all duration-200"
-                      formControlName="contactPerson2"
-                      placeholder="e.g. Ms. Jane Doe"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div
-                class="bg-white rounded-xl border-2 border-slate-200 p-6 space-y-5"
-                formGroupName="billingAddress"
-              >
-                <div
-                  class="flex items-center gap-2.5 pb-3 border-b-2 border-slate-100"
-                >
-                  <i class="pi pi-credit-card text-blue-600"></i>
-                  <h3 class="font-bold text-slate-900 text-base">
-                    Billing Address
-                  </h3>
-                </div>
-
-                <div class="grid grid-cols-1 gap-5">
-                  <div class="space-y-2">
-                    <label class="text-sm font-semibold text-slate-700"
-                      >Address Line 1</label
-                    >
-                    <input
-                      pInputText
-                      formControlName="addressLine1"
-                      class="w-full px-4 py-3 border-2 border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 rounded-xl transition-all duration-200"
-                      placeholder="Floor, building, or suite number"
-                    />
-                  </div>
-                  <div class="space-y-2">
-                    <label class="text-sm font-semibold text-slate-700"
-                      >Address Line 2</label
-                    >
-                    <input
-                      pInputText
-                      formControlName="addressLine2"
-                      class="w-full px-4 py-3 border-2 border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 rounded-xl transition-all duration-200"
-                      placeholder="Street name or neighborhood"
-                    />
-                  </div>
-                  <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <div class="space-y-2">
-                      <label class="text-sm font-semibold text-slate-700"
-                        >City</label
-                      >
-                      <input
-                        pInputText
-                        formControlName="city"
-                        class="w-full px-4 py-3 border-2 border-slate-200 focus:border-blue-500 rounded-xl transition-all duration-200"
-                      />
-                    </div>
-                    <div class="space-y-2">
-                      <label class="text-sm font-semibold text-slate-700"
-                        >Postcode / ZIP</label
-                      >
-                      <input
-                        pInputText
-                        formControlName="postcode"
-                        class="w-full px-4 py-3 border-2 border-slate-200 focus:border-blue-500 rounded-xl transition-all duration-200"
-                      />
-                    </div>
-                  </div>
-                  <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <div class="space-y-2">
-                      <label class="text-sm font-semibold text-slate-700"
-                        >State</label
-                      >
-                      <input
-                        pInputText
-                        formControlName="state"
-                        class="w-full px-4 py-3 border-2 border-slate-200 focus:border-blue-500 rounded-xl transition-all duration-200"
-                      />
-                    </div>
-                    <div class="space-y-2">
-                      <label class="text-sm font-semibold text-slate-700"
-                        >Country</label
-                      >
-                      <input
-                        pInputText
-                        formControlName="country"
-                        class="w-full px-4 py-3 border-2 border-slate-200 focus:border-blue-500 rounded-xl transition-all duration-200"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div
-                class="bg-white rounded-xl border-2 border-slate-200 p-6 space-y-5"
-              >
-                <div
-                  class="flex items-center justify-between pb-3 border-b-2 border-slate-100"
-                >
-                  <div class="flex items-center gap-2.5">
-                    <i class="pi pi-truck text-blue-600"></i>
+                    <i class="pi pi-briefcase text-blue-600"></i>
                     <h3 class="font-bold text-slate-900 text-base">
-                      Shipping Address
+                      Basic Information
                     </h3>
                   </div>
+
+                  <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-5">
+                    <div class="lg:col-span-2 space-y-2">
+                      <label class="text-sm font-semibold text-slate-700">
+                        Company Name <span class="text-red-500">*</span>
+                      </label>
+
+                      <input
+                        type="text"
+                        pInputText
+                        class="w-full"
+                        formControlName="name"
+                        placeholder="e.g. Acme Corp Bhd"
+                      />
+                    </div>
+
+                    <div class="space-y-2">
+                      <label class="text-sm font-semibold text-slate-700"
+                        >Account Ref No.</label
+                      >
+
+                      <input
+                        type="text"
+                        pInputText
+                        class="w-full"
+                        formControlName="acNo"
+                        placeholder="ACC-2026-89"
+                      />
+                    </div>
+                  </div>
+
+                  <div class="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5">
+                    <div class="space-y-2">
+                      <label class="text-sm font-semibold text-slate-700"
+                        >Email Address</label
+                      >
+                      <input
+                        type="email"
+                        pInputText
+                        class="w-full"
+                        formControlName="email"
+                        placeholder="info@acme.com"
+                      />
+                    </div>
+
+                    <div class="space-y-2">
+                      <label class="text-sm font-semibold text-slate-700"
+                        >Phone Number</label
+                      >
+                      <input
+                        type="tel"
+                        pInputText
+                        class="w-full"
+                        formControlName="contactNo"
+                        placeholder="+60 3-XXXX XXXX"
+                      />
+                    </div>
+
+                    <div class="space-y-2">
+                      <label class="text-sm font-semibold text-slate-700"
+                        >Fax Number</label
+                      >
+                      <input
+                        type="tel"
+                        pInputText
+                        class="w-full"
+                        formControlName="faxNo"
+                        placeholder="+60 3-XXXX XXXX"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <!-- CONTACT PEOPLE -->
+                <div
+                  class="bg-white rounded-xl border border-slate-200 p-4 sm:p-6 space-y-5"
+                >
                   <div
-                    class="flex items-center gap-3 bg-slate-100 px-4 py-2.5 rounded-xl border-2 border-slate-200 hover:bg-slate-200/60 cursor-pointer transition-all duration-200"
+                    class="flex items-center gap-2.5 pb-3 border-b border-slate-100"
                   >
-                    <input
-                      type="checkbox"
-                      formControlName="sameAsBilling"
-                      id="sameAsBilling"
-                      class="cursor-pointer w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                    />
-                    <label
-                      for="sameAsBilling"
-                      class="cursor-pointer font-semibold text-slate-700 text-sm select-none"
+                    <i class="pi pi-users text-blue-600"></i>
+                    <h3 class="font-bold text-slate-900 text-base">
+                      Contact People
+                    </h3>
+                  </div>
+
+                  <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5">
+                    <div
+                      class="bg-blue-50/50 rounded-xl border border-blue-200 p-4 sm:p-5 space-y-2"
                     >
-                      Same as Billing
+                      <div class="flex items-center gap-2 mb-2">
+                        <div class="w-2 h-2 rounded-full bg-blue-600"></div>
+                        <span class="text-sm font-bold text-blue-900"
+                          >Primary Contact</span
+                        >
+                      </div>
+
+                      <label class="text-sm font-medium text-slate-600"
+                        >Full Name</label
+                      >
+
+                      <input
+                        type="text"
+                        pInputText
+                        class="w-full"
+                        formControlName="contactPerson1"
+                        placeholder="e.g. Mr. John Doe"
+                      />
+                    </div>
+
+                    <div
+                      class="bg-slate-50 rounded-xl border border-slate-200 p-4 sm:p-5 space-y-2"
+                    >
+                      <div class="flex items-center gap-2 mb-2">
+                        <div class="w-2 h-2 rounded-full bg-slate-400"></div>
+                        <span class="text-sm font-bold text-slate-700"
+                          >Secondary Contact</span
+                        >
+                        <span class="text-xs text-slate-400 italic"
+                          >(Optional)</span
+                        >
+                      </div>
+
+                      <label class="text-sm font-medium text-slate-600"
+                        >Full Name</label
+                      >
+
+                      <input
+                        type="text"
+                        pInputText
+                        class="w-full"
+                        formControlName="contactPerson2"
+                        placeholder="e.g. Ms. Jane Doe"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <!-- BILLING ADDRESS -->
+                <div
+                  class="bg-white rounded-xl border border-slate-200 p-4 sm:p-6 space-y-5"
+                  formGroupName="billingAddress"
+                >
+                  <div
+                    class="flex items-center gap-2.5 pb-3 border-b border-slate-100"
+                  >
+                    <i class="pi pi-credit-card text-blue-600"></i>
+                    <h3 class="font-bold text-slate-900 text-base">
+                      Billing Address
+                    </h3>
+                  </div>
+
+                  <div class="grid grid-cols-1 gap-4 sm:gap-5">
+                    <div class="space-y-2">
+                      <label class="text-sm font-semibold text-slate-700"
+                        >Address Line 1</label
+                      >
+                      <input
+                        pInputText
+                        formControlName="addressLine1"
+                        class="w-full"
+                        placeholder="Floor, building, or suite number"
+                      />
+                    </div>
+
+                    <div class="space-y-2">
+                      <label class="text-sm font-semibold text-slate-700"
+                        >Address Line 2</label
+                      >
+                      <input
+                        pInputText
+                        formControlName="addressLine2"
+                        class="w-full"
+                        placeholder="Street name or neighborhood"
+                      />
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
+                      <div class="space-y-2">
+                        <label class="text-sm font-semibold text-slate-700"
+                          >City</label
+                        >
+                        <input
+                          pInputText
+                          formControlName="city"
+                          class="w-full"
+                        />
+                      </div>
+
+                      <div class="space-y-2">
+                        <label class="text-sm font-semibold text-slate-700"
+                          >Postcode / ZIP</label
+                        >
+                        <input
+                          pInputText
+                          formControlName="postcode"
+                          class="w-full"
+                        />
+                      </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
+                      <div class="space-y-2">
+                        <label class="text-sm font-semibold text-slate-700"
+                          >State</label
+                        >
+                        <input
+                          pInputText
+                          formControlName="state"
+                          class="w-full"
+                        />
+                      </div>
+
+                      <div class="space-y-2">
+                        <label class="text-sm font-semibold text-slate-700"
+                          >Country</label
+                        >
+                        <input
+                          pInputText
+                          formControlName="country"
+                          class="w-full"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- SHIPPING ADDRESS -->
+                <div
+                  class="bg-white rounded-xl border border-slate-200 p-4 sm:p-6 space-y-5"
+                >
+                  <div
+                    class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-3 border-b border-slate-100"
+                  >
+                    <div class="flex items-center gap-2.5">
+                      <i class="pi pi-truck text-blue-600"></i>
+                      <h3 class="font-bold text-slate-900 text-base">
+                        Shipping Address
+                      </h3>
+                    </div>
+
+                    <label
+                      class="flex items-center gap-3 bg-slate-100 px-3 sm:px-4 py-2.5 rounded-xl border border-slate-200 hover:bg-slate-200/60 cursor-pointer transition-all"
+                    >
+                      <input
+                        type="checkbox"
+                        formControlName="sameAsBilling"
+                        id="sameAsBilling"
+                        class="cursor-pointer w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <span
+                        class="cursor-pointer font-semibold text-slate-700 text-sm select-none"
+                      >
+                        Same as Billing
+                      </span>
                     </label>
                   </div>
-                </div>
 
-                <div
-                  *ngIf="!companyForm.get('sameAsBilling')?.value"
-                  formGroupName="deliveryAddress"
-                  class="grid grid-cols-1 gap-5 animate-fadeIn"
-                >
-                  <div class="space-y-2">
-                    <label class="text-sm font-semibold text-slate-700"
-                      >Address Line 1</label
-                    >
-                    <input
-                      pInputText
-                      formControlName="addressLine1"
-                      class="w-full px-4 py-3 border-2 border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 rounded-xl transition-all duration-200"
-                      placeholder="Warehouse, loading bay, or suite number"
-                    />
-                  </div>
-                  <div class="space-y-2">
-                    <label class="text-sm font-semibold text-slate-700"
-                      >Address Line 2</label
-                    >
-                    <input
-                      pInputText
-                      formControlName="addressLine2"
-                      class="w-full px-4 py-3 border-2 border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 rounded-xl transition-all duration-200"
-                      placeholder="Street name or neighborhood"
-                    />
-                  </div>
-                  <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <div
+                    *ngIf="!companyForm.get('sameAsBilling')?.value"
+                    formGroupName="deliveryAddress"
+                    class="grid grid-cols-1 gap-4 sm:gap-5 animate-fadeIn"
+                  >
                     <div class="space-y-2">
                       <label class="text-sm font-semibold text-slate-700"
-                        >City</label
+                        >Address Line 1</label
                       >
                       <input
                         pInputText
-                        formControlName="city"
-                        class="w-full px-4 py-3 border-2 border-slate-200 focus:border-blue-500 rounded-xl transition-all duration-200"
+                        formControlName="addressLine1"
+                        class="w-full"
+                        placeholder="Warehouse, loading bay, or suite number"
                       />
                     </div>
-                    <div class="space-y-2">
-                      <label class="text-sm font-semibold text-slate-700"
-                        >Postcode / ZIP</label
-                      >
-                      <input
-                        pInputText
-                        formControlName="postcode"
-                        class="w-full px-4 py-3 border-2 border-slate-200 focus:border-blue-500 rounded-xl transition-all duration-200"
-                      />
-                    </div>
-                  </div>
-                  <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <div class="space-y-2">
-                      <label class="text-sm font-semibold text-slate-700"
-                        >State</label
-                      >
-                      <input
-                        pInputText
-                        formControlName="state"
-                        class="w-full px-4 py-3 border-2 border-slate-200 focus:border-blue-500 rounded-xl transition-all duration-200"
-                      />
-                    </div>
-                    <div class="space-y-2">
-                      <label class="text-sm font-semibold text-slate-700"
-                        >Country</label
-                      >
-                      <input
-                        pInputText
-                        formControlName="country"
-                        class="w-full px-4 py-3 border-2 border-slate-200 focus:border-blue-500 rounded-xl transition-all duration-200"
-                      />
-                    </div>
-                  </div>
-                </div>
 
-                <div
-                  class="p-4 bg-blue-50 border-2 border-blue-200 rounded-xl flex items-center gap-3 animate-fadeIn"
-                  *ngIf="companyForm.get('sameAsBilling')?.value"
-                >
-                  <i class="pi pi-info-circle text-blue-600 text-lg"></i>
-                  <span class="text-sm font-medium text-blue-900">
-                    Delivery address will automatically match the billing
-                    address
-                  </span>
+                    <div class="space-y-2">
+                      <label class="text-sm font-semibold text-slate-700"
+                        >Address Line 2</label
+                      >
+                      <input
+                        pInputText
+                        formControlName="addressLine2"
+                        class="w-full"
+                        placeholder="Street name or neighborhood"
+                      />
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
+                      <div class="space-y-2">
+                        <label class="text-sm font-semibold text-slate-700"
+                          >City</label
+                        >
+                        <input
+                          pInputText
+                          formControlName="city"
+                          class="w-full"
+                        />
+                      </div>
+
+                      <div class="space-y-2">
+                        <label class="text-sm font-semibold text-slate-700"
+                          >Postcode / ZIP</label
+                        >
+                        <input
+                          pInputText
+                          formControlName="postcode"
+                          class="w-full"
+                        />
+                      </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
+                      <div class="space-y-2">
+                        <label class="text-sm font-semibold text-slate-700"
+                          >State</label
+                        >
+                        <input
+                          pInputText
+                          formControlName="state"
+                          class="w-full"
+                        />
+                      </div>
+
+                      <div class="space-y-2">
+                        <label class="text-sm font-semibold text-slate-700"
+                          >Country</label
+                        >
+                        <input
+                          pInputText
+                          formControlName="country"
+                          class="w-full"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div
+                    class="p-4 bg-blue-50 border border-blue-200 rounded-xl flex items-start gap-3 animate-fadeIn"
+                    *ngIf="companyForm.get('sameAsBilling')?.value"
+                  >
+                    <i
+                      class="pi pi-info-circle text-blue-600 text-lg mt-0.5"
+                    ></i>
+                    <span class="text-sm font-medium text-blue-900">
+                      Delivery address will automatically match the billing
+                      address.
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          <div
-            class="bg-slate-100 border-t border-slate-200 px-8 py-3 flex justify-end items-center gap-4"
-          >
-            <p-button
-              (onClick)="visible = false"
-              label="Cancel"
-              severity="secondary"
-              styleClass="px-6! py-2.5 border! border-slate-300! bg-white hover:bg-slate-50 text-slate-700 font-semibold rounded-xl transition-all duration-200"
-            ></p-button>
+            <!-- DIALOG FOOTER -->
+            <div
+              class="bg-slate-100 border-t border-slate-200 px-4 sm:px-6 lg:px-8 py-3 flex flex-col-reverse sm:flex-row justify-end items-stretch sm:items-center gap-2 sm:gap-3"
+            >
+              <p-button
+                (onClick)="visible = false"
+                label="Cancel"
+                severity="secondary"
+                styleClass="w-full sm:w-auto px-6! py-2.5 border! border-slate-300! bg-white hover:bg-slate-50 text-slate-700 font-semibold rounded-xl"
+              />
 
-            <p-button
-              (onClick)="SaveCompany()"
-              [label]="'Save ' + (mode === 'company' ? 'Company' : 'Client')"
-              severity="info"
-              [disabled]="companyForm.invalid"
-              styleClass="px-6! py-2.5 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 disabled:from-slate-300 disabled:to-slate-300 disabled:text-slate-500 border-0 text-white font-semibold shadow-lg shadow-blue-500/25 rounded-xl transition-all duration-200"
-            ></p-button>
-          </div>
-        </ng-template>
-      </p-dialog>
+              <p-button
+                (onClick)="SaveCompany()"
+                [label]="'Save ' + (mode === 'company' ? 'Company' : 'Client')"
+                severity="info"
+                [disabled]="companyForm.invalid"
+                styleClass="w-full sm:w-auto px-6! py-2.5 bg-blue-600! hover:bg-blue-700! disabled:bg-slate-300! border-0 text-white font-semibold shadow-lg shadow-blue-500/20 rounded-xl"
+              />
+            </div>
+          </ng-template>
+        </p-dialog>
+      </div>
     </div>
-  </div> `,
+  `,
   styleUrl: './quotation-form.less',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

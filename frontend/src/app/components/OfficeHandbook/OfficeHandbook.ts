@@ -35,122 +35,157 @@ import { SelectModule } from 'primeng/select';
     CheckboxModule,
     SelectModule,
   ],
-  template: ` <div class="min-h-screen bg-slate-50 p-4 md:p-6 lg:p-8">
-      <div class="space-y-6">
-        <!-- Breadcrumb -->
-        <div class="flex items-center gap-2 text-sm text-slate-500">
-          <a routerLink="/dashboard" class="hover:text-blue-600"> Dashboard </a>
-          <i class="pi pi-angle-right text-xs"></i>
-          <span class="font-medium text-slate-800">Office Handbook</span>
-        </div>
-
-        <!-- Page Heading -->
-        <div
-          class="flex flex-col justify-between gap-4 sm:flex-row sm:items-center"
-        >
-          <div>
-            <div class="mb-2 flex items-center gap-2">
-              <span class="rounded-lg bg-blue-100 p-2 text-blue-600">
-                <i class="pi pi-book text-xl"></i>
-              </span>
-              <span
-                class="text-sm font-semibold uppercase tracking-wider text-blue-600"
-              >
-                Employee Resources
-              </span>
+  template: ` <div class="handbook-page min-h-screen bg-slate-50">
+      <div
+        class="mx-auto max-w-[1600px] space-y-6 p-4 sm:p-5 lg:space-y-8 lg:p-8"
+      >
+        <!-- PAGE HEADER -->
+        <header class="handbook-header">
+          <div class="min-w-0">
+            <div
+              class="mb-3 flex items-center gap-2 text-xs font-medium text-slate-500 sm:text-sm"
+            >
+              <a routerLink="/dashboard" class="transition hover:text-blue-600">
+                Dashboard
+              </a>
+              <i class="pi pi-angle-right text-xs"></i>
+              <span class="text-slate-800">Office Handbook</span>
             </div>
 
-            <h1
-              class="text-2xl font-bold tracking-tight text-slate-900 md:text-3xl"
-            >
-              Office Handbook
-            </h1>
+            <div class="flex items-center gap-3">
+              <div
+                class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-lg shadow-blue-100 sm:h-14 sm:w-14"
+              >
+                <i class="pi pi-book text-xl sm:text-2xl"></i>
+              </div>
 
-            <p class="mt-1 text-sm text-slate-500">
-              Everything you need to know about company policies, guidelines and
-              procedures.
+              <div class="min-w-0">
+                <p
+                  class="text-xs font-bold uppercase tracking-[0.16em] text-blue-600"
+                >
+                  Employee Resources
+                </p>
+                <h1
+                  class="mt-1 text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl"
+                >
+                  Office Handbook
+                </h1>
+              </div>
+            </div>
+
+            <p class="mt-3 max-w-2xl text-sm leading-6 text-slate-500">
+              Your central place for company policies, guidelines, procedures
+              and important employee information.
             </p>
           </div>
 
-          <!-- Admin Action -->
-          <button
-            *ngIf="canManage"
-            type="button"
-            (click)="openArticleActions($event)"
-            class="rounded-lg p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
-            title="Article actions"
-          >
-            <i class="pi pi-ellipsis-v"></i>
-          </button>
-        </div>
+          <div *ngIf="canManage" class="flex shrink-0 items-center gap-2">
+            <button
+              type="button"
+              (click)="openCreateDialog()"
+              class="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 active:scale-[0.98]"
+            >
+              <i class="pi pi-plus"></i>
+              <span>New Article</span>
+            </button>
 
-        <!-- Handbook Overview -->
-        <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <div
-            class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
-          >
-            <div class="flex items-center justify-between">
-              <div>
-                <p class="text-sm text-slate-500">Total Articles</p>
-                <h3 class="mt-2 text-2xl font-bold text-slate-900">
+            <button
+              type="button"
+              (click)="openArticleActions($event)"
+              class="flex h-11 w-11 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600"
+              title="More actions"
+              aria-label="More handbook actions"
+            >
+              <i class="pi pi-ellipsis-v"></i>
+            </button>
+          </div>
+        </header>
+
+        <!-- STATISTICS -->
+        <section class="grid grid-cols-3 gap-2 sm:gap-4">
+          <div class="handbook-stat-card">
+            <div class="flex items-center justify-between gap-2">
+              <div class="min-w-0">
+                <p class="text-[11px] font-medium text-slate-500 sm:text-sm">
+                  Articles
+                </p>
+                <h3
+                  class="mt-1 text-xl font-extrabold text-slate-900 sm:mt-2 sm:text-2xl"
+                >
                   {{ handbooks.length }}
                 </h3>
               </div>
-              <div class="rounded-xl bg-blue-50 p-3 text-blue-600">
-                <i class="pi pi-file text-xl"></i>
+              <div class="stat-icon bg-blue-50 text-blue-600">
+                <i class="pi pi-file text-base sm:text-xl"></i>
               </div>
             </div>
+            <p class="mt-2 hidden text-xs text-slate-400 sm:block">
+              Total handbook articles
+            </p>
           </div>
 
-          <div
-            class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
-          >
-            <div class="flex items-center justify-between">
-              <div>
-                <p class="text-sm text-slate-500">Categories</p>
-                <h3 class="mt-2 text-2xl font-bold text-slate-900">
+          <div class="handbook-stat-card">
+            <div class="flex items-center justify-between gap-2">
+              <div class="min-w-0">
+                <p class="text-[11px] font-medium text-slate-500 sm:text-sm">
+                  Categories
+                </p>
+                <h3
+                  class="mt-1 text-xl font-extrabold text-slate-900 sm:mt-2 sm:text-2xl"
+                >
                   {{ categories.length }}
                 </h3>
               </div>
-              <div class="rounded-xl bg-purple-50 p-3 text-purple-600">
-                <i class="pi pi-folder text-xl"></i>
+              <div class="stat-icon bg-purple-50 text-purple-600">
+                <i class="pi pi-folder text-base sm:text-xl"></i>
               </div>
             </div>
+            <p class="mt-2 hidden text-xs text-slate-400 sm:block">
+              Organised topics
+            </p>
           </div>
 
-          <div
-            class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
-          >
-            <div class="flex items-center justify-between">
-              <div>
-                <p class="text-sm text-slate-500">Published Articles</p>
-                <h3 class="mt-2 text-2xl font-bold text-slate-900">
+          <div class="handbook-stat-card">
+            <div class="flex items-center justify-between gap-2">
+              <div class="min-w-0">
+                <p class="text-[11px] font-medium text-slate-500 sm:text-sm">
+                  Published
+                </p>
+                <h3
+                  class="mt-1 text-xl font-extrabold text-slate-900 sm:mt-2 sm:text-2xl"
+                >
                   {{ publishedCount }}
                 </h3>
               </div>
-              <div class="rounded-xl bg-green-50 p-3 text-green-600">
-                <i class="pi pi-check-circle text-xl"></i>
+              <div class="stat-icon bg-emerald-50 text-emerald-600">
+                <i class="pi pi-check-circle text-base sm:text-xl"></i>
               </div>
             </div>
+            <p class="mt-2 hidden text-xs text-slate-400 sm:block">
+              Available to employees
+            </p>
           </div>
-        </div>
+        </section>
 
-        <!-- Main Content -->
-        <div class="grid grid-cols-1 gap-6 lg:grid-cols-4">
-          <!-- Categories Sidebar -->
-          <aside class="lg:col-span-1">
-            <div
-              class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
-            >
+        <!-- MAIN CONTENT -->
+        <div
+          class="grid grid-cols-1 gap-5 lg:grid-cols-[250px_minmax(0,1fr)] lg:gap-7"
+        >
+          <!-- DESKTOP CATEGORY SIDEBAR -->
+          <aside class="hidden lg:block">
+            <div class="category-sidebar">
               <div class="mb-4 flex items-center justify-between">
-                <h2 class="font-bold text-slate-800">Categories</h2>
+                <div>
+                  <h2 class="font-bold text-slate-900">Categories</h2>
+                  <p class="mt-1 text-xs text-slate-400">Browse by topic</p>
+                </div>
 
                 <button
                   *ngIf="canManage"
                   type="button"
                   (click)="openCategoryDialog()"
+                  class="flex h-9 w-9 items-center justify-center rounded-lg text-slate-400 transition hover:bg-blue-50 hover:text-blue-600"
                   title="Manage categories"
-                  class="rounded-lg p-2 text-slate-400 transition hover:bg-blue-50 hover:text-blue-600"
                 >
                   <i class="pi pi-cog"></i>
                 </button>
@@ -162,18 +197,16 @@ import { SelectModule } from 'primeng/select';
                   (click)="selectCategory(null)"
                   [ngClass]="
                     selectedCategoryId === null
-                      ? 'bg-blue-50 text-blue-700 font-semibold'
-                      : 'text-slate-600 hover:bg-slate-50'
+                      ? 'category-selected'
+                      : 'category-unselected'
                   "
-                  class="flex w-full items-center justify-between rounded-xl px-3 py-3 text-left text-sm transition"
+                  class="category-button"
                 >
-                  <span class="flex items-center gap-3">
+                  <span class="flex min-w-0 items-center gap-3">
                     <i class="pi pi-th-large"></i>
-                    All Articles
+                    <span>All Articles</span>
                   </span>
-                  <span class="text-xs">
-                    {{ handbooks.length }}
-                  </span>
+                  <span class="category-count">{{ handbooks.length }}</span>
                 </button>
 
                 <button
@@ -182,116 +215,199 @@ import { SelectModule } from 'primeng/select';
                   (click)="selectCategory(category.id)"
                   [ngClass]="
                     selectedCategoryId === category.id
-                      ? 'bg-blue-50 text-blue-700 font-semibold'
-                      : 'text-slate-600 hover:bg-slate-50'
+                      ? 'category-selected'
+                      : 'category-unselected'
                   "
-                  class="flex w-full items-center justify-between rounded-xl px-3 py-3 text-left text-sm transition"
+                  class="category-button"
                 >
                   <span class="flex min-w-0 items-center gap-3">
                     <i class="pi pi-folder"></i>
                     <span class="truncate">{{ category.name }}</span>
                   </span>
+                  <span class="category-count">{{
+                    category.articleCount
+                  }}</span>
+                </button>
+              </div>
 
-                  <span class="shrink-0 text-xs">
-                    {{ category.articleCount }}
-                  </span>
+              <div
+                *ngIf="canManage"
+                class="mt-5 border-t border-slate-100 pt-4"
+              >
+                <button
+                  type="button"
+                  (click)="openCategoryDialog()"
+                  class="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-slate-300 px-3 py-3 text-sm font-semibold text-slate-500 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-600"
+                >
+                  <i class="pi pi-plus"></i>
+                  Manage Categories
                 </button>
               </div>
             </div>
           </aside>
 
-          <!-- Articles Section -->
-          <section class="space-y-5 lg:col-span-3">
-            <!-- Search and Filter -->
-            <div
-              class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
-            >
-              <div class="flex flex-col gap-3 sm:flex-row">
-                <div class="relative flex-1">
-                  <i
-                    class="pi pi-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
-                  ></i>
-
-                  <input
-                    type="text"
-                    [(ngModel)]="searchTerm"
-                    placeholder="Search handbook articles..."
-                    class="w-full rounded-xl border border-slate-200 bg-slate-50 py-3 pl-11 pr-4 text-sm outline-none transition focus:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-100"
-                  />
+          <!-- ARTICLES AREA -->
+          <section class="min-w-0 space-y-5">
+            <!-- MOBILE CATEGORY FILTER -->
+            <div class="category-mobile-panel lg:hidden">
+              <div class="mb-3 flex items-center justify-between">
+                <div>
+                  <h2 class="text-sm font-bold text-slate-900">Categories</h2>
+                  <p class="mt-0.5 text-xs text-slate-400">
+                    Select a topic to filter articles
+                  </p>
                 </div>
 
-                <p-select
-                  [(ngModel)]="publicationFilter"
+                <button
                   *ngIf="canManage"
-                  [options]="publicationOptions"
-                  optionLabel="label"
-                  optionValue="value"
-                  placeholder="All Status"
-                  styleClass="w-full md:w-44"
-                  appendTo="body"
+                  type="button"
+                  (click)="openCategoryDialog()"
+                  class="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition hover:bg-blue-50 hover:text-blue-600"
+                  aria-label="Manage categories"
                 >
-                </p-select>
+                  <i class="pi pi-cog"></i>
+                </button>
+              </div>
+
+              <div class="category-horizontal-list">
+                <button
+                  type="button"
+                  (click)="selectCategory(null)"
+                  [class.selected]="selectedCategoryId === null"
+                  class="category-chip"
+                >
+                  <i class="pi pi-th-large"></i>
+                  All
+                  <span>{{ handbooks.length }}</span>
+                </button>
+
+                <button
+                  *ngFor="let category of categories"
+                  type="button"
+                  (click)="selectCategory(category.id)"
+                  [class.selected]="selectedCategoryId === category.id"
+                  class="category-chip"
+                >
+                  <i class="pi pi-folder"></i>
+                  {{ category.name }}
+                  <span>{{ category.articleCount }}</span>
+                </button>
               </div>
             </div>
 
-            <!-- Article Heading -->
-            <div class="flex items-center justify-between">
-              <div>
-                <h2 class="text-lg font-bold text-slate-800">
+            <!-- SEARCH AND FILTER -->
+            <div class="handbook-filter-panel">
+              <div class="relative min-w-0 flex-1">
+                <i class="pi pi-search search-icon"></i>
+                <input
+                  type="text"
+                  [(ngModel)]="searchTerm"
+                  placeholder="Search by article title, category or content..."
+                  class="handbook-search-input"
+                />
+                <button
+                  *ngIf="searchTerm"
+                  type="button"
+                  (click)="searchTerm = ''"
+                  class="absolute right-3 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                  aria-label="Clear search"
+                >
+                  <i class="pi pi-times"></i>
+                </button>
+              </div>
+
+              <p-select
+                *ngIf="canManage"
+                [(ngModel)]="publicationFilter"
+                [options]="publicationOptions"
+                optionLabel="label"
+                optionValue="value"
+                placeholder="All Status"
+                styleClass="handbook-status-select"
+                appendTo="body"
+              ></p-select>
+            </div>
+
+            <!-- ARTICLE SECTION HEADER -->
+            <div class="flex flex-wrap items-end justify-between gap-3">
+              <div class="min-w-0">
+                <h2 class="text-lg font-extrabold text-slate-900 sm:text-xl">
                   {{ selectedCategoryName }}
                 </h2>
                 <p class="mt-1 text-sm text-slate-500">
-                  {{ filteredHandbooks.length }} article(s) available
+                  Showing {{ filteredHandbooks.length }}
+                  {{ filteredHandbooks.length === 1 ? 'article' : 'articles' }}
                 </p>
               </div>
+
+              <span
+                *ngIf="publicationFilter !== 'all' && canManage"
+                class="rounded-full bg-blue-50 px-3 py-1.5 text-xs font-semibold capitalize text-blue-700"
+              >
+                {{ publicationFilter }}
+              </span>
             </div>
 
-            <!-- Loading -->
-            <div
-              *ngIf="isLoading"
-              class="rounded-2xl border border-slate-200 bg-white py-16 text-center"
-            >
+            <!-- LOADING -->
+            <div *ngIf="isLoading" class="handbook-state-panel">
               <i class="pi pi-spin pi-spinner text-3xl text-blue-600"></i>
-              <p class="mt-3 text-sm text-slate-500">
-                Loading handbook articles...
+              <p class="mt-4 text-sm font-semibold text-slate-700">
+                Loading handbook articles
+              </p>
+              <p class="mt-1 text-xs text-slate-400">
+                Please wait while we retrieve the latest information.
               </p>
             </div>
 
-            <!-- Article Cards -->
+            <!-- ARTICLE GRID -->
             <div
               *ngIf="!isLoading && filteredHandbooks.length > 0"
-              class="grid grid-cols-1 gap-4 md:grid-cols-2"
+              class="grid grid-cols-1 gap-4 xl:grid-cols-2"
             >
-              <div
+              <article
                 *ngFor="let article of filteredHandbooks"
-                class="group rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:border-blue-200 hover:shadow-md"
+                class="handbook-article-card group"
               >
-                <div class="mb-4 flex items-start justify-between">
-                  <div class="rounded-xl bg-blue-50 p-3 text-blue-600">
-                    <i class="pi pi-file-edit text-xl"></i>
+                <div class="flex items-start justify-between gap-3">
+                  <div class="flex min-w-0 items-center gap-3">
+                    <div class="article-file-icon">
+                      <i class="pi pi-file-edit text-lg"></i>
+                    </div>
+
+                    <div class="min-w-0">
+                      <p
+                        class="truncate text-xs font-bold uppercase tracking-wider text-blue-600"
+                      >
+                        {{ article.categoryName || 'General' }}
+                      </p>
+                      <p class="mt-1 text-xs text-slate-400">
+                        {{
+                          article.publishedAt
+                            ? (article.publishedAt | date: 'dd MMM yyyy')
+                            : (article.createdAt | date: 'dd MMM yyyy')
+                        }}
+                      </p>
+                    </div>
                   </div>
 
-                  <div class="flex items-center gap-2">
-                    <!-- Archived -->
+                  <div class="flex shrink-0 items-center gap-2">
                     <span
                       *ngIf="article.isArchived"
-                      class="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600"
+                      class="article-status status-archived"
                     >
                       Archived
                     </span>
 
-                    <!-- Published -->
                     <span
                       *ngIf="!article.isArchived && article.isPublished"
-                      class="rounded-full bg-green-50 px-3 py-1 text-xs font-semibold text-green-700"
+                      class="article-status status-published"
                     >
                       Published
                     </span>
 
-                    <!-- Draft -->
                     <span
                       *ngIf="!article.isArchived && !article.isPublished"
-                      class="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700"
+                      class="article-status status-draft"
                     >
                       Draft
                     </span>
@@ -300,36 +416,33 @@ import { SelectModule } from 'primeng/select';
                       *ngIf="canManage"
                       type="button"
                       (click)="openArticleActions($event, article)"
-                      class="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                      class="flex h-9 w-9 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
                       title="Article actions"
+                      aria-label="Article actions"
                     >
                       <i class="pi pi-ellipsis-v"></i>
                     </button>
                   </div>
                 </div>
 
-                <p
-                  class="mb-2 text-xs font-semibold uppercase tracking-wider text-blue-600"
-                >
-                  {{ article.categoryName }}
-                </p>
+                <div class="mt-5 min-w-0">
+                  <h3
+                    class="line-clamp-2 text-base font-bold leading-snug text-slate-900 transition group-hover:text-blue-700 sm:text-lg"
+                  >
+                    {{ article.title }}
+                  </h3>
 
-                <h3
-                  class="line-clamp-2 text-lg font-bold text-slate-800 transition group-hover:text-blue-700"
-                >
-                  {{ article.title }}
-                </h3>
-
-                <p
-                  class="mt-2 line-clamp-3 text-sm leading-relaxed text-slate-500"
-                >
-                  {{ getArticlePreview(article.content) }}
-                </p>
+                  <p class="mt-2 line-clamp-3 text-sm leading-6 text-slate-500">
+                    {{ getArticlePreview(article.content) }}
+                  </p>
+                </div>
 
                 <div
-                  class="mt-5 flex items-center justify-between border-t border-slate-100 pt-4"
+                  class="mt-5 flex items-center justify-between gap-3 border-t border-slate-100 pt-4"
                 >
-                  <span class="text-xs text-slate-400">
+                  <span class="min-w-0 truncate text-xs text-slate-400">
+                    <i class="pi pi-calendar mr-1"></i>
+                    {{ article.publishedAt ? 'Published' : 'Created' }}
                     {{
                       article.publishedAt
                         ? (article.publishedAt | date: 'dd MMM yyyy')
@@ -340,46 +453,63 @@ import { SelectModule } from 'primeng/select';
                   <button
                     type="button"
                     (click)="viewArticle(article)"
-                    class="inline-flex items-center gap-2 text-sm font-semibold text-blue-600 transition hover:text-blue-800"
+                    class="inline-flex min-h-10 shrink-0 items-center gap-2 rounded-lg px-3 text-sm font-bold text-blue-600 transition hover:bg-blue-50 hover:text-blue-800"
                   >
                     Read Article
                     <i class="pi pi-arrow-right text-xs"></i>
                   </button>
                 </div>
-              </div>
+              </article>
             </div>
 
-            <!-- Empty State -->
+            <!-- EMPTY STATE -->
             <div
               *ngIf="!isLoading && filteredHandbooks.length === 0"
-              class="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-16 text-center"
+              class="handbook-state-panel px-5 py-14"
             >
               <div
                 class="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100 text-slate-400"
               >
-                <i class="pi pi-book text-3xl"></i>
+                <i class="pi pi-search text-2xl"></i>
               </div>
 
-              <h3 class="mt-4 font-bold text-slate-800">No Articles Found</h3>
+              <h3 class="mt-5 text-base font-bold text-slate-900">
+                No Articles Found
+              </h3>
 
-              <p class="mx-auto mt-2 max-w-sm text-sm text-slate-500">
-                There are no handbook articles matching your search or selected
-                category.
+              <p class="mx-auto mt-2 max-w-sm text-sm leading-6 text-slate-500">
+                We couldn't find any articles matching your search or selected
+                category. Try changing your filters.
               </p>
 
-              <button
-                *ngIf="canManage"
-                type="button"
-                (click)="openCreateDialog()"
-                class="mt-5 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700"
-              >
-                <i class="pi pi-plus mr-2"></i>
-                Create First Article
-              </button>
+              <div class="mt-5 flex flex-wrap justify-center gap-2">
+                <button
+                  type="button"
+                  (click)="
+                    searchTerm = '';
+                    selectCategory(null);
+                    publicationFilter = 'all'
+                  "
+                  class="min-h-10 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
+                >
+                  Clear Filters
+                </button>
+
+                <button
+                  *ngIf="canManage"
+                  type="button"
+                  (click)="openCreateDialog()"
+                  class="min-h-10 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
+                >
+                  <i class="pi pi-plus mr-2"></i>
+                  Create Article
+                </button>
+              </div>
             </div>
           </section>
         </div>
       </div>
+
       <p-menu
         #articleMenu
         [popup]="true"

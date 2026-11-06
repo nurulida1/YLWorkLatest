@@ -54,7 +54,6 @@ interface ActivityLogDto {
       <!-- Breadcrumb -->
       <nav class="breadcrumb">
         <a routerLink="/dashboard">
-          <i class="pi pi-home"></i>
           <span>Dashboard</span>
         </a>
 

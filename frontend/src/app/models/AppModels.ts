@@ -1,4 +1,6 @@
+import { Department } from '../components/company-management/department/department';
 import { UserRole } from '../shared/enum/enum';
+import { UserDto } from './User';
 
 export interface DashboardSummary {
   success: boolean;
@@ -67,18 +69,24 @@ export interface SuperAdminDashboardDto {
 export interface PendingUserDto {
   id: string;
   fullName: string;
+  displayName: string;
+  email: string;
   jobTitle: string;
-  department: string;
+  department: Department[];
   createdAt: string;
 }
 
 export interface ActivityLogDto {
+  id: string;
   title: string;
   description: string;
   user: string;
   date: string;
   icon: string;
   color: string;
+  actionAt: Date;
+  createdAt: Date;
+  actionUser: UserDto;
 }
 
 export interface HrDepartmentDistribution {

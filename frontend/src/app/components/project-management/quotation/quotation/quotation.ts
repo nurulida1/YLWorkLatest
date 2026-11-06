@@ -35,6 +35,7 @@ import {
   BuildSortText,
   BuildFilterText,
 } from '../../../../shared/helpers/helpers';
+import { PaginatorModule } from 'primeng/paginator';
 
 @Component({
   selector: 'app-quotation',
@@ -51,269 +52,439 @@ import {
     TimelineModule,
     DatePickerModule,
     DrawerModule,
+    PaginatorModule,
   ],
-  template: `<div class="w-full min-h-[92.9vh] flex flex-col p-5">
-      <div class="flex flex-row items-center gap-1 text-gray-500 tracking-wide">
-        <div
-          [routerLink]="'/dashboard'"
-          class="cursor-pointer hover:text-gray-600"
-        >
-          Dashboard
+  template: `<div class="quotation-page">
+      <div class="quotation-container">
+        <!-- Breadcrumb -->
+        <div class="breadcrumb">
+          <a routerLink="/dashboard">Dashboard</a>
+          <i class="pi pi-angle-right"></i>
+          <span>Quotations</span>
         </div>
-        /
-        <div class="text-gray-700 font-semibold">Quotations</div>
-      </div>
 
-      <div
-        class="mt-3 border border-gray-200 rounded-md tracking-wide bg-white p-5 flex flex-col"
-      >
-        <div class="flex flex-row items-center justify-between">
-          <div class="flex flex-col">
-            <div class="text-[20px] text-gray-700 font-semibold">
-              Quotations
+        <!-- Page heading -->
+        <div class="page-heading">
+          <div class="heading-copy">
+            <div class="heading-icon">
+              <i class="pi pi-file-edit"></i>
             </div>
-            <div class="text-gray-500">
-              View, create, and track all project quotations
+
+            <div>
+              <h1>Quotations</h1>
+              <p>Manage, review and track your project quotations.</p>
             </div>
           </div>
 
-          <div class="flex flex-row items-center gap-2">
-            <div class="min-w-[300px] relative">
-              <input
-                type="text"
-                pInputText
-                [(ngModel)]="search"
-                (keydown)="onKeyDown($event)"
-                class="w-full!"
-                placeholder="Search by quotation no"
-              />
-              <i
-                class="pi pi-search absolute! top-3! right-2! text-gray-500!"
-              ></i>
-            </div>
+          <div class="heading-actions">
             <p-button
-              label="Export as Excel"
-              (onClick)="exportToExcel()"
-              icon="pi pi-file-export"
+              label="Export Excel"
+              icon="pi pi-file-excel"
               severity="secondary"
               [outlined]="true"
-              styleClass="py-2! whitespace-nowrap!"
+              styleClass="export-button"
+              (onClick)="exportToExcel()"
             ></p-button>
+
             <p-button
-              label="Quotation"
-              [routerLink]="'/quotations/form'"
+              label="New Quotation"
               icon="pi pi-plus"
-              severity="info"
-              styleClass="py-2! whitespace-nowrap! bg-blue-600! border-none!"
+              styleClass="new-quotation-button"
+              [routerLink]="'/quotations/form'"
             ></p-button>
           </div>
         </div>
 
-        <div class="mt-3">
-          <p-table
-            #fTable
-            dataKey="id"
-            [value]="PagingSignal().data"
-            [paginator]="true"
-            [rows]="Query.PageSize"
-            [totalRecords]="PagingSignal().totalElements"
-            [tableStyle]="{ 'min-width': '60rem' }"
-            [rowsPerPageOptions]="[10, 20, 30, 50]"
-            stripedRows="false"
-            [lazy]="true"
-            (onLazyLoad)="NextPage($event)"
-            showGridlines
-            [expandedRowKeys]="expandedRows"
-          >
-            <ng-template #header>
-              <tr>
-                <th class="w-[2%]! bg-gray-100!"></th>
-                <th
-                  pSortableColumn="QuotationNo"
-                  class="bg-gray-100! text-center! w-[10%]!"
-                >
-                  <div class="flex flex-row justify-center items-center gap-2">
-                    <div>Quotation No</div>
-                    <p-sortIcon field="QuotationNo" />
-                  </div>
-                </th>
-                <th class="bg-gray-100! text-left! w-[30%]">Client</th>
-                <th class="bg-gray-100! text-left! w-[10%]">Quotation By</th>
+        <!-- Main content -->
+        <section class="quotation-panel">
+          <!-- Toolbar -->
+          <div class="quotation-toolbar">
+            <div class="toolbar-title">
+              <h2>All Quotations</h2>
+              <p>Browse and manage quotation records</p>
+            </div>
 
-                <th
-                  pSortableColumn="QuotationDate"
-                  class="bg-gray-100! text-center! w-[10%]!"
-                >
-                  <div class="flex flex-row justify-center items-center gap-2">
-                    <div>Quotation Date</div>
-                    <p-sortIcon field="QuotationDate" />
-                  </div>
-                </th>
-                <th
-                  pSortableColumn="DueDate"
-                  class="bg-gray-100! text-center! w-[10%]!"
-                >
-                  <div class="flex flex-row justify-center items-center gap-2">
-                    <div>Due Date</div>
-                    <p-sortIcon field="DueDate" />
-                  </div>
-                </th>
-                <th
-                  pSortableColumn="Status"
-                  class="bg-gray-100! text-center! w-[10%]!"
-                >
-                  <div class="flex flex-row justify-center items-center gap-2">
-                    <div>Status</div>
-                    <p-sortIcon field="Status" />
-                  </div>
-                </th>
-                <th class="bg-gray-100! text-left! w-[10%]">Action</th>
-              </tr>
-            </ng-template>
+            <div class="toolbar-actions">
+              <div class="quotation-search">
+                <i class="pi pi-search"></i>
+                <input
+                  type="text"
+                  pInputText
+                  [(ngModel)]="search"
+                  (keydown)="onKeyDown($event)"
+                  placeholder="Search quotation number..."
+                />
 
-            <ng-template
-              #body
-              let-data
-              let-rowIndex="rowIndex"
-              let-expanded="expanded"
+                <button
+                  *ngIf="search"
+                  type="button"
+                  class="clear-search"
+                  aria-label="Clear search"
+                  (click)="ResetTable()"
+                >
+                  <i class="pi pi-times"></i>
+                </button>
+              </div>
+
+              <p-button
+                icon="pi pi-refresh"
+                severity="secondary"
+                [outlined]="true"
+                styleClass="refresh-button"
+                pTooltip="Refresh quotations"
+                (onClick)="ResetTable()"
+              ></p-button>
+            </div>
+          </div>
+
+          <!-- Desktop table -->
+          <div class="desktop-table">
+            <p-table
+              #fTable
+              dataKey="id"
+              [value]="PagingSignal().data || []"
+              [paginator]="true"
+              [rows]="Query.PageSize"
+              [totalRecords]="PagingSignal().totalElements || 0"
+              [rowsPerPageOptions]="[10, 20, 30, 50]"
+              [lazy]="true"
+              (onLazyLoad)="NextPage($event)"
+              [expandedRowKeys]="expandedRows"
+              [tableStyle]="{ 'min-width': '1050px' }"
+              [showGridlines]="false"
+              [rowHover]="true"
+              styleClass="quotation-table"
             >
-              <tr>
-                <td>
-                  <div
-                    class="flex items-center justify-center cursor-pointer"
-                    (click)="onRowExpand(data, fTable)"
-                  >
-                    <i
-                      class="text-sm!"
-                      [class]="
-                        expanded ? 'pi pi-chevron-down' : 'pi pi-chevron-right'
-                      "
-                    ></i>
-                  </div>
-                </td>
-                <td class="text-center! font-semibold!">
-                  {{ data.quotationNo }}
-                </td>
-                <td class="text-left!">{{ data.client?.name }}</td>
-                <td class="text-left!">{{ data.createdBy?.displayName }}</td>
+              <ng-template #header>
+                <tr>
+                  <th class="expand-column"></th>
 
-                <td class="text-center!">
-                  {{ data.quotationDate | date: 'dd/MM/yyyy' }}
-                </td>
-                <td class="text-center!">
-                  {{ data.dueDate | date: 'dd/MM/yyyy' }}
-                </td>
-                <td class="text-center!">
-                  <div class="flex justify-center">
-                    <div
-                      class="rounded-full px-4 text-sm py-0.5 font-medium w-fit whitespace-nowrap"
+                  <th pSortableColumn="QuotationNo">
+                    Quotation
+                    <p-sortIcon field="QuotationNo"></p-sortIcon>
+                  </th>
+
+                  <th>Client</th>
+                  <th>Created By</th>
+
+                  <th pSortableColumn="QuotationDate">
+                    Quotation Date
+                    <p-sortIcon field="QuotationDate"></p-sortIcon>
+                  </th>
+
+                  <th pSortableColumn="DueDate">
+                    Due Date
+                    <p-sortIcon field="DueDate"></p-sortIcon>
+                  </th>
+
+                  <th pSortableColumn="Status">
+                    Status
+                    <p-sortIcon field="Status"></p-sortIcon>
+                  </th>
+
+                  <th class="action-column">Actions</th>
+                </tr>
+              </ng-template>
+
+              <ng-template #body let-data let-expanded="expanded">
+                <tr>
+                  <td class="expand-cell">
+                    <button
+                      type="button"
+                      class="expand-button"
+                      [attr.aria-label]="
+                        expanded
+                          ? 'Collapse quotation history'
+                          : 'Expand quotation history'
+                      "
+                      (click)="onRowExpand(data, fTable)"
+                    >
+                      <i
+                        [class]="
+                          expanded
+                            ? 'pi pi-chevron-down'
+                            : 'pi pi-chevron-right'
+                        "
+                      ></i>
+                    </button>
+                  </td>
+
+                  <td>
+                    <div class="quotation-number">
+                      <span class="quotation-number-icon">
+                        <i class="pi pi-file"></i>
+                      </span>
+                      <span>{{ data.quotationNo }}</span>
+                    </div>
+                  </td>
+
+                  <td>
+                    <div class="client-cell">
+                      <span class="client-name">
+                        {{ data.client?.name || '—' }}
+                      </span>
+                    </div>
+                  </td>
+
+                  <td>
+                    <span class="muted-cell">
+                      {{ data.createdBy?.displayName || '—' }}
+                    </span>
+                  </td>
+
+                  <td>
+                    <span class="date-cell">
+                      {{ data.quotationDate | date: 'dd MMM yyyy' }}
+                    </span>
+                  </td>
+
+                  <td>
+                    <span class="date-cell">
+                      {{ data.dueDate | date: 'dd MMM yyyy' }}
+                    </span>
+                  </td>
+
+                  <td>
+                    <span
+                      class="status-badge"
                       [ngClass]="{
-                        'bg-blue-100 text-blue-600':
+                        'status-draft': data.status === 'Draft',
+                        'status-progress':
                           data.status === 'Reviewed' ||
                           data.status === 'Sent' ||
                           data.status === 'Approved',
-                        'bg-orange-100 text-orange-600':
-                          data.status === 'Draft',
-                        'bg-green-100 text-green-600':
-                          data.status === 'Accepted',
-                        'bg-red-100 text-red-600':
+                        'status-accepted': data.status === 'Accepted',
+                        'status-rejected':
                           data.status === 'Rejected' ||
                           data.status === 'Cancelled' ||
-                          data.status == 'Expired',
+                          data.status === 'Expired',
                       }"
                     >
+                      <span class="status-dot"></span>
                       {{ data.status }}
-                    </div>
-                  </div>
-                </td>
-                <td class="text-center!">
-                  <div
-                    class="flex flex-row items-center gap-6 whitespace-nowrap"
-                  >
-                    <p-button
-                      label="Convert to SO"
-                      (onClick)="ActionClick(data, 'Convert')"
-                      [severity]="data.status !== 'Sent' ? 'secondary' : 'info'"
-                      [outlined]="true"
-                      size="small"
-                      styleClass="border-2! font-semibold!"
-                      [disabled]="data.status !== 'Sent'"
-                    ></p-button>
-                    <div
-                      class="flex items-center justify-center"
-                      *ngIf="data.status !== 'Cancelled'"
-                    >
-                      <i
+                    </span>
+                  </td>
+
+                  <td>
+                    <div class="table-actions">
+                      <p-button
+                        label="Convert to SO"
+                        icon="pi pi-arrow-right-arrow-left"
+                        size="small"
+                        [outlined]="true"
+                        severity="info"
+                        styleClass="convert-button"
+                        [disabled]="data.status !== 'Sent'"
+                        (onClick)="ActionClick(data, 'Convert')"
+                      ></p-button>
+
+                      <button
+                        *ngIf="data.status !== 'Cancelled'"
+                        type="button"
+                        class="icon-action-button"
+                        aria-label="Quotation actions"
                         (click)="onEllipsisClick($event, data, menu)"
-                        class="pi pi-ellipsis-h cursor-pointer"
-                      ></i>
+                      >
+                        <i class="pi pi-ellipsis-v"></i>
+                      </button>
                     </div>
-                  </div>
-                </td>
-              </tr>
-            </ng-template>
+                  </td>
+                </tr>
+              </ng-template>
 
-            <ng-template #expandedrow let-item>
-              <tr>
-                <td colspan="100%">
-                  <div class="px-5">
-                    <p-timeline
-                      [value]="timelineMap[item.id]"
-                      align="top"
-                      layout="horizontal"
-                      class="customized-timeline w-full whitespace-nowrap"
-                    >
-                      <ng-template #marker let-event>
-                        <div
-                          class="w-6 h-6 p-2 flex items-center justify-center rounded-full shadow-sm text-white"
-                          [ngClass]="
-                            event.actionAt ? 'bg-blue-500' : 'bg-gray-300'
-                          "
-                        >
-                          <i
-                            class="pi text-xs"
-                            [ngClass]="
-                              event.verified ? 'pi-check' : 'pi-circle-fill'
-                            "
-                          ></i>
-                        </div>
-                      </ng-template>
-                      <ng-template #content let-event>
-                        <div class="flex flex-col min-h-[70px]">
-                          <div class="font-semibold text-sm">
-                            {{ event.status }}
+              <!-- Expanded quotation history -->
+              <ng-template #expandedrow let-item>
+                <tr>
+                  <td colspan="8">
+                    <div class="history-container">
+                      <div class="history-heading">
+                        <i class="pi pi-history"></i>
+                        <span>Quotation Status History</span>
+                      </div>
+
+                      <p-timeline
+                        [value]="timelineMap[item.id] || []"
+                        align="top"
+                        layout="horizontal"
+                        class="quotation-timeline"
+                      >
+                        <ng-template #marker let-event>
+                          <div
+                            class="timeline-marker"
+                            [class.timeline-marker-active]="event.actionAt"
+                          >
+                            <i
+                              class="pi"
+                              [ngClass]="
+                                event.verified ? 'pi-check' : 'pi-circle-fill'
+                              "
+                            ></i>
                           </div>
-                          <small
-                            class="text-gray-500 text-xs"
-                            *ngIf="event.actionUser"
-                          >
-                            {{ event.actionUser }}
-                          </small>
-                          <small
-                            class="text-gray-400 text-xs"
-                            *ngIf="event.actionAt"
-                          >
-                            {{ event.actionAt | date: 'dd MMM, yyyy HH:mm aa' }}
-                          </small>
-                        </div>
-                      </ng-template>
-                    </p-timeline>
-                  </div>
-                </td>
-              </tr>
-            </ng-template>
+                        </ng-template>
 
-            <ng-template #emptymessage>
-              <tr>
-                <td colspan="100%" class="border-x!">
-                  <div class="text-center text-gray-500">
-                    No quotation found in records.
+                        <ng-template #content let-event>
+                          <div class="timeline-content">
+                            <span class="timeline-status">
+                              {{ event.status }}
+                            </span>
+
+                            <span
+                              *ngIf="event.actionUser"
+                              class="timeline-user"
+                            >
+                              {{ event.actionUser }}
+                            </span>
+
+                            <span *ngIf="event.actionAt" class="timeline-date">
+                              {{ event.actionAt | date: 'dd MMM yyyy, h:mm a' }}
+                            </span>
+                          </div>
+                        </ng-template>
+                      </p-timeline>
+                    </div>
+                  </td>
+                </tr>
+              </ng-template>
+
+              <ng-template #emptymessage>
+                <tr>
+                  <td colspan="8">
+                    <div class="empty-state">
+                      <div class="empty-icon">
+                        <i class="pi pi-folder-open"></i>
+                      </div>
+                      <h3>No quotations found</h3>
+                      <p>Try changing your search or create a new quotation.</p>
+                      <p-button
+                        label="Create Quotation"
+                        icon="pi pi-plus"
+                        size="small"
+                        styleClass="bg-blue-700! border-none! hover:bg-blue-500! py-3! px-5!"
+                        [routerLink]="'/quotations/form'"
+                      ></p-button>
+                    </div>
+                  </td>
+                </tr>
+              </ng-template>
+            </p-table>
+          </div>
+
+          <!-- Mobile quotation cards -->
+          <div class="mobile-quotation-list">
+            <div
+              *ngIf="!PagingSignal().data?.length"
+              class="empty-state mobile-empty-state"
+            >
+              <div class="empty-icon">
+                <i class="pi pi-folder-open"></i>
+              </div>
+              <h3>No quotations found</h3>
+              <p>There are no quotation records to display.</p>
+            </div>
+
+            <article
+              *ngFor="let data of PagingSignal().data || []"
+              class="mobile-quotation-card"
+            >
+              <div class="mobile-card-top">
+                <div class="mobile-quotation-number">
+                  <div class="mobile-file-icon">
+                    <i class="pi pi-file"></i>
                   </div>
-                </td>
-              </tr>
-            </ng-template>
-          </p-table>
-        </div>
+
+                  <div>
+                    <span class="mobile-field-label">Quotation No.</span>
+                    <strong>{{ data.quotationNo }}</strong>
+                  </div>
+                </div>
+
+                <button
+                  *ngIf="data.status !== 'Cancelled'"
+                  type="button"
+                  class="icon-action-button"
+                  aria-label="Quotation actions"
+                  (click)="onEllipsisClick($event, data, menu)"
+                >
+                  <i class="pi pi-ellipsis-v"></i>
+                </button>
+              </div>
+
+              <div class="mobile-card-client">
+                {{ data.client?.name || 'No client information' }}
+              </div>
+
+              <div class="mobile-card-details">
+                <div>
+                  <span class="mobile-field-label">Quotation Date</span>
+                  <span>{{ data.quotationDate | date: 'dd MMM yyyy' }}</span>
+                </div>
+
+                <div>
+                  <span class="mobile-field-label">Due Date</span>
+                  <span>{{ data.dueDate | date: 'dd MMM yyyy' }}</span>
+                </div>
+
+                <div>
+                  <span class="mobile-field-label">Created By</span>
+                  <span>{{ data.createdBy?.displayName || '—' }}</span>
+                </div>
+
+                <div>
+                  <span class="mobile-field-label">Status</span>
+                  <span
+                    class="status-badge"
+                    [ngClass]="{
+                      'status-draft': data.status === 'Draft',
+                      'status-progress':
+                        data.status === 'Reviewed' ||
+                        data.status === 'Sent' ||
+                        data.status === 'Approved',
+                      'status-accepted': data.status === 'Accepted',
+                      'status-rejected':
+                        data.status === 'Rejected' ||
+                        data.status === 'Cancelled' ||
+                        data.status === 'Expired',
+                    }"
+                  >
+                    <span class="status-dot"></span>
+                    {{ data.status }}
+                  </span>
+                </div>
+              </div>
+
+              <div class="mobile-card-footer">
+                <button
+                  type="button"
+                  class="history-button"
+                  (click)="openDetailsDrawer(data)"
+                >
+                  <i class="pi pi-eye"></i>
+                  View Details
+                </button>
+
+                <p-button
+                  label="Convert to SO"
+                  icon="pi pi-arrow-right-arrow-left"
+                  size="small"
+                  severity="info"
+                  [outlined]="true"
+                  [disabled]="data.status !== 'Sent'"
+                  styleClass="mobile-convert-button"
+                  (onClick)="ActionClick(data, 'Convert')"
+                ></p-button>
+              </div>
+            </article>
+
+            <!-- Mobile pagination -->
+            <p-paginator
+              [first]="((Query.Page || 1) - 1) * (Query.PageSize || 10)"
+              [rows]="Query.PageSize || 10"
+              [totalRecords]="PagingSignal().totalElements || 0"
+              [rowsPerPageOptions]="[10, 20, 30]"
+              (onPageChange)="NextPage($event)"
+            ></p-paginator>
+          </div>
+        </section>
       </div>
     </div>
 
@@ -325,108 +496,233 @@ import {
     ></p-menu>
 
     <p-dialog
-      header="Convert Quotation to Sales Order"
       [(visible)]="displayConvertSODialog"
       [modal]="true"
-      [style]="{ width: '450px' }"
       [draggable]="false"
       [resizable]="false"
+      [closable]="true"
+      [dismissableMask]="false"
+      [style]="{ width: '480px' }"
+      [breakpoints]="{
+        '768px': '90vw',
+        '480px': 'calc(100vw - 24px)',
+      }"
+      styleClass="quotation-convert-dialog"
       (onHide)="resetConvertForm()"
     >
-      <div class="flex flex-col gap-4 py-2 text-sm text-gray-700 tracking-wide">
-        <div class="flex flex-col gap-1">
-          <label class="font-semibold text-gray-600"
-            >Client PO Number <span class="text-red-500">*</span></label
-          >
+      <!-- Dialog Header -->
+      <ng-template #header>
+        <div class="convert-dialog-header">
+          <div class="convert-header-icon">
+            <i class="pi pi-file-edit"></i>
+          </div>
+
+          <div class="convert-header-text">
+            <h2>Convert to Sales Order</h2>
+            <p>Provide the client's purchase order details.</p>
+          </div>
+        </div>
+      </ng-template>
+
+      <!-- Dialog Content -->
+      <div class="convert-dialog-content">
+        <!-- Information -->
+        <div class="convert-info-banner">
+          <i class="pi pi-info-circle"></i>
+
+          <div>
+            <span class="font-semibold">Before you continue</span>
+            <p>
+              Please provide the client's PO number and attach the official
+              purchase order document.
+            </p>
+          </div>
+        </div>
+
+        <!-- Client PO Number -->
+        <div class="convert-form-field">
+          <label for="clientPONumber">
+            Client PO Number
+            <span class="required-mark">*</span>
+          </label>
+
           <input
+            id="clientPONumber"
             type="text"
             pInputText
             [(ngModel)]="soForm.clientPONumber"
-            placeholder="e.g., PO-12345"
+            placeholder="e.g. PO-12345"
+            maxlength="100"
+            autocomplete="off"
             class="w-full"
           />
+
+          <small class="field-hint">
+            Enter the purchase order number provided by the client.
+          </small>
         </div>
 
-        <div class="flex flex-col gap-1">
-          <label class="font-semibold text-gray-600">PO Received Date</label>
+        <!-- PO Received Date -->
+        <div class="convert-form-field">
+          <label for="clientPODate">
+            PO Received Date
+            <span class="optional-mark">Optional</span>
+          </label>
 
           <p-datepicker
+            inputId="clientPODate"
             [(ngModel)]="soForm.clientPODate"
             appendTo="body"
             [showIcon]="true"
+            [showButtonBar]="true"
             dateFormat="dd/mm/yy"
+            placeholder="Select received date"
             inputStyleClass="w-full"
             styleClass="w-full"
-          >
-          </p-datepicker>
+          ></p-datepicker>
+
+          <small class="field-hint">
+            Select the date the purchase order was received.
+          </small>
         </div>
 
-        <div class="flex flex-col gap-1">
-          <label class="font-semibold text-gray-600">Remarks</label>
-          <input
-            type="text"
+        <!-- Remarks -->
+        <div class="convert-form-field">
+          <label for="soRemarks">
+            Remarks
+            <span class="optional-mark">Optional</span>
+          </label>
+
+          <textarea
+            id="soRemarks"
             pInputText
             [(ngModel)]="soForm.remarks"
-            placeholder="Optional notes..."
-            class="w-full"
-          />
+            placeholder="Add any additional notes..."
+            rows="3"
+            maxlength="1000"
+            class="w-full resize-none"
+          ></textarea>
         </div>
 
-        <div class="flex flex-col gap-1">
-          <label class="font-semibold text-gray-600"
-            >PO Attachment File <span class="text-red-500">*</span></label
-          >
+        <!-- Attachment -->
+        <div class="convert-form-field">
+          <label>
+            Client PO Attachment
+            <span class="required-mark">*</span>
+          </label>
+
+          <input
+            #fileInput
+            type="file"
+            id="poFile"
+            accept=".pdf,.png,.jpg,.jpeg"
+            (change)="onFileSelected($event)"
+            class="hidden"
+          />
+
+          <!-- No file selected -->
           <div
-            class="flex items-center justify-between gap-2 border border-dashed border-gray-300 rounded p-3 bg-gray-50"
+            *ngIf="!soForm.clientPOAttachment"
+            class="attachment-upload-area"
+            (click)="fileInput.click()"
+            (keydown.enter)="fileInput.click()"
+            (keydown.space)="fileInput.click(); $event.preventDefault()"
+            tabindex="0"
+            role="button"
+            aria-label="Choose purchase order attachment"
           >
-            <input
-              type="file"
-              id="poFile"
-              (change)="onFileSelected($event)"
-              accept=".pdf,.png,.jpg,.jpeg"
-              class="hidden"
-              #fileInput
-            />
-            <div class="flex flex-col truncate max-w-[250px]">
-              <span
-                *ngIf="soForm.clientPOAttachment"
-                (click)="downloadLocalFile(soForm.clientPOAttachment)"
-                class="text-xs text-blue-600 hover:text-blue-800 font-medium underline cursor-pointer truncate flex items-center gap-1"
-              >
-                <i class="pi pi-download text-[10px]"></i>
-                {{ soForm.clientPOAttachment.name }}
+            <div class="upload-icon">
+              <i class="pi pi-cloud-upload"></i>
+            </div>
+
+            <div class="upload-text">
+              <span>
+                Click to upload
+                <strong>or browse files</strong>
               </span>
-              <span
-                *ngIf="!soForm.clientPOAttachment"
-                class="text-xs text-gray-500 font-medium truncate"
-                >No file chosen</span
+
+              <small
+                >PDF, PNG or JPG (maximum file size depends on server
+                limits)</small
               >
             </div>
-            <p-button
-              label="Choose File"
-              size="small"
-              icon="pi pi-upload"
-              severity="secondary"
-              (click)="fileInput.click()"
-            ></p-button>
           </div>
+
+          <!-- File selected -->
+          <div
+            *ngIf="soForm.clientPOAttachment as attachment"
+            class="attachment-selected"
+          >
+            <div class="attachment-file-icon">
+              <i
+                class="pi"
+                [ngClass]="
+                  attachment.type === 'application/pdf'
+                    ? 'pi-file-pdf'
+                    : 'pi-image'
+                "
+              ></i>
+            </div>
+
+            <div class="attachment-file-info">
+              <span class="attachment-file-name">
+                {{ attachment.name }}
+              </span>
+
+              <span class="attachment-file-size">
+                {{ formatFileSize(attachment.size) }}
+              </span>
+            </div>
+
+            <div class="attachment-actions">
+              <button
+                type="button"
+                class="attachment-action"
+                title="Download selected file"
+                (click)="downloadLocalFile(attachment)"
+              >
+                <i class="pi pi-download"></i>
+              </button>
+
+              <button
+                type="button"
+                class="attachment-action remove-attachment"
+                title="Remove attachment"
+                (click)="removeAttachment(fileInput)"
+              >
+                <i class="pi pi-trash"></i>
+              </button>
+            </div>
+          </div>
+
+          <small class="field-hint">
+            <i class="pi pi-lock"></i>
+            The purchase order will be attached to the generated Sales Order.
+          </small>
         </div>
       </div>
 
+      <!-- Dialog Footer -->
       <ng-template #footer>
-        <div class="flex justify-end gap-2 mt-2">
+        <div class="convert-dialog-footer">
           <p-button
             label="Cancel"
             severity="secondary"
-            styleClass="py-1.5!"
-            (click)="displayConvertSODialog = false"
+            [outlined]="true"
+            styleClass="cancel-convert-button"
+            (onClick)="displayConvertSODialog = false"
           ></p-button>
+
           <p-button
-            label="Convert"
+            label="Convert to SO"
+            icon="pi pi-arrow-right"
+            iconPos="right"
             severity="success"
-            styleClass="py-1.5!"
-            [disabled]="!soForm.clientPONumber || !soForm.clientPOAttachment"
-            (click)="submitConvertToSO()"
+            styleClass="submit-convert-button"
+            [disabled]="
+              !soForm.clientPONumber?.trim() || !soForm.clientPOAttachment
+            "
+            (onClick)="submitConvertToSO()"
           ></p-button>
         </div>
       </ng-template>
@@ -435,57 +731,54 @@ import {
     <p-drawer
       [(visible)]="displayDetailsDrawer"
       position="right"
-      styleClass="w-[70%]!"
+      styleClass="quotation-details-drawer"
       [modal]="true"
       [showCloseIcon]="false"
       (onHide)="selectedQuotation = null"
     >
+      <!-- Drawer Header -->
       <ng-template #header>
-        <div class="flex items-center justify-between w-full pr-4">
-          <div class="flex items-center gap-4">
-            <div
-              class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center shadow-lg"
-            >
-              <i class="pi pi-file-edit text-white text-xl"></i>
+        <div class="quotation-drawer-header">
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="quotation-header-icon">
+              <i class="pi pi-file-edit"></i>
             </div>
-            <div>
-              <h2 class="text-2xl font-bold text-slate-900 tracking-tight">
+
+            <div class="min-w-0">
+              <h2 class="text-lg sm:text-xl font-bold text-slate-900">
                 Quotation Details
               </h2>
-              <p class="text-sm text-slate-500 mt-0.5">
-                Complete quotation information and line items
+              <p class="text-xs sm:text-sm text-slate-500 mt-1">
+                Quotation information and pricing
               </p>
             </div>
           </div>
 
-          <div class="flex items-center gap-3">
-            <div
+          <div class="flex items-center gap-2 shrink-0">
+            <span
               *ngIf="!loadingDetails && selectedQuotation"
-              class="rounded-xl px-4 py-2 text-sm font-bold uppercase tracking-wider shadow-sm"
+              class="quotation-status"
               [ngClass]="{
-                'bg-gradient-to-r from-blue-100 to-blue-50 text-blue-700 border-2 border-blue-200':
-                  selectedQuotation.status === 'Reviewed' ||
-                  selectedQuotation.status === 'Sent' ||
-                  selectedQuotation.status === 'Approved',
-                'bg-gradient-to-r from-orange-100 to-orange-50 text-orange-700 border-2 border-orange-200':
-                  selectedQuotation.status === 'Draft',
-                'bg-gradient-to-r from-green-100 to-green-50 text-green-700 border-2 border-green-200':
-                  selectedQuotation.status === 'Accepted',
-                'bg-gradient-to-r from-red-100 to-red-50 text-red-700 border-2 border-red-200':
+                'status-draft': selectedQuotation.status === 'Draft',
+                'status-reviewed': selectedQuotation.status === 'Reviewed',
+                'status-sent': selectedQuotation.status === 'Sent',
+                'status-approved': selectedQuotation.status === 'Approved',
+                'status-accepted': selectedQuotation.status === 'Accepted',
+                'status-rejected':
                   selectedQuotation.status === 'Rejected' ||
                   selectedQuotation.status === 'Cancelled' ||
                   selectedQuotation.status === 'Expired',
               }"
             >
               <i
-                class="pi mr-2 mt-1"
+                class="pi"
                 [ngClass]="{
+                  'pi-file-edit': selectedQuotation.status === 'Draft',
                   'pi-eye': selectedQuotation.status === 'Reviewed',
                   'pi-send': selectedQuotation.status === 'Sent',
                   'pi-check-circle':
                     selectedQuotation.status === 'Approved' ||
                     selectedQuotation.status === 'Accepted',
-                  'pi-file-edit': selectedQuotation.status === 'Draft',
                   'pi-times-circle':
                     selectedQuotation.status === 'Rejected' ||
                     selectedQuotation.status === 'Cancelled' ||
@@ -493,79 +786,81 @@ import {
                 }"
               ></i>
               {{ selectedQuotation.status }}
-            </div>
+            </span>
 
             <p-button
               icon="pi pi-times"
               [rounded]="true"
               [text]="true"
               severity="secondary"
-              styleClass="hover:bg-slate-100 text-slate-600"
+              ariaLabel="Close quotation details"
+              styleClass="quotation-close-button"
               (onClick)="displayDetailsDrawer = false"
             ></p-button>
           </div>
         </div>
       </ng-template>
 
+      <!-- Loading -->
       <div
         *ngIf="loadingDetails"
-        class="flex flex-col items-center justify-center py-16 gap-4"
+        class="flex flex-col items-center justify-center py-20 px-4"
       >
-        <div
-          class="w-16 h-16 rounded-2xl bg-blue-50 flex items-center justify-center"
-        >
-          <i class="pi pi-spin pi-spinner text-3xl text-blue-600"></i>
+        <div class="quotation-loading-icon">
+          <i class="pi pi-spin pi-spinner"></i>
         </div>
-        <div class="text-center">
-          <div class="text-slate-900 font-semibold text-lg">
-            Loading quotation details...
-          </div>
-          <div class="text-slate-500 text-sm mt-1">
-            Please wait while we fetch the information
-          </div>
-        </div>
+
+        <h3 class="text-base font-semibold text-slate-800 mt-4">
+          Loading quotation details
+        </h3>
+
+        <p class="text-sm text-slate-500 mt-1 text-center">
+          Please wait while we retrieve the quotation information.
+        </p>
       </div>
 
+      <!-- Drawer Content -->
       <div
         *ngIf="!loadingDetails && selectedQuotation"
-        class="flex flex-col gap-6 p-6 bg-slate-50 min-h-full"
+        class="quotation-drawer-content"
       >
+        <!-- Draft Notice -->
         <div
           *ngIf="selectedQuotation.status === 'Draft'"
-          class="bg-white rounded-xl border-2 border-orange-200 p-4 flex items-center justify-between shadow-sm"
+          class="quotation-draft-notice"
         >
-          <div class="flex items-center gap-3">
-            <div
-              class="w-10 h-10 rounded-lg bg-orange-100 flex items-center justify-center"
-            >
-              <i class="pi pi-exclamation-triangle text-orange-600 text-lg"></i>
+          <div class="flex items-start gap-3 min-w-0">
+            <div class="quotation-notice-icon">
+              <i class="pi pi-exclamation-triangle"></i>
             </div>
-            <div>
+
+            <div class="min-w-0">
               <div class="font-semibold text-slate-900">
-                This quotation is in
-                <b class="text-orange-400 tracking-wide">Draft</b> status
+                This quotation is still in Draft
               </div>
-              <div class="text-sm text-slate-600 mt-0.5">
-                Review and mark as reviewed, or cancel if needed
-              </div>
+              <p class="text-sm text-slate-600 mt-1">
+                Review the quotation before sending it to the client.
+              </p>
             </div>
           </div>
-          <div class="flex items-center gap-3">
+
+          <div class="quotation-notice-actions">
             <p-button
               label="Mark as Reviewed"
               icon="pi pi-check-circle"
               severity="success"
-              styleClass="px-5! py-2.5 font-semibold bg-gradient-to-r from-green-600 to-green-500 border-0 shadow-lg shadow-green-500/25 rounded-xl"
+              styleClass="w-full sm:w-auto"
               (onClick)="
                 updateQuotationStatus(selectedQuotation.id, 'Reviewed')
               "
             ></p-button>
+
             <p-button
               label="Cancel Quote"
               icon="pi pi-ban"
               severity="danger"
               [outlined]="true"
-              styleClass="px-5! py-2.5 font-semibold border-2 border-red-200 text-red-700 hover:bg-red-50 rounded-xl"
+              styleClass="w-full sm:w-auto"
               (onClick)="
                 updateQuotationStatus(selectedQuotation.id, 'Cancelled')
               "
@@ -573,367 +868,323 @@ import {
           </div>
         </div>
 
-        <div
-          class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden"
-        >
-          <div class="bg-gray-100 px-8 py-3 border-b border-gray-200">
-            <div class="flex items-center justify-between">
-              <div>
-                <div
-                  class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1"
-                >
-                  Quotation Number
-                </div>
-                <div class="text-2xl font-bold tracking-wide">
-                  {{ selectedQuotation.quotationNo }}
-                </div>
-              </div>
-              <div class="text-right">
-                <div
-                  class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1"
-                >
-                  Date
-                </div>
-                <div class="text-lg font-bold">
-                  {{ selectedQuotation.quotationDate | date: 'dd MMM yyyy' }}
-                </div>
+        <!-- Quotation Summary -->
+        <section class="quotation-section">
+          <div class="quotation-summary">
+            <div class="min-w-0">
+              <span class="quotation-field-label">Quotation Number</span>
+              <h2 class="quotation-number">
+                {{ selectedQuotation.quotationNo || '-' }}
+              </h2>
+            </div>
+
+            <div class="quotation-summary-date">
+              <span class="quotation-field-label">Quotation Date</span>
+              <div class="font-semibold text-slate-800">
+                {{
+                  selectedQuotation.quotationDate
+                    ? (selectedQuotation.quotationDate | date: 'dd MMM yyyy')
+                    : '-'
+                }}
               </div>
             </div>
           </div>
 
-          <div class="px-8 py-5 space-y-3">
-            <div class="pb-2 border-b-2 border-slate-100">
-              <div
-                class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2"
-              >
-                Subject
-              </div>
-              <div class="text-lg font-semibold text-slate-900 leading-relaxed">
-                {{ selectedQuotation.subject || 'No subject provided' }}
-              </div>
-            </div>
-
-            <div class="grid grid-cols-2 gap-6">
-              <div
-                class="bg-gradient-to-br from-blue-50 to-slate-50 rounded-xl border-2 border-blue-100 p-5"
-              >
-                <div
-                  class="flex items-center gap-2 mb-4 pb-3 border-b-2 border-blue-200/50"
-                >
-                  <div
-                    class="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center"
-                  >
-                    <i class="pi pi-building text-white text-sm"></i>
-                  </div>
-                  <span
-                    class="font-bold text-slate-900 uppercase tracking-wider text-sm"
-                    >From</span
-                  >
-                </div>
-                <div
-                  class="space-y-2.5 text-sm"
-                  *ngIf="selectedQuotation.fromCompany"
-                >
-                  <div class="font-bold text-slate-900 text-base">
-                    {{ selectedQuotation.fromCompany?.name }}
-                  </div>
-                  <div class="text-slate-700 leading-relaxed">
-                    <div>
-                      {{
-                        selectedQuotation.fromCompany?.billingAddress
-                          ?.addressLine1
-                      }}
-                    </div>
-                    <div>
-                      {{
-                        selectedQuotation.fromCompany?.billingAddress
-                          ?.addressLine2
-                      }}
-                    </div>
-                    <div>
-                      {{ selectedQuotation.fromCompany?.billingAddress?.city }},
-                      {{ selectedQuotation.fromCompany?.billingAddress?.state }}
-                    </div>
-                    <div>
-                      {{
-                        selectedQuotation.fromCompany?.billingAddress?.postcode
-                      }}
-                    </div>
-                  </div>
-                  <div class="pt-2 mt-2 border-t border-blue-200/50 space-y-1">
-                    <div class="flex items-center gap-2 text-slate-700">
-                      <i class="pi pi-phone text-blue-600 text-xs"></i>
-                      <span>{{
-                        selectedQuotation.fromCompany?.contactNo
-                      }}</span>
-                    </div>
-                    <div class="flex items-center gap-2 text-slate-700">
-                      <i class="pi pi-envelope text-blue-600 text-xs"></i>
-                      <span class="break-all">{{
-                        selectedQuotation.fromCompany?.email
-                      }}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div
-                class="bg-gradient-to-br from-emerald-50 to-slate-50 rounded-xl border-2 border-emerald-100 p-5"
-              >
-                <div
-                  class="flex items-center gap-2 mb-4 pb-3 border-b-2 border-emerald-200/50"
-                >
-                  <div
-                    class="w-8 h-8 rounded-lg bg-emerald-600 flex items-center justify-center"
-                  >
-                    <i class="pi pi-user text-white text-sm"></i>
-                  </div>
-                  <span
-                    class="font-bold text-slate-900 uppercase tracking-wider text-sm"
-                    >Bill To</span
-                  >
-                </div>
-                <div
-                  class="space-y-2.5 text-sm"
-                  *ngIf="selectedQuotation.client"
-                >
-                  <div class="font-bold text-slate-900 text-base">
-                    {{ selectedQuotation.client?.name }}
-                  </div>
-                  <div class="text-slate-700 leading-relaxed">
-                    <div>
-                      {{
-                        selectedQuotation.client?.billingAddress?.addressLine1
-                      }}
-                    </div>
-                    <div>
-                      {{
-                        selectedQuotation.client?.billingAddress?.addressLine2
-                      }}
-                    </div>
-                    <div>
-                      {{ selectedQuotation.client?.billingAddress?.city }},
-                      {{ selectedQuotation.client?.billingAddress?.state }}
-                    </div>
-                    <div>
-                      {{ selectedQuotation.client?.billingAddress?.postcode }}
-                    </div>
-                  </div>
-                  <div
-                    class="pt-2 mt-2 border-t border-emerald-200/50 space-y-1"
-                  >
-                    <div class="flex items-center gap-2 text-slate-700">
-                      <i class="pi pi-user text-emerald-600 text-xs"></i>
-                      <span>{{
-                        selectedQuotation.client?.contactPerson1
-                      }}</span>
-                    </div>
-                    <div class="flex items-center gap-2 text-slate-700">
-                      <i class="pi pi-phone text-emerald-600 text-xs"></i>
-                      <span>{{ selectedQuotation.client?.contactNo }}</span>
-                    </div>
-                    <div class="flex items-center gap-2 text-slate-700">
-                      <i class="pi pi-envelope text-emerald-600 text-xs"></i>
-                      <span class="break-all">{{
-                        selectedQuotation.client?.email
-                      }}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div
-              *ngIf="selectedQuotation.projectCode"
-              class="bg-slate-50 rounded-xl border border-slate-200 p-4"
-            >
-              <div class="flex items-center justify-between">
-                <div class="flex items-center gap-2">
-                  <i class="pi pi-briefcase text-slate-500"></i>
-                  <span
-                    class="text-sm font-bold text-slate-600 uppercase tracking-wider"
-                    >Project Code</span
-                  >
-                </div>
-                <span class="font-mono font-bold text-slate-900">{{
-                  selectedQuotation.projectCode
-                }}</span>
-              </div>
-            </div>
+          <div class="quotation-subject">
+            <span class="quotation-field-label">Subject</span>
+            <p class="text-base sm:text-lg font-semibold text-slate-900 mt-1">
+              {{ selectedQuotation.subject || 'No subject provided' }}
+            </p>
           </div>
-        </div>
 
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200">
-          <div class="px-8 py-5">
-            <div class="flex items-center gap-3">
-              <div
-                class="w-10 h-10 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center"
-              >
-                <i class="pi pi-list text-lg!"></i>
+          <!-- Company and Client -->
+          <div class="quotation-parties-grid">
+            <!-- From Company -->
+            <div class="quotation-party-card quotation-party-company">
+              <div class="quotation-party-heading">
+                <div class="quotation-party-icon">
+                  <i class="pi pi-building"></i>
+                </div>
+
+                <div>
+                  <h3>From</h3>
+                  <p>Your company information</p>
+                </div>
               </div>
-              <div>
-                <h3 class="text-xl font-bold">Line Items</h3>
-                <p class="text-gray-500 text-sm mt-0.5">
-                  Detailed quotation items and pricing
-                </p>
+
+              <ng-container *ngIf="selectedQuotation.fromCompany as company">
+                <h4 class="quotation-party-name">
+                  {{ company.name || '-' }}
+                </h4>
+
+                <div class="quotation-address">
+                  <div *ngIf="company.billingAddress?.addressLine1">
+                    {{ company.billingAddress?.addressLine1 }}
+                  </div>
+
+                  <div *ngIf="company.billingAddress?.addressLine2">
+                    {{ company.billingAddress?.addressLine2 }}
+                  </div>
+
+                  <div
+                    *ngIf="
+                      company.billingAddress?.city ||
+                      company.billingAddress?.state
+                    "
+                  >
+                    {{ company.billingAddress?.city }}
+                    <span
+                      *ngIf="
+                        company.billingAddress?.city &&
+                        company.billingAddress?.state
+                      "
+                      >,</span
+                    >
+                    {{ company.billingAddress?.state }}
+                  </div>
+
+                  <div *ngIf="company.billingAddress?.postcode">
+                    {{ company.billingAddress?.postcode }}
+                  </div>
+                </div>
+
+                <div class="quotation-party-contact">
+                  <div *ngIf="company.contactNo" class="quotation-contact-row">
+                    <i class="pi pi-phone"></i>
+                    <span>{{ company.contactNo }}</span>
+                  </div>
+
+                  <div *ngIf="company.email" class="quotation-contact-row">
+                    <i class="pi pi-envelope"></i>
+                    <span class="break-all">{{ company.email }}</span>
+                  </div>
+                </div>
+              </ng-container>
+
+              <div
+                *ngIf="!selectedQuotation.fromCompany"
+                class="text-sm text-slate-400"
+              >
+                Company information unavailable.
+              </div>
+            </div>
+
+            <!-- Client -->
+            <div class="quotation-party-card quotation-party-client">
+              <div class="quotation-party-heading">
+                <div class="quotation-party-icon">
+                  <i class="pi pi-user"></i>
+                </div>
+
+                <div>
+                  <h3>Bill To</h3>
+                  <p>Customer information</p>
+                </div>
+              </div>
+
+              <ng-container *ngIf="selectedQuotation.client as client">
+                <h4 class="quotation-party-name">
+                  {{ client.name || '-' }}
+                </h4>
+
+                <div class="quotation-address">
+                  <div *ngIf="client.billingAddress?.addressLine1">
+                    {{ client.billingAddress?.addressLine1 }}
+                  </div>
+
+                  <div *ngIf="client.billingAddress?.addressLine2">
+                    {{ client.billingAddress?.addressLine2 }}
+                  </div>
+
+                  <div
+                    *ngIf="
+                      client.billingAddress?.city ||
+                      client.billingAddress?.state
+                    "
+                  >
+                    {{ client.billingAddress?.city }}
+                    <span
+                      *ngIf="
+                        client.billingAddress?.city &&
+                        client.billingAddress?.state
+                      "
+                      >,</span
+                    >
+                    {{ client.billingAddress?.state }}
+                  </div>
+
+                  <div *ngIf="client.billingAddress?.postcode">
+                    {{ client.billingAddress?.postcode }}
+                  </div>
+                </div>
+
+                <div class="quotation-party-contact">
+                  <div
+                    *ngIf="client.contactPerson1"
+                    class="quotation-contact-row"
+                  >
+                    <i class="pi pi-user"></i>
+                    <span>{{ client.contactPerson1 }}</span>
+                  </div>
+
+                  <div *ngIf="client.contactNo" class="quotation-contact-row">
+                    <i class="pi pi-phone"></i>
+                    <span>{{ client.contactNo }}</span>
+                  </div>
+
+                  <div *ngIf="client.email" class="quotation-contact-row">
+                    <i class="pi pi-envelope"></i>
+                    <span class="break-all">{{ client.email }}</span>
+                  </div>
+                </div>
+              </ng-container>
+
+              <div
+                *ngIf="!selectedQuotation.client"
+                class="text-sm text-slate-400"
+              >
+                Client information unavailable.
               </div>
             </div>
           </div>
 
-          <div class="overflow-auto px-2">
+          <!-- Project Code -->
+          <div
+            *ngIf="selectedQuotation.projectCode"
+            class="quotation-project-code"
+          >
+            <div class="flex items-center gap-2">
+              <i class="pi pi-briefcase"></i>
+              <span>Project Code</span>
+            </div>
+
+            <span class="font-mono font-semibold text-slate-800">
+              {{ selectedQuotation.projectCode }}
+            </span>
+          </div>
+        </section>
+
+        <!-- Line Items -->
+        <section class="quotation-section">
+          <div class="quotation-section-heading">
+            <div class="quotation-section-icon">
+              <i class="pi pi-list"></i>
+            </div>
+
+            <div>
+              <h3>Line Items</h3>
+              <p>Quotation items and pricing breakdown</p>
+            </div>
+          </div>
+
+          <div class="quotation-table-wrapper">
             <p-table
               [value]="getSortedQuotationItems()"
-              styleClass="border! border-gray-200!"
               [showGridlines]="true"
+              styleClass="quotation-items-table"
+              responsiveLayout="scroll"
             >
               <ng-template #header>
-                <tr class="border-b-2 border-slate-200">
-                  <th
-                    class="bg-gray-100! text-center! text-xs font-bold text-slate-700 uppercase tracking-wider w-[5%]!"
-                  >
-                    Item
-                  </th>
-                  <th
-                    class="bg-gray-100! text-left! text-xs font-bold text-slate-700 uppercase tracking-wider w-[35%]!"
-                  >
-                    Description
-                  </th>
-                  <th
-                    class="bg-gray-100! text-center! text-xs font-bold text-slate-700 uppercase tracking-wider w-[5%]!"
-                  >
-                    Unit
-                  </th>
-                  <th
-                    class="bg-gray-100! text-center! text-xs font-bold text-slate-700 uppercase tracking-wider w-[10%]!"
-                  >
-                    Qty
-                  </th>
-                  <th
-                    class="bg-gray-100! text-right! text-xs font-bold text-slate-700 uppercase tracking-wider w-[15%]!"
-                  >
-                    Unit Price (RM)
-                  </th>
-                  <th
-                    class="bg-gray-100! text-right! text-xs font-bold text-slate-700 uppercase tracking-wider w-[25%]!"
-                  >
-                    Total (RM)
-                  </th>
+                <tr>
+                  <th class="text-center! min-w-[65px]!">Item</th>
+                  <th class="min-w-[220px]!">Description</th>
+                  <th class="text-center! min-w-[80px]!">Unit</th>
+                  <th class="text-center! min-w-[75px]!">Qty</th>
+                  <th class="text-right! min-w-[130px]!">Unit Price (RM)</th>
+                  <th class="text-right! min-w-[130px]!">Total (RM)</th>
                 </tr>
               </ng-template>
-              <ng-template #body let-item let-i="rowIndex">
-                <ng-container>
-                  <tr
-                    *ngIf="item.type === 'Category'"
-                    class="bg-gray-50 border-y-2 border-gray-200"
-                  >
-                    <td colspan="6" class="px-4 py-3">
-                      <div class="flex items-center gap-3">
-                        <span
-                          class="font-bold text-gray-900 text-base"
-                          [innerHTML]="item.description"
-                        ></span>
-                      </div>
-                    </td>
-                  </tr>
 
-                  <tr
-                    *ngIf="item.type === 'Item'"
-                    class="border-b border-slate-100 hover:bg-slate-50/50 transition-colors"
+              <ng-template #body let-item>
+                <tr
+                  *ngIf="item.type === 'Category'"
+                  class="quotation-category-row"
+                >
+                  <td colspan="6">
+                    <span [innerHTML]="item.description"></span>
+                  </td>
+                </tr>
+
+                <tr *ngIf="item.type === 'Item'">
+                  <td class="text-center!">
+                    {{ item.item || '-' }}
+                  </td>
+
+                  <td>
+                    <div
+                      class="text-sm text-slate-700 leading-relaxed"
+                      [innerHTML]="item.description"
+                    ></div>
+                  </td>
+
+                  <td class="text-center!">
+                    {{ item.unit || '-' }}
+                  </td>
+
+                  <td class="text-center! font-medium">
+                    {{ item.quantity || '-' }}
+                  </td>
+
+                  <td class="text-right! font-mono">
+                    {{
+                      item.unitPrice != null
+                        ? (item.unitPrice | number: '1.2-2')
+                        : '-'
+                    }}
+                  </td>
+
+                  <td
+                    class="text-right! font-mono font-semibold text-slate-900"
                   >
-                    <td class="text-center!">
-                      {{ item.item || '-' }}
-                    </td>
-                    <td class="px-4 py-4">
-                      <div
-                        class="text-sm text-slate-900 leading-relaxed"
-                        [innerHTML]="item.description"
-                      ></div>
-                    </td>
-                    <td class="text-center!">
-                      <span
-                        class="inline-block px-3 py-1 rounded-lg bg-slate-100 text-slate-700 font-medium text-sm"
-                      >
-                        {{ item.unit || '-' }}
+                    {{
+                      item.totalPrice != null
+                        ? (item.totalPrice | number: '1.2-2')
+                        : '-'
+                    }}
+                  </td>
+                </tr>
+              </ng-template>
+
+              <ng-template #emptymessage>
+                <tr>
+                  <td colspan="6" class="text-center! py-10">
+                    <div class="flex flex-col items-center gap-2">
+                      <i class="pi pi-inbox text-3xl text-slate-300"></i>
+                      <span class="font-semibold text-slate-600">
+                        No line items found
                       </span>
-                    </td>
-                    <td class="text-center! font-semibold text-slate-900">
-                      {{ item.quantity || '-' }}
-                    </td>
-                    <td
-                      class="text-right! font-mono font-semibold text-slate-900"
-                    >
-                      {{
-                        item.unitPrice
-                          ? (item.unitPrice | number: '1.2-2')
-                          : '-'
-                      }}
-                    </td>
-                    <td class="text-right! font-mono font-bold text-slate-900">
-                      {{
-                        item.totalPrice
-                          ? (item.totalPrice | number: '1.2-2')
-                          : '-'
-                      }}
-                    </td>
-                  </tr>
-                </ng-container>
-
-                <tr *ngIf="!selectedQuotation.quotationItems?.length">
-                  <td colspan="6" class="px-4 py-12 text-center">
-                    <div class="flex flex-col items-center gap-3">
-                      <div
-                        class="w-16 h-16 rounded-2xl bg-slate-100 flex items-center justify-center"
-                      >
-                        <i class="pi pi-inbox text-3xl text-slate-300"></i>
-                      </div>
-                      <div class="text-slate-600 font-semibold">
-                        No items found
-                      </div>
-                      <div class="text-sm text-slate-400">
-                        This quotation doesn't have any line items yet
-                      </div>
+                      <span class="text-sm text-slate-400">
+                        This quotation does not contain any items.
+                      </span>
                     </div>
                   </td>
                 </tr>
               </ng-template>
 
               <ng-template #footer>
-                <tr class="border-slate-200 bg-slate-50/50">
-                  <td
-                    colspan="5"
-                    class="text-right! font-bold text-slate-700 text-base"
-                  >
-                    Subtotal
-                  </td>
-                  <td class="text-right! font-mono font-bold text-slate-900">
+                <tr class="quotation-subtotal-row">
+                  <td colspan="5" class="text-right!">Subtotal</td>
+                  <td class="text-right! font-mono">
                     {{ selectedQuotation.subTotal | number: '1.2-2' }}
                   </td>
                 </tr>
 
-                <tr *ngIf="selectedQuotation.discount" class="bg-slate-50/30">
-                  <td
-                    colspan="5"
-                    class="text-right! font-bold text-red-600! text-base"
-                  >
-                    Discount
-                  </td>
-                  <td
-                    class="text-right! font-mono font-bold text-red-600! text-base"
-                  >
+                <tr
+                  *ngIf="
+                    selectedQuotation.discount != null &&
+                    selectedQuotation.discount !== 0
+                  "
+                  class="quotation-discount-row"
+                >
+                  <td colspan="5" class="text-right!">Discount</td>
+                  <td class="text-right! font-mono">
                     -{{ selectedQuotation.discount | number: '1.2-2' }}
                   </td>
                 </tr>
 
-                <tr class=" bg-gray-100">
-                  <td
-                    colspan="5"
-                    class="bg-gray-100! px-4 py-5 text-right! font-bold text-slate-900 text-lg"
-                  >
-                    Total Amount
-                  </td>
-                  <td
-                    class="bg-gray-100! px-4 py-5 text-right! font-mono font-bold text-gray-900 text-xl"
-                  >
+                <tr class="quotation-total-row">
+                  <td colspan="5" class="text-right!">Total Amount</td>
+                  <td class="text-right! font-mono">
                     {{
                       selectedQuotation.totalAmount
                         | currency: 'RM ' : 'symbol' : '1.2-2'
@@ -943,101 +1194,116 @@ import {
               </ng-template>
             </p-table>
           </div>
-        </div>
+        </section>
 
-        <div
-          class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden"
-        >
-          <div class="bg-gray-100 px-8 py-5 border-b border-gray-200">
-            <div class="flex items-center gap-3">
-              <div
-                class="w-10 h-10 rounded-lg bg-gray-300 backdrop-blur-sm flex items-center justify-center"
-              >
-                <i class="pi pi-file-edit text-lg!"></i>
-              </div>
-              <div>
-                <h3 class="text-xl font-bold">Terms & Conditions</h3>
-                <p class="text-gray-500 text-sm mt-0.5">
-                  Commercial terms for this quotation
-                </p>
-              </div>
+        <!-- Terms and Conditions -->
+        <section class="quotation-section">
+          <div class="quotation-section-heading">
+            <div class="quotation-section-icon terms-icon">
+              <i class="pi pi-file-edit"></i>
+            </div>
+
+            <div>
+              <h3>Terms & Conditions</h3>
+              <p>Commercial terms for this quotation</p>
             </div>
           </div>
 
-          <div class="p-8 grid grid-cols-12 gap-3">
-            <div class="col-span-1 font-semibold">Terms</div>
-            <div class="col-span-11">
-              : {{ selectedQuotation.paymentTerms }}
-            </div>
-            <div class="col-span-1 font-semibold">Validity</div>
-            <div class="col-span-11">
-              : {{ selectedQuotation.validity }}
-              {{ selectedQuotation.validityType }} (with effect from the date of
-              this quotation)
-            </div>
-            <div class="col-span-1 font-semibold">Execution</div>
-            <div class="col-span-11">: {{ selectedQuotation.execution }}</div>
-            <div class="col-span-1 font-semibold">Warranty</div>
-            <div class="col-span-11">
-              : {{ selectedQuotation.warrantyTerms }}
+          <div class="quotation-terms">
+            <div class="quotation-term-row">
+              <span class="quotation-term-label">Payment Terms</span>
+              <span class="quotation-term-value">
+                {{ selectedQuotation.paymentTerms || '-' }}
+              </span>
             </div>
 
-            <div
-              *ngIf="selectedQuotation.remarks"
-              class="col-span-12 mt-6 bg-yellow-50 rounded-xl border border-yellow-400 p-5"
-            >
-              <div class="flex items-center gap-2 mb-3">
-                <i class="pi pi-comment text-yellow-600"></i>
-                <span
-                  class="text-xs font-bold text-slate-500 uppercase tracking-wider"
-                  >Remarks</span
+            <div class="quotation-term-row">
+              <span class="quotation-term-label">Validity</span>
+              <span class="quotation-term-value">
+                <ng-container
+                  *ngIf="
+                    selectedQuotation.validity ||
+                      selectedQuotation.validityType;
+                    else noValidity
+                  "
                 >
-              </div>
-              <div
-                class="text-sm text-slate-700 leading-relaxed whitespace-pre-wrap"
-              >
-                {{ selectedQuotation.remarks }}
-              </div>
+                  {{ selectedQuotation.validity || '' }}
+                  {{ selectedQuotation.validityType || '' }}
+                  <span class="text-slate-500">
+                    (with effect from the date of this quotation)
+                  </span>
+                </ng-container>
+
+                <ng-template #noValidity>-</ng-template>
+              </span>
+            </div>
+
+            <div class="quotation-term-row">
+              <span class="quotation-term-label">Execution</span>
+              <span class="quotation-term-value">
+                {{ selectedQuotation.execution || '-' }}
+              </span>
+            </div>
+
+            <div class="quotation-term-row">
+              <span class="quotation-term-label">Warranty</span>
+              <span class="quotation-term-value">
+                {{ selectedQuotation.warrantyTerms || '-' }}
+              </span>
             </div>
           </div>
-        </div>
 
-        <div
-          class="bg-white rounded-xl border border-slate-200 p-6 flex items-center justify-between shadow-sm sticky bottom-0"
-        >
-          <div class="flex items-center gap-2 text-sm text-slate-600">
-            <i class="pi pi-info-circle"></i>
-            <span
-              >Last updated:
+          <!-- Remarks -->
+          <div *ngIf="selectedQuotation.remarks" class="quotation-remarks">
+            <div class="flex items-center gap-2 mb-2">
+              <i class="pi pi-comment"></i>
+              <span>Remarks</span>
+            </div>
+
+            <p>{{ selectedQuotation.remarks }}</p>
+          </div>
+        </section>
+
+        <!-- Footer Actions -->
+        <div class="quotation-drawer-footer">
+          <div class="quotation-last-updated">
+            <i class="pi pi-clock"></i>
+
+            <span>
+              Last updated:
               {{
                 selectedQuotation.updatedAt
                   ? (selectedQuotation.updatedAt | date: 'dd MMM yyyy, h:mm a')
                   : (selectedQuotation.createdAt | date: 'dd MMM yyyy, h:mm a')
-              }}</span
-            >
+              }}
+            </span>
           </div>
-          <div class="flex items-center gap-3">
+
+          <div class="quotation-footer-actions">
             <p-button
               label="Generate PDF"
               icon="pi pi-file-pdf"
               severity="danger"
-              styleClass="px-5 py-2.5 font-semibold border-2 border-slate-200 text-slate-700 hover:bg-slate-50 rounded-xl"
+              [outlined]="true"
+              styleClass="w-full sm:w-auto"
               (onClick)="generatePDF()"
             ></p-button>
+
             <p-button
               *ngIf="selectedQuotation.status === 'Draft'"
               label="Edit Quotation"
               icon="pi pi-pencil"
               severity="info"
-              styleClass="px-5 py-2.5 font-semibold bg-gradient-to-r from-blue-600 to-blue-500 border-0 shadow-lg shadow-blue-500/25 rounded-xl"
+              styleClass="w-full sm:w-auto"
               (onClick)="ActionClick(selectedQuotation, 'Update')"
             ></p-button>
+
             <p-button
               *ngIf="selectedQuotation.status === 'Reviewed'"
               label="Mark as Sent"
               icon="pi pi-send"
               severity="info"
-              styleClass="px-5 py-2.5 font-semibold bg-gradient-to-r from-blue-600 to-blue-500 border-0 shadow-lg shadow-blue-500/25 rounded-xl"
+              styleClass="w-full sm:w-auto"
               (onClick)="updateQuotationStatus(selectedQuotation.id, 'Sent')"
             ></p-button>
           </div>
@@ -1519,11 +1785,29 @@ export class Quotation implements OnInit, OnDestroy {
     });
   }
 
-  onFileSelected(event: any) {
-    const fileList: FileList = event.target.files;
-    if (fileList.length > 0) {
-      this.soForm.clientPOAttachment = fileList[0];
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+
+    if (!file) {
+      return;
     }
+
+    const allowedTypes = ['application/pdf', 'image/png', 'image/jpeg'];
+
+    if (!allowedTypes.includes(file.type)) {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Invalid File',
+        detail: 'Only PDF, PNG and JPG files are allowed.',
+      });
+
+      input.value = '';
+      return;
+    }
+
+    this.soForm.clientPOAttachment = file;
+    this.cdr.markForCheck();
   }
 
   submitConvertToSO() {
@@ -1718,6 +2002,24 @@ export class Quotation implements OnInit, OnDestroy {
         window.URL.revokeObjectURL(url);
       },
     });
+  }
+
+  formatFileSize(bytes: number): string {
+    if (!bytes || bytes <= 0) {
+      return '0 KB';
+    }
+
+    if (bytes < 1024 * 1024) {
+      return `${(bytes / 1024).toFixed(1)} KB`;
+    }
+
+    return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+  }
+
+  removeAttachment(fileInput: HTMLInputElement): void {
+    this.soForm.clientPOAttachment = null;
+    fileInput.value = '';
+    this.cdr.markForCheck();
   }
 
   ngOnDestroy(): void {

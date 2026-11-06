@@ -7,9 +7,6 @@ import {
   RouterLinkActive,
 } from '@angular/router';
 
-import { AvatarModule } from 'primeng/avatar';
-import { ButtonModule } from 'primeng/button';
-
 interface QuickAction {
   label: string;
   description: string;
@@ -19,17 +16,17 @@ interface QuickAction {
   background: string;
 }
 
+interface WorkMenuItem {
+  label: string;
+  description: string;
+  icon: string;
+  route: string;
+}
+
 @Component({
   selector: 'app-mobile-layout',
   standalone: true,
-  imports: [
-    CommonModule,
-    RouterOutlet,
-    RouterLink,
-    RouterLinkActive,
-    AvatarModule,
-    ButtonModule,
-  ],
+  imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive],
   template: `
     <div class="mobile-layout">
       <!-- Main Content -->
@@ -38,29 +35,39 @@ interface QuickAction {
       </main>
 
       <!-- Bottom Navigation -->
-      <nav class="bottom-navigation">
+      <nav class="bottom-navigation" aria-label="Main navigation">
+        <!-- Home -->
         <a
           routerLink="/dashboard"
           routerLinkActive="active"
           [routerLinkActiveOptions]="{ exact: true }"
           class="nav-item"
+          (click)="closeAllSheets()"
         >
           <i class="pi pi-home"></i>
           <span>Home</span>
         </a>
 
-        <a routerLink="/my-tasks" routerLinkActive="active" class="nav-item">
-          <i class="pi pi-clipboard"></i>
+        <!-- My Work -->
+        <button
+          type="button"
+          class="nav-item"
+          [class.active]="showWorkMenu"
+          [attr.aria-expanded]="showWorkMenu"
+          aria-label="Open My Work menu"
+          (click)="toggleWorkMenu()"
+        >
+          <i class="pi pi-briefcase"></i>
           <span>My Work</span>
-        </a>
+        </button>
 
-        <!-- Create Button -->
+        <!-- Create -->
         <div class="quick-action-wrapper">
           <button
             type="button"
             class="quick-action-button"
             [class.active]="showQuickActions"
-            aria-label="Open quick actions"
+            aria-label="Open create actions"
             [attr.aria-expanded]="showQuickActions"
             (click)="toggleActions()"
           >
@@ -74,35 +81,88 @@ interface QuickAction {
           <span class="quick-action-label">Create</span>
         </div>
 
+        <!-- Notifications -->
         <a
-          routerLink="/announcements"
+          routerLink="/notifications"
           routerLinkActive="active"
           class="nav-item"
+          (click)="closeAllSheets()"
         >
-          <i class="pi pi-megaphone"></i>
-          <span>Notices</span>
+          <i class="pi pi-bell"></i>
+          <span>Notifications</span>
         </a>
 
+        <!-- Settings -->
         <a
           routerLink="/profile-settings"
           routerLinkActive="active"
           class="nav-item"
+          (click)="closeAllSheets()"
         >
-          <i class="pi pi-user"></i>
-          <span>Profile</span>
+          <i class="pi pi-cog"></i>
+          <span>Settings</span>
         </a>
       </nav>
 
-      <!-- Quick Action Backdrop -->
+      <!-- Shared Backdrop -->
       <div
-        class="quick-action-backdrop"
-        [class.show]="showQuickActions"
-        (click)="closeActions()"
+        class="mobile-sheet-backdrop"
+        [class.show]="showQuickActions || showWorkMenu"
+        (click)="closeAllSheets()"
       ></div>
 
-      <!-- Quick Action Bottom Sheet -->
+      <!-- My Work Bottom Sheet -->
       <section
-        class="quick-action-sheet"
+        class="mobile-bottom-sheet work-menu-sheet"
+        [class.show]="showWorkMenu"
+        [attr.aria-hidden]="!showWorkMenu"
+        aria-label="My Work menu"
+      >
+        <div class="sheet-handle"></div>
+
+        <div class="sheet-header">
+          <div>
+            <h3>My Work</h3>
+            <p>Access your work modules</p>
+          </div>
+
+          <button
+            type="button"
+            class="sheet-close-button"
+            aria-label="Close My Work menu"
+            (click)="closeAllSheets()"
+          >
+            <i class="pi pi-times"></i>
+          </button>
+        </div>
+
+        <div class="work-menu-list">
+          @for (item of workMenuItems; track item.route) {
+            <button
+              type="button"
+              class="work-menu-item"
+              (click)="navigateTo(item.route)"
+            >
+              <div class="work-menu-icon">
+                <i [class]="item.icon"></i>
+              </div>
+
+              <div class="work-menu-text">
+                <span class="work-menu-title">{{ item.label }}</span>
+                <span class="work-menu-description">
+                  {{ item.description }}
+                </span>
+              </div>
+
+              <i class="pi pi-angle-right work-menu-arrow"></i>
+            </button>
+          }
+        </div>
+      </section>
+
+      <!-- Create Bottom Sheet -->
+      <section
+        class="mobile-bottom-sheet create-menu-sheet"
         [class.show]="showQuickActions"
         [attr.aria-hidden]="!showQuickActions"
         aria-label="Create new"
@@ -118,8 +178,8 @@ interface QuickAction {
           <button
             type="button"
             class="sheet-close-button"
-            aria-label="Close quick actions"
-            (click)="closeActions()"
+            aria-label="Close create menu"
+            (click)="closeAllSheets()"
           >
             <i class="pi pi-times"></i>
           </button>
@@ -159,9 +219,38 @@ interface QuickAction {
 })
 export class MobileLayout {
   showQuickActions = false;
+  showWorkMenu = false;
 
   constructor(private router: Router) {}
 
+  // My Work menu
+  workMenuItems: WorkMenuItem[] = [
+    {
+      label: 'Upcoming Meetings',
+      description: 'View your upcoming meetings',
+      icon: 'pi pi-calendar-clock',
+      route: '/meeting',
+    },
+    {
+      label: 'My Tasks',
+      description: 'View and manage your assigned tasks',
+      icon: 'pi pi-list-check',
+      route: '/my-tasks',
+    },
+    {
+      label: 'My Daily Reports',
+      description: 'View your submitted daily reports',
+      icon: 'pi pi-file-edit',
+      route: '/daily-reports',
+    },
+    {
+      label: 'Team Daily Reports',
+      description: 'View daily reports submitted by your team',
+      icon: 'pi pi-users',
+      route: '/daily-reports/team',
+    },
+  ];
+  // Create menu
   quickActions: QuickAction[] = [
     {
       label: 'Apply Leave',
@@ -205,16 +294,23 @@ export class MobileLayout {
     },
   ];
 
-  toggleActions(): void {
-    this.showQuickActions = !this.showQuickActions;
-  }
-
-  closeActions(): void {
+  toggleWorkMenu(): void {
+    this.showWorkMenu = !this.showWorkMenu;
     this.showQuickActions = false;
   }
 
+  toggleActions(): void {
+    this.showQuickActions = !this.showQuickActions;
+    this.showWorkMenu = false;
+  }
+
+  closeAllSheets(): void {
+    this.showQuickActions = false;
+    this.showWorkMenu = false;
+  }
+
   navigateTo(route: string): void {
-    this.closeActions();
+    this.closeAllSheets();
     this.router.navigateByUrl(route);
   }
 }

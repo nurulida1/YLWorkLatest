@@ -132,11 +132,11 @@ import { RouterLink } from '@angular/router';
               class="flex flex-col items-center gap-2 py-2"
             >
               <div
-                class="w-12 h-12 rounded-xl bg-green-50 flex items-center justify-center"
+                class="w-15 h-15 rounded-xl bg-green-50 flex items-center justify-center"
               >
-                <i class="pi pi-wallet text-green-600 text-xl"></i>
+                <i class="pi pi-wallet text-green-600 text-2xl!"></i>
               </div>
-              <span class="text-xs font-semibold text-slate-700">Claims</span>
+              <span class="text-sm font-semibold text-slate-700">Claims</span>
             </a>
 
             <a
@@ -144,11 +144,11 @@ import { RouterLink } from '@angular/router';
               class="flex flex-col items-center gap-2 py-2"
             >
               <div
-                class="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center"
+                class="w-15 h-15 rounded-xl bg-blue-50 flex items-center justify-center"
               >
-                <i class="pi pi-list-check text-blue-600 text-xl"></i>
+                <i class="pi pi-list-check text-blue-600 text-2xl!"></i>
               </div>
-              <span class="text-xs font-semibold text-slate-700">Tasks</span>
+              <span class="text-sm font-semibold text-slate-700">Tasks</span>
             </a>
 
             <a
@@ -156,11 +156,11 @@ import { RouterLink } from '@angular/router';
               class="flex flex-col items-center gap-2 py-2"
             >
               <div
-                class="w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center"
+                class="w-15 h-15 rounded-xl bg-amber-50 flex items-center justify-center"
               >
-                <i class="pi pi-calendar text-amber-600 text-xl"></i>
+                <i class="pi pi-calendar text-amber-600 text-2xl!"></i>
               </div>
-              <span class="text-xs font-semibold text-slate-700">Leave</span>
+              <span class="text-sm font-semibold text-slate-700">Leave</span>
             </a>
 
             <a
@@ -168,11 +168,11 @@ import { RouterLink } from '@angular/router';
               class="flex flex-col items-center gap-2 py-2"
             >
               <div
-                class="w-12 h-12 rounded-xl bg-violet-50 flex items-center justify-center"
+                class="w-15 h-15 rounded-xl bg-violet-50 flex items-center justify-center"
               >
-                <i class="pi pi-megaphone text-violet-600 text-xl"></i>
+                <i class="pi pi-megaphone text-violet-600 text-2xl!"></i>
               </div>
-              <span class="text-xs font-semibold text-slate-700">Notices</span>
+              <span class="text-sm font-semibold text-slate-700">Notices</span>
             </a>
           </div>
         </div>

@@ -1,4 +1,4 @@
-import { Supplier } from '../components/suppliers/supplier/supplier';
+import { Supplier } from '../components/company-management/suppliers/supplier/supplier';
 import { BaseModel } from './BaseModel';
 import { CompanyDto } from './Company';
 import { PurchaseOrderDto, PurchaseOrderItem } from './PurchaseOrder';

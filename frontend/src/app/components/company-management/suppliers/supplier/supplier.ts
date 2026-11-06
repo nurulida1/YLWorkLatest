@@ -1,0 +1,373 @@
+import { CommonModule } from '@angular/common';
+import {
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component,
+  inject,
+  OnDestroy,
+  OnInit,
+  signal,
+  ViewChild,
+} from '@angular/core';
+import { FormGroup, FormsModule } from '@angular/forms';
+import { Router, RouterLink } from '@angular/router';
+import { ButtonModule } from 'primeng/button';
+import { InputTextModule } from 'primeng/inputtext';
+import { MenuModule } from 'primeng/menu';
+import { Table, TableLazyLoadEvent, TableModule } from 'primeng/table';
+import { MenuItem, MessageService } from 'primeng/api';
+import { Subject, takeUntil } from 'rxjs';
+import { LoadingService } from '../../../../services/loading.service';
+import { SupplierService } from '../../../../services/SupplierService';
+import { CompanyDto } from '../../../../models/Company';
+import {
+  PagingContent,
+  GridifyQueryExtend,
+  BuildFilterText,
+  BuildSortText,
+} from '../../../../shared/helpers/helpers';
+import { ImageModule } from 'primeng/image';
+
+@Component({
+  selector: 'app-supplier',
+  imports: [
+    CommonModule,
+    RouterLink,
+    InputTextModule,
+    FormsModule,
+    TableModule,
+    ButtonModule,
+    FormsModule,
+    MenuModule,
+    ImageModule,
+  ],
+  template: `<div class="w-full flex flex-col p-5">
+      <div class="flex flex-row items-center gap-1 text-gray-500 tracking-wide">
+        <div
+          class="cursor-pointer hover:text-gray-600"
+          [routerLink]="'/dashboard'"
+        >
+          Dashboard
+        </div>
+        /
+        <div class="text-gray-700 font-semibold">Supplier</div>
+      </div>
+      <div
+        class="mt-3 border border-gray-200 rounded-md tracking-wide bg-white p-5 flex flex-col"
+      >
+        <div class="flex flex-row items-center justify-between">
+          <div class="flex flex-col">
+            <div class="text-[20px] text-gray-700 font-semibold">Supplier</div>
+            <div class="text-gray-500">
+              Manage supplier profiles and information
+            </div>
+          </div>
+          <div class="flex flex-row items-center gap-2">
+            <div class="min-w-[300px] relative">
+              <input
+                type="text"
+                pInputText
+                class="w-full!"
+                placeholder="Search by name"
+                [(ngModel)]="search"
+                (keyup)="onKeyDown($event)"
+              />
+              <i
+                class="pi pi-search absolute! top-3! right-2! text-gray-500!"
+              ></i>
+            </div>
+            <p-button
+              label="New Supplier"
+              (onClick)="ActionClick(null, 'add')"
+              icon="pi pi-plus-circle"
+              severity="info"
+              styleClass="py-2! whitespace-nowrap!"
+            ></p-button>
+          </div>
+        </div>
+        <div class="mt-3">
+          <p-table
+            #fTable
+            [value]="PagingSignal().data"
+            [paginator]="true"
+            [rows]="Query.PageSize"
+            [totalRecords]="PagingSignal().totalElements"
+            [tableStyle]="{ 'min-width': '80rem' }"
+            [rowsPerPageOptions]="[10, 20, 30, 50]"
+            [stripedRows]="true"
+            [showGridlines]="true"
+            [lazy]="true"
+            (onLazyLoad)="NextPage($event)"
+            ><ng-template #header>
+              <tr>
+                <th class="bg-gray-100! text-center! w-[5%]!"></th>
+                <th pSortableColumn="Name" class="bg-gray-100! w-[30%]!">
+                  <div class="flex flex-row items-center gap-2">
+                    <div>Name</div>
+                    <p-sortIcon field="Name" class="mt-1" />
+                  </div>
+                </th>
+                <th class="bg-gray-100! text-center! w-[15%]!">Email</th>
+                <th class="bg-gray-100! text-center! w-[15%]!">Contact No</th>
+                <th class="bg-gray-100! text-center! w-[15%]!">
+                  Contact Person
+                </th>
+                <th class="bg-gray-100! text-center! w-[15%]!">
+                  Balance Payment (RM)
+                </th>
+
+                <th class="bg-gray-100! text-center! w-[5%]!">Action</th>
+              </tr>
+            </ng-template>
+            <ng-template #body let-data>
+              <tr>
+                <td class="text-center! font-semibold!">
+                  <div class="flex items-center justify-center">
+                    <div
+                      class="w-[50px] flex items-center justify-center"
+                      *ngIf="!data.logoImage"
+                    >
+                      <i class="pi pi-building text-[30px]!"></i>
+                    </div>
+                    <p-image
+                      *ngIf="data.logoImage"
+                      [src]="data.logoImage"
+                      width="50px"
+                    ></p-image>
+                  </div>
+                </td>
+                <td class="font-semibold!">
+                  {{ data.name }}
+                </td>
+                <td class="text-center!">
+                  {{ data.email }}
+                </td>
+                <td class="text-center!">
+                  {{ data.contactNo }}
+                </td>
+                <td class="text-center!">
+                  <div class="flex flex-col items-center justify-center gap-1">
+                    <span class="font-medium text-gray-800">{{
+                      data.contactPerson1
+                    }}</span>
+
+                    <span
+                      *ngIf="data.contactPerson2"
+                      class="text-xs text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded"
+                    >
+                      Alt: {{ data.contactPerson2 }}
+                    </span>
+                  </div>
+                </td>
+
+                <td class="text-center!">
+                  {{ data.balancePayment | number: '1.2' }}
+                </td>
+
+                <td class="text-center!">
+                  <div class="flex items-center justify-center">
+                    <i
+                      class="pi pi-ellipsis-h cursor-pointer"
+                      (click)="onEllipsisClick($event, data, menu)"
+                    ></i>
+                  </div>
+                </td>
+              </tr> </ng-template
+            ><ng-template #emptymessage>
+              <tr>
+                <td class="border-x!" colspan="100%">
+                  <div class="text-center text-gray-500">
+                    No supplier found in record.
+                  </div>
+                </td>
+              </tr>
+            </ng-template></p-table
+          >
+        </div>
+      </div>
+    </div>
+    <p-menu #menu [model]="menuItems" [popup]="true"></p-menu> `,
+  styleUrl: './supplier.less',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export class Supplier implements OnInit, OnDestroy {
+  @ViewChild('fTable') fTable?: Table;
+
+  private readonly loadingService = inject(LoadingService);
+  private readonly messageService = inject(MessageService);
+  private readonly supplierService = inject(SupplierService);
+  private readonly cdr = inject(ChangeDetectorRef);
+  private readonly router = inject(Router);
+  protected ngUnsubscribe: Subject<void> = new Subject<void>();
+
+  PagingSignal = signal<PagingContent<CompanyDto>>(
+    {} as PagingContent<CompanyDto>,
+  );
+  Query: GridifyQueryExtend = {} as GridifyQueryExtend;
+
+  visible: boolean = false;
+  isUpdate: boolean = false;
+
+  search: string = '';
+  title: string = 'Add New Supplier';
+  FG!: FormGroup;
+  menuItems: MenuItem[] = [];
+
+  constructor() {
+    this.Query.Page = 1;
+    this.Query.PageSize = 10;
+    this.Query.Filter = null;
+    this.Query.OrderBy = 'Name';
+    this.Query.Select = null;
+    this.Query.Includes = null;
+  }
+
+  ngOnInit(): void {}
+
+  GetData() {
+    this.loadingService.start();
+    this.supplierService
+      .GetMany(this.Query)
+      .pipe(takeUntil(this.ngUnsubscribe))
+      .subscribe({
+        next: (res) => {
+          this.loadingService.stop();
+          this.PagingSignal.set(res);
+          this.cdr.markForCheck();
+        },
+        error: (err) => {
+          this.loadingService.stop();
+        },
+      });
+  }
+
+  NextPage(event: TableLazyLoadEvent) {
+    if ((event?.first || event?.first === 0) && event?.rows) {
+      this.Query.Page = event.first / event.rows + 1 || 1;
+      this.Query.PageSize = event.rows;
+    }
+
+    const sortText = BuildSortText(event);
+    this.Query.OrderBy = sortText ? sortText : 'Name';
+
+    this.Query.Filter = BuildFilterText(event);
+    console.log(this.Query);
+    this.GetData();
+  }
+
+  onKeyDown(event: KeyboardEvent) {
+    const isEnter = event.key === 'Enter';
+    const isBackspaceClear = event.key === 'Backspace' && this.search === '';
+
+    if (isEnter) {
+      this.Search(this.search);
+    } else if (isBackspaceClear) {
+      this.Search('');
+    }
+  }
+
+  Search(data: string) {
+    const filter = {
+      Name: [
+        {
+          value: data,
+          matchMode: '=',
+          operator: 'and',
+        },
+      ],
+    };
+
+    this.Query.Filter = BuildFilterText({
+      first: 0,
+      rows: this.fTable?.rows,
+      filters: filter,
+      sortField: null,
+      sortOrder: null,
+    } as TableLazyLoadEvent);
+
+    this.Query.Page = 1;
+
+    this.GetData();
+  }
+
+  ResetTable() {
+    this.search = '';
+
+    if (this.fTable) {
+      this.fTable.first = 0;
+      this.fTable.clearFilterValues();
+      this.fTable.saveState();
+    }
+
+    this.Query.Filter = null;
+    this.GetData();
+  }
+
+  ActionClick(data: CompanyDto | null, action: string) {
+    if (action === 'Delete' && data) {
+      this.loadingService.start();
+
+      this.supplierService
+        .Delete(data?.id)
+        .pipe(takeUntil(this.ngUnsubscribe))
+        .subscribe({
+          next: (res: any) => {
+            this.loadingService.stop();
+
+            this.messageService.add({
+              severity: 'success',
+              summary: 'Deleted',
+              detail: res?.message || 'Supplier deleted successfully',
+            });
+
+            this.PagingSignal.update((state) => ({
+              ...state,
+              data: state.data.filter((d: any) => d.id !== data.id),
+            }));
+
+            this.cdr.markForCheck();
+          },
+
+          error: (err: any) => {
+            this.loadingService.stop();
+
+            this.messageService.add({
+              severity: 'error',
+              summary: 'Error',
+              detail:
+                err.error?.error ||
+                err.error?.message ||
+                'Failed to delete supplier',
+            });
+          },
+        });
+    } else {
+      this.router.navigate(['/supplier/form'], {
+        queryParams: { id: data?.id },
+      });
+    }
+  }
+
+  onEllipsisClick(event: any, supplier: any, menu: any) {
+    this.menuItems = [
+      {
+        label: 'Edit',
+        icon: 'pi pi-pencil',
+        command: () => this.ActionClick(supplier, 'Update'),
+      },
+      {
+        label: 'Delete',
+        icon: 'pi pi-trash',
+        command: () => this.ActionClick(supplier, 'Delete'),
+      },
+    ];
+
+    menu.toggle(event);
+  }
+
+  ngOnDestroy(): void {
+    this.ngUnsubscribe.next();
+    this.ngUnsubscribe.complete();
+    this.loadingService.stop();
+  }
+}

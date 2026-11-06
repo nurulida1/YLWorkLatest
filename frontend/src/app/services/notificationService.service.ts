@@ -38,7 +38,7 @@ export class NotificationService {
 
   url = environment.ApiBaseUrl + '/Notification';
 
-  private readonly baseUrl = 'http://192.168.1.79:5000/hubs/notifications';
+  private readonly baseUrl = environment.AttachmentUrl + 'hubs/notifications';
 
   constructor(
     private zone: NgZone,

@@ -150,7 +150,7 @@ import { NotificationService } from '../../services/notificationService.service'
                   </p>
 
                   <div class="flex items-center gap-2 mt-2">
-                    <i class="pi pi-clock text-[11px] text-gray-400"></i>
+                    <i class="pi pi-clock text-[11px]! text-gray-400"></i>
                     <span class="text-[11px] sm:text-xs text-gray-400">
                       {{
                         notification.createdAt | date: 'dd MMM yyyy, hh:mm a'

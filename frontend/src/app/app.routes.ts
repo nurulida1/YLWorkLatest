@@ -17,7 +17,9 @@ export const routes: Routes = [
   {
     path: 'get-started',
     loadComponent: () =>
-      import('./components/get-started/get-started').then((m) => m.GetStarted),
+      import('./components/auth/get-started/get-started').then(
+        (m) => m.GetStarted,
+      ),
   },
   {
     path: 'login',
@@ -69,22 +71,7 @@ export const routes: Routes = [
       },
     ],
   },
-  {
-    path: 'notice',
-    data: { moduleKey: 'notice' },
-    loadComponent: () =>
-      import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
-        (m) => m.ResponsiveLayout,
-      ),
-    children: [
-      {
-        path: '',
-        data: { moduleKey: 'notice' },
-        loadComponent: () =>
-          import('./components/notice/notice').then((m) => m.Notice),
-      },
-    ],
-  },
+
   {
     path: 'announcements',
     data: { moduleKey: 'announcements' },
@@ -118,7 +105,7 @@ export const routes: Routes = [
           const isMobile = window.innerWidth < 768;
 
           return isMobile
-            ? import('./components/directory/directory').then(
+            ? import('./components/company-management/directory/directory').then(
                 (m) => m.Directory,
               )
             : import('./components/main-dashboard/dashboard/dashboard').then(
@@ -149,24 +136,16 @@ export const routes: Routes = [
   },
 
   {
-    path: 'change-password',
-    loadComponent: () =>
-      import('./components/change-password-internal/change-password-internal').then(
-        (m) => m.ChangePasswordInternal,
-      ),
-  },
-
-  {
     path: 'confirm-email',
     loadComponent: () =>
-      import('./components/confirmEmail/confirmEmail').then(
+      import('./components/auth/confirmEmail/confirmEmail').then(
         (m) => m.ConfirmEmail,
       ),
   },
   {
     path: 'reset-link',
     loadComponent: () =>
-      import('./components/confirmEmail/confirmEmail').then(
+      import('./components/auth/confirmEmail/confirmEmail').then(
         (m) => m.ConfirmEmail,
       ),
   },
@@ -206,7 +185,7 @@ export const routes: Routes = [
       {
         path: '',
         loadChildren: () =>
-          import('./components/clients/client-routing.module').then(
+          import('./components/company-management/clients/client-routing.module').then(
             (m) => m.ClientRoutingModule,
           ),
       },
@@ -225,7 +204,7 @@ export const routes: Routes = [
         path: '',
         data: { moduleKey: 'incomes' },
         loadComponent: () =>
-          import('./components/income/income').then((m) => m.Income),
+          import('./components/finances/income/income').then((m) => m.Income),
       },
     ],
   },
@@ -242,7 +221,9 @@ export const routes: Routes = [
         path: '',
         data: { moduleKey: 'expenses' },
         loadComponent: () =>
-          import('./components/expense/expense').then((m) => m.Expense),
+          import('./components/finances/expense/expense').then(
+            (m) => m.Expense,
+          ),
       },
     ],
   },
@@ -259,7 +240,7 @@ export const routes: Routes = [
         path: '',
         data: { moduleKey: 'supplier-payments' },
         loadComponent: () =>
-          import('./components/supplier-payment/supplier-payment').then(
+          import('./components/finances/supplier-payment/supplier-payment').then(
             (m) => m.SupplierPayment,
           ),
       },
@@ -276,29 +257,13 @@ export const routes: Routes = [
       {
         path: '',
         loadChildren: () =>
-          import('./components/projects/project-routing.module').then(
+          import('./components/project-management/project/project-routing.module').then(
             (m) => m.ProjectRoutingModule,
           ),
       },
     ],
   },
-  {
-    path: 'material-requests',
-    data: { moduleKey: 'material-requests' },
-    loadComponent: () =>
-      import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
-        (m) => m.ResponsiveLayout,
-      ),
-    children: [
-      {
-        path: '',
-        loadChildren: () =>
-          import('./components/materialRequests/material-request-routing.module').then(
-            (m) => m.MaterialRequestRoutingModule,
-          ),
-      },
-    ],
-  },
+
   {
     path: 'supplier',
     canActivate: [...protectedGuards],
@@ -311,7 +276,7 @@ export const routes: Routes = [
       {
         path: '',
         loadChildren: () =>
-          import('./components/suppliers/supplier-routing.module').then(
+          import('./components/company-management/suppliers/supplier-routing.module').then(
             (m) => m.SupplierRoutingModule,
           ),
       },
@@ -330,7 +295,9 @@ export const routes: Routes = [
         path: '',
         data: { moduleKey: 'payments' },
         loadComponent: () =>
-          import('./components/payments/payments').then((m) => m.Payments),
+          import('./components/finances/payments/payments').then(
+            (m) => m.Payments,
+          ),
       },
     ],
   },
@@ -364,7 +331,7 @@ export const routes: Routes = [
       {
         path: '',
         loadChildren: () =>
-          import('./components/quotations/quotation-routing.module').then(
+          import('./components/project-management/quotation/quotation-routing.module').then(
             (m) => m.QuotationRoutingModule,
           ),
       },
@@ -382,7 +349,7 @@ export const routes: Routes = [
       {
         path: '',
         loadChildren: () =>
-          import('./components/goods-receiving/goods-receiving-routing.module').then(
+          import('./components/sales-purchasing/good-receiving/goods-receiving-routing.module').then(
             (m) => m.GoodsReceivingRoutingModule,
           ),
       },
@@ -399,7 +366,7 @@ export const routes: Routes = [
       {
         path: '',
         loadChildren: () =>
-          import('./components/purchase-orders/purchase-order-routing.module').then(
+          import('./components/sales-purchasing/purchase-orders/purchase-order-routing.module').then(
             (m) => m.PurchaseOrderRoutingModule,
           ),
       },
@@ -417,7 +384,7 @@ export const routes: Routes = [
       {
         path: '',
         loadChildren: () =>
-          import('./components/sales-orders/sales-order-routing.module').then(
+          import('./components/sales-purchasing/sales-order/sales-order-routing.module').then(
             (m) => m.SalesOrderRoutingModule,
           ),
       },
@@ -434,7 +401,7 @@ export const routes: Routes = [
       {
         path: '',
         loadChildren: () =>
-          import('./components/delivery-order/delivery-order-routing.module').then(
+          import('./components/sales-purchasing/delivery-order/delivery-order-routing.module').then(
             (m) => m.DeliveryOrderRoutingModule,
           ),
       },
@@ -452,7 +419,7 @@ export const routes: Routes = [
       {
         path: '',
         loadChildren: () =>
-          import('./components/do-rma/do-rma-routing.module').then(
+          import('./components/sales-purchasing/do-rma/do-rma-routing.module').then(
             (m) => m.DORMARoutingModule,
           ),
       },
@@ -469,7 +436,7 @@ export const routes: Routes = [
       {
         path: '',
         loadChildren: () =>
-          import('./components/invoices/invoice-routing.module').then(
+          import('./components/finances/invoice/invoice-routing.module').then(
             (m) => m.InvoiceRoutingModule,
           ),
       },
@@ -487,7 +454,7 @@ export const routes: Routes = [
         path: '',
         data: { moduleKey: 'department' },
         loadComponent: () =>
-          import('./components/department/department').then(
+          import('./components/company-management/department/department').then(
             (m) => m.Department,
           ),
       },
@@ -511,25 +478,7 @@ export const routes: Routes = [
       },
     ],
   },
-  {
-    path: 'access-permission',
-    canActivate: [...protectedGuards],
-    data: { moduleKey: 'access-permission' },
-    loadComponent: () =>
-      import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
-        (m) => m.ResponsiveLayout,
-      ),
-    children: [
-      {
-        path: '',
-        data: { moduleKey: 'access-permission' },
-        loadComponent: () =>
-          import('./components/accessPermission/accessPermission').then(
-            (m) => m.AccessPermission,
-          ),
-      },
-    ],
-  },
+
   {
     path: 'company',
     canActivate: [...protectedGuards],
@@ -542,7 +491,7 @@ export const routes: Routes = [
       {
         path: '',
         loadChildren: () =>
-          import('./components/companies/company-routing.module').then(
+          import('./components/company-management/companies/company-routing.module').then(
             (m) => m.CompanyRoutingModule,
           ),
       },
@@ -578,7 +527,7 @@ export const routes: Routes = [
         path: '',
         data: { moduleKey: 'products-services' },
         loadComponent: () =>
-          import('./components/ProductsServices/ProductsServices').then(
+          import('./components/sales-purchasing/ProductsServices/ProductsServices').then(
             (m) => m.ProductsServices,
           ),
       },
@@ -600,45 +549,13 @@ export const routes: Routes = [
         path: '',
         data: { moduleKey: 'profile-settings' },
         loadComponent: () =>
-          import('./components/personal-info/personal-info').then(
+          import('./components/settings/personal-info/personal-info').then(
             (m) => m.PersonalInfo,
           ),
       },
     ],
   },
-  {
-    path: 'my-tasks',
-    data: { moduleKey: 'my-tasks' },
-    loadComponent: () =>
-      import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
-        (m) => m.ResponsiveLayout,
-      ),
-    children: [
-      {
-        path: '',
-        loadChildren: () =>
-          import('./components/tasks/tasks-routing.module').then(
-            (m) => m.TasksRoutingModule,
-          ),
-      },
-    ],
-  },
-  {
-    path: 'schedule',
-    data: { moduleKey: 'schedule' },
-    loadComponent: () =>
-      import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
-        (m) => m.ResponsiveLayout,
-      ),
-    children: [
-      {
-        path: '',
-        data: { moduleKey: 'schedule' },
-        loadComponent: () =>
-          import('./components/schedule/schedule').then((m) => m.Schedule),
-      },
-    ],
-  },
+
   {
     path: 'leave',
     // canActivate: [...protectedGuards],
@@ -667,7 +584,7 @@ export const routes: Routes = [
       {
         path: '',
         loadChildren: () =>
-          import('./components/meeting/meeting-routing.module').then(
+          import('./components/my-work/meeting/meeting-routing.module').then(
             (m) => m.MeetingRoutingModule,
           ),
       },
@@ -690,24 +607,7 @@ export const routes: Routes = [
       },
     ],
   },
-  {
-    path: 'meeting-room',
-    canActivate: [...protectedGuards],
-    data: { moduleKey: 'meeting-room' },
-    loadComponent: () =>
-      import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
-        (m) => m.ResponsiveLayout,
-      ),
-    children: [
-      {
-        path: '',
-        loadChildren: () =>
-          import('./components/meeting-room/meeting-room-routing.module').then(
-            (m) => m.MeetingRoomRoutingModule,
-          ),
-      },
-    ],
-  },
+
   {
     path: 'profile-settings/personal-info',
     data: { moduleKey: 'profile-settings' },
@@ -720,7 +620,7 @@ export const routes: Routes = [
         path: '',
         data: { moduleKey: 'profile-settings' },
         loadComponent: () =>
-          import('./components/personal-info/personal-info').then(
+          import('./components/settings/personal-info/personal-info').then(
             (m) => m.PersonalInfo,
           ),
       },
@@ -747,25 +647,6 @@ export const routes: Routes = [
   },
 
   {
-    path: 'task-management',
-    data: { moduleKey: 'task-management' },
-    loadComponent: () =>
-      import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
-        (m) => m.ResponsiveLayout,
-      ),
-    children: [
-      {
-        path: '',
-        data: { moduleKey: 'task-management' },
-        loadChildren: () =>
-          import('./components/task-management/tasks-management-routing.module').then(
-            (m) => m.TaskManagementRoutingModule,
-          ),
-      },
-    ],
-  },
-
-  {
     path: 'daily-reports',
     data: { moduleKey: 'daily-reports' },
     loadComponent: () =>
@@ -777,7 +658,7 @@ export const routes: Routes = [
         path: '',
         data: { moduleKey: 'daily-reports' },
         loadComponent: () =>
-          import('./components/daily-report/daily-report').then(
+          import('./components/my-work/daily-report/daily-report').then(
             (m) => m.DailyReport,
           ),
       },
@@ -795,7 +676,7 @@ export const routes: Routes = [
         path: '',
         data: { moduleKey: 'daily-reports/team' },
         loadComponent: () =>
-          import('./components/team-daily-report/team-daily-report').then(
+          import('./components/my-work/team-daily-report/team-daily-report').then(
             (m) => m.TeamDailyReport,
           ),
       },
@@ -814,7 +695,7 @@ export const routes: Routes = [
         path: '',
         data: { moduleKey: 'hardware-request' },
         loadComponent: () =>
-          import('./components/hardware-requests/hardware-request/hardware-request').then(
+          import('./components/support-requests/hardware-request/hardware-request/hardware-request').then(
             (m) => m.HardwareRequest,
           ),
       },
@@ -822,7 +703,7 @@ export const routes: Routes = [
         path: 'incoming',
         data: { moduleKey: 'incoming' },
         loadComponent: () =>
-          import('./components/hardware-requests/incoming-hardware-request/incoming-hardware-request').then(
+          import('./components/support-requests/hardware-request/incoming-hardware-request/incoming-hardware-request').then(
             (m) => m.IncomingHardwareRequest,
           ),
       },
@@ -835,14 +716,6 @@ export const routes: Routes = [
       //     ),
       // },
     ],
-  },
-
-  {
-    path: 'task-management/form',
-    loadComponent: () =>
-      import('./components/task-management/task-form/task-form').then(
-        (m) => m.TaskForm,
-      ),
   },
 
   { path: 'unauthorized', component: Unauthorized },

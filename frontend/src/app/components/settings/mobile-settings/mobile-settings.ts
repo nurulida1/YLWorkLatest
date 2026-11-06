@@ -35,85 +35,239 @@ import { UserService } from '../../../services/userService.service';
     TranslateDirective,
     FormsModule,
   ],
-  template: `<div class="w-full min-h-[80vh] flex flex-col bg-gray-50">
-      <div class="flex flex-col space-y-3 items-center justify-center py-5">
+
+  template: `
+    <div class="min-h-screen bg-slate-50 pb-8">
+      <!-- Header -->
+      <div class="px-5 pt-6 pb-5">
+        <div class="flex items-center justify-between mb-5">
+          <div>
+            <h1 class="text-2xl font-bold text-slate-900" translate>
+              Settings
+            </h1>
+            <p class="text-sm text-slate-500 mt-1" translate>
+              Manage your account and preferences
+            </p>
+          </div>
+        </div>
+
+        <!-- Profile Card -->
         <div
-          class="border-2 inset-shadow-sm border-gray-200 relative w-25 h-25 rounded-full bg-gray-100 flex items-center justify-center"
+          class="relative overflow-hidden rounded-2xl bg-gradient-to-br
+               from-blue-600 to-indigo-700 p-5 shadow-lg shadow-blue-200/50"
         >
-          <i class="pi pi-user text-4xl! text-gray-500!"></i>
-          <div class="absolute -bottom-1 -right-1">
+          <div
+            class="absolute -right-8 -top-10 w-36 h-36 rounded-full
+                 bg-white/10"
+          ></div>
+
+          <div
+            class="absolute -right-3 -bottom-16 w-40 h-40 rounded-full
+                 bg-white/10"
+          ></div>
+
+          <div class="relative flex items-center gap-4">
             <div
-              class="flex items-center justify-center bg-blue-600 rounded-full h-7 w-7 border-2 border-white"
+              class="w-16 h-16 shrink-0 rounded-2xl bg-white/20
+                   border border-white/30 flex items-center justify-center
+                   text-white text-xl font-bold"
             >
-              <i class="pi pi-pencil text-xs! text-white!"></i>
-            </div>
-          </div>
-        </div>
-        <div class="flex flex-col text-center gap-1">
-          <div class="font-bold text-xl">{{ name }}</div>
-          <span class="text-gray-500" translate>
-            {{ currentUser?.jobTitle }}
-          </span>
-        </div>
-      </div>
-      <div class="flex flex-col gap-1 px-6 mt-2">
-        <div class="uppercase text-gray-600 text-sm" translate>Account</div>
-        <div class="bg-white rounded-lg border border-gray-300 my-2">
-          <div
-            [routerLink]="'/profile-settings/personal-info'"
-            class="cursor-pointer flex flex-row items-center justify-between border-b border-gray-300 p-4"
-          >
-            <div class="flex flex-row items-center gap-4">
-              <i class="pi pi-user"></i>
-              <div translate>Personal Information</div>
-            </div>
-            <i class="pi pi-chevron-right text-gray-500!"></i>
-          </div>
-          <div
-            class="flex flex-row items-center justify-between border-b border-gray-300 p-4"
-            [routerLink]="'/change-password'"
-          >
-            <div class="flex flex-row items-center gap-4">
-              <i class="pi pi-lock"></i>
-              <div translate>Change Password</div>
-            </div>
-            <i class="pi pi-chevron-right text-gray-500!"></i>
-          </div>
-          <div class="flex flex-row items-center justify-between p-4">
-            <div class="flex flex-row items-center gap-4">
-              <i class="pi pi-bell"></i>
-              <div translate>Notifications</div>
-            </div>
-            <i class="pi pi-chevron-right text-gray-500!"></i>
-          </div>
-        </div>
-      </div>
-      <div class="flex flex-col gap-1 px-6 mt-3">
-        <div class="uppercase text-gray-600 text-sm" translate>Preferences</div>
-        <div class="bg-white rounded-lg border border-gray-300 my-2">
-          <div
-            (click)="isLanguageDialogOpen.set(true)"
-            class="cursor-pointer flex flex-row items-center justify-between
-         border-b border-gray-300 p-4"
-          >
-            <div class="flex flex-row items-center gap-4">
-              <i class="pi pi-language"></i>
-              <div translate>Language</div>
+              {{ initials || 'U' }}
             </div>
 
-            <div class="flex flex-row items-center gap-2">
-              <span class="text-blue-600">
+            <div class="flex-1 min-w-0">
+              <h2 class="text-lg font-bold text-white truncate">
+                {{ name }}
+              </h2>
+
+              <p class="text-sm text-blue-100 mt-1 truncate">
+                {{ currentUser?.jobTitle || 'Employee' }}
+              </p>
+
+              <div
+                class="inline-flex items-center gap-1.5 mt-2
+                     rounded-full bg-white/15 px-2.5 py-1"
+              >
+                <span class="w-1.5 h-1.5 rounded-full bg-green-300"></span>
+                <span class="text-xs text-white font-medium" translate>
+                  Active Account
+                </span>
+              </div>
+            </div>
+
+            <a
+              routerLink="/profile-settings/personal-info"
+              class="w-9 h-9 shrink-0 rounded-xl bg-white/15
+                   flex items-center justify-center"
+              aria-label="Edit profile"
+            >
+              <i class="pi pi-pencil text-white text-sm"></i>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Account -->
+      <div class="px-5 mt-2">
+        <div class="flex items-center justify-between mb-3">
+          <h3
+            class="text-sm font-bold text-slate-800 uppercase tracking-wider"
+            translate
+          >
+            Account
+          </h3>
+        </div>
+
+        <div
+          class="bg-white rounded-2xl border border-slate-200
+               overflow-hidden shadow-sm"
+        >
+          <!-- Personal Information -->
+          <a
+            routerLink="/profile-settings/personal-info"
+            class="flex items-center gap-3.5 p-4
+                 active:bg-slate-50 transition-colors"
+          >
+            <div
+              class="w-11 h-11 rounded-xl bg-blue-50
+                   flex items-center justify-center shrink-0"
+            >
+              <i class="pi pi-user text-blue-600 text-lg"></i>
+            </div>
+
+            <div class="flex-1 min-w-0">
+              <p class="font-semibold text-sm text-slate-800" translate>
+                Personal Information
+              </p>
+              <p class="text-xs text-slate-500 mt-1" translate>
+                Manage your personal details
+              </p>
+            </div>
+
+            <i class="pi pi-chevron-right text-xs text-slate-400"></i>
+          </a>
+
+          <div class="h-px bg-slate-100 ml-[68px]"></div>
+
+          <!-- Change Password -->
+          <a
+            routerLink="/change-password"
+            class="flex items-center gap-3.5 p-4
+                 active:bg-slate-50 transition-colors"
+          >
+            <div
+              class="w-11 h-11 rounded-xl bg-amber-50
+                   flex items-center justify-center shrink-0"
+            >
+              <i class="pi pi-lock text-amber-600 text-lg"></i>
+            </div>
+
+            <div class="flex-1 min-w-0">
+              <p class="font-semibold text-sm text-slate-800" translate>
+                Change Password
+              </p>
+              <p class="text-xs text-slate-500 mt-1" translate>
+                Update your account password
+              </p>
+            </div>
+
+            <i class="pi pi-chevron-right text-xs text-slate-400"></i>
+          </a>
+
+          <div class="h-px bg-slate-100 ml-[68px]"></div>
+
+          <!-- Notifications -->
+          <a
+            routerLink="/notifications"
+            class="flex items-center gap-3.5 p-4
+                 active:bg-slate-50 transition-colors"
+          >
+            <div
+              class="w-11 h-11 rounded-xl bg-violet-50
+                   flex items-center justify-center shrink-0"
+            >
+              <i class="pi pi-bell text-violet-600 text-lg"></i>
+            </div>
+
+            <div class="flex-1 min-w-0">
+              <p class="font-semibold text-sm text-slate-800" translate>
+                Notifications
+              </p>
+              <p class="text-xs text-slate-500 mt-1" translate>
+                View your notifications
+              </p>
+            </div>
+
+            <i class="pi pi-chevron-right text-xs text-slate-400"></i>
+          </a>
+        </div>
+      </div>
+
+      <!-- Preferences -->
+      <div class="px-5 mt-6">
+        <h3
+          class="text-sm font-bold text-slate-800 uppercase
+               tracking-wider mb-3"
+          translate
+        >
+          Preferences
+        </h3>
+
+        <div
+          class="bg-white rounded-2xl border border-slate-200
+               overflow-hidden shadow-sm"
+        >
+          <!-- Language -->
+          <button
+            type="button"
+            (click)="isLanguageDialogOpen.set(true)"
+            class="w-full flex items-center gap-3.5 p-4
+                 text-left active:bg-slate-50 transition-colors"
+          >
+            <div
+              class="w-11 h-11 rounded-xl bg-emerald-50
+                   flex items-center justify-center shrink-0"
+            >
+              <i class="pi pi-language text-emerald-600 text-lg"></i>
+            </div>
+
+            <div class="flex-1 min-w-0">
+              <p class="font-semibold text-sm text-slate-800" translate>
+                Language
+              </p>
+              <p class="text-xs text-slate-500 mt-1" translate>
+                Choose your preferred language
+              </p>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-semibold text-blue-600">
                 {{ getLanguageName() }}
               </span>
+              <i class="pi pi-chevron-right text-xs text-slate-400"></i>
+            </div>
+          </button>
 
-              <i class="pi pi-chevron-right text-gray-500!"></i>
+          <div class="h-px bg-slate-100 ml-[68px]"></div>
+
+          <!-- Dark Mode -->
+          <div class="flex items-center gap-3.5 p-4">
+            <div
+              class="w-11 h-11 rounded-xl bg-indigo-50
+                   flex items-center justify-center shrink-0"
+            >
+              <i class="pi pi-moon text-indigo-600 text-lg"></i>
             </div>
-          </div>
-          <div class="flex flex-row items-center justify-between p-4">
-            <div class="flex flex-row items-center gap-4">
-              <i class="pi pi-moon"></i>
-              <div translate>Dark Mode</div>
+
+            <div class="flex-1 min-w-0">
+              <p class="font-semibold text-sm text-slate-800" translate>
+                Dark Mode
+              </p>
+              <p class="text-xs text-slate-500 mt-1" translate>
+                Change your app appearance
+              </p>
             </div>
+
             <p-toggleswitch
               [ngModel]="appState()?.darkTheme ?? false"
               (ngModelChange)="toggleDarkMode($event)"
@@ -121,143 +275,275 @@ import { UserService } from '../../../services/userService.service';
           </div>
         </div>
       </div>
-      <div class="flex flex-col gap-1 px-6 mt-3">
-        <div class="uppercase text-gray-600 text-sm" translate>Support</div>
-        <div class="bg-white rounded-lg border border-gray-300 my-2">
+
+      <!-- Support -->
+      <div class="px-5 mt-6">
+        <h3
+          class="text-sm font-bold text-slate-800 uppercase
+               tracking-wider mb-3"
+          translate
+        >
+          Support
+        </h3>
+
+        <div
+          class="bg-white rounded-2xl border border-slate-200
+               overflow-hidden shadow-sm"
+        >
+          <!-- Help Center -->
           <div
-            class="flex flex-row items-center justify-between border-b border-gray-300 p-4"
+            class="flex items-center gap-3.5 p-4
+                 active:bg-slate-50 transition-colors"
           >
-            <div class="flex flex-row items-center gap-4">
-              <i class="pi pi-question-circle"></i>
-              <div translate>Help Center</div>
+            <div
+              class="w-11 h-11 rounded-xl bg-sky-50
+                   flex items-center justify-center shrink-0"
+            >
+              <i class="pi pi-question-circle text-sky-600 text-lg"></i>
             </div>
-            <i class="pi pi-external-link text-gray-500!"></i>
+
+            <div class="flex-1 min-w-0">
+              <p class="font-semibold text-sm text-slate-800" translate>
+                Help Center
+              </p>
+              <p class="text-xs text-slate-500 mt-1" translate>
+                Get help using OfficeHub
+              </p>
+            </div>
+
+            <i class="pi pi-external-link text-xs text-slate-400"></i>
           </div>
+
+          <div class="h-px bg-slate-100 ml-[68px]"></div>
+
+          <!-- Report a Bug -->
           <div
-            class="flex flex-row items-center justify-between border-b border-gray-300 p-4"
+            class="flex items-center gap-3.5 p-4
+                 active:bg-slate-50 transition-colors"
           >
-            <div class="flex flex-row items-center gap-4">
-              <i class="pi pi-microchip"></i>
-              <div translate>Report a bug</div>
+            <div
+              class="w-11 h-11 rounded-xl bg-rose-50
+                   flex items-center justify-center shrink-0"
+            >
+              <i class="pi pi-microchip text-rose-600 text-lg"></i>
             </div>
-            <i class="pi pi-chevron-right text-gray-500!"></i>
+
+            <div class="flex-1 min-w-0">
+              <p class="font-semibold text-sm text-slate-800" translate>
+                Report a Bug
+              </p>
+              <p class="text-xs text-slate-500 mt-1" translate>
+                Let us know if something is not working
+              </p>
+            </div>
+
+            <i class="pi pi-chevron-right text-xs text-slate-400"></i>
           </div>
-          <div class="flex flex-row items-center justify-between p-4">
-            <div class="flex flex-row items-center gap-4">
-              <i class="pi pi-file"></i>
-              <div translate>Terms & Privacy</div>
+
+          <div class="h-px bg-slate-100 ml-[68px]"></div>
+
+          <!-- Terms & Privacy -->
+          <div
+            class="flex items-center gap-3.5 p-4
+                 active:bg-slate-50 transition-colors"
+          >
+            <div
+              class="w-11 h-11 rounded-xl bg-slate-100
+                   flex items-center justify-center shrink-0"
+            >
+              <i class="pi pi-file text-slate-600 text-lg"></i>
             </div>
-            <i class="pi pi-chevron-right text-gray-500!"></i>
+
+            <div class="flex-1 min-w-0">
+              <p class="font-semibold text-sm text-slate-800" translate>
+                Terms & Privacy
+              </p>
+              <p class="text-xs text-slate-500 mt-1" translate>
+                Read our terms and privacy policy
+              </p>
+            </div>
+
+            <i class="pi pi-chevron-right text-xs text-slate-400"></i>
           </div>
         </div>
+      </div>
+
+      <!-- Sign Out -->
+      <div class="px-5 mt-7">
         <p-button
           (onClick)="LogOut()"
-          styleClass="w-full border-gray-200! py-3!"
-          severity="secondary"
+          styleClass="w-full !rounded-xl !py-3.5 !bg-white !border !border-red-200 !text-red-600 hover:!bg-red-50"
+          severity="danger"
+          [outlined]="true"
           [label]="'Sign Out' | translate"
           icon="pi pi-sign-out"
-          class="my-4"
+          class="w-full"
         ></p-button>
+
+        <div class="text-center mt-5">
+          <p class="text-xs text-slate-400 font-medium">OfficeHub</p>
+          <p class="text-[11px] text-slate-400 mt-1">Version 1.0.0</p>
+        </div>
       </div>
     </div>
 
+    <!-- Signing Out Overlay -->
     @if (isLoggingOut()) {
       <div
-        class="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm
-         flex items-center justify-center"
+        class="fixed inset-0 z-50 bg-slate-950/50 backdrop-blur-sm
+             flex items-center justify-center px-6"
       >
         <div
-          class="bg-white rounded-3xl px-8 py-7 flex flex-col
-           items-center gap-4 shadow-2xl"
+          class="w-full max-w-xs bg-white rounded-3xl px-8 py-8
+               flex flex-col items-center gap-4 shadow-2xl"
         >
-          <i class="pi pi-spin pi-spinner text-4xl text-blue-600"></i>
+          <div
+            class="w-16 h-16 rounded-2xl bg-blue-50
+                 flex items-center justify-center"
+          >
+            <i class="pi pi-spin pi-spinner text-3xl text-blue-600"></i>
+          </div>
 
-          <div class="font-semibold" translate>Signing Out...</div>
+          <div class="text-center">
+            <p class="font-bold text-slate-900" translate>Signing Out...</p>
 
-          <div class="text-sm text-gray-500" translate>
-            Please wait a moment
+            <p class="text-sm text-slate-500 mt-1" translate>
+              Please wait a moment
+            </p>
           </div>
         </div>
       </div>
     }
 
+    <!-- Language Bottom Sheet -->
     @if (isLanguageDialogOpen()) {
       <div
-        class="fixed inset-0 z-50 bg-black/40 flex items-end"
+        class="fixed inset-0 z-50 bg-slate-950/50 backdrop-blur-sm
+             flex items-end"
         (click)="isLanguageDialogOpen.set(false)"
       >
         <div
-          class="w-full bg-white rounded-t-3xl px-6 pt-5 pb-8"
+          class="w-full bg-white rounded-t-3xl px-5 pt-3 pb-8
+               animate-[slideUp_0.25s_ease-out]"
           (click)="$event.stopPropagation()"
         >
+          <!-- Sheet Handle -->
+          <div class="w-10 h-1 rounded-full bg-slate-300 mx-auto mb-5"></div>
+
           <div class="flex items-center justify-between mb-5">
-            <div class="text-xl font-semibold" translate>Language</div>
+            <div>
+              <h2 class="text-lg font-bold text-slate-900" translate>
+                Choose Language
+              </h2>
+              <p class="text-xs text-slate-500 mt-1" translate>
+                Select your preferred language
+              </p>
+            </div>
 
             <button
               type="button"
-              class="border-none bg-transparent cursor-pointer"
+              class="w-9 h-9 rounded-full bg-slate-100
+                   flex items-center justify-center"
               (click)="isLanguageDialogOpen.set(false)"
+              aria-label="Close language selection"
             >
-              <i class="pi pi-times text-xl"></i>
+              <i class="pi pi-times text-slate-600"></i>
             </button>
           </div>
 
-          <div
+          <!-- English -->
+          <button
+            type="button"
             (click)="changeLanguage('en')"
-            class="cursor-pointer flex items-center justify-between
-               py-4 border-b border-gray-200"
+            class="w-full flex items-center gap-3.5 p-4 rounded-2xl
+                 border mb-3 transition-colors"
+            [ngClass]="
+              selectedLanguage() === 'en'
+                ? 'border-blue-500 bg-blue-50'
+                : 'border-slate-200 bg-white'
+            "
           >
-            <div class="flex items-center gap-3">
-              <div class="text-xl">🇬🇧</div>
+            <div
+              class="w-11 h-11 rounded-xl bg-blue-100
+                   flex items-center justify-center text-2xl"
+            >
+              🇬🇧
+            </div>
 
-              <div class="flex flex-col">
-                <span class="font-medium">English</span>
-              </div>
+            <div class="flex-1 text-left">
+              <p class="font-semibold text-sm text-slate-800">English</p>
+              <p class="text-xs text-slate-500 mt-1">English language</p>
             </div>
 
             @if (selectedLanguage() === 'en') {
-              <i class="pi pi-check text-blue-600"></i>
+              <i class="pi pi-check-circle text-blue-600 text-lg"></i>
             }
-          </div>
+          </button>
 
-          <div
+          <!-- Chinese -->
+          <button
+            type="button"
             (click)="changeLanguage('zh')"
-            class="cursor-pointer flex items-center justify-between
-               py-4 border-b border-gray-200"
+            class="w-full flex items-center gap-3.5 p-4 rounded-2xl
+                 border mb-3 transition-colors"
+            [ngClass]="
+              selectedLanguage() === 'zh'
+                ? 'border-blue-500 bg-blue-50'
+                : 'border-slate-200 bg-white'
+            "
           >
-            <div class="flex items-center gap-3">
-              <div class="text-xl">🇨🇳</div>
+            <div
+              class="w-11 h-11 rounded-xl bg-red-50
+                   flex items-center justify-center text-2xl"
+            >
+              🇨🇳
+            </div>
 
-              <div class="flex flex-col">
-                <span class="font-medium">中文</span>
-                <span class="text-sm text-gray-500">Mandarin</span>
-              </div>
+            <div class="flex-1 text-left">
+              <p class="font-semibold text-sm text-slate-800">中文</p>
+              <p class="text-xs text-slate-500 mt-1">Mandarin</p>
             </div>
 
             @if (selectedLanguage() === 'zh') {
-              <i class="pi pi-check text-blue-600"></i>
+              <i class="pi pi-check-circle text-blue-600 text-lg"></i>
             }
-          </div>
+          </button>
 
-          <div
+          <!-- Bahasa Malaysia -->
+          <button
+            type="button"
             (click)="changeLanguage('ms')"
-            class="cursor-pointer flex items-center justify-between py-4"
+            class="w-full flex items-center gap-3.5 p-4 rounded-2xl
+                 border transition-colors"
+            [ngClass]="
+              selectedLanguage() === 'ms'
+                ? 'border-blue-500 bg-blue-50'
+                : 'border-slate-200 bg-white'
+            "
           >
-            <div class="flex items-center gap-3">
-              <div class="text-xl">🇲🇾</div>
+            <div
+              class="w-11 h-11 rounded-xl bg-emerald-50
+                   flex items-center justify-center text-2xl"
+            >
+              🇲🇾
+            </div>
 
-              <div class="flex flex-col">
-                <span class="font-medium">Bahasa Malaysia</span>
-              </div>
+            <div class="flex-1 text-left">
+              <p class="font-semibold text-sm text-slate-800">
+                Bahasa Malaysia
+              </p>
+              <p class="text-xs text-slate-500 mt-1">Bahasa Melayu</p>
             </div>
 
             @if (selectedLanguage() === 'ms') {
-              <i class="pi pi-check text-blue-600"></i>
+              <i class="pi pi-check-circle text-blue-600 text-lg"></i>
             }
-          </div>
+          </button>
         </div>
       </div>
-    } `,
+    }
+  `,
+
   styleUrl: './mobile-settings.less',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

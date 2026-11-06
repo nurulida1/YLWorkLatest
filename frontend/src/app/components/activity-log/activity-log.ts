@@ -11,10 +11,13 @@ import {
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { Table, TableLazyLoadEvent, TableModule } from 'primeng/table';
+import { PaginatorModule } from 'primeng/paginator';
 import { MessageService } from 'primeng/api';
+
 import { Subject, takeUntil } from 'rxjs';
 
 import { LoadingService } from '../../services/loading.service';
@@ -36,6 +39,7 @@ interface ActivityLogDto {
 
 @Component({
   selector: 'app-activity-log',
+  standalone: true,
   imports: [
     CommonModule,
     FormsModule,
@@ -43,173 +47,175 @@ interface ActivityLogDto {
     TableModule,
     ButtonModule,
     InputTextModule,
+    PaginatorModule,
   ],
   template: `
-    <div class="w-full flex flex-col p-5">
+    <div class="activity-page">
       <!-- Breadcrumb -->
-      <div class="flex flex-row items-center gap-1 text-gray-500 tracking-wide">
-        <div
-          class="cursor-pointer hover:text-gray-600"
-          [routerLink]="'/dashboard'"
-        >
-          Dashboard
-        </div>
-        /
-        <div class="text-gray-700 font-semibold">Activity Log</div>
-      </div>
+      <nav class="breadcrumb">
+        <a routerLink="/dashboard">
+          <i class="pi pi-home"></i>
+          <span>Dashboard</span>
+        </a>
 
-      <!-- Main Container -->
-      <div
-        class="mt-3 border border-gray-200 rounded-md tracking-wide bg-white p-5 flex flex-col"
-      >
-        <!-- Header -->
-        <div
-          class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3"
-        >
-          <div class="flex flex-col">
-            <div class="text-[20px] text-gray-700 font-semibold">
-              Activity Log
-            </div>
+        <i class="pi pi-angle-right separator"></i>
 
-            <div class="text-gray-500">
-              Track and monitor activities performed throughout the system.
-            </div>
+        <span class="current">Activity Log</span>
+      </nav>
+
+      <!-- Page Header -->
+      <section class="page-header">
+        <div class="header-content">
+          <div class="header-icon">
+            <i class="pi pi-history"></i>
           </div>
 
-          <div class="flex flex-row items-center gap-2">
-            <!-- Search -->
-            <div class="min-w-[250px] relative">
-              <input
-                type="text"
-                pInputText
-                [(ngModel)]="search"
-                class="w-full!"
-                placeholder="Search activity"
-                (keyup)="onKeyDown($event)"
-              />
-
-              <i
-                class="pi pi-search absolute! top-3! right-2! text-gray-500!"
-              ></i>
-            </div>
-
-            <p-button
-              label="Refresh"
-              icon="pi pi-refresh"
-              severity="secondary"
-              (onClick)="ResetTable()"
-              styleClass="py-2! whitespace-nowrap!"
-            ></p-button>
+          <div class="header-text">
+            <h1>Activity Log</h1>
+            <p>Track and monitor activities performed throughout the system.</p>
           </div>
         </div>
 
-        <!-- Summary -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-5">
-          <div
-            class="border border-gray-200 rounded-lg p-4 flex items-center gap-3"
-          >
-            <div
-              class="w-11 h-11 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center"
-            >
-              <i class="pi pi-history text-lg"></i>
-            </div>
+        <button
+          pButton
+          type="button"
+          icon="pi pi-refresh"
+          label="Refresh"
+          class="refresh-button"
+          severity="secondary"
+          (click)="ResetTable()"
+        ></button>
+      </section>
 
-            <div>
-              <div class="text-sm text-gray-500">Total Activities</div>
-              <div class="text-xl font-bold text-gray-700">
-                {{ PagingSignal().totalElements }}
-              </div>
-            </div>
+      <!-- Summary Cards -->
+      <section class="summary-grid">
+        <div class="summary-card">
+          <div class="summary-icon total-icon">
+            <i class="pi pi-history"></i>
           </div>
 
-          <div
-            class="border border-gray-200 rounded-lg p-4 flex items-center gap-3"
-          >
-            <div
-              class="w-11 h-11 rounded-full bg-green-100 text-green-700 flex items-center justify-center"
-            >
-              <i class="pi pi-list text-lg"></i>
-            </div>
-
-            <div>
-              <div class="text-sm text-gray-500">Activities Displayed</div>
-              <div class="text-xl font-bold text-gray-700">
-                {{ PagingSignal().data.length }}
-              </div>
-            </div>
+          <div class="summary-content">
+            <span class="summary-label">Total Activities</span>
+            <strong>{{ PagingSignal().totalElements }}</strong>
+            <small>Recorded activities</small>
           </div>
         </div>
 
-        <!-- Table -->
-        <div class="mt-5">
+        <div class="summary-card">
+          <div class="summary-icon displayed-icon">
+            <i class="pi pi-list"></i>
+          </div>
+
+          <div class="summary-content">
+            <span class="summary-label">Activities Displayed</span>
+            <strong>{{ PagingSignal().data.length }}</strong>
+            <small>Activities on this page</small>
+          </div>
+        </div>
+      </section>
+
+      <!-- Activity Section -->
+      <section class="activity-section">
+        <!-- Section Header -->
+        <div class="section-header">
+          <div>
+            <h2>System Activities</h2>
+            <p>View the latest activities recorded in the system.</p>
+          </div>
+
+          <div class="search-container">
+            <i class="pi pi-search search-icon"></i>
+
+            <input
+              pInputText
+              type="text"
+              [(ngModel)]="search"
+              placeholder="Search activities..."
+              (keyup)="onKeyDown($event)"
+            />
+
+            @if (search) {
+              <button
+                type="button"
+                class="clear-search"
+                aria-label="Clear search"
+                (click)="ResetTable()"
+              >
+                <i class="pi pi-times"></i>
+              </button>
+            }
+          </div>
+        </div>
+
+        <!-- Desktop Table -->
+        <div class="desktop-table">
           <p-table
             #fTable
             [value]="PagingSignal().data"
             [paginator]="true"
             [rows]="Query.PageSize"
+            [first]="(Query.Page - 1) * Query.PageSize"
             [totalRecords]="PagingSignal().totalElements"
-            [tableStyle]="{ 'min-width': '60rem' }"
             [rowsPerPageOptions]="[10, 20, 30, 50]"
             [lazy]="true"
-            [showGridlines]="true"
+            [showGridlines]="false"
+            [rowHover]="true"
             (onLazyLoad)="NextPage($event)"
+            styleClass="activity-table"
           >
-            <!-- Header -->
             <ng-template #header>
               <tr>
-                <th class="bg-gray-100! text-center! w-[5%]!">No.</th>
-
-                <th class="bg-gray-100! w-[20%]!">Activity</th>
-
-                <th class="bg-gray-100! w-[30%]!">Description</th>
-
-                <th class="bg-gray-100! text-center! w-[15%]!">User</th>
-
-                <th class="bg-gray-100! text-center! w-[20%]!">Date & Time</th>
+                <th class="number-column">No.</th>
+                <th class="activity-column">Activity</th>
+                <th>Description</th>
+                <th class="user-column">Performed By</th>
+                <th class="date-column">Date & Time</th>
               </tr>
             </ng-template>
 
-            <!-- Body -->
             <ng-template #body let-data let-rowIndex="rowIndex">
               <tr>
-                <!-- Number -->
-                <td class="text-center!">
+                <td class="number-cell">
                   {{ (Query.Page - 1) * Query.PageSize + rowIndex + 1 }}
                 </td>
 
-                <!-- Activity -->
                 <td>
-                  <span class="font-semibold text-gray-700">
-                    {{ data.title }}
+                  <div class="activity-name">
+                    <div
+                      class="activity-badge"
+                      [ngClass]="GetColorClass(data.color)"
+                    >
+                      <i [class]="data.icon || 'pi pi-history'"></i>
+                    </div>
+
+                    <span>{{ data.title || 'Activity' }}</span>
+                  </div>
+                </td>
+
+                <td>
+                  <span class="description-text">
+                    {{ data.description || '-' }}
                   </span>
                 </td>
 
-                <!-- Description -->
                 <td>
-                  <div class="text-gray-600">
-                    {{ data.description }}
+                  <div class="user-info">
+                    <div class="user-avatar">
+                      <i class="pi pi-user"></i>
+                    </div>
+
+                    <span>{{ data.user || 'System' }}</span>
                   </div>
                 </td>
 
-                <!-- User -->
-                <td class="text-center!">
-                  <div class="flex items-center justify-center gap-2">
-                    <i class="pi pi-user text-gray-400"></i>
-
-                    <span class="text-gray-600">
-                      {{ data.user || 'System' }}
-                    </span>
-                  </div>
-                </td>
-
-                <!-- Date -->
-                <td class="text-center!">
-                  <div class="flex flex-col">
-                    <span class="text-sm text-gray-700">
-                      {{ data.date | date: 'dd/MM/yyyy' }}
+                <td>
+                  <div class="date-info">
+                    <span class="date-main">
+                      {{ data.date | date: 'dd MMM yyyy' }}
                     </span>
 
-                    <span class="text-xs text-gray-400">
+                    <span class="date-time">
+                      <i class="pi pi-clock"></i>
                       {{ data.date | date: 'hh:mm a' }}
                     </span>
                   </div>
@@ -217,19 +223,96 @@ interface ActivityLogDto {
               </tr>
             </ng-template>
 
-            <!-- Empty Message -->
             <ng-template #emptymessage>
               <tr>
-                <td colspan="100%" class="border-x!">
-                  <div class="text-center text-gray-500 py-3">
-                    No activity found in records.
+                <td colspan="5">
+                  <div class="empty-state">
+                    <div class="empty-icon">
+                      <i class="pi pi-inbox"></i>
+                    </div>
+
+                    <strong>No activities found</strong>
+                    <span>
+                      There are no activity records matching your search.
+                    </span>
                   </div>
                 </td>
               </tr>
             </ng-template>
           </p-table>
         </div>
-      </div>
+
+        <!-- Mobile Activity Cards -->
+        <div class="mobile-activity-list">
+          @if (PagingSignal().data.length > 0) {
+            @for (data of PagingSignal().data; track $index; let i = $index) {
+              <article class="mobile-activity-card">
+                <div class="mobile-card-top">
+                  <div
+                    class="activity-badge"
+                    [ngClass]="GetColorClass(data.color)"
+                  >
+                    <i [class]="data.icon || 'pi pi-history'"></i>
+                  </div>
+
+                  <div class="mobile-activity-content">
+                    <div class="mobile-activity-title">
+                      {{ data.title || 'Activity' }}
+                    </div>
+
+                    <div class="mobile-activity-description">
+                      {{ data.description || '-' }}
+                    </div>
+                  </div>
+                </div>
+
+                <div class="mobile-card-divider"></div>
+
+                <div class="mobile-card-footer">
+                  <div class="mobile-user">
+                    <i class="pi pi-user"></i>
+                    <span>{{ data.user || 'System' }}</span>
+                  </div>
+
+                  <div class="mobile-date">
+                    <span>
+                      {{ data.date | date: 'dd MMM yyyy' }}
+                    </span>
+                    <span class="mobile-time">
+                      {{ data.date | date: 'hh:mm a' }}
+                    </span>
+                  </div>
+                </div>
+
+                <span class="mobile-record-number">
+                  #{{ (Query.Page - 1) * Query.PageSize + i + 1 }}
+                </span>
+              </article>
+            }
+          } @else {
+            <div class="empty-state mobile-empty">
+              <div class="empty-icon">
+                <i class="pi pi-inbox"></i>
+              </div>
+
+              <strong>No activities found</strong>
+              <span> There are no activity records matching your search. </span>
+            </div>
+          }
+
+          <!-- Mobile Pagination -->
+          @if (PagingSignal().totalElements > 0) {
+            <p-paginator
+              [first]="(Query.Page - 1) * Query.PageSize"
+              [rows]="Query.PageSize"
+              [totalRecords]="PagingSignal().totalElements"
+              [rowsPerPageOptions]="[10, 20, 30]"
+              (onPageChange)="OnMobilePage($event)"
+              styleClass="mobile-paginator"
+            ></p-paginator>
+          }
+        </div>
+      </section>
     </div>
   `,
   styleUrl: './activity-log.less',
@@ -243,7 +326,7 @@ export class ActivityLog implements OnInit, OnDestroy {
   private readonly messageService = inject(MessageService);
   private readonly cdr = inject(ChangeDetectorRef);
 
-  protected ngUnsubscribe: Subject<void> = new Subject<void>();
+  protected ngUnsubscribe = new Subject<void>();
 
   PagingSignal = signal<PagingContent<ActivityLogDto>>({
     data: [],
@@ -252,7 +335,7 @@ export class ActivityLog implements OnInit, OnDestroy {
 
   Query: GridifyQueryExtend = {} as GridifyQueryExtend;
 
-  search: string = '';
+  search = '';
 
   constructor() {
     this.Query.Page = 1;
@@ -304,7 +387,16 @@ export class ActivityLog implements OnInit, OnDestroy {
     }
 
     this.Query.OrderBy = 'CreatedAt desc';
+    this.GetData();
+  }
 
+  OnMobilePage(event: { first?: number | null; rows?: number | null }): void {
+    if (event.rows) {
+      this.Query.PageSize = event.rows;
+      this.Query.Page = Math.floor((event.first ?? 0) / event.rows) + 1;
+    }
+
+    this.Query.OrderBy = 'CreatedAt desc';
     this.GetData();
   }
 
@@ -344,16 +436,16 @@ export class ActivityLog implements OnInit, OnDestroy {
 
   GetColorClass(color: string): string {
     const colors: Record<string, string> = {
-      blue: 'bg-blue-100 text-blue-700',
-      green: 'bg-green-100 text-green-700',
-      red: 'bg-red-100 text-red-700',
-      orange: 'bg-orange-100 text-orange-700',
-      yellow: 'bg-yellow-100 text-yellow-700',
-      purple: 'bg-purple-100 text-purple-700',
-      gray: 'bg-gray-100 text-gray-700',
-      grey: 'bg-gray-100 text-gray-700',
-      pink: 'bg-pink-100 text-pink-700',
-      indigo: 'bg-indigo-100 text-indigo-700',
+      blue: 'activity-blue',
+      green: 'activity-green',
+      red: 'activity-red',
+      orange: 'activity-orange',
+      yellow: 'activity-yellow',
+      purple: 'activity-purple',
+      gray: 'activity-gray',
+      grey: 'activity-gray',
+      pink: 'activity-pink',
+      indigo: 'activity-indigo',
     };
 
     return colors[color?.toLowerCase()] ?? colors['blue'];

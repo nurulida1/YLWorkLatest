@@ -562,3 +562,554 @@
     color: #374151;
   }
 }
+
+/* =========================================
+   MOBILE MEETING PAGE
+========================================= */
+
+.meeting-mobile {
+  min-height: 100vh;
+  background: #f5f7fb;
+  color: #1e293b;
+  padding-bottom: 32px;
+}
+
+/* Header */
+
+.mobile-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 22px;
+  background: #0566d9;
+  color: #ffffff;
+}
+
+.mobile-brand {
+  font-size: 23px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  cursor: pointer;
+}
+
+.mobile-header-subtitle {
+  margin-top: 3px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.75);
+  letter-spacing: 0.5px;
+}
+
+.mobile-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.mobile-icon-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+  font-size: 17px;
+  cursor: pointer;
+}
+
+.mobile-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 37px;
+  height: 37px;
+  border-radius: 50%;
+  background: #ffffff;
+  color: #0566d9;
+  font-size: 16px;
+}
+
+/* Main content */
+
+.mobile-content {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  padding: 22px 16px;
+}
+
+.mobile-page-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.mobile-eyebrow {
+  margin-bottom: 6px;
+  color: #8b95a5;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.3px;
+}
+
+.mobile-page-heading h1 {
+  margin: 0;
+  color: #172033;
+  font-size: 25px;
+  font-weight: 750;
+  letter-spacing: -0.7px;
+}
+
+.mobile-page-heading p {
+  margin: 5px 0 0;
+  color: #8993a3;
+  font-size: 12px;
+}
+
+.mobile-add-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-width: 82px;
+  height: 40px;
+  padding: 0 14px;
+  border: none;
+  border-radius: 9px;
+  background: #0566d9;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(5, 102, 217, 0.18);
+  cursor: pointer;
+}
+
+.mobile-add-button:active {
+  transform: scale(0.97);
+}
+
+/* Calendar card */
+
+.mobile-calendar-card {
+  padding: 17px 12px 12px;
+  background: #ffffff;
+  border: 1px solid #edf0f5;
+  border-radius: 15px;
+  box-shadow: 0 3px 15px rgba(15, 23, 42, 0.035);
+}
+
+.mobile-calendar-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 5px 12px;
+}
+
+.mobile-calendar-heading h2 {
+  margin: 0;
+  color: #253047;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.mobile-calendar-heading p {
+  margin: 4px 0 0;
+  color: #9aa3b2;
+  font-size: 11px;
+}
+
+.mobile-today-button {
+  padding: 7px 12px;
+  border: 1px solid #dbeafe;
+  border-radius: 7px;
+  background: #eff6ff;
+  color: #0566d9;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* PrimeNG inline datepicker */
+
+:host ::ng-deep .mobile-datepicker {
+  display: block;
+  width: 100%;
+}
+
+:host ::ng-deep .mobile-datepicker .p-datepicker {
+  width: 100%;
+  min-width: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+}
+
+:host ::ng-deep .mobile-datepicker .p-datepicker-header {
+  padding: 8px 2px 12px;
+  border: none;
+}
+
+:host ::ng-deep .mobile-datepicker .p-datepicker-title {
+  gap: 5px;
+}
+
+:host ::ng-deep .mobile-datepicker .p-datepicker-title button {
+  color: #26344d;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+:host ::ng-deep .mobile-datepicker .p-datepicker-prev,
+:host ::ng-deep .mobile-datepicker .p-datepicker-next {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  color: #64748b;
+}
+
+:host ::ng-deep .mobile-datepicker table {
+  width: 100%;
+  margin: 0;
+  font-size: 12px;
+}
+
+:host ::ng-deep .mobile-datepicker th {
+  padding: 7px 0;
+  color: #9aa3b2;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+:host ::ng-deep .mobile-datepicker td {
+  padding: 3px 0;
+  text-align: center;
+}
+
+:host ::ng-deep .mobile-datepicker td > span {
+  width: 34px;
+  height: 34px;
+  margin: auto;
+  border-radius: 50%;
+  font-size: 12px;
+}
+
+:host ::ng-deep .mobile-datepicker td > span.p-datepicker-day-selected {
+  background: #0566d9;
+  color: #ffffff;
+}
+
+:host ::ng-deep .mobile-datepicker td > span:not(.p-disabled):hover {
+  background: #eff6ff;
+  color: #0566d9;
+}
+
+/* Agenda */
+
+.mobile-agenda {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.mobile-agenda-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.mobile-agenda-heading h2 {
+  margin: 0;
+  color: #172033;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.mobile-meeting-count {
+  padding: 6px 10px;
+  border-radius: 20px;
+  background: #eaf2ff;
+  color: #0566d9;
+  font-size: 10px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* Empty state */
+
+.mobile-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 32px 20px;
+  border: 1px dashed #dce3ed;
+  border-radius: 13px;
+  background: #ffffff;
+  text-align: center;
+}
+
+.mobile-empty-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  margin-bottom: 12px;
+  border-radius: 50%;
+  background: #eff6ff;
+  color: #6a9ce8;
+  font-size: 21px;
+}
+
+.mobile-empty-state h3 {
+  margin: 0;
+  color: #334155;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.mobile-empty-state p {
+  margin: 6px 0 15px;
+  color: #9aa3b2;
+  font-size: 11px;
+}
+
+.mobile-empty-button {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 14px;
+  border: none;
+  border-radius: 7px;
+  background: #eff6ff;
+  color: #0566d9;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Meeting cards */
+
+.mobile-meeting-list {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+}
+
+.mobile-meeting-card {
+  position: relative;
+  display: flex;
+  gap: 12px;
+  padding: 15px 13px;
+  overflow: hidden;
+  border: 1px solid #edf0f5;
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 3px 12px rgba(15, 23, 42, 0.035);
+}
+
+.mobile-meeting-indicator {
+  flex: 0 0 4px;
+  align-self: stretch;
+  min-height: 40px;
+  border-radius: 5px;
+  background: #4786ff;
+}
+
+.mobile-meeting-indicator.task--warning {
+  background: #fdb44d;
+}
+
+.mobile-meeting-indicator.task--danger {
+  background: #fa607e;
+}
+
+.mobile-meeting-indicator.task--info {
+  background: #4786ff;
+}
+
+.mobile-meeting-indicator.task--primary {
+  background: #0566d9;
+}
+
+.mobile-meeting-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.mobile-meeting-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.mobile-meeting-time {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.mobile-meeting-time i {
+  color: #0566d9;
+  font-size: 11px;
+}
+
+.mobile-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 8px;
+  border-radius: 20px;
+  font-size: 9px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.mobile-status.upcoming {
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.mobile-status.ongoing {
+  background: #ecfdf5;
+  color: #059669;
+}
+
+.mobile-status.ongoing span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #10b981;
+}
+
+.mobile-status.completed {
+  background: #f1f5f9;
+  color: #94a3b8;
+}
+
+.mobile-meeting-content h3 {
+  margin: 10px 0 0;
+  color: #26344d;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.mobile-meeting-description {
+  margin: 6px 0 0;
+  color: #8993a3;
+  font-size: 11px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.mobile-meeting-details {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 11px;
+}
+
+.mobile-meeting-details > div {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  color: #8490a1;
+  font-size: 11px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.mobile-meeting-details i {
+  margin-top: 2px;
+  color: #9aa6b7;
+  font-size: 11px;
+}
+
+.mobile-meeting-details a {
+  color: #0566d9;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.mobile-meeting-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 13px;
+  padding-top: 11px;
+  border-top: 1px solid #f0f2f6;
+}
+
+.mobile-edit-button,
+.mobile-cancel-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 33px;
+  padding: 0 12px;
+  border-radius: 7px;
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.mobile-edit-button {
+  border: 1px solid #dbeafe;
+  background: #eff6ff;
+  color: #0566d9;
+}
+
+.mobile-cancel-button {
+  border: 1px solid #fee2e2;
+  background: #fff5f5;
+  color: #dc2626;
+}
+
+.mobile-meeting-past {
+  background: #fafbfc;
+  opacity: 0.7;
+}
+
+.mobile-meeting-past .mobile-meeting-content h3 {
+  color: #94a3b8;
+}
+
+/* Responsive adjustments */
+
+@media (max-width: 380px) {
+  .mobile-header {
+    padding: 17px 16px;
+  }
+
+  .mobile-content {
+    padding: 18px 12px;
+  }
+
+  .mobile-page-heading h1 {
+    font-size: 22px;
+  }
+
+  .mobile-calendar-card {
+    padding-right: 7px;
+    padding-left: 7px;
+  }
+
+  :host ::ng-deep .mobile-datepicker td > span {
+    width: 30px;
+    height: 30px;
+    font-size: 11px;
+  }
+
+  .mobile-meeting-card {
+    padding: 12px 10px;
+  }
+}

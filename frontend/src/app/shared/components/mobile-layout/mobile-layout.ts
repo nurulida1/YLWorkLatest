@@ -94,7 +94,7 @@ interface WorkMenuItem {
 
         <!-- Settings -->
         <a
-          routerLink="/profile-settings"
+          routerLink="/mobile-settings"
           routerLinkActive="active"
           class="nav-item"
           (click)="closeAllSheets()"
@@ -256,7 +256,7 @@ export class MobileLayout {
       label: 'Apply Leave',
       description: 'Submit a leave application',
       icon: 'pi pi-calendar-plus',
-      route: '/leave',
+      route: '/leave/apply',
       color: '#2563eb',
       background: '#eff6ff',
     },
@@ -288,7 +288,7 @@ export class MobileLayout {
       label: 'Create Meeting',
       description: 'Schedule a new meeting',
       icon: 'pi pi-calendar',
-      route: '/meeting',
+      route: '/meeting/form',
       color: '#0891b2',
       background: '#ecfeff',
     },

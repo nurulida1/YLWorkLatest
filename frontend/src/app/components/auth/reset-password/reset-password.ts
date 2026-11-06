@@ -12,13 +12,13 @@ import {
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
+import { RouterLink, ActivatedRoute } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { PasswordModule } from 'primeng/password';
-import { LoadingService } from '../../services/loading.service';
-import { UserService } from '../../services/userService.service';
-import { ActivatedRoute, RouterLink } from '@angular/router';
-import { ValidateAllFormFields } from '../../shared/helpers/helpers';
 import { Subject, takeUntil } from 'rxjs';
+import { LoadingService } from '../../../services/loading.service';
+import { UserService } from '../../../services/userService.service';
+import { ValidateAllFormFields } from '../../../shared/helpers/helpers';
 
 @Component({
   selector: 'app-reset-password',

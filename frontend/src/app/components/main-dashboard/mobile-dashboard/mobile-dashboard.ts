@@ -20,7 +20,6 @@ import { SelectModule } from 'primeng/select';
 import { InputTextModule } from 'primeng/inputtext';
 import { TextareaModule } from 'primeng/textarea';
 import { ButtonModule } from 'primeng/button';
-import { DepartmentService } from '../../../services/departmentService';
 import { CheckboxModule } from 'primeng/checkbox';
 import { StaffTaskService } from '../../../services/staffTaskService';
 import { RouterLink } from '@angular/router';
@@ -94,7 +93,7 @@ import { RouterLink } from '@angular/router';
 
           <!-- Welcome -->
           <div class="mt-9">
-            <div class="text-white/70 text-sm">Welcome back,</div>
+            <div class="text-white/70">Welcome back,</div>
 
             <h1 class="text-2xl font-bold text-white mt-1">
               {{ currentUser?.displayName }}
@@ -103,7 +102,7 @@ import { RouterLink } from '@angular/router';
             <div class="flex items-center gap-2 mt-2">
               <i class="pi pi-briefcase text-white/70 text-xs"></i>
               <span class="text-white/80 text-sm">
-                {{ currentUser?.jobTitle ?? 'Employee' }}
+                {{ currentUser?.jobTitle || 'Employee' }}
               </span>
             </div>
 
@@ -148,7 +147,7 @@ import { RouterLink } from '@angular/router';
               >
                 <i class="pi pi-list-check text-blue-600 text-2xl!"></i>
               </div>
-              <span class="text-sm font-semibold text-slate-700">Tasks</span>
+              <span class="text-sm font-semibold text-slate-700">My Tasks</span>
             </a>
 
             <a
@@ -172,7 +171,9 @@ import { RouterLink } from '@angular/router';
               >
                 <i class="pi pi-megaphone text-violet-600 text-2xl!"></i>
               </div>
-              <span class="text-sm font-semibold text-slate-700">Notices</span>
+              <span class="text-sm font-semibold text-slate-700"
+                >Annoucements</span
+              >
             </a>
           </div>
         </div>

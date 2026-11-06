@@ -44,10 +44,12 @@ import { DatePickerModule } from 'primeng/datepicker';
 import { PasswordModule } from 'primeng/password';
 import { DepartmentService } from '../../../services/departmentService';
 import { ChartModule } from 'primeng/chart';
-import { Textarea } from 'primeng/textarea';
+import { Textarea, TextareaModule } from 'primeng/textarea';
+import { PaginatorModule } from 'primeng/paginator';
 
 @Component({
   selector: 'app-user-management',
+  standalone: true,
   imports: [
     CommonModule,
     RouterLink,
@@ -66,310 +68,527 @@ import { Textarea } from 'primeng/textarea';
     DatePickerModule,
     PasswordModule,
     ChartModule,
-    Textarea,
+    TextareaModule,
+    PaginatorModule,
   ],
-  template: `<div class="w-full min-h-[92.9vh] flex flex-col p-6 bg-gray-50/50">
-      <div
-        class="flex flex-row items-center gap-2 text-gray-500 tracking-wide font-medium mb-4"
-      >
-        <div
-          [routerLink]="'/dashboard'"
-          class="cursor-pointer hover:text-blue-600 transition-colors"
-        >
-          Dashboard
-        </div>
-        <i class="pi pi-chevron-right text-gray-500! text-[8px]! mt-1!"></i>
-        <div class="text-gray-700 font-semibold">User Management</div>
-      </div>
-
-      <div class="flex flex-row items-center justify-between">
-        <div class="flex flex-col gap-0.5">
-          <h1 class="text-2xl text-gray-800 font-bold m-0 tracking-wide">
-            User Management
-          </h1>
-          <p class="text-gray-500 m-0">
-            Create, edit, and configure systemic permission roles for user
-            accounts.
-          </p>
-        </div>
-        <p-button
-          label="Add User"
-          (onClick)="ActionClick(null, 'add')"
-          icon="pi pi-user-plus"
-          severity="info"
-          styleClass="!bg-blue-700 hover:!bg-blue-600 !border-none !py-2 !px-6 rounded-sm! !text-sm whitespace-nowrap font-medium rounded-lg shadow-sm transition-all"
-        ></p-button>
-      </div>
-
-      <div class="grid grid-cols-12 gap-4 my-3">
-        <div
-          class="col-span-4 p-6 border border-gray-300 bg-white flex flex-row gap-5"
-        >
-          <div
-            class="w-16 h-16 bg-blue-100 rounded-lg flex items-center justify-center"
+  template: `<div class="min-h-screen w-full bg-slate-50/70 p-3 sm:p-5 lg:p-7">
+      <div class="mx-auto flex w-full max-w-[1600px] flex-col gap-5">
+        <!-- Breadcrumb -->
+        <div class="flex items-center gap-2 text-xs font-medium text-slate-400">
+          <a
+            routerLink="/dashboard"
+            class="transition-colors hover:text-blue-600"
           >
-            <i class="pi pi-users text-4xl! text-blue-700!"></i>
-          </div>
-          <div class="flex flex-col">
-            <div class="uppercase text-gray-500 tracking-wide text-sm">
-              Total Users
-            </div>
-            <div class="font-extrabold text-5xl text-gray-700">
-              {{ dashboardCount?.totalUsers }}
-            </div>
-          </div>
+            Dashboard
+          </a>
+          <i class="pi pi-chevron-right text-[9px]!"></i>
+          <span class="font-semibold text-slate-700">User Management</span>
         </div>
+
+        <!-- Page heading -->
         <div
-          class="col-span-4 p-6 border border-gray-300 bg-white flex flex-row gap-5"
+          class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
         >
-          <div
-            class="w-16 h-16 bg-red-100 rounded-lg flex items-center justify-center"
-          >
-            <i class="pi pi-calendar-clock text-4xl! text-red-700!"></i>
-          </div>
-          <div class="flex flex-col">
-            <div class="uppercase text-gray-500 tracking-wide text-sm">
-              Pending Approvals
-            </div>
-            <div class="font-extrabold text-5xl text-gray-700">
-              {{ dashboardCount?.pendingUsers }}
-            </div>
-          </div>
-        </div>
-
-        <div
-          class="col-span-4 p-6 border border-gray-300 bg-white flex flex-row gap-5"
-        >
-          <div
-            class="w-16 h-16 bg-sky-100 rounded-lg flex items-center justify-center"
-          >
-            <i class="pi pi-check-circle text-4xl! text-sky-700!"></i>
-          </div>
-          <div class="flex flex-col">
-            <div class="uppercase text-gray-500 tracking-wide text-sm">
-              Active Staff
-            </div>
-            <div class="font-extrabold text-5xl text-gray-700">
-              {{ dashboardCount?.activeUsers }}
-            </div>
-          </div>
-        </div>
-      </div>
-      <div
-        class="border border-gray-200 tracking-wide bg-white shadow-sm flex flex-col overflow-hidden mt-2"
-      >
-        <div class="px-6 py-4 flex justify-end gap-4 border-b border-gray-100">
-          <span class="relative min-w-full md:min-w-[320px]">
-            <i
-              class="pi pi-search absolute top-1/2 -translate-y-1/2 left-3 text-gray-400 text-sm"
-            ></i>
-            <input
-              type="text"
-              pInputText
-              [(ngModel)]="search"
-              class="w-full pl-9! pr-4! py-2! text-sm border border-gray-300 rounded-none! focus:border-blue-500 text-gray-800 placeholder:text-gray-400 shadow-inner/5"
-              placeholder="Search users by name..."
-              (keyup)="onKeyDown($event)"
-            />
-          </span>
-        </div>
-
-        <div class="p-0 overflow-x-auto">
-          <p-table
-            #fTable
-            [value]="PagingSignal().data"
-            [paginator]="true"
-            [rows]="Query.PageSize"
-            [totalRecords]="PagingSignal().totalElements"
-            [tableStyle]="{ 'min-width': '80rem' }"
-            [rowsPerPageOptions]="[10, 20, 30, 50]"
-            [showGridlines]="true"
-            [lazy]="true"
-            (onLazyLoad)="NextPage($event)"
-            styleClass="p-datatable-sm"
-          >
-            <ng-template #header>
-              <tr class="border border-gray-200">
-                <th
-                  pSortableColumn="FullName"
-                  class="border-b! border-gray-300! bg-gray-200! text-gray-600! font-semibold! text-xs! uppercase tracking-wider py-3 px-5 w-[20%]!"
-                >
-                  <div class="flex flex-row items-center gap-2">
-                    <div>Name</div>
-                    <p-sortIcon field="FullName" class="mt-1" />
-                  </div>
-                </th>
-                <th
-                  class="border-b! border-gray-300! bg-gray-200! text-gray-600! font-semibold! text-xs! uppercase tracking-wider py-3 px-4 w-[15%]"
-                >
-                  System Role
-                </th>
-                <th
-                  class="border-b! border-gray-300! bg-gray-200! text-gray-600! font-semibold! text-xs! uppercase tracking-wider py-3 px-4 w-[15%]"
-                >
-                  Departments
-                </th>
-                <th
-                  class="border-b! border-gray-300! bg-gray-200! text-gray-600! font-semibold! text-xs! uppercase tracking-wider py-3 px-4 text-center! w-[10%]"
-                >
-                  Last Active
-                </th>
-                <th
-                  class="border-b! border-gray-300! bg-gray-200! text-gray-600! font-semibold! text-xs! uppercase tracking-wider py-3 px-4 text-center! w-[10%]"
-                >
-                  Created Date
-                </th>
-                <th
-                  class="border-b! border-gray-300! bg-gray-200! text-gray-600! font-semibold! text-xs! uppercase tracking-wider py-3 px-4 text-center! w-[5%]"
-                >
-                  Status
-                </th>
-                <th
-                  class="border-b! border-gray-300! bg-gray-200! text-gray-600! font-semibold! text-xs! uppercase tracking-wider py-3 px-4 text-center! w-[5%]"
-                >
-                  Is Active
-                </th>
-                <th
-                  class="border-b! border-gray-300! bg-gray-200! text-gray-600! font-semibold! text-xs! uppercase tracking-wider py-3 px-4 text-center! w-[5%]"
-                >
-                  Action
-                </th>
-              </tr>
-            </ng-template>
-
-            <ng-template #body let-data>
-              <tr
-                class="hover:bg-gray-50/40 transition-colors border-b border-gray-100 last:border-b-0 text-sm"
+          <div class="min-w-0">
+            <div class="flex items-center gap-2">
+              <h1 class="m-0 text-2xl font-bold tracking-tight text-slate-900">
+                User Management
+              </h1>
+              <span
+                class="hidden rounded-full bg-blue-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-blue-700 sm:inline-flex"
               >
-                <td class="py-3 px-5">
-                  <div class="flex flex-col gap-0.5">
-                    <span class="font-semibold text-gray-800">{{
-                      data.fullName
-                    }}</span>
-                    <span class="text-xs text-gray-400 font-normal"
-                      >{{ '@' }} {{ data.displayName || 'no-alias' }}</span
-                    >
-                  </div>
-                </td>
+                Administration
+              </span>
+            </div>
+            <p class="mt-1 text-sm text-slate-500">
+              Manage employee accounts, roles and organisational access.
+            </p>
+          </div>
 
-                <td class="py-3 px-4">
+          <p-button
+            label="Add User"
+            icon="pi pi-user-plus"
+            (onClick)="ActionClick(null, 'add')"
+            styleClass="!w-full sm:!w-auto !justify-center !bg-blue-700 hover:!bg-blue-800 !border-blue-700 !rounded-xl !px-5 !py-2.5 !text-sm !font-semibold !shadow-sm"
+          ></p-button>
+        </div>
+
+        <!-- Dashboard statistics -->
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
+          <!-- Total Users -->
+          <div
+            class="flex min-w-0 items-center gap-3 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm sm:gap-4 sm:p-5"
+          >
+            <div
+              class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-700 sm:h-12 sm:w-12"
+            >
+              <i class="pi pi-users text-xl"></i>
+            </div>
+            <div class="min-w-0">
+              <p
+                class="m-0 text-xs font-semibold uppercase tracking-wider text-slate-400"
+              >
+                Total Users
+              </p>
+              <p
+                class="mt-1 text-2xl font-bold tracking-tight text-slate-800 sm:text-3xl"
+              >
+                {{ dashboardCount?.totalUsers ?? 0 }}
+              </p>
+            </div>
+          </div>
+
+          <!-- Pending Approvals -->
+          <div
+            class="flex min-w-0 items-center gap-3 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm sm:gap-4 sm:p-5"
+          >
+            <div
+              class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-600 sm:h-12 sm:w-12"
+            >
+              <i class="pi pi-clock text-xl"></i>
+            </div>
+            <div class="min-w-0">
+              <p
+                class="m-0 text-xs font-semibold uppercase tracking-wider text-slate-400"
+              >
+                Pending Approvals
+              </p>
+              <p
+                class="mt-1 text-2xl font-bold tracking-tight text-slate-800 sm:text-3xl"
+              >
+                {{ dashboardCount?.pendingUsers ?? 0 }}
+              </p>
+            </div>
+          </div>
+
+          <!-- Active Staff -->
+          <div
+            class="flex min-w-0 items-center gap-3 rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm sm:gap-4 sm:p-5"
+          >
+            <div
+              class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 sm:h-12 sm:w-12"
+            >
+              <i class="pi pi-user-check text-xl"></i>
+            </div>
+            <div class="min-w-0">
+              <p
+                class="m-0 text-xs font-semibold uppercase tracking-wider text-slate-400"
+              >
+                Active Staff
+              </p>
+              <p
+                class="mt-1 text-2xl font-bold tracking-tight text-slate-800 sm:text-3xl"
+              >
+                {{ dashboardCount?.activeUsers ?? 0 }}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- User records panel -->
+        <div
+          class="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm"
+        >
+          <!-- Search toolbar -->
+          <div
+            class="flex flex-col gap-3 border-b border-slate-100 p-4 sm:flex-row sm:items-center sm:justify-between sm:px-5"
+          >
+            <div>
+              <h2 class="m-0 text-sm font-bold text-slate-800">
+                Employee Accounts
+              </h2>
+              <p class="mt-1 text-xs text-slate-400">
+                View and manage registered users.
+              </p>
+            </div>
+
+            <div class="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+              <div class="relative w-full sm:min-w-[300px]">
+                <i
+                  class="pi pi-search absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-400"
+                ></i>
+                <input
+                  type="text"
+                  pInputText
+                  [(ngModel)]="search"
+                  (keyup)="onKeyDown($event)"
+                  placeholder="Search by employee name..."
+                  class="w-full !rounded-xl !border-slate-200 !py-2.5 !pl-9 !pr-3 !text-sm placeholder:!text-slate-400 focus:!border-blue-500 focus:!ring-2 focus:!ring-blue-100"
+                />
+              </div>
+
+              <button
+                type="button"
+                (click)="ResetTable()"
+                class="flex items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50"
+              >
+                <i class="pi pi-refresh text-xs"></i>
+                <span>Reset</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- ================= MOBILE USER CARDS ================= -->
+          <div class="divide-y divide-slate-100 md:hidden">
+            <ng-container *ngIf="PagingSignal().data?.length; else mobileEmpty">
+              <div
+                *ngFor="let data of PagingSignal().data"
+                class="p-4 transition-colors active:bg-slate-50"
+              >
+                <!-- Name and action -->
+                <div class="flex items-start justify-between gap-3">
+                  <div class="flex min-w-0 items-center gap-3">
+                    <div
+                      class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-blue-50 text-sm font-bold uppercase text-blue-700"
+                    >
+                      {{ data.fullName?.charAt(0) || '?' }}
+                    </div>
+
+                    <div class="min-w-0">
+                      <p class="m-0 truncate text-sm font-bold text-slate-800">
+                        {{ data.fullName }}
+                      </p>
+                      <p class="mt-0.5 truncate text-xs text-slate-400">
+                        {{ '@' }}{{ data.displayName || 'no-alias' }}
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    (click)="onEllipsisClick($event, data, menu)"
+                    class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-800"
+                  >
+                    <i class="pi pi-ellipsis-v"></i>
+                  </button>
+                </div>
+
+                <!-- Role and status -->
+                <div class="mt-3 flex flex-wrap items-center gap-2">
                   <span
-                    class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap"
+                    class="rounded-full px-2.5 py-1 text-[11px] font-semibold"
                     [ngClass]="{
-                      'bg-purple-100 text-purple-700':
+                      'bg-purple-50 text-purple-700':
                         data.systemRole === 'SuperAdmin',
-                      'bg-blue-100 text-blue-700':
+                      'bg-blue-50 text-blue-700':
                         data.systemRole === 'Management',
-                      'bg-green-100 text-green-700': data.systemRole === 'HOD',
-                      'bg-orange-100 text-orange-700': data.systemRole === 'HR',
-                      'bg-red-100 text-red-700': data.systemRole === 'Support',
-                      'bg-gray-100 text-gray-700': data.systemRole === 'Staff',
+                      'bg-green-50 text-green-700': data.systemRole === 'HOD',
+                      'bg-orange-50 text-orange-700': data.systemRole === 'HR',
+                      'bg-red-50 text-red-700': data.systemRole === 'Support',
+                      'bg-slate-100 text-slate-600':
+                        data.systemRole === 'Staff',
                     }"
                   >
                     {{ getRoleLabel(data.systemRole) }}
                   </span>
-                </td>
 
-                <td class="py-3 px-4">
-                  <div class="flex flex-wrap gap-1 max-w-[240px]">
+                  <span
+                    class="rounded-full px-2.5 py-1 text-[11px] font-semibold"
+                    [ngClass]="{
+                      'bg-amber-50 text-amber-700': data.status === 'Pending',
+                      'bg-emerald-50 text-emerald-700':
+                        data.status === 'Approved',
+                      'bg-red-50 text-red-700': data.status === 'Rejected',
+                    }"
+                  >
+                    {{ data.status }}
+                  </span>
+
+                  <span
+                    class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium"
+                    [ngClass]="
+                      data.isActive
+                        ? 'bg-emerald-50 text-emerald-700'
+                        : 'bg-slate-100 text-slate-500'
+                    "
+                  >
+                    <span
+                      class="h-1.5 w-1.5 rounded-full"
+                      [ngClass]="
+                        data.isActive ? 'bg-emerald-500' : 'bg-slate-400'
+                      "
+                    ></span>
+                    {{ data.isActive ? 'Active' : 'Inactive' }}
+                  </span>
+                </div>
+
+                <!-- Department details -->
+                <div class="mt-3">
+                  <p
+                    class="mb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400"
+                  >
+                    Departments
+                  </p>
+
+                  <div class="flex flex-wrap gap-1.5">
                     <span
                       *ngFor="let dept of data.departments"
-                      class="bg-slate-50 text-slate-700 text-[11px] font-medium px-2 py-0.5 rounded-md border border-slate-200/60 shadow-xs"
+                      class="rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] font-medium text-slate-600"
                     >
                       {{ dept.name }}
                     </span>
+
                     <span
                       *ngIf="!data.departments?.length"
-                      class="text-gray-400 font-normal italic text-xs"
+                      class="text-xs italic text-slate-400"
                     >
-                      No divisions assigned
+                      No departments assigned
                     </span>
                   </div>
-                </td>
+                </div>
 
-                <td class="py-3 px-4 text-center! text-gray-500">
-                  <div
-                    class="flex flex-row items-center gap-2 justify-center text-xs"
-                  >
-                    <span
-                      class="h-2 w-2 rounded-full inline-block"
-                      [ngClass]="
-                        getLastSeen(data.lastLoginAt) === 'Online'
-                          ? 'bg-emerald-500 animate-pulse'
-                          : 'bg-gray-300'
-                      "
-                    ></span>
-                    <span class="font-medium text-gray-600">{{
-                      getLastSeen(data.lastLoginAt)
-                    }}</span>
-                  </div>
-                </td>
-
-                <td class="py-3 px-4 text-center! text-gray-600 text-xs">
-                  {{ data.createdAt | date: 'dd MMM yyyy' }}
-                </td>
-
-                <td class="py-3 px-4 text-center! text-gray-600 text-xs">
-                  <div class="flex items-center justify-center">
-                    <div
-                      class="px-5 py-1 rounded-full font-semibold"
-                      [ngClass]="{
-                        'bg-amber-100 text-amber-700':
-                          data.status === 'Pending',
-                        'bg-green-100 text-green-700':
-                          data.status === 'Approved',
-                        'bg-red-100 text-red-700': data.status === 'Rejected',
-                      }"
+                <!-- Last active and created date -->
+                <div
+                  class="mt-3 grid grid-cols-2 gap-3 rounded-xl bg-slate-50 p-3"
+                >
+                  <div class="min-w-0">
+                    <p
+                      class="m-0 text-[10px] font-semibold uppercase tracking-wider text-slate-400"
                     >
-                      {{ data.status }}
-                    </div>
-                  </div>
-                </td>
-
-                <td class="py-3 px-4 text-center!">
-                  <div class="flex items-center justify-center">
-                    <p-toggleswitch
-                      [(ngModel)]="data.isActive"
-                      (ngModelChange)="isActiveOnChange($event, data.id)"
-                      styleClass="scale-90"
-                    />
-                  </div>
-                </td>
-
-                <td class="py-3 px-4 text-center!">
-                  <div class="flex items-center justify-center">
-                    <button
-                      (click)="onEllipsisClick($event, data, menu)"
-                      class="h-8 w-8 rounded-lg flex items-center justify-center text-gray-500 hover:text-gray-800 hover:bg-gray-100 transition-all cursor-pointer border-0 bg-transparent"
+                      Last Active
+                    </p>
+                    <p
+                      class="mt-1 truncate text-xs font-semibold text-slate-700"
                     >
-                      <i class="pi pi-ellipsis-h text-sm"></i>
-                    </button>
+                      {{ getLastSeen(data.lastLoginAt) }}
+                    </p>
                   </div>
-                </td>
-              </tr>
+
+                  <div class="min-w-0">
+                    <p
+                      class="m-0 text-[10px] font-semibold uppercase tracking-wider text-slate-400"
+                    >
+                      Created Date
+                    </p>
+                    <p class="mt-1 text-xs font-semibold text-slate-700">
+                      {{ data.createdAt | date: 'dd MMM yyyy' }}
+                    </p>
+                  </div>
+                </div>
+
+                <!-- Active toggle -->
+                <div
+                  class="mt-3 flex items-center justify-between border-t border-slate-100 pt-3"
+                >
+                  <div>
+                    <p class="m-0 text-xs font-semibold text-slate-700">
+                      Account Status
+                    </p>
+                    <p class="mt-0.5 text-[11px] text-slate-400">
+                      Enable or disable this account
+                    </p>
+                  </div>
+
+                  <p-toggleswitch
+                    [(ngModel)]="data.isActive"
+                    (ngModelChange)="isActiveOnChange($event, data.id)"
+                  />
+                </div>
+              </div>
+            </ng-container>
+
+            <ng-template #mobileEmpty>
+              <div class="flex flex-col items-center px-4 py-12 text-center">
+                <div
+                  class="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-400"
+                >
+                  <i class="pi pi-users text-2xl"></i>
+                </div>
+                <p class="mt-3 text-sm font-semibold text-slate-700">
+                  No users found
+                </p>
+                <p class="mt-1 text-xs text-slate-400">
+                  Try changing your search or reset the filters.
+                </p>
+              </div>
             </ng-template>
+          </div>
 
-            <ng-template #emptymessage>
-              <tr>
-                <td colspan="100%" class="py-8 bg-gray-50/20">
-                  <div
-                    class="flex flex-col items-center justify-center gap-2 py-4"
-                  >
-                    <i class="pi pi-users text-gray-300 text-3xl"></i>
-                    <span
-                      class="text-sm text-gray-400 font-medium tracking-wide"
+          <!-- Mobile paginator -->
+          <div class="border-t border-slate-100 p-3 md:hidden">
+            <p-paginator
+              [first]="((Query.Page || 1) - 1) * (Query.PageSize || 10)"
+              [rows]="Query.PageSize || 10"
+              [totalRecords]="PagingSignal().totalElements || 0"
+              [rowsPerPageOptions]="[10, 20, 30]"
+              (onPageChange)="NextPage($event)"
+            ></p-paginator>
+          </div>
+
+          <!-- ================= DESKTOP TABLE ================= -->
+          <div class="hidden md:block">
+            <div class="overflow-x-auto">
+              <p-table
+                #fTable
+                [value]="PagingSignal().data"
+                [paginator]="true"
+                [rows]="Query.PageSize"
+                [totalRecords]="PagingSignal().totalElements"
+                [rowsPerPageOptions]="[10, 20, 30, 50]"
+                [lazy]="true"
+                [showGridlines]="false"
+                (onLazyLoad)="NextPage($event)"
+                styleClass="p-datatable-sm user-management-table"
+              >
+                <ng-template #header>
+                  <tr>
+                    <th
+                      pSortableColumn="FullName"
+                      class="user-table-header min-w-[220px]"
                     >
-                      No user records found matching target scope.
-                    </span>
-                  </div>
-                </td>
-              </tr>
-            </ng-template>
-          </p-table>
+                      <div class="flex items-center gap-2">
+                        Name
+                        <p-sortIcon field="FullName" />
+                      </div>
+                    </th>
+                    <th class="user-table-header min-w-[180px]">System Role</th>
+                    <th class="user-table-header min-w-[200px]">Departments</th>
+                    <th class="user-table-header text-center">Last Active</th>
+                    <th class="user-table-header text-center">Created Date</th>
+                    <th class="user-table-header text-center">Status</th>
+                    <th class="user-table-header text-center">Is Active</th>
+                    <th class="user-table-header text-center">Action</th>
+                  </tr>
+                </ng-template>
+
+                <ng-template #body let-data>
+                  <tr class="transition-colors hover:bg-blue-50/30">
+                    <td class="px-5 py-4">
+                      <div class="flex items-center gap-3">
+                        <div
+                          class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-50 text-xs font-bold uppercase text-blue-700"
+                        >
+                          {{ data.fullName?.charAt(0) || '?' }}
+                        </div>
+                        <div class="min-w-0">
+                          <p
+                            class="m-0 truncate text-sm font-semibold text-slate-800"
+                          >
+                            {{ data.fullName }}
+                          </p>
+                          <p class="mt-0.5 truncate text-xs text-slate-400">
+                            {{ '@' }}{{ data.displayName || 'no-alias' }}
+                          </p>
+                        </div>
+                      </div>
+                    </td>
+
+                    <td class="px-4 py-4">
+                      <span
+                        class="inline-flex rounded-full px-3 py-1 text-xs font-semibold"
+                        [ngClass]="{
+                          'bg-purple-50 text-purple-700':
+                            data.systemRole === 'SuperAdmin',
+                          'bg-blue-50 text-blue-700':
+                            data.systemRole === 'Management',
+                          'bg-green-50 text-green-700':
+                            data.systemRole === 'HOD',
+                          'bg-orange-50 text-orange-700':
+                            data.systemRole === 'HR',
+                          'bg-red-50 text-red-700':
+                            data.systemRole === 'Support',
+                          'bg-slate-100 text-slate-600':
+                            data.systemRole === 'Staff',
+                        }"
+                      >
+                        {{ getRoleLabel(data.systemRole) }}
+                      </span>
+                    </td>
+
+                    <td class="px-4 py-4">
+                      <div class="flex max-w-[240px] flex-wrap gap-1.5">
+                        <span
+                          *ngFor="let dept of data.departments"
+                          class="rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] font-medium text-slate-600"
+                        >
+                          {{ dept.name }}
+                        </span>
+                        <span
+                          *ngIf="!data.departments?.length"
+                          class="text-xs italic text-slate-400"
+                        >
+                          No departments
+                        </span>
+                      </div>
+                    </td>
+
+                    <td class="px-4 py-4 text-center">
+                      <div
+                        class="flex items-center justify-center gap-2 text-xs"
+                      >
+                        <span
+                          class="h-2 w-2 rounded-full"
+                          [ngClass]="
+                            getLastSeen(data.lastLoginAt) === 'Online'
+                              ? 'animate-pulse bg-emerald-500'
+                              : 'bg-slate-300'
+                          "
+                        ></span>
+                        <span class="font-medium text-slate-600">
+                          {{ getLastSeen(data.lastLoginAt) }}
+                        </span>
+                      </div>
+                    </td>
+
+                    <td class="px-4 py-4 text-center text-xs text-slate-600">
+                      {{ data.createdAt | date: 'dd MMM yyyy' }}
+                    </td>
+
+                    <td class="px-4 py-4 text-center">
+                      <span
+                        class="inline-flex rounded-full px-3 py-1 text-xs font-semibold"
+                        [ngClass]="{
+                          'bg-amber-50 text-amber-700':
+                            data.status === 'Pending',
+                          'bg-emerald-50 text-emerald-700':
+                            data.status === 'Approved',
+                          'bg-red-50 text-red-700': data.status === 'Rejected',
+                        }"
+                      >
+                        {{ data.status }}
+                      </span>
+                    </td>
+
+                    <td class="px-4 py-4 text-center">
+                      <div class="flex justify-center">
+                        <p-toggleswitch
+                          [(ngModel)]="data.isActive"
+                          (ngModelChange)="isActiveOnChange($event, data.id)"
+                        />
+                      </div>
+                    </td>
+
+                    <td class="px-4 py-4 text-center">
+                      <button
+                        type="button"
+                        (click)="onEllipsisClick($event, data, menu)"
+                        class="inline-flex h-9 w-9 items-center justify-center rounded-xl text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-800"
+                      >
+                        <i class="pi pi-ellipsis-v"></i>
+                      </button>
+                    </td>
+                  </tr>
+                </ng-template>
+
+                <ng-template #emptymessage>
+                  <tr>
+                    <td colspan="8" class="px-4 py-12 text-center">
+                      <i class="pi pi-users text-3xl text-slate-300"></i>
+                      <p class="mt-3 text-sm font-semibold text-slate-600">
+                        No user records found
+                      </p>
+                      <p class="mt-1 text-xs text-slate-400">
+                        Try changing your search criteria.
+                      </p>
+                    </td>
+                  </tr>
+                </ng-template>
+              </p-table>
+            </div>
+          </div>
         </div>
       </div>
     </div>
-
     <p-menu
       #menu
       [model]="menuItems"
@@ -386,23 +605,7 @@ import { Textarea } from 'primeng/textarea';
       [dismissableMask]="true"
       closable="true"
       (onHide)="visible = false"
-      styleClass="
-    yl-user-dialog
-    !border-0
-    !p-0
-    !shadow-2xl
-    !bg-white
-    w-full!
-    sm:w-[95%]!
-    md:w-[90%]!
-    lg:w-[900px]!
-    xl:w-[1050px]!
-    2xl:w-[1150px]!
-    max-h-[94dvh]!
-    sm:max-h-[90dvh]!
-    !rounded-t-3xl
-    lg:!rounded-3xl
-    !overflow-hidden
+      styleClass="yl-user-dialog !w-full sm:!w-[95%] md:!w-[90%] lg:!w-[900px] xl:!w-[1050px] !max-h-[94dvh] !border-0 !bg-white !p-0 !shadow-2xl !overflow-hidden
   "
     >
       <ng-template #header>
@@ -478,13 +681,7 @@ import { Textarea } from 'primeng/textarea';
       </ng-template>
 
       <div
-        class="
-      min-h-0
-      overflow-y-auto
-      px-5
-      sm:px-6
-      py-5
-    "
+        class="min-h-0 max-h-[calc(94dvh-150px)] overflow-y-auto px-4 py-5 sm:px-6 sm:py-6"
         [formGroup]="FG"
       >
         <div class="flex flex-col gap-8">
@@ -1240,70 +1437,27 @@ import { Textarea } from 'primeng/textarea';
 
       <ng-template #footer>
         <div
-          class="w-full
-        flex
-        flex-col-reverse
-        sm:flex-row
-        justify-between
-        items-stretch
-        sm:items-center
-        gap-3
-        px-5
-        sm:px-6
-        py-4
-        border-t border-gray-200
-        bg-white
-      "
+          class="flex w-full flex-col-reverse gap-2 border-t border-slate-100 bg-white px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6"
         >
-          <div
-            class="
-          hidden
-          sm:flex
-          items-center
-          gap-2
-          text-xs
-          text-gray-400
-        "
-          >
-            <i class="pi pi-info-circle"></i>
+          <p class="hidden text-xs text-slate-400 sm:block">
+            <i class="pi pi-info-circle mr-1"></i>
+            Changes will take effect immediately.
+          </p>
 
-            <span> Changes will take effect immediately. </span>
-          </div>
-
-          <!-- Buttons -->
-          <div class="flex gap-2">
+          <div class="flex w-full gap-2 sm:w-auto">
             <p-button
               (onClick)="visible = false"
               label="Cancel"
               severity="secondary"
-              styleClass="
-            !bg-white
-            !border-gray-200
-            !text-gray-600
-            hover:!bg-gray-50
-            !py-2.5
-            !px-5
-            !rounded-xl
-            font-medium
-            text-sm
-          "
+              styleClass="!w-full sm:!w-auto !justify-center !rounded-xl !border-slate-200 !bg-white !px-5 !py-2.5 !text-sm !font-medium !text-slate-600"
             ></p-button>
 
             <p-button
               (onClick)="SaveUser()"
               [label]="isUpdate ? 'Save Changes' : 'Create User'"
+              icon="pi pi-save"
               iconPos="right"
-              styleClass="
-            !bg-[#2148BC]
-            hover:!bg-[#193A9E]
-            !border-[#2148BC]
-            !py-2.5
-            !px-5
-            !rounded-xl
-            font-semibold
-            text-sm
-            shadow-sm
-          "
+              styleClass="!w-full sm:!w-auto !justify-center !rounded-xl !border-blue-700 !bg-blue-700 !px-5 !py-2.5 !text-sm !font-semibold hover:!bg-blue-800"
             ></p-button>
           </div>
         </div>
@@ -1314,7 +1468,7 @@ import { Textarea } from 'primeng/textarea';
       [(visible)]="approvalVisible"
       header="Approve User"
       [modal]="true"
-      styleClass="w-[400px]"
+      styleClass="yl-approval-dialog"
     >
       <div [formGroup]="approvalForm" class="flex flex-col gap-2">
         <label>System Role <span class="text-red-500">*</span></label>
@@ -1362,7 +1516,7 @@ import { Textarea } from 'primeng/textarea';
       [(visible)]="rejectVisible"
       header="Reject User"
       [modal]="true"
-      styleClass="w-[400px]"
+      styleClass="yl-reject-dialog"
     >
       <div [formGroup]="rejectForm">
         <label> Reason * </label>
@@ -1386,7 +1540,7 @@ import { Textarea } from 'primeng/textarea';
 
         <p-button label="Reject" severity="danger" (click)="RejectUser()" />
       </ng-template>
-    </p-dialog> `,
+    </p-dialog>`,
   styleUrl: './user-management.less',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

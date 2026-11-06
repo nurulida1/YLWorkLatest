@@ -1,0 +1,308 @@
+:host {
+  display: block;
+}
+
+.announcement-form-page {
+  min-height: 100vh;
+  padding: 24px;
+  background: #f8fafc;
+  color: #1e293b;
+}
+
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 24px;
+  color: #64748b;
+  font-size: 13px;
+
+  a {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    color: #64748b;
+    text-decoration: none;
+
+    &:hover {
+      color: #2563eb;
+    }
+  }
+
+  .pi-angle-right {
+    font-size: 10px;
+    color: #94a3b8;
+  }
+
+  span {
+    color: #2563eb;
+    font-weight: 600;
+  }
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  max-width: 900px;
+  margin: 0 auto 24px;
+
+  > button {
+    flex-shrink: 0;
+  }
+}
+
+.header-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+  border-radius: 14px;
+  background: #eff6ff;
+  color: #2563eb;
+  font-size: 21px;
+}
+
+.header-text {
+  h1 {
+    margin: 0 0 5px;
+    font-size: 24px;
+    font-weight: 700;
+    color: #0f172a;
+  }
+
+  p {
+    margin: 0;
+    color: #64748b;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+}
+
+.form-card {
+  max-width: 900px;
+  margin: 0 auto;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 2px 8px rgb(15 23 42 / 4%);
+}
+
+.form-card-header {
+  padding: 22px 26px;
+  border-bottom: 1px solid #e2e8f0;
+
+  h2 {
+    margin: 0 0 5px;
+    font-size: 16px;
+    font-weight: 700;
+    color: #1e293b;
+  }
+
+  p {
+    margin: 0;
+    color: #64748b;
+    font-size: 12px;
+  }
+}
+
+.form-content {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  padding: 26px;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  > label {
+    color: #334155;
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  input,
+  textarea {
+    width: 100%;
+  }
+
+  .required {
+    color: #dc2626;
+  }
+}
+
+.field-hint {
+  color: #94a3b8;
+  font-size: 11px;
+}
+
+.date-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.pin-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #f8fafc;
+
+  p-checkbox {
+    margin-top: 2px;
+  }
+
+  label {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    cursor: pointer;
+
+    strong {
+      color: #334155;
+      font-size: 13px;
+    }
+
+    span {
+      color: #64748b;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+  }
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 18px 26px;
+  border-top: 1px solid #e2e8f0;
+  background: #fafafa;
+}
+
+:host ::ng-deep {
+  .p-inputtext,
+  .p-textarea {
+    border-radius: 8px;
+    font-size: 13px;
+  }
+
+  .p-datepicker {
+    width: 100%;
+
+    input {
+      width: 100%;
+    }
+  }
+
+  .p-datepicker-input {
+    width: 100%;
+  }
+}
+
+@media (max-width: 767px) {
+  .announcement-form-page {
+    min-height: 100dvh;
+    padding: 16px;
+  }
+
+  .breadcrumb {
+    gap: 7px;
+    margin-bottom: 18px;
+    font-size: 11px;
+  }
+
+  .page-header {
+    gap: 8px;
+    margin-bottom: 18px;
+
+    > button {
+      width: 34px;
+      height: 34px;
+    }
+  }
+
+  .header-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 11px;
+    font-size: 18px;
+  }
+
+  .header-text {
+    h1 {
+      font-size: 19px;
+    }
+
+    p {
+      font-size: 11px;
+    }
+  }
+
+  .form-card {
+    border-radius: 12px;
+  }
+
+  .form-card-header {
+    padding: 18px;
+
+    h2 {
+      font-size: 14px;
+    }
+  }
+
+  .form-content {
+    gap: 20px;
+    padding: 18px;
+  }
+
+  .date-fields {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .form-actions {
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+    display: grid;
+    grid-template-columns: 1fr 1.5fr;
+    padding: 14px 18px;
+    background: #fff;
+    box-shadow: 0 -4px 12px rgb(15 23 42 / 5%);
+
+    button {
+      justify-content: center;
+      min-height: 42px;
+      font-size: 12px;
+    }
+  }
+}
+
+@media (max-width: 380px) {
+  .announcement-form-page {
+    padding: 12px;
+  }
+
+  .header-text h1 {
+    font-size: 17px;
+  }
+
+  .form-content {
+    padding: 14px;
+  }
+
+  .form-actions {
+    padding: 12px 14px;
+  }
+}

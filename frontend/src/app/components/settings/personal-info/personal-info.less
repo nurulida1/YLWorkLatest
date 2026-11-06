@@ -6,16 +6,23 @@
 }
 
 .personal-info-page {
+  box-sizing: border-box;
   width: 100%;
   min-height: 100%;
-  padding: 20px;
+  padding: 28px;
   color: #1e293b;
 }
 
 .personal-info-container {
   width: 100%;
-  max-width: 1440px;
+  max-width: 1500px;
   margin: 0 auto;
+}
+
+.personal-info-page *,
+.personal-info-page *::before,
+.personal-info-page *::after {
+  box-sizing: border-box;
 }
 
 /* ============================================
@@ -26,20 +33,21 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 15px;
+  margin-bottom: 22px;
 
   h1 {
     margin: 0;
     color: #0f172a;
-    font-size: 23px;
+    font-size: 26px;
     font-weight: 700;
     letter-spacing: -0.5px;
   }
 
   p {
-    margin: 2px 0 0;
+    margin: 5px 0 0;
     color: #64748b;
-    font-size: 13px;
+    font-size: 14px;
+    line-height: 1.5;
   }
 }
 
@@ -50,9 +58,9 @@
 .employee-summary {
   display: flex;
   align-items: center;
-  gap: 20px;
-  padding: 15px;
-  margin-bottom: 10px;
+  gap: 22px;
+  padding: 22px;
+  margin-bottom: 20px;
   background: #ffffff;
   border: 1px solid #e2e8f0;
   border-radius: 14px;
@@ -64,12 +72,12 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  width: 64px;
-  height: 64px;
+  width: 68px;
+  height: 68px;
   border-radius: 14px;
   background: #dbeafe;
   color: #1d4ed8;
-  font-size: 25px;
+  font-size: 27px;
   font-weight: 700;
   text-transform: uppercase;
 }
@@ -81,14 +89,14 @@
   h2 {
     margin: 0;
     color: #0f172a;
-    font-size: 18px;
+    font-size: 20px;
     font-weight: 700;
   }
 
   > p {
-    margin: 4px 0 4px;
+    margin: 4px 0 8px;
     color: #64748b;
-    font-size: 13px;
+    font-size: 14px;
   }
 }
 
@@ -156,7 +164,7 @@
   justify-content: center;
   gap: 9px;
   flex: 1 0 auto;
-  min-height: 44px;
+  min-height: 48px;
   padding: 11px 20px;
   border: none;
   border-radius: 8px;
@@ -209,7 +217,7 @@
 .information-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 20px;
+  gap: 22px;
   margin-bottom: 20px;
 
   .info-card {
@@ -223,7 +231,7 @@
 
 .info-card {
   min-width: 0;
-  padding: 22px;
+  padding: 24px;
   margin-bottom: 20px;
   background: #ffffff;
   border: 1px solid #e2e8f0;
@@ -242,14 +250,14 @@
   h3 {
     margin: 0;
     color: #1e293b;
-    font-size: 15px;
+    font-size: 16px;
     font-weight: 700;
   }
 
   p {
     margin: 5px 0 0;
     color: #94a3b8;
-    font-size: 12px;
+    font-size: 13px;
     line-height: 1.5;
   }
 }
@@ -315,7 +323,7 @@
 
   label {
     color: #94a3b8;
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 500;
   }
 
@@ -378,7 +386,7 @@
 .leave-balance-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 16px;
+  gap: 18px;
 }
 
 .leave-balance-item {
@@ -659,6 +667,7 @@
   overflow-x: auto;
   scrollbar-width: thin;
   scrollbar-color: #cbd5e1 transparent;
+  -webkit-overflow-scrolling: touch;
 }
 
 .employee-history-table {
@@ -857,25 +866,87 @@
 }
 
 /* ============================================
-   RESPONSIVE - TABLET
+   TABLET - 641px TO 1024px
 ============================================ */
 
-@media (max-width: 1024px) {
+@media (min-width: 641px) and (max-width: 1024px) {
   .personal-info-page {
     padding: 22px;
   }
 
+  .page-heading {
+    h1 {
+      font-size: 23px;
+    }
+
+    p {
+      font-size: 13px;
+    }
+  }
+
+  .employee-summary {
+    gap: 15px;
+    padding: 18px;
+  }
+
+  .employee-avatar {
+    width: 56px;
+    height: 56px;
+    font-size: 23px;
+  }
+
+  .employee-summary-info h2 {
+    font-size: 17px;
+  }
+
+  .employee-summary-meta {
+    gap: 10px;
+
+    span {
+      font-size: 12px;
+    }
+  }
+
+  .personal-info-tabs {
+    gap: 5px;
+    margin-bottom: 20px;
+  }
+
+  .personal-info-tab {
+    padding: 10px 14px;
+    font-size: 12px;
+  }
+
   .information-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 15px;
+  }
+
+  .info-card {
+    padding: 18px;
   }
 
   .leave-balance-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 13px;
+  }
+
+  .claims-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .claims-summary-item {
+    padding: 15px;
+  }
+
+  .medical-balance-details {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
 /* ============================================
-   RESPONSIVE - MOBILE
+   MOBILE - 640px AND BELOW
 ============================================ */
 
 @media (max-width: 640px) {
@@ -883,189 +954,217 @@
     padding: 14px;
   }
 
+  .personal-info-container {
+    max-width: 100%;
+  }
+
+  /* Page heading */
   .page-heading {
-    margin-bottom: 18px;
+    display: block;
+    margin-bottom: 16px;
 
     h1 {
-      font-size: 22px;
+      font-size: 21px;
+      line-height: 1.3;
     }
 
     p {
+      margin-top: 5px;
       font-size: 12px;
-      line-height: 1.5;
+      line-height: 1.6;
     }
   }
 
-  /* Employee Summary */
+  /* Employee profile */
   .employee-summary {
-    align-items: flex-start;
-    flex-wrap: wrap;
-    gap: 13px;
-    padding: 17px;
+    display: grid;
+    grid-template-columns: 48px minmax(0, 1fr);
+    align-items: center;
+    gap: 12px;
+    padding: 15px;
+    margin-bottom: 15px;
+    border-radius: 12px;
   }
 
   .employee-avatar {
-    width: 50px;
-    height: 50px;
-    font-size: 21px;
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    font-size: 20px;
   }
 
   .employee-summary-info {
-    flex: 1 1 calc(100% - 65px);
+    min-width: 0;
 
     h2 {
-      font-size: 17px;
+      font-size: 15px;
+      line-height: 1.4;
+      overflow-wrap: anywhere;
     }
 
     > p {
-      font-size: 12px;
+      margin: 3px 0 6px;
+      font-size: 11px;
     }
   }
 
   .employee-summary-meta {
+    display: flex;
     flex-direction: column;
-    gap: 7px;
+    gap: 5px;
 
     span {
+      font-size: 11px;
+      overflow-wrap: anywhere;
+    }
+
+    i {
       font-size: 11px;
     }
   }
 
   .employee-status {
-    margin-left: 63px;
+    grid-column: 2;
+    justify-self: start;
+    margin: 0;
+    padding: 5px 10px;
+    font-size: 10px;
   }
 
   /* Tabs */
   .personal-info-tabs {
-    gap: 4px;
+    display: flex;
+    width: 100%;
+    gap: 5px;
     padding: 5px;
-    margin-bottom: 18px;
+    margin-bottom: 16px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    border-radius: 10px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
   }
 
   .personal-info-tab {
     flex: 0 0 auto;
+    min-height: 40px;
     gap: 7px;
-    min-height: 42px;
-    padding: 10px 13px;
-    font-size: 12px;
+    padding: 9px 13px;
+    border-radius: 7px;
+    font-size: 11px;
 
     i {
       font-size: 13px;
     }
   }
 
-  /* Cards */
+  /* Information cards */
   .information-grid {
-    grid-template-columns: 1fr;
-    gap: 14px;
-    margin-bottom: 14px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+    margin-bottom: 12px;
   }
 
   .info-card {
-    padding: 17px;
-    margin-bottom: 14px;
+    width: 100%;
+    min-width: 0;
+    padding: 16px;
+    margin-bottom: 13px;
+    border-radius: 11px;
   }
 
   .info-card-header {
-    gap: 11px;
-    padding-bottom: 14px;
-    margin-bottom: 15px;
+    gap: 10px;
+    padding-bottom: 13px;
+    margin-bottom: 14px;
 
     h3 {
-      font-size: 14px;
+      font-size: 13px;
+      line-height: 1.4;
     }
 
     p {
       font-size: 11px;
+      line-height: 1.5;
     }
   }
 
   .info-icon {
-    width: 38px;
-    height: 38px;
+    width: 36px;
+    height: 36px;
+    border-radius: 9px;
 
     i {
-      font-size: 16px;
+      font-size: 15px;
     }
   }
 
-  /* Leave */
-  .leave-balance-grid {
-    grid-template-columns: 1fr;
-    gap: 12px;
+  .info-card-body {
+    gap: 15px;
   }
 
-  .leave-balance-item {
-    padding: 16px;
-  }
+  .info-field {
+    gap: 5px;
 
-  .leave-remaining strong {
-    font-size: 27px;
-  }
+    label {
+      font-size: 11px;
+    }
 
-  /* Claims */
-  .claims-summary-grid {
-    grid-template-columns: 1fr;
-    gap: 12px;
-  }
-
-  .claims-summary-item {
-    padding: 16px;
-
-    strong {
-      font-size: 20px;
+    span {
+      font-size: 13px;
+      line-height: 1.5;
     }
   }
 
-  .medical-balance-main {
-    padding: 18px;
-
-    strong {
-      font-size: 27px;
-    }
+  /* Department */
+  .department-content {
+    gap: 8px;
   }
 
-  .medical-balance-details {
-    grid-template-columns: 1fr;
-    gap: 9px;
-
-    div {
-      padding: 12px;
-    }
-  }
-
-  /* Security */
-  .security-content {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-
-  .security-content button {
-    width: 100%;
-  }
-
-  /* Notice */
-  .profile-notice {
-    padding: 14px;
-  }
-}
-
-/* ============================================
-   RESPONSIVE - SMALL MOBILE
-============================================ */
-
-@media (max-width: 380px) {
-  .personal-info-page {
-    padding: 10px;
-  }
-
-  .personal-info-tab {
-    padding: 9px 11px;
+  .department-tag {
+    padding: 8px 10px;
     font-size: 11px;
   }
 
+  /* Leave balances */
+  .leave-balance-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 11px;
+  }
+
+  .leave-balance-item {
+    padding: 15px;
+    border-radius: 10px;
+  }
+
+  .leave-balance-top {
+    margin-bottom: 14px;
+  }
+
+  .leave-type-name {
+    font-size: 13px;
+  }
+
+  .leave-remaining {
+    margin-bottom: 14px;
+
+    strong {
+      font-size: 26px;
+    }
+
+    span {
+      font-size: 11px;
+    }
+  }
+
   .leave-balance-details {
-    gap: 5px;
+    gap: 7px;
+    padding: 12px 0;
 
     span {
       font-size: 10px;
@@ -1076,13 +1175,312 @@
     }
   }
 
-  .claims-summary-item {
+  .leave-balance-footer {
+    padding-top: 10px;
+
+    span {
+      font-size: 10px;
+    }
+  }
+
+  /* Claims */
+  .claims-summary-grid {
+    grid-template-columns: minmax(0, 1fr);
     gap: 10px;
-    padding: 13px;
+  }
+
+  .claims-summary-item {
+    gap: 12px;
+    padding: 14px;
+    border-radius: 10px;
+
+    span {
+      font-size: 11px;
+    }
+
+    strong {
+      font-size: 19px;
+    }
+
+    small {
+      font-size: 10px;
+    }
   }
 
   .claims-summary-icon {
+    width: 42px;
+    height: 42px;
+
+    i {
+      font-size: 18px;
+    }
+  }
+
+  .claims-summary-note {
+    gap: 8px;
+    padding: 11px;
+    font-size: 11px;
+    line-height: 1.5;
+  }
+
+  /* Medical balance */
+  .medical-balance-main {
+    padding: 17px;
+    border-radius: 10px;
+
+    span {
+      font-size: 12px;
+    }
+
+    strong {
+      font-size: 26px;
+    }
+  }
+
+  .medical-balance-details {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+
+    div {
+      gap: 5px;
+      padding: 12px;
+    }
+
+    span {
+      font-size: 10px;
+    }
+
+    strong {
+      font-size: 13px;
+    }
+  }
+
+  .medical-proration-note {
+    align-items: flex-start;
+    padding: 10px;
+    font-size: 11px;
+    line-height: 1.5;
+  }
+
+  /* History tables */
+  .table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .employee-history-table {
+    min-width: 650px;
+
+    th {
+      padding: 11px;
+      font-size: 10px;
+    }
+
+    td {
+      padding: 11px;
+      font-size: 11px;
+    }
+
+    td strong {
+      font-size: 11px;
+    }
+  }
+
+  /* Empty states */
+  .empty-state {
+    min-height: 125px;
+    padding: 18px;
+
+    i {
+      font-size: 27px;
+    }
+
+    p {
+      font-size: 12px;
+      line-height: 1.5;
+    }
+  }
+
+  /* Account security */
+  .security-content {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+  }
+
+  .security-info {
+    gap: 11px;
+
+    strong {
+      font-size: 13px;
+    }
+
+    p {
+      font-size: 11px;
+      line-height: 1.5;
+    }
+  }
+
+  .security-icon {
     width: 40px;
     height: 40px;
+
+    i {
+      font-size: 16px;
+    }
+  }
+
+  .security-content button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Profile notice */
+  .profile-notice {
+    gap: 10px;
+    padding: 13px;
+    border-radius: 9px;
+
+    > i {
+      font-size: 15px;
+    }
+
+    strong {
+      font-size: 12px;
+    }
+
+    p {
+      font-size: 11px;
+      line-height: 1.6;
+    }
+  }
+}
+
+/* ============================================
+   SMALL MOBILE - 380px AND BELOW
+============================================ */
+
+@media (max-width: 380px) {
+  .personal-info-page {
+    padding: 10px;
+  }
+
+  .page-heading h1 {
+    font-size: 19px;
+  }
+
+  .employee-summary {
+    gap: 9px;
+    padding: 12px;
+  }
+
+  .employee-avatar {
+    width: 43px;
+    height: 43px;
+    font-size: 18px;
+  }
+
+  .employee-summary-info h2 {
+    font-size: 13px;
+  }
+
+  .personal-info-tab {
+    gap: 5px;
+    padding: 8px 10px;
+    font-size: 10px;
+  }
+
+  .info-card {
+    padding: 13px;
+  }
+
+  .leave-balance-details {
+    gap: 4px;
+
+    span {
+      font-size: 9px;
+    }
+
+    strong {
+      font-size: 11px;
+    }
+  }
+
+  .claims-summary-item {
+    gap: 9px;
+    padding: 12px;
+  }
+
+  .claims-summary-icon {
+    width: 37px;
+    height: 37px;
+  }
+
+  .medical-balance-main strong {
+    font-size: 23px;
+  }
+}
+
+/* ============================================
+   CHANGE PASSWORD DIALOG
+============================================ */
+
+:host ::ng-deep .p-dialog {
+  width: 450px;
+  max-width: calc(100vw - 30px);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+:host ::ng-deep .p-dialog .p-dialog-header {
+  padding: 20px 22px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+:host ::ng-deep .p-dialog .p-dialog-title {
+  font-size: 17px;
+  font-weight: 700;
+}
+
+:host ::ng-deep .p-dialog .p-dialog-content {
+  padding: 20px 22px;
+}
+
+:host ::ng-deep .p-password,
+:host ::ng-deep .p-password input {
+  width: 100%;
+}
+
+:host ::ng-deep .p-password input {
+  min-height: 43px;
+  font-size: 13px;
+}
+
+@media (max-width: 640px) {
+  :host ::ng-deep .p-dialog {
+    width: calc(100vw - 24px) !important;
+    max-width: calc(100vw - 24px);
+    margin: 12px;
+    border-radius: 12px;
+  }
+
+  :host ::ng-deep .p-dialog .p-dialog-header {
+    padding: 16px;
+  }
+
+  :host ::ng-deep .p-dialog .p-dialog-title {
+    font-size: 15px;
+  }
+
+  :host ::ng-deep .p-dialog .p-dialog-content {
+    padding: 16px;
+  }
+
+  :host ::ng-deep .p-password input {
+    min-height: 44px;
+    font-size: 13px;
   }
 }

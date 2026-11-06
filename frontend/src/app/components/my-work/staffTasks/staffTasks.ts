@@ -8,13 +8,16 @@ import {
   OnInit,
   signal,
 } from '@angular/core';
+
 import {
   FormArray,
   FormControl,
   FormGroup,
+  FormsModule,
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
+
 import { RouterLink } from '@angular/router';
 
 import { ButtonModule } from 'primeng/button';
@@ -26,13 +29,17 @@ import { DialogModule } from 'primeng/dialog';
 import { TextareaModule } from 'primeng/textarea';
 import { CheckboxModule } from 'primeng/checkbox';
 import { MessageService } from 'primeng/api';
+
 import { map, Subject, switchMap, takeUntil, tap } from 'rxjs';
+
 import { ProjectDto } from '../../../models/Project';
 import { StaffTask } from '../../../models/StaffTask';
+
 import { LoadingService } from '../../../services/loading.service';
 import { ProjectService } from '../../../services/ProjectService';
 import { StaffTaskService } from '../../../services/staffTaskService';
 import { UserService } from '../../../services/userService.service';
+
 import {
   PagingContent,
   GridifyQueryExtend,
@@ -53,6 +60,7 @@ import {
     DialogModule,
     TextareaModule,
     CheckboxModule,
+    FormsModule,
   ],
   template: `
     <div class="w-full min-h-[92.9vh] flex flex-col p-4 sm:p-5">
@@ -204,13 +212,10 @@ import {
                   type="text"
                   placeholder="Search tasks..."
                   class="task-search-input"
+                  [(ngModel)]="searchText"
+                  (input)="onSearch()"
                 />
               </div>
-
-              <button type="button" class="task-toolbar-button">
-                <i class="pi pi-filter"></i>
-                <span>Filter</span>
-              </button>
 
               <button
                 type="button"
@@ -410,9 +415,13 @@ import {
               <i class="pi pi-list"></i>
 
               Showing
-              <strong>{{ PagingSignal().data.length || 0 }}</strong>
+              <strong>
+                {{ PagingSignal().data.length || 0 }}
+              </strong>
               of
-              <strong>{{ PagingSignal().totalElements }}</strong>
+              <strong>
+                {{ PagingSignal().totalElements }}
+              </strong>
               tasks
             </div>
 
@@ -432,9 +441,15 @@ import {
       [draggable]="false"
       [resizable]="false"
       [closable]="false"
-      [breakpoints]="{ '960px': '90vw', '640px': '98vw' }"
-      [style]="{ width: '900px', maxWidth: '96vw' }"
-      styleClass="task-dialog"
+      [breakpoints]="{
+        '960px': '90vw',
+        '640px': '100vw',
+      }"
+      [style]="{
+        width: '900px',
+        maxWidth: '96vw',
+      }"
+      styleClass="task-dialog-responsive"
     >
       <ng-template #headless>
         <div class="task-dialog-container">
@@ -489,6 +504,7 @@ import {
 
                   <div>
                     <div class="section-title">Task Details</div>
+
                     <div class="section-description">
                       Provide the basic information for this task.
                     </div>
@@ -549,6 +565,7 @@ import {
 
                   <div>
                     <div class="section-title">Checklist</div>
+
                     <div class="section-description">
                       Break this task into smaller actionable items.
                     </div>
@@ -613,6 +630,7 @@ import {
 
                   <div>
                     <div class="section-title">Schedule</div>
+
                     <div class="section-description">
                       Set when this task should be completed.
                     </div>
@@ -868,9 +886,9 @@ import {
                     : 'Fields marked with'
                 }}
 
-                <span *ngIf="!isAssigneeOnly" class="required">*</span>
+                <span *ngIf="!isAssigneeOnly" class="required"> * </span>
 
-                <span *ngIf="!isAssigneeOnly">are required.</span>
+                <span *ngIf="!isAssigneeOnly"> are required. </span>
               </span>
             </div>
 
@@ -884,6 +902,7 @@ import {
                 styleClass="delete-button"
                 (onClick)="DeleteTask()"
               ></p-button>
+
               <p-button
                 label="Cancel"
                 severity="secondary"
@@ -910,6 +929,7 @@ import {
       </ng-template>
     </p-dialog>
 
+    <!-- DELETE CONFIRMATION DIALOG -->
     <p-dialog
       header="Delete Task"
       [(visible)]="showDeleteConfirm"
@@ -917,7 +937,10 @@ import {
       [closable]="false"
       [draggable]="false"
       [resizable]="false"
-      [style]="{ width: '420px', maxWidth: '95vw' }"
+      [style]="{
+        width: '420px',
+        maxWidth: '95vw',
+      }"
     >
       <div class="flex items-start gap-3">
         <i class="pi pi-exclamation-triangle text-red-500 text-2xl"></i>
@@ -961,26 +984,21 @@ export class StaffTasks implements OnInit, OnDestroy {
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly messageService = inject(MessageService);
   private readonly projectService = inject(ProjectService);
+
   protected ngUnsubscribe = new Subject<void>();
 
-  PagingSignal = signal<PagingContent<StaffTask>>(
-    {} as PagingContent<StaffTask>,
-  );
+  // --------------------------------------------------
+  // DATA
+  // --------------------------------------------------
+
+  PagingSignal = signal<PagingContent<StaffTask>>({
+    data: [],
+    totalElements: 0,
+  } as PagingContent<StaffTask>);
 
   Query: GridifyQueryExtend = {} as GridifyQueryExtend;
 
-  FG!: FormGroup;
-
-  userSelection: { label: string; value: string }[] = [];
-  projectSelection: { label: string; value: string }[] = [];
-
-  visible: boolean = false;
-  isUpdate: boolean = false;
-  isAssigneeOnly: boolean = false;
-  isTaskCreator: boolean = false;
-  showDeleteConfirm: boolean = false;
-
-  today = new Date();
+  searchText = '';
 
   summaryCount: any = {
     myTasks: 0,
@@ -991,7 +1009,32 @@ export class StaffTasks implements OnInit, OnDestroy {
 
   selectedTask: StaffTask | null = null;
 
+  // --------------------------------------------------
+  // FORM
+  // --------------------------------------------------
+
+  FG!: FormGroup;
+
+  userSelection: { label: string; value: string }[] = [];
+  projectSelection: { label: string; value: string }[] = [];
+
+  // --------------------------------------------------
+  // DIALOG STATE
+  // --------------------------------------------------
+
+  visible = false;
+  isUpdate = false;
+  isAssigneeOnly = false;
+  isTaskCreator = false;
+  showDeleteConfirm = false;
+
+  today = new Date();
+
   createdBy = this.userService.currentUser?.fullName ?? '';
+
+  // --------------------------------------------------
+  // DROPDOWN OPTIONS
+  // --------------------------------------------------
 
   priorityOptions = [
     { label: 'Low', value: 'Low' },
@@ -1034,12 +1077,26 @@ export class StaffTasks implements OnInit, OnDestroy {
     this.Query.OrderBy = null;
   }
 
+  // --------------------------------------------------
+  // LIFECYCLE
+  // --------------------------------------------------
+
   ngOnInit(): void {
     this.initForm();
     this.getUserSelection();
     this.getProjectSelection();
     this.GetData();
   }
+
+  ngOnDestroy(): void {
+    this.ngUnsubscribe.next();
+    this.ngUnsubscribe.complete();
+    this.loadingService.stop();
+  }
+
+  // --------------------------------------------------
+  // INITIAL DATA
+  // --------------------------------------------------
 
   getProjectSelection(): void {
     const query: GridifyQueryExtend = {
@@ -1077,8 +1134,39 @@ export class StaffTasks implements OnInit, OnDestroy {
       });
   }
 
+  getUserSelection(): void {
+    this.staffTaskService
+      .GetDropdown()
+      .pipe(takeUntil(this.ngUnsubscribe))
+      .subscribe({
+        next: (res) => {
+          this.userSelection = (res?.users ?? []).map((user: any) => ({
+            label:
+              user.fullName ??
+              user.displayName ??
+              user.name ??
+              user.email ??
+              'Unknown User',
+            value: user.id,
+          }));
+
+          this.cdr.markForCheck();
+        },
+
+        error: (err) => {
+          console.error('Error loading staff dropdown:', err);
+
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: 'Failed to load staff members.',
+          });
+        },
+      });
+  }
+
   // --------------------------------------------------
-  // FORM
+  // FORM INITIALIZATION
   // --------------------------------------------------
 
   initForm(): void {
@@ -1096,7 +1184,9 @@ export class StaffTasks implements OnInit, OnDestroy {
       description: new FormControl<string | null>(null),
 
       assignedToId: new FormControl<string | null>(null),
+
       projectId: new FormControl<string | null>(null),
+
       priority: new FormControl<string>('Medium', Validators.required),
 
       category: new FormControl<string>('Others', Validators.required),
@@ -1168,13 +1258,23 @@ export class StaffTasks implements OnInit, OnDestroy {
     ];
 
     fields.forEach((field) => {
-      this.FG.get(field)?.enable({ emitEvent: false });
+      this.FG.get(field)?.enable({
+        emitEvent: false,
+      });
     });
 
     this.checklists.controls.forEach((control) => {
-      control.get('title')?.enable({ emitEvent: false });
-      control.get('sequence')?.enable({ emitEvent: false });
-      control.get('isCompleted')?.enable({ emitEvent: false });
+      control.get('title')?.enable({
+        emitEvent: false,
+      });
+
+      control.get('sequence')?.enable({
+        emitEvent: false,
+      });
+
+      control.get('isCompleted')?.enable({
+        emitEvent: false,
+      });
     });
   }
 
@@ -1196,18 +1296,28 @@ export class StaffTasks implements OnInit, OnDestroy {
     ];
 
     fields.forEach((field) => {
-      this.FG.get(field)?.disable({ emitEvent: false });
+      this.FG.get(field)?.disable({
+        emitEvent: false,
+      });
     });
 
     this.checklists.controls.forEach((control) => {
-      control.get('title')?.disable({ emitEvent: false });
-      control.get('sequence')?.disable({ emitEvent: false });
-      control.get('isCompleted')?.enable({ emitEvent: false });
+      control.get('title')?.disable({
+        emitEvent: false,
+      });
+
+      control.get('sequence')?.disable({
+        emitEvent: false,
+      });
+
+      control.get('isCompleted')?.enable({
+        emitEvent: false,
+      });
     });
   }
 
   // --------------------------------------------------
-  // DATA
+  // GET DATA
   // --------------------------------------------------
 
   GetData(): void {
@@ -1217,9 +1327,15 @@ export class StaffTasks implements OnInit, OnDestroy {
       .GetMany(this.Query)
       .pipe(
         takeUntil(this.ngUnsubscribe),
+
         tap((res) => {
-          this.PagingSignal.set(res);
+          this.PagingSignal.set({
+            ...res,
+            data: res?.data ?? [],
+            totalElements: res?.totalElements ?? 0,
+          });
         }),
+
         switchMap(() => this.getCount()),
       )
       .subscribe({
@@ -1230,6 +1346,11 @@ export class StaffTasks implements OnInit, OnDestroy {
         error: (err) => {
           console.error('Error loading tasks:', err);
 
+          this.PagingSignal.set({
+            data: [],
+            totalElements: 0,
+          } as PagingContent<StaffTask>);
+
           this.loadingService.stop();
 
           this.messageService.add({
@@ -1237,6 +1358,8 @@ export class StaffTasks implements OnInit, OnDestroy {
             summary: 'Error',
             detail: 'Failed to load tasks.',
           });
+
+          this.cdr.markForCheck();
         },
 
         complete: () => {
@@ -1248,6 +1371,7 @@ export class StaffTasks implements OnInit, OnDestroy {
   getCount() {
     return this.staffTaskService.GetSummary().pipe(
       takeUntil(this.ngUnsubscribe),
+
       tap((res) => {
         this.summaryCount = {
           myTasks: res?.myTasks ?? 0,
@@ -1261,39 +1385,8 @@ export class StaffTasks implements OnInit, OnDestroy {
     );
   }
 
-  getUserSelection(): void {
-    this.staffTaskService
-      .GetDropdown()
-      .pipe(takeUntil(this.ngUnsubscribe))
-      .subscribe({
-        next: (res) => {
-          this.userSelection = (res?.users ?? []).map((user: any) => ({
-            label:
-              user.fullName ??
-              user.displayName ??
-              user.name ??
-              user.email ??
-              'Unknown User',
-            value: user.id,
-          }));
-
-          this.cdr.markForCheck();
-        },
-
-        error: (err) => {
-          console.error('Error loading staff dropdown:', err);
-
-          this.messageService.add({
-            severity: 'error',
-            summary: 'Error',
-            detail: 'Failed to load staff members.',
-          });
-        },
-      });
-  }
-
   // --------------------------------------------------
-  // CREATE
+  // CREATE TASK
   // --------------------------------------------------
 
   OpenTaskDialog(): void {
@@ -1303,29 +1396,35 @@ export class StaffTasks implements OnInit, OnDestroy {
     this.selectedTask = null;
 
     this.enableTaskFields();
+
     this.FG.reset();
 
     this.clearChecklists();
 
     this.FG.patchValue({
+      id: null,
+      title: null,
+      description: null,
+      assignedToId: null,
+      projectId: null,
       priority: 'Medium',
       category: 'Others',
       status: 'Todo',
       startDate: new Date(),
       dueDate: null,
+      reminderAt: null,
       isRecurring: false,
       recurringType: null,
       estimatedHours: null,
-      assignedToId: null,
-      projectId: null,
     });
 
     this.visible = true;
+
     this.cdr.markForCheck();
   }
 
   // --------------------------------------------------
-  // EDIT
+  // EDIT TASK
   // --------------------------------------------------
 
   editTask(task: StaffTask): void {
@@ -1342,6 +1441,7 @@ export class StaffTasks implements OnInit, OnDestroy {
       task.assignedById !== currentUserId;
 
     this.enableTaskFields();
+
     this.clearChecklists();
 
     for (const item of task.checklists ?? []) {
@@ -1370,11 +1470,12 @@ export class StaffTasks implements OnInit, OnDestroy {
     }
 
     this.visible = true;
+
     this.cdr.markForCheck();
   }
 
   // --------------------------------------------------
-  // SAVE
+  // SAVE TASK
   // --------------------------------------------------
 
   SaveTask(): void {
@@ -1423,16 +1524,27 @@ export class StaffTasks implements OnInit, OnDestroy {
 
     const request: any = {
       title: formValue.title?.trim(),
+
       description: formValue.description?.trim() || null,
+
       assignedToId: formValue.assignedToId || null,
+
       projectId: formValue.projectId || null,
+
       priority: formValue.priority,
+
       category: formValue.category,
+
       startDate: formValue.startDate,
+
       dueDate: formValue.dueDate,
+
       reminderAt: formValue.reminderAt,
+
       isRecurring: formValue.isRecurring,
+
       recurringType: formValue.isRecurring ? formValue.recurringType : null,
+
       estimatedHours: formValue.estimatedHours,
 
       checklists: (formValue.checklists ?? []).map(
@@ -1469,6 +1581,7 @@ export class StaffTasks implements OnInit, OnDestroy {
     request$
       .pipe(
         takeUntil(this.ngUnsubscribe),
+
         switchMap((res: StaffTask) => this.getCount().pipe(map(() => res))),
       )
       .subscribe({
@@ -1504,6 +1617,7 @@ export class StaffTasks implements OnInit, OnDestroy {
           });
 
           this.loadingService.stop();
+
           this.cdr.markForCheck();
         },
 
@@ -1538,6 +1652,7 @@ export class StaffTasks implements OnInit, OnDestroy {
       .UpdateChecklist(request)
       .pipe(
         takeUntil(this.ngUnsubscribe),
+
         switchMap((res: StaffTask) => this.getCount().pipe(map(() => res))),
       )
       .subscribe({
@@ -1566,6 +1681,7 @@ export class StaffTasks implements OnInit, OnDestroy {
           });
 
           this.loadingService.stop();
+
           this.cdr.markForCheck();
         },
 
@@ -1581,6 +1697,7 @@ export class StaffTasks implements OnInit, OnDestroy {
 
   updateTaskInList(task: StaffTask): void {
     const currentData = this.PagingSignal();
+
     const existingData = currentData.data ?? [];
 
     const exists = existingData.some((item: StaffTask) => item.id === task.id);
@@ -1642,6 +1759,10 @@ export class StaffTasks implements OnInit, OnDestroy {
     return icons[status] ?? 'pi pi-circle';
   }
 
+  // --------------------------------------------------
+  // CHECKLIST HELPERS
+  // --------------------------------------------------
+
   addChecklist(): void {
     this.checklists.push(
       this.createChecklistForm({
@@ -1659,28 +1780,58 @@ export class StaffTasks implements OnInit, OnDestroy {
   }
 
   // --------------------------------------------------
-  // DIALOG
+  // SEARCH
+  // --------------------------------------------------
+
+  onSearch(): void {
+    this.Query.Page = 1;
+
+    const search = this.searchText.trim();
+
+    // Assumes your backend Gridify filter supports
+    // title=*searchText* syntax.
+    this.Query.Filter = search ? `title=*${search}*` : null;
+
+    this.GetData();
+  }
+
+  // --------------------------------------------------
+  // DIALOG RESET
   // --------------------------------------------------
 
   resetDialog(): void {
     this.visible = false;
+
     this.isUpdate = false;
     this.isAssigneeOnly = false;
     this.isTaskCreator = false;
+
     this.selectedTask = null;
 
     this.enableTaskFields();
+
     this.FG.reset();
 
     this.clearChecklists();
 
     this.FG.patchValue({
+      id: null,
+      title: null,
+      description: null,
+      assignedToId: null,
+      projectId: null,
       priority: 'Medium',
       category: 'Others',
       status: 'Todo',
+      startDate: new Date(),
+      dueDate: null,
+      reminderAt: null,
       isRecurring: false,
       recurringType: null,
+      estimatedHours: null,
     });
+
+    this.showDeleteConfirm = false;
 
     this.cdr.markForCheck();
   }
@@ -1690,7 +1841,7 @@ export class StaffTasks implements OnInit, OnDestroy {
   }
 
   // --------------------------------------------------
-  // DELETE
+  // DELETE TASK
   // --------------------------------------------------
 
   DeleteTask(): void {
@@ -1712,6 +1863,8 @@ export class StaffTasks implements OnInit, OnDestroy {
 
     const taskId = this.selectedTask.id;
 
+    this.loadingService.start();
+
     this.staffTaskService
       .Delete(taskId)
       .pipe(takeUntil(this.ngUnsubscribe))
@@ -1726,9 +1879,11 @@ export class StaffTasks implements OnInit, OnDestroy {
           });
 
           this.resetDialog();
+
+          // GetData() also refreshes the summary count.
           this.GetData();
-          this.getCount();
         },
+
         error: (err) => {
           console.error('Error deleting task:', err);
 
@@ -1740,13 +1895,15 @@ export class StaffTasks implements OnInit, OnDestroy {
               err?.error?.message ??
               'Failed to delete task.',
           });
+
+          this.loadingService.stop();
+
+          this.cdr.markForCheck();
+        },
+
+        complete: () => {
+          this.loadingService.stop();
         },
       });
-  }
-
-  ngOnDestroy(): void {
-    this.ngUnsubscribe.next();
-    this.ngUnsubscribe.complete();
-    this.loadingService.stop();
   }
 }

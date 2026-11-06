@@ -58,39 +58,209 @@ interface CalendarDay {
     TextareaModule,
     SelectModule,
   ],
-  template: ` <div class="lg:hidden flex flex-col min-h-screen">
-      <div class="p-6 bg-[#0566D9] flex flex-row items-center justify-between">
-        <div class="text-3xl font-bold text-white" [routerLink]="'/dashboard'">
-          YL Works
+  template: ` <div class="meeting-mobile lg:hidden">
+      <!-- Mobile header -->
+      <div class="mobile-header">
+        <div>
+          <div class="mobile-brand" [routerLink]="'/dashboard'">YL Works</div>
+          <div class="mobile-header-subtitle">Your work calendar</div>
         </div>
-        <div class="flex flex-row items-center gap-4">
-          <i class="pi pi-bell text-3xl! text-white!"></i>
-          <div
-            class="bg-white w-8 h-8 rounded-full flex items-center justify-center p-2"
-          >
-            <i class="pi pi-user text-xl! text-[#0566D9]!"></i>
+
+        <div class="mobile-header-actions">
+          <button type="button" class="mobile-icon-button">
+            <i class="pi pi-bell"></i>
+          </button>
+
+          <div class="mobile-avatar">
+            <i class="pi pi-user"></i>
           </div>
         </div>
       </div>
 
-      <div class="flex flex-col gap-3 px-6 py-4">
-        <div class="font-semibold text-2xl">Upcoming Meetings</div>
-        <p-button
-          label="New Meeting"
-          icon="pi pi-plus"
-          severity="info"
-          [rounded]="true"
-          styleClass="bg-[#0566D9]! border-none! px-5! shadow-md!"
-        ></p-button>
-        <div class="mt-4">
+      <div class="mobile-content">
+        <!-- Page heading -->
+        <div class="mobile-page-heading">
+          <div>
+            <div class="mobile-eyebrow">YOUR SCHEDULE</div>
+            <h1>Meetings</h1>
+            <p>Keep track of your upcoming meetings.</p>
+          </div>
+
+          <button
+            type="button"
+            class="mobile-add-button"
+            (click)="OpenDialog()"
+          >
+            <i class="pi pi-plus"></i>
+            <span>New</span>
+          </button>
+        </div>
+
+        <!-- Calendar card -->
+        <div class="mobile-calendar-card">
+          <div class="mobile-calendar-heading">
+            <div>
+              <h2>Calendar</h2>
+              <p>Select a date to view your meetings</p>
+            </div>
+
+            <button
+              type="button"
+              class="mobile-today-button"
+              (click)="goToMobileToday()"
+            >
+              Today
+            </button>
+          </div>
+
           <p-datepicker
             [inline]="true"
-            styleClass="w-full!"
-            panelStyleClass="w-full"
+            [ngModel]="mobileSelectedDate"
+            (ngModelChange)="onMobileDateChange($event)"
+            [showOtherMonths]="true"
+            [selectOtherMonths]="true"
+            styleClass="mobile-datepicker"
+            panelStyleClass="mobile-datepicker-panel"
           ></p-datepicker>
+        </div>
+
+        <!-- Selected date agenda -->
+        <div class="mobile-agenda">
+          <div class="mobile-agenda-heading">
+            <div>
+              <div class="mobile-eyebrow">YOUR AGENDA</div>
+              <h2>{{ mobileSelectedDate | date: 'EEEE, d MMMM yyyy' }}</h2>
+            </div>
+
+            <div class="mobile-meeting-count">
+              {{ mobileSelectedMeetings.length }}
+              {{ mobileSelectedMeetings.length === 1 ? 'Meeting' : 'Meetings' }}
+            </div>
+          </div>
+
+          <!-- Empty state -->
+          <div
+            *ngIf="mobileSelectedMeetings.length === 0"
+            class="mobile-empty-state"
+          >
+            <div class="mobile-empty-icon">
+              <i class="pi pi-calendar-times"></i>
+            </div>
+
+            <h3>No meetings scheduled</h3>
+            <p>You don't have any meetings on this date.</p>
+
+            <button
+              type="button"
+              class="mobile-empty-button"
+              (click)="OpenDialog()"
+            >
+              <i class="pi pi-plus"></i>
+              Create a meeting
+            </button>
+          </div>
+
+          <!-- Meeting list -->
+          <div
+            *ngIf="mobileSelectedMeetings.length > 0"
+            class="mobile-meeting-list"
+          >
+            <div
+              *ngFor="let meeting of mobileSelectedMeetings"
+              class="mobile-meeting-card"
+              [class.mobile-meeting-past]="isMeetingPast(meeting)"
+            >
+              <div
+                class="mobile-meeting-indicator"
+                [ngClass]="getMeetingTaskClass(meeting)"
+              ></div>
+
+              <div class="mobile-meeting-content">
+                <div class="mobile-meeting-top">
+                  <div class="mobile-meeting-time">
+                    <i class="pi pi-clock"></i>
+                    {{ formatMeetingTime(meeting.meetingTime) }}
+                  </div>
+
+                  <span
+                    *ngIf="isMeetingPast(meeting)"
+                    class="mobile-status completed"
+                  >
+                    Completed
+                  </span>
+
+                  <span
+                    *ngIf="!isMeetingPast(meeting) && isMeetingNow(meeting)"
+                    class="mobile-status ongoing"
+                  >
+                    <span></span>
+                    Ongoing
+                  </span>
+
+                  <span
+                    *ngIf="!isMeetingPast(meeting) && !isMeetingNow(meeting)"
+                    class="mobile-status upcoming"
+                  >
+                    Upcoming
+                  </span>
+                </div>
+
+                <h3>{{ meeting.title }}</h3>
+
+                <p
+                  *ngIf="meeting.description"
+                  class="mobile-meeting-description"
+                >
+                  {{ meeting.description }}
+                </p>
+
+                <div class="mobile-meeting-details">
+                  <div *ngIf="meeting.location">
+                    <i class="pi pi-map-marker"></i>
+                    <span>{{ meeting.location }}</span>
+                  </div>
+
+                  <div *ngIf="meeting.meetingLink">
+                    <i class="pi pi-video"></i>
+                    <a
+                      [href]="meeting.meetingLink"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Join online meeting
+                    </a>
+                  </div>
+                </div>
+
+                <div
+                  *ngIf="isOrganizer(meeting) && !isMeetingPast(meeting)"
+                  class="mobile-meeting-actions"
+                >
+                  <button
+                    type="button"
+                    class="mobile-edit-button"
+                    (click)="EditMeeting(meeting)"
+                  >
+                    <i class="pi pi-pencil"></i>
+                    Edit
+                  </button>
+
+                  <button
+                    type="button"
+                    class="mobile-cancel-button"
+                    (click)="CancelMeeting(meeting)"
+                  >
+                    <i class="pi pi-times"></i>
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
+
     <div class="w-full min-h-[92.9vh] hidden lg:flex flex-col p-5">
       <div class="flex flex-row items-center justify-between">
         <div
@@ -700,6 +870,8 @@ export class Meeting implements OnInit, OnDestroy {
   cancelDialogVisible: boolean = false;
   moreMeetingsDialogVisible = false;
 
+  mobileSelectedDate: Date = new Date();
+
   meetingToCancel: MeetingDto | null = null;
   selectedDay: CalendarDay | null = null;
 
@@ -887,6 +1059,12 @@ export class Meeting implements OnInit, OnDestroy {
             1,
           );
         }
+
+        this.mobileSelectedDate = new Date(
+          savedMeetingDate.getFullYear(),
+          savedMeetingDate.getMonth(),
+          savedMeetingDate.getDate(),
+        );
 
         // Refresh calendar using the latest data.
         this.generateCalendar();
@@ -1405,6 +1583,32 @@ export class Meeting implements OnInit, OnDestroy {
   CloseCancelDialog(): void {
     this.cancelDialogVisible = false;
     this.meetingToCancel = null;
+  }
+
+  get mobileSelectedMeetings(): MeetingDto[] {
+    return [...this.getMeetingsForDate(this.mobileSelectedDate)].sort((a, b) =>
+      this.compareMeetingTime(a, b),
+    );
+  }
+
+  onMobileDateChange(date: Date | null): void {
+    if (!date) {
+      return;
+    }
+
+    this.mobileSelectedDate = new Date(
+      date.getFullYear(),
+      date.getMonth(),
+      date.getDate(),
+    );
+
+    this.cdr.markForCheck();
+  }
+
+  goToMobileToday(): void {
+    this.mobileSelectedDate = new Date();
+
+    this.cdr.markForCheck();
   }
 
   ngOnDestroy(): void {

@@ -26,6 +26,7 @@ export interface UserDto extends BaseModel {
   hodIds: string[];
 
   gender: string;
+  status: string;
 
   monthlySalary?: number | null;
 

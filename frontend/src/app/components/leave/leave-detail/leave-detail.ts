@@ -28,223 +28,295 @@ import { environment } from '../../../../environments/environment.development';
   selector: 'app-leave-detail',
   imports: [CommonModule, RouterLink, TagModule, ButtonModule],
   template: `
-    <div class="min-h-screen w-full bg-slate-50 p-4 sm:p-6 lg:p-8">
-      @if (request) {
-        <div class="flex flex-col gap-6">
+    <div class="min-h-screen w-full bg-slate-50">
+      <div
+        class="mx-auto flex w-full max-w-[1440px] flex-col gap-5 p-4 sm:gap-6 sm:p-6 lg:p-8"
+      >
+        @if (request) {
           <!-- Breadcrumb -->
-          <div class="flex items-center gap-2 text-sm">
+          <div class="flex flex-wrap items-center gap-2 text-xs sm:text-sm">
+            <a
+              routerLink="/dashboard"
+              class="text-slate-400 transition hover:text-blue-600"
+            >
+              Dashboard
+            </a>
+            <i class="pi pi-angle-right text-[9px] text-slate-300"></i>
             <a
               routerLink="/leave"
-              class="font-medium text-slate-500 transition hover:text-blue-600"
+              class="text-slate-400 transition hover:text-blue-600"
             >
               Leave
             </a>
-            <i class="pi pi-chevron-right text-[10px] text-slate-400"></i>
-            <span class="font-semibold text-slate-800">Leave Details</span>
+            <i class="pi pi-angle-right text-[9px] text-slate-300"></i>
+            <span class="font-semibold text-slate-700">Leave Details</span>
           </div>
 
-          <!-- Header -->
+          <!-- Page Header -->
           <div
-            class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
+            class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"
           >
-            <div class="min-w-0">
-              <div class="mb-2 flex flex-wrap items-center gap-3">
+            <div class="h-1.5 bg-blue-700"></div>
+
+            <div
+              class="flex flex-col gap-4 p-5 sm:p-6 lg:flex-row lg:items-center lg:justify-between"
+            >
+              <div class="min-w-0">
+                <div class="mb-3 flex flex-wrap items-center gap-2">
+                  <span
+                    class="rounded-md bg-blue-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-blue-700"
+                  >
+                    Leave Application
+                  </span>
+
+                  <p-tag
+                    [value]="request.status"
+                    [severity]="statusSeverity(request.status)"
+                  />
+                </div>
+
                 <h1
-                  class="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl"
+                  class="break-words text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl"
                 >
                   {{ request.leaveTypeName }}
                 </h1>
-                <p-tag [value]="request.status" />
+
+                <p class="mt-2 text-sm text-slate-500">
+                  Application submitted by
+                  <span class="font-semibold text-slate-700">
+                    {{ request.employeeName }}
+                  </span>
+                </p>
+
+                <div class="mt-4 flex flex-wrap gap-2">
+                  @if (request.isShortNoticeAnnual) {
+                    <p-tag value="Short Notice · Unpaid" severity="warn" />
+                  } @else if (hasBalanceSplit(request)) {
+                    <p-tag value="Balance Split" severity="warn" />
+                  } @else if (request.isUnpaid) {
+                    <p-tag value="Unpaid Leave" severity="secondary" />
+                  }
+
+                  @if (request.isEmergency) {
+                    <p-tag value="Emergency Leave" severity="danger" />
+                  }
+                </div>
               </div>
 
-              <p class="text-sm text-slate-500">
-                Leave application by
-                <span class="font-semibold text-slate-700">{{
-                  request.employeeName
-                }}</span>
-              </p>
-
-              <div class="mt-3 flex flex-wrap gap-2">
-                @if (request.isShortNoticeAnnual) {
-                  <p-tag value="Short Notice · Unpaid" severity="warn" />
-                } @else if (hasBalanceSplit(request)) {
-                  <p-tag value="Balance Split" severity="warn" />
-                } @else if (request.isUnpaid) {
-                  <p-tag value="Unpaid Leave" severity="secondary" />
-                }
-
-                @if (request.isEmergency) {
-                  <p-tag value="Emergency Leave" severity="danger" />
-                }
-              </div>
+              @if (canCancel) {
+                <div class="w-full shrink-0 sm:w-auto">
+                  <p-button
+                    label="Cancel Leave"
+                    icon="pi pi-times"
+                    severity="danger"
+                    [outlined]="true"
+                    styleClass="w-full sm:w-auto rounded-lg! px-4! py-2.5!"
+                    (onClick)="cancel()"
+                  />
+                </div>
+              }
             </div>
-
-            @if (canCancel) {
-              <p-button
-                label="Cancel Leave"
-                icon="pi pi-times"
-                severity="danger"
-                [outlined]="true"
-                size="small"
-                (onClick)="cancel()"
-              />
-            }
           </div>
 
           <!-- Summary Cards -->
-          <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div class="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4">
+            <!-- Duration -->
             <div
-              class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm"
+              class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5"
             >
               <div
-                class="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50"
+                class="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600"
               >
-                <i class="pi pi-calendar text-lg text-blue-600"></i>
+                <i class="pi pi-calendar text-lg"></i>
               </div>
-              <p class="text-sm text-slate-500">Leave Duration</p>
-              <h2 class="mt-1 text-2xl font-bold text-slate-900">
+
+              <p class="mt-4 text-xs font-medium text-slate-400 sm:text-sm">
+                Leave Duration
+              </p>
+
+              <h2
+                class="mt-1 break-words text-xl font-bold text-slate-900 sm:text-2xl"
+              >
                 {{ formatLeaveDays(request) }}
               </h2>
             </div>
 
+            <!-- Start Date -->
             <div
-              class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm"
+              class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5"
             >
               <div
-                class="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-purple-50"
+                class="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-50 text-purple-600"
               >
-                <i class="pi pi-clock text-lg text-purple-600"></i>
+                <i class="pi pi-calendar-plus text-lg"></i>
               </div>
-              <p class="text-sm text-slate-500">Start Date</p>
-              <h2 class="mt-1 text-lg font-bold text-slate-900">
+
+              <p class="mt-4 text-xs font-medium text-slate-400 sm:text-sm">
+                Start Date
+              </p>
+
+              <h2 class="mt-1 text-base font-bold text-slate-900 sm:text-lg">
                 {{ request.startDate | date: 'dd MMM yyyy' }}
               </h2>
             </div>
 
+            <!-- End Date -->
             <div
-              class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm"
+              class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5"
             >
               <div
-                class="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-50"
+                class="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600"
               >
-                <i class="pi pi-calendar-plus text-lg text-emerald-600"></i>
+                <i class="pi pi-calendar-check text-lg"></i>
               </div>
-              <p class="text-sm text-slate-500">End Date</p>
-              <h2 class="mt-1 text-lg font-bold text-slate-900">
+
+              <p class="mt-4 text-xs font-medium text-slate-400 sm:text-sm">
+                End Date
+              </p>
+
+              <h2 class="mt-1 text-base font-bold text-slate-900 sm:text-lg">
                 {{ request.endDate | date: 'dd MMM yyyy' }}
               </h2>
             </div>
 
+            <!-- Submitted -->
             <div
-              class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm"
+              class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5"
             >
               <div
-                class="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-amber-50"
+                class="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50 text-amber-600"
               >
-                <i class="pi pi-send text-lg text-amber-600"></i>
+                <i class="pi pi-send text-lg"></i>
               </div>
-              <p class="text-sm text-slate-500">Submitted On</p>
-              <h2 class="mt-1 text-lg font-bold text-slate-900">
+
+              <p class="mt-4 text-xs font-medium text-slate-400 sm:text-sm">
+                Submitted On
+              </p>
+
+              <h2 class="mt-1 text-base font-bold text-slate-900 sm:text-lg">
                 {{ request.submittedAt | date: 'dd MMM yyyy' }}
               </h2>
             </div>
           </div>
 
-          <!-- Main Content -->
-          <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
-            <div class="flex flex-col gap-6 lg:col-span-2">
+          <!-- Main Layout -->
+          <div
+            class="grid grid-cols-1 items-start gap-5 lg:grid-cols-3 lg:gap-6"
+          >
+            <!-- Left Content -->
+            <div class="flex min-w-0 flex-col gap-5 lg:col-span-2">
               <!-- Leave Information -->
               <section
                 class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm"
               >
-                <div class="border-b border-slate-100 px-5 py-4">
-                  <h2 class="font-semibold text-slate-900">
-                    Leave Information
-                  </h2>
-                  <p class="mt-1 text-xs text-slate-500">
-                    Details of this leave application
-                  </p>
+                <div
+                  class="flex items-center gap-3 border-b border-slate-100 px-5 py-4"
+                >
+                  <div
+                    class="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600"
+                  >
+                    <i class="pi pi-file-edit text-lg"></i>
+                  </div>
+
+                  <div>
+                    <h2 class="font-semibold text-slate-900">
+                      Leave Information
+                    </h2>
+                    <p class="mt-0.5 text-xs text-slate-400">
+                      Application details and leave reason
+                    </p>
+                  </div>
                 </div>
 
-                <div class="grid grid-cols-1 gap-5 p-5 sm:grid-cols-2">
+                <div
+                  class="grid grid-cols-1 gap-x-6 gap-y-5 p-5 sm:grid-cols-2 sm:p-6"
+                >
                   <div>
                     <p
-                      class="text-xs font-medium uppercase tracking-wide text-slate-400"
+                      class="text-[11px] font-semibold uppercase tracking-wider text-slate-400"
                     >
                       Leave Type
                     </p>
-                    <p class="mt-1 font-semibold text-slate-800">
+                    <p
+                      class="mt-1.5 break-words text-sm font-semibold text-slate-800"
+                    >
                       {{ request.leaveTypeName }}
                     </p>
                   </div>
 
                   <div>
                     <p
-                      class="text-xs font-medium uppercase tracking-wide text-slate-400"
+                      class="text-[11px] font-semibold uppercase tracking-wider text-slate-400"
                     >
                       Employee
                     </p>
-                    <p class="mt-1 font-semibold text-slate-800">
+                    <p
+                      class="mt-1.5 break-words text-sm font-semibold text-slate-800"
+                    >
                       {{ request.employeeName }}
                     </p>
                   </div>
 
                   <div>
                     <p
-                      class="text-xs font-medium uppercase tracking-wide text-slate-400"
+                      class="text-[11px] font-semibold uppercase tracking-wider text-slate-400"
                     >
                       Start Date
                     </p>
-                    <p class="mt-1 font-semibold text-slate-800">
+                    <p class="mt-1.5 text-sm font-semibold text-slate-800">
                       {{ request.startDate | date: 'EEEE, dd MMMM yyyy' }}
                     </p>
                   </div>
 
                   <div>
                     <p
-                      class="text-xs font-medium uppercase tracking-wide text-slate-400"
+                      class="text-[11px] font-semibold uppercase tracking-wider text-slate-400"
                     >
                       End Date
                     </p>
-                    <p class="mt-1 font-semibold text-slate-800">
+                    <p class="mt-1.5 text-sm font-semibold text-slate-800">
                       {{ request.endDate | date: 'EEEE, dd MMMM yyyy' }}
                     </p>
                   </div>
 
                   <div>
                     <p
-                      class="text-xs font-medium uppercase tracking-wide text-slate-400"
+                      class="text-[11px] font-semibold uppercase tracking-wider text-slate-400"
                     >
                       Total Leave
                     </p>
-                    <p class="mt-1 font-semibold text-slate-800">
+                    <p class="mt-1.5 text-sm font-semibold text-slate-800">
                       {{ formatLeaveDays(request) }}
                     </p>
                   </div>
 
                   <div>
                     <p
-                      class="text-xs font-medium uppercase tracking-wide text-slate-400"
+                      class="text-[11px] font-semibold uppercase tracking-wider text-slate-400"
                     >
                       Submitted Date
                     </p>
-                    <p class="mt-1 font-semibold text-slate-800">
+                    <p class="mt-1.5 text-sm font-semibold text-slate-800">
                       {{ request.submittedAt | date: 'dd MMM yyyy, HH:mm' }}
                     </p>
                   </div>
 
+                  <!-- Reason -->
                   <div class="sm:col-span-2">
                     <div class="border-t border-slate-100 pt-5">
                       <p
-                        class="text-xs font-medium uppercase tracking-wide text-slate-400"
+                        class="text-[11px] font-semibold uppercase tracking-wider text-slate-400"
                       >
                         Reason for Leave
                       </p>
-                      <p
-                        class="mt-2 whitespace-pre-wrap break-words text-sm leading-relaxed text-slate-700"
-                      >
-                        {{ request.reason || 'No reason provided.' }}
-                      </p>
+
+                      <div class="mt-3 rounded-lg bg-slate-50 p-4">
+                        <p
+                          class="whitespace-pre-wrap break-words text-sm leading-7 text-slate-700"
+                        >
+                          {{ request.reason || 'No reason provided.' }}
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -255,21 +327,22 @@ import { environment } from '../../../../environments/environment.development';
                 <section
                   class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm"
                 >
-                  <div class="border-b border-slate-100 px-5 py-4">
-                    <div class="flex items-center gap-2">
-                      <div
-                        class="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-50"
-                      >
-                        <i class="pi pi-wallet text-amber-600"></i>
-                      </div>
-                      <div>
-                        <h2 class="font-semibold text-slate-900">
-                          Leave Balance Breakdown
-                        </h2>
-                        <p class="mt-1 text-xs text-slate-500">
-                          Allocation of leave days across leave balances
-                        </p>
-                      </div>
+                  <div
+                    class="flex items-center gap-3 border-b border-slate-100 px-5 py-4"
+                  >
+                    <div
+                      class="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50 text-amber-600"
+                    >
+                      <i class="pi pi-wallet text-lg"></i>
+                    </div>
+
+                    <div>
+                      <h2 class="font-semibold text-slate-900">
+                        Leave Balance Breakdown
+                      </h2>
+                      <p class="mt-0.5 text-xs text-slate-400">
+                        Allocation across leave balances
+                      </p>
                     </div>
                   </div>
 
@@ -279,15 +352,18 @@ import { environment } from '../../../../environments/environment.development';
                       track line.leaveTypeId + line.sortOrder
                     ) {
                       <div
-                        class="flex items-center justify-between gap-3 px-5 py-4"
+                        class="flex items-center justify-between gap-3 px-5 py-4 sm:px-6"
                       >
                         <div class="min-w-0">
-                          <p class="font-semibold text-slate-800">
+                          <p
+                            class="break-words text-sm font-semibold text-slate-800"
+                          >
                             {{ line.leaveTypeName }}
                           </p>
+
                           @if (line.isUnpaidBucket) {
                             <span
-                              class="mt-1 inline-flex rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700"
+                              class="mt-1 inline-flex rounded-full bg-amber-50 px-2.5 py-1 text-[10px] font-semibold text-amber-700"
                             >
                               Unpaid allocation
                             </span>
@@ -311,16 +387,26 @@ import { environment } from '../../../../environments/environment.development';
                 <section
                   class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm"
                 >
-                  <div class="border-b border-slate-100 px-5 py-4">
-                    <h2 class="font-semibold text-slate-900">
-                      Supporting Document
-                    </h2>
-                    <p class="mt-1 text-xs text-slate-500">
-                      Uploaded document for this leave application
-                    </p>
+                  <div
+                    class="flex items-center gap-3 border-b border-slate-100 px-5 py-4"
+                  >
+                    <div
+                      class="flex h-10 w-10 items-center justify-center rounded-xl bg-red-50 text-red-500"
+                    >
+                      <i class="pi pi-paperclip text-lg"></i>
+                    </div>
+
+                    <div>
+                      <h2 class="font-semibold text-slate-900">
+                        Supporting Document
+                      </h2>
+                      <p class="mt-0.5 text-xs text-slate-400">
+                        Document attached to this application
+                      </p>
+                    </div>
                   </div>
 
-                  <div class="p-5">
+                  <div class="p-5 sm:p-6">
                     <div
                       class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
                     >
@@ -328,7 +414,7 @@ import { environment } from '../../../../environments/environment.development';
                         <div
                           class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-red-50"
                         >
-                          <i class="pi pi-file text-xl text-red-500"></i>
+                          <i class="pi pi-file-pdf text-xl text-red-500"></i>
                         </div>
 
                         <div class="min-w-0">
@@ -337,29 +423,30 @@ import { environment } from '../../../../environments/environment.development';
                               [href]="resolveDocumentUrl(request.documentUrl)"
                               target="_blank"
                               rel="noopener noreferrer"
-                              class="block truncate text-sm font-semibold text-blue-600 hover:underline"
+                              class="block break-all text-sm font-semibold text-blue-600 hover:underline"
                             >
                               {{
                                 request.documentFileName ||
                                   'View uploaded document'
                               }}
                             </a>
-                            <p class="mt-1 text-xs text-slate-500">
-                              Click to open the supporting document
+
+                            <p class="mt-1 text-xs text-slate-400">
+                              Open supporting document
                             </p>
                           } @else {
-                            <p class="text-sm font-semibold text-slate-800">
+                            <p class="text-sm font-semibold text-slate-700">
                               No document uploaded
                             </p>
-                            <p class="mt-1 text-xs text-slate-500">
-                              Emergency leave requires supporting documentation.
+                            <p class="mt-1 text-xs text-slate-400">
+                              Upload the required supporting document.
                             </p>
                           }
                         </div>
                       </div>
 
                       @if (request.isEmergency) {
-                        <div class="shrink-0">
+                        <div class="w-full shrink-0 sm:w-auto">
                           <input
                             #documentFile
                             type="file"
@@ -381,7 +468,7 @@ import { environment } from '../../../../environments/environment.development';
                             "
                             severity="secondary"
                             [outlined]="true"
-                            size="small"
+                            styleClass="w-full rounded-lg! sm:w-auto"
                             (onClick)="documentFile.click()"
                           />
                         </div>
@@ -393,43 +480,53 @@ import { environment } from '../../../../environments/environment.development';
 
               <!-- Rejection Reason -->
               @if (request.status === 'Rejected' && request.rejectionReason) {
-                <section class="rounded-xl border border-red-200 bg-red-50 p-5">
-                  <div class="flex items-center gap-2">
-                    <i class="pi pi-exclamation-circle text-red-600"></i>
-                    <h2 class="font-semibold text-red-800">
-                      Leave Application Rejected
-                    </h2>
+                <section
+                  class="overflow-hidden rounded-xl border border-red-200 bg-white shadow-sm"
+                >
+                  <div class="border-b border-red-100 bg-red-50 px-5 py-4">
+                    <div class="flex items-center gap-2">
+                      <i class="pi pi-exclamation-circle text-red-600"></i>
+                      <h2 class="font-semibold text-red-800">
+                        Leave Application Rejected
+                      </h2>
+                    </div>
                   </div>
 
-                  <p class="mt-3 text-sm font-medium text-red-800">
-                    Rejection Reason
-                  </p>
-                  <p
-                    class="mt-1 whitespace-pre-wrap break-words text-sm leading-relaxed text-red-700"
-                  >
-                    {{ request.rejectionReason }}
-                  </p>
-
-                  <div class="mt-4 border-t border-red-200 pt-3">
-                    <p class="text-xs text-red-700">
-                      This request cannot be reopened. Submit a new leave
-                      application if you still need time off.
+                  <div class="p-5">
+                    <p
+                      class="text-xs font-bold uppercase tracking-wider text-red-500"
+                    >
+                      Rejection Reason
                     </p>
 
-                    <a routerLink="/leave/apply" class="mt-3 inline-block">
-                      <p-button
-                        label="Apply for New Leave"
-                        icon="pi pi-plus"
-                        size="small"
-                      />
-                    </a>
+                    <p
+                      class="mt-2 whitespace-pre-wrap break-words text-sm leading-7 text-red-800"
+                    >
+                      {{ request.rejectionReason }}
+                    </p>
+
+                    <div class="mt-5 border-t border-red-100 pt-4">
+                      <p class="text-xs leading-relaxed text-slate-500">
+                        This request cannot be reopened. You may submit a new
+                        leave application if you still need time off.
+                      </p>
+
+                      <a routerLink="/leave/apply" class="mt-4 inline-block">
+                        <p-button
+                          label="Apply for New Leave"
+                          icon="pi pi-plus"
+                          size="small"
+                          styleClass="rounded-lg!"
+                        />
+                      </a>
+                    </div>
                   </div>
                 </section>
               }
             </div>
 
-            <!-- Approval Progress -->
-            <div class="lg:col-span-1">
+            <!-- Right Sidebar: Approval Progress -->
+            <div class="min-w-0 lg:sticky lg:top-5 lg:col-span-1">
               <section
                 class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm"
               >
@@ -439,13 +536,21 @@ import { environment } from '../../../../environments/environment.development';
                   (click)="approvalProgressOpen = !approvalProgressOpen"
                   [attr.aria-expanded]="approvalProgressOpen"
                 >
-                  <div>
-                    <h2 class="font-semibold text-slate-900">
-                      Approval Progress
-                    </h2>
-                    <p class="mt-1 text-xs text-slate-500">
-                      Track your leave approval steps
-                    </p>
+                  <div class="flex items-center gap-3">
+                    <div
+                      class="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600"
+                    >
+                      <i class="pi pi-sitemap text-lg"></i>
+                    </div>
+
+                    <div>
+                      <h2 class="font-semibold text-slate-900">
+                        Approval Progress
+                      </h2>
+                      <p class="mt-0.5 text-xs text-slate-400">
+                        Approval workflow
+                      </p>
+                    </div>
                   </div>
 
                   <i
@@ -460,7 +565,7 @@ import { environment } from '../../../../environments/environment.development';
                   <div class="p-5">
                     @if (request.noApproverAssigned) {
                       <div
-                        class="rounded-lg border border-amber-200 bg-amber-50 p-4"
+                        class="rounded-xl border border-amber-200 bg-amber-50 p-4"
                       >
                         <div
                           class="flex items-center gap-2 text-sm font-semibold text-amber-800"
@@ -468,22 +573,28 @@ import { environment } from '../../../../environments/environment.development';
                           <i class="pi pi-exclamation-triangle"></i>
                           No Approver Assigned
                         </div>
-                        <p class="mt-1 text-xs text-amber-700">
+
+                        <p class="mt-2 text-xs leading-relaxed text-amber-700">
                           This leave application currently has no assigned
                           approver.
                         </p>
                       </div>
                     } @else if (!chainSteps.length) {
-                      <div class="py-8 text-center">
+                      <div class="flex flex-col items-center py-8 text-center">
                         <div
-                          class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-slate-100"
+                          class="flex h-12 w-12 items-center justify-center rounded-full bg-slate-100"
                         >
                           <i
                             class="pi pi-info-circle text-xl text-slate-400"
                           ></i>
                         </div>
-                        <p class="mt-3 text-sm font-medium text-slate-600">
-                          No approval steps available.
+
+                        <p class="mt-3 text-sm font-semibold text-slate-600">
+                          No approval steps available
+                        </p>
+
+                        <p class="mt-1 text-xs text-slate-400">
+                          Approval information is not available yet.
                         </p>
                       </div>
                     } @else {
@@ -493,18 +604,18 @@ import { environment } from '../../../../environments/environment.development';
                           track step.stepOrder;
                           let last = $last
                         ) {
-                          <li class="relative flex gap-3 pb-6 last:pb-0">
+                          <li class="relative flex gap-3 pb-7 last:pb-0">
                             @if (!last) {
                               <span
-                                class="absolute left-[15px] top-8 bottom-0 w-px bg-slate-200"
+                                class="absolute bottom-0 left-[15px] top-8 w-px bg-slate-200"
                                 aria-hidden="true"
                               ></span>
                             }
 
+                            <!-- Step Icon -->
                             <span
                               class="relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 text-xs font-bold"
                               [ngClass]="stepDotClass(step.status)"
-                              aria-hidden="true"
                             >
                               @if (
                                 step.status === 'Approved' ||
@@ -518,10 +629,9 @@ import { environment } from '../../../../environments/environment.development';
                               }
                             </span>
 
+                            <!-- Step Information -->
                             <div class="min-w-0 flex-1 pt-1">
-                              <div
-                                class="flex flex-wrap items-start justify-between gap-2"
-                              >
+                              <div class="flex flex-col gap-2">
                                 <p
                                   class="break-words text-sm font-semibold text-slate-800"
                                 >
@@ -529,7 +639,7 @@ import { environment } from '../../../../environments/environment.development';
                                 </p>
 
                                 <span
-                                  class="inline-flex rounded-full px-2.5 py-1 text-[10px] font-semibold"
+                                  class="w-fit rounded-full px-2.5 py-1 text-[10px] font-bold"
                                   [ngClass]="stepBadgeClass(step.status)"
                                 >
                                   {{ step.status }}
@@ -537,7 +647,8 @@ import { environment } from '../../../../environments/environment.development';
                               </div>
 
                               @if (step.decidedAt) {
-                                <p class="mt-1 text-xs text-slate-400">
+                                <p class="mt-2 text-xs text-slate-400">
+                                  <i class="pi pi-clock mr-1"></i>
                                   {{
                                     step.decidedAt | date: 'dd MMM yyyy, HH:mm'
                                   }}
@@ -548,9 +659,17 @@ import { environment } from '../../../../environments/environment.development';
                                 step.status === 'Rejected' &&
                                 step.rejectionReason
                               ) {
-                                <div class="mt-2 rounded-md bg-red-50 p-2.5">
+                                <div
+                                  class="mt-3 rounded-lg border border-red-100 bg-red-50 p-3"
+                                >
                                   <p
-                                    class="whitespace-pre-wrap break-words text-xs leading-relaxed text-red-700"
+                                    class="text-[10px] font-bold uppercase tracking-wider text-red-500"
+                                  >
+                                    Rejection Reason
+                                  </p>
+
+                                  <p
+                                    class="mt-1 whitespace-pre-wrap break-words text-xs leading-relaxed text-red-700"
                                   >
                                     {{ step.rejectionReason }}
                                   </p>
@@ -564,35 +683,64 @@ import { environment } from '../../../../environments/environment.development';
                   </div>
                 }
               </section>
+
+              <!-- Application Status Information -->
+              <div
+                class="mt-4 rounded-xl border border-blue-100 bg-blue-50 p-4"
+              >
+                <div class="flex items-start gap-2">
+                  <i class="pi pi-info-circle mt-0.5 text-blue-600"></i>
+
+                  <div>
+                    <p class="text-sm font-semibold text-blue-900">
+                      Application Information
+                    </p>
+
+                    <p class="mt-1 text-xs leading-relaxed text-blue-700">
+                      You can track each approval step here. The status will
+                      update when an approver takes action.
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
           <!-- Footer -->
-          <div class="flex justify-start">
+          <div
+            class="flex flex-col gap-3 border-t border-slate-200 pt-5 sm:flex-row sm:items-center sm:justify-between"
+          >
+            <p class="text-xs text-slate-400">Leave application details</p>
+
             <p-button
               label="Back to Leave Overview"
               icon="pi pi-arrow-left"
               severity="secondary"
               [outlined]="true"
-              size="small"
               routerLink="/leave"
+              styleClass="w-full rounded-lg! sm:w-auto"
             />
           </div>
-        </div>
-      } @else {
-        <div
-          class="flex min-h-[60vh] flex-col items-center justify-center gap-3"
-        >
+        } @else {
           <div
-            class="flex h-14 w-14 items-center justify-center rounded-full bg-blue-50"
+            class="flex min-h-[60vh] flex-col items-center justify-center gap-3"
           >
-            <i class="pi pi-calendar text-2xl text-blue-500"></i>
+            <div
+              class="flex h-14 w-14 items-center justify-center rounded-full bg-blue-50"
+            >
+              <i class="pi pi-calendar text-2xl text-blue-500"></i>
+            </div>
+
+            <p class="text-sm font-semibold text-slate-600">
+              Loading leave details...
+            </p>
+
+            <p class="text-xs text-slate-400">
+              Please wait while we retrieve your application.
+            </p>
           </div>
-          <p class="text-sm font-medium text-slate-500">
-            Loading leave details...
-          </p>
-        </div>
-      }
+        }
+      </div>
     </div>
   `,
 })
@@ -767,5 +915,23 @@ export class LeaveDetail implements OnInit, OnDestroy {
     const base = environment.ApiBaseUrl.replace(/\/api\/?$/, '');
     const cleaned = path.startsWith('/') ? path.slice(1) : path;
     return `${base}/${cleaned}`;
+  }
+
+  statusSeverity(
+    status: string,
+  ): 'success' | 'warn' | 'danger' | 'info' | 'secondary' {
+    switch (status) {
+      case 'Approved':
+        return 'success';
+
+      case 'Rejected':
+        return 'danger';
+
+      case 'Pending':
+        return 'warn';
+
+      default:
+        return 'secondary';
+    }
   }
 }

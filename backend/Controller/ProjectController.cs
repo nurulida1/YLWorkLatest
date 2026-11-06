@@ -179,203 +179,194 @@ namespace YLWorks.Controller
         [HttpGet("GetOne")]
         public async Task<IActionResult> GetOne(string? filter = null)
         {
-            var query = _context.Projects
-    .Include(x => x.Client)
-    .Include(x => x.ProjectMembers)
-        .ThenInclude(pm => pm.User)
-    .Include(x => x.PurchaseOrders)
-    .Include(x => x.Quotations)
-    .Include(x => x.Attachments)
-    .Include(x => x.ProjectTasks)
-        .ThenInclude(t => t.AssignedTaskMembers)
-            .ThenInclude(a => a.User)
-    .AsQueryable();
+            try
+            {
+                // Support both:
+                // filter=Id=GUID
+                // filter=GUID
 
+                if (string.IsNullOrWhiteSpace(filter))
+                    return BadRequest("Project Id is required.");
 
-            var filterValue = filter?.Split('=')[1];
+                var filterValue = filter.Contains('=')
+                    ? filter.Split('=', StringSplitOptions.RemoveEmptyEntries).LastOrDefault()
+                    : filter;
 
+                if (!Guid.TryParse(filterValue, out Guid id))
+                    return BadRequest("Invalid Id");
 
-            if (!Guid.TryParse(filterValue, out Guid id))
-                return BadRequest("Invalid Id");
-
-
-
-            var data = await query
-
-                .Where(x => x.Id == id)
-
-                .Select(x => new
-                {
-                    x.Id,
-                    x.ProjectCode,
-                    x.ProjectTitle,
-                    x.StartDate,
-                    x.EstimatedCompletedDate,
-                    x.Location,
-                    x.EstimatedBudget,
-                    x.DueDate,
-                    x.Description,
-                    x.Priority,
-                    x.Status,
-                    x.ClientId,
-                    x.ProjectLeaderId,
-                    ProjectLeader = x.ProjectLeader == null ? null : new
+                var data = await _context.Projects
+                    .AsNoTracking()
+                    .Where(x => x.Id == id)
+                    .Select(x => new
                     {
-                        FullName = x.ProjectLeader.FullName,
-                        Email = x.ProjectLeader.Email,
-                        DisplayName = x.ProjectLeader.DisplayName,
-                        JobTitle = x.ProjectLeader.JobTitle
-                    },
+                        x.Id,
+                        x.ProjectCode,
+                        x.ProjectTitle,
+                        x.StartDate,
+                        x.EstimatedCompletedDate,
+                        x.EndDate,
+                        x.Location,
+                        x.EstimatedBudget,
+                        x.DueDate,
+                        x.Description,
+                        x.Priority,
+                        x.Status,
+                        x.ClientId,
+                        x.ProjectLeaderId,
 
-                    Client = x.Client == null ? null : new
-                    {
-                        Name = x.Client.Name
-                    },
-
-
-                    ProjectMembers = x.ProjectMembers
-                        .Select(pm => new ProjectMemberDto
+                        // Project Leader
+                        ProjectLeader = x.ProjectLeader == null ? null : new
                         {
-                            ProjectId = x.Id,
+                            x.ProjectLeader.FullName,
+                            x.ProjectLeader.Email,
+                            x.ProjectLeader.DisplayName,
+                            x.ProjectLeader.JobTitle
+                        },
 
-                            UserId = pm.User.Id,
+                        // Client
+                        Client = x.Client == null ? null : new
+                        {
+                            x.Client.Name
+                        },
 
-                            User = pm.User == null
-                            ? null
-                            : new UserDto
+                        // Project Members
+                        ProjectMembers = x.ProjectMembers
+                            .Select(pm => new ProjectMemberDto
                             {
-                                Id = pm.User.Id,
-                                FullName = pm.User.FullName,
-                                JobTitle = pm.User.JobTitle
-                            }
+                                ProjectId = pm.ProjectId,
+                                UserId = pm.UserId,
 
-                        }).ToList(),
-
-
-
-                    MaterialRequests = x.MaterialRequest
-                        .Select(mr => new
-                        {
-                            mr.DocumentNo,
-
-                            mr.RequestDate,
-
-
-                            MaterialItems = mr.MaterialItems
-                                .Select(i => new
+                                User = pm.User == null ? null : new UserDto
                                 {
-                                    i.Description,
+                                    Id = pm.User.Id,
+                                    FullName = pm.User.FullName,
+                                    JobTitle = pm.User.JobTitle
+                                }
+                            })
+                            .ToList(),
 
-                                    i.Brand,
+                        // Material Requests
+                        MaterialRequests = x.MaterialRequest
+                            .Select(mr => new
+                            {
+                                mr.DocumentNo,
+                                mr.RequestDate,
 
-                                    i.Quantity,
+                                MaterialItems = mr.MaterialItems
+                                    .Select(i => new
+                                    {
+                                        i.Description,
+                                        i.Brand,
+                                        i.Quantity,
+                                        i.Unit,
+                                        i.Remarks
+                                    })
+                                    .ToList()
+                            })
+                            .ToList(),
 
-                                    i.Unit,
+                        // Work Orders
+                        WorkOrders = x.WorkOrders
+                            .OrderBy(w => w.CreatedAt)
+                            .Select(w => new
+                            {
+                                w.Id,
+                                w.WorkOrderNo,
+                                w.Title,
+                                w.Description,
+                                w.WorkType,
+                                w.Location,
+                                w.ScopeOfWork,
+                                w.Remarks,
+                                w.Priority,
+                                w.Status,
+                                w.ScheduledDate,
+                                w.DueDate,
+                                w.StartedAt,
+                                w.CompletedAt,
+                                w.CreatedAt,
 
-                                    i.Remarks
+                                // Main Assigned User
+                                AssignedTo = w.AssignedTo == null ? null : new
+                                {
+                                    w.AssignedTo.Id,
+                                    w.AssignedTo.FullName,
+                                    w.AssignedTo.DisplayName,
+                                    w.AssignedTo.JobTitle,
+                                    w.AssignedTo.Email
+                                },
 
-                                }).ToList()
+                                // Additional Work Order Members
+                                WorkOrderMembers = w.WorkOrderMembers
+                                    .Select(m => new
+                                    {
+                                        m.Id,
+                                        m.UserId,
+                                        m.AssignedAt,
 
-                        }).ToList(),
+                                        User = m.User == null ? null : new
+                                        {
+                                            m.User.Id,
+                                            m.User.FullName,
+                                            m.User.DisplayName,
+                                            m.User.JobTitle,
+                                            m.User.Email
+                                        }
+                                    })
+                                    .ToList(),
 
-                    ProjectTasks = x.ProjectTasks
-    .OrderBy(t => t.EstimatedStartDate)
-    .Select(t => new
-    {
-        t.Id,
-        t.TaskCode,
-        t.Title,
-        t.Description,
-        t.Category,
-        t.Priority,
-        t.Status,
-        t.Progress,
-        t.EstimatedStartDate,
-        t.EstimatedEndDate,
-        t.ActualStartDate,
-        t.CompletedDate,
-        t.DueDate,
-        t.Remarks,
-        t.CreatedAt,
+                                // Work Order Checklists
+                                Checklists = w.Checklists
+                                    .OrderBy(c => c.Sequence)
+                                    .Select(c => new
+                                    {
+                                        c.Id,
+                                        c.Title,
+                                        c.IsCompleted,
+                                        c.CompletedAt,
+                                        c.Sequence
+                                    })
+                                    .ToList()
+                            })
+                            .ToList(),
 
+                        // Project Attachments
+                        Attachments = x.Attachments
+                            .Where(a =>
+                                a.EntityType == "Project" &&
+                                a.EntityId == x.Id
+                            )
+                            .Select(a => new
+                            {
+                                a.Id,
+                                a.FileName,
+                                a.FileType,
+                                a.FileSize,
+                                a.FileUrl,
+                                a.UploadedAt,
+                                a.UploadedById
+                            })
+                            .ToList()
+                    })
+                    .FirstOrDefaultAsync();
 
-        AssignedTaskMembers = t.AssignedTaskMembers
-            .Select(a => new
+                if (data == null)
+                    return NotFound(new
+                    {
+                        Error = "Project not found."
+                    });
+
+                return Ok(data);
+            }
+            catch (Exception ex)
             {
-                a.Id,
-                a.UserId,
-                a.AssignedDate,
-                User = a.User == null ? null : new
+                return StatusCode(500, new
                 {
-                    a.User.Id,
-                    a.User.FullName,
-                    a.User.DisplayName,
-                    a.User.JobTitle,
-                    a.User.Email
-                }
-            })
-            .ToList(),
-
-        Checklists = t.Checklists
-            .Select(c => new
-            {
-                c.Id,
-                c.Title,
-                c.IsCompleted
-            })
-            .ToList(),
-
-        TaskAttachments = t.TaskAttachments
-            .Select(a => new
-            {
-                a.Id,
-                a.FileName,
-                a.FileType
-            })
-            .ToList()
-    })
-    .ToList(),
-
-                    Attachments = x.Attachments
-
-                        .Where(a =>
-                            a.EntityType == "Project"
-                            &&
-                            a.EntityId == x.Id
-                        )
-
-                        .Select(a => new
-                        {
-                            a.Id,
-
-                            a.FileName,
-
-                            a.FileType,
-
-                            a.FileSize,
-
-                            a.FileUrl,
-
-                            a.UploadedAt,
-
-                            a.UploadedById
-                        })
-
-                        .ToList()
-
-
-                })
-
-                .FirstOrDefaultAsync();
-
-
-
-            if (data == null)
-                return NotFound();
-
-
-
-            return Ok(data);
+                    Error = "Failed to retrieve project.",
+                    Message = ex.Message
+                });
+            }
         }
 
         [HttpPost("Create")]

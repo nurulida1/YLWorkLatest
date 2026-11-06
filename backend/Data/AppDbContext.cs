@@ -1,3 +1,4 @@
+
 using Microsoft.EntityFrameworkCore;
 using YLWorks.Model;
 using YLWorks.Model.Leave;
@@ -6,11 +7,15 @@ namespace YLWorks.Data
 {
     public class AppDbContext : DbContext
     {
-        public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
+        public AppDbContext(DbContextOptions<AppDbContext> options)
+            : base(options)
+        {
+        }
 
         // =======================
         // SECURITY / ACCESS
         // =======================
+
         public DbSet<User> Users { get; set; }
         public DbSet<UserReportingManager> UserReportingManagers { get; set; }
         public DbSet<PasswordResetToken> PasswordResetTokens { get; set; }
@@ -18,12 +23,12 @@ namespace YLWorks.Data
         public DbSet<RolePermission> RolePermissions { get; set; }
         public DbSet<AccessPermission> AccessPermissions { get; set; }
         public DbSet<SystemModule> SystemModules { get; set; }
-
         public DbSet<ActivityLog> ActivityLogs { get; set; }
 
         // =======================
         // LEAVE MANAGEMENT
         // =======================
+
         public DbSet<LeaveType> LeaveTypes { get; set; }
         public DbSet<LeaveBalance> LeaveBalances { get; set; }
         public DbSet<LeaveRequest> LeaveRequests { get; set; }
@@ -44,16 +49,25 @@ namespace YLWorks.Data
         // =======================
         // CLAIM MANAGEMENT
         // =======================
+
         public DbSet<YLWorks.Model.Claim.ClaimRequest> ClaimRequests { get; set; }
         public DbSet<YLWorks.Model.Claim.ClaimLineItem> ClaimLineItems { get; set; }
         public DbSet<YLWorks.Model.Claim.ClaimApproval> ClaimApprovals { get; set; }
         public DbSet<YLWorks.Model.Claim.ClaimDocument> ClaimDocuments { get; set; }
         public DbSet<YLWorks.Model.Claim.ClaimSettings> ClaimSettings { get; set; }
 
+        // =======================
+        // STAFF TASK / MEETING
+        // =======================
+
         public DbSet<StaffTask> StaffTasks { get; set; }
         public DbSet<Meeting> Meetings { get; set; }
         public DbSet<MeetingParticipant> MeetingParticipants { get; set; }
         public DbSet<StaffTaskChecklist> StaffTaskChecklists { get; set; }
+
+        // =======================
+        // DAILY REPORT
+        // =======================
 
         public DbSet<DailyReport> DailyReports { get; set; }
         public DbSet<DailyReportTask> DailyReportTasks { get; set; }
@@ -62,23 +76,26 @@ namespace YLWorks.Data
         // =======================
         // ORGANIZATION
         // =======================
+
         public DbSet<Department> Departments { get; set; }
+
         public DbSet<Project> Projects { get; set; }
         public DbSet<ProjectMember> ProjectMembers { get; set; }
 
-        public DbSet<ProjectTask> ProjectTasks { get; set; }
-        public DbSet<ProjectTaskAssignment> ProjectTaskAssignments { get; set; }
-        public DbSet<ProjectTaskAttachment> ProjectTaskAttachments { get; set; }
-        public DbSet<ProjectTaskChecklist> ProjectTaskChecklists { get; set; }
-
+        // WORK ORDER
         public DbSet<WorkOrder> WorkOrders { get; set; }
-        public DbSet<WorkOrderTask> WorkOrderTasks { get; set; }
-        public DbSet<WorkOrderAssignment> WorkOrderAssignments { get; set; }
+        public DbSet<WorkOrderMember> WorkOrderMembers { get; set; }
+        public DbSet<WorkOrderChecklist> WorkOrderChecklists { get; set; }
 
+        // JOB SHEET
+        public DbSet<JobSheet> JobSheets { get; set; }
+        public DbSet<JobSheetMember> JobSheetMembers { get; set; }
+
+        // DELIVERY ORDER
         public DbSet<DeliveryOrder> DeliveryOrders { get; set; }
         public DbSet<DeliveryOrderItem> DeliveryOrderItems { get; set; }
         public DbSet<DeliveryOrderStatusHistory> DeliveryOrderStatusHistories { get; set; }
-        //public DbSet<DeliveryOrderProofImage> DeliveryOrderProofImages { get; set; }
+
         public DbSet<DORMAProofImage> DORMAProofImages { get; set; }
         public DbSet<DORMAStatusHistory> DORMAStatusHistories { get; set; }
 
@@ -93,19 +110,19 @@ namespace YLWorks.Data
         public DbSet<CategoryInventory> CategoryInventories { get; set; }
         public DbSet<LocationInventory> LocationInventories { get; set; }
 
-
         // =======================
         // MASTER DATA
         // =======================
+
         public DbSet<Company> Companies { get; set; }
         public DbSet<Address> Addresses { get; set; }
         public DbSet<AttachmentDto> Attachments { get; set; }
-
         public DbSet<Notice> Notices { get; set; }
 
         // =======================
         // SALES / PROCUREMENT
         // =======================
+
         public DbSet<Quotation> Quotations { get; set; }
         public DbSet<QuotationItems> QuotationItems { get; set; }
         public DbSet<QuotationStatusHistory> QuotationStatusHistories { get; set; }
@@ -123,39 +140,53 @@ namespace YLWorks.Data
         // =======================
         // INVENTORY / MATERIAL
         // =======================
+
         public DbSet<GoodsReceiving> GoodsReceivings { get; set; }
         public DbSet<GoodsReceivingItem> GoodsReceivingItems { get; set; }
 
         public DbSet<MaterialRequest> MaterialRequests { get; set; }
         public DbSet<MaterialItem> MaterialItems { get; set; }
         public DbSet<MaterialRequestStatusHistory> MaterialRequestStatusHistories { get; set; }
+
         public DbSet<Inventory> Inventories { get; set; }
         public DbSet<InventoryAudit> InventoryAudits { get; set; }
+
         // =======================
         // FINANCE
         // =======================
+
         public DbSet<Invoice> Invoices { get; set; }
         public DbSet<InvoiceItem> InvoiceItems { get; set; }
         public DbSet<Payments> Payments { get; set; }
         public DbSet<Income> Incomes { get; set; }
         public DbSet<Expense> Expenses { get; set; }
 
-        //Setting
+        // =======================
+        // SETTINGS
+        // =======================
+
         public DbSet<TermsAndCondition> TermsAndConditions { get; set; }
         public DbSet<PaymentTerm> PaymentTerms { get; set; }
         public DbSet<ProductService> ProductServices { get; set; }
         public DbSet<StockTransaction> StockTransactions { get; set; }
 
-        public DbSet<JobSheet> JobSheets { get; set; }
-        public DbSet<JobSheetMember> JobSheetMembers { get; set; }
+        // =======================
+        // HARDWARE REQUEST
+        // =======================
 
         public DbSet<HardwareRequest> HardwareRequests { get; set; }
-
         public DbSet<HardwareRequestItem> HardwareRequestItems { get; set; }
 
-        public DbSet<OfficeHandbook> OfficeHandbooks { get; set; }
+        // =======================
+        // OFFICE HANDBOOK
+        // =======================
 
+        public DbSet<OfficeHandbook> OfficeHandbooks { get; set; }
         public DbSet<OfficeHandbookCategory> OfficeHandbookCategories { get; set; }
+
+        // =======================
+        // MODEL CONFIGURATION
+        // =======================
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -164,7 +195,7 @@ namespace YLWorks.Data
             // =======================
             // DEFAULT SUPER ADMIN
             // =======================
-            // Must use fixed Guid/DateTime — Guid.NewGuid()/DateTime.UtcNow break EF migrations.
+
             modelBuilder.Entity<User>().HasData(
                 new User
                 {
@@ -187,83 +218,146 @@ namespace YLWorks.Data
 
             modelBuilder.Entity<RolePermission>(entity =>
             {
-                entity.HasKey(ra => new { ra.Id });
-
+                entity.HasKey(ra => ra.Id);
             });
 
             modelBuilder.Entity<AccessPermission>(entity =>
             {
-                entity.HasKey(ra => new { ra.Id });
-
+                entity.HasKey(ra => ra.Id);
             });
 
             // =======================
             // COMPANY
             // =======================
+
             modelBuilder.Entity<Company>(entity =>
             {
                 entity.HasKey(e => e.Id);
-
                 entity.Property(e => e.Name).IsRequired().HasMaxLength(200);
             });
 
-           
             // =======================
             // DEPARTMENT
             // =======================
+
             modelBuilder.Entity<Department>(entity =>
             {
                 entity.HasKey(e => e.Id);
 
-                entity.Property(e => e.Name).IsRequired().HasMaxLength(200);
+                entity.Property(e => e.Name)
+                    .IsRequired()
+                    .HasMaxLength(200);
+
                 entity.HasOne(d => d.Hod)
-        .WithMany() // no collection in User
-        .HasForeignKey(d => d.HodId)
-        .OnDelete(DeleteBehavior.SetNull);
+                    .WithMany()
+                    .HasForeignKey(d => d.HodId)
+                    .OnDelete(DeleteBehavior.SetNull);
             });
 
             // =======================
             // PROJECT
             // =======================
+
             modelBuilder.Entity<ProjectMember>(entity =>
             {
                 entity.HasKey(pm => new { pm.ProjectCode, pm.UserId });
             });
 
-            modelBuilder.Entity<ProjectTask>()
-    .HasOne(t => t.Project)
-    .WithMany(p => p.ProjectTasks)
-    .HasForeignKey(t => t.ProjectId)
-        .OnDelete(DeleteBehavior.Cascade);
+            // Project -> JobSheets
+            modelBuilder.Entity<JobSheet>()
+                .HasOne(js => js.Project)
+                .WithMany(p => p.JobSheets)
+                .HasForeignKey(js => js.ProjectId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Project -> WorkOrders
+            modelBuilder.Entity<WorkOrder>()
+                .HasOne(wo => wo.Project)
+                .WithMany(p => p.WorkOrders)
+                .HasForeignKey(wo => wo.ProjectId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             // =======================
             // WORK ORDER
             // =======================
-            modelBuilder.Entity<WorkOrder>(entity =>
-            {
-                entity.HasKey(e => e.Id);
 
-                entity.Property(e => e.WorkOrderNo).IsRequired().HasMaxLength(50);
-            });
+            modelBuilder.Entity<WorkOrder>()
+                .HasOne(x => x.AssignedTo)
+                .WithMany()
+                .HasForeignKey(x => x.AssignedToId)
+                .OnDelete(DeleteBehavior.Restrict);
 
-            modelBuilder.Entity<WorkOrderTask>(entity =>
-            {
-                entity.HasKey(e => e.Id);
-            });
+            modelBuilder.Entity<WorkOrder>()
+                .HasOne(x => x.CreatedBy)
+                .WithMany()
+                .HasForeignKey(x => x.CreatedById)
+                .OnDelete(DeleteBehavior.Restrict);
 
-            modelBuilder.Entity<WorkOrderAssignment>(entity =>
-            {
-                entity.HasKey(e => e.Id);
-            });
+            modelBuilder.Entity<WorkOrder>()
+                .HasIndex(x => x.WorkOrderNo)
+                .IsUnique();
+
+            // WorkOrder -> Members
+            modelBuilder.Entity<WorkOrderMember>()
+                .HasOne(x => x.WorkOrder)
+                .WithMany(x => x.WorkOrderMembers)
+                .HasForeignKey(x => x.WorkOrderId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<WorkOrderMember>()
+                .HasOne(x => x.User)
+                .WithMany()
+                .HasForeignKey(x => x.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<WorkOrderMember>()
+                .HasOne(x => x.AssignedBy)
+                .WithMany()
+                .HasForeignKey(x => x.AssignedById)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // WorkOrder -> Checklists
+            modelBuilder.Entity<WorkOrderChecklist>()
+                .HasOne(x => x.WorkOrder)
+                .WithMany(x => x.Checklists)
+                .HasForeignKey(x => x.WorkOrderId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // =======================
+            // JOB SHEET
+            // =======================
+
+            // WorkOrder -> JobSheets
+            modelBuilder.Entity<JobSheet>()
+                .HasOne(js => js.WorkOrder)
+                .WithMany(wo => wo.JobSheets)
+                .HasForeignKey(js => js.WorkOrderId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            // JobSheet -> Members
+            modelBuilder.Entity<JobSheetMember>()
+                .HasOne(m => m.JobSheet)
+                .WithMany(js => js.Members)
+                .HasForeignKey(m => m.JobSheetId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // JobSheetMember -> User
+            modelBuilder.Entity<JobSheetMember>()
+                .HasOne(m => m.User)
+                .WithMany()
+                .HasForeignKey(m => m.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             // =======================
             // MATERIAL REQUEST
             // =======================
+
             modelBuilder.Entity<MaterialRequest>(entity =>
             {
                 entity.HasKey(e => e.Id);
 
-                entity.Property(e => e.RequestNo).HasMaxLength(50);
+                entity.Property(e => e.RequestNo)
+                    .HasMaxLength(50);
 
                 entity.Property(e => e.Status)
                     .HasMaxLength(30)
@@ -278,100 +372,127 @@ namespace YLWorks.Data
             modelBuilder.Entity<MaterialItem>(entity =>
             {
                 entity.HasKey(e => e.Id);
-
                 entity.Property(e => e.Quantity).HasColumnType("decimal(18,2)");
-
             });
 
             // =======================
             // DELIVERY ORDER
             // =======================
+
             modelBuilder.Entity<DeliveryOrder>(entity =>
             {
                 entity.HasKey(e => e.Id);
 
-                entity.Property(e => e.DeliveryOrderNo).IsRequired().HasMaxLength(50);
-                entity.Property(e => e.Status).HasMaxLength(20).HasDefaultValue("Draft");
+                entity.Property(e => e.DeliveryOrderNo)
+                    .IsRequired()
+                    .HasMaxLength(50);
+
+                entity.Property(e => e.Status)
+                    .HasMaxLength(20)
+                    .HasDefaultValue("Draft");
             });
 
             modelBuilder.Entity<DeliveryOrderItem>(entity =>
             {
                 entity.HasKey(e => e.Id);
 
-                entity.Property(e => e.QuantityOrdered).HasColumnType("decimal(18,2)");
-                entity.Property(e => e.QuantityDelivered).HasColumnType("decimal(18,2)");
+                entity.Property(e => e.QuantityOrdered)
+                    .HasColumnType("decimal(18,2)");
+
+                entity.Property(e => e.QuantityDelivered)
+                    .HasColumnType("decimal(18,2)");
             });
 
             modelBuilder.Entity<DORMAItem>(entity =>
             {
                 entity.HasKey(e => e.Id);
-
                 entity.Property(e => e.Quantity).HasColumnType("decimal(18,2)");
             });
 
             // =======================
             // FINANCE
             // =======================
+
             modelBuilder.Entity<Invoice>(entity =>
             {
                 entity.HasKey(e => e.Id);
 
-                entity.Property(e => e.InvoiceNo).IsRequired().HasMaxLength(50);
+                entity.Property(e => e.InvoiceNo)
+                    .IsRequired()
+                    .HasMaxLength(50);
             });
 
             modelBuilder.Entity<InvoiceItem>(entity =>
             {
-                entity.Property(i => i.Amount).HasColumnType("decimal(18,2)");
+                entity.Property(i => i.Amount)
+                    .HasColumnType("decimal(18,2)");
             });
 
             modelBuilder.Entity<Payments>(entity =>
             {
                 entity.HasKey(e => e.Id);
 
-                entity.Property(e => e.Amount).HasColumnType("decimal(18,2)");
+                entity.Property(e => e.Amount)
+                    .HasColumnType("decimal(18,2)");
             });
 
             modelBuilder.Entity<Expense>(entity =>
             {
                 entity.HasKey(e => e.Id);
 
-                entity.Property(e => e.ExpenseNo).IsRequired().HasMaxLength(50);
-                entity.Property(e => e.Amount).HasColumnType("decimal(18,2)");
+                entity.Property(e => e.ExpenseNo)
+                    .IsRequired()
+                    .HasMaxLength(50);
+
+                entity.Property(e => e.Amount)
+                    .HasColumnType("decimal(18,2)");
             });
 
             modelBuilder.Entity<Income>(entity =>
             {
                 entity.HasKey(e => e.Id);
 
-                entity.Property(e => e.IncomeNo).IsRequired().HasMaxLength(50);
-                entity.Property(e => e.Amount).HasColumnType("decimal(18,2)");
+                entity.Property(e => e.IncomeNo)
+                    .IsRequired()
+                    .HasMaxLength(50);
+
+                entity.Property(e => e.Amount)
+                    .HasColumnType("decimal(18,2)");
             });
 
             // =======================
             // QUOTATION & ITEMS
             // =======================
+
             modelBuilder.Entity<Quotation>(entity =>
             {
                 entity.HasKey(e => e.Id);
-                entity.Property(e => e.QuotationNo).IsRequired().HasMaxLength(50);
 
-                // Relationship to Items
+                entity.Property(e => e.QuotationNo)
+                    .IsRequired()
+                    .HasMaxLength(50);
+
                 entity.HasMany(q => q.QuotationItems)
-                      .WithOne(qi => qi.Quotation)
-                      .HasForeignKey(qi => qi.QuotationId)
-                      .OnDelete(DeleteBehavior.Cascade);
+                    .WithOne(qi => qi.Quotation)
+                    .HasForeignKey(qi => qi.QuotationId)
+                    .OnDelete(DeleteBehavior.Cascade);
             });
 
             modelBuilder.Entity<QuotationItems>(entity =>
             {
                 entity.HasKey(e => e.Id);
 
-                // Fix: Column precision for financial data
-                entity.Property(e => e.Quantity).HasColumnType("decimal(18,2)");
-                entity.Property(e => e.UnitPrice).HasColumnType("decimal(18,2)");
-                entity.Property(e => e.TotalPrice).HasColumnType("decimal(18,2)");
+                entity.Property(e => e.Quantity)
+                    .HasColumnType("decimal(18,2)");
 
-                entity.Property(e => e.RowType).HasMaxLength(20);
+                entity.Property(e => e.UnitPrice)
+                    .HasColumnType("decimal(18,2)");
+
+                entity.Property(e => e.TotalPrice)
+                    .HasColumnType("decimal(18,2)");
+
+                entity.Property(e => e.RowType)
+                    .HasMaxLength(20);
             });
 
             modelBuilder.Entity<QuotationStatusHistory>(entity =>
@@ -379,8 +500,8 @@ namespace YLWorks.Data
                 entity.HasKey(e => e.Id);
 
                 entity.HasOne(sh => sh.Quotation)
-                      .WithMany(q => q.QuotationStatusHistories)
-                      .HasForeignKey(sh => sh.QuotationId);
+                    .WithMany(q => q.QuotationStatusHistories)
+                    .HasForeignKey(sh => sh.QuotationId);
             });
 
             modelBuilder.Entity<ProductService>(entity =>
@@ -388,44 +509,74 @@ namespace YLWorks.Data
                 entity.HasKey(x => x.Id);
 
                 entity.HasMany(x => x.Inventories)
-                      .WithOne(x => x.ProductService)
-                      .HasForeignKey(x => x.ProductServiceId)
-                      .OnDelete(DeleteBehavior.SetNull);
+                    .WithOne(x => x.ProductService)
+                    .HasForeignKey(x => x.ProductServiceId)
+                    .OnDelete(DeleteBehavior.SetNull);
             });
+
+            // =======================
+            // ATTACHMENTS
+            // =======================
 
             modelBuilder.Entity<AttachmentDto>(entity =>
             {
                 entity.HasKey(x => x.Id);
 
                 entity.HasOne(x => x.UploadedBy)
-                   .WithMany()
-                   .HasForeignKey(x => x.UploadedById)
-                   .OnDelete(DeleteBehavior.Restrict);
+                    .WithMany()
+                    .HasForeignKey(x => x.UploadedById)
+                    .OnDelete(DeleteBehavior.Restrict);
             });
+
+            // =======================
+            // INVENTORY AUDIT
+            // =======================
 
             modelBuilder.Entity<InventoryAudit>(entity =>
             {
                 entity.HasKey(x => x.Id);
-                entity.Property(x => x.Action).HasMaxLength(20).IsRequired();
-                entity.Property(x => x.UserName).HasMaxLength(200);
-                entity.Property(x => x.Changes).HasColumnType("json").IsRequired();
+
+                entity.Property(x => x.Action)
+                    .HasMaxLength(20)
+                    .IsRequired();
+
+                entity.Property(x => x.UserName)
+                    .HasMaxLength(200);
+
+                entity.Property(x => x.Changes)
+                    .HasColumnType("json")
+                    .IsRequired();
+
                 entity.HasIndex(x => new { x.InventoryId, x.CreatedAt });
 
                 entity.HasOne(x => x.Inventory)
-                      .WithMany()
-                      .HasForeignKey(x => x.InventoryId)
-                      .OnDelete(DeleteBehavior.Cascade);
+                    .WithMany()
+                    .HasForeignKey(x => x.InventoryId)
+                    .OnDelete(DeleteBehavior.Cascade);
             });
 
             modelBuilder.Entity<Inventory>(entity =>
             {
-                entity.Property(x => x.Quantity).HasColumnType("decimal(18,3)");
-                entity.Property(x => x.ReservedQuantity).HasColumnType("decimal(18,3)");
-                entity.Property(x => x.Costs).HasColumnType("decimal(18,2)");
+                entity.Property(x => x.Quantity)
+                    .HasColumnType("decimal(18,3)");
+
+                entity.Property(x => x.ReservedQuantity)
+                    .HasColumnType("decimal(18,3)");
+
+                entity.Property(x => x.Costs)
+                    .HasColumnType("decimal(18,2)");
             });
+
+            // =======================
+            // LEAVE MANAGEMENT
+            // =======================
 
             ConfigureLeaveManagement(modelBuilder);
         }
+
+        // ==================================================
+        // LEAVE MANAGEMENT CONFIGURATION
+        // ==================================================
 
         private static void ConfigureLeaveManagement(ModelBuilder modelBuilder)
         {
@@ -440,34 +591,59 @@ namespace YLWorks.Data
             modelBuilder.Entity<UserReportingManager>(entity =>
             {
                 entity.ToTable("UserReportingManagers");
+
                 entity.HasKey(e => new { e.UserId, e.ManagerId });
+
                 entity.HasOne(e => e.User)
                     .WithMany(u => u.ReportingManagers)
                     .HasForeignKey(e => e.UserId)
                     .OnDelete(DeleteBehavior.Cascade);
+
                 entity.HasOne(e => e.Manager)
                     .WithMany()
                     .HasForeignKey(e => e.ManagerId)
                     .OnDelete(DeleteBehavior.Restrict);
+
                 entity.HasIndex(e => e.ManagerId);
             });
 
             modelBuilder.Entity<LeaveType>(entity =>
             {
                 entity.HasKey(e => e.Id);
-                entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
-                entity.Property(e => e.PolicyKind).HasConversion<string>().HasMaxLength(30);
-                entity.Property(e => e.ApplicableGender).HasConversion<string>().HasMaxLength(20);
+
+                entity.Property(e => e.Name)
+                    .IsRequired()
+                    .HasMaxLength(100);
+
+                entity.Property(e => e.PolicyKind)
+                    .HasConversion<string>()
+                    .HasMaxLength(30);
+
+                entity.Property(e => e.ApplicableGender)
+                    .HasConversion<string>()
+                    .HasMaxLength(20);
             });
 
             modelBuilder.Entity<LeaveBalance>(entity =>
             {
                 entity.HasKey(e => e.Id);
-                entity.HasIndex(e => new { e.EmployeeId, e.LeaveTypeId, e.Year }).IsUnique();
-                entity.HasOne(e => e.Employee).WithMany().HasForeignKey(e => e.EmployeeId)
+
+                entity.HasIndex(e => new
+                {
+                    e.EmployeeId,
+                    e.LeaveTypeId,
+                    e.Year
+                }).IsUnique();
+
+                entity.HasOne(e => e.Employee)
+                    .WithMany()
+                    .HasForeignKey(e => e.EmployeeId)
                     .OnDelete(DeleteBehavior.Cascade);
-                entity.HasOne(e => e.LeaveType).WithMany(t => t.LeaveBalances)
-                    .HasForeignKey(e => e.LeaveTypeId).OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.LeaveType)
+                    .WithMany(t => t.LeaveBalances)
+                    .HasForeignKey(e => e.LeaveTypeId)
+                    .OnDelete(DeleteBehavior.Restrict);
             });
 
             modelBuilder.Entity<LeavePolicy>(entity =>
@@ -479,9 +655,15 @@ namespace YLWorks.Data
             modelBuilder.Entity<LeaveTenureBand>(entity =>
             {
                 entity.HasKey(e => e.Id);
-                entity.Property(e => e.BandKind).HasConversion<string>().HasMaxLength(20);
-                entity.HasOne(e => e.LeavePolicy).WithMany(p => p.TenureBands)
-                    .HasForeignKey(e => e.LeavePolicyId).OnDelete(DeleteBehavior.Cascade);
+
+                entity.Property(e => e.BandKind)
+                    .HasConversion<string>()
+                    .HasMaxLength(20);
+
+                entity.HasOne(e => e.LeavePolicy)
+                    .WithMany(p => p.TenureBands)
+                    .HasForeignKey(e => e.LeavePolicyId)
+                    .OnDelete(DeleteBehavior.Cascade);
             });
 
             modelBuilder.Entity<LeaveYearClose>(entity =>
@@ -493,118 +675,216 @@ namespace YLWorks.Data
             modelBuilder.Entity<LeaveRequest>(entity =>
             {
                 entity.HasKey(e => e.Id);
+
                 entity.Property(e => e.Status)
                     .HasConversion<string>()
                     .HasMaxLength(20);
+
                 entity.Property(e => e.StartSession)
                     .HasConversion<string>()
                     .HasMaxLength(10);
+
                 entity.Property(e => e.EndSession)
                     .HasConversion<string>()
                     .HasMaxLength(10);
-                entity.HasOne(e => e.Employee).WithMany().HasForeignKey(e => e.EmployeeId)
+
+                entity.HasOne(e => e.Employee)
+                    .WithMany()
+                    .HasForeignKey(e => e.EmployeeId)
                     .OnDelete(DeleteBehavior.Restrict);
-                entity.HasOne(e => e.LeaveType).WithMany(t => t.LeaveRequests)
-                    .HasForeignKey(e => e.LeaveTypeId).OnDelete(DeleteBehavior.Restrict);
-                entity.HasOne(e => e.Cancellation).WithOne(c => c.Request)
+
+                entity.HasOne(e => e.LeaveType)
+                    .WithMany(t => t.LeaveRequests)
+                    .HasForeignKey(e => e.LeaveTypeId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.Cancellation)
+                    .WithOne(c => c.Request)
                     .HasForeignKey<LeaveCancellation>(c => c.RequestId);
-                entity.HasOne(e => e.ConflictCheck).WithOne(c => c.Request)
+
+                entity.HasOne(e => e.ConflictCheck)
+                    .WithOne(c => c.Request)
                     .HasForeignKey<LeaveConflictCheck>(c => c.RequestId);
-                entity.HasOne(e => e.BalanceCheck).WithOne(c => c.Request)
+
+                entity.HasOne(e => e.BalanceCheck)
+                    .WithOne(c => c.Request)
                     .HasForeignKey<LeaveBalanceCheckRecord>(c => c.RequestId);
-                entity.HasOne(e => e.Appeal).WithOne(a => a.Request)
+
+                entity.HasOne(e => e.Appeal)
+                    .WithOne(a => a.Request)
                     .HasForeignKey<LeaveAppeal>(a => a.RequestId);
             });
 
             modelBuilder.Entity<LeaveRequestBalanceAllocation>(entity =>
             {
                 entity.HasKey(e => e.Id);
+
                 entity.HasIndex(e => e.RequestId);
-                entity.HasOne(e => e.Request).WithMany(r => r.BalanceAllocations)
-                    .HasForeignKey(e => e.RequestId).OnDelete(DeleteBehavior.Cascade);
-                entity.HasOne(e => e.LeaveType).WithMany()
-                    .HasForeignKey(e => e.LeaveTypeId).OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.Request)
+                    .WithMany(r => r.BalanceAllocations)
+                    .HasForeignKey(e => e.RequestId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(e => e.LeaveType)
+                    .WithMany()
+                    .HasForeignKey(e => e.LeaveTypeId)
+                    .OnDelete(DeleteBehavior.Restrict);
             });
 
             modelBuilder.Entity<LeaveApproval>(entity =>
             {
                 entity.HasKey(e => e.Id);
-                entity.Property(e => e.Decision).HasConversion<string>().HasMaxLength(20);
-                entity.HasOne(e => e.Request).WithMany(r => r.Approvals)
-                    .HasForeignKey(e => e.RequestId).OnDelete(DeleteBehavior.Cascade);
-                entity.HasOne(e => e.Approver).WithMany().HasForeignKey(e => e.ApproverId)
+
+                entity.Property(e => e.Decision)
+                    .HasConversion<string>()
+                    .HasMaxLength(20);
+
+                entity.HasOne(e => e.Request)
+                    .WithMany(r => r.Approvals)
+                    .HasForeignKey(e => e.RequestId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(e => e.Approver)
+                    .WithMany()
+                    .HasForeignKey(e => e.ApproverId)
                     .OnDelete(DeleteBehavior.Restrict);
             });
 
             modelBuilder.Entity<LeaveCancellation>(entity =>
             {
                 entity.HasKey(e => e.Id);
-                entity.Property(e => e.Status).HasConversion<string>().HasMaxLength(20);
+
+                entity.Property(e => e.Status)
+                    .HasConversion<string>()
+                    .HasMaxLength(20);
             });
 
-            modelBuilder.Entity<LeaveConflictCheck>(entity => entity.HasKey(e => e.Id));
+            modelBuilder.Entity<LeaveConflictCheck>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+            });
 
             modelBuilder.Entity<LeaveBalanceCheckRecord>(entity =>
             {
                 entity.HasKey(e => e.Id);
-                entity.Property(e => e.ActionTaken).HasConversion<string>().HasMaxLength(30);
+
+                entity.Property(e => e.ActionTaken)
+                    .HasConversion<string>()
+                    .HasMaxLength(30);
             });
 
             modelBuilder.Entity<LeaveSupportingDocument>(entity =>
             {
                 entity.HasKey(e => e.Id);
-                entity.HasOne(e => e.Request).WithMany(r => r.Documents)
-                    .HasForeignKey(e => e.RequestId).OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(e => e.Request)
+                    .WithMany(r => r.Documents)
+                    .HasForeignKey(e => e.RequestId)
+                    .OnDelete(DeleteBehavior.Cascade);
             });
 
             modelBuilder.Entity<LeaveAppeal>(entity =>
             {
                 entity.HasKey(e => e.Id);
-                entity.Property(e => e.Outcome).HasConversion<string>().HasMaxLength(20);
-                entity.HasOne(e => e.RaisedByUser).WithMany().HasForeignKey(e => e.RaisedBy)
+
+                entity.Property(e => e.Outcome)
+                    .HasConversion<string>()
+                    .HasMaxLength(20);
+
+                entity.HasOne(e => e.RaisedByUser)
+                    .WithMany()
+                    .HasForeignKey(e => e.RaisedBy)
                     .OnDelete(DeleteBehavior.Restrict);
-                entity.HasOne(e => e.ReviewedByUser).WithMany().HasForeignKey(e => e.ReviewedBy)
+
+                entity.HasOne(e => e.ReviewedByUser)
+                    .WithMany()
+                    .HasForeignKey(e => e.ReviewedBy)
                     .OnDelete(DeleteBehavior.SetNull);
             });
 
             modelBuilder.Entity<LeaveCalendarConnection>(entity =>
             {
                 entity.HasKey(e => e.Id);
-                entity.Property(e => e.Provider).HasConversion<string>().HasMaxLength(20);
-                entity.HasIndex(e => new { e.UserId, e.Provider }).IsUnique();
+
+                entity.Property(e => e.Provider)
+                    .HasConversion<string>()
+                    .HasMaxLength(20);
+
+                entity.HasIndex(e => new { e.UserId, e.Provider })
+                    .IsUnique();
+
                 entity.HasIndex(e => e.RefreshTokenProtected);
-                entity.HasOne(e => e.User).WithMany().HasForeignKey(e => e.UserId)
+
+                entity.HasOne(e => e.User)
+                    .WithMany()
+                    .HasForeignKey(e => e.UserId)
                     .OnDelete(DeleteBehavior.Cascade);
             });
 
             modelBuilder.Entity<LeaveCalendarEventMap>(entity =>
             {
                 entity.HasKey(e => e.Id);
-                entity.HasIndex(e => new { e.ConnectionId, e.LeaveRequestId }).IsUnique();
-                entity.HasOne(e => e.Connection).WithMany(c => c.EventMaps)
-                    .HasForeignKey(e => e.ConnectionId).OnDelete(DeleteBehavior.Cascade);
-                entity.HasOne(e => e.LeaveRequest).WithMany()
-                    .HasForeignKey(e => e.LeaveRequestId).OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasIndex(e => new
+                {
+                    e.ConnectionId,
+                    e.LeaveRequestId
+                }).IsUnique();
+
+                entity.HasOne(e => e.Connection)
+                    .WithMany(c => c.EventMaps)
+                    .HasForeignKey(e => e.ConnectionId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(e => e.LeaveRequest)
+                    .WithMany()
+                    .HasForeignKey(e => e.LeaveRequestId)
+                    .OnDelete(DeleteBehavior.Cascade);
             });
 
             modelBuilder.Entity<PublicHoliday>(entity =>
             {
                 entity.HasKey(e => e.Id);
-                entity.Property(e => e.Name).IsRequired().HasMaxLength(200);
-                entity.Property(e => e.Date).HasColumnType("date");
+
+                entity.Property(e => e.Name)
+                    .IsRequired()
+                    .HasMaxLength(200);
+
+                entity.Property(e => e.Date)
+                    .HasColumnType("date");
+
                 entity.HasIndex(e => e.Date).IsUnique();
                 entity.HasIndex(e => e.IsActive);
             });
 
+            // =======================
+            // CLAIM MANAGEMENT
+            // =======================
+
             modelBuilder.Entity<YLWorks.Model.Claim.ClaimRequest>(entity =>
             {
                 entity.HasKey(e => e.Id);
-                entity.Property(e => e.ClaimType).HasConversion<string>().HasMaxLength(40);
-                entity.Property(e => e.Status).HasConversion<string>().HasMaxLength(20);
-                entity.Property(e => e.TotalAmount).HasPrecision(18, 2);
-                entity.Property(e => e.Destination).HasMaxLength(200);
-                entity.HasOne(e => e.Employee).WithMany().HasForeignKey(e => e.EmployeeId)
+
+                entity.Property(e => e.ClaimType)
+                    .HasConversion<string>()
+                    .HasMaxLength(40);
+
+                entity.Property(e => e.Status)
+                    .HasConversion<string>()
+                    .HasMaxLength(20);
+
+                entity.Property(e => e.TotalAmount)
+                    .HasPrecision(18, 2);
+
+                entity.Property(e => e.Destination)
+                    .HasMaxLength(200);
+
+                entity.HasOne(e => e.Employee)
+                    .WithMany()
+                    .HasForeignKey(e => e.EmployeeId)
                     .OnDelete(DeleteBehavior.Restrict);
+
                 entity.HasIndex(e => e.EmployeeId);
                 entity.HasIndex(e => e.Status);
             });
@@ -612,40 +892,72 @@ namespace YLWorks.Data
             modelBuilder.Entity<YLWorks.Model.Claim.ClaimLineItem>(entity =>
             {
                 entity.HasKey(e => e.Id);
-                entity.Property(e => e.LineKind).HasConversion<string>().HasMaxLength(30);
-                entity.Property(e => e.Category).HasConversion<string>().HasMaxLength(30);
-                entity.Property(e => e.DayType).HasConversion<string>().HasMaxLength(30);
-                entity.Property(e => e.VehicleType).HasConversion<string>().HasMaxLength(20);
+
+                entity.Property(e => e.LineKind)
+                    .HasConversion<string>()
+                    .HasMaxLength(30);
+
+                entity.Property(e => e.Category)
+                    .HasConversion<string>()
+                    .HasMaxLength(30);
+
+                entity.Property(e => e.DayType)
+                    .HasConversion<string>()
+                    .HasMaxLength(30);
+
+                entity.Property(e => e.VehicleType)
+                    .HasConversion<string>()
+                    .HasMaxLength(20);
+
                 entity.Property(e => e.Amount).HasPrecision(18, 2);
                 entity.Property(e => e.Hours).HasPrecision(10, 2);
                 entity.Property(e => e.OrdinaryRate).HasPrecision(18, 4);
                 entity.Property(e => e.HourlyRate).HasPrecision(18, 4);
                 entity.Property(e => e.Kilometers).HasPrecision(12, 2);
-                entity.HasOne(e => e.Request).WithMany(r => r.LineItems)
-                    .HasForeignKey(e => e.RequestId).OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(e => e.Request)
+                    .WithMany(r => r.LineItems)
+                    .HasForeignKey(e => e.RequestId)
+                    .OnDelete(DeleteBehavior.Cascade);
             });
 
             modelBuilder.Entity<YLWorks.Model.Claim.ClaimApproval>(entity =>
             {
                 entity.HasKey(e => e.Id);
-                entity.Property(e => e.Decision).HasConversion<string>().HasMaxLength(20);
-                entity.HasOne(e => e.Request).WithMany(r => r.Approvals)
-                    .HasForeignKey(e => e.RequestId).OnDelete(DeleteBehavior.Cascade);
-                entity.HasOne(e => e.Approver).WithMany().HasForeignKey(e => e.ApproverId)
+
+                entity.Property(e => e.Decision)
+                    .HasConversion<string>()
+                    .HasMaxLength(20);
+
+                entity.HasOne(e => e.Request)
+                    .WithMany(r => r.Approvals)
+                    .HasForeignKey(e => e.RequestId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(e => e.Approver)
+                    .WithMany()
+                    .HasForeignKey(e => e.ApproverId)
                     .OnDelete(DeleteBehavior.Restrict);
             });
 
             modelBuilder.Entity<YLWorks.Model.Claim.ClaimDocument>(entity =>
             {
                 entity.HasKey(e => e.Id);
-                entity.Property(e => e.DocumentKind).HasConversion<string>().HasMaxLength(20);
-                entity.HasOne(e => e.Request).WithMany(r => r.Documents)
-                    .HasForeignKey(e => e.RequestId).OnDelete(DeleteBehavior.Cascade);
+
+                entity.Property(e => e.DocumentKind)
+                    .HasConversion<string>()
+                    .HasMaxLength(20);
+
+                entity.HasOne(e => e.Request)
+                    .WithMany(r => r.Documents)
+                    .HasForeignKey(e => e.RequestId)
+                    .OnDelete(DeleteBehavior.Cascade);
             });
 
             modelBuilder.Entity<YLWorks.Model.Claim.ClaimSettings>(entity =>
             {
                 entity.HasKey(e => e.Id);
+
                 entity.Property(e => e.MedicalPerReceiptLimit).HasPrecision(18, 2);
                 entity.Property(e => e.MedicalAnnualLimit).HasPrecision(18, 2);
                 entity.Property(e => e.SafetyShoesLimit).HasPrecision(18, 2);
@@ -658,12 +970,17 @@ namespace YLWorks.Data
                 entity.Property(e => e.OtRestDayAfter8HourlyMultiplier).HasPrecision(8, 4);
                 entity.Property(e => e.OtPublicHolidayUpTo8Multiplier).HasPrecision(8, 4);
                 entity.Property(e => e.OtPublicHolidayAfter8HourlyMultiplier).HasPrecision(8, 4);
+
                 entity.HasIndex(e => e.IsActive);
             });
 
+            // =======================
+            // DAILY REPORT
+            // =======================
+
             modelBuilder.Entity<DailyReport>()
-    .HasIndex(x => new { x.EmployeeId, x.ReportDate })
-    .IsUnique();
+                .HasIndex(x => new { x.EmployeeId, x.ReportDate })
+                .IsUnique();
 
             modelBuilder.Entity<DailyReport>()
                 .HasOne(x => x.Project)
@@ -690,17 +1007,21 @@ namespace YLWorks.Data
                 .HasForeignKey(x => x.StaffTaskId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            modelBuilder.Entity<HardwareRequest>()
-    .HasMany(x => x.Items)
-    .WithOne(x => x.HardwareRequest)
-    .HasForeignKey(x => x.HardwareRequestId)
-    .OnDelete(DeleteBehavior.Cascade);
+            // =======================
+            // HARDWARE REQUEST
+            // =======================
 
             modelBuilder.Entity<HardwareRequest>()
-    .HasOne(r => r.ResponsibleDepartment)
-    .WithMany()
-    .HasForeignKey(r => r.ResponsibleDepartmentId)
-    .OnDelete(DeleteBehavior.Restrict);
+                .HasMany(x => x.Items)
+                .WithOne(x => x.HardwareRequest)
+                .HasForeignKey(x => x.HardwareRequestId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<HardwareRequest>()
+                .HasOne(r => r.ResponsibleDepartment)
+                .WithMany()
+                .HasForeignKey(r => r.ResponsibleDepartmentId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<HardwareRequestItem>()
                 .HasOne(x => x.Inventory)

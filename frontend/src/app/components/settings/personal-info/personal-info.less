@@ -1,85 +1,67 @@
 :host {
   display: block;
-  width: 100%;
-  min-height: 100%;
-  background: #f8fafc;
+  min-width: 0;
+  color: #334155;
 }
 
 .personal-info-page {
-  box-sizing: border-box;
-  width: 100%;
   min-height: 100%;
-  padding: 28px;
-  color: #1e293b;
+  padding: 20px;
+  background: #f8fafc;
 }
 
 .personal-info-container {
   width: 100%;
-  max-width: 1500px;
   margin: 0 auto;
 }
 
-.personal-info-page *,
-.personal-info-page *::before,
-.personal-info-page *::after {
-  box-sizing: border-box;
-}
-
-/* ============================================
-   PAGE HEADING
-============================================ */
+/* PAGE HEADING */
 
 .page-heading {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 22px;
+  margin-bottom: 18px;
 
   h1 {
     margin: 0;
-    color: #0f172a;
-    font-size: 26px;
-    font-weight: 700;
+    color: #172554;
+    font-size: 21px;
+    font-weight: 750;
     letter-spacing: -0.5px;
   }
 
   p {
     margin: 5px 0 0;
-    color: #64748b;
-    font-size: 14px;
+    color: #94a3b8;
+    font-size: 12px;
     line-height: 1.5;
   }
 }
 
-/* ============================================
-   EMPLOYEE PROFILE SUMMARY
-============================================ */
+/* EMPLOYEE PROFILE */
 
 .employee-summary {
   display: flex;
   align-items: center;
-  gap: 22px;
-  padding: 22px;
-  margin-bottom: 20px;
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
+  gap: 14px;
+  padding: 17px 19px;
+  margin-bottom: 17px;
+  border: 1px solid #e8edf5;
   border-radius: 14px;
-  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.03);
+  background: #fff;
+  box-shadow: 0 2px 8px rgb(15 23 42 / 3%);
 }
 
 .employee-avatar {
+  width: 49px;
+  height: 49px;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-shrink: 0;
-  width: 68px;
-  height: 68px;
-  border-radius: 14px;
-  background: #dbeafe;
-  color: #1d4ed8;
-  font-size: 27px;
-  font-weight: 700;
-  text-transform: uppercase;
+  border-radius: 13px;
+  background: #eaf1ff;
+  color: #2148bc;
+  font-size: 19px;
+  font-weight: 750;
 }
 
 .employee-summary-info {
@@ -88,196 +70,178 @@
 
   h2 {
     margin: 0;
-    color: #0f172a;
-    font-size: 20px;
+    overflow-wrap: anywhere;
+    color: #1e293b;
+    font-size: 16px;
     font-weight: 700;
   }
 
   > p {
-    margin: 4px 0 8px;
+    margin: 3px 0 8px;
     color: #64748b;
-    font-size: 14px;
+    font-size: 11px;
   }
 }
 
 .employee-summary-meta {
   display: flex;
   flex-wrap: wrap;
-  gap: 16px;
+  gap: 6px 16px;
 
   span {
     display: inline-flex;
     align-items: center;
-    gap: 7px;
-    color: #64748b;
-    font-size: 13px;
+    gap: 6px;
+    min-width: 0;
+    color: #94a3b8;
+    font-size: 10px;
     overflow-wrap: anywhere;
   }
 
   i {
-    color: #94a3b8;
-    font-size: 13px;
+    color: #64748b;
+    font-size: 11px;
   }
 }
 
 .employee-status {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 7px 13px;
+  gap: 6px;
+  flex-shrink: 0;
+  padding: 6px 10px;
   border-radius: 20px;
-  background: #f0fdf4;
+  background: #ecfdf5;
   color: #15803d;
-  font-size: 12px;
-  font-weight: 600;
-  white-space: nowrap;
+  font-size: 10px;
+  font-weight: 650;
 }
 
 .status-dot {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
   background: #22c55e;
 }
 
-/* ============================================
-   TAB NAVIGATION
-============================================ */
+/* TABS */
 
 .personal-info-tabs {
   display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px;
-  margin-bottom: 24px;
-  background: #f1f5f9;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
+  align-items: stretch;
+  gap: 5px;
+  padding: 5px;
+  margin-bottom: 17px;
   overflow-x: auto;
-  scrollbar-width: thin;
-  scrollbar-color: #cbd5e1 transparent;
+  border: 1px solid #e8edf5;
+  border-radius: 12px;
+  background: #fff;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 .personal-info-tab {
+  min-width: 0;
+  min-height: 39px;
   display: inline-flex;
+  flex: 1 0 auto;
   align-items: center;
   justify-content: center;
-  gap: 9px;
-  flex: 1 0 auto;
-  min-height: 48px;
-  padding: 11px 20px;
-  border: none;
+  gap: 7px;
+  padding: 9px 13px;
+  border: 0;
   border-radius: 8px;
   background: transparent;
   color: #64748b;
   font-family: inherit;
-  font-size: 14px;
+  font-size: 11px;
   font-weight: 600;
   white-space: nowrap;
   cursor: pointer;
-  transition:
-    background 0.2s ease,
-    color 0.2s ease,
-    box-shadow 0.2s ease;
+  transition: 0.2s ease;
 
   i {
-    font-size: 15px;
+    font-size: 13px;
   }
 
-  &:hover:not(.active) {
-    background: #e2e8f0;
-    color: #1e293b;
+  &:hover {
+    background: #f8fafc;
+    color: #2148bc;
   }
 
   &.active {
-    background: #ffffff;
-    color: #1d4ed8;
-    box-shadow: 0 1px 4px rgba(15, 23, 42, 0.12);
-  }
-
-  &:focus-visible {
-    outline: 2px solid #3b82f6;
-    outline-offset: 2px;
+    background: #2148bc;
+    color: #fff;
+    box-shadow: 0 2px 5px rgb(33 72 188 / 15%);
   }
 }
 
-/* ============================================
-   TAB CONTENT
-============================================ */
+/* TAB CONTENT */
 
 .tab-content {
-  width: 100%;
-  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
 }
 
-/* ============================================
-   INFORMATION GRID
-============================================ */
+.tab-content[hidden] {
+  display: none !important;
+}
+
+/* INFORMATION GRID */
 
 .information-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 22px;
-  margin-bottom: 20px;
-
-  .info-card {
-    margin-bottom: 0;
-  }
+  gap: 13px;
 }
 
-/* ============================================
-   GENERAL INFO CARD
-============================================ */
+/* COMMON CARD */
 
 .info-card {
   min-width: 0;
-  padding: 24px;
-  margin-bottom: 20px;
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.025);
+  padding: 16px;
+  border: 1px solid #e8edf5;
+  border-radius: 13px;
+  background: #fff;
+  box-shadow: 0 2px 7px rgb(15 23 42 / 2%);
 }
 
 .info-card-header {
   display: flex;
   align-items: center;
-  gap: 13px;
-  padding-bottom: 18px;
-  margin-bottom: 18px;
+  gap: 11px;
+  padding-bottom: 13px;
+  margin-bottom: 13px;
   border-bottom: 1px solid #f1f5f9;
 
   h3 {
     margin: 0;
     color: #1e293b;
-    font-size: 16px;
+    font-size: 13px;
     font-weight: 700;
   }
 
   p {
-    margin: 5px 0 0;
+    margin: 3px 0 0;
     color: #94a3b8;
-    font-size: 13px;
-    line-height: 1.5;
+    font-size: 10px;
+    line-height: 1.45;
   }
 }
 
-/* ============================================
-   INFO ICONS
-============================================ */
-
 .info-icon {
+  width: 35px;
+  height: 35px;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-shrink: 0;
-  width: 42px;
-  height: 42px;
-  border-radius: 11px;
-
-  i {
-    font-size: 18px;
-  }
+  border-radius: 10px;
+  font-size: 14px;
 }
 
 .info-icon-blue {
@@ -301,35 +265,33 @@
 }
 
 .info-icon-security {
-  background: #f1f5f9;
-  color: #475569;
+  background: #eff6ff;
+  color: #2148bc;
 }
 
-/* ============================================
-   INFO CARD BODY
-============================================ */
+/* BASIC INFORMATION FIELDS */
 
 .info-card-body {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 13px;
 }
 
 .info-field {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
   min-width: 0;
 
   label {
     color: #94a3b8;
-    font-size: 13px;
+    font-size: 10px;
     font-weight: 500;
   }
 
   span {
     color: #334155;
-    font-size: 14px;
+    font-size: 12px;
     font-weight: 600;
     overflow-wrap: anywhere;
   }
@@ -339,208 +301,168 @@
   }
 }
 
-/* ============================================
-   DEPARTMENT INFORMATION
-============================================ */
-
-.department-card {
-  margin-bottom: 0;
-}
+/* DEPARTMENT */
 
 .department-content {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 7px;
 }
 
 .department-tag {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 9px 13px;
-  border: 1px solid #dbeafe;
-  border-radius: 8px;
-  background: #eff6ff;
-  color: #1d4ed8;
-  font-size: 13px;
+  gap: 6px;
+  padding: 7px 10px;
+  border: 1px solid #e0eaff;
+  border-radius: 7px;
+  background: #f5f8ff;
+  color: #3458a6;
+  font-size: 10px;
   font-weight: 600;
 
   i {
-    font-size: 13px;
+    font-size: 10px;
   }
 }
 
 .empty-text {
   color: #94a3b8;
-  font-size: 13px;
+  font-size: 11px;
 }
 
-/* ============================================
-   LEAVE BALANCES
-============================================ */
-
-.leave-card {
-  margin-bottom: 20px;
-}
+/* LEAVE BALANCES */
 
 .leave-balance-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 18px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 11px;
 }
 
 .leave-balance-item {
   min-width: 0;
-  padding: 18px;
-  border: 1px solid #e2e8f0;
-  border-radius: 11px;
-  background: #ffffff;
-  transition:
-    border-color 0.2s ease,
-    box-shadow 0.2s ease;
-
-  &:hover {
-    border-color: #bfdbfe;
-    box-shadow: 0 3px 10px rgba(37, 99, 235, 0.06);
-  }
+  padding: 13px;
+  border: 1px solid #edf1f7;
+  border-radius: 10px;
+  background: #fbfcfe;
 }
 
 .leave-balance-top {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
-  margin-bottom: 18px;
+  gap: 8px;
 
   i {
-    color: #3b82f6;
-    font-size: 17px;
+    color: #2148bc;
+    font-size: 13px;
   }
 }
 
 .leave-type-name {
-  color: #334155;
-  font-size: 14px;
+  color: #475569;
+  font-size: 11px;
   font-weight: 700;
-  overflow-wrap: anywhere;
 }
 
 .leave-remaining {
   display: flex;
   align-items: baseline;
-  gap: 7px;
-  margin-bottom: 18px;
+  gap: 6px;
+  margin: 12px 0;
 
   strong {
-    color: #1d4ed8;
-    font-size: 30px;
-    font-weight: 700;
+    color: #2148bc;
+    font-size: 25px;
+    font-weight: 750;
     line-height: 1;
   }
 
   span {
     color: #94a3b8;
-    font-size: 12px;
+    font-size: 10px;
   }
 }
 
 .leave-balance-details {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
-  padding: 13px 0;
-  border-top: 1px solid #f1f5f9;
-  border-bottom: 1px solid #f1f5f9;
+  gap: 5px;
+  padding: 10px 0;
+  border-top: 1px solid #edf1f7;
+  border-bottom: 1px solid #edf1f7;
 
-  div {
+  > div {
     display: flex;
     flex-direction: column;
-    gap: 5px;
-    min-width: 0;
+    gap: 4px;
   }
 
   span {
     color: #94a3b8;
-    font-size: 11px;
+    font-size: 9px;
   }
 
   strong {
     color: #475569;
-    font-size: 13px;
-    font-weight: 700;
-  }
-}
-
-.leave-balance-footer {
-  padding-top: 12px;
-
-  span {
-    color: #64748b;
     font-size: 11px;
   }
 }
 
-/* ============================================
-   CLAIMS SUMMARY
-============================================ */
-
-.claims-card {
-  margin-bottom: 20px;
+.leave-balance-footer {
+  padding-top: 9px;
+  color: #94a3b8;
+  font-size: 9px;
 }
+
+/* CLAIMS SUMMARY */
 
 .claims-summary-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px;
+  gap: 11px;
 }
 
 .claims-summary-item {
   display: flex;
   align-items: center;
-  gap: 15px;
+  gap: 10px;
   min-width: 0;
-  padding: 20px;
-  border: 1px solid #e2e8f0;
-  border-radius: 11px;
-  background: #ffffff;
+  padding: 13px;
+  border: 1px solid #edf1f7;
+  border-radius: 10px;
+  background: #fbfcfe;
 
   > div:last-child {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
     min-width: 0;
   }
 
-  span {
-    color: #64748b;
-    font-size: 12px;
+  span,
+  small {
+    display: block;
+    color: #94a3b8;
+    font-size: 10px;
   }
 
   strong {
+    display: block;
+    margin: 5px 0 3px;
     color: #1e293b;
-    font-size: 22px;
-    font-weight: 700;
+    font-size: 17px;
+    font-weight: 750;
     overflow-wrap: anywhere;
-  }
-
-  small {
-    color: #94a3b8;
-    font-size: 11px;
   }
 }
 
 .claims-summary-icon {
+  width: 35px;
+  height: 35px;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-shrink: 0;
-  width: 46px;
-  height: 46px;
-  border-radius: 12px;
-
-  i {
-    font-size: 20px;
-  }
+  border-radius: 9px;
+  font-size: 14px;
 }
 
 .approved-icon {
@@ -549,125 +471,91 @@
 }
 
 .pending-icon {
-  background: #fff7ed;
-  color: #ea580c;
+  background: #fffbeb;
+  color: #d97706;
 }
 
-.claims-summary-note {
+.claims-summary-note,
+.medical-proration-note {
   display: flex;
   align-items: flex-start;
-  gap: 10px;
-  margin-top: 16px;
-  padding: 12px 14px;
+  gap: 8px;
+  padding: 10px;
+  margin-top: 12px;
   border-radius: 8px;
-  background: #eff6ff;
-  color: #1e40af;
-  font-size: 12px;
-  line-height: 1.6;
+  background: #f5f8ff;
+  color: #64748b;
+  font-size: 10px;
+  line-height: 1.5;
 
   i {
     flex-shrink: 0;
-    margin-top: 2px;
-    font-size: 14px;
+    margin-top: 1px;
+    color: #3b82f6;
   }
 }
 
-/* ============================================
-   MEDICAL CLAIMS BALANCE
-============================================ */
-
-.medical-card {
-  margin-bottom: 20px;
-}
+/* MEDICAL BALANCE */
 
 .medical-balance-content {
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
+  padding: 14px;
+  border: 1px solid #edf1f7;
+  border-radius: 10px;
+  background: #fbfcfe;
 }
 
 .medical-balance-main {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 22px;
-  border-radius: 11px;
-  background: #f5f3ff;
+  gap: 6px;
+  padding-bottom: 13px;
+  border-bottom: 1px solid #edf1f7;
 
   span {
-    color: #7c3aed;
-    font-size: 13px;
-    font-weight: 600;
+    color: #94a3b8;
+    font-size: 10px;
   }
 
   strong {
-    color: #5b21b6;
-    font-size: 32px;
-    font-weight: 700;
+    color: #2148bc;
+    font-size: 25px;
+    font-weight: 750;
   }
 }
 
 .medical-balance-details {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
+  gap: 8px;
+  padding-top: 13px;
 
-  div {
+  > div {
     display: flex;
     flex-direction: column;
-    gap: 7px;
+    gap: 5px;
     min-width: 0;
-    padding: 14px;
-    border: 1px solid #e2e8f0;
-    border-radius: 9px;
   }
 
   span {
     color: #94a3b8;
-    font-size: 11px;
+    font-size: 9px;
   }
 
   strong {
     color: #334155;
-    font-size: 15px;
-    font-weight: 700;
+    font-size: 11px;
     overflow-wrap: anywhere;
   }
 }
 
-.medical-proration-note {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  padding: 11px 13px;
-  border-radius: 8px;
-  background: #fffbeb;
-  color: #b45309;
-  font-size: 12px;
-
-  i {
-    font-size: 14px;
-  }
-}
-
-/* ============================================
-   HISTORY TABLES
-============================================ */
-
-.history-card {
-  margin-bottom: 20px;
-
-  &:last-child {
-    margin-bottom: 0;
-  }
-}
+/* HISTORY TABLES */
 
 .table-wrapper {
   width: 100%;
   overflow-x: auto;
+  border: 1px solid #edf1f7;
+  border-radius: 9px;
   scrollbar-width: thin;
-  scrollbar-color: #cbd5e1 transparent;
-  -webkit-overflow-scrolling: touch;
 }
 
 .employee-history-table {
@@ -681,806 +569,390 @@
   }
 
   th {
-    padding: 13px 14px;
+    padding: 11px 12px;
     color: #64748b;
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 700;
-    letter-spacing: 0.3px;
-    text-transform: uppercase;
     white-space: nowrap;
-    border-bottom: 1px solid #e2e8f0;
   }
 
   td {
-    padding: 14px;
-    color: #475569;
-    font-size: 13px;
-    border-bottom: 1px solid #f1f5f9;
-    vertical-align: middle;
-  }
-
-  tbody tr {
-    transition: background 0.15s ease;
-
-    &:hover {
-      background: #f8fafc;
-    }
-
-    &:last-child td {
-      border-bottom: none;
-    }
+    padding: 12px;
+    border-top: 1px solid #f1f5f9;
+    color: #64748b;
+    font-size: 10px;
+    white-space: nowrap;
   }
 
   td strong {
     display: block;
     color: #334155;
-    font-size: 13px;
-    font-weight: 600;
+    font-size: 11px;
   }
 
   td small {
-    display: inline-block;
-    margin-top: 5px;
-    margin-right: 5px;
-    padding: 3px 7px;
-    border-radius: 5px;
-    background: #fff7ed;
-    color: #c2410c;
-    font-size: 10px;
-    font-weight: 600;
+    display: block;
+    margin-top: 3px;
+    color: #94a3b8;
+    font-size: 9px;
+  }
+
+  tbody tr:hover {
+    background: #fafcff;
   }
 
   .amount-cell {
-    color: #1e293b;
+    color: #334155;
     font-weight: 700;
-    white-space: nowrap;
   }
 }
 
 .history-status {
   display: inline-flex;
   align-items: center;
-  padding: 5px 10px;
+  padding: 5px 9px;
   border-radius: 20px;
-  background: #f1f5f9;
-  color: #475569;
-  font-size: 11px;
-  font-weight: 600;
-  white-space: nowrap;
+  background: #eff6ff;
+  color: #2563eb;
+  font-size: 9px;
+  font-weight: 650;
 }
 
-/* ============================================
-   EMPTY STATES
-============================================ */
+/* EMPTY STATES */
 
 .empty-state {
+  min-height: 100px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 10px;
-  min-height: 150px;
-  padding: 25px;
+  gap: 9px;
+  padding: 15px;
+  color: #94a3b8;
   text-align: center;
 
   i {
     color: #cbd5e1;
-    font-size: 32px;
+    font-size: 23px;
   }
 
   p {
     margin: 0;
-    color: #94a3b8;
-    font-size: 13px;
+    font-size: 11px;
   }
 }
 
-/* ============================================
-   ACCOUNT SECURITY
-============================================ */
-
-.security-card {
-  margin-bottom: 20px;
-}
+/* SECURITY */
 
 .security-content {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 20px;
+  gap: 15px;
+
+  > button {
+    flex-shrink: 0;
+    font-size: 11px;
+  }
 }
 
 .security-info {
   display: flex;
-  align-items: center;
-  gap: 14px;
+  align-items: flex-start;
+  gap: 11px;
   min-width: 0;
 
-  > div:last-child {
-    min-width: 0;
-  }
-
   strong {
+    display: block;
     color: #334155;
-    font-size: 14px;
-    font-weight: 700;
+    font-size: 12px;
   }
 
   p {
-    margin: 5px 0 0;
+    margin: 4px 0 0;
     color: #94a3b8;
-    font-size: 12px;
+    font-size: 10px;
     line-height: 1.5;
   }
 }
 
 .security-icon {
+  width: 35px;
+  height: 35px;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-shrink: 0;
-  width: 44px;
-  height: 44px;
-  border-radius: 10px;
-  background: #f1f5f9;
-  color: #475569;
-
-  i {
-    font-size: 18px;
-  }
+  border-radius: 9px;
+  background: #eff6ff;
+  color: #2148bc;
 }
-
-/* ============================================
-   PROFILE NOTICE
-============================================ */
 
 .profile-notice {
   display: flex;
   align-items: flex-start;
-  gap: 12px;
-  padding: 16px 18px;
-  border: 1px solid #bfdbfe;
+  gap: 10px;
+  padding: 13px;
+  border: 1px solid #dbeafe;
   border-radius: 10px;
-  background: #eff6ff;
-  color: #1e40af;
+  background: #f5f8ff;
+  color: #64748b;
 
   > i {
-    flex-shrink: 0;
     margin-top: 2px;
-    font-size: 17px;
+    color: #3b82f6;
+    font-size: 14px;
   }
 
   strong {
     display: block;
-    margin-bottom: 5px;
-    font-size: 13px;
-    font-weight: 700;
+    color: #334155;
+    font-size: 11px;
   }
 
   p {
-    margin: 0;
-    color: #3b82f6;
-    font-size: 12px;
-    line-height: 1.6;
-  }
-}
-
-/* ============================================
-   TABLET - 641px TO 1024px
-============================================ */
-
-@media (min-width: 641px) and (max-width: 1024px) {
-  .personal-info-page {
-    padding: 22px;
-  }
-
-  .page-heading {
-    h1 {
-      font-size: 23px;
-    }
-
-    p {
-      font-size: 13px;
-    }
-  }
-
-  .employee-summary {
-    gap: 15px;
-    padding: 18px;
-  }
-
-  .employee-avatar {
-    width: 56px;
-    height: 56px;
-    font-size: 23px;
-  }
-
-  .employee-summary-info h2 {
-    font-size: 17px;
-  }
-
-  .employee-summary-meta {
-    gap: 10px;
-
-    span {
-      font-size: 12px;
-    }
-  }
-
-  .personal-info-tabs {
-    gap: 5px;
-    margin-bottom: 20px;
-  }
-
-  .personal-info-tab {
-    padding: 10px 14px;
-    font-size: 12px;
-  }
-
-  .information-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 15px;
-  }
-
-  .info-card {
-    padding: 18px;
-  }
-
-  .leave-balance-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 13px;
-  }
-
-  .claims-summary-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px;
-  }
-
-  .claims-summary-item {
-    padding: 15px;
-  }
-
-  .medical-balance-details {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-
-/* ============================================
-   MOBILE - 640px AND BELOW
-============================================ */
-
-@media (max-width: 640px) {
-  .personal-info-page {
-    padding: 14px;
-  }
-
-  .personal-info-container {
-    max-width: 100%;
-  }
-
-  /* Page heading */
-  .page-heading {
-    display: block;
-    margin-bottom: 16px;
-
-    h1 {
-      font-size: 21px;
-      line-height: 1.3;
-    }
-
-    p {
-      margin-top: 5px;
-      font-size: 12px;
-      line-height: 1.6;
-    }
-  }
-
-  /* Employee profile */
-  .employee-summary {
-    display: grid;
-    grid-template-columns: 48px minmax(0, 1fr);
-    align-items: center;
-    gap: 12px;
-    padding: 15px;
-    margin-bottom: 15px;
-    border-radius: 12px;
-  }
-
-  .employee-avatar {
-    width: 48px;
-    height: 48px;
-    border-radius: 12px;
-    font-size: 20px;
-  }
-
-  .employee-summary-info {
-    min-width: 0;
-
-    h2 {
-      font-size: 15px;
-      line-height: 1.4;
-      overflow-wrap: anywhere;
-    }
-
-    > p {
-      margin: 3px 0 6px;
-      font-size: 11px;
-    }
-  }
-
-  .employee-summary-meta {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-
-    span {
-      font-size: 11px;
-      overflow-wrap: anywhere;
-    }
-
-    i {
-      font-size: 11px;
-    }
-  }
-
-  .employee-status {
-    grid-column: 2;
-    justify-self: start;
-    margin: 0;
-    padding: 5px 10px;
+    margin: 4px 0 0;
     font-size: 10px;
-  }
-
-  /* Tabs */
-  .personal-info-tabs {
-    display: flex;
-    width: 100%;
-    gap: 5px;
-    padding: 5px;
-    margin-bottom: 16px;
-    overflow-x: auto;
-    overflow-y: hidden;
-    border-radius: 10px;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-
-    &::-webkit-scrollbar {
-      display: none;
-    }
-  }
-
-  .personal-info-tab {
-    flex: 0 0 auto;
-    min-height: 40px;
-    gap: 7px;
-    padding: 9px 13px;
-    border-radius: 7px;
-    font-size: 11px;
-
-    i {
-      font-size: 13px;
-    }
-  }
-
-  /* Information cards */
-  .information-grid {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    gap: 12px;
-    margin-bottom: 12px;
-  }
-
-  .info-card {
-    width: 100%;
-    min-width: 0;
-    padding: 16px;
-    margin-bottom: 13px;
-    border-radius: 11px;
-  }
-
-  .info-card-header {
-    gap: 10px;
-    padding-bottom: 13px;
-    margin-bottom: 14px;
-
-    h3 {
-      font-size: 13px;
-      line-height: 1.4;
-    }
-
-    p {
-      font-size: 11px;
-      line-height: 1.5;
-    }
-  }
-
-  .info-icon {
-    width: 36px;
-    height: 36px;
-    border-radius: 9px;
-
-    i {
-      font-size: 15px;
-    }
-  }
-
-  .info-card-body {
-    gap: 15px;
-  }
-
-  .info-field {
-    gap: 5px;
-
-    label {
-      font-size: 11px;
-    }
-
-    span {
-      font-size: 13px;
-      line-height: 1.5;
-    }
-  }
-
-  /* Department */
-  .department-content {
-    gap: 8px;
-  }
-
-  .department-tag {
-    padding: 8px 10px;
-    font-size: 11px;
-  }
-
-  /* Leave balances */
-  .leave-balance-grid {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 11px;
-  }
-
-  .leave-balance-item {
-    padding: 15px;
-    border-radius: 10px;
-  }
-
-  .leave-balance-top {
-    margin-bottom: 14px;
-  }
-
-  .leave-type-name {
-    font-size: 13px;
-  }
-
-  .leave-remaining {
-    margin-bottom: 14px;
-
-    strong {
-      font-size: 26px;
-    }
-
-    span {
-      font-size: 11px;
-    }
-  }
-
-  .leave-balance-details {
-    gap: 7px;
-    padding: 12px 0;
-
-    span {
-      font-size: 10px;
-    }
-
-    strong {
-      font-size: 12px;
-    }
-  }
-
-  .leave-balance-footer {
-    padding-top: 10px;
-
-    span {
-      font-size: 10px;
-    }
-  }
-
-  /* Claims */
-  .claims-summary-grid {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 10px;
-  }
-
-  .claims-summary-item {
-    gap: 12px;
-    padding: 14px;
-    border-radius: 10px;
-
-    span {
-      font-size: 11px;
-    }
-
-    strong {
-      font-size: 19px;
-    }
-
-    small {
-      font-size: 10px;
-    }
-  }
-
-  .claims-summary-icon {
-    width: 42px;
-    height: 42px;
-
-    i {
-      font-size: 18px;
-    }
-  }
-
-  .claims-summary-note {
-    gap: 8px;
-    padding: 11px;
-    font-size: 11px;
     line-height: 1.5;
-  }
-
-  /* Medical balance */
-  .medical-balance-main {
-    padding: 17px;
-    border-radius: 10px;
-
-    span {
-      font-size: 12px;
-    }
-
-    strong {
-      font-size: 26px;
-    }
-  }
-
-  .medical-balance-details {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 8px;
-
-    div {
-      gap: 5px;
-      padding: 12px;
-    }
-
-    span {
-      font-size: 10px;
-    }
-
-    strong {
-      font-size: 13px;
-    }
-  }
-
-  .medical-proration-note {
-    align-items: flex-start;
-    padding: 10px;
-    font-size: 11px;
-    line-height: 1.5;
-  }
-
-  /* History tables */
-  .table-wrapper {
-    width: 100%;
-    overflow-x: auto;
-    overflow-y: hidden;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  .employee-history-table {
-    min-width: 650px;
-
-    th {
-      padding: 11px;
-      font-size: 10px;
-    }
-
-    td {
-      padding: 11px;
-      font-size: 11px;
-    }
-
-    td strong {
-      font-size: 11px;
-    }
-  }
-
-  /* Empty states */
-  .empty-state {
-    min-height: 125px;
-    padding: 18px;
-
-    i {
-      font-size: 27px;
-    }
-
-    p {
-      font-size: 12px;
-      line-height: 1.5;
-    }
-  }
-
-  /* Account security */
-  .security-content {
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    gap: 16px;
-  }
-
-  .security-info {
-    gap: 11px;
-
-    strong {
-      font-size: 13px;
-    }
-
-    p {
-      font-size: 11px;
-      line-height: 1.5;
-    }
-  }
-
-  .security-icon {
-    width: 40px;
-    height: 40px;
-
-    i {
-      font-size: 16px;
-    }
-  }
-
-  .security-content button {
-    width: 100%;
-    justify-content: center;
-  }
-
-  /* Profile notice */
-  .profile-notice {
-    gap: 10px;
-    padding: 13px;
-    border-radius: 9px;
-
-    > i {
-      font-size: 15px;
-    }
-
-    strong {
-      font-size: 12px;
-    }
-
-    p {
-      font-size: 11px;
-      line-height: 1.6;
-    }
   }
 }
 
-/* ============================================
-   SMALL MOBILE - 380px AND BELOW
-============================================ */
+/* PASSWORD DIALOG */
 
-@media (max-width: 380px) {
+:host ::ng-deep {
+  .p-dialog {
+    overflow: hidden;
+    border-radius: 14px;
+  }
+
+  .p-dialog-header {
+    padding: 16px 19px;
+    border-bottom: 1px solid #f1f5f9;
+    color: #1e293b;
+    font-size: 15px;
+    font-weight: 700;
+  }
+
+  .p-dialog-content {
+    padding: 17px 19px 19px;
+  }
+
+  .p-password,
+  .p-password-input {
+    width: 100%;
+  }
+
+  .p-inputtext {
+    font-size: 12px;
+  }
+
+  .p-button {
+    font-size: 11px;
+  }
+}
+
+/* TABLET */
+
+@media (max-width: 768px) {
   .personal-info-page {
-    padding: 10px;
+    padding: 15px;
   }
 
-  .page-heading h1 {
-    font-size: 19px;
+  .information-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+}
 
-  .employee-summary {
-    gap: 9px;
+/* MOBILE */
+
+@media (max-width: 600px) {
+  .personal-info-page {
     padding: 12px;
   }
 
-  .employee-avatar {
-    width: 43px;
-    height: 43px;
-    font-size: 18px;
+  .page-heading {
+    margin-bottom: 13px;
+
+    h1 {
+      font-size: 18px;
+    }
+
+    p {
+      font-size: 11px;
+    }
   }
 
-  .employee-summary-info h2 {
-    font-size: 13px;
-  }
-
-  .personal-info-tab {
-    gap: 5px;
-    padding: 8px 10px;
-    font-size: 10px;
-  }
-
-  .info-card {
+  .employee-summary {
+    gap: 11px;
     padding: 13px;
+    margin-bottom: 12px;
+    border-radius: 12px;
   }
 
-  .leave-balance-details {
-    gap: 4px;
+  .employee-avatar {
+    width: 42px;
+    height: 42px;
+    border-radius: 11px;
+    font-size: 16px;
+  }
+
+  .employee-summary-info {
+    h2 {
+      font-size: 13px;
+    }
+
+    > p {
+      font-size: 10px;
+    }
+  }
+
+  .employee-summary-meta {
+    flex-direction: column;
+    gap: 5px;
 
     span {
       font-size: 9px;
     }
+  }
 
-    strong {
+  .employee-status {
+    align-self: flex-start;
+    padding: 5px 7px;
+    font-size: 9px;
+  }
+
+  .personal-info-tabs {
+    gap: 3px;
+    margin-bottom: 12px;
+    border-radius: 10px;
+  }
+
+  .personal-info-tab {
+    min-height: 36px;
+    padding: 8px 11px;
+    font-size: 10px;
+  }
+
+  .tab-content {
+    gap: 11px;
+  }
+
+  .information-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .info-card {
+    padding: 13px;
+    border-radius: 11px;
+  }
+
+  .info-card-header {
+    gap: 9px;
+    padding-bottom: 11px;
+    margin-bottom: 11px;
+
+    h3 {
+      font-size: 12px;
+    }
+
+    p {
+      font-size: 9px;
+    }
+  }
+
+  .info-icon {
+    width: 32px;
+    height: 32px;
+    font-size: 13px;
+  }
+
+  .info-card-body {
+    gap: 11px;
+  }
+
+  .info-field {
+    label {
+      font-size: 9px;
+    }
+
+    span {
       font-size: 11px;
     }
   }
 
-  .claims-summary-item {
+  .leave-balance-grid,
+  .claims-summary-grid {
+    grid-template-columns: 1fr;
     gap: 9px;
+  }
+
+  .leave-balance-item {
     padding: 12px;
   }
 
-  .claims-summary-icon {
-    width: 37px;
-    height: 37px;
+  .leave-remaining strong {
+    font-size: 23px;
+  }
+
+  .claims-summary-item {
+    padding: 11px;
+
+    strong {
+      font-size: 16px;
+    }
+  }
+
+  .medical-balance-content {
+    padding: 12px;
   }
 
   .medical-balance-main strong {
-    font-size: 23px;
+    font-size: 22px;
+  }
+
+  .security-content {
+    align-items: flex-start;
+    flex-direction: column;
+
+    > button {
+      width: 100%;
+      justify-content: center;
+    }
+  }
+
+  .profile-notice {
+    padding: 11px;
   }
 }
 
-/* ============================================
-   CHANGE PASSWORD DIALOG
-============================================ */
+/* VERY SMALL MOBILE */
 
-:host ::ng-deep .p-dialog {
-  width: 450px;
-  max-width: calc(100vw - 30px);
-  border-radius: 14px;
-  overflow: hidden;
-}
-
-:host ::ng-deep .p-dialog .p-dialog-header {
-  padding: 20px 22px;
-  border-bottom: 1px solid #e2e8f0;
-}
-
-:host ::ng-deep .p-dialog .p-dialog-title {
-  font-size: 17px;
-  font-weight: 700;
-}
-
-:host ::ng-deep .p-dialog .p-dialog-content {
-  padding: 20px 22px;
-}
-
-:host ::ng-deep .p-password,
-:host ::ng-deep .p-password input {
-  width: 100%;
-}
-
-:host ::ng-deep .p-password input {
-  min-height: 43px;
-  font-size: 13px;
-}
-
-@media (max-width: 640px) {
-  :host ::ng-deep .p-dialog {
-    width: calc(100vw - 24px) !important;
-    max-width: calc(100vw - 24px);
-    margin: 12px;
-    border-radius: 12px;
+@media (max-width: 360px) {
+  .personal-info-page {
+    padding: 9px;
   }
 
-  :host ::ng-deep .p-dialog .p-dialog-header {
-    padding: 16px;
+  .employee-summary {
+    flex-wrap: wrap;
   }
 
-  :host ::ng-deep .p-dialog .p-dialog-title {
-    font-size: 15px;
+  .employee-status {
+    margin-left: 53px;
   }
 
-  :host ::ng-deep .p-dialog .p-dialog-content {
-    padding: 16px;
+  .personal-info-tab {
+    gap: 5px;
+    padding: 8px 9px;
+    font-size: 9px;
+
+    i {
+      font-size: 11px;
+    }
   }
 
-  :host ::ng-deep .p-password input {
-    min-height: 44px;
-    font-size: 13px;
+  .leave-balance-details,
+  .medical-balance-details {
+    gap: 4px;
   }
 }

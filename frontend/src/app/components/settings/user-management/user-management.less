@@ -75,94 +75,87 @@
   font-size: 12px;
 }
 
-/* ================================
-   Add / Edit User dialog
-================================ */
-
 :host ::ng-deep .yl-user-dialog {
-  position: fixed !important;
-  left: 50% !important;
-  bottom: 0 !important;
-  transform: translateX(-50%) !important;
-  margin: 0 !important;
-  display: flex;
-  flex-direction: column;
-  max-height: 94dvh !important;
-  border-radius: 1.5rem 1.5rem 0 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  height: 98dvh !important;
+  max-height: 98dvh !important;
+  overflow: hidden !important;
 }
 
 :host ::ng-deep .yl-user-dialog .p-dialog-header {
-  flex-shrink: 0;
-  padding: 18px 0 0 !important;
-  border-bottom: 0 !important;
+  flex: 0 0 auto !important;
+  padding: 12px 16px !important;
+  background: #fff !important;
 }
 
 :host ::ng-deep .yl-user-dialog .p-dialog-content {
-  min-height: 0;
+  flex: 1 1 0 !important;
+  min-height: 0 !important;
+  height: auto !important;
+  overflow-x: hidden !important;
   overflow-y: auto !important;
   padding: 0 !important;
+  -webkit-overflow-scrolling: touch;
 }
 
 :host ::ng-deep .yl-user-dialog .p-dialog-footer {
-  flex-shrink: 0;
+  display: block !important;
+  position: relative !important;
+  flex: 0 0 auto !important;
+  flex-shrink: 0 !important;
+  min-height: fit-content !important;
   padding: 0 !important;
-  border-top: 0 !important;
+  margin: 0 !important;
+  border-top: 1px solid #e2e8f0 !important;
+  background: #fff !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  z-index: 10 !important;
 }
 
-:host ::ng-deep .yl-user-dialog .p-dialog-header-icons {
-  align-self: flex-start;
-  margin-right: 14px;
+:host ::ng-deep .yl-user-dialog .p-dialog-footer > div {
+  display: flex !important;
+  width: 100% !important;
+  align-items: center !important;
+  justify-content: space-between !important;
 }
 
-:host ::ng-deep .yl-user-dialog .p-dialog-header-close {
-  width: 2rem;
-  height: 2rem;
-  border-radius: 10px;
+@media (max-width: 640px) {
+  :host ::ng-deep .yl-user-dialog {
+    width: calc(100vw - 16px) !important;
+    height: 77dvh !important;
+    max-height: 94dvh !important;
+    margin: 0 !important;
+    border-radius: 18px 18px 0 0 !important;
+  }
+
+  :host ::ng-deep .yl-user-dialog .p-dialog-footer {
+    padding-bottom: env(safe-area-inset-bottom) !important;
+  }
+
+  :host ::ng-deep .yl-user-dialog .p-dialog-footer > div {
+    flex-direction: column-reverse !important;
+    gap: 8px !important;
+    padding: 12px 16px !important;
+  }
+
+  :host ::ng-deep .yl-user-dialog .p-dialog-footer p-button {
+    display: block !important;
+    width: 100% !important;
+  }
+
+  :host ::ng-deep .yl-user-dialog .p-dialog-footer .p-button {
+    width: 100% !important;
+    justify-content: center !important;
+  }
 }
 
-/* Form controls */
-
-:host ::ng-deep .yl-user-dialog .p-inputtext,
-:host ::ng-deep .yl-user-dialog .p-select,
-:host ::ng-deep .yl-user-dialog .p-multiselect,
-:host ::ng-deep .yl-user-dialog .p-inputnumber,
-:host ::ng-deep .yl-user-dialog .p-password {
-  max-width: 100%;
-}
-
-:host ::ng-deep .yl-user-dialog .p-multiselect {
-  min-height: 40px;
-}
-
-:host ::ng-deep .yl-user-dialog .p-multiselect-label {
-  font-size: 13px;
-}
-
-:host ::ng-deep .yl-user-dialog .p-select-label {
-  font-size: 13px;
-}
-
-:host ::ng-deep .yl-user-dialog .p-datepicker {
-  width: 100%;
-}
-
-:host ::ng-deep .yl-user-dialog .p-password-input {
-  width: 100%;
-}
-
-/* Dialog scrollbar */
-
-:host ::ng-deep .yl-user-dialog ::-webkit-scrollbar {
-  width: 5px;
-}
-
-:host ::ng-deep .yl-user-dialog ::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-:host ::ng-deep .yl-user-dialog ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 999px;
+@media (min-width: 1024px) {
+  :host ::ng-deep .yl-user-dialog {
+    height: 90dvh !important;
+    max-height: 900px !important;
+  }
 }
 
 /* ================================
@@ -197,39 +190,4 @@
   gap: 8px;
   padding: 12px 20px 18px;
   border-top: 1px solid #f1f5f9;
-}
-
-/* ================================
-   Desktop dialog positioning
-================================ */
-
-@media (min-width: 1024px) {
-  :host ::ng-deep .yl-user-dialog {
-    top: 50% !important;
-    bottom: auto !important;
-    transform: translate(-50%, -50%) !important;
-    border-radius: 1.5rem !important;
-  }
-}
-
-/* ================================
-   Small screens
-================================ */
-
-@media (max-width: 640px) {
-  :host ::ng-deep .yl-user-dialog {
-    padding-bottom: env(safe-area-inset-bottom) !important;
-  }
-
-  :host ::ng-deep .yl-user-dialog .p-dialog-header {
-    padding-top: 14px !important;
-  }
-
-  :host ::ng-deep .yl-user-dialog .p-dialog-header-icons {
-    margin-right: 10px;
-  }
-
-  :host ::ng-deep .yl-user-dialog .p-dialog-footer {
-    padding-bottom: env(safe-area-inset-bottom) !important;
-  }
 }

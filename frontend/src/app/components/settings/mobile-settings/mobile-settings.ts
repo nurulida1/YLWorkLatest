@@ -418,7 +418,7 @@ import { UserService } from '../../../services/userService.service';
     <!-- Language Bottom Sheet -->
     @if (isLanguageDialogOpen()) {
       <div
-        class="fixed inset-0 z-50 bg-slate-950/50 backdrop-blur-sm
+        class="pb-23 fixed inset-0 z-50 bg-slate-950/50 backdrop-blur-sm
              flex items-end"
         (click)="isLanguageDialogOpen.set(false)"
       >

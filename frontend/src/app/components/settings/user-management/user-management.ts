@@ -605,8 +605,7 @@ import { PaginatorModule } from 'primeng/paginator';
       [dismissableMask]="true"
       closable="true"
       (onHide)="visible = false"
-      styleClass="yl-user-dialog !w-full sm:!w-[95%] md:!w-[90%] lg:!w-[900px] xl:!w-[1050px] !max-h-[94dvh] !border-0 !bg-white !p-0 !shadow-2xl !overflow-hidden
-  "
+      styleClass="yl-user-dialog !w-[calc(100vw-1rem)] sm:!w-[95%] md:!w-[90%] lg:!w-[900px] xl:!w-[1050px] !max-h-[94dvh] !border-0 !bg-white !p-0 !shadow-2xl !overflow-hidden"
     >
       <ng-template #header>
         <div class="w-full px-5 sm:px-6 pt-1">
@@ -681,7 +680,7 @@ import { PaginatorModule } from 'primeng/paginator';
       </ng-template>
 
       <div
-        class="min-h-0 max-h-[calc(94dvh-150px)] overflow-y-auto px-4 py-5 sm:px-6 sm:py-6"
+        class="user-dialog-form min-h-0 px-4 py-4 sm:px-6 sm:py-5"
         [formGroup]="FG"
       >
         <div class="flex flex-col gap-8">

@@ -5,6 +5,7 @@ import { authGuard } from './common/guard/auth.guard';
 import { modulePermissionGuard } from './common/permission/module-permission.guard';
 import { SplashScreen } from './components/auth/splash-screen/splash-screen';
 import { deviceRedirectGuard } from './common/guard/device-redirect.guard';
+import { TermsPrivacy } from './components/settings/terms-privacy/terms-privacy';
 
 const protectedGuards = [authGuard, modulePermissionGuard] as const;
 
@@ -884,6 +885,11 @@ export const routes: Routes = [
           ),
       },
     ],
+  },
+
+  {
+    path: 'terms-privacy',
+    component: TermsPrivacy,
   },
 
   // =========================================================

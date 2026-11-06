@@ -343,7 +343,8 @@ import { UserService } from '../../../services/userService.service';
           <div class="h-px bg-slate-100 ml-[68px]"></div>
 
           <!-- Terms & Privacy -->
-          <div
+          <a
+            routerLink="/terms-privacy"
             class="flex items-center gap-3.5 p-4
                  active:bg-slate-50 transition-colors"
           >
@@ -364,7 +365,7 @@ import { UserService } from '../../../services/userService.service';
             </div>
 
             <i class="pi pi-chevron-right text-xs text-slate-400"></i>
-          </div>
+          </a>
         </div>
       </div>
 

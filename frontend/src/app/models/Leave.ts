@@ -96,6 +96,8 @@ export interface CreateLeaveRequestDto {
   conflictOverride?: boolean;
   acceptShortNoticeAsUnpaid?: boolean;
   acceptBalanceCascade?: boolean;
+  /** When cascade needed: "Annual" or "Unpaid" for overflow days (non-emergency). */
+  cascadeOverflowTarget?: 'Annual' | 'Unpaid' | string | null;
   startSession?: LeaveDaySession;
   endSession?: LeaveDaySession;
 }

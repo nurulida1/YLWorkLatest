@@ -210,7 +210,7 @@ import { InputTextModule } from 'primeng/inputtext';
                   </div>
                   <span class="text-xs text-slate-400">Users</span>
                 </div>
-                <div class="stat-value">{{ data.totalUsers ?? 0 }}</div>
+                <div class="stat-value">{{ data.totalUsers }}</div>
                 <div class="stat-label">Total Users</div>
               </div>
 
@@ -221,7 +221,7 @@ import { InputTextModule } from 'primeng/inputtext';
                   </div>
                   <span class="text-xs text-slate-400">Active</span>
                 </div>
-                <div class="stat-value">{{ data.activeUsers ?? 0 }}</div>
+                <div class="stat-value">{{ data.activeUsers }}</div>
                 <div class="stat-label">Active Users</div>
               </div>
 
@@ -232,7 +232,7 @@ import { InputTextModule } from 'primeng/inputtext';
                   </div>
                   <span class="text-xs text-slate-400">Inactive</span>
                 </div>
-                <div class="stat-value">{{ data.inactiveUsers ?? 0 }}</div>
+                <div class="stat-value">{{ data.inactiveUsers }}</div>
                 <div class="stat-label">Inactive Users</div>
               </div>
 
@@ -243,7 +243,7 @@ import { InputTextModule } from 'primeng/inputtext';
                   </div>
                   <span class="text-xs text-slate-400">Pending</span>
                 </div>
-                <div class="stat-value">{{ data.pendingApprovals ?? 0 }}</div>
+                <div class="stat-value">{{ data.pendingApprovals }}</div>
                 <div class="stat-label">Pending Approvals</div>
               </div>
 
@@ -254,7 +254,7 @@ import { InputTextModule } from 'primeng/inputtext';
                   </div>
                   <span class="text-xs text-slate-400">Departments</span>
                 </div>
-                <div class="stat-value">{{ data.totalDepartments ?? 0 }}</div>
+                <div class="stat-value">{{ data.totalDepartments }}</div>
                 <div class="stat-label">Departments</div>
               </div>
 
@@ -266,7 +266,7 @@ import { InputTextModule } from 'primeng/inputtext';
                   <span class="text-xs text-slate-400">Inventory</span>
                 </div>
                 <div class="stat-value">
-                  {{ data.totalInventoryItems ?? 0 }}
+                  {{ data.totalInventoryItems }}
                 </div>
                 <div class="stat-label">Inventory Items</div>
               </div>
@@ -278,7 +278,7 @@ import { InputTextModule } from 'primeng/inputtext';
                   </div>
                   <span class="text-xs text-slate-400">Low Stock</span>
                 </div>
-                <div class="stat-value">{{ data.lowStockItems ?? 0 }}</div>
+                <div class="stat-value">{{ data.lowStockItems }}</div>
                 <div class="stat-label">Low Stock Items</div>
               </div>
 
@@ -289,7 +289,7 @@ import { InputTextModule } from 'primeng/inputtext';
                   </div>
                   <span class="text-xs text-slate-400">Faulty</span>
                 </div>
-                <div class="stat-value">{{ data.faultyItems ?? 0 }}</div>
+                <div class="stat-value">{{ data.faultyItems }}</div>
                 <div class="stat-label">Faulty Items</div>
               </div>
             </div>
@@ -304,7 +304,7 @@ import { InputTextModule } from 'primeng/inputtext';
                 <a routerLink="/user-management">View All</a>
               </div>
 
-              @if (data.pendingUsers?.length) {
+              @if (data.pendingUsers.length) {
                 <div class="flex flex-col">
                   @for (user of data.pendingUsers; track user.id || $index) {
                     <div class="leave-event">
@@ -343,7 +343,7 @@ import { InputTextModule } from 'primeng/inputtext';
                 </div>
               </div>
 
-              @if (data.activities?.length) {
+              @if (data.activities.length) {
                 <div class="flex flex-col gap-4">
                   @for (
                     activity of data.activities;
@@ -410,7 +410,7 @@ import { InputTextModule } from 'primeng/inputtext';
                   </div>
                   <span class="text-xs text-slate-400">Employees</span>
                 </div>
-                <div class="stat-value">{{ data.totalEmployees ?? 0 }}</div>
+                <div class="stat-value">{{ data.totalEmployees }}</div>
                 <div class="stat-label">Total Employees</div>
               </div>
 
@@ -421,7 +421,7 @@ import { InputTextModule } from 'primeng/inputtext';
                   </div>
                   <span class="text-xs text-slate-400">Pending</span>
                 </div>
-                <div class="stat-value">{{ data.pendingLeave ?? 0 }}</div>
+                <div class="stat-value">{{ data.pendingLeave }}</div>
                 <div class="stat-label">Pending Leave Requests</div>
               </div>
 
@@ -432,7 +432,7 @@ import { InputTextModule } from 'primeng/inputtext';
                   </div>
                   <span class="text-xs text-slate-400">Today</span>
                 </div>
-                <div class="stat-value">{{ data.onLeaveToday ?? 0 }}</div>
+                <div class="stat-value">{{ data.onLeaveToday }}</div>
                 <div class="stat-label">On Leave Today</div>
               </div>
 
@@ -444,7 +444,7 @@ import { InputTextModule } from 'primeng/inputtext';
                   <span class="text-xs text-slate-400">Present</span>
                 </div>
                 <div class="stat-value">
-                  {{ data.assumedPresentToday ?? 0 }}
+                  {{ data.assumedPresentToday }}
                 </div>
                 <div class="stat-label">Assumed Present Today</div>
               </div>
@@ -456,7 +456,7 @@ import { InputTextModule } from 'primeng/inputtext';
                   </div>
                   <span class="text-xs text-slate-400">Resigned</span>
                 </div>
-                <div class="stat-value">{{ data.resignedStaff ?? 0 }}</div>
+                <div class="stat-value">{{ data.resignedStaff }}</div>
                 <div class="stat-label">Resigned Staff</div>
               </div>
 
@@ -468,7 +468,7 @@ import { InputTextModule } from 'primeng/inputtext';
                   <span class="text-xs text-slate-400">New Staff</span>
                 </div>
                 <div class="stat-value">
-                  {{ data.newStaffUnderOneYear ?? 0 }}
+                  {{ data.newStaffUnderOneYear }}
                 </div>
                 <div class="stat-label">Joined Within One Year</div>
               </div>
@@ -483,7 +483,7 @@ import { InputTextModule } from 'primeng/inputtext';
                 </div>
               </div>
 
-              @if (data.departmentDistribution?.length) {
+              @if (data.departmentDistribution.length) {
                 <div class="department-list">
                   @for (
                     department of data.departmentDistribution;
@@ -524,7 +524,7 @@ import { InputTextModule } from 'primeng/inputtext';
                 <a routerLink="/leave">View All</a>
               </div>
 
-              @if (data.todayLeaveEvents?.length) {
+              @if (data.todayLeaveEvents.length) {
                 <div class="flex flex-col">
                   @for (
                     leave of data.todayLeaveEvents;
@@ -586,7 +586,7 @@ import { InputTextModule } from 'primeng/inputtext';
                   </div>
                   <span class="text-xs text-slate-400">Items</span>
                 </div>
-                <div class="stat-value">{{ data.totalItems ?? 0 }}</div>
+                <div class="stat-value">{{ data.totalItems }}</div>
                 <div class="stat-label">Total Inventory Items</div>
               </div>
 
@@ -597,7 +597,7 @@ import { InputTextModule } from 'primeng/inputtext';
                   </div>
                   <span class="text-xs text-slate-400">Low Stock</span>
                 </div>
-                <div class="stat-value">{{ data.lowStockItems ?? 0 }}</div>
+                <div class="stat-value">{{ data.lowStockItems }}</div>
                 <div class="stat-label">Low Stock Items</div>
               </div>
 
@@ -608,7 +608,7 @@ import { InputTextModule } from 'primeng/inputtext';
                   </div>
                   <span class="text-xs text-slate-400">Faulty</span>
                 </div>
-                <div class="stat-value">{{ data.faultyItems ?? 0 }}</div>
+                <div class="stat-value">{{ data.faultyItems }}</div>
                 <div class="stat-label">Faulty Items</div>
               </div>
 
@@ -619,7 +619,7 @@ import { InputTextModule } from 'primeng/inputtext';
                   </div>
                   <span class="text-xs text-slate-400">Requests</span>
                 </div>
-                <div class="stat-value">{{ data.pendingRequests ?? 0 }}</div>
+                <div class="stat-value">{{ data.pendingRequests }}</div>
                 <div class="stat-label">Pending Requests</div>
               </div>
             </div>
@@ -634,7 +634,7 @@ import { InputTextModule } from 'primeng/inputtext';
                 <a routerLink="/inventory/listing">Inventory</a>
               </div>
 
-              @if (data.restockAlerts?.length) {
+              @if (data.restockAlerts.length) {
                 <div class="restock-list">
                   @for (item of data.restockAlerts; track item.id || $index) {
                     <div class="restock-item">
@@ -676,7 +676,7 @@ import { InputTextModule } from 'primeng/inputtext';
                 </div>
               </div>
 
-              @if (data.categoryChart?.length) {
+              @if (data.categoryChart.length) {
                 <div class="department-list">
                   @for (
                     category of data.categoryChart;

@@ -241,7 +241,7 @@ import { PaginatorModule } from 'primeng/paginator';
                     <div
                       class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-blue-50 text-sm font-bold uppercase text-blue-700"
                     >
-                      {{ data.fullName?.charAt(0) || '?' }}
+                      {{ data.fullName.charAt(0) || '?' }}
                     </div>
 
                     <div class="min-w-0">
@@ -458,7 +458,7 @@ import { PaginatorModule } from 'primeng/paginator';
                         <div
                           class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-50 text-xs font-bold uppercase text-blue-700"
                         >
-                          {{ data.fullName?.charAt(0) || '?' }}
+                          {{ data.fullName.charAt(0) || '?' }}
                         </div>
                         <div class="min-w-0">
                           <p

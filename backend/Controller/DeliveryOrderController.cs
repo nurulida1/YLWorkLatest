@@ -242,7 +242,7 @@ namespace YLWorks.Controller
 
             if (request.Attachment != null)
             {
-                var folder = Path.Combine(Directory.GetCurrentDirectory(), "Uploads/DO");
+                var folder = Path.Combine(Directory.GetCurrentDirectory(), "uploads/DO");
                 if (!Directory.Exists(folder)) Directory.CreateDirectory(folder);
 
                 var fileName = $"{Guid.NewGuid()}{Path.GetExtension(request.Attachment.FileName)}";
@@ -251,7 +251,7 @@ namespace YLWorks.Controller
                 using var stream = new FileStream(path, FileMode.Create);
                 await request.Attachment.CopyToAsync(stream);
 
-                filePath = $"Uploads/DO/{fileName}";
+                filePath = $"uploads/DO/{fileName}";
             }
 
             var doEntity = new DeliveryOrder
@@ -394,7 +394,7 @@ namespace YLWorks.Controller
 
             if (request.ProofImages?.Count > 0)
             {
-                var folder = Path.Combine("Uploads/DO/Proof");
+                var folder = Path.Combine("uploads/DO/Proof");
                 if (!Directory.Exists(folder))
                     Directory.CreateDirectory(folder);
 
@@ -412,7 +412,7 @@ namespace YLWorks.Controller
                     //{
                     //    Id = Guid.NewGuid(),
                     //    DeliveryOrderStatusHistoryId = history.Id,
-                    //    ImageUrl = $"Uploads/DO/Proof/{fileName}",
+                    //    ImageUrl = $"uploads/DO/Proof/{fileName}",
                     //    Remarks = request.Remarks
                     //});
                 }

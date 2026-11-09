@@ -168,7 +168,7 @@ import { InventoryQrDialog } from '../shared/inventory-qr-dialog';
             <div class="rounded-xl border border-slate-200 bg-white p-3">
               <p class="text-xs text-slate-500">Par Level</p>
               <p class="mt-1 text-xl font-bold text-slate-800 tabular-nums">
-                {{ item.parLevel ?? '—' }}
+                {{ item.parLevel }}
               </p>
             </div>
           </div>

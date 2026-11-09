@@ -43,6 +43,7 @@ import {
   BuildFilterText,
   buildFormData,
   ValidateAllFormFields,
+  resolveAssetUrl,
 } from '../../../../shared/helpers/helpers';
 
 @Component({
@@ -892,7 +893,7 @@ export class GoodsReceiving implements OnInit, OnDestroy {
     }
 
     const cleanPath = rawPath.replace(/\\/g, '/');
-    const fileUrl = `https://localhost:5000/${cleanPath}`;
+    const fileUrl = resolveAssetUrl(cleanPath);
 
     this.loadingService.start();
 

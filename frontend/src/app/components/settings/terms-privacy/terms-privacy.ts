@@ -1,11 +1,11 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { TranslateDirective, TranslatePipe } from '@ngx-translate/core';
+import { TranslateDirective } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-terms-privacy',
-  imports: [CommonModule, RouterLink, TranslatePipe, TranslateDirective],
+  imports: [CommonModule, RouterLink, TranslateDirective],
   template: `
     <div class="min-h-screen bg-slate-50 pb-8">
       <!-- Header -->

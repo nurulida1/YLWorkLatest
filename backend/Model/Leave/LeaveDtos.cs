@@ -27,6 +27,11 @@ namespace YLWorks.Model.Leave
         public bool AcceptShortNoticeAsUnpaid { get; set; }
         /// <summary>Required when paid balance cascades to Annual and/or Unpaid.</summary>
         public bool AcceptBalanceCascade { get; set; }
+        /// <summary>
+        /// When cascade is needed (non-emergency): "Annual" or "Unpaid" for the overflow days.
+        /// Emergency still uses Annual then Unpaid automatically.
+        /// </summary>
+        public string? CascadeOverflowTarget { get; set; }
         /// <summary>Full | AM | PM — ignored when leave type does not allow half day.</summary>
         public string StartSession { get; set; } = nameof(LeaveDaySession.Full);
         /// <summary>Full | AM | PM — ignored when leave type does not allow half day.</summary>

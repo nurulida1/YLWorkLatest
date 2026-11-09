@@ -19,6 +19,7 @@ import { Subject, takeUntil } from 'rxjs';
 import { SalesOrderDto } from '../../../../models/SalesOrder';
 import { LoadingService } from '../../../../services/loading.service';
 import { SalesOrderService } from '../../../../services/SalesOrderService';
+import { resolveAssetUrl } from '../../../../shared/helpers/helpers';
 
 @Component({
   selector: 'app-sales-order-review',
@@ -553,7 +554,7 @@ export class SalesOrderReview {
           }
 
           if (res?.clientPOAttachment) {
-            const fullUrl = `https://localhost:5000/${res.clientPOAttachment}`;
+            const fullUrl = resolveAssetUrl(res.clientPOAttachment);
             this.attachmentUrl =
               this.sanitizer.bypassSecurityTrustResourceUrl(fullUrl);
           }
@@ -586,7 +587,7 @@ export class SalesOrderReview {
   getAttachmentUrl(path: string | undefined | null): SafeResourceUrl {
     if (!path) return '';
 
-    const fullUrl = `https://localhost:5000/${path}`;
+    const fullUrl = resolveAssetUrl(path);
     return this.sanitizer.bypassSecurityTrustResourceUrl(fullUrl);
   }
 

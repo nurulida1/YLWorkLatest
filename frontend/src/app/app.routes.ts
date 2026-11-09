@@ -242,6 +242,7 @@ export const routes: Routes = [
   {
     path: 'meeting',
     // canActivate: [...protectedGuards],
+    data: { moduleKey: 'meeting' },
     loadComponent: () =>
       import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
         (m) => m.ResponsiveLayout,
@@ -529,7 +530,8 @@ export const routes: Routes = [
 
   {
     path: 'inventory',
-    // canActivate: [...protectedGuards],
+    // auth only here — modulePermissionGuard needs child moduleKey (listing/item/etc).
+    canActivate: [authGuard],
     loadComponent: () =>
       import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
         (m) => m.ResponsiveLayout,

@@ -251,7 +251,7 @@ import {
                       Client
                     </div>
                     <div class="truncate text-sm font-semibold text-slate-700">
-                      {{ data.client?.name || 'No client assigned' }}
+                      {{ data.client.name || 'No client assigned' }}
                     </div>
                   </div>
                 </div>

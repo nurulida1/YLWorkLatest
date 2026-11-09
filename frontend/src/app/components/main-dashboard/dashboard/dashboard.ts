@@ -343,7 +343,7 @@ interface WeekDayCell {
 
               <div class="p-2 sm:p-4">
                 <p-table
-                  [value]="dashboard.pendingUsers ?? []"
+                  [value]="dashboard.pendingUsers"
                   size="small"
                   [tableStyle]="{ 'min-width': '100%' }"
                   responsiveLayout="scroll"
@@ -457,7 +457,7 @@ interface WeekDayCell {
                   </div>
                 </div>
 
-                @if ((dashboard.activities ?? []).length > 5) {
+                @if (dashboard.activities.length > 5) {
                   <a
                     routerLink="/activity-log"
                     class="text-sm font-semibold text-[#2148BC] hover:underline whitespace-nowrap"

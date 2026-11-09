@@ -411,14 +411,14 @@ namespace YLWorks.Services.Claims
             var request = await _context.ClaimRequests.FindAsync(requestId)
                 ?? throw new InvalidOperationException("Claim request not found.");
 
-            var folder = Path.Combine(Directory.GetCurrentDirectory(), "Uploads", "Claim");
+            var folder = Path.Combine(Directory.GetCurrentDirectory(), "uploads", "Claim");
             Directory.CreateDirectory(folder);
             var storedName = $"{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
             var path = Path.Combine(folder, storedName);
             await using (var stream = new FileStream(path, FileMode.Create))
                 await file.CopyToAsync(stream);
 
-            var relative = $"Uploads/Claim/{storedName}";
+            var relative = $"uploads/Claim/{storedName}";
             var doc = new ClaimDocument
             {
                 Id = Guid.NewGuid(),

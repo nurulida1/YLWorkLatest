@@ -24,7 +24,7 @@ import {
 import { LeaveRequestService } from '../../../services/leave-request.service';
 import { LoadingService } from '../../../services/loading.service';
 import { UserService } from '../../../services/userService.service';
-import { environment } from '../../../../environments/environment.development';
+import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'app-leave-approvals',

@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, retry, catchError, of, throwError } from 'rxjs';
 import { MessageService } from 'primeng/api';
-import { environment } from '../../environments/environment.development';
+import { environment } from '../../environments/environment';
 import {
   CreateQuotationRequest,
   QuotationDto,

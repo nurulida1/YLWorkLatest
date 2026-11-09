@@ -200,7 +200,7 @@ const PROTECTED_POLICY_KINDS = new Set(['AnnualTenure', 'MedicalTenure']);
             </p>
           } @else {
             <p class="text-xs text-gray-500 m-0">
-              Cascade: when remaining on this type is insufficient, take from Annual Leave then Unpaid Leave
+              Cascade: when remaining on this type is insufficient, applicant chooses Annual Leave or Unpaid Leave for the overflow
               (staff must confirm). Changing defaults does not rewrite existing year balances.
             </p>
           }

@@ -3,6 +3,13 @@ import { TableLazyLoadEvent } from 'primeng/table';
 import { Observable } from 'rxjs';
 import { AbstractControl, ValidationErrors, ValidatorFn } from '@angular/forms';
 
+/** Same-origin URL for uploaded files (works for LAN IP and Cloudflare hostname). */
+export function resolveAssetUrl(path: string | null | undefined): string {
+  if (!path) return '';
+  const clean = String(path).replace(/\\/g, '/').replace(/^\/+/, '');
+  return `/${clean}`;
+}
+
 export interface PagingContent<T> {
   data: T[];
   totalElements: number;

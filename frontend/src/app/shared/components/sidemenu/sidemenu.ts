@@ -5,6 +5,7 @@ import {
   Component,
   DestroyRef,
   inject,
+  OnInit,
 } from '@angular/core';
 import { NavigationEnd, Router, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -17,16 +18,13 @@ import { ButtonModule } from 'primeng/button';
 import { UserService } from '../../../services/userService.service';
 import { LoginResponse } from '../../../models/User';
 import { AuthService } from '../../../services/authService';
-import { MenuItem } from 'primeng/api';
+import { PermissionService } from '../../../services/permissionService';
+import {
+  APP_MAIN_MENU,
+  APP_MANAGEMENT_MENU,
+  AppNavItem,
+} from '../../navigation/app-navigation';
 
-interface SideMenuItem {
-  label: string;
-  route?: string;
-  icon?: string;
-  roles?: string[];
-  mobileOnly?: boolean;
-  items?: SideMenuItem[];
-}
 @Component({
   selector: 'app-sidemenu',
   imports: [
@@ -62,6 +60,7 @@ interface SideMenuItem {
           <div class="flex flex-col gap-2 w-full">
             <ng-container *ngFor="let item of mainMenu">
               <div
+                *ngIf="canView(item)"
                 class="flex flex-row lg:pl-4 py-2 items-center justify-center lg:justify-start gap-3 px-2 text-[14px] cursor-pointer"
                 [routerLink]="item.route"
                 [ngClass]="{
@@ -151,6 +150,7 @@ interface SideMenuItem {
                       'hover:bg-gray-700 hover:text-blue-500': !isActive(
                         sub.route
                       ),
+                      'lg:hidden': sub.mobileOnly,
                     }"
                     [routerLink]="sub.route"
                   >
@@ -167,11 +167,7 @@ interface SideMenuItem {
   styleUrl: './sidemenu.less',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class Sidemenu {
-  // ==========================================
-  // DEPENDENCIES
-  // ==========================================
-
+export class Sidemenu implements OnInit {
   readonly router = inject(Router);
 
   private readonly cdr = inject(ChangeDetectorRef);
@@ -179,10 +175,7 @@ export class Sidemenu {
 
   private readonly userService = inject(UserService);
   private readonly authService = inject(AuthService);
-
-  // ==========================================
-  // COMPONENT STATE
-  // ==========================================
+  private readonly permissionService = inject(PermissionService);
 
   currentUrl = '';
   currentUser: LoginResponse | null = null;
@@ -192,318 +185,16 @@ export class Sidemenu {
 
   openMenu: string | null = null;
 
-  // ==========================================
-  // MAIN MENU
-  // ==========================================
-
-  readonly mainMenu: SideMenuItem[] = [
-    {
-      label: 'Dashboard',
-      route: '/dashboard',
-      icon: 'pi-home',
-    },
-    {
-      label: 'Office Handbook',
-      route: '/office-handbook',
-      icon: 'pi-book',
-    },
-  ];
-
-  // ==========================================
-  // MANAGEMENT MENU
-  // ==========================================
-
-  readonly management: SideMenuItem[] = [
-    // WORKSPACE
-    {
-      label: 'My Work',
-      icon: 'pi-briefcase',
-      items: [
-        {
-          label: 'Upcoming Meetings',
-          route: '/meeting',
-          icon: 'pi-calendar-clock',
-        },
-        {
-          label: 'My Tasks',
-          route: '/my-tasks',
-          icon: 'pi-list-check',
-        },
-        {
-          label: 'My Daily Reports',
-          route: '/daily-reports',
-          icon: 'pi-file-edit',
-        },
-        {
-          label: 'Team Daily Reports',
-          route: '/daily-reports/team',
-          icon: 'pi-users',
-        },
-      ],
-    },
-    {
-      label: 'Leave & Claims',
-      icon: 'pi-calendar',
-      items: [
-        {
-          label: 'Leave Application',
-          route: '/leave',
-        },
-        {
-          label: 'Leave Approvals',
-          route: '/leave/approvals',
-          roles: ['SuperAdmin', 'Management', 'HOD', 'HR'],
-        },
-        {
-          label: 'Claims',
-          route: '/claims',
-        },
-        {
-          label: 'Apply Claim',
-          route: '/claims/apply',
-        },
-        {
-          label: 'Claim Approvals',
-          route: '/claims/approvals',
-        },
-      ],
-    },
-    {
-      label: 'Support & Requests',
-      icon: 'pi-desktop',
-      items: [
-        {
-          label: 'Hardware / IT Support',
-          route: '/hardware-request',
-          icon: 'pi-wrench',
-        },
-        {
-          label: 'Incoming Requests',
-          route: '/hardware-request/incoming',
-          icon: 'pi-inbox',
-        },
-      ],
-    },
-
-    // BUSINESS OPERATIONS
-    {
-      label: 'Project Management',
-      icon: 'pi-folder',
-      roles: ['SuperAdmin', 'Management', 'HOD'],
-      items: [
-        {
-          label: 'Projects',
-          route: '/projects',
-          roles: ['SuperAdmin', 'Management', 'HOD'],
-        },
-        {
-          label: 'Work Orders',
-          route: '/work-order',
-          roles: ['SuperAdmin', 'Management', 'HOD'],
-        },
-        {
-          label: 'Quotations',
-          route: '/quotations',
-          roles: ['SuperAdmin', 'Management', 'HOD'],
-        },
-      ],
-    },
-    {
-      label: 'Sales & Purchasing',
-      icon: 'pi-shopping-cart',
-      roles: ['SuperAdmin', 'Management', 'HOD'],
-      items: [
-        {
-          label: 'Products Services',
-          route: '/products-services',
-          roles: ['SuperAdmin', 'Management', 'HOD'],
-        },
-        {
-          label: 'Sales Order',
-          route: '/sales-order',
-          roles: ['SuperAdmin', 'Management', 'HOD'],
-        },
-        {
-          label: 'Delivery Orders',
-          route: '/delivery-orders',
-          roles: ['SuperAdmin', 'Management', 'HOD'],
-        },
-        {
-          label: 'Purchase Orders',
-          route: '/purchase-orders',
-          roles: ['SuperAdmin', 'Management', 'HOD'],
-        },
-        {
-          label: 'Goods Receiving',
-          route: '/goods-receiving',
-          roles: ['SuperAdmin', 'Management', 'HOD'],
-        },
-        {
-          label: 'DO RMA',
-          route: '/do-rma',
-          roles: ['SuperAdmin', 'Management', 'HOD'],
-        },
-      ],
-    },
-    {
-      label: 'Inventory',
-      icon: 'pi-box',
-      items: [
-        {
-          label: 'Inventory Record',
-          route: '/inventory/listing',
-          roles: ['SuperAdmin', 'Management', 'HOD'],
-        },
-        {
-          label: 'Category',
-          route: '/inventory/category',
-          roles: ['SuperAdmin', 'Management', 'HOD'],
-        },
-        {
-          label: 'Location',
-          route: '/inventory/location',
-          roles: ['SuperAdmin', 'Management', 'HOD'],
-        },
-        {
-          label: 'Section',
-          route: '/inventory/section',
-          roles: ['SuperAdmin', 'Management', 'HOD'],
-        },
-      ],
-    },
-    {
-      label: 'Finance',
-      icon: 'pi-wallet',
-      roles: ['SuperAdmin', 'Management', 'HOD'],
-      items: [
-        {
-          label: 'Sales Invoice',
-          route: '/invoices/sales',
-          roles: ['SuperAdmin', 'Management', 'HOD'],
-        },
-        {
-          label: 'Purchase Invoice',
-          route: '/invoices/purchase',
-          roles: ['SuperAdmin', 'Management', 'HOD'],
-        },
-        {
-          label: 'Expenses',
-          route: '/expenses',
-          roles: ['SuperAdmin', 'Management', 'HOD'],
-        },
-        {
-          label: 'Incomes',
-          route: '/incomes',
-          roles: ['SuperAdmin', 'Management', 'HOD'],
-        },
-        {
-          label: 'Payments',
-          route: '/payments',
-          roles: ['SuperAdmin', 'Management', 'HOD'],
-        },
-      ],
-    },
-
-    // ADMINISTRATION
-    {
-      label: 'Company Management',
-      icon: 'pi-building',
-      roles: ['SuperAdmin', 'Management', 'HOD'],
-      items: [
-        {
-          label: 'My Company',
-          route: '/company',
-          roles: ['SuperAdmin', 'Management', 'HOD'],
-        },
-        {
-          label: 'Department',
-          route: '/department',
-        },
-        {
-          label: 'Suppliers',
-          route: '/supplier',
-          roles: ['SuperAdmin', 'Management', 'HOD'],
-        },
-        {
-          label: 'Clients',
-          route: '/clients',
-          roles: ['SuperAdmin', 'Management', 'HOD'],
-        },
-      ],
-    },
-    {
-      label: 'Administration Settings',
-      icon: 'pi-cog',
-      items: [
-        {
-          label: 'User Management',
-          route: '/user-management',
-          roles: ['SuperAdmin', 'HR'],
-        },
-        {
-          label: 'Profile Settings',
-          route: '/profile-settings',
-          icon: 'pi-user',
-          roles: ['Support', 'Staff', 'Management', 'HOD', 'HR'],
-          mobileOnly: true,
-        },
-        {
-          label: 'System Module',
-          route: '/settings/system-module',
-          roles: ['SuperAdmin'],
-        },
-        {
-          label: 'Role Permissions',
-          route: '/settings/role-permission',
-          roles: ['SuperAdmin'],
-        },
-        {
-          label: 'Leave Types',
-          route: '/settings/leave-types',
-          roles: ['SuperAdmin', 'HOD', 'Management', 'HR'],
-        },
-        {
-          label: 'Leave Policy',
-          route: '/settings/leave-policy',
-          roles: ['SuperAdmin', 'HOD', 'Management', 'HR'],
-        },
-        {
-          label: 'Public Holidays',
-          route: '/settings/leave-holidays',
-          roles: ['SuperAdmin', 'Admin', 'HR'],
-        },
-        {
-          label: 'Leave Calendar Sync',
-          route: '/settings/leave-calendar-sync',
-          roles: ['SuperAdmin', 'HOD', 'Management', 'HR'],
-        },
-        {
-          label: 'Claim Settings',
-          route: '/settings/claim-settings',
-          roles: ['SuperAdmin', 'Admin', 'HR'],
-        },
-      ],
-    },
-    {
-      label: 'Activity Log',
-      route: '/activity-log',
-      icon: 'pi-history',
-      roles: ['SuperAdmin'],
-    },
-    {
-      label: 'Announcements',
-      route: '/announcements',
-      icon: 'pi-bell',
-    },
-  ];
-
-  // ==========================================
-  // LIFECYCLE
-  // ==========================================
+  readonly mainMenu: AppNavItem[] = APP_MAIN_MENU;
+  readonly management: AppNavItem[] = APP_MANAGEMENT_MENU;
 
   constructor() {
     this.initializeCurrentUser();
     this.initializeRouteTracking();
+  }
+
+  ngOnInit(): void {
+    this.reloadPermissions();
   }
 
   private initializeCurrentUser(): void {
@@ -513,8 +204,19 @@ export class Sidemenu {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((user) => {
         this.currentUser = user;
-        this.cdr.markForCheck();
+        if (user) {
+          this.reloadPermissions();
+        } else {
+          this.cdr.markForCheck();
+        }
       });
+  }
+
+  private reloadPermissions(): void {
+    this.permissionService.loadPermissions().subscribe({
+      next: () => this.cdr.markForCheck(),
+      error: () => this.cdr.markForCheck(),
+    });
   }
 
   private initializeRouteTracking(): void {
@@ -533,14 +235,6 @@ export class Sidemenu {
       });
   }
 
-  // ==========================================
-  // ROUTE HANDLING
-  // ==========================================
-
-  // ==========================================
-  // ROUTE HANDLING
-  // ==========================================
-
   syncOpenMenuWithRoute(): void {
     const activeParent = this.management.find((item) =>
       item.items?.some((sub) => this.isRouteMatch(this.currentUrl, sub.route)),
@@ -549,10 +243,16 @@ export class Sidemenu {
     this.openMenu = activeParent?.label ?? null;
   }
 
-  isActive(route?: string, item?: SideMenuItem): boolean {
+  isActive(route?: string, item?: AppNavItem): boolean {
+    if (item?.items?.length) {
+      return item.items.some((sub) =>
+        this.isRouteMatch(this.currentUrl, sub.route),
+      );
+    }
+
     if (!route) return false;
 
-    return this.currentUrl.split('?')[0].split('#')[0] === route;
+    return this.isRouteMatch(this.currentUrl, route);
   }
 
   private isRouteMatch(currentUrl: string, route?: string): boolean {
@@ -563,15 +263,11 @@ export class Sidemenu {
     return cleanUrl === route || cleanUrl.startsWith(`${route}/`);
   }
 
-  // ==========================================
-  // SUBMENU HANDLING
-  // ==========================================
-
-  getAllowedSubItems(item: SideMenuItem): SideMenuItem[] {
+  getAllowedSubItems(item: AppNavItem): AppNavItem[] {
     return item.items?.filter((sub) => this.canView(sub)) ?? [];
   }
 
-  hasVisibleSubItems(item: SideMenuItem): boolean {
+  hasVisibleSubItems(item: AppNavItem): boolean {
     return this.getAllowedSubItems(item).length > 0;
   }
 
@@ -580,55 +276,13 @@ export class Sidemenu {
     this.cdr.markForCheck();
   }
 
-  // ==========================================
-  // ROLE AND DEPARTMENT PERMISSIONS
-  // ==========================================
-
-  canView(item: SideMenuItem): boolean {
-    const role = this.currentUser?.systemRole?.trim().toLowerCase();
-
-    if (!role) return false;
-
-    if (role === 'superadmin') {
-      return true;
+  canView(item: AppNavItem): boolean {
+    if (item.items?.length) {
+      return this.hasVisibleSubItems(item);
     }
 
-    if (this.isInventoryMenu(item)) {
-      return (
-        role === 'director' ||
-        role === 'hod' ||
-        this.hasPurchasingLogisticDepartment()
-      );
-    }
-
-    if (!item.roles?.length) {
-      return true;
-    }
-
-    return item.roles.some(
-      (allowedRole: string) => allowedRole.trim().toLowerCase() === role,
-    );
+    return this.permissionService.canReadModule(item.moduleKey);
   }
-
-  private isInventoryMenu(item: SideMenuItem): boolean {
-    return (
-      item.label === 'Inventory' ||
-      item.route?.startsWith('/inventory/') === true
-    );
-  }
-
-  private hasPurchasingLogisticDepartment(): boolean {
-    const departments = this.currentUser?.departments ?? [];
-
-    return departments.some(
-      (department) =>
-        department?.trim().toLowerCase() === 'purchasing & logistic',
-    );
-  }
-
-  // ==========================================
-  // DIALOG HANDLING
-  // ==========================================
 
   signOutClick(): void {
     this.signOutDialog = true;
@@ -639,10 +293,6 @@ export class Sidemenu {
     this.showDialog = !this.showDialog;
     this.cdr.markForCheck();
   }
-
-  // ==========================================
-  // AUTHENTICATION
-  // ==========================================
 
   LogOut(): void {
     this.signOutDialog = false;

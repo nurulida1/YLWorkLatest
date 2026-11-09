@@ -259,7 +259,7 @@ string? includes = null)
 
                 if (request.Attachment != null)
                 {
-                    var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "Uploads", "INV");
+                    var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "uploads", "INV");
 
                     if (!Directory.Exists(uploadsFolder))
                         Directory.CreateDirectory(uploadsFolder);
@@ -272,7 +272,7 @@ string? includes = null)
                         await request.Attachment.CopyToAsync(stream);
                     }
 
-                    filePath = $"Uploads/INV/{fileName}";
+                    filePath = $"uploads/INV/{fileName}";
                 }
 
                 var invoice = new Invoice
@@ -368,7 +368,7 @@ string? includes = null)
 
                 if (request.Attachment != null)
                 {
-                    var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "Uploads", "INV");
+                    var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "uploads", "INV");
 
                     if (!Directory.Exists(uploadsFolder))
                         Directory.CreateDirectory(uploadsFolder);
@@ -381,7 +381,7 @@ string? includes = null)
                         await request.Attachment.CopyToAsync(stream);
                     }
 
-                    filePath = $"Uploads/INV/{fileName}";
+                    filePath = $"uploads/INV/{fileName}";
                 }
 
                 invoice.InvoiceNo = request.InvoiceNo;

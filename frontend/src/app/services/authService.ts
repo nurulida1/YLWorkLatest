@@ -2,7 +2,6 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Router } from '@angular/router';
 import { MessageService } from 'primeng/api';
-
 import {
   Observable,
   catchError,
@@ -13,8 +12,7 @@ import {
   tap,
   throwError,
 } from 'rxjs';
-
-import { environment } from '../../environments/environment.development';
+import { environment } from '../../environments/environment';
 import { UserService } from './userService.service';
 import { LoginResponse } from '../models/User';
 

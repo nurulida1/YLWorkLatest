@@ -1014,11 +1014,11 @@ namespace YLWorks.Controller
                 string? attachmentPath = null;
                 if (request.ClientPOAttachment != null && request.ClientPOAttachment.Length > 0)
                 {
-                    var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "Uploads", "ClientPOs");
+                    var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "uploads", "ClientPOs");
                     if (!Directory.Exists(uploadsFolder)) Directory.CreateDirectory(uploadsFolder);
 
                     var uniqueFileName = $"{Guid.NewGuid()}_{Path.GetFileName(request.ClientPOAttachment.FileName)}";
-                    attachmentPath = Path.Combine("Uploads", "ClientPOs", uniqueFileName);
+                    attachmentPath = Path.Combine("uploads", "ClientPOs", uniqueFileName);
 
                     using (var fileStream = new FileStream(Path.Combine(Directory.GetCurrentDirectory(), attachmentPath), FileMode.Create))
                     {

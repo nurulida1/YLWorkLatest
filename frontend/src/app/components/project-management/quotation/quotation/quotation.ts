@@ -221,14 +221,14 @@ import { PaginatorModule } from 'primeng/paginator';
                   <td>
                     <div class="client-cell">
                       <span class="client-name">
-                        {{ data.client?.name || '—' }}
+                        {{ data.client.name || '—' }}
                       </span>
                     </div>
                   </td>
 
                   <td>
                     <span class="muted-cell">
-                      {{ data.createdBy?.displayName || '—' }}
+                      {{ data.createdBy.displayName || '—' }}
                     </span>
                   </td>
 
@@ -410,7 +410,7 @@ import { PaginatorModule } from 'primeng/paginator';
               </div>
 
               <div class="mobile-card-client">
-                {{ data.client?.name || 'No client information' }}
+                {{ data.client.name || 'No client information' }}
               </div>
 
               <div class="mobile-card-details">
@@ -426,7 +426,7 @@ import { PaginatorModule } from 'primeng/paginator';
 
                 <div>
                   <span class="mobile-field-label">Created By</span>
-                  <span>{{ data.createdBy?.displayName || '—' }}</span>
+                  <span>{{ data.createdBy.displayName || '—' }}</span>
                 </div>
 
                 <div>
@@ -720,7 +720,7 @@ import { PaginatorModule } from 'primeng/paginator';
             severity="success"
             styleClass="submit-convert-button"
             [disabled]="
-              !soForm.clientPONumber?.trim() || !soForm.clientPOAttachment
+              !soForm.clientPONumber.trim() || !soForm.clientPOAttachment
             "
             (onClick)="submitConvertToSO()"
           ></p-button>

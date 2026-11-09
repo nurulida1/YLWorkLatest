@@ -39,6 +39,7 @@ import {
   BuildSortText,
   BuildFilterText,
   ValidateAllFormFields,
+  resolveAssetUrl,
 } from '../../../../shared/helpers/helpers';
 
 @Component({
@@ -561,7 +562,7 @@ export class ClientPurchaseOrder implements OnInit, OnDestroy {
 
         this.selectedFileName = cleanPath.split('/').pop() || '';
 
-        this.selectedFileUrl = `https://localhost:5000/${cleanPath}`;
+        this.selectedFileUrl = resolveAssetUrl(cleanPath);
 
         this.FG.patchValue({
           attachment: data.attachment,
@@ -860,7 +861,7 @@ export class ClientPurchaseOrder implements OnInit, OnDestroy {
     if (!data.attachment) return;
 
     const cleanPath = data.attachment.replace(/\\/g, '/');
-    const fileUrl = `https://localhost:5000/${cleanPath}`;
+    const fileUrl = resolveAssetUrl(cleanPath);
 
     fetch(fileUrl)
       .then((response) => response.blob())

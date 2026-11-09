@@ -1,6 +1,7 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using Microsoft.Extensions.FileProviders;
+using Microsoft.AspNetCore.HttpOverrides;
 using YLWorks.Data;
 using YLWorks.Services;
 using YLWorks.Hubs;
@@ -20,6 +21,15 @@ var key = jwtSettings["Key"];
 var issuer = jwtSettings["Issuer"];
 var audience = jwtSettings["Audience"];
 
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders =
+        ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    // Cloudflare / reverse proxy; clear known networks so forwarded headers are accepted.
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
+});
+
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -28,7 +38,7 @@ builder.Services.AddAuthentication(options =>
 })
 .AddJwtBearer(options =>
 {
-    options.RequireHttpsMetadata = false;
+    options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
     options.SaveToken = true;
     options.TokenValidationParameters = new TokenValidationParameters
     {
@@ -87,6 +97,7 @@ builder.Services.AddSignalR();
 
 builder.Services.AddCors(options =>
 {
+    // Dev only: Angular on :4200 calling API on :5000.
     options.AddPolicy("AllowAll",
         policy =>
         {
@@ -130,14 +141,25 @@ builder.Services.AddScoped<IOfficeHandbookService, OfficeHandbookService>();
 
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
+app.UseForwardedHeaders();
+
 {
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     var logger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("LeaveDbSeeder");
-    await LeaveDbSeeder.SeedAsync(db, logger);
-    var claimLogger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("ClaimDbSeeder");
-    await ClaimDbSeeder.SeedAsync(db, claimLogger);
+
+    if (app.Environment.IsDevelopment())
+    {
+        // Full leave seed: types + policy + demo users/requests (dev only).
+        await LeaveDbSeeder.SeedAsync(db, logger);
+        var claimLogger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("ClaimDbSeeder");
+        await ClaimDbSeeder.SeedAsync(db, claimLogger);
+    }
+    else
+    {
+        // Production: leave policy + default leave types only (no demo data).
+        await LeaveDbSeeder.EnsureBasicsAsync(db, logger);
+    }
 }
 
 if (app.Environment.IsDevelopment())
@@ -150,17 +172,33 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-app.UseHttpsRedirection();
+if (app.Configuration.GetValue("EnableHttpsRedirection", false))
+{
+    app.UseHttpsRedirection();
+}
 
-//app.UseCors("AllowAngular");
-app.UseCors("AllowAll");
+// Same-origin SPA+API in Production needs no CORS. Keep open CORS for local Angular dev server.
+if (app.Environment.IsDevelopment())
+{
+    app.UseCors("AllowAll");
+}
 
+app.UseDefaultFiles();
 app.UseStaticFiles();
 
+var uploadsRoot = Path.Combine(Directory.GetCurrentDirectory(), "uploads");
+Directory.CreateDirectory(uploadsRoot);
+var uploadsProvider = new PhysicalFileProvider(uploadsRoot);
+
+// Canonical path (lowercase). Also map /Uploads for existing DB-stored relative paths.
 app.UseStaticFiles(new StaticFileOptions
 {
-    FileProvider = new PhysicalFileProvider(
-        Path.Combine(Directory.GetCurrentDirectory(), "Uploads")),
+    FileProvider = uploadsProvider,
+    RequestPath = "/uploads"
+});
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = uploadsProvider,
     RequestPath = "/Uploads"
 });
 
@@ -172,5 +210,8 @@ app.MapHub<NotificationHub>("/hubs/notifications");
 app.MapHealthChecks("/health");
 
 app.MapGet("/api", () => Results.Ok("Hello from API"));
+
+// Angular client-side routes (must be after API/hub maps).
+app.MapFallbackToFile("index.html");
 
 app.Run();

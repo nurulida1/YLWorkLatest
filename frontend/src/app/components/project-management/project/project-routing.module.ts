@@ -9,19 +9,19 @@ const routes: Routes = [
     path: '',
     component: Project,
     // canActivate: [modulePermissionGuard],
-    // data: { moduleKey: 'projects' },
+    data: { moduleKey: 'projects' },
   },
   {
     path: 'form',
     component: ProjectForm,
     // canActivate: [modulePermissionGuard],
-    // data: { moduleKey: 'projects' },
+    data: { moduleKey: 'projects' },
   },
   {
     path: 'details',
     component: ProjectDetails,
     // canActivate: [modulePermissionGuard],
-    // data: { moduleKey: 'projects' },
+    data: { moduleKey: 'projects' },
   },
 ];
 

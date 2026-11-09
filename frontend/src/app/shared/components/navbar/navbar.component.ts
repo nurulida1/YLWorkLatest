@@ -21,11 +21,9 @@ import { FormsModule } from '@angular/forms';
 import { InputTextModule } from 'primeng/inputtext';
 import { MenuItem } from 'primeng/api';
 import { MenuModule } from 'primeng/menu';
-import { DrawerModule } from 'primeng/drawer';
 import { RippleModule } from 'primeng/ripple';
 
 import { AppConfigService } from '../../../services/appConfig.service';
-import { LoadingService } from '../../../services/loading.service';
 import { NotificationService } from '../../../services/notificationService.service';
 import { UserService } from '../../../services/userService.service';
 
@@ -44,24 +42,13 @@ import { AuthService } from '../../../services/authService';
     FormsModule,
     InputTextModule,
     MenuModule,
-    DrawerModule,
     RouterLink,
     RippleModule,
   ],
   template: `
     <div
-      class="border-b border-gray-200 w-full py-3 px-2 bg-white flex flex-row items-center justify-between"
+      class="border-b border-gray-200 w-full py-3 px-2 bg-white flex flex-row items-center justify-end"
     >
-      <!-- Mobile Sidebar Toggle -->
-      <div>
-        <div class="block pl-3 lg:pl-0 lg:hidden">
-          <div
-            class="pi pi-bars text-xl! cursor-pointer"
-            (click)="ToggleSidebar()"
-          ></div>
-        </div>
-      </div>
-
       <div class="flex flex-row gap-4 items-center">
         <!-- Dark Mode Toggle -->
         <div
@@ -106,7 +93,6 @@ import { AuthService } from '../../../services/authService';
             </span>
           </div>
 
-          <!-- Notification List -->
           <div class="flex-1 overflow-y-auto min-h-0">
             <div
               *ngIf="notificationLists.length === 0"
@@ -237,136 +223,6 @@ import { AuthService } from '../../../services/authService';
       </div>
     </div>
 
-    <!-- Mobile Drawer -->
-    <p-drawer
-      [(visible)]="showSidebar"
-      (onHide)="showSidebar = false"
-      position="left"
-      [modal]="true"
-      styleClass="bg-gray-800! border-none! text-white! overflow-y-auto!"
-      [closable]="false"
-    >
-      <ng-template #headless>
-        <div class="flex flex-col pt-7 pb-5 text-white">
-          <!-- Logo -->
-          <div
-            class="flex flex-row items-center gap-4 px-5 border-b border-white/10 pb-5"
-          >
-            <div class="w-50">
-              <img
-                src="assets/logo-yl-work.png"
-                alt="YL Work"
-                class="w-full h-full object-cover cursor-pointer"
-                [routerLink]="'/dashboard'"
-              />
-            </div>
-          </div>
-
-          <div
-            class="py-5 flex flex-col px-3 overflow-y-auto scrollbar scroll-smooth"
-          >
-            <!-- Main Menu -->
-            <div class="flex flex-col gap-2 w-full">
-              <ng-container *ngFor="let item of mainMenu">
-                <div
-                  *ngIf="canView(item) || hasVisibleSubItems(item)"
-                  class="flex flex-row items-center gap-3 py-3 px-2 text-[14px]"
-                  [routerLink]="item.route"
-                  [ngClass]="{
-                    'rounded-lg bg-blue-500 text-white': isActive(item.route),
-                    'cursor-pointer hover:text-gray-400 text-gray-300':
-                      !isActive(item.route),
-                  }"
-                >
-                  <div class="flex items-center gap-3">
-                    <i
-                      class="pi {{ item.icon }} text-sm! xl:text-base!"
-                      [ngClass]="{
-                        'text-white': isActive(item.route, item),
-                        'text-gray-400': !isActive(item.route, item),
-                      }"
-                    ></i>
-
-                    <span>{{ item.label }}</span>
-                  </div>
-                </div>
-              </ng-container>
-            </div>
-
-            <!-- Management Menu -->
-            <div
-              class="mt-1 flex flex-col items-center lg:items-start gap-3 text-[14px]"
-            >
-              <ng-container *ngFor="let item of management">
-                <div
-                  *ngIf="canView(item) || hasVisibleSubItems(item)"
-                  class="flex flex-col gap-2 w-full"
-                >
-                  <!-- Parent Menu -->
-                  <div
-                    class="flex flex-row lg:pl-4 items-center justify-between gap-3 py-2 rounded-lg px-2"
-                    [ngClass]="{
-                      'bg-blue-500 text-white': isActive(item.route, item),
-                      'hover:text-gray-400 cursor-pointer text-gray-300':
-                        !isActive(item.route, item),
-                    }"
-                    (click)="
-                      item.items
-                        ? toggleMenu(item.label)
-                        : item.route && router.navigate([item.route])
-                    "
-                  >
-                    <div class="flex items-center gap-3">
-                      <i
-                        class="pi {{ item.icon }} text-sm! xl:text-base!"
-                        [ngClass]="{
-                          'text-white': isActive(item.route, item),
-                          'text-gray-400': !isActive(item.route, item),
-                        }"
-                      ></i>
-
-                      <span>{{ item.label }}</span>
-                    </div>
-
-                    <i
-                      *ngIf="item.items"
-                      class="text-sm! hidden! lg:block! pi"
-                      [ngClass]="{
-                        'pi-chevron-right': openMenu !== item.label,
-                        'pi-chevron-down': openMenu === item.label,
-                      }"
-                    ></i>
-                  </div>
-
-                  <!-- Submenu -->
-                  <div
-                    *ngIf="item.items && openMenu === item.label"
-                    class="ml-10 flex flex-col gap-1"
-                  >
-                    <div
-                      *ngFor="let sub of getAllowedSubItems(item)"
-                      class="py-3 px-3 rounded-md cursor-pointer"
-                      [ngClass]="{
-                        'bg-gray-700 font-semibold text-blue-500': isActive(
-                          sub.route
-                        ),
-                        'hover:bg-gray-700 hover:text-blue-500': !isActive(
-                          sub.route
-                        ),
-                      }"
-                      [routerLink]="sub.route"
-                    >
-                      {{ sub.label }}
-                    </div>
-                  </div>
-                </div>
-              </ng-container>
-            </div>
-          </div>
-        </div>
-      </ng-template>
-    </p-drawer>
-
     <!-- Logout Confirmation Dialog -->
     <p-dialog
       [(visible)]="signOutDialog"
@@ -428,11 +284,10 @@ import { AuthService } from '../../../services/authService';
 export class NavbarComponent implements OnDestroy, OnInit {
   private readonly notificationService = inject(NotificationService);
   private readonly appConfigService = inject(AppConfigService);
-  private readonly loadingService = inject(LoadingService);
   private readonly userService = inject(UserService);
   private readonly authService = inject(AuthService);
   private readonly cdr = inject(ChangeDetectorRef);
-  private readonly router = inject(Router);
+  readonly router = inject(Router);
 
   private readonly destroy$ = new Subject<void>();
 
@@ -443,266 +298,29 @@ export class NavbarComponent implements OnDestroy, OnInit {
   isMobile = window.innerWidth < 770;
 
   notificationVisible = false;
-  userRequestVisible = false;
-  showLogoutDialog = false;
-  visibleSetting = false;
   signOutDialog = false;
-  isLogin = false;
-  showSidebar = false;
-
-  type = '';
-  reason = '';
-  currentUrl = '';
-  openMenu: string | null = null;
 
   userId: string | null = null;
   unreadCount = 0;
 
   items: MenuItem[] = [];
 
-  selectedNotification: NotificationDto | null = null;
   notificationLists: NotificationDto[] = [];
 
   currentUser: LoginResponse | null = null;
-
-  // ==========================================
-  // MAIN MENU
-  // ==========================================
-
-  mainMenu: any[] = [
-    {
-      label: 'Dashboard',
-      route: '/dashboard',
-      icon: 'pi-home',
-      roles: [
-        'SuperAdmin',
-        'Admin',
-        'Staff',
-        'HR',
-        'Manager',
-        'Sales Director',
-        'Sales Support',
-        'Sales Executive',
-        'Logistic Assistant',
-        'Project Manager',
-        'System & Intelligence Manager',
-        'Account & Admin Manager',
-        'Purchasing Executive',
-      ],
-    },
-    // {
-    //   label: 'Apply Leave',
-    //   icon: 'pi pi-calendar',
-    //   route: '/apply-leave',
-    //   roles: ['SuperAdmin', 'Admin', 'HR', 'Manager', 'Staff'],
-    // },
-    // {
-    //   label: 'Payslips',
-    //   icon: 'pi pi-dollar',
-    //   route: '/my-payslips',
-    //   roles: ['SuperAdmin', 'Admin', 'HR', 'Manager', 'Staff', 'Director'],
-    // },
-    // {
-    //   label: 'Employees',
-    //   icon: 'pi pi-users',
-    //   route: '/employees',
-    //   roles: ['SuperAdmin', 'Admin', 'HR', 'Manager', 'Staff', 'Director'],
-    // },
-  ];
-
-  // ==========================================
-  // MANAGEMENT MENU
-  // ==========================================
-
-  management: any[] = [
-    // ==========================================
-    // WORK MANAGEMENT
-    // ==========================================
-    {
-      label: 'Work Management',
-      icon: 'pi-briefcase',
-      items: [
-        {
-          label: 'Projects',
-          route: '/projects',
-        },
-        {
-          label: 'Work Orders',
-          route: '/work-order',
-        },
-        {
-          label: 'Tasks',
-          route: '/tasks',
-        },
-      ],
-    },
-
-    // ==========================================
-    // SALES & PURCHASING
-    // ==========================================
-    {
-      label: 'Sales & Purchasing',
-      icon: 'pi-shopping-cart',
-      items: [
-        {
-          label: 'Quotations',
-          route: '/quotations',
-        },
-        {
-          label: 'Sales Order',
-          route: '/sales-order',
-        },
-        {
-          label: 'Purchase Orders',
-          route: '/purchase-orders',
-        },
-      ],
-    },
-
-    // ==========================================
-    // DELIVERY & LOGISTICS
-    // ==========================================
-    {
-      label: 'Delivery & Logistics',
-      icon: 'pi-truck',
-      items: [
-        {
-          label: 'Inbound DO',
-          route: '/delivery-orders/inbound',
-        },
-        {
-          label: 'Outbound DO',
-          route: '/delivery-orders/outbound',
-        },
-        {
-          label: 'DO RMA',
-          route: '/delivery-orders/rma',
-        },
-        {
-          label: 'Material Requests',
-          route: '/material-requests',
-        },
-      ],
-    },
-
-    // ==========================================
-    // INVENTORY
-    // ==========================================
-    {
-      label: 'Inventory',
-      icon: 'pi-box',
-      items: [
-        {
-          label: 'Inventory Record',
-          route: '/inventory/listing',
-        },
-        {
-          label: 'Category',
-          route: '/inventory/category',
-        },
-        {
-          label: 'Location',
-          route: '/inventory/location',
-        },
-        {
-          label: 'Section',
-          route: '/inventory/section',
-        },
-      ],
-    },
-
-    // ==========================================
-    // FINANCE
-    // ==========================================
-    {
-      label: 'Finance',
-      icon: 'pi-wallet',
-      items: [
-        {
-          label: 'Invoices',
-          items: [
-            {
-              label: 'Sales Invoice',
-              route: '/invoices/sales',
-            },
-            {
-              label: 'Purchase Invoice',
-              route: '/invoices/purchase',
-            },
-          ],
-        },
-        {
-          label: 'Expenses',
-          route: '/expenses',
-        },
-        {
-          label: 'Incomes',
-          route: '/incomes',
-        },
-        {
-          label: 'Payments',
-          route: '/payments',
-        },
-      ],
-    },
-
-    // ==========================================
-    // COMPANY MANAGEMENT
-    // ==========================================
-    {
-      label: 'Company Management',
-      icon: 'pi-building',
-      items: [
-        {
-          label: 'Company',
-          route: '/company',
-        },
-        {
-          label: 'Suppliers',
-          route: '/supplier',
-        },
-        {
-          label: 'Clients',
-          route: '/clients',
-        },
-      ],
-    },
-
-    // ==========================================
-    // SETTINGS
-    // ==========================================
-    {
-      label: 'Settings',
-      icon: 'pi-cog',
-      items: [
-        {
-          label: 'User Management',
-          route: '/user-management',
-        },
-      ],
-    },
-  ];
-  // ==========================================
-  // CONSTRUCTOR
-  // ==========================================
 
   constructor() {
     this.currentUser = this.userService.currentUser;
     this.userId = this.currentUser?.userId ?? null;
 
-    this.currentUrl = this.router.url;
-
-    // Keep navbar user information synchronized.
     this.userService.currentUser$
       .pipe(takeUntil(this.destroy$))
       .subscribe((user) => {
         this.currentUser = user;
         this.userId = user?.userId ?? null;
-
         this.cdr.markForCheck();
       });
 
-    // Listen for route changes.
     this.router.events
       .pipe(
         filter(
@@ -710,26 +328,13 @@ export class NavbarComponent implements OnDestroy, OnInit {
         ),
         takeUntil(this.destroy$),
       )
-      .subscribe((event) => {
-        this.currentUrl = event.urlAfterRedirects;
-
-        this.syncOpenMenuWithRoute();
-
+      .subscribe(() => {
         this.notificationVisible = false;
-        this.showSidebar = false;
-
         this.cdr.markForCheck();
       });
-
-    this.syncOpenMenuWithRoute();
   }
 
-  // ==========================================
-  // INITIALIZATION
-  // ==========================================
-
   ngOnInit(): void {
-    // Notification list.
     this.notificationService.notifications$
       .pipe(takeUntil(this.destroy$))
       .subscribe((notifications) => {
@@ -737,7 +342,6 @@ export class NavbarComponent implements OnDestroy, OnInit {
         this.cdr.markForCheck();
       });
 
-    // Unread count.
     this.notificationService.unreadCount$
       .pipe(takeUntil(this.destroy$))
       .subscribe((count) => {
@@ -745,7 +349,6 @@ export class NavbarComponent implements OnDestroy, OnInit {
         this.cdr.markForCheck();
       });
 
-    // Load notifications.
     this.notificationService
       .GetNotifications()
       .pipe(takeUntil(this.destroy$))
@@ -753,10 +356,8 @@ export class NavbarComponent implements OnDestroy, OnInit {
         error: (err) => console.error('Failed to load notifications:', err),
       });
 
-    // Refresh unread count using the service.
     this.notificationService.refreshUnreadCount();
 
-    // Profile menu.
     this.items = [
       {
         items: [
@@ -771,109 +372,13 @@ export class NavbarComponent implements OnDestroy, OnInit {
         ],
       },
     ];
-
-    this.syncOpenMenuWithRoute();
-  }
-
-  // ==========================================
-  // ROUTE HANDLING
-  // ==========================================
-
-  private isRouteMatch(route?: string): boolean {
-    if (!route) return false;
-
-    const currentRoute = this.currentUrl.split('?')[0].split('#')[0];
-
-    return currentRoute === route || currentRoute.startsWith(`${route}/`);
-  }
-
-  private hasActiveRoute(item: any): boolean {
-    if (item.route && this.isRouteMatch(item.route)) {
-      return true;
-    }
-
-    return item.items?.some((sub: any) => this.hasActiveRoute(sub)) ?? false;
-  }
-
-  syncOpenMenuWithRoute(): void {
-    const activeParent = this.management.find((item) =>
-      this.hasActiveRoute(item),
-    );
-
-    this.openMenu = activeParent?.label ?? null;
-  }
-
-  isActive(route?: string, item?: any): boolean {
-    if (item) {
-      return this.hasActiveRoute(item);
-    }
-
-    return this.isRouteMatch(route);
-  }
-
-  getAllowedSubItems(item: any): any[] {
-    if (!item.items) return [];
-
-    return item.items.filter(
-      (sub: any) => this.canView(sub) || this.hasVisibleSubItems(sub),
-    );
-  }
-
-  hasVisibleSubItems(item: any): boolean {
-    return this.getAllowedSubItems(item).length > 0;
-  }
-  // ==========================================
-  // ROLE PERMISSIONS
-  // ==========================================
-
-  canView(item: any): boolean {
-    const currentRole = this.currentUser?.systemRole?.trim().toLowerCase();
-
-    if (!currentRole) return false;
-
-    // SuperAdmin can access everything.
-    if (currentRole === 'superadmin') {
-      return true;
-    }
-
-    // Items without role restrictions.
-    if (!item.roles || item.roles.length === 0) {
-      return true;
-    }
-
-    return item.roles.some(
-      (role: string) => role.trim().toLowerCase() === currentRole,
-    );
-  }
-
-  toggleMenu(label: string): void {
-    this.openMenu = this.openMenu === label ? null : label;
-    this.cdr.markForCheck();
-  }
-
-  // ==========================================
-  // MOBILE SIDEBAR
-  // ==========================================
-
-  ToggleSidebar(): void {
-    this.showSidebar = true;
-    this.cdr.markForCheck();
   }
 
   @HostListener('window:resize')
   onResize(): void {
     this.isMobile = window.innerWidth < 770;
-
-    if (!this.isMobile) {
-      this.showSidebar = false;
-    }
-
     this.cdr.markForCheck();
   }
-
-  // ==========================================
-  // DARK MODE
-  // ==========================================
 
   toggleDarkMode(): void {
     this.appConfigService.appState.update((state) => ({
@@ -884,22 +389,14 @@ export class NavbarComponent implements OnDestroy, OnInit {
     this.cdr.markForCheck();
   }
 
-  // ==========================================
-  // NOTIFICATIONS
-  // ==========================================
-
   @HostListener('document:click', ['$event'])
   onDocumentClick(event: MouseEvent): void {
     if (!this.notificationVisible || this.isMobile) return;
 
     const target = event.target as HTMLElement;
-
     const notificationPanel = document.getElementById('notification-panel');
-
     const notificationBell = document.getElementById('notification-bell');
-
     const clickedInsidePanel = notificationPanel?.contains(target);
-
     const clickedBell = notificationBell?.contains(target);
 
     if (!clickedInsidePanel && !clickedBell) {
@@ -927,9 +424,7 @@ export class NavbarComponent implements OnDestroy, OnInit {
       .subscribe({
         next: () => {
           notification.isRead = true;
-
           this.unreadCount = Math.max(0, this.unreadCount - 1);
-
           this.cdr.markForCheck();
         },
         error: (err) =>
@@ -937,61 +432,10 @@ export class NavbarComponent implements OnDestroy, OnInit {
       });
   }
 
-  loadNotifications(): void {
-    this.notificationService
-      .GetNotifications()
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (res: NotificationDto[]) => {
-          this.notificationLists = res;
-
-          this.unreadCount = res.filter(
-            (notification) => !notification.isRead,
-          ).length;
-
-          this.cdr.markForCheck();
-        },
-        error: (err) => console.error('Failed to load notifications:', err),
-      });
-  }
-
-  // ==========================================
-  // OTHER DIALOGS
-  // ==========================================
-
-  ShowSettingDialog(): void {
-    this.visibleSetting = !this.visibleSetting;
-
-    if (this.notificationVisible && this.visibleSetting) {
-      this.notificationVisible = false;
-    }
-
-    this.cdr.markForCheck();
-  }
-
-  RoleRequestClick(notification: NotificationDto): void {
-    this.selectedNotification = notification;
-    this.userRequestVisible = true;
-    this.cdr.markForCheck();
-  }
-
-  CancelDialog(): void {
-    this.userRequestVisible = false;
-    this.cdr.markForCheck();
-  }
-
-  // ==========================================
-  // LOGOUT
-  // ==========================================
-
   LogOut(): void {
     this.signOutDialog = false;
     this.authService.logout();
   }
-
-  // ==========================================
-  // CLEANUP
-  // ==========================================
 
   ngOnDestroy(): void {
     this.destroy$.next();

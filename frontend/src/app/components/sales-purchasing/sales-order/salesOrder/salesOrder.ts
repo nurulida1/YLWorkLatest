@@ -43,6 +43,7 @@ import {
   BuildSortText,
   BuildFilterText,
   ValidateAllFormFields,
+  resolveAssetUrl,
 } from '../../../../shared/helpers/helpers';
 
 @Component({
@@ -822,7 +823,7 @@ export class SalesOrder implements OnInit, OnDestroy {
           if (data.clientPOAttachment) {
             const cleanPath = data.clientPOAttachment.replace(/\\/g, '/');
             this.selectedFileName = cleanPath.split('/').pop() || '';
-            this.selectedFileUrl = `https://localhost:5000/${cleanPath}`;
+            this.selectedFileUrl = resolveAssetUrl(cleanPath);
           }
 
           this.FG.patchValue({
@@ -1186,7 +1187,7 @@ export class SalesOrder implements OnInit, OnDestroy {
     }
 
     const cleanPath = rawPath.replace(/\\/g, '/');
-    const fileUrl = `https://localhost:5000/${cleanPath}`;
+    const fileUrl = resolveAssetUrl(cleanPath);
 
     this.loadingService.start();
 

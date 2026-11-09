@@ -282,7 +282,7 @@ string? includes = null)
 
             if (request.SupplierDOAttachment != null)
             {
-                var folder = Path.Combine("Uploads", "GRN");
+                var folder = Path.Combine("uploads", "GRN");
 
                 if (!Directory.Exists(folder))
                     Directory.CreateDirectory(folder);
@@ -374,7 +374,7 @@ string? includes = null)
                 var file = request.SupplierDOAttachment;
 
                 var fileName = $"{Guid.NewGuid()}_{file.FileName}";
-                var filePath = Path.Combine("Uploads/GRN", fileName);
+                var filePath = Path.Combine("uploads/GRN", fileName);
 
                 using (var stream = new FileStream(filePath, FileMode.Create))
                 {

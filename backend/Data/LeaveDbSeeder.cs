@@ -8,16 +8,86 @@ namespace YLWorks.Data
 {
     public static class LeaveDbSeeder
     {
+        /// <summary>
+        /// Production-safe: default leave policy + leave types only (no demo users/requests).
+        /// Idempotent — skips when leave types already exist.
+        /// </summary>
+        public static async Task EnsureBasicsAsync(AppDbContext context, ILogger logger)
+        {
+            await EnsurePolicyAndKindsAsync(context, logger);
+            await EnsureDefaultLeaveTypesAsync(context, logger);
+        }
+
+        /// <summary>
+        /// Creates the standard leave types if the table is empty.
+        /// Does not create users, balances, or sample requests.
+        /// </summary>
+        public static async Task EnsureDefaultLeaveTypesAsync(AppDbContext context, ILogger logger)
+        {
+            if (await context.LeaveTypes.AnyAsync())
+            {
+                logger.LogInformation("Default leave types skipped — leave types already exist.");
+                return;
+            }
+
+            var types = CreateDefaultLeaveTypes();
+            context.LeaveTypes.AddRange(types);
+            await context.SaveChangesAsync();
+            logger.LogInformation("Seeded {Count} default leave types.", types.Count);
+        }
+
+        private static List<LeaveType> CreateDefaultLeaveTypes() =>
+        [
+            new LeaveType
+            {
+                Id = Guid.NewGuid(), Name = "Annual Leave", Description = "Standard annual leave",
+                IsPaid = true, DefaultDaysPerYear = 8, PolicyKind = LeavePolicyKind.AnnualTenure,
+                AllowsHalfDay = true,
+                AllowsBalanceCascade = true,
+                CreatedAt = DateTime.UtcNow
+            },
+            new LeaveType
+            {
+                Id = Guid.NewGuid(), Name = "Medical Leave", Description = "Medical leave (MC)",
+                IsPaid = true, DefaultDaysPerYear = 14, RequiresDocument = true,
+                AllowsBalanceCascade = true,
+                PolicyKind = LeavePolicyKind.MedicalTenure, CreatedAt = DateTime.UtcNow
+            },
+            new LeaveType
+            {
+                Id = Guid.NewGuid(), Name = "Emergency Leave", Description = "Urgent leave",
+                IsPaid = true, IsEmergency = true, DefaultDaysPerYear = 0, RequiresDocument = true,
+                AllowsBalanceCascade = false,
+                PolicyKind = LeavePolicyKind.Fixed, CreatedAt = DateTime.UtcNow
+            },
+            new LeaveType
+            {
+                Id = Guid.NewGuid(), Name = "Unpaid Leave", Description = "Unpaid leave",
+                IsPaid = false, DefaultDaysPerYear = 365, PolicyKind = LeavePolicyKind.Fixed,
+                CreatedAt = DateTime.UtcNow
+            },
+            new LeaveType
+            {
+                Id = Guid.NewGuid(), Name = "Replacement Leave",
+                Description = "Leave credited for working on a public holiday",
+                IsPaid = true, DefaultDaysPerYear = 0, PolicyKind = LeavePolicyKind.Replacement,
+                AllowsBalanceCascade = true,
+                CreatedAt = DateTime.UtcNow
+            },
+        ];
+
         public static async Task SeedAsync(AppDbContext context, ILogger logger)
         {
             await EnsureBalanceCascadeSchemaAsync(context, logger);
             await EnsurePolicyAndKindsAsync(context, logger);
             await EnsureLeaveSettingsModulesAsync(context, logger);
             await EnsureLeaveCalendarTablesAsync(context, logger);
+            await EnsureDefaultLeaveTypesAsync(context, logger);
 
-            if (await context.LeaveTypes.AnyAsync())
+            // Demo users / sample leave requests — Development only (caller gates this).
+            if (await context.LeaveRequests.AnyAsync())
             {
-                logger.LogInformation("Leave request seed skipped — leave types already exist.");
+                logger.LogInformation("Leave request seed skipped — leave requests already exist.");
                 return;
             }
 
@@ -25,44 +95,12 @@ namespace YLWorks.Data
             var policy = await context.LeavePolicies.Include(p => p.TenureBands)
                 .FirstAsync(p => p.IsActive);
 
-            var annual = new LeaveType
-            {
-                Id = Guid.NewGuid(), Name = "Annual Leave", Description = "Standard annual leave",
-                IsPaid = true, DefaultDaysPerYear = 8, PolicyKind = LeavePolicyKind.AnnualTenure,
-                AllowsHalfDay = true,
-                AllowsBalanceCascade = true,
-                CreatedAt = DateTime.UtcNow
-            };
-            var medical = new LeaveType
-            {
-                Id = Guid.NewGuid(), Name = "Medical Leave", Description = "Medical leave (MC)",
-                IsPaid = true, DefaultDaysPerYear = 14, RequiresDocument = true,
-                AllowsBalanceCascade = true,
-                PolicyKind = LeavePolicyKind.MedicalTenure, CreatedAt = DateTime.UtcNow
-            };
-            var emergency = new LeaveType
-            {
-                Id = Guid.NewGuid(), Name = "Emergency Leave", Description = "Urgent leave",
-                IsPaid = true, IsEmergency = true, DefaultDaysPerYear = 0, RequiresDocument = true,
-                AllowsBalanceCascade = false,
-                PolicyKind = LeavePolicyKind.Fixed, CreatedAt = DateTime.UtcNow
-            };
-            var unpaid = new LeaveType
-            {
-                Id = Guid.NewGuid(), Name = "Unpaid Leave", Description = "Unpaid leave",
-                IsPaid = false, DefaultDaysPerYear = 365, PolicyKind = LeavePolicyKind.Fixed,
-                CreatedAt = DateTime.UtcNow
-            };
-            var replacement = new LeaveType
-            {
-                Id = Guid.NewGuid(), Name = "Replacement Leave",
-                Description = "Leave credited for working on a public holiday",
-                IsPaid = true, DefaultDaysPerYear = 0, PolicyKind = LeavePolicyKind.Replacement,
-                AllowsBalanceCascade = true,
-                CreatedAt = DateTime.UtcNow
-            };
-
-            context.LeaveTypes.AddRange(annual, medical, emergency, unpaid, replacement);
+            var types = await context.LeaveTypes.ToListAsync();
+            var annual = types.First(t => t.PolicyKind == LeavePolicyKind.AnnualTenure);
+            var medical = types.First(t => t.PolicyKind == LeavePolicyKind.MedicalTenure);
+            var emergency = types.First(t => t.IsEmergency);
+            var unpaid = types.First(t => !t.IsPaid && t.PolicyKind == LeavePolicyKind.Fixed);
+            var replacement = types.First(t => t.PolicyKind == LeavePolicyKind.Replacement);
 
             var users = await SeedUsersAsync(context, logger);
             var mgr1 = users["manager1"];

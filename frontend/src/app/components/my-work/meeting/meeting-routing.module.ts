@@ -7,10 +7,12 @@ const routes: Routes = [
   {
     path: '',
     component: Meeting,
+    data: { moduleKey: 'meeting' },
   },
   {
     path: 'form',
     component: MeetingForm,
+    data: { moduleKey: 'meeting' },
   },
 ];
 

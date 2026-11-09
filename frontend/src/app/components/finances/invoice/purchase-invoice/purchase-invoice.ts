@@ -31,6 +31,7 @@ import {
   GridifyQueryExtend,
   PagingContent,
   ValidateAllFormFields,
+  resolveAssetUrl,
 } from '../../../../shared/helpers/helpers';
 import { InvoiceDto } from '../../../../models/Invoice';
 import { Table, TableLazyLoadEvent, TableModule } from 'primeng/table';
@@ -1028,7 +1029,7 @@ export class PurchaseInvoice implements OnInit, OnDestroy {
             this.isInitializingForm = false;
             if (data.attachment) {
               this.invoiceFileName = data.attachment.split('/').pop() || '';
-              this.invoiceFileUrl = `https://localhost:5000/${data.attachment.replace(/\\/g, '/')}`;
+              this.invoiceFileUrl = resolveAssetUrl(data.attachment.replace(/\\/g, '/'));
             }
           } else {
             this.isEditMode = false;
@@ -1140,7 +1141,7 @@ export class PurchaseInvoice implements OnInit, OnDestroy {
     if (!data.attachment) return;
 
     const cleanPath = data.attachment.replace(/\\/g, '/');
-    const fileUrl = `https://localhost:5000/${cleanPath}`;
+    const fileUrl = resolveAssetUrl(cleanPath);
 
     fetch(fileUrl)
       .then((response) => response.blob())

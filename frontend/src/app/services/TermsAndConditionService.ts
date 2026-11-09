@@ -8,7 +8,7 @@ import {
 } from '../models/TermsAndCondition';
 import { MessageService } from 'primeng/api';
 import { Observable, retry, catchError, throwError } from 'rxjs';
-import { environment } from '../../environments/environment.development';
+import { environment } from '../../environments/environment';
 import {
   GridifyQueryExtend,
   PagingContent,

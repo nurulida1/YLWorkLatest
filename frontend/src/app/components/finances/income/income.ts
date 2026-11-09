@@ -39,6 +39,7 @@ import {
   BuildSortText,
   BuildFilterText,
   ValidateAllFormFields,
+  resolveAssetUrl,
 } from '../../../shared/helpers/helpers';
 
 @Component({
@@ -441,7 +442,7 @@ export class Income implements OnInit, OnDestroy {
     if (!data) return;
 
     const cleanPath = data.attachment.replace(/\\/g, '/');
-    const fileUrl = `https://localhost:5000/${cleanPath}`;
+    const fileUrl = resolveAssetUrl(cleanPath);
 
     fetch(fileUrl)
       .then((response) => response.blob())

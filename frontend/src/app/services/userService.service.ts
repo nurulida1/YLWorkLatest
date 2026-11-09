@@ -21,9 +21,7 @@ import {
   BehaviorSubject,
   map,
 } from 'rxjs';
-
-import { environment } from '../../environments/environment.development';
-
+import { environment } from '../../environments/environment';
 import {
   GridifyQueryExtend,
   PagingContent,

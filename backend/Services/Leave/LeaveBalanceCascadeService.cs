@@ -23,12 +23,16 @@ namespace YLWorks.Services.Leave
         public double AnnualDays => Lines.Where(l => !l.IsUnpaidBucket && l.SortOrder == 1).Sum(l => l.Days);
         public double UnpaidDays => Lines.Where(l => l.IsUnpaidBucket).Sum(l => l.Days);
         public bool UsesCascade => Lines.Count > 1 || (Lines.Count == 1 && Lines[0].IsUnpaidBucket && PrimaryDays == 0);
+        /// <summary>Normalized overflow choice: Annual | Unpaid | null when not applicable.</summary>
+        public string? OverflowTarget { get; init; }
     }
 
     public class LeaveBalanceCascadeService
     {
         public const string AnnualLeaveTypeName = "Annual Leave";
         public const string UnpaidLeaveTypeName = "Unpaid Leave";
+        public const string OverflowTargetAnnual = "Annual";
+        public const string OverflowTargetUnpaid = "Unpaid";
 
         private readonly AppDbContext _context;
         private readonly LeaveBalanceService _balanceService;
@@ -39,13 +43,29 @@ namespace YLWorks.Services.Leave
             _balanceService = balanceService;
         }
 
+        public static string? NormalizeOverflowTarget(string? raw)
+        {
+            if (string.IsNullOrWhiteSpace(raw)) return null;
+            var t = raw.Trim();
+            if (t.Equals(OverflowTargetAnnual, StringComparison.OrdinalIgnoreCase) ||
+                t.Equals("AnnualLeave", StringComparison.OrdinalIgnoreCase) ||
+                t.Equals(AnnualLeaveTypeName, StringComparison.OrdinalIgnoreCase))
+                return OverflowTargetAnnual;
+            if (t.Equals(OverflowTargetUnpaid, StringComparison.OrdinalIgnoreCase) ||
+                t.Equals("UnpaidLeave", StringComparison.OrdinalIgnoreCase) ||
+                t.Equals(UnpaidLeaveTypeName, StringComparison.OrdinalIgnoreCase))
+                return OverflowTargetUnpaid;
+            return null;
+        }
+
         public async Task<LeaveBalanceCascadePlan> PlanAsync(
             Guid employeeId,
             LeaveType selectedType,
             double totalDays,
             int year,
             DateTime startDate,
-            IReadOnlyDictionary<Guid, double>? creditBackByType = null)
+            IReadOnlyDictionary<Guid, double>? creditBackByType = null,
+            string? cascadeOverflowTarget = null)
         {
             if (totalDays <= 0)
             {
@@ -85,7 +105,6 @@ namespace YLWorks.Services.Leave
             }
 
             // Emergency: no own balance — charge Annual then Unpaid (always require accept).
-            // Short-notice still uses Annual. Request LeaveTypeId stays Emergency for display.
             if (selectedType.IsEmergency)
             {
                 return await PlanEmergencyAsync(employeeId, totalDays, year, creditBackByType);
@@ -136,35 +155,46 @@ namespace YLWorks.Services.Leave
                 ?? throw new InvalidOperationException(
                     "Unpaid Leave type is not configured. Ask HR to add an \"Unpaid Leave\" leave type.");
 
+            var overflowTarget = NormalizeOverflowTarget(cascadeOverflowTarget);
             var isAnnualSelected = string.Equals(
                 selectedType.Name?.Trim(), AnnualLeaveTypeName, StringComparison.OrdinalIgnoreCase);
-            var shortNoticeBlocksAnnual = IsWithinShortNoticeWindow(startDate);
 
-            double annualTake = 0;
-            if (!isAnnualSelected && !shortNoticeBlocksAnnual)
+            // Selecting Annual Leave itself: overflow can only be Unpaid (no nested Annual).
+            if (isAnnualSelected)
             {
-                var annualType = await FindLeaveTypeByNameAsync(AnnualLeaveTypeName);
-                if (annualType != null && annualType.IsPaid)
+                lines.Add(new LeaveBalanceAllocationLine
                 {
-                    var annualBalance = await _balanceService.GetBalanceAsync(employeeId, annualType.Id, year);
-                    var annualAvailable = (annualBalance?.RemainingDays ?? 0) + Credit(annualType.Id);
-                    annualTake = Math.Min(Math.Max(0, annualAvailable), rest);
-                    if (annualTake > 0)
-                    {
-                        lines.Add(new LeaveBalanceAllocationLine
-                        {
-                            LeaveTypeId = annualType.Id,
-                            LeaveTypeName = annualType.Name,
-                            Days = annualTake,
-                            SortOrder = 1,
-                            IsUnpaidBucket = false
-                        });
-                        rest = Math.Round(rest - annualTake, 4);
-                    }
-                }
+                    LeaveTypeId = unpaidType.Id,
+                    LeaveTypeName = unpaidType.Name,
+                    Days = rest,
+                    SortOrder = 2,
+                    IsUnpaidBucket = true
+                });
+
+                return new LeaveBalanceCascadePlan
+                {
+                    Lines = lines.Where(l => l.Days > 0).ToList(),
+                    IsSufficient = true,
+                    RequiresAccept = true,
+                    AvailableOnPrimary = availablePrimary,
+                    OverflowTarget = OverflowTargetUnpaid
+                };
             }
 
-            if (rest > 0)
+            // Applicant must choose Annual or Unpaid for the overflow.
+            if (overflowTarget == null)
+            {
+                return new LeaveBalanceCascadePlan
+                {
+                    Lines = lines,
+                    IsSufficient = true,
+                    RequiresAccept = true,
+                    AvailableOnPrimary = availablePrimary,
+                    OverflowTarget = null
+                };
+            }
+
+            if (overflowTarget == OverflowTargetUnpaid)
             {
                 lines.Add(new LeaveBalanceAllocationLine
                 {
@@ -175,13 +205,55 @@ namespace YLWorks.Services.Leave
                     IsUnpaidBucket = true
                 });
             }
+            else
+            {
+                // Annual: use Annual Leave for as much of the overflow as possible, then Unpaid.
+                var annualType = await FindLeaveTypeByNameAsync(AnnualLeaveTypeName)
+                    ?? throw new InvalidOperationException(
+                        "Annual Leave type is not configured. Ask HR to add an \"Annual Leave\" leave type.");
+
+                if (!annualType.IsPaid)
+                {
+                    throw new InvalidOperationException(
+                        "Annual Leave must be configured as a paid leave type for balance cascade.");
+                }
+
+                var annualBalance = await _balanceService.GetBalanceAsync(employeeId, annualType.Id, year);
+                var annualAvailable = (annualBalance?.RemainingDays ?? 0) + Credit(annualType.Id);
+                var annualTake = Math.Min(Math.Max(0, annualAvailable), rest);
+                if (annualTake > 0)
+                {
+                    lines.Add(new LeaveBalanceAllocationLine
+                    {
+                        LeaveTypeId = annualType.Id,
+                        LeaveTypeName = annualType.Name,
+                        Days = annualTake,
+                        SortOrder = 1,
+                        IsUnpaidBucket = false
+                    });
+                    rest = Math.Round(rest - annualTake, 4);
+                }
+
+                if (rest > 0)
+                {
+                    lines.Add(new LeaveBalanceAllocationLine
+                    {
+                        LeaveTypeId = unpaidType.Id,
+                        LeaveTypeName = unpaidType.Name,
+                        Days = rest,
+                        SortOrder = 2,
+                        IsUnpaidBucket = true
+                    });
+                }
+            }
 
             return new LeaveBalanceCascadePlan
             {
                 Lines = lines.Where(l => l.Days > 0).ToList(),
                 IsSufficient = true,
                 RequiresAccept = true,
-                AvailableOnPrimary = availablePrimary
+                AvailableOnPrimary = availablePrimary,
+                OverflowTarget = overflowTarget
             };
         }
 
@@ -249,7 +321,8 @@ namespace YLWorks.Services.Leave
                 Lines = lines,
                 IsSufficient = true,
                 RequiresAccept = true,
-                AvailableOnPrimary = annualAvailable
+                AvailableOnPrimary = annualAvailable,
+                OverflowTarget = OverflowTargetAnnual
             };
         }
 

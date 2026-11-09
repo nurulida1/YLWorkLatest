@@ -1,7 +1,7 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { MessageService } from 'primeng/api';
-import { environment } from '../../environments/environment.development';
+import { environment } from '../../environments/environment';
 import {
   DashboardCount,
   DashboardSummary,

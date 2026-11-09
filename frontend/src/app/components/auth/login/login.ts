@@ -14,7 +14,7 @@ import {
   FormControl,
   Validators,
 } from '@angular/forms';
-import { RouterLink, Router } from '@angular/router';
+import { ActivatedRoute, RouterLink, Router } from '@angular/router';
 import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
@@ -890,6 +890,7 @@ export class Login implements OnDestroy, OnInit {
   private readonly authService = inject(AuthService);
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   readonly currentYear = new Date().getFullYear();
   protected ngUnsubscribe: Subject<void> = new Subject<void>();
 
@@ -922,6 +923,22 @@ export class Login implements OnDestroy, OnInit {
     this.cdr.detectChanges();
   }
 
+  /** Prefer ?returnUrl= from auth redirects (e.g. QR deep links); fall back to dashboard. */
+  private resolvePostLoginUrl(): string {
+    const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
+
+    if (
+      returnUrl &&
+      returnUrl.startsWith('/') &&
+      !returnUrl.startsWith('//') &&
+      !returnUrl.startsWith('/login')
+    ) {
+      return returnUrl;
+    }
+
+    return '/dashboard';
+  }
+
   onLogin(): void {
     if (this.FG.invalid) {
       ValidateAllFormFields(this.FG);
@@ -943,7 +960,7 @@ export class Login implements OnDestroy, OnInit {
 
           if (res.success) {
             // AuthService should already save the tokens and update currentUser.
-            this.router.navigate(['/dashboard']);
+            void this.router.navigateByUrl(this.resolvePostLoginUrl());
             return;
           }
 

@@ -224,7 +224,7 @@ import {
                 Review each item and specify the quantity to approve.
               </p>
 
-              @if (request.items?.length) {
+              @if (request.items.length) {
                 <div class="approval-items">
                   @for (item of request.items; track item.id) {
                     <div class="approval-item">
@@ -250,10 +250,7 @@ import {
                           min="0"
                           [max]="item.requestedQuantity"
                           step="0.01"
-                          [ngModel]="
-                            approvalQuantities[item.id] ??
-                            item.requestedQuantity
-                          "
+                          [ngModel]="approvalQuantities[item.id]"
                           (ngModelChange)="approvalQuantities[item.id] = $event"
                           [ngModelOptions]="{ standalone: true }"
                         />

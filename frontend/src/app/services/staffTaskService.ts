@@ -11,9 +11,7 @@ import {
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { MessageService } from 'primeng/api';
 import { Observable, of, throwError, catchError } from 'rxjs';
-
-import { environment } from '../../environments/environment.development';
-
+import { environment } from '../../environments/environment';
 import {
   GridifyQueryExtend,
   PagingContent,

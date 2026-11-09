@@ -11,7 +11,7 @@ import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { TagModule } from 'primeng/tag';
 import { finalize } from 'rxjs';
-import { environment } from '../../../../environments/environment.development';
+import { environment } from '../../../../environments/environment';
 import {
   CLAIM_TYPE_LABELS,
   ClaimApprovalChainStepDto,

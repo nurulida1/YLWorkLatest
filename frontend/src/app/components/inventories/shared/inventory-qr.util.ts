@@ -1,5 +1,5 @@
 import QRCode from 'qrcode';
-import { environment } from '../../../../environments/environment.development';
+import { environment } from '../../../../environments/environment';
 
 export function buildInventoryItemUrl(id: string): string {
   const base = (environment.RedirectUrl || window.location.origin).replace(

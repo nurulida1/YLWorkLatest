@@ -339,7 +339,7 @@ namespace YLWorks.Controller
 
                 if (request.Attachment != null)
                 {
-                    var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "Uploads", "PO");
+                    var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "uploads", "PO");
 
                     if (!Directory.Exists(uploadsFolder))
                         Directory.CreateDirectory(uploadsFolder);
@@ -352,7 +352,7 @@ namespace YLWorks.Controller
                         await request.Attachment.CopyToAsync(stream);
                     }
 
-                    filePath = $"Uploads/PO/{fileName}";
+                    filePath = $"uploads/PO/{fileName}";
                 }
 
                 var po = new PurchaseOrder
@@ -504,7 +504,7 @@ namespace YLWorks.Controller
                 {
                     var uploadsFolder = Path.Combine(
                         Directory.GetCurrentDirectory(),
-                        "Uploads",
+                        "uploads",
                         "PO");
 
                     if (!Directory.Exists(uploadsFolder))
@@ -520,7 +520,7 @@ namespace YLWorks.Controller
                         await request.Attachment.CopyToAsync(stream);
                     }
 
-                    po.Attachment = $"Uploads/PO/{fileName}";
+                    po.Attachment = $"uploads/PO/{fileName}";
                 }
 
                 po.PurchaseOrderNo = request.PurchaseOrderNo;

@@ -217,7 +217,8 @@ namespace YLWorks.Services.Leave
             else
             {
                 plan = await _cascadeService.PlanAsync(
-                    dto.EmployeeId, leaveType, totalDays, year, dto.StartDate);
+                    dto.EmployeeId, leaveType, totalDays, year, dto.StartDate,
+                    cascadeOverflowTarget: dto.CascadeOverflowTarget);
             }
 
             if (!plan.IsSufficient)
@@ -238,15 +239,7 @@ namespace YLWorks.Services.Leave
                 };
             }
 
-            if (plan.RequiresAccept && !dto.AcceptBalanceCascade)
-            {
-                throw new InvalidOperationException(
-                    leaveType.IsEmergency
-                        ? "Emergency leave is charged from Annual Leave first, then Unpaid Leave. " +
-                          "Please confirm the balance split and resubmit."
-                        : "Insufficient balance on the selected leave type. Remaining days will be taken from " +
-                          "Annual Leave (if available) then Unpaid Leave. Please confirm the balance split and resubmit.");
-            }
+            EnsureCascadeAccepted(plan, dto, leaveType);
 
             var isUnpaid = plan.Lines.All(l => l.IsUnpaidBucket);
             var hasPaidAllocations = plan.Lines.Any(l => !l.IsUnpaidBucket);
@@ -432,7 +425,8 @@ namespace YLWorks.Services.Leave
             else
             {
                 plan = await _cascadeService.PlanAsync(
-                    dto.EmployeeId, leaveType, totalDays, year, dto.StartDate, creditBack);
+                    dto.EmployeeId, leaveType, totalDays, year, dto.StartDate, creditBack,
+                    cascadeOverflowTarget: dto.CascadeOverflowTarget);
             }
 
             if (!plan.IsSufficient)
@@ -454,15 +448,7 @@ namespace YLWorks.Services.Leave
                 };
             }
 
-            if (plan.RequiresAccept && !dto.AcceptBalanceCascade)
-            {
-                throw new InvalidOperationException(
-                    leaveType.IsEmergency
-                        ? "Emergency leave is charged from Annual Leave first, then Unpaid Leave. " +
-                          "Please confirm the balance split and resubmit."
-                        : "Insufficient balance on the selected leave type. Remaining days will be taken from " +
-                          "Annual Leave (if available) then Unpaid Leave. Please confirm the balance split and resubmit.");
-            }
+            EnsureCascadeAccepted(plan, dto, leaveType);
 
             var isUnpaid = plan.Lines.All(l => l.IsUnpaidBucket);
             var hasPaidAllocations = plan.Lines.Any(l => !l.IsUnpaidBucket);
@@ -843,14 +829,14 @@ namespace YLWorks.Services.Leave
             var request = await _context.LeaveRequests.FindAsync(requestId)
                 ?? throw new InvalidOperationException("Leave request not found.");
 
-            var folder = Path.Combine(Directory.GetCurrentDirectory(), "Uploads", "Leave");
+            var folder = Path.Combine(Directory.GetCurrentDirectory(), "uploads", "Leave");
             Directory.CreateDirectory(folder);
             var fileName = $"{Guid.NewGuid()}{Path.GetExtension(file.FileName)}";
             var path = Path.Combine(folder, fileName);
             await using (var stream = new FileStream(path, FileMode.Create))
                 await file.CopyToAsync(stream);
 
-            var relative = $"Uploads/Leave/{fileName}";
+            var relative = $"uploads/Leave/{fileName}";
             _context.LeaveSupportingDocuments.Add(new LeaveSupportingDocument
             {
                 Id = Guid.NewGuid(),
@@ -1153,6 +1139,42 @@ namespace YLWorks.Services.Leave
                 SortOrder = l.SortOrder,
                 IsUnpaidBucket = l.IsUnpaidBucket
             }).ToList();
+
+        private static void EnsureCascadeAccepted(
+            LeaveBalanceCascadePlan plan,
+            CreateLeaveRequestDto dto,
+            LeaveType leaveType)
+        {
+            if (!plan.RequiresAccept)
+                return;
+
+            if (leaveType.IsEmergency)
+            {
+                if (!dto.AcceptBalanceCascade)
+                {
+                    throw new InvalidOperationException(
+                        "Emergency leave is charged from Annual Leave first, then Unpaid Leave. " +
+                        "Please confirm the balance split and resubmit.");
+                }
+                return;
+            }
+
+            var target = LeaveBalanceCascadeService.NormalizeOverflowTarget(dto.CascadeOverflowTarget);
+            if (!dto.AcceptBalanceCascade || target == null)
+            {
+                throw new InvalidOperationException(
+                    "Insufficient balance on the selected leave type. " +
+                    "Choose whether remaining days should come from Annual Leave or Unpaid Leave, " +
+                    "confirm the split, and resubmit.");
+            }
+
+            // Plan was built without a target (client accepted but forgot target) — reject.
+            if (plan.OverflowTarget == null)
+            {
+                throw new InvalidOperationException(
+                    "Choose Annual Leave or Unpaid Leave for the remaining days and resubmit.");
+            }
+        }
 
         private void ReplaceBalanceAllocations(LeaveRequest request, LeaveBalanceCascadePlan plan)
         {

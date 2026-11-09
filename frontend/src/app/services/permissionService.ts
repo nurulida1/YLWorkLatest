@@ -147,4 +147,17 @@ export class PermissionService {
       );
     });
   }
+
+  /** Menu / nav visibility: SuperAdmin always; otherwise RolePermission canRead. */
+  canReadModule(moduleKey: string | null | undefined): boolean {
+    if (!moduleKey) {
+      return false;
+    }
+
+    if (this.currentUser?.systemRole === 'SuperAdmin') {
+      return true;
+    }
+
+    return this.getModuleRights(moduleKey)().canRead;
+  }
 }

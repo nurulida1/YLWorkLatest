@@ -12,8 +12,7 @@ import {
 
 import * as signalR from '@microsoft/signalr';
 import { HttpClient, HttpParams } from '@angular/common/http';
-
-import { environment } from '../../environments/environment.development';
+import { environment } from '../../environments/environment';
 import { NotificationDto } from '../models/Notifications';
 import { BaseResponse } from '../shared/helpers/helpers';
 import { MessageService } from 'primeng/api';
@@ -38,7 +37,7 @@ export class NotificationService {
 
   url = environment.ApiBaseUrl + '/Notification';
 
-  private readonly baseUrl = environment.AttachmentUrl + 'hubs/notifications';
+  private readonly baseUrl = environment.HubUrl;
 
   constructor(
     private zone: NgZone,

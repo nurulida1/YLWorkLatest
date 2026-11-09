@@ -370,7 +370,7 @@ namespace YLWorks.Controller
 
                 if (request.ClientPOAttachment != null)
                 {
-                    var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "Uploads", "SO");
+                    var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "uploads", "SO");
 
                     if (!Directory.Exists(uploadsFolder))
                         Directory.CreateDirectory(uploadsFolder);
@@ -383,7 +383,7 @@ namespace YLWorks.Controller
                         await request.ClientPOAttachment.CopyToAsync(stream);
                     }
 
-                    filePath = $"Uploads/SO/{fileName}";
+                    filePath = $"uploads/SO/{fileName}";
                 }
 
                 var so = new SalesOrder

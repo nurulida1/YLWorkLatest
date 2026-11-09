@@ -38,6 +38,7 @@ import { CompanyType } from '../../../../shared/enum/enum';
 import {
   normalizeHtml,
   ValidateAllFormFields,
+  resolveAssetUrl,
 } from '../../../../shared/helpers/helpers';
 import { TabsModule } from 'primeng/tabs';
 
@@ -1662,7 +1663,7 @@ export class SalesOrderDetails {
           }
 
           if (res?.clientPOAttachment) {
-            const fullUrl = `https://localhost:5000/${res.clientPOAttachment}`;
+            const fullUrl = resolveAssetUrl(res.clientPOAttachment);
             this.attachmentUrl =
               this.sanitizer.bypassSecurityTrustResourceUrl(fullUrl);
           }
@@ -1736,7 +1737,7 @@ export class SalesOrderDetails {
   getAttachmentUrl(path: string | undefined | null): SafeResourceUrl {
     if (!path) return '';
 
-    const fullUrl = `https://localhost:5000/${path}`;
+    const fullUrl = resolveAssetUrl(path);
     return this.sanitizer.bypassSecurityTrustResourceUrl(fullUrl);
   }
 
@@ -1841,7 +1842,7 @@ export class SalesOrderDetails {
     }
 
     const cleanPath = rawPath.replace(/\\/g, '/');
-    const fileUrl = `https://localhost:5000/${cleanPath}`;
+    const fileUrl = resolveAssetUrl(cleanPath);
 
     this.loadingService.start();
 

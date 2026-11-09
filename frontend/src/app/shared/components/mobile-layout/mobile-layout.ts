@@ -21,31 +21,19 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { filter } from 'rxjs';
 
 import { NotificationService } from '../../../services/notificationService.service';
+import { PermissionService } from '../../../services/permissionService';
 import { UserService } from '../../../services/userService.service';
 
 import { LoginResponse } from '../../../models/User';
-
-// ==========================================
-// INTERFACES
-// ==========================================
-
-interface QuickAction {
-  label: string;
-  description: string;
-  icon: string;
-  route: string;
-  color: string;
-  background: string;
-}
-
-interface WorkMenuItem {
-  label: string;
-  description?: string;
-  icon?: string;
-  route?: string;
-  roles?: string[];
-  items?: WorkMenuItem[];
-}
+import {
+  APP_MAIN_MENU,
+  APP_MANAGEMENT_MENU,
+  AppNavItem,
+  MOBILE_QUICK_ACTIONS,
+  MOBILE_WORK_MENU,
+  MobileQuickAction,
+  MobileWorkMenuItem,
+} from '../../navigation/app-navigation';
 
 // ==========================================
 // COMPONENT
@@ -204,7 +192,7 @@ interface WorkMenuItem {
             </div>
 
             <div class="menu-section-items">
-              @for (item of myWorkItems; track item.route) {
+              @for (item of visibleMyWorkItems; track item.route) {
                 <a
                   class="work-menu-item"
                   [class.active]="isActive(item.route)"
@@ -212,7 +200,7 @@ interface WorkMenuItem {
                   (click)="closeAllSheets()"
                 >
                   <div class="work-menu-icon">
-                    <i [class]="'pi ' + (item.icon || 'pi-circle')"></i>
+                    <i [class]="item.icon || 'pi pi-circle'"></i>
                   </div>
 
                   <div class="work-menu-text">
@@ -330,7 +318,7 @@ interface WorkMenuItem {
                         </span>
 
                         <span class="work-menu-description">
-                          {{ item.description || 'Open ' + item.label }}
+                          {{ getMenuDescription(item) }}
                         </span>
                       </div>
 
@@ -373,7 +361,7 @@ interface WorkMenuItem {
         </div>
 
         <div class="quick-action-grid">
-          @for (action of quickActions; track action.route) {
+          @for (action of visibleQuickActions; track action.route) {
             <button
               type="button"
               class="quick-action-card"
@@ -418,6 +406,7 @@ export class MobileLayout implements OnInit {
 
   private readonly userService = inject(UserService);
   private readonly notificationService = inject(NotificationService);
+  private readonly permissionService = inject(PermissionService);
 
   // ==========================================
   // STATE
@@ -449,478 +438,37 @@ export class MobileLayout implements OnInit {
   };
 
   // ==========================================
-  // SECTION 1: MY WORK
-  // Personal / daily work activities only
+  // SECTION 1: MY WORK (shared navigation)
   // ==========================================
 
-  readonly myWorkItems: WorkMenuItem[] = [
-    {
-      label: 'Upcoming Meetings',
-      description: 'View your upcoming meetings',
-      icon: 'pi-calendar-clock',
-      route: '/meeting',
-    },
+  private readonly allMyWorkItems = MOBILE_WORK_MENU;
 
-    {
-      label: 'My Tasks',
-      description: 'View and manage your tasks',
-      icon: 'pi-list-check',
-      route: '/my-tasks',
-    },
+  get visibleMyWorkItems(): MobileWorkMenuItem[] {
+    return this.allMyWorkItems.filter((item) =>
+      this.permissionService.canReadModule(item.moduleKey),
+    );
+  }
 
-    {
-      label: 'My Daily Reports',
-      description: 'View your daily reports',
-      icon: 'pi-file-edit',
-      route: '/daily-reports',
-    },
+  // ==========================================
+  // SECTION 2: ALL MODULES (shared with sidemenu)
+  // ==========================================
 
-    {
-      label: 'Team Daily Reports',
-      description: 'View your team reports',
-      icon: 'pi-users',
-      route: '/daily-reports/team',
-    },
+  readonly allModuleItems: AppNavItem[] = [
+    ...APP_MAIN_MENU,
+    ...APP_MANAGEMENT_MENU.filter((item) => item.label !== 'My Work'),
   ];
 
   // ==========================================
-  // SECTION 2: ALL MODULES
-  // Same module structure as desktop Sidemenu
+  // CREATE ACTIONS (shared navigation)
   // ==========================================
 
-  readonly allModuleItems: WorkMenuItem[] = [
-    // --------------------------------------
-    // GENERAL
-    // --------------------------------------
+  private readonly allQuickActions = MOBILE_QUICK_ACTIONS;
 
-    {
-      label: 'Dashboard',
-      description: 'View your company dashboard',
-      icon: 'pi-home',
-      route: '/dashboard',
-    },
-
-    {
-      label: 'Office Handbook',
-      description: 'Company information and guidelines',
-      icon: 'pi-book',
-      route: '/office-handbook',
-    },
-
-    // --------------------------------------
-    // LEAVE & CLAIMS
-    // --------------------------------------
-
-    {
-      label: 'Leave & Claims',
-      icon: 'pi-calendar',
-      items: [
-        {
-          label: 'Leave Application',
-          route: '/leave',
-          icon: 'pi-calendar',
-        },
-
-        {
-          label: 'Leave Approvals',
-          route: '/leave/approvals',
-          icon: 'pi-check-circle',
-          roles: ['SuperAdmin', 'Management', 'HOD', 'HR'],
-        },
-
-        {
-          label: 'Claims',
-          route: '/claims',
-          icon: 'pi-wallet',
-        },
-
-        {
-          label: 'Apply Claim',
-          route: '/claims/apply',
-          icon: 'pi-file-edit',
-        },
-
-        {
-          label: 'Claim Approvals',
-          route: '/claims/approvals',
-          icon: 'pi-check-square',
-        },
-      ],
-    },
-
-    // --------------------------------------
-    // SUPPORT & REQUESTS
-    // --------------------------------------
-
-    {
-      label: 'Support & Requests',
-      icon: 'pi-desktop',
-      items: [
-        {
-          label: 'Hardware / IT Support',
-          route: '/hardware-request',
-          icon: 'pi-wrench',
-        },
-
-        {
-          label: 'Incoming Requests',
-          route: '/hardware-request/incoming',
-          icon: 'pi-inbox',
-        },
-      ],
-    },
-
-    // --------------------------------------
-    // PROJECT MANAGEMENT
-    // --------------------------------------
-
-    {
-      label: 'Project Management',
-      icon: 'pi-folder',
-      roles: ['SuperAdmin', 'Management', 'HOD'],
-      items: [
-        {
-          label: 'Projects',
-          route: '/projects',
-          icon: 'pi-briefcase',
-          roles: ['SuperAdmin', 'Management', 'HOD'],
-        },
-
-        {
-          label: 'Work Orders',
-          route: '/work-order',
-          icon: 'pi-list',
-          roles: ['SuperAdmin', 'Management', 'HOD'],
-        },
-
-        {
-          label: 'Quotations',
-          route: '/quotations',
-          icon: 'pi-file',
-          roles: ['SuperAdmin', 'Management', 'HOD'],
-        },
-      ],
-    },
-
-    // --------------------------------------
-    // SALES & PURCHASING
-    // --------------------------------------
-
-    {
-      label: 'Sales & Purchasing',
-      icon: 'pi-shopping-cart',
-      roles: ['SuperAdmin', 'Management', 'HOD'],
-      items: [
-        {
-          label: 'Products Services',
-          route: '/products-services',
-          icon: 'pi-box',
-          roles: ['SuperAdmin', 'Management', 'HOD'],
-        },
-
-        {
-          label: 'Sales Order',
-          route: '/sales-order',
-          icon: 'pi-shopping-bag',
-          roles: ['SuperAdmin', 'Management', 'HOD'],
-        },
-
-        {
-          label: 'Delivery Orders',
-          route: '/delivery-orders',
-          icon: 'pi-truck',
-          roles: ['SuperAdmin', 'Management', 'HOD'],
-        },
-
-        {
-          label: 'Purchase Orders',
-          route: '/purchase-orders',
-          icon: 'pi-file',
-          roles: ['SuperAdmin', 'Management', 'HOD'],
-        },
-
-        {
-          label: 'Goods Receiving',
-          route: '/goods-receiving',
-          icon: 'pi-inbox',
-          roles: ['SuperAdmin', 'Management', 'HOD'],
-        },
-
-        {
-          label: 'DO RMA',
-          route: '/do-rma',
-          icon: 'pi-refresh',
-          roles: ['SuperAdmin', 'Management', 'HOD'],
-        },
-      ],
-    },
-
-    // --------------------------------------
-    // INVENTORY
-    // Special department permission applies
-    // --------------------------------------
-
-    {
-      label: 'Inventory',
-      icon: 'pi-box',
-      items: [
-        {
-          label: 'Inventory Record',
-          route: '/inventory/listing',
-          icon: 'pi-list',
-        },
-
-        {
-          label: 'Category',
-          route: '/inventory/category',
-          icon: 'pi-tags',
-        },
-
-        {
-          label: 'Location',
-          route: '/inventory/location',
-          icon: 'pi-map-marker',
-        },
-
-        {
-          label: 'Section',
-          route: '/inventory/section',
-          icon: 'pi-th-large',
-        },
-      ],
-    },
-
-    // --------------------------------------
-    // FINANCE
-    // --------------------------------------
-
-    {
-      label: 'Finance',
-      icon: 'pi-wallet',
-      roles: ['SuperAdmin', 'Management', 'HOD'],
-      items: [
-        {
-          label: 'Sales Invoice',
-          route: '/invoices/sales',
-          icon: 'pi-file',
-          roles: ['SuperAdmin', 'Management', 'HOD'],
-        },
-
-        {
-          label: 'Purchase Invoice',
-          route: '/invoices/purchase',
-          icon: 'pi-file',
-          roles: ['SuperAdmin', 'Management', 'HOD'],
-        },
-
-        {
-          label: 'Expenses',
-          route: '/expenses',
-          icon: 'pi-money-bill',
-          roles: ['SuperAdmin', 'Management', 'HOD'],
-        },
-
-        {
-          label: 'Incomes',
-          route: '/incomes',
-          icon: 'pi-wallet',
-          roles: ['SuperAdmin', 'Management', 'HOD'],
-        },
-
-        {
-          label: 'Payments',
-          route: '/payments',
-          icon: 'pi-credit-card',
-          roles: ['SuperAdmin', 'Management', 'HOD'],
-        },
-      ],
-    },
-
-    // --------------------------------------
-    // COMPANY MANAGEMENT
-    // --------------------------------------
-
-    {
-      label: 'Company Management',
-      icon: 'pi-building',
-      roles: ['SuperAdmin', 'Management', 'HOD'],
-      items: [
-        {
-          label: 'My Company',
-          route: '/company',
-          icon: 'pi-building',
-          roles: ['SuperAdmin', 'Management', 'HOD'],
-        },
-
-        {
-          label: 'Department',
-          route: '/department',
-          icon: 'pi-sitemap',
-        },
-
-        {
-          label: 'Suppliers',
-          route: '/supplier',
-          icon: 'pi-truck',
-          roles: ['SuperAdmin', 'Management', 'HOD'],
-        },
-
-        {
-          label: 'Clients',
-          route: '/clients',
-          icon: 'pi-users',
-          roles: ['SuperAdmin', 'Management', 'HOD'],
-        },
-      ],
-    },
-
-    // --------------------------------------
-    // ADMINISTRATION SETTINGS
-    // --------------------------------------
-
-    {
-      label: 'Administration Settings',
-      icon: 'pi-cog',
-      items: [
-        {
-          label: 'User Management',
-          route: '/user-management',
-          icon: 'pi-users',
-          roles: ['SuperAdmin', 'HR'],
-        },
-
-        {
-          label: 'Profile Settings',
-          route: '/profile-settings',
-          icon: 'pi-user',
-          roles: ['Support', 'Staff', 'Management', 'HOD', 'HR'],
-        },
-
-        {
-          label: 'System Module',
-          route: '/settings/system-module',
-          icon: 'pi-th-large',
-          roles: ['SuperAdmin'],
-        },
-
-        {
-          label: 'Role Permissions',
-          route: '/settings/role-permission',
-          icon: 'pi-lock',
-          roles: ['SuperAdmin'],
-        },
-
-        {
-          label: 'Leave Types',
-          route: '/settings/leave-types',
-          icon: 'pi-calendar',
-          roles: ['SuperAdmin', 'HOD', 'Management', 'HR'],
-        },
-
-        {
-          label: 'Leave Policy',
-          route: '/settings/leave-policy',
-          icon: 'pi-file',
-          roles: ['SuperAdmin', 'HOD', 'Management', 'HR'],
-        },
-
-        {
-          label: 'Public Holidays',
-          route: '/settings/leave-holidays',
-          icon: 'pi-calendar-plus',
-          roles: ['SuperAdmin', 'Admin', 'HR'],
-        },
-
-        {
-          label: 'Leave Calendar Sync',
-          route: '/settings/leave-calendar-sync',
-          icon: 'pi-sync',
-          roles: ['SuperAdmin', 'HOD', 'Management', 'HR'],
-        },
-
-        {
-          label: 'Claim Settings',
-          route: '/settings/claim-settings',
-          icon: 'pi-wallet',
-          roles: ['SuperAdmin', 'Admin', 'HR'],
-        },
-      ],
-    },
-
-    // --------------------------------------
-    // ACTIVITY LOG
-    // --------------------------------------
-
-    {
-      label: 'Activity Log',
-      description: 'View system activity history',
-      icon: 'pi-history',
-      route: '/activity-log',
-      roles: ['SuperAdmin'],
-    },
-
-    // --------------------------------------
-    // ANNOUNCEMENTS
-    // --------------------------------------
-
-    {
-      label: 'Announcements',
-      description: 'Company announcements and updates',
-      icon: 'pi-megaphone',
-      route: '/announcements',
-    },
-  ];
-
-  // ==========================================
-  // CREATE ACTIONS
-  // ==========================================
-
-  readonly quickActions: QuickAction[] = [
-    {
-      label: 'Apply Leave',
-      description: 'Submit a leave application',
-      icon: 'pi pi-calendar-plus',
-      route: '/leave/apply',
-      color: '#2563eb',
-      background: '#eff6ff',
-    },
-
-    {
-      label: 'Apply Claim',
-      description: 'Submit an expense claim',
-      icon: 'pi pi-wallet',
-      route: '/claims/apply',
-      color: '#059669',
-      background: '#ecfdf5',
-    },
-
-    {
-      label: 'Daily Report',
-      description: 'Submit your daily report',
-      icon: 'pi pi-file-edit',
-      route: '/daily-reports',
-      color: '#7c3aed',
-      background: '#f5f3ff',
-    },
-
-    {
-      label: 'Hardware Request',
-      description: 'Request equipment or IT support',
-      icon: 'pi pi-desktop',
-      route: '/hardware-request',
-      color: '#ea580c',
-      background: '#fff7ed',
-    },
-
-    {
-      label: 'Create Meeting',
-      description: 'Schedule a new meeting',
-      icon: 'pi pi-calendar',
-      route: '/meeting/form',
-      color: '#0891b2',
-      background: '#ecfeff',
-    },
-  ];
+  get visibleQuickActions(): MobileQuickAction[] {
+    return this.allQuickActions.filter((action) =>
+      this.permissionService.canReadModule(action.moduleKey),
+    );
+  }
 
   // ==========================================
   // INITIALIZATION
@@ -929,6 +477,7 @@ export class MobileLayout implements OnInit {
   ngOnInit(): void {
     this.currentUser = this.userService.currentUser;
     this.currentUrl = this.router.url;
+    this.reloadPermissions();
 
     // USER INFORMATION
     this.userService.currentUser$
@@ -936,9 +485,12 @@ export class MobileLayout implements OnInit {
       .subscribe((user) => {
         this.currentUser = user;
 
-        this.syncOpenMenuWithRoute();
-
-        this.cdr.markForCheck();
+        if (user) {
+          this.reloadPermissions();
+        } else {
+          this.syncOpenMenuWithRoute();
+          this.cdr.markForCheck();
+        }
       });
 
     // ROUTE CHANGES
@@ -987,84 +539,43 @@ export class MobileLayout implements OnInit {
   // MENU DESCRIPTIONS
   // ==========================================
 
-  getMenuDescription(item: WorkMenuItem): string {
+  getMenuDescription(item: AppNavItem): string {
     return (
-      item.description ||
       this.menuDescriptions[item.label] ||
       `Access ${item.label}`
     );
   }
 
   // ==========================================
-  // ROLE PERMISSIONS
+  // PERMISSIONS (shared with sidemenu)
   // ==========================================
 
-  canView(item: WorkMenuItem): boolean {
-    const role = this.currentUser?.systemRole?.trim().toLowerCase();
-
-    if (!role) {
-      return false;
-    }
-
-    // SUPERADMIN CAN ACCESS EVERYTHING
-    if (role === 'superadmin') {
-      return true;
-    }
-
-    // INVENTORY SPECIAL PERMISSION
-    if (this.isInventoryMenu(item)) {
-      return (
-        role === 'director' ||
-        role === 'hod' ||
-        this.hasPurchasingLogisticDepartment()
-      );
-    }
-
-    // ITEMS WITHOUT ROLE RESTRICTIONS
-    if (!item.roles?.length) {
-      return true;
-    }
-
-    // CHECK USER ROLE
-    return item.roles.some(
-      (allowedRole) => allowedRole.trim().toLowerCase() === role,
-    );
+  private reloadPermissions(): void {
+    this.permissionService.loadPermissions().subscribe({
+      next: () => {
+        this.syncOpenMenuWithRoute();
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.syncOpenMenuWithRoute();
+        this.cdr.markForCheck();
+      },
+    });
   }
 
-  // ==========================================
-  // INVENTORY PERMISSION
-  // ==========================================
-
-  private isInventoryMenu(item: WorkMenuItem): boolean {
-    return (
-      item.label === 'Inventory' ||
-      item.route?.startsWith('/inventory/') === true
-    );
-  }
-
-  private hasPurchasingLogisticDepartment(): boolean {
-    const departments = this.currentUser?.departments ?? [];
-
-    return departments.some(
-      (department) =>
-        department?.trim().toLowerCase() === 'purchasing & logistic',
-    );
-  }
-
-  // ==========================================
-  // SUBMENU PERMISSIONS
-  // ==========================================
-
-  getAllowedSubItems(item: WorkMenuItem): WorkMenuItem[] {
-    // Check parent permission first.
-    if (!this.canView(item)) {
-      return [];
+  canView(item: AppNavItem): boolean {
+    if (item.items?.length) {
+      return this.hasVisibleSubItems(item);
     }
 
+    return this.permissionService.canReadModule(item.moduleKey);
+  }
+
+  getAllowedSubItems(item: AppNavItem): AppNavItem[] {
     return item.items?.filter((sub) => this.canView(sub)) ?? [];
   }
 
-  hasVisibleSubItems(item: WorkMenuItem): boolean {
+  hasVisibleSubItems(item: AppNavItem): boolean {
     return this.getAllowedSubItems(item).length > 0;
   }
 
@@ -1079,10 +590,10 @@ export class MobileLayout implements OnInit {
 
     const currentRoute = this.currentUrl.split('?')[0].split('#')[0];
 
-    return currentRoute === route;
+    return currentRoute === route || currentRoute.startsWith(`${route}/`);
   }
 
-  isActive(route?: string, item?: WorkMenuItem): boolean {
+  isActive(route?: string, item?: AppNavItem): boolean {
     if (item?.items?.length) {
       return item.items.some((sub) => this.isActive(sub.route, sub));
     }

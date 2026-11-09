@@ -5,6 +5,7 @@ import { LocationInventory } from './locationInventory/locationInventory';
 import { SectionInventory } from './sectionInventory/sectionInventory';
 import { Inventory } from './inventory/inventory';
 import { InventoryItem } from './inventory-item/inventory-item';
+import { authGuard } from '../../common/guard/auth.guard';
 import { modulePermissionGuard } from '../../common/permission/module-permission.guard';
 
 const routes: Routes = [
@@ -18,7 +19,7 @@ const routes: Routes = [
   {
     path: 'item/:id',
     component: InventoryItem,
-    canActivate: [modulePermissionGuard],
+    canActivate: [authGuard, modulePermissionGuard],
     data: { moduleKey: 'inventory-listing' },
   },
   {

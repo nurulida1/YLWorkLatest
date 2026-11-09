@@ -475,7 +475,7 @@ import { environment } from '../../../../environments/environment.development';
               Inventory Items
             </h2>
             <p class="text-xs text-gray-400 mt-1">
-              {{ PagingSignal()?.totalElements ?? 0 }} items found
+              {{ PagingSignal().totalElements }} items found
             </p>
           </div>
 
@@ -628,7 +628,7 @@ import { environment } from '../../../../environments/environment.development';
                     Storage Section
                   </p>
                   <p class="text-xs font-semibold text-gray-700 mt-1 truncate">
-                    {{ data.section?.name || 'Not assigned' }}
+                    {{ data.section.name || 'Not assigned' }}
                   </p>
                 </div>
 
@@ -690,7 +690,7 @@ import { environment } from '../../../../environments/environment.development';
               Page {{ Query.Page }} of {{ totalPages }}
             </p>
             <p class="text-[10px] text-gray-400 mt-0.5">
-              {{ PagingSignal()?.totalElements ?? 0 }} total items
+              {{ PagingSignal().totalElements }} total items
             </p>
           </div>
 
@@ -713,7 +713,7 @@ import { environment } from '../../../../environments/environment.development';
           <div>
             <h2 class="text-lg font-bold text-gray-900">Inventory Items</h2>
             <p class="text-xs text-gray-500 mt-1">
-              {{ PagingSignal()?.totalElements ?? 0 }} items found
+              {{ PagingSignal().totalElements }} items found
             </p>
           </div>
         </div>
@@ -793,7 +793,7 @@ import { environment } from '../../../../environments/environment.development';
 
                 <td>
                   <span class="bg-gray-100 rounded-md px-2 py-1 text-xs">
-                    {{ data.section?.name || '-' }}
+                    {{ data.section.name || '-' }}
                   </span>
                 </td>
 
@@ -1413,7 +1413,7 @@ import { environment } from '../../../../environments/environment.development';
               <div>
                 <p class="text-xs text-gray-400">Category</p>
                 <p class="font-semibold text-sm mt-1">
-                  {{ item.category?.name || '-' }}
+                  {{ item.category.name || '-' }}
                 </p>
               </div>
 
@@ -1441,14 +1441,14 @@ import { environment } from '../../../../environments/environment.development';
               <div>
                 <p class="text-xs text-gray-400">Location</p>
                 <p class="font-semibold text-sm mt-1">
-                  {{ item.location?.name || '-' }}
+                  {{ item.location.name || '-' }}
                 </p>
               </div>
 
               <div>
                 <p class="text-xs text-gray-400">Section / Rack</p>
                 <p class="font-semibold text-sm mt-1">
-                  {{ item.section?.name || '-' }}
+                  {{ item.section.name || '-' }}
                 </p>
               </div>
             </div>

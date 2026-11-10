@@ -1,3 +1,46 @@
 :host {
   display: block;
+  min-width: 0;
+  width: 100%;
+}
+
+/* Payment dialog */
+:host ::ng-deep .sales-payment-dialog {
+  max-width: calc(100vw - 24px) !important;
+  border-radius: 12px;
+}
+
+:host ::ng-deep .sales-payment-dialog .p-dialog-header {
+  padding: 1.25rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+:host ::ng-deep .sales-payment-dialog .p-dialog-content {
+  padding: 1.25rem;
+  overscroll-behavior: contain;
+}
+
+:host ::ng-deep .sales-payment-dialog .p-dialog-footer {
+  padding: 1rem 1.25rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+/* Mobile */
+@media (max-width: 640px) {
+  :host ::ng-deep .sales-payment-dialog {
+    width: calc(100vw - 24px) !important;
+    max-height: calc(100dvh - 140px) !important;
+    margin-top: 0 !important;
+    margin-bottom: 100px !important;
+  }
+
+  :host ::ng-deep .sales-payment-dialog .p-dialog-content {
+    max-height: calc(100dvh - 260px) !important;
+    overflow-y: auto !important;
+  }
+
+  :host ::ng-deep .sales-payment-dialog .p-dialog-header,
+  :host ::ng-deep .sales-payment-dialog .p-dialog-footer {
+    padding: 1rem;
+  }
 }

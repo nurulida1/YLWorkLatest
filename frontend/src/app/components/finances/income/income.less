@@ -1,3 +1,75 @@
 :host {
   display: block;
+  width: 100%;
+  min-width: 0;
+}
+
+:host,
+:host * {
+  box-sizing: border-box;
+}
+
+/* Table */
+:host ::ng-deep .p-datatable {
+  width: 100%;
+}
+
+:host ::ng-deep .p-datatable-table {
+  width: 100%;
+}
+
+:host ::ng-deep .p-datatable-thead > tr > th {
+  padding: 0.85rem 0.75rem;
+  color: #475569;
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+:host ::ng-deep .p-datatable-tbody > tr > td {
+  padding: 0.8rem 0.75rem;
+  font-size: 0.85rem;
+  vertical-align: middle;
+}
+
+/* Dialog */
+:host ::ng-deep .income-dialog {
+  width: 70vw;
+  max-width: 680px;
+  max-height: calc(100dvh - 40px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 12px;
+}
+
+:host ::ng-deep .income-dialog .p-dialog-content {
+  padding: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  min-height: 0;
+}
+
+:host ::ng-deep .income-dialog .p-dialog-header {
+  display: none;
+}
+
+:host ::ng-deep .p-inputnumber-input {
+  width: 100%;
+  min-width: 0;
+}
+
+/* Mobile */
+@media (max-width: 640px) {
+  :host ::ng-deep .income-dialog {
+    width: calc(100vw - 24px) !important;
+    max-width: none !important;
+    max-height: calc(100dvh - 120px) !important;
+    margin-top: 0 !important;
+    margin-bottom: 90px !important;
+  }
+
+  :host ::ng-deep .income-dialog .p-dialog-content {
+    overflow-y: auto !important;
+  }
 }

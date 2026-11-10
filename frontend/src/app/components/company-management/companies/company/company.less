@@ -1,3 +1,82 @@
 :host {
   display: block;
+  width: 100%;
+  min-width: 0;
+}
+
+:host,
+:host * {
+  box-sizing: border-box;
+}
+
+/* Table styling */
+:host ::ng-deep .company-desktop-table .p-datatable {
+  width: 100%;
+}
+
+:host ::ng-deep .company-desktop-table .p-datatable-table {
+  width: 100%;
+}
+
+:host ::ng-deep .company-desktop-table .p-datatable-thead > tr > th {
+  padding: 0.9rem 1rem;
+  background: #f8fafc;
+  color: #475569;
+  font-weight: 600;
+  white-space: nowrap;
+  border-color: #e5e7eb;
+}
+
+:host ::ng-deep .company-desktop-table .p-datatable-tbody > tr > td {
+  padding: 0.9rem 1rem;
+  color: #475569;
+  font-size: 0.875rem;
+  border-color: #f1f5f9;
+  vertical-align: middle;
+}
+
+:host ::ng-deep .company-desktop-table .p-datatable-tbody > tr {
+  transition: background-color 0.15s ease;
+}
+
+:host ::ng-deep .company-desktop-table .p-datatable-tbody > tr:hover {
+  background: #f8fafc;
+}
+
+/* Search input */
+:host ::ng-deep .company-page .p-inputtext {
+  min-width: 0;
+}
+
+/* Mobile company cards */
+.company-card {
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.company-card:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 2px 8px rgb(15 23 42 / 5%);
+}
+
+/* Paginator */
+:host ::ng-deep .company-page .p-paginator {
+  justify-content: center;
+  gap: 0.25rem;
+  padding: 0.5rem 0;
+  border: 0;
+}
+
+@media (max-width: 640px) {
+  :host ::ng-deep .company-page .p-paginator {
+    flex-wrap: wrap;
+  }
+
+  :host ::ng-deep .company-page .p-paginator .p-paginator-current {
+    width: 100%;
+    justify-content: center;
+    margin: 0.25rem 0;
+    order: 2;
+  }
 }

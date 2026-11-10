@@ -41,6 +41,7 @@ import { DatePickerModule } from 'primeng/datepicker';
 import { DialogModule } from 'primeng/dialog';
 import { TextareaModule } from 'primeng/textarea';
 import { UserService } from '../../../../services/userService.service';
+import { PaginatorModule, PaginatorState } from 'primeng/paginator';
 
 @Component({
   selector: 'app-purchase-invoice',
@@ -57,64 +58,86 @@ import { UserService } from '../../../../services/userService.service';
     InputNumberModule,
     DatePickerModule,
     TextareaModule,
+    PaginatorModule,
     DialogModule,
   ],
-  template: `<div class="w-full min-h-[92.9vh] flex flex-col p-5">
-      <div class="flex flex-row items-center gap-1 text-gray-500 tracking-wide">
-        <div
-          [routerLink]="'/dashboard'"
-          class="cursor-pointer hover:text-gray-600"
-        >
-          Dashboard
-        </div>
-        /
-        <div class="text-gray-700 font-semibold">Purchase Invoice</div>
-      </div>
+  template: `<div
+      class="w-full min-h-[92.9vh] min-w-0 flex flex-col p-3 sm:p-4 lg:p-5"
+    >
+      <!-- Breadcrumb -->
       <div
-        class="mt-3 border border-gray-200 rounded-md tracking-wide bg-white p-5 flex flex-col"
+        class="flex flex-wrap items-center gap-1 text-xs sm:text-sm text-gray-500 tracking-wide"
       >
+        <a routerLink="/dashboard" class="cursor-pointer hover:text-blue-600">
+          Dashboard
+        </a>
+        <span>/</span>
+        <span class="font-semibold text-gray-700">Purchase Invoice</span>
+      </div>
+
+      <!-- Main Container -->
+      <div
+        class="mt-3 min-w-0 rounded-lg border border-gray-200 bg-white p-4 sm:p-5"
+      >
+        <!-- Header -->
         <div
-          class="flex flex-col gap-3 xl:gap-0 xl:flex-row xl:items-center justify-between"
+          class="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between"
         >
-          <div class="flex flex-col">
-            <div class="text-[18px] text-gray-700 font-semibold">
-              Purchase Invoices
+          <div class="flex items-center gap-3">
+            <div
+              class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-700"
+            >
+              <i class="pi pi-file text-xl"></i>
             </div>
-            <div class="text-gray-500">
-              Manage your purchase invoice with ease and efficiency
+
+            <div>
+              <h1 class="text-lg font-semibold text-gray-800">
+                Purchase Invoices
+              </h1>
+              <p class="mt-0.5 text-xs sm:text-sm text-gray-500">
+                Manage your purchase invoices with ease and efficiency
+              </p>
             </div>
           </div>
-          <div class="flex flex-row items-center gap-2">
-            <div class="w-full xl:min-w-[300px] relative">
+
+          <!-- Search and Action -->
+          <div
+            class="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_auto] gap-2 w-full xl:w-auto"
+          >
+            <div class="relative min-w-0">
               <input
                 type="text"
                 pInputText
                 [(ngModel)]="search"
-                class="w-full!"
+                class="w-full pr-9"
                 placeholder="Search by Invoice No"
                 (keydown)="onKeyDown($event)"
               />
+
               <i
-                class="pi pi-search absolute! top-3! right-2! text-gray-500!"
+                class="pi pi-search absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
               ></i>
             </div>
+
             <p-button
               label="Record Purchase Invoice"
+              icon="pi pi-plus"
               (onClick)="OpenFormDialog()"
-              icon="pi pi-plus-circle"
-              styleClass="bg-sky-600! border-none! py-2! whitespace-nowrap!"
+              styleClass="py-3! sm:py-2! w-full sm:w-auto whitespace-nowrap! bg-blue-700! border-none! hover:bg-blue-500!"
             ></p-button>
           </div>
         </div>
-        <div class="mt-3">
+
+        <!-- Desktop Table -->
+        <div class="hidden lg:block mt-5">
           <p-table
             #fTable
             dataKey="id"
-            [value]="PagingSignal().data"
+            [value]="PagingSignal().data || []"
             [paginator]="true"
             [rows]="Query.PageSize"
-            [totalRecords]="PagingSignal().totalElements"
-            [tableStyle]="{ 'min-width': '60rem' }"
+            [totalRecords]="PagingSignal().totalElements || 0"
+            [tableStyle]="{ 'min-width': '65rem' }"
             [showGridlines]="true"
             [rowsPerPageOptions]="[10, 20, 30, 50]"
             [lazy]="true"
@@ -122,192 +145,243 @@ import { UserService } from '../../../../services/userService.service';
           >
             <ng-template #header>
               <tr>
-                <!-- <th class="w-[5%]! bg-gray-100!"></th> -->
-
                 <th
                   pSortableColumn="InvoiceNo"
-                  class="bg-gray-100! text-center! w-[15%]!"
+                  class="bg-gray-50! text-center! w-[15%]!"
                 >
-                  <div class="flex flex-row justify-center items-center gap-2">
-                    <div>Invoice No</div>
+                  <div class="flex items-center justify-center gap-2">
+                    Invoice No
                     <p-sortIcon field="InvoiceNo" />
                   </div>
                 </th>
-                <th class="bg-gray-100! w-[20%]">Supplier</th>
+
+                <th class="bg-gray-50! w-[20%]!">Supplier</th>
 
                 <th
                   pSortableColumn="InvoiceDate"
-                  class="bg-gray-100! w-[10%] text-center!"
+                  class="bg-gray-50! text-center! w-[12%]!"
                 >
-                  <div class="flex flex-row justify-center items-center gap-2">
-                    <div>Invoice Date</div>
+                  <div class="flex items-center justify-center gap-2">
+                    Invoice Date
                     <p-sortIcon field="InvoiceDate" />
                   </div>
                 </th>
 
-                <th class="bg-gray-100! text-center! w-[15%]">Total Amount</th>
-                <th class="bg-gray-100! text-center! w-[15%]">Paid Amount</th>
-                <th class="bg-gray-100! text-center! w-[10%]">Due Date</th>
+                <th class="bg-gray-50! text-center! w-[13%]!">Total Amount</th>
+
+                <th class="bg-gray-50! text-center! w-[13%]!">Paid Amount</th>
+
+                <th class="bg-gray-50! text-center! w-[12%]!">Due Date</th>
 
                 <th
                   pSortableColumn="Status"
-                  class="bg-gray-100! text-center! w-[10%]!"
+                  class="bg-gray-50! text-center! w-[10%]!"
                 >
-                  <div class="flex flex-row justify-center items-center gap-2">
-                    <div>Status</div>
+                  <div class="flex items-center justify-center gap-2">
+                    Status
                     <p-sortIcon field="Status" />
                   </div>
                 </th>
-                <th class="bg-gray-100! text-center! w-[10%]">Action</th>
+
+                <th class="bg-gray-50! text-center! w-[5%]!">Action</th>
               </tr>
             </ng-template>
-            <ng-template
-              #body
-              let-data
-              let-rowIndex="rowIndex"
-              let-expanded="expanded"
-            >
+
+            <ng-template #body let-data>
               <tr>
-                <!-- <td>
-                  <div
-                    class="flex items-center justify-center cursor-pointer"
-                    (click)="fTable.toggleRow(data)"
-                  >
-                    <i
-                      [class]="
-                        expanded ? 'pi pi-chevron-down' : 'pi pi-chevron-right'
-                      "
-                    ></i>
-                  </div>
-                </td> -->
-                <td class="text-center! font-semibold!">
+                <td class="text-center! font-semibold! text-gray-800">
                   {{ data.invoiceNo }}
                 </td>
-                <td>{{ data.supplier?.name }}</td>
+
+                <td>
+                  <div class="font-medium text-gray-700">
+                    {{ data.supplier.name || '-' }}
+                  </div>
+                </td>
+
                 <td class="text-center!">
                   {{ data.invoiceDate | date: 'dd/MM/yyyy' }}
                 </td>
-                <td class="text-center!">
+
+                <td class="text-right! font-medium">
                   {{ data.totalAmount | currency: 'RM ' }}
                 </td>
-                <td class="text-center!">
+
+                <td class="text-right!">
                   {{ data.paidAmount | currency: 'RM ' }}
                 </td>
+
                 <td class="text-center!">
-                  {{ data.dueDate | date: 'dd/MM/yyyy' }}
-                </td>
-                <td class="text-center!">
-                  <div class="flex justify-center">
-                    <div
-                      class="rounded-full px-6 text-[13px] py-0.5 font-medium w-fit whitespace-nowrap"
-                      [ngClass]="{
-                        'bg-blue-100 text-blue-700': data.status === 'Received',
-
-                        'bg-indigo-100 text-indigo-700':
-                          data.status === 'Verified',
-
-                        'bg-amber-100 text-amber-700':
-                          data.status === 'PartiallyPaid',
-
-                        'bg-green-100 text-green-700': data.status === 'Paid',
-
-                        'bg-red-100 text-red-700': data.status === 'Overdue',
-
-                        'bg-orange-100 text-orange-700':
-                          data.status === 'Disputed' || data.status === 'Draft',
-
-                        'bg-gray-200 text-gray-600':
-                          data.status === 'Cancelled',
-                      }"
-                    >
-                      {{ data.status }}
-                    </div>
-                  </div>
+                  {{ data.dueDate ? (data.dueDate | date: 'dd/MM/yyyy') : '-' }}
                 </td>
 
                 <td class="text-center!">
-                  <div class="flex items-center justify-center">
-                    <i
-                      (click)="onEllipsisClick($event, data, menu)"
-                      class="pi pi-ellipsis-h cursor-pointer"
-                    ></i>
-                  </div>
+                  <span
+                    class="inline-flex rounded-full px-3 py-1 text-xs font-medium whitespace-nowrap"
+                    [ngClass]="{
+                      'bg-blue-100 text-blue-700': data.status === 'Received',
+                      'bg-indigo-100 text-indigo-700':
+                        data.status === 'Verified',
+                      'bg-amber-100 text-amber-700':
+                        data.status === 'PartiallyPaid',
+                      'bg-green-100 text-green-700': data.status === 'Paid',
+                      'bg-red-100 text-red-700': data.status === 'Overdue',
+                      'bg-orange-100 text-orange-700':
+                        data.status === 'Disputed' || data.status === 'Draft',
+                      'bg-gray-200 text-gray-600': data.status === 'Cancelled',
+                    }"
+                  >
+                    {{ data.status }}
+                  </span>
+                </td>
+
+                <td class="text-center!">
+                  <p-button
+                    icon="pi pi-ellipsis-h"
+                    severity="secondary"
+                    [text]="true"
+                    [rounded]="true"
+                    (onClick)="onEllipsisClick($event, data, menu)"
+                  ></p-button>
                 </td>
               </tr>
             </ng-template>
-            <!-- <ng-template #expandedrow let-item>
-              <tr>
-                <td colspan="100%">
-                  <div class="px-5">
-                    <p-timeline
-                      [value]="item.timeline"
-                      align="top"
-                      layout="horizontal"
-                      class="customized-timeline w-full"
-                    >
-                      <ng-template #marker let-event>
-                        <div
-                          class="w-6 h-6 p-2 flex items-center justify-center rounded-full shadow-sm text-white"
-                          [ngClass]="
-                            event.actionAt ? event.color : 'bg-gray-300'
-                          "
-                        >
-                          <i
-                            class="pi text-xs"
-                            [ngClass]="
-                              event.verified ? 'pi-check' : 'pi-circle-fill'
-                            "
-                          ></i>
-                        </div>
-                      </ng-template>
 
-                      <ng-template #content let-event>
-                        <div class="flex flex-col min-h-[70px]">
-                          <div class="font-semibold text-sm">
-                            {{ event.status }}
-                          </div>
-
-                          <small
-                            class="text-gray-500 text-xs whitespace-nowrap"
-                            *ngIf="event.actionUser"
-                          >
-                            {{ event.actionUser }}
-                          </small>
-
-                          <small
-                            class="text-gray-400 text-xs whitespace-nowrap"
-                            *ngIf="event.actionAt"
-                          >
-                            {{ event.actionAt | date: 'dd MMM, yyyy HH:mm aa' }}
-                          </small>
-                        </div>
-                      </ng-template>
-                    </p-timeline>
-                  </div>
-                </td>
-              </tr>
-            </ng-template> -->
             <ng-template #emptymessage>
               <tr>
-                <td colspan="100%" class="border-x!">
-                  <div class="text-center text-gray-500">
-                    No purchase invoices found in records.
+                <td colspan="8">
+                  <div
+                    class="flex flex-col items-center justify-center gap-2 py-10 text-gray-400"
+                  >
+                    <i class="pi pi-inbox text-3xl"></i>
+                    <span class="text-sm"
+                      >No purchase invoices found in records.</span
+                    >
                   </div>
                 </td>
               </tr>
             </ng-template>
           </p-table>
         </div>
+
+        <!-- Mobile / Tablet Cards -->
+        <div class="lg:hidden mt-5 space-y-3">
+          @for (data of PagingSignal().data || []; track data.id) {
+            <div class="rounded-lg border border-gray-200 bg-white p-4">
+              <!-- Invoice Header -->
+              <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0 flex-1">
+                  <div class="text-xs text-gray-500">Invoice No.</div>
+
+                  <div class="mt-1 break-all font-semibold text-gray-800">
+                    {{ data.invoiceNo }}
+                  </div>
+
+                  <div class="mt-1 text-sm text-gray-600 truncate">
+                    {{ data.supplier?.name || '-' }}
+                  </div>
+                </div>
+
+                <div class="shrink-0">
+                  <p-button
+                    icon="pi pi-ellipsis-v"
+                    severity="secondary"
+                    [text]="true"
+                    [rounded]="true"
+                    (onClick)="onEllipsisClick($event, data, menu)"
+                  ></p-button>
+                </div>
+              </div>
+
+              <!-- Status -->
+              <div class="mt-3">
+                <span
+                  class="inline-flex rounded-full px-3 py-1 text-xs font-medium"
+                  [ngClass]="{
+                    'bg-blue-100 text-blue-700': data.status === 'Received',
+                    'bg-indigo-100 text-indigo-700': data.status === 'Verified',
+                    'bg-amber-100 text-amber-700':
+                      data.status === 'PartiallyPaid',
+                    'bg-green-100 text-green-700': data.status === 'Paid',
+                    'bg-red-100 text-red-700': data.status === 'Overdue',
+                    'bg-orange-100 text-orange-700':
+                      data.status === 'Disputed' || data.status === 'Draft',
+                    'bg-gray-200 text-gray-600': data.status === 'Cancelled',
+                  }"
+                >
+                  {{ data.status }}
+                </span>
+              </div>
+
+              <div class="my-3 border-t border-gray-100"></div>
+
+              <!-- Invoice Details -->
+              <div class="grid grid-cols-2 gap-x-4 gap-y-3">
+                <div>
+                  <div class="text-xs text-gray-500">Invoice Date</div>
+                  <div class="mt-1 text-sm font-medium text-gray-700">
+                    {{ data.invoiceDate | date: 'dd/MM/yyyy' }}
+                  </div>
+                </div>
+
+                <div>
+                  <div class="text-xs text-gray-500">Due Date</div>
+                  <div class="mt-1 text-sm font-medium text-gray-700">
+                    {{
+                      data.dueDate ? (data.dueDate | date: 'dd/MM/yyyy') : '-'
+                    }}
+                  </div>
+                </div>
+
+                <div>
+                  <div class="text-xs text-gray-500">Total Amount</div>
+                  <div class="mt-1 text-sm font-semibold text-gray-800">
+                    {{ data.totalAmount | currency: 'RM ' }}
+                  </div>
+                </div>
+
+                <div>
+                  <div class="text-xs text-gray-500">Paid Amount</div>
+                  <div class="mt-1 text-sm font-medium text-green-700">
+                    {{ data.paidAmount | currency: 'RM ' }}
+                  </div>
+                </div>
+              </div>
+            </div>
+          } @empty {
+            <div
+              class="rounded-lg border border-gray-200 py-10 text-center text-gray-500"
+            >
+              <i class="pi pi-inbox mb-2 block text-3xl text-gray-300"></i>
+              <p class="text-sm">No purchase invoices found in records.</p>
+            </div>
+          }
+
+          <!-- Mobile Pagination -->
+          <div class="border-t border-slate-200 bg-white px-2 py-3 lg:hidden">
+            <p-paginator
+              [first]="((Query.Page || 1) - 1) * (Query.PageSize || 10)"
+              [rows]="Query.PageSize || 10"
+              [totalRecords]="PagingSignal().totalElements || 0"
+              [rowsPerPageOptions]="[10, 20, 30, 50]"
+              (onPageChange)="onMobilePageChange($event)"
+            ></p-paginator>
+          </div>
+        </div>
       </div>
     </div>
-    <p-menu #menu [model]="menuItems" [popup]="true"></p-menu>
+
+    <p-menu #menu [model]="menuItems" [popup]="true" appendTo="body"></p-menu>
 
     <p-dialog
       [(visible)]="showRecordDialog"
       [modal]="true"
       [draggable]="false"
       [resizable]="false"
-      styleClass="preview-dialog rounded-xl! overflow-hidden w-[90%]! lg:w-[60%]!"
+      [autoZIndex]="true"
+      [baseZIndex]="10000"
+      [breakpoints]="{ '640px': '95%', '960px': '85vw' }"
+      styleClass="purchase-invoice-dialog rounded-xl overflow-hidden"
       [maskStyle]="{ 'overflow-y': 'auto' }"
       appendTo="body"
     >
@@ -332,7 +406,7 @@ import { UserService } from '../../../../services/userService.service';
             ></p-button>
           </div>
         </div>
-        <div class="p-6 flex-1 overflow-y-auto">
+        <div class="p-4 sm:p-6 flex-1 overflow-y-auto min-h-0">
           <div [formGroup]="FG" class="grid grid-cols-12 gap-4">
             <div class="col-span-12 flex flex-col gap-1">
               <div>Invoice No <span class="text-red-500">*</span></div>
@@ -431,18 +505,20 @@ import { UserService } from '../../../../services/userService.service';
           </div>
         </div>
         <div
-          class="p-4 bg-gray-50 border-t border-gray-200 flex justify-end gap-3 flex-none"
+          class="p-4 bg-gray-50 border-t border-gray-200 flex flex-col-reverse sm:flex-row sm:justify-end gap-2 flex-none"
         >
           <p-button
             label="Cancel"
             severity="secondary"
             styleClass="border-gray-200!"
+            styleClass="w-full! sm:w-fit! py-3! sm:py-2!"
             (onClick)="showRecordDialog = false"
           ></p-button>
           <p-button
             label="Save"
-            icon="pi pi-check-circle"
+            icon="pi pi-save"
             severity="info"
+            styleClass="w-full! py-3! sm:py-2! sm:w-fit! bg-blue-700! border-none! hover:bg-blue-500!"
             (onClick)="saveRecord()"
           ></p-button></div></ng-template
     ></p-dialog>
@@ -452,7 +528,10 @@ import { UserService } from '../../../../services/userService.service';
       [modal]="true"
       [draggable]="false"
       [resizable]="false"
-      styleClass="w-[92%] lg:w-[50%] rounded-xl overflow-hidden"
+      [autoZIndex]="true"
+      [baseZIndex]="10000"
+      [breakpoints]="{ '640px': '96vw', '960px': '85vw' }"
+      styleClass="purchase-invoice-dialog rounded-xl overflow-hidden"
       appendTo="body"
     >
       <ng-template pTemplate="header">
@@ -485,7 +564,7 @@ import { UserService } from '../../../../services/userService.service';
           </div>
         </div>
 
-        <div class="grid grid-cols-12 gap-4" [formGroup]="FG">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4" [formGroup]="FG">
           <div class="col-span-6 flex flex-col gap-1">
             <label>Invoice No</label>
             <input pInputText class="w-full" formControlName="invoiceNo" />
@@ -525,8 +604,10 @@ import { UserService } from '../../../../services/userService.service';
           </div>
         </div>
 
-        <div class="border border-gray-200 rounded-lg p-4">
-          <div class="flex justify-between items-center">
+        <div class="border border-gray-200 rounded-lg p-3 sm:p-4">
+          <div
+            class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3"
+          >
             <div class="font-semibold">
               Invoice Attachment <span class="text-red-500">*</span>
             </div>
@@ -562,7 +643,7 @@ import { UserService } from '../../../../services/userService.service';
 
       <ng-template pTemplate="footer">
         <div
-          class="flex justify-end gap-2 border-t w-full pt-4 border-gray-200"
+          class="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 border-t w-full pt-4 border-gray-200"
         >
           <p-button
             label="Cancel"
@@ -586,7 +667,11 @@ import { UserService } from '../../../../services/userService.service';
       [modal]="true"
       [draggable]="false"
       [resizable]="false"
-      styleClass="w-[92%] lg:w-[40%] rounded-xl"
+      [autoZIndex]="true"
+      [baseZIndex]="10000"
+      [breakpoints]="{ '640px': '96vw', '960px': '85vw' }"
+      styleClass="purchase-invoice-dialog rounded-xl overflow-hidden"
+      appendTo="body"
     >
       <ng-template pTemplate="header">
         <div>
@@ -597,7 +682,10 @@ import { UserService } from '../../../../services/userService.service';
         </div>
       </ng-template>
 
-      <div class="grid grid-cols-12 gap-4" [formGroup]="paymentFG">
+      <div
+        class="grid grid-cols-1 sm:grid-cols-2 gap-4"
+        [formGroup]="paymentFG"
+      >
         <div class="col-span-6 flex flex-col gap-1">
           <label for="">Payment No</label>
           <input
@@ -715,7 +803,7 @@ import { UserService } from '../../../../services/userService.service';
       </div>
 
       <ng-template pTemplate="footer">
-        <div class="flex justify-end gap-2">
+        <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
           <p-button
             label="Cancel"
             severity="secondary"
@@ -794,21 +882,28 @@ export class PurchaseInvoice implements OnInit, OnDestroy {
     this.initForm();
     this.initPaymentForm();
 
-    this.paymentFG.get('amount')?.valueChanges.subscribe((value) => {
-      const total = this.selectedInvoice?.totalAmount || 0;
-      const currentPaid = this.selectedInvoice?.paidAmount || 0;
-      const input = value || 0;
+    this.paymentFG
+      .get('amount')
+      ?.valueChanges.pipe(takeUntil(this.ngUnsubscribe))
+      .subscribe((value) => {
+        const total = this.selectedInvoice?.totalAmount || 0;
+        const currentPaid = this.selectedInvoice?.paidAmount || 0;
+        const remaining = total - currentPaid;
+        const input = value || 0;
 
-      const remaining = total - currentPaid;
+        this.remainingAmount = remaining - input;
 
-      this.remainingAmount = remaining - input;
+        const amountControl = this.paymentFG.get('amount');
+        const errors = { ...(amountControl?.errors || {}) };
 
-      if (input > remaining) {
-        this.paymentFG.get('amount')?.setErrors({ exceed: true });
-      } else {
-        this.paymentFG.get('amount')?.setErrors(null);
-      }
-    });
+        if (input > remaining) {
+          errors['exceed'] = true;
+        } else {
+          delete errors['exceed'];
+        }
+
+        amountControl?.setErrors(Object.keys(errors).length ? errors : null);
+      });
   }
 
   initForm() {
@@ -1029,7 +1124,9 @@ export class PurchaseInvoice implements OnInit, OnDestroy {
             this.isInitializingForm = false;
             if (data.attachment) {
               this.invoiceFileName = data.attachment.split('/').pop() || '';
-              this.invoiceFileUrl = resolveAssetUrl(data.attachment.replace(/\\/g, '/'));
+              this.invoiceFileUrl = resolveAssetUrl(
+                data.attachment.replace(/\\/g, '/'),
+              );
             }
           } else {
             this.isEditMode = false;
@@ -1051,7 +1148,7 @@ export class PurchaseInvoice implements OnInit, OnDestroy {
       invoiceId: new FormControl<string | null>(data?.invoiceId ?? null),
       item: new FormControl<string | null>(data?.item ?? null),
       description: new FormControl<string | null>(data?.description ?? null),
-      quantity: new FormControl<number>(data?.quantity ?? false),
+      quantity: new FormControl<number>(data?.quantity ?? 0),
       unitPrice: new FormControl<number>(data?.unitPrice ?? 0),
       unit: new FormControl<string>(data?.unit ?? 'Unit'),
       discount: new FormControl<number | null>(data?.discount ?? null),
@@ -1387,6 +1484,16 @@ export class PurchaseInvoice implements OnInit, OnDestroy {
         console.error(err);
       },
     });
+  }
+
+  onMobilePageChange(event: PaginatorState): void {
+    const first = event.first ?? 0;
+    const rows = event.rows ?? this.Query.PageSize ?? 10;
+
+    this.Query.Page = Math.floor(first / rows) + 1;
+    this.Query.PageSize = rows;
+
+    this.GetData();
   }
 
   ngOnDestroy(): void {

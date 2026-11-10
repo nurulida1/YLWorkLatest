@@ -33,6 +33,7 @@ import {
   denormalizeHtml,
   normalizeHtml,
 } from '../../../../shared/helpers/helpers';
+import { TooltipModule } from 'primeng/tooltip';
 
 @Component({
   selector: 'app-invoice-form',
@@ -50,326 +51,408 @@ import {
     DialogModule,
     EditorModule,
     TextareaModule,
+    TooltipModule,
   ],
-  template: ` <div class="w-full p-5 flex flex-col">
-    <div class="flex flex-row items-center gap-1 text-gray-500 tracking-wide">
+  template: `
+    <div class="w-full min-w-0 p-3 sm:p-4 lg:p-5 flex flex-col">
+      <!-- Breadcrumb -->
       <div
-        [routerLink]="'/dashboard'"
-        class="cursor-pointer hover:text-gray-600"
+        class="flex flex-wrap items-center gap-1 text-xs sm:text-sm text-gray-500 tracking-wide"
       >
-        Dashboard
+        <a routerLink="/dashboard" class="hover:text-blue-600 cursor-pointer">
+          Dashboard
+        </a>
+        <span>/</span>
+        <a
+          routerLink="/invoices/sales"
+          class="hover:text-blue-600 cursor-pointer"
+        >
+          Sales Invoice
+        </a>
+        <span>/</span>
+        <span class="text-gray-700 font-semibold truncate">
+          {{
+            currentId
+              ? FG.get('invoiceNo')?.value || 'Update Invoice'
+              : 'New Sales Invoice'
+          }}
+        </span>
       </div>
-      /
+
+      <!-- Page Header -->
       <div
-        [routerLink]="'/invoices/sales'"
-        class="cursor-pointer hover:text-gray-600"
+        class="mt-3 flex flex-col gap-3 rounded-lg border border-gray-200 bg-white p-4 sm:flex-row sm:items-center sm:justify-between sm:px-5"
       >
-        Sales Invoice
-      </div>
-      /
-      <div class="text-gray-700 font-semibold">
-        {{ currentId ? FG.get('invoiceNo')?.value : 'New Sales Invoice' }}
-      </div>
-    </div>
-    <div
-      class="px-5 py-2 flex flex-row items-center justify-between border border-gray-200 bg-white mt-3"
-    >
-      <div class="flex flex-row items-center gap-2 font-semibold">
-        <i class="pi pi-file"></i>
-        <div>
-          {{ currentId ? 'Update Sales Invoice' : 'Create Sales Invoice' }}
+        <div class="flex items-center gap-3 min-w-0">
+          <div
+            class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-700"
+          >
+            <i class="pi pi-file text-lg"></i>
+          </div>
+
+          <div class="min-w-0">
+            <h1 class="text-base sm:text-lg font-semibold text-gray-800">
+              {{ currentId ? 'Update Sales Invoice' : 'Create Sales Invoice' }}
+            </h1>
+            <p class="text-xs text-gray-500 mt-0.5">
+              Manage invoice information and item details
+            </p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 sm:flex sm:flex-row gap-2">
+          <p-button
+            label="Cancel"
+            severity="secondary"
+            [outlined]="true"
+            styleClass="w-full sm:w-auto"
+            [routerLink]="'/invoices/sales'"
+          ></p-button>
+
+          <p-button
+            (onClick)="onSave()"
+            [label]="currentId ? 'Save Changes' : 'Create Invoice'"
+            severity="info"
+            styleClass="w-full sm:w-auto bg-blue-700! border-none! hover:bg-blue-500!"
+          ></p-button>
         </div>
       </div>
-      <div class="flex flex-row items-center gap-2">
-        <p-button
-          label="Cancel"
-          severity="secondary"
-          [outlined]="true"
-          styleClass="py-1.5! px-4!"
-          [routerLink]="'/invoices/sales'"
-        ></p-button>
 
-        <p-button
-          (onClick)="onSave()"
-          [label]="currentId ? 'Save Changes' : 'Create'"
-          severity="info"
-          styleClass="py-1.5! px-4!"
-        ></p-button>
-      </div>
-    </div>
+      <!-- Invoice Form -->
+      <div
+        class="mt-3 rounded-lg border border-gray-200 bg-white p-4 sm:p-5"
+        [formGroup]="FG"
+      >
+        <!-- Invoice Information -->
+        <div class="mb-5">
+          <div
+            class="flex items-center gap-2 border-b border-gray-100 pb-3 mb-4"
+          >
+            <i class="pi pi-info-circle text-blue-600"></i>
+            <h2 class="font-semibold text-gray-800">Invoice Information</h2>
+          </div>
 
-    <div class="mt-3 border border-gray-200 bg-white p-5 flex flex-col">
-      <div class="grid grid-cols-12 gap-4 items-center" [formGroup]="FG">
-        <div class="col-span-12 font-semibold text-lg">Invoice Information</div>
-        <div class="col-span-12 flex flex-col gap-1">
-          <div class="flex items-center justify-between">
-            <div>
-              Invoice No
-              <span class="text-gray-400 text-xs italic ml-1">
-                (Optional – auto-generated if left blank)
-              </span>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <!-- Invoice No -->
+            <div class="sm:col-span-2 flex flex-col gap-1">
+              <label class="font-medium text-sm text-gray-700">
+                Invoice No
+                <span class="ml-1 text-xs font-normal italic text-gray-400">
+                  (Optional – auto-generated if left blank)
+                </span>
+              </label>
+
+              <input
+                type="text"
+                pInputText
+                class="w-full font-semibold"
+                formControlName="invoiceNo"
+                placeholder="Leave blank for auto-generated invoice number"
+              />
+            </div>
+
+            <!-- From -->
+            <div class="flex flex-col gap-1">
+              <label class="font-medium text-sm text-gray-700">
+                From <span class="text-red-500">*</span>
+              </label>
+
+              <p-select
+                [options]="companySelection || []"
+                appendTo="body"
+                styleClass="w-full"
+                formControlName="companyId"
+                placeholder="Select company"
+              ></p-select>
+            </div>
+
+            <!-- Bill To -->
+            <div class="flex flex-col gap-1">
+              <label class="font-medium text-sm text-gray-700">
+                Bill To <span class="text-red-500">*</span>
+              </label>
+
+              <p-select
+                [filter]="true"
+                [options]="companySelection || []"
+                appendTo="body"
+                styleClass="w-full"
+                formControlName="clientId"
+                placeholder="Select client"
+                [showClear]="!!FG.get('clientId')?.value"
+              ></p-select>
+            </div>
+
+            <!-- DO -->
+            <div class="flex flex-col gap-1">
+              <label class="font-medium text-sm text-gray-700">DO No.</label>
+
+              <p-select
+                [filter]="true"
+                [options]="deliveryOrderSelection || []"
+                appendTo="body"
+                styleClass="w-full"
+                formControlName="deliveryOrderId"
+                placeholder="Select delivery order"
+                [showClear]="!!FG.get('deliveryOrderId')?.value"
+              ></p-select>
+            </div>
+
+            <!-- PO -->
+            <div class="flex flex-col gap-1">
+              <label class="font-medium text-sm text-gray-700">PO No.</label>
+
+              <p-select
+                [filter]="true"
+                [options]="purchaseOrderSelection || []"
+                appendTo="body"
+                styleClass="w-full"
+                formControlName="purchaseOrderId"
+                placeholder="Select purchase order"
+                [showClear]="!!FG.get('purchaseOrderId')?.value"
+              ></p-select>
+            </div>
+
+            <!-- Invoice Date -->
+            <div class="flex flex-col gap-1">
+              <label class="font-medium text-sm text-gray-700">
+                Invoice Date <span class="text-red-500">*</span>
+              </label>
+
+              <p-datepicker
+                appendTo="body"
+                styleClass="w-full"
+                formControlName="invoiceDate"
+                [showIcon]="true"
+                dateFormat="dd/mm/yy"
+                placeholder="Select invoice date"
+              ></p-datepicker>
+            </div>
+
+            <!-- Terms -->
+            <div class="flex flex-col gap-1">
+              <label class="font-medium text-sm text-gray-700">Terms</label>
+
+              <input
+                type="text"
+                pInputText
+                class="w-full"
+                formControlName="terms"
+                placeholder="Enter payment terms"
+              />
+            </div>
+
+            <!-- Remarks -->
+            <div class="sm:col-span-2 flex flex-col gap-1">
+              <label class="font-medium text-sm text-gray-700">Remarks</label>
+
+              <textarea
+                pTextarea
+                formControlName="remarks"
+                class="w-full"
+                rows="3"
+                placeholder="Enter remarks here..."
+              ></textarea>
             </div>
           </div>
-
-          <input
-            type="text"
-            pInputText
-            class="w-full font-semibold! placeholder:font-normal!"
-            formControlName="invoiceNo"
-            placeholder="Leave blank for auto-generated invoice number"
-          />
-        </div>
-        <div class="col-span-12 lg:col-span-6 flex flex-col gap-1">
-          <div class="mt-2 mb-1">From <span class="text-red-500">*</span></div>
-          <p-select
-            [options]="companySelection || []"
-            appendTo="body"
-            styleClass="w-full!"
-            formControlName="companyId"
-          ></p-select>
-        </div>
-        <div class="col-span-12 lg:col-span-6 flex flex-col gap-1">
-          <div class="flex flex-row justify-between items-center">
-            <div>Bill To <span class="text-red-500">*</span></div>
-            <!-- <p-button
-              label="Add New Vendor"
-              icon="pi pi-plus-circle"
-              size="small"
-              severity="info"
-              [text]="true"
-              (onClick)="AddVendorClick()"
-            ></p-button> -->
-          </div>
-          <p-select
-            [filter]="true"
-            [options]="companySelection || []"
-            appendTo="body"
-            styleClass="w-full!"
-            formControlName="clientId"
-            [showClear]="FG.get('clientId')?.value"
-          ></p-select>
-        </div>
-        <div class="col-span-12 lg:col-span-6 flex flex-col gap-1">
-          <div class="flex flex-row justify-between items-center">
-            <div>DO No.</div>
-          </div>
-          <p-select
-            [filter]="true"
-            [options]="deliveryOrderSelection || []"
-            appendTo="body"
-            styleClass="w-full!"
-            formControlName="deliveryOrderId"
-            [showClear]="FG.get('deliveryOrderId')?.value"
-          ></p-select>
-        </div>
-        <div class="col-span-12 lg:col-span-6 flex flex-col gap-1">
-          <div class="flex flex-row justify-between items-center">
-            <div>PO No.</div>
-          </div>
-          <p-select
-            [filter]="true"
-            [options]="purchaseOrderSelection || []"
-            appendTo="body"
-            styleClass="w-full!"
-            formControlName="purchaseOrderId"
-            [showClear]="FG.get('purchaseOrderId')?.value"
-          ></p-select>
-        </div>
-        <div class="col-span-12 lg:col-span-6 flex flex-col gap-1">
-          <div>Invoice date <span class="text-red-500">*</span></div>
-          <p-datepicker
-            appendTo="body"
-            styleClass="w-full!"
-            formControlName="invoiceDate"
-            [showIcon]="true"
-            dateFormat="dd/mm/yy"
-          ></p-datepicker>
-        </div>
-        <div class="col-span-12 lg:col-span-6 flex flex-col gap-1">
-          <div>Terms</div>
-          <input
-            type="text"
-            pInputText
-            class="w-full"
-            formControlName="terms"
-          />
         </div>
 
-        <div class="col-span-12 flex flex-col gap-1">
-          <div>Remarks</div>
-          <div class="col-span-12">
-            <textarea
-              name="remarks"
-              id="remarks"
-              pTextarea
-              formControlName="remarks"
-              class="w-full!"
-              rows="3"
-              cols="30"
-              placeholder="Enter remarks here..."
-            ></textarea>
-          </div>
-        </div>
-        <div class="col-span-12 font-semibold text-lg">Items Details</div>
-        <div class="col-span-12">
-          <p-table
-            showGridlines="true"
-            [tableStyle]="{ 'min-width': '60rem', 'table-layout': 'fixed' }"
-            [value]="Items.controls"
+        <!-- Items Details -->
+        <div class="mt-6">
+          <div
+            class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-b border-gray-100 pb-3 mb-4"
           >
-            <ng-template #header>
-              <tr>
-                <th class="text-center! text-sm! w-[20%]!">Item</th>
-                <th class="text-center! text-sm! w-[30%]!">Description</th>
-                <th class="text-center! text-sm! w-[10%]!">Qty</th>
+            <div class="flex items-center gap-2">
+              <i class="pi pi-list text-blue-600"></i>
+              <h2 class="font-semibold text-gray-800">Items Details</h2>
+            </div>
 
-                <th class="text-center! text-sm! w-[10%]!">Unit</th>
-                <th class="text-center! text-sm! w-[15%]!">Unit Price (RM)</th>
-                <th class="text-center! text-sm! w-[10%]!">Discount (%)</th>
+            <span class="text-xs text-gray-500">
+              {{ Items.length }} item(s)
+            </span>
+          </div>
 
-                <th class="text-center! text-sm! w-[15%]!">Total Price (RM)</th>
-                <th class="text-center! text-sm! w-[10%]!">Action</th>
-              </tr></ng-template
+          <!-- Responsive Table -->
+          <div
+            class="invoice-items-table w-full overflow-x-auto rounded-lg border border-gray-200"
+          >
+            <p-table
+              showGridlines="true"
+              [value]="Items.controls"
+              [tableStyle]="{
+                'min-width': '1050px',
+                'table-layout': 'fixed',
+              }"
             >
-            <ng-template #body let-row let-i="rowIndex">
-              <tr [formGroup]="row">
-                <td class="w-[20%]! text-center!">
-                  <input
-                    pInputText
-                    formControlName="item"
-                    class="w-full text-center!"
-                  />
-                </td>
+              <ng-template #header>
+                <tr>
+                  <th class="text-center! w-[15%]!">Item</th>
+                  <th class="text-center! w-[25%]!">Description</th>
+                  <th class="text-center! w-[8%]!">Qty</th>
+                  <th class="text-center! w-[8%]!">Unit</th>
+                  <th class="text-center! w-[13%]!">Unit Price (RM)</th>
+                  <th class="text-center! w-[10%]!">Discount (%)</th>
+                  <th class="text-center! w-[13%]!">Total Price (RM)</th>
+                  <th class="text-center! w-[8%]!">Action</th>
+                </tr>
+              </ng-template>
 
-                <td class="w-[15%]!">
-                  <p-editor
-                    formControlName="description"
-                    [style]="{ height: '100px' }"
-                  >
-                    <ng-template #header>
-                      <span class="ql-formats">
-                        <button
-                          type="button"
-                          class="ql-bold"
-                          aria-label="Bold"
-                        ></button>
-                        <button
-                          type="button"
-                          class="ql-italic"
-                          aria-label="Italic"
-                        ></button>
-                        <button
-                          type="button"
-                          class="ql-underline"
-                          aria-label="Underline"
-                        ></button>
-                      </span> </ng-template
-                  ></p-editor>
-                </td>
-                <td class="w-[10%]!">
-                  <p-inputNumber
-                    formControlName="quantity"
-                    class="w-full!"
-                    inputStyleClass="w-full! text-center!"
-                    styleClass="w-full!"
-                  />
-                </td>
-                <td class="w-[10%]!">
-                  <input
-                    pInputText
-                    formControlName="unit"
-                    class="w-full text-center!"
-                  />
-                </td>
+              <ng-template #body let-row let-i="rowIndex">
+                <tr [formGroup]="row">
+                  <td>
+                    <input
+                      pInputText
+                      formControlName="item"
+                      class="w-full text-center"
+                      placeholder="Item"
+                    />
+                  </td>
 
-                <td class="w-[15%]!">
-                  <p-inputNumber
-                    formControlName="unitPrice"
-                    class="w-full!"
-                    inputStyleClass="w-full! text-center!"
-                    styleClass="w-full!"
-                    mode="decimal"
-                    [minFractionDigits]="2"
-                    [maxFractionDigits]="2"
-                  />
-                </td>
+                  <td>
+                    <p-editor
+                      formControlName="description"
+                      [style]="{ height: '100px' }"
+                    >
+                      <ng-template #header>
+                        <span class="ql-formats">
+                          <button
+                            type="button"
+                            class="ql-bold"
+                            aria-label="Bold"
+                          ></button>
+                          <button
+                            type="button"
+                            class="ql-italic"
+                            aria-label="Italic"
+                          ></button>
+                          <button
+                            type="button"
+                            class="ql-underline"
+                            aria-label="Underline"
+                          ></button>
+                        </span>
+                      </ng-template>
+                    </p-editor>
+                  </td>
 
-                <td class="w-[10%]!">
-                  <p-inputNumber
-                    formControlName="discount"
-                    class="w-full!"
-                    inputStyleClass="w-full! text-center!"
-                    styleClass="w-full!"
-                    mode="decimal"
-                    [minFractionDigits]="2"
-                    [maxFractionDigits]="2"
-                  />
-                </td>
+                  <td>
+                    <p-inputNumber
+                      formControlName="quantity"
+                      styleClass="w-full"
+                      inputStyleClass="w-full text-center"
+                    />
+                  </td>
 
-                <td class="w-[15%]!">
-                  <p-inputNumber
-                    formControlName="amount"
-                    [readonly]="true"
-                    class="w-full!"
-                    inputStyleClass="w-full! text-center!"
-                    styleClass="w-full!"
-                    mode="decimal"
-                    [minFractionDigits]="2"
-                    [maxFractionDigits]="2"
-                  />
-                </td>
+                  <td>
+                    <input
+                      pInputText
+                      formControlName="unit"
+                      class="w-full text-center"
+                      placeholder="Unit"
+                    />
+                  </td>
 
-                <td class="text-center w-[5%]!">
-                  <p-button
-                    icon="pi pi-trash"
-                    severity="danger"
-                    size="small"
-                    class="flex items-center justify-center"
-                    [text]="true"
-                    (onClick)="removeItem(i)"
-                  ></p-button>
-                </td>
-              </tr>
-            </ng-template>
-            <ng-template #emptymessage>
-              <tr>
-                <td colspan="100%">
-                  <div
-                    class="flex items-center justify-center text-sm text-gray-500"
-                  >
-                    No items
-                  </div>
-                </td>
-              </tr>
-            </ng-template>
-          </p-table>
+                  <td>
+                    <p-inputNumber
+                      formControlName="unitPrice"
+                      styleClass="w-full"
+                      inputStyleClass="w-full text-center"
+                      mode="decimal"
+                      [minFractionDigits]="2"
+                      [maxFractionDigits]="2"
+                    />
+                  </td>
 
-          <div class="flex gap-2 mt-3">
+                  <td>
+                    <p-inputNumber
+                      formControlName="discount"
+                      styleClass="w-full"
+                      inputStyleClass="w-full text-center"
+                      mode="decimal"
+                      [minFractionDigits]="2"
+                      [maxFractionDigits]="2"
+                    />
+                  </td>
+
+                  <td>
+                    <p-inputNumber
+                      formControlName="amount"
+                      [readonly]="true"
+                      styleClass="w-full"
+                      inputStyleClass="w-full text-center"
+                      mode="decimal"
+                      [minFractionDigits]="2"
+                      [maxFractionDigits]="2"
+                    />
+                  </td>
+
+                  <td class="text-center">
+                    <p-button
+                      icon="pi pi-trash"
+                      severity="danger"
+                      size="small"
+                      [text]="true"
+                      [rounded]="true"
+                      pTooltip="Remove item"
+                      (onClick)="removeItem(i)"
+                    ></p-button>
+                  </td>
+                </tr>
+              </ng-template>
+
+              <ng-template #emptymessage>
+                <tr>
+                  <td colspan="8">
+                    <div
+                      class="flex flex-col items-center justify-center gap-2 py-8 text-gray-400"
+                    >
+                      <i class="pi pi-inbox text-2xl"></i>
+                      <span class="text-sm">No invoice items added yet</span>
+                    </div>
+                  </td>
+                </tr>
+              </ng-template>
+            </p-table>
+          </div>
+
+          <div class="mt-3">
             <p-button
               label="Add Item"
-              styleClass="rounded-full!"
-              icon="pi pi-plus-circle"
+              icon="pi pi-plus"
               size="small"
+              severity="info"
+              [outlined]="true"
               (onClick)="addItem()"
             ></p-button>
           </div>
         </div>
-        <div class="col-span-12 flex flex-row items-center justify-end gap-2">
-          <div class="font-semibold">Total Amount :</div>
-          <p-inputnumber
-            styleClass="text-center!"
-            formControlName="totalAmount"
-            inputStyleClass="w-full font-semibold! cursor-pointer! bg-gray-200!"
-            mode="currency"
-            currency="MYR"
-            readonly="true"
-            locale="ms-MY"
-            [minFractionDigits]="2"
-          ></p-inputnumber>
+
+        <!-- Total Amount -->
+        <div
+          class="mt-6 grid grid-cols-1 sm:grid-cols-12 gap-2 sm:gap-4 items-center border-t border-gray-200 pt-4"
+        >
+          <label
+            class="sm:col-span-8 font-semibold text-gray-700 sm:text-right"
+          >
+            Total Amount
+          </label>
+
+          <div class="sm:col-span-4">
+            <p-inputnumber
+              styleClass="w-full"
+              formControlName="totalAmount"
+              inputStyleClass="w-full font-semibold bg-gray-100"
+              mode="currency"
+              currency="MYR"
+              readonly="true"
+              locale="ms-MY"
+              [minFractionDigits]="2"
+            ></p-inputnumber>
+          </div>
         </div>
       </div>
     </div>
-  </div>`,
+  `,
   styleUrl: './invoice-form.less',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -510,6 +593,7 @@ export class InvoiceForm implements OnInit, OnDestroy {
 
   LoadForm() {
     this.loadingService.start();
+
     this.invoiceService
       .GetOne({
         Page: 1,
@@ -523,31 +607,30 @@ export class InvoiceForm implements OnInit, OnDestroy {
       .subscribe({
         next: (res) => {
           this.loadingService.stop();
+
           this.FG.patchValue({
             ...res,
             invoiceDate: res?.invoiceDate ? new Date(res.invoiceDate) : null,
           });
+
+          // Clear existing items
           this.Items.clear();
 
+          // Load invoice items only once
           if (res?.invoiceItems?.length) {
-            res.invoiceItems.forEach((item: any) => {
-              this.Items.push(this.createItem(item));
-            });
+            [...res.invoiceItems]
+              .sort((a: any, b: any) => a.sortOrder - b.sortOrder)
+              .forEach((item: any) => {
+                const group = this.createItem({
+                  ...item,
+                  description: denormalizeHtml(item.description),
+                });
+
+                this.Items.push(group);
+              });
           }
 
-          res?.invoiceItems
-            ?.sort((a: any, b: any) => a.sortOrder - b.sortOrder)
-            .forEach((item: any) => {
-              const group = this.createItem({
-                ...item,
-                description: denormalizeHtml(item.description),
-              });
-
-              this.Items.push(group);
-            });
-
           this.calculateTotals();
-
           this.cdr.markForCheck();
         },
         error: (err) => {

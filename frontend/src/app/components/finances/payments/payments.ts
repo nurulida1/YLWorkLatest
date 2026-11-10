@@ -40,6 +40,7 @@ import {
   BuildFilterText,
   ValidateAllFormFields,
 } from '../../../shared/helpers/helpers';
+import { PaginatorModule, PaginatorState } from 'primeng/paginator';
 
 @Component({
   selector: 'app-payments',
@@ -57,223 +58,390 @@ import {
     DatePickerModule,
     TagModule,
     MenuModule,
+    PaginatorModule,
     HasPermissionActionDirective,
   ],
-  template: `<div class="w-full min-h-[92.9vh] flex flex-col p-5">
-      <div class="flex flex-row items-center gap-1 text-gray-500 tracking-wide">
+  template: `
+    <div class="w-full min-h-screen flex flex-col p-3 sm:p-5">
+      <!-- Breadcrumb -->
+      <div
+        class="flex items-center gap-2 text-xs sm:text-sm text-gray-500 tracking-wide"
+      >
         <div
           [routerLink]="'/dashboard'"
-          class="cursor-pointer hover:text-gray-600"
+          class="cursor-pointer hover:text-blue-600"
         >
           Dashboard
         </div>
-        /
+        <i class="pi pi-angle-right text-xs"></i>
         <div class="text-gray-700 font-semibold">Payments</div>
       </div>
+
+      <!-- Main Content -->
       <div
-        class="mt-3 border border-gray-200 rounded-md tracking-wide bg-white p-5 flex flex-col"
+        class="mt-4 border border-gray-200 rounded-xl bg-white p-3 sm:p-5 flex flex-col min-w-0"
       >
-        <div class="flex flex-row items-center justify-between">
+        <!-- Header -->
+        <div
+          class="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4"
+        >
           <div class="flex flex-col">
-            <div class="text-[20px] text-gray-700 font-semibold">Payments</div>
-            <div class="text-gray-500">
-              Manage and oversee all project payments
+            <div class="text-xl font-semibold text-gray-800">Payments</div>
+            <div class="text-sm text-gray-500 mt-1">
+              Manage and oversee all project payments.
             </div>
           </div>
-          <div class="flex flex-row items-center gap-2">
-            <div class="min-w-[300px] relative">
+
+          <div
+            class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2"
+          >
+            <div class="w-full sm:w-[280px] relative">
               <input
                 type="text"
                 pInputText
                 [(ngModel)]="search"
-                class="w-full!"
+                class="w-full"
                 placeholder="Search by payment no"
                 (keyup)="onKeyDown($event)"
               />
-              <i
-                class="pi pi-search absolute! top-3! right-2! text-gray-500!"
-              ></i>
+              <i class="pi pi-search absolute top-3 right-3 text-gray-400"></i>
             </div>
+
             <p-button
               *hasPermissionAction="'canCreate'"
               label="Add New Payment"
+              icon="pi pi-plus"
               (onClick)="ActionClick(null, 'add')"
-              icon="pi pi-plus-circle"
-              severity="info"
-              styleClass="py-2! whitespace-nowrap!"
+              styleClass="w-full sm:w-auto whitespace-nowrap bg-blue-700! border-none! hover:bg-blue-500!"
             ></p-button>
           </div>
         </div>
-        <div class="mt-3">
+
+        <!-- Summary -->
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-5">
+          <div class="rounded-lg border border-gray-200 bg-gray-50 p-3">
+            <div class="text-xs text-gray-500">Total Records</div>
+            <div class="text-xl font-semibold text-gray-800 mt-1">
+              {{ PagingSignal().totalElements || 0 }}
+            </div>
+          </div>
+
+          <div class="rounded-lg border border-gray-200 bg-gray-50 p-3">
+            <div class="text-xs text-gray-500">Current Page</div>
+            <div class="text-xl font-semibold text-gray-800 mt-1">
+              {{ Query.Page || 1 }}
+            </div>
+          </div>
+
+          <div
+            class="rounded-lg border border-gray-200 bg-gray-50 p-3 col-span-2 sm:col-span-1"
+          >
+            <div class="text-xs text-gray-500">Records Per Page</div>
+            <div class="text-xl font-semibold text-gray-800 mt-1">
+              {{ Query.PageSize || 10 }}
+            </div>
+          </div>
+        </div>
+
+        <!-- Desktop Table -->
+        <div class="hidden lg:block mt-5">
           <p-table
             #fTable
-            [value]="PagingSignal().data"
+            [value]="PagingSignal().data || []"
             [paginator]="true"
             [rows]="Query.PageSize"
-            [totalRecords]="PagingSignal().totalElements"
-            [tableStyle]="{ 'min-width': '60rem' }"
+            [totalRecords]="PagingSignal().totalElements || 0"
             [rowsPerPageOptions]="[10, 20, 30, 50]"
-            stripedRows="false"
             [lazy]="true"
             [showGridlines]="true"
+            [rowHover]="true"
+            [tableStyle]="{ 'min-width': '60rem' }"
             (onLazyLoad)="NextPage($event)"
           >
             <ng-template #header>
               <tr>
-                <th class="bg-gray-100! w-[30%]!">Client/Vendor</th>
-                <th class="bg-gray-100! text-center! w-[15%]">Payment No</th>
-                <th class="bg-gray-100! text-center! w-[10%]">Paid Date</th>
-                <th class="bg-gray-100! text-center! w-[15%]">Amount</th>
-                <th class="bg-gray-100! text-center! w-[15%]">Type</th>
-                <th class="bg-gray-100! text-center! w-[10%]">
-                  Payment Method
-                </th>
-
+                <th class="bg-gray-50! w-[25%]!">Client / Vendor</th>
+                <th class="bg-gray-50! text-center!">Payment No</th>
+                <th class="bg-gray-50! text-center!">Paid Date</th>
+                <th class="bg-gray-50! text-center!">Amount</th>
+                <th class="bg-gray-50! text-center!">Type</th>
+                <th class="bg-gray-50! text-center!">Payment Method</th>
                 <th
                   *ngIf="rights().canUpdate || rights().canDelete"
-                  class="bg-gray-100! text-center! w-[10%]"
+                  class="bg-gray-50! text-center! w-24!"
                 >
                   Action
                 </th>
               </tr>
             </ng-template>
+
             <ng-template #body let-data>
               <tr>
-                <td class="font-semibold!">
-                  {{ data.client?.name ?? data.supplier?.name }}
+                <td class="font-semibold! text-gray-700">
+                  {{ data.client?.name ?? data.supplier?.name ?? '-' }}
                 </td>
+
                 <td class="text-center! font-semibold!">
-                  {{ data.paymentNo }}
+                  {{ data.paymentNo || '-' }}
                 </td>
-                <td class="text-center!">
+
+                <td class="text-center! whitespace-nowrap">
                   {{ data.paymentDate | date: 'dd/MM/yyyy' }}
                 </td>
-                <td class="text-center!">
+
+                <td class="text-center! font-semibold! whitespace-nowrap">
                   {{ data.amount | currency: 'RM ' }}
                 </td>
+
                 <td class="text-center!">
                   <p-tag
                     [value]="data.clientId ? 'Income' : 'Expense'"
                     [severity]="data.clientId ? 'success' : 'danger'"
                   ></p-tag>
                 </td>
+
                 <td class="text-center!">
-                  {{ data.paymentMode }}
+                  {{ data.paymentMode || '-' }}
                 </td>
+
                 <td
                   *ngIf="rights().canUpdate || rights().canDelete"
                   class="text-center!"
                 >
-                  <div class="flex items-center justify-center">
-                    <i
-                      (click)="onEllipsisClick($event, data, menu)"
-                      class="pi pi-ellipsis-h cursor-pointer"
-                    ></i>
-                  </div>
+                  <button
+                    type="button"
+                    (click)="onEllipsisClick($event, data, menu)"
+                    class="inline-flex items-center justify-center rounded-lg p-2 text-gray-600 hover:bg-gray-100"
+                    title="Payment actions"
+                  >
+                    <i class="pi pi-ellipsis-h"></i>
+                  </button>
                 </td>
               </tr>
             </ng-template>
+
             <ng-template #emptymessage>
               <tr>
-                <td colspan="100%" class="border-x!">
-                  <div class="text-center text-gray-500">
-                    No project found in records.
-                  </div>
+                <td colspan="7" class="text-center! py-8! text-gray-500">
+                  <i class="pi pi-wallet text-2xl mb-2 block"></i>
+                  No payment found in records.
                 </td>
               </tr>
             </ng-template>
           </p-table>
         </div>
+
+        <!-- Mobile / Tablet Cards -->
+        <div class="lg:hidden mt-5 flex flex-col gap-3">
+          @for (data of PagingSignal().data || []; track data.id) {
+            <div class="border border-gray-200 rounded-xl p-4 bg-white">
+              <!-- Card Header -->
+              <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                  <div class="text-xs text-gray-500">Payment No.</div>
+                  <div class="font-semibold text-gray-800 break-all mt-1">
+                    {{ data.paymentNo || '-' }}
+                  </div>
+                  <div class="mt-2">
+                    <p-tag
+                      [value]="data.clientId ? 'Income' : 'Expense'"
+                      [severity]="data.clientId ? 'success' : 'danger'"
+                    ></p-tag>
+                  </div>
+                </div>
+
+                <div class="text-right shrink-0">
+                  <div class="text-xs text-gray-500">Amount</div>
+                  <div
+                    class="font-bold text-blue-700 text-base mt-1 whitespace-nowrap"
+                  >
+                    {{ data.amount | currency: 'RM ' }}
+                  </div>
+                </div>
+              </div>
+
+              <div class="border-t border-gray-100 my-3"></div>
+
+              <!-- Card Details -->
+              <div class="grid grid-cols-2 gap-x-3 gap-y-4">
+                <div class="col-span-2 min-w-0">
+                  <div class="text-xs text-gray-500">Client / Vendor</div>
+                  <div
+                    class="text-sm text-gray-700 font-semibold mt-1 break-words"
+                  >
+                    {{ data.client?.name ?? data.supplier?.name ?? '-' }}
+                  </div>
+                </div>
+
+                <div class="min-w-0">
+                  <div class="text-xs text-gray-500">Payment Date</div>
+                  <div class="text-sm text-gray-700 font-medium mt-1">
+                    {{ data.paymentDate | date: 'dd/MM/yyyy' }}
+                  </div>
+                </div>
+
+                <div class="min-w-0">
+                  <div class="text-xs text-gray-500">Payment Method</div>
+                  <div class="text-sm text-gray-700 font-medium mt-1">
+                    {{ data.paymentMode || '-' }}
+                  </div>
+                </div>
+              </div>
+
+              <!-- Actions -->
+              <div
+                *ngIf="rights().canUpdate || rights().canDelete"
+                class="border-t border-gray-100 mt-3 pt-3 flex justify-end"
+              >
+                <button
+                  type="button"
+                  (click)="onEllipsisClick($event, data, menu)"
+                  class="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                >
+                  <i class="pi pi-ellipsis-h"></i>
+                  Actions
+                </button>
+              </div>
+            </div>
+          } @empty {
+            <div
+              class="border border-gray-200 rounded-xl p-8 text-center text-gray-500"
+            >
+              <i class="pi pi-wallet text-3xl mb-3 block"></i>
+              <div class="font-medium">No payment found</div>
+              <div class="text-sm mt-1">
+                There are no payment records to display.
+              </div>
+            </div>
+          }
+
+          <!-- Mobile Pagination -->
+          <p-paginator
+            [first]="((Query.Page || 1) - 1) * (Query.PageSize || 10)"
+            [rows]="Query.PageSize || 10"
+            [totalRecords]="PagingSignal().totalElements || 0"
+            [rowsPerPageOptions]="[10, 20, 30, 50]"
+            (onPageChange)="onMobilePageChange($event)"
+            styleClass="border border-gray-200 rounded-lg"
+          ></p-paginator>
+        </div>
       </div>
     </div>
-    <p-menu #menu [model]="menuItems" [popup]="true"></p-menu>
 
+    <!-- Action Menu -->
+    <p-menu #menu [model]="menuItems" [popup]="true" appendTo="body"></p-menu>
+
+    <!-- Add / Update Payment Dialog -->
     <p-dialog
       *ngIf="visible"
       [(visible)]="visible"
       [modal]="true"
       [draggable]="false"
-      closable="true"
+      [closable]="true"
+      [autoZIndex]="true"
+      [baseZIndex]="10000"
+      [appendTo]="'body'"
+      [breakpoints]="{ '640px': '96vw', '960px': '85vw' }"
+      styleClass="payment-dialog"
       (onHide)="visible = false"
-      styleClass="!relative !border-0 !bg-white overflow-y-auto! w-[90%] lg:w-[70%] xl:w-[50%]"
     >
       <ng-template #headless>
-        <div class="flex flex-col p-5">
-          <div class="font-semibold text-[20px]">{{ title }}</div>
-          <div class="font-normal tracking-wide text-gray-500 text-[14px]">
-            Fill in all required field.
+        <div class="flex flex-col min-h-0">
+          <!-- Dialog Header -->
+          <div class="p-4 sm:p-6 pb-3">
+            <div class="font-semibold text-lg sm:text-xl text-gray-800">
+              {{ title }}
+            </div>
+            <div class="text-sm text-gray-500 mt-1">
+              Fill in all required fields.
+            </div>
           </div>
-          <div class="border-b border-gray-200 w-full mt-2 mb-2"></div>
+
+          <div class="border-b border-gray-200"></div>
+
+          <!-- Form -->
           <div
             [formGroup]="FG"
-            class="mt-3 grid grid-cols-12 gap-3 text-[15px]"
+            class="p-4 sm:p-6 grid grid-cols-1 sm:grid-cols-2 gap-4 overflow-y-auto"
           >
-            <div class="col-span-12 lg:col-span-6 flex flex-col gap-1">
-              <div>Payment No <span class="text-red-500">*</span></div>
+            <div class="flex flex-col gap-1">
+              <label class="text-sm font-medium text-gray-700">
+                Payment No <span class="text-red-500">*</span>
+              </label>
               <input
                 type="text"
                 pInputText
-                class="w-full!"
+                class="w-full"
                 formControlName="paymentNo"
               />
             </div>
 
-            <div class="col-span-12 lg:col-span-6 flex flex-col gap-1">
-              <div>Client</div>
+            <div class="flex flex-col gap-1">
+              <label class="text-sm font-medium text-gray-700">Client</label>
               <p-select
                 [options]="clients || []"
                 appendTo="body"
-                styleClass="text-[15px]!"
-                inputStyleClass="text-[15px]!"
-                panelStyleClass="text-[15px]!"
+                styleClass="w-full"
+                inputStyleClass="w-full"
+                panelStyleClass="text-sm"
                 formControlName="clientId"
-                [showClear]="FG.get('clientId')?.value"
+                [showClear]="!!FG.get('clientId')?.value"
                 [filter]="true"
+                placeholder="Select client"
               ></p-select>
             </div>
 
-            <div class="col-span-12 lg:col-span-6 flex flex-col gap-1">
-              <div>Invoice No</div>
+            <div class="flex flex-col gap-1">
+              <label class="text-sm font-medium text-gray-700"
+                >Invoice No</label
+              >
               <p-select
                 [options]="clients || []"
                 appendTo="body"
-                styleClass="text-[15px]!"
-                inputStyleClass="text-[15px]!"
-                panelStyleClass="text-[15px]!"
+                styleClass="w-full"
+                inputStyleClass="w-full"
+                panelStyleClass="text-sm"
                 formControlName="invoiceId"
-                [showClear]="FG.get('invoiceId')?.value"
+                [showClear]="!!FG.get('invoiceId')?.value"
                 [filter]="true"
+                placeholder="Select invoice"
               ></p-select>
             </div>
 
-            <div class="col-span-12 lg:col-span-6 flex flex-col gap-1">
-              <div>Reference No <span class="text-red-500">*</span></div>
+            <div class="flex flex-col gap-1">
+              <label class="text-sm font-medium text-gray-700">
+                Reference No <span class="text-red-500">*</span>
+              </label>
               <input
                 type="text"
                 pInputText
-                class="w-full!"
+                class="w-full"
                 formControlName="referenceNo"
               />
             </div>
 
-            <div class="col-span-12 lg:col-span-6 flex flex-col gap-1">
-              <div>Payment Date <span class="text-red-500">*</span></div>
+            <div class="flex flex-col gap-1">
+              <label class="text-sm font-medium text-gray-700">
+                Payment Date <span class="text-red-500">*</span>
+              </label>
               <p-datepicker
                 appendTo="body"
                 dateFormat="dd/mm/yy"
                 [showIcon]="true"
                 styleClass="w-full"
-                inputStyleClass="w-full!"
+                inputStyleClass="w-full"
                 formControlName="paymentDate"
               ></p-datepicker>
             </div>
 
-            <div class="col-span-12 lg:col-span-6 flex flex-col gap-1">
-              <div>Payment Mode <span class="text-red-500">*</span></div>
+            <div class="flex flex-col gap-1">
+              <label class="text-sm font-medium text-gray-700">
+                Payment Mode <span class="text-red-500">*</span>
+              </label>
               <p-select
                 appendTo="body"
                 styleClass="w-full"
-                inputStyleClass="w-full!"
+                inputStyleClass="w-full"
                 formControlName="paymentMode"
                 [options]="[
                   { label: 'Cash', value: 'Cash' },
@@ -281,15 +449,18 @@ import {
                   { label: 'Bank Transfer', value: 'Bank Transfer' },
                   { label: 'Paypal', value: 'Paypal' },
                 ]"
+                placeholder="Select payment mode"
               ></p-select>
             </div>
 
-            <div class="col-span-12 lg:col-span-6 flex flex-col gap-1">
-              <div>Amount <span class="text-red-500">*</span></div>
+            <div class="flex flex-col gap-1">
+              <label class="text-sm font-medium text-gray-700">
+                Amount <span class="text-red-500">*</span>
+              </label>
               <p-inputnumber
                 appendTo="body"
                 styleClass="w-full"
-                inputStyleClass="w-full !text-[15px]"
+                inputStyleClass="w-full"
                 formControlName="amount"
                 mode="currency"
                 currency="MYR"
@@ -297,16 +468,17 @@ import {
                 [useGrouping]="true"
                 [minFractionDigits]="2"
                 [maxFractionDigits]="2"
-              >
-              </p-inputnumber>
+              ></p-inputnumber>
             </div>
 
-            <div class="col-span-12 lg:col-span-6 flex flex-col gap-1">
-              <div>Paid Amount <span class="text-red-500">*</span></div>
+            <div class="flex flex-col gap-1">
+              <label class="text-sm font-medium text-gray-700"
+                >Paid Amount</label
+              >
               <p-inputnumber
                 appendTo="body"
                 styleClass="w-full"
-                inputStyleClass="w-full !text-[15px]"
+                inputStyleClass="w-full"
                 formControlName="paidAmount"
                 mode="currency"
                 currency="MYR"
@@ -314,16 +486,17 @@ import {
                 [useGrouping]="true"
                 [minFractionDigits]="2"
                 [maxFractionDigits]="2"
-              >
-              </p-inputnumber>
+              ></p-inputnumber>
             </div>
 
-            <div class="col-span-12 lg:col-span-6 flex flex-col gap-1">
-              <div>Due Amount <span class="text-red-500">*</span></div>
+            <div class="flex flex-col gap-1">
+              <label class="text-sm font-medium text-gray-700"
+                >Due Amount</label
+              >
               <p-inputnumber
                 appendTo="body"
                 styleClass="w-full"
-                inputStyleClass="w-full !text-[15px]"
+                inputStyleClass="w-full"
                 formControlName="dueAmount"
                 mode="currency"
                 currency="MYR"
@@ -331,12 +504,11 @@ import {
                 [useGrouping]="true"
                 [minFractionDigits]="2"
                 [maxFractionDigits]="2"
-              >
-              </p-inputnumber>
+              ></p-inputnumber>
             </div>
 
-            <div class="col-span-12 lg:col-span-6 flex flex-col gap-1">
-              <div>Notes</div>
+            <div class="flex flex-col gap-1">
+              <label class="text-sm font-medium text-gray-700">Notes</label>
               <input
                 type="text"
                 pInputText
@@ -345,65 +517,75 @@ import {
               />
             </div>
 
-            <div class="col-span-12 flex flex-col gap-1">
-              <div>Attachment <span class="text-red-500">*</span></div>
+            <!-- Attachment -->
+            <div class="sm:col-span-2 flex flex-col gap-2">
+              <label class="text-sm font-medium text-gray-700">
+                Attachment <span class="text-red-500">*</span>
+              </label>
+
               <div
-                class="p-5 bg-gray-100 border-2 rounded-lg border-gray-300 border-dashed flex flex-col items-center justify-center"
+                class="p-4 sm:p-5 bg-gray-50 border-2 rounded-xl border-gray-300 border-dashed flex flex-col items-center justify-center"
               >
                 <div
-                  class="w-20 h-20 border"
+                  class="w-24 h-24 border border-gray-200 rounded-lg overflow-hidden bg-white"
                   *ngIf="FG.get('attachment')?.value"
                 >
                   <img
                     [src]="FG.get('attachment')?.value"
-                    alt=""
+                    alt="Payment attachment preview"
                     class="w-full h-full object-cover"
                   />
                 </div>
+
                 <div
                   class="pi pi-cloud-upload text-gray-400! text-3xl!"
                   *ngIf="!FG.get('attachment')?.value"
                 ></div>
-                <div class="text-gray-500 text-[14px] mt-2 tracking-wide">
-                  Drop your attachment here or
-                  <a
-                    class="text-blue-500 hover:underline cursor-pointer"
+
+                <div class="text-gray-500 text-sm mt-3 text-center">
+                  Choose an image attachment or
+                  <button
+                    type="button"
+                    class="text-blue-600 hover:underline font-medium"
                     (click)="fileInput.click()"
-                    >Browse</a
                   >
+                    Browse
+                  </button>
                 </div>
               </div>
 
               <input
                 type="file"
                 #fileInput
-                style="display: none"
+                class="hidden"
                 accept="image/*"
                 (change)="onFileSelected($event)"
               />
             </div>
           </div>
-          <div class="border-b border-gray-200 mt-3 mb-3"></div>
-          <div class="flex flex-row justify-end items-center gap-2 w-full">
+
+          <!-- Footer -->
+          <div
+            class="border-t border-gray-200 p-4 sm:px-6 flex flex-col-reverse sm:flex-row sm:justify-end gap-2"
+          >
             <p-button
               (onClick)="visible = false"
               label="Cancel"
               severity="secondary"
-              styleClass="px-7! tracking-wide! py-1.5! border-gray-200!"
-            >
-            </p-button>
+              styleClass="w-full sm:w-auto"
+            ></p-button>
 
             <p-button
               (onClick)="Submit()"
               [label]="isUpdate ? 'Save Changes' : 'Create'"
-              severity="info"
-              styleClass="px-7! tracking-wide! py-1.5!"
-            >
-            </p-button>
+              icon="pi pi-save"
+              styleClass="w-full sm:w-auto border-none! bg-blue-700! hover:bg-blue-500!"
+            ></p-button>
           </div>
         </div>
       </ng-template>
-    </p-dialog> `,
+    </p-dialog>
+  `,
   styleUrl: './payments.less',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -672,6 +854,16 @@ export class Payments implements OnInit, OnDestroy {
 
       reader.readAsDataURL(file);
     }
+  }
+
+  onMobilePageChange(event: PaginatorState): void {
+    const first = event.first ?? 0;
+    const rows = event.rows ?? this.Query.PageSize ?? 10;
+
+    this.Query.Page = Math.floor(first / rows) + 1;
+    this.Query.PageSize = rows;
+
+    this.GetData();
   }
 
   ngOnDestroy(): void {

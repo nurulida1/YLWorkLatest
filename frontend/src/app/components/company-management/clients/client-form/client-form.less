@@ -1,3 +1,65 @@
 :host {
   display: block;
+  width: 100%;
+  min-width: 0;
+}
+
+.client-form-page {
+  width: 100%;
+  min-width: 0;
+  overflow-x: hidden;
+}
+
+.client-form-page section {
+  min-width: 0;
+}
+
+.client-form-page input,
+.client-form-page p-select {
+  max-width: 100%;
+  min-width: 0;
+}
+
+.client-form-page label {
+  line-height: 1.4;
+}
+
+/* PrimeNG select */
+:host ::ng-deep .p-select {
+  width: 100%;
+  min-width: 0;
+}
+
+/* PrimeNG inputs */
+:host ::ng-deep .p-inputtext {
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* Checkbox alignment */
+:host ::ng-deep .p-checkbox {
+  flex-shrink: 0;
+}
+
+/* Mobile */
+@media (max-width: 639px) {
+  .client-form-page {
+    padding: 1rem;
+  }
+
+  .client-form-page section {
+    border-radius: 0.75rem;
+  }
+
+  .client-form-page input,
+  .client-form-page .p-select {
+    min-height: 2.75rem;
+  }
+}
+
+/* Tablet and desktop */
+@media (min-width: 640px) {
+  .client-form-page {
+    overflow-x: visible;
+  }
 }

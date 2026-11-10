@@ -1,3 +1,127 @@
 :host {
   display: block;
+  width: 100%;
+  min-width: 0;
+}
+
+:host,
+:host * {
+  box-sizing: border-box;
+}
+
+/* Form controls */
+:host ::ng-deep .p-inputtext,
+:host ::ng-deep textarea {
+  width: 100%;
+  min-width: 0;
+}
+
+:host ::ng-deep .p-button {
+  white-space: nowrap;
+}
+
+/* Tab navigation container */
+:host ::ng-deep .company-form-tablist {
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  white-space: nowrap;
+  border-bottom: 1px solid #e2e8f0;
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* PrimeNG internal navigation wrapper */
+:host ::ng-deep .company-form-tablist .p-tablist-content {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: visible !important;
+}
+
+/* Actual tab list */
+:host ::ng-deep .company-form-tablist .p-tablist-tab-list {
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  width: max-content;
+  min-width: 100%;
+  overflow: visible !important;
+}
+
+/* Individual tabs */
+:host ::ng-deep .company-form-tablist .p-tab {
+  display: inline-flex;
+  flex: 0 0 auto !important;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem 1.25rem;
+  color: #64748b;
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: color 0.2s ease;
+}
+
+/* Active tab */
+:host ::ng-deep .company-form-tablist .p-tab[aria-selected="true"] {
+  color: #2148bc;
+}
+
+/* Tab panels */
+:host ::ng-deep .company-form-tabpanels {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow: visible;
+  padding: 1.5rem;
+}
+
+:host ::ng-deep .company-form-tabpanels .p-tabpanel {
+  width: 100%;
+  min-width: 0;
+}
+
+/* Checkbox alignment */
+:host ::ng-deep .p-checkbox {
+  flex-shrink: 0;
+}
+
+/* Mobile */
+@media (max-width: 640px) {
+  .company-form-page {
+    padding: 0.75rem;
+  }
+
+  :host ::ng-deep .company-form-tablist {
+    scrollbar-width: thin;
+  }
+
+  :host ::ng-deep .company-form-tablist .p-tab {
+    flex: 0 0 auto !important;
+    padding: 0.85rem 1rem;
+    font-size: 0.8rem;
+  }
+
+  :host ::ng-deep .company-form-tabpanels {
+    padding: 1rem;
+  }
+
+  :host ::ng-deep .company-form-tabpanels .p-tabpanel {
+    min-width: 0;
+  }
+
+  :host ::ng-deep .p-inputtext {
+    font-size: 0.875rem;
+  }
+}
+
+/* Tablet and desktop */
+@media (min-width: 641px) {
+  :host ::ng-deep .company-form-tabpanels {
+    padding: 1.5rem;
+  }
 }

@@ -1,3 +1,76 @@
 :host {
   display: block;
+  width: 100%;
+  min-width: 0;
+}
+
+/* Keep the invoice form within the available viewport */
+:host,
+:host * {
+  box-sizing: border-box;
+}
+
+/* Responsive item table */
+.invoice-items-table {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+}
+
+:host ::ng-deep .invoice-items-table .p-datatable-wrapper {
+  overflow-x: auto;
+}
+
+:host ::ng-deep .invoice-items-table .p-datatable-table {
+  min-width: 1050px;
+}
+
+:host ::ng-deep .invoice-items-table th {
+  padding: 0.75rem 0.5rem;
+  background: #f8fafc;
+  color: #475569;
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+:host ::ng-deep .invoice-items-table td {
+  padding: 0.6rem 0.5rem;
+  vertical-align: middle;
+}
+
+/* Editor sizing */
+:host ::ng-deep .invoice-items-table .p-editor {
+  width: 100%;
+  min-width: 0;
+}
+
+:host ::ng-deep .invoice-items-table .p-editor-content {
+  min-height: 70px;
+}
+
+/* Dropdowns and date picker */
+:host ::ng-deep p-select,
+:host ::ng-deep p-datepicker,
+:host ::ng-deep p-inputnumber {
+  width: 100%;
+  min-width: 0;
+}
+
+:host ::ng-deep .p-inputnumber-input {
+  min-width: 0;
+}
+
+/* Mobile */
+@media (max-width: 640px) {
+  :host ::ng-deep .invoice-items-table .p-datatable-table {
+    min-width: 1050px;
+  }
+
+  :host ::ng-deep .invoice-items-table th,
+  :host ::ng-deep .invoice-items-table td {
+    padding: 0.5rem;
+  }
 }

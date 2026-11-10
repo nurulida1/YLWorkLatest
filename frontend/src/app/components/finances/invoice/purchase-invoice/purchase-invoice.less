@@ -1,3 +1,56 @@
 :host {
   display: block;
+  min-width: 0;
+  width: 100%;
+}
+
+/* Dialog */
+:host ::ng-deep .purchase-invoice-dialog {
+  width: 90vw;
+  max-width: 900px;
+  max-height: calc(100dvh - 40px);
+  display: flex;
+  flex-direction: column;
+}
+
+:host ::ng-deep .purchase-invoice-dialog .p-dialog-content {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  min-height: 0;
+}
+
+:host ::ng-deep .purchase-invoice-dialog .p-dialog-header {
+  flex-shrink: 0;
+}
+
+:host ::ng-deep .purchase-invoice-dialog .p-dialog-footer {
+  flex-shrink: 0;
+}
+
+:host ::ng-deep .p-inputnumber-input {
+  min-width: 0;
+}
+
+/* Mobile */
+@media (max-width: 640px) {
+  :host ::ng-deep .purchase-invoice-dialog {
+    width: calc(100vw - 24px) !important;
+    max-width: none !important;
+    max-height: calc(100dvh - 120px) !important;
+    margin-top: 0 !important;
+    margin-bottom: 90px !important;
+  }
+
+  :host ::ng-deep .purchase-invoice-dialog .p-dialog-content {
+    padding: 1rem;
+    overflow-y: auto !important;
+  }
+
+  :host ::ng-deep .purchase-invoice-dialog .p-dialog-header {
+    padding: 1rem;
+  }
+
+  :host ::ng-deep .purchase-invoice-dialog .p-dialog-footer {
+    padding: 1rem;
+  }
 }

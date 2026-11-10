@@ -1,3 +1,68 @@
 :host {
   display: block;
+  width: 100%;
+  min-width: 0;
+}
+
+.supplier-page {
+  min-width: 0;
+}
+
+.supplier-desktop-table {
+  display: block;
+  width: 100%;
+  min-width: 0;
+}
+
+.supplier-mobile-list {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .supplier-desktop-table {
+    display: none;
+  }
+
+  .supplier-mobile-list {
+    display: block;
+  }
+}
+
+:host ::ng-deep {
+  .p-datatable {
+    width: 100%;
+  }
+
+  .p-datatable-table {
+    width: 100%;
+  }
+
+  .p-datatable-thead > tr > th {
+    padding: 0.85rem 1rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #475569;
+    white-space: nowrap;
+  }
+
+  .p-datatable-tbody > tr > td {
+    padding: 0.85rem 1rem;
+    font-size: 0.875rem;
+    color: #475569;
+  }
+
+  .p-paginator {
+    padding: 0.75rem 0;
+  }
+
+  .p-image img {
+    display: block;
+    object-fit: contain;
+  }
+}
+
+@media (max-width: 640px) {
+  .supplier-page {
+    padding: 0.75rem;
+  }
 }

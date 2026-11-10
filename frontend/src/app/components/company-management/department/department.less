@@ -1,3 +1,229 @@
 :host {
   display: block;
+  width: 100%;
+  min-width: 0;
+}
+
+:host,
+:host * {
+  box-sizing: border-box;
+}
+
+/* Primary buttons */
+:host ::ng-deep .department-primary-button {
+  background: #2148bc !important;
+  border: 1px solid #2148bc !important;
+  color: #fff !important;
+  border-radius: 0.625rem !important;
+  padding: 0.7rem 1.1rem !important;
+  font-size: 0.875rem !important;
+  font-weight: 600 !important;
+  box-shadow: none !important;
+}
+
+:host ::ng-deep .department-primary-button:hover {
+  background: #193b9f !important;
+  border-color: #193b9f !important;
+}
+
+/* Search */
+:host ::ng-deep .department-search .p-inputtext {
+  width: 100%;
+  min-width: 0;
+  padding: 0.7rem 0.75rem 0.7rem 2.4rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.625rem;
+  font-size: 0.875rem;
+  box-shadow: none;
+}
+
+:host ::ng-deep .department-search .p-inputtext:focus {
+  border-color: #2148bc;
+}
+
+/* Desktop table */
+.department-desktop-view {
+  display: block;
+  min-width: 0;
+}
+
+.department-mobile-view {
+  display: none;
+}
+
+:host ::ng-deep .department-table {
+  width: 100%;
+}
+
+:host ::ng-deep .department-table .p-datatable-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+:host ::ng-deep .department-table .p-datatable-thead > tr > th {
+  padding: 1rem 1.25rem;
+  background: #f8fafc;
+  color: #64748b;
+  border-bottom: 1px solid #e2e8f0;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+:host ::ng-deep .department-table .p-datatable-tbody > tr > td {
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: middle;
+}
+
+:host ::ng-deep .department-table .p-datatable-tbody > tr:hover {
+  background: #f8fafc;
+}
+
+:host ::ng-deep .department-table .p-paginator {
+  justify-content: flex-end;
+  padding: 1rem 0 0;
+  border: none;
+  background: transparent;
+}
+
+:host ::ng-deep .department-table .p-paginator .p-paginator-page,
+:host ::ng-deep .department-table .p-paginator .p-paginator-next,
+:host ::ng-deep .department-table .p-paginator .p-paginator-prev {
+  border-radius: 0.5rem;
+}
+
+/* Mobile cards */
+.department-mobile-card {
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.department-mobile-card:active {
+  border-color: #bfdbfe;
+}
+
+/* Mobile pagination buttons */
+:host ::ng-deep .department-page-button {
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0 !important;
+  border-radius: 0.625rem !important;
+}
+
+/* Dialog */
+:host ::ng-deep .department-dialog {
+  width: 550px;
+  max-width: 95vw;
+  border-radius: 1rem;
+  overflow: hidden;
+}
+
+:host ::ng-deep .department-dialog .p-dialog-content {
+  padding: 0;
+  overflow: hidden;
+}
+
+:host ::ng-deep .department-dialog .p-inputtext,
+:host ::ng-deep .department-dialog .p-select {
+  width: 100%;
+  min-width: 0;
+}
+
+:host ::ng-deep .department-dialog .p-inputtext {
+  padding: 0.7rem 0.8rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.625rem;
+  font-size: 0.875rem;
+  box-shadow: none;
+}
+
+:host ::ng-deep .department-dialog .p-inputtext:focus {
+  border-color: #2148bc;
+}
+
+:host ::ng-deep .department-dialog .p-select {
+  border-radius: 0.625rem;
+  border-color: #e2e8f0;
+  box-shadow: none;
+}
+
+:host ::ng-deep .department-dialog .p-select-label {
+  font-size: 0.875rem;
+}
+
+.department-dialog-content {
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+}
+
+/* Action menu */
+:host ::ng-deep .department-action-menu {
+  min-width: 9rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  box-shadow: 0 8px 24px rgb(15 23 42 / 10%);
+}
+
+:host ::ng-deep .department-action-menu .p-menu-item-link {
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+}
+
+/* Mobile */
+@media (max-width: 767px) {
+  .department-page {
+    padding: 0.75rem;
+  }
+
+  .department-desktop-view {
+    display: none;
+  }
+
+  .department-mobile-view {
+    display: block;
+  }
+
+  :host ::ng-deep .department-dialog {
+    width: calc(100vw - 1.5rem) !important;
+    max-width: calc(100vw - 1.5rem) !important;
+    margin: 0.75rem;
+    border-radius: 1rem;
+  }
+
+  :host ::ng-deep .department-dialog .p-dialog-content {
+    max-height: calc(100dvh - 2rem);
+  }
+
+  .department-dialog-content {
+    max-height: calc(100dvh - 190px);
+    overflow-y: auto;
+  }
+}
+
+/* Tablet and desktop */
+@media (min-width: 768px) {
+  .department-desktop-view {
+    display: block;
+  }
+
+  .department-mobile-view {
+    display: none;
+  }
+}
+:host ::ng-deep .department-delete-dialog {
+  border-radius: 1rem;
+  overflow: hidden;
+}
+
+:host ::ng-deep .department-delete-dialog .p-dialog-content {
+  padding: 1.5rem 1.5rem 0.5rem;
+}
+
+:host ::ng-deep .department-delete-dialog .p-dialog-footer {
+  padding: 1rem 1.5rem 1.5rem;
 }

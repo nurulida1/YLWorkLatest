@@ -1,3 +1,105 @@
 :host {
   display: block;
+  width: 100%;
+  min-width: 0;
+}
+
+.supplier-form-page {
+  width: 100%;
+  min-width: 0;
+}
+
+.supplier-form-container {
+  min-width: 0;
+  overflow: visible;
+}
+
+/* Tabs */
+:host ::ng-deep {
+  .supplier-tabs {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .supplier-tablist {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    white-space: nowrap;
+    scrollbar-width: thin;
+    -webkit-overflow-scrolling: touch;
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  .supplier-tablist .p-tablist-content {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: visible !important;
+  }
+
+  .supplier-tablist .p-tablist-tab-list {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    width: max-content;
+    min-width: 100%;
+    overflow: visible !important;
+  }
+
+  .supplier-tablist .p-tab {
+    display: inline-flex;
+    flex: 0 0 auto !important;
+    align-items: center;
+    padding: 1rem 1.25rem;
+    color: #64748b;
+    font-size: 0.8rem;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .supplier-tablist .p-tab-active {
+    color: #2148bc;
+  }
+
+  .supplier-tabpanels {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow: visible;
+    padding: 1.5rem;
+  }
+
+  .p-inputtext {
+    width: 100%;
+    max-width: 100%;
+  }
+}
+
+/* Tablet and mobile */
+@media (max-width: 767px) {
+  :host ::ng-deep {
+    .supplier-tabpanels {
+      padding: 1rem;
+    }
+
+    .supplier-tablist .p-tab {
+      padding: 0.9rem 1rem;
+      font-size: 0.75rem;
+    }
+  }
+}
+
+/* Small mobile */
+@media (max-width: 480px) {
+  :host ::ng-deep {
+    .supplier-tabpanels {
+      padding: 0.85rem;
+    }
+  }
 }

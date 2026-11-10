@@ -139,6 +139,16 @@ export const APP_MANAGEMENT_MENU: AppNavItem[] = [
         moduleKey: 'projects',
       },
       {
+        label: 'Work Order',
+        route: '/work-order',
+        moduleKey: 'work-order',
+      },
+      {
+        label: 'Job Sheet',
+        route: '/job-sheet',
+        moduleKey: 'job-sheet',
+      },
+      {
         label: 'Quotations',
         route: '/quotations',
         moduleKey: 'quotations',

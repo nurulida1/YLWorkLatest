@@ -1,3 +1,62 @@
 :host {
   display: block;
+  width: 100%;
+  min-width: 0;
+}
+
+:host ::ng-deep {
+  .p-inputtext,
+  .p-textarea,
+  .p-datepicker,
+  .p-inputnumber,
+  .p-select {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .p-datepicker-input {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .p-inputnumber-input {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .grn-items-table {
+    width: 100%;
+
+    .p-datatable-table {
+      width: 100%;
+    }
+
+    .p-datatable-thead > tr > th,
+    .p-datatable-tbody > tr > td,
+    .p-datatable-tfoot > tr > td {
+      padding: 0.75rem;
+      vertical-align: middle;
+    }
+  }
+
+  .p-button {
+    justify-content: center;
+  }
+}
+
+@media (max-width: 767px) {
+  :host ::ng-deep {
+    .p-inputnumber-button {
+      min-width: 2rem;
+    }
+
+    .p-datepicker,
+    .p-inputnumber {
+      width: 100%;
+    }
+
+    .p-button {
+      width: 100%;
+    }
+  }
 }

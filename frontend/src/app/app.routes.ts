@@ -381,6 +381,44 @@ export const routes: Routes = [
     ],
   },
 
+  // Work Order
+  {
+    path: 'work-order',
+    data: { moduleKey: 'work-order' },
+    loadComponent: () =>
+      import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
+        (m) => m.ResponsiveLayout,
+      ),
+    children: [
+      {
+        path: '',
+        loadChildren: () =>
+          import('./components/project-management/work-order/work-order-routing.module').then(
+            (m) => m.WorkOrderRoutingModule,
+          ),
+      },
+    ],
+  },
+
+  // Job Sheet
+  {
+    path: 'job-sheet',
+    data: { moduleKey: 'job-sheet' },
+    loadComponent: () =>
+      import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
+        (m) => m.ResponsiveLayout,
+      ),
+    children: [
+      {
+        path: '',
+        loadChildren: () =>
+          import('./components/project-management/job-sheet/job-sheet-routing.module').then(
+            (m) => m.JobSheetRoutingModule,
+          ),
+      },
+    ],
+  },
+
   // Quotations
   {
     path: 'quotations',

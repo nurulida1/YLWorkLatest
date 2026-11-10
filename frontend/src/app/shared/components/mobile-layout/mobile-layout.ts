@@ -412,15 +412,15 @@ export class MobileLayout implements OnInit {
   // STATE
   // ==========================================
 
-  showQuickActions = false;
-  showWorkMenu = false;
+  showQuickActions: boolean = false;
+  showWorkMenu: boolean = false;
 
   openMenu: string | null = null;
 
   currentUser: LoginResponse | null = null;
-  currentUrl = '';
+  currentUrl: string = '';
 
-  unreadCount = 0;
+  unreadCount: number = 0;
 
   // ==========================================
   // MENU DESCRIPTIONS

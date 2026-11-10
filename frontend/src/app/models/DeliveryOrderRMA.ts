@@ -1,62 +1,76 @@
 import { BaseModel } from './BaseModel';
-import { CompanyDto } from './Company';
+import { CompanyDropdownItem, CompanyDto } from './Company';
+import { DeliveryOrderDto, DODropdownDto } from './DeliveryOrder';
+import { ProjectDropdownDto } from './Project';
+import { UserDto } from './User';
 
 export interface DeliveryOrderRMA extends BaseModel {
   deliveryOrderRMANo: string;
-  deliveryOrderId: string;
-  date: Date;
-  returnType: string;
-  returnQuantity: number;
-  returnMethod: string;
-  returnAction: string;
 
-  senderCompanyId?: string;
-  senderCompany?: CompanyDto;
+  deliveryOrderId: string | null;
+  deliveryOrder?: DeliveryOrderDto | null;
 
-  receiverCompanyId?: string;
-  receiverCompany?: CompanyDto;
+  date: Date | string | null;
 
-  reason: string;
-  remarks: string;
+  returnType: string | null;
+  returnQuantity: number | null;
+  returnMethod: string | null;
+  returnAction: string | null;
+
+  senderCompanyId: string | null;
+  senderCompany?: CompanyDto | null;
+
+  receiverCompanyId: string | null;
+  receiverCompany?: CompanyDto | null;
+
+  reason: string | null;
+  remarks: string | null;
   status: string;
 
-  actionUserId: string;
-  actionUserName: string;
+  actionUserId: string | null;
+  actionUserName: string | null;
+  signatureImage: string | null;
 
-  signatureImage: string;
-
-  doRMAItems: DORMAItem[];
-  doRMAProofImages: DORMAProofImage[];
-  doRMAStatusHistories: DORMAStatusHistory[];
+  dormaItems?: DORMAItem[];
+  dormaProofImages?: DORMAProofImage[];
+  dormaStatusHistories?: DORMAStatusHistory[];
 }
 
 export interface DORMAItem {
   id: string;
   deliveryOrderRMAId: string;
-  deliveryOrderRMA: DeliveryOrderRMA;
-  salesOrderItemid: string;
-  deliveryOrderItemId: string;
-  description: string;
-  quantity: number;
-  unit: string;
-  condition: string;
-  remarks: string;
+  deliveryOrderRMA?: DeliveryOrderRMA;
+
+  salesOrderItemId: string | null;
+  deliveryOrderItemId: string | null;
+
+  description: string | null;
+  quantity: number | null;
+  unit: string | null;
+  condition: string | null;
+  remarks: string | null;
 }
 
 export interface CreateDeliveryOrderRMARequest {
   deliveryOrderRMANo: string;
-  deliveryOrderId: string;
-  date: Date;
-  returnMethod: string;
-  returnType: string;
-  returnQuantity: number;
-  returnAction: string;
-  senderCompanyId?: string;
-  receiverCompanyId?: string;
-  reason: string;
-  remarks: string;
-  doRMAItems: RMAItemRequest[];
-  doRMAProofImages: DORMAProofImageRequest[];
+  deliveryOrderId: string | null;
+  date: Date | string | null;
+
+  returnType: string | null;
+  returnQuantity: number | null;
+  returnMethod: string | null;
+  returnAction: string | null;
+
+  senderCompanyId: string | null;
+  receiverCompanyId: string | null;
+
+  reason: string | null;
+  remarks: string | null;
+
+  // null/undefined: preserve existing records during update
+  // []: remove all existing records
+  dormaItems?: RMAItemRequest[] | null;
+  dormaProofImages?: DORMAProofImageRequest[] | null;
 }
 
 export interface UpdateDeliveryOrderRMARequest extends CreateDeliveryOrderRMARequest {
@@ -64,40 +78,47 @@ export interface UpdateDeliveryOrderRMARequest extends CreateDeliveryOrderRMAReq
 }
 
 export interface RMAItemRequest {
-  description: string;
-  quantity: number;
-  unit: string;
-  condition: string;
-  remarks: string;
+  salesOrderItemId?: string | null;
+  deliveryOrderItemId?: string | null;
+
+  description: string | null;
+  quantity: number | null;
+  unit: string | null;
+  condition: string | null;
+  remarks: string | null;
 }
 
 export interface DORMAProofImageRequest {
   url: string;
 }
 
-export interface UpdateRMAItemRequest extends RMAItemRequest {
-  id: string;
-}
-
 export interface DORMAProofImage {
   id: string;
   deliveryOrderRMAId: string;
-  deliveryOrderRMA: DeliveryOrderRMA;
+  deliveryOrderRMA?: DeliveryOrderRMA;
   url: string;
 }
 
 export interface UpdateRMAStatusRequest {
   status: string;
-  actionUserName?: string;
-  remarks?: string;
-  signatureImage?: string;
+  remarks?: string | null;
+  signatureImage?: string | null;
 }
 
 export interface DORMAStatusHistory {
   id: string;
   rmaId: string;
+  deliveryOrderRMA?: DeliveryOrderRMA;
+
   status: string;
-  actionAt: Date;
-  actionUserId: string;
-  remarks: string;
+  actionAt: Date | string;
+  actionUserId: string | null;
+  remarks: string | null;
+}
+
+export interface DORMADropdownDto {
+  deliveryOrders: DODropdownDto[];
+  projects: ProjectDropdownDto[];
+  companies: CompanyDropdownItem[];
+  users: UserDto[];
 }

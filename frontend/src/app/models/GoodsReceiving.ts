@@ -1,4 +1,3 @@
-import { Supplier } from '../components/company-management/suppliers/supplier/supplier';
 import { BaseModel } from './BaseModel';
 import { CompanyDto } from './Company';
 import { PurchaseOrderDto, PurchaseOrderItem } from './PurchaseOrder';
@@ -9,7 +8,7 @@ export interface GoodsReceivingDto extends BaseModel {
   purchaseOrderId: string;
   purchaseOrder: PurchaseOrderDto;
   supplierId?: string;
-  supplier?: Supplier;
+  supplier?: CompanyDto;
   companyId?: string;
   company?: CompanyDto;
   receivedDate: Date;

@@ -1,3 +1,47 @@
 :host {
   display: block;
+  width: 100%;
+}
+
+:host ::ng-deep {
+  .p-inputtext,
+  .p-select,
+  .p-datepicker,
+  .p-inputnumber,
+  .p-textarea {
+    font-size: 0.875rem;
+  }
+
+  .p-inputtext,
+  .p-select,
+  .p-datepicker,
+  .p-inputnumber {
+    width: 100%;
+  }
+
+  .p-select {
+    min-width: 0;
+  }
+
+  .p-datepicker-input {
+    width: 100%;
+  }
+
+  .p-inputnumber-input {
+    width: 100%;
+  }
+
+  .p-button {
+    font-size: 0.875rem;
+  }
+}
+
+@media (max-width: 640px) {
+  :host ::ng-deep {
+    .p-datepicker,
+    .p-inputnumber,
+    .p-select {
+      width: 100%;
+    }
+  }
 }

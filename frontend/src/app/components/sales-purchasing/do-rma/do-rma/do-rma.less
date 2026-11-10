@@ -1,3 +1,38 @@
 :host {
   display: block;
+  width: 100%;
+  min-width: 0;
+}
+
+:host ::ng-deep {
+  .do-rma-table {
+    width: 100%;
+
+    .p-datatable-table {
+      width: 100%;
+    }
+
+    .p-datatable-thead > tr > th,
+    .p-datatable-tbody > tr > td {
+      padding: 0.8rem 0.75rem;
+      vertical-align: middle;
+    }
+
+    .p-paginator {
+      flex-wrap: wrap;
+      gap: 0.25rem;
+    }
+  }
+
+  .p-button {
+    justify-content: center;
+  }
+}
+
+@media (max-width: 767px) {
+  :host ::ng-deep {
+    .p-button {
+      min-height: 2.5rem;
+    }
+  }
 }

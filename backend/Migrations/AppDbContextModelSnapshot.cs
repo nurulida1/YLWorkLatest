@@ -694,7 +694,7 @@ namespace YLWorks.Migrations
                         .HasColumnType("longtext");
 
                     b.Property<decimal?>("Quantity")
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("decimal(65,30)");
 
                     b.Property<string>("Remarks")
                         .HasColumnType("longtext");
@@ -707,7 +707,11 @@ namespace YLWorks.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("DeliveryOrderItemId");
+
                     b.HasIndex("DeliveryOrderRMAId");
+
+                    b.HasIndex("SalesOrderItemId");
 
                     b.ToTable("DORMAItems");
                 });
@@ -744,9 +748,6 @@ namespace YLWorks.Migrations
                     b.Property<Guid?>("ActionUserId")
                         .HasColumnType("char(36)");
 
-                    b.Property<Guid?>("DeliveryOrderRMAId")
-                        .HasColumnType("char(36)");
-
                     b.Property<Guid>("RMAId")
                         .HasColumnType("char(36)");
 
@@ -759,7 +760,7 @@ namespace YLWorks.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("DeliveryOrderRMAId");
+                    b.HasIndex("RMAId");
 
                     b.ToTable("DORMAStatusHistories");
                 });
@@ -1086,7 +1087,7 @@ namespace YLWorks.Migrations
 
                     b.Property<string>("DeliveryOrderRMANo")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasColumnType("varchar(255)");
 
                     b.Property<string>("Reason")
                         .HasColumnType("longtext");
@@ -1126,6 +1127,11 @@ namespace YLWorks.Migrations
                         .HasColumnType("char(36)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("DeliveryOrderId");
+
+                    b.HasIndex("DeliveryOrderRMANo")
+                        .IsUnique();
 
                     b.HasIndex("ReceiverCompanyId");
 
@@ -5033,13 +5039,25 @@ namespace YLWorks.Migrations
 
             modelBuilder.Entity("YLWorks.Model.DORMAItem", b =>
                 {
+                    b.HasOne("YLWorks.Model.DeliveryOrderItem", "DeliveryOrderItem")
+                        .WithMany()
+                        .HasForeignKey("DeliveryOrderItemId");
+
                     b.HasOne("YLWorks.Model.DeliveryOrderRMA", "DeliveryOrderRMA")
                         .WithMany("DORMAItems")
                         .HasForeignKey("DeliveryOrderRMAId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("YLWorks.Model.SalesOrderItem", "SalesOrderItem")
+                        .WithMany()
+                        .HasForeignKey("SalesOrderItemId");
+
+                    b.Navigation("DeliveryOrderItem");
+
                     b.Navigation("DeliveryOrderRMA");
+
+                    b.Navigation("SalesOrderItem");
                 });
 
             modelBuilder.Entity("YLWorks.Model.DORMAProofImage", b =>
@@ -5055,9 +5073,13 @@ namespace YLWorks.Migrations
 
             modelBuilder.Entity("YLWorks.Model.DORMAStatusHistory", b =>
                 {
-                    b.HasOne("YLWorks.Model.DeliveryOrderRMA", null)
+                    b.HasOne("YLWorks.Model.DeliveryOrderRMA", "DeliveryOrderRMA")
                         .WithMany("DORMAStatusHistories")
-                        .HasForeignKey("DeliveryOrderRMAId");
+                        .HasForeignKey("RMAId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("DeliveryOrderRMA");
                 });
 
             modelBuilder.Entity("YLWorks.Model.DailyReport", b =>
@@ -5160,13 +5182,22 @@ namespace YLWorks.Migrations
 
             modelBuilder.Entity("YLWorks.Model.DeliveryOrderRMA", b =>
                 {
+                    b.HasOne("YLWorks.Model.DeliveryOrder", "DeliveryOrder")
+                        .WithMany()
+                        .HasForeignKey("DeliveryOrderId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("YLWorks.Model.Company", "ReceiverCompany")
                         .WithMany()
-                        .HasForeignKey("ReceiverCompanyId");
+                        .HasForeignKey("ReceiverCompanyId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("YLWorks.Model.Company", "SenderCompany")
                         .WithMany()
-                        .HasForeignKey("SenderCompanyId");
+                        .HasForeignKey("SenderCompanyId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("DeliveryOrder");
 
                     b.Navigation("ReceiverCompany");
 

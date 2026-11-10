@@ -184,7 +184,12 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseDefaultFiles();
-app.UseStaticFiles();
+var staticFileContentTypes = new Microsoft.AspNetCore.StaticFiles.FileExtensionContentTypeProvider();
+staticFileContentTypes.Mappings[".webmanifest"] = "application/manifest+json";
+app.UseStaticFiles(new StaticFileOptions
+{
+    ContentTypeProvider = staticFileContentTypes
+});
 
 var uploadsRoot = Path.Combine(Directory.GetCurrentDirectory(), "uploads");
 Directory.CreateDirectory(uploadsRoot);

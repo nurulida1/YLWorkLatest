@@ -49,176 +49,590 @@ import { UserDto } from '../../../models/User';
     TextareaModule,
   ],
   template: `
-    <div class="w-full min-h-screen bg-[#f4f6f8] p-6 flex flex-col gap-5">
-      <div class="flex items-center gap-1.5 text-sm text-gray-500">
-        <a routerLink="/dashboard" class="hover:text-blue-600">Dashboard</a>
-        <span>/</span>
-        <span class="text-gray-700 font-semibold">Leave policy</span>
-      </div>
+    <div
+      class="leave-policy-page min-h-screen w-full bg-slate-50 p-3 sm:p-5 lg:p-6"
+    >
+      <div class="mx-auto flex w-full flex-col gap-5">
+        <!-- Breadcrumb -->
+        <div class="flex items-center gap-2 text-sm text-slate-400">
+          <a
+            routerLink="/dashboard"
+            class="transition-colors hover:text-blue-700"
+          >
+            Dashboard
+          </a>
+          <i class="pi pi-angle-right text-xs"></i>
+          <span class="font-semibold text-slate-700">Leave Policy</span>
+        </div>
 
-      <div class="flex flex-col gap-3">
-        <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <!-- Page heading -->
+        <div
+          class="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between"
+        >
           <div class="min-w-0">
-            <h1 class="text-2xl font-bold text-gray-900 m-0">Leave policy</h1>
-            <p class="text-sm text-gray-500 mt-1 m-0">
-              Tenure bands for Annual and Medical leave, annual use-it-or-lose-it % (forfeit unused portion of that %),
-              and replacement leave credits. Policy edits apply from the effective year / next calendar year.
+            <h1 class="text-2xl font-bold tracking-tight text-slate-800">
+              Leave Policy
+            </h1>
+            <p class="mt-1 max-w-3xl text-sm leading-relaxed text-slate-500">
+              Configure annual and medical leave entitlement by employee tenure,
+              carry-forward rules, and replacement leave credits.
             </p>
           </div>
-          <div class="flex flex-wrap items-center gap-2 shrink-0">
+
+          <div
+            class="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:flex xl:shrink-0"
+          >
             <p-button
               label="Grant replacement leave"
               icon="pi pi-gift"
               severity="secondary"
               [outlined]="true"
               (onClick)="openCreditDialog()"
+              styleClass="w-full"
             />
             <p-button
               label="Save policy"
               icon="pi pi-save"
               (onClick)="save()"
               [loading]="saving"
+              styleClass="w-full leave-primary-button"
             />
           </div>
         </div>
 
-        <div
-          class="bg-white border border-gray-200 rounded-xl px-4 py-3 flex flex-col gap-2 md:flex-row md:items-center md:gap-4"
-        >
-          <div class="flex flex-wrap items-center gap-2 shrink-0">
-            <label class="text-sm font-medium text-gray-700 whitespace-nowrap">Close year</label>
-            <p-inputNumber
-              [(ngModel)]="yearEndCloseYear"
-              [useGrouping]="false"
-              [min]="2000"
-              [max]="2100"
-              placeholder="Year"
-              class="w-[6.5rem] shrink-0"
-              styleClass="w-full"
-              inputStyleClass="w-full"
-            />
-            <p-button
-              label="Run year-end"
-              icon="pi pi-calendar"
-              severity="secondary"
-              [outlined]="true"
-              class="shrink-0"
-              (onClick)="runYearEnd()"
-              [loading]="runningYearEnd"
-            />
-          </div>
-          <p class="text-xs text-gray-500 m-0 md:flex-1">
-            Closes the selected year and builds next-year balances (with Annual carry). Chain tests: 2025, then 2026, etc.
-          </p>
-        </div>
+        @if (policy) {
+          <!-- Policy configuration -->
+          <section class="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <!-- Effective year -->
+            <div class="leave-setting-card">
+              <div class="mb-3 flex items-center gap-3">
+                <div class="leave-icon-box bg-blue-50 text-blue-700">
+                  <i class="pi pi-calendar"></i>
+                </div>
+                <div>
+                  <h2 class="text-sm font-semibold text-slate-800">
+                    Effective from year
+                  </h2>
+                  <p class="mt-0.5 text-xs text-slate-500">
+                    When this policy takes effect
+                  </p>
+                </div>
+              </div>
+
+              <p-inputNumber
+                [(ngModel)]="policy.effectiveFromYear"
+                [useGrouping]="false"
+                [min]="2000"
+                [max]="2100"
+                class="w-full"
+                styleClass="w-full"
+                inputStyleClass="w-full"
+              />
+
+              <p class="mt-2 text-xs text-slate-500">
+                New balances from this year onward use these tenure bands.
+              </p>
+            </div>
+
+            <!-- Carry forward -->
+            <div class="leave-setting-card">
+              <div class="mb-3 flex items-center gap-3">
+                <div class="leave-icon-box bg-violet-50 text-violet-700">
+                  <i class="pi pi-percentage"></i>
+                </div>
+                <div>
+                  <h2 class="text-sm font-semibold text-slate-800">
+                    Annual use-it-or-lose-it
+                  </h2>
+                  <p class="mt-0.5 text-xs text-slate-500">
+                    Annual carry-forward percentage
+                  </p>
+                </div>
+              </div>
+
+              <p-inputNumber
+                [(ngModel)]="policy.annualCarryForwardPercent"
+                [min]="0"
+                [max]="100"
+                suffix=" %"
+                class="w-full"
+                styleClass="w-full"
+                inputStyleClass="w-full"
+              />
+
+              <p class="mt-2 text-xs leading-relaxed text-slate-500">
+                The configured percentage determines the minimum leave to use or
+                forfeit. Carry-forward is calculated from the remaining balance.
+              </p>
+            </div>
+          </section>
+
+          <!-- Year-end processing -->
+          <section
+            class="rounded-xl border border-slate-200 bg-white p-4 sm:p-5"
+          >
+            <div
+              class="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between"
+            >
+              <div class="flex items-start gap-3">
+                <div class="leave-icon-box shrink-0 bg-amber-50 text-amber-700">
+                  <i class="pi pi-calendar-clock"></i>
+                </div>
+                <div class="min-w-0">
+                  <h2 class="text-sm font-semibold text-slate-800">
+                    Year-end processing
+                  </h2>
+                  <p class="mt-1 text-xs leading-relaxed text-slate-500">
+                    Close a calendar year and create the following year's leave
+                    balances, including eligible Annual leave carry-forward.
+                  </p>
+                </div>
+              </div>
+
+              <div
+                class="grid grid-cols-1 gap-2 sm:grid-cols-[minmax(120px,160px)_auto] xl:w-auto"
+              >
+                <p-inputNumber
+                  [(ngModel)]="yearEndCloseYear"
+                  [useGrouping]="false"
+                  [min]="2000"
+                  [max]="2100"
+                  placeholder="Year"
+                  styleClass="w-full"
+                  inputStyleClass="w-full"
+                />
+                <p-button
+                  label="Run year-end"
+                  icon="pi pi-play"
+                  severity="secondary"
+                  [outlined]="true"
+                  (onClick)="runYearEnd()"
+                  [loading]="runningYearEnd"
+                  styleClass="w-full"
+                />
+              </div>
+            </div>
+
+            <div
+              class="mt-4 flex items-start gap-2 rounded-lg bg-amber-50 p-3 text-amber-800"
+            >
+              <i class="pi pi-info-circle mt-0.5 shrink-0 text-sm"></i>
+              <p class="text-xs leading-relaxed">
+                Example: close 2025 to create 2026 balances. For consecutive
+                years, process them in order.
+              </p>
+            </div>
+          </section>
+
+          <!-- Carry examples -->
+          <details
+            class="overflow-hidden rounded-xl border border-slate-200 bg-white text-sm"
+          >
+            <summary
+              class="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-4 font-semibold text-slate-800 select-none"
+            >
+              <span class="flex items-center gap-2">
+                <i class="pi pi-calculator text-blue-700"></i>
+                Carry-forward examples
+              </span>
+              <i
+                class="pi pi-chevron-down text-xs text-slate-400 transition-transform"
+              ></i>
+            </summary>
+
+            <div class="border-t border-slate-100 px-4 py-4">
+              <p class="mb-3 text-xs text-slate-500">
+                Example: tenure entitlement of 15 days with a carry-forward
+                percentage of 50%.
+              </p>
+
+              <div class="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                <div class="rounded-lg bg-slate-50 p-3">
+                  <p class="text-xs text-slate-500">Used: 0 days</p>
+                  <p class="mt-1 text-lg font-bold text-slate-800">22.5 days</p>
+                  <p class="text-xs text-slate-500">Next-year balance</p>
+                </div>
+                <div class="rounded-lg bg-slate-50 p-3">
+                  <p class="text-xs text-slate-500">Used: 7.5 days</p>
+                  <p class="mt-1 text-lg font-bold text-slate-800">30 days</p>
+                  <p class="text-xs text-slate-500">Next-year balance</p>
+                </div>
+                <div class="rounded-lg bg-slate-50 p-3">
+                  <p class="text-xs text-slate-500">Used: 3 days</p>
+                  <p class="mt-1 text-lg font-bold text-slate-800">37.5 days</p>
+                  <p class="text-xs text-slate-500">Next-year balance</p>
+                </div>
+              </div>
+            </div>
+          </details>
+
+          <!-- Annual bands -->
+          <section class="leave-section-card">
+            <div
+              class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
+            >
+              <div class="flex items-center gap-3">
+                <div class="leave-icon-box bg-emerald-50 text-emerald-700">
+                  <i class="pi pi-sun"></i>
+                </div>
+                <div>
+                  <h2 class="text-sm font-semibold text-slate-800">
+                    Annual leave tenure bands
+                  </h2>
+                  <p class="mt-0.5 text-xs text-slate-500">
+                    Configure annual entitlement according to service years.
+                  </p>
+                </div>
+              </div>
+
+              <p-button
+                label="Add band"
+                icon="pi pi-plus"
+                size="small"
+                [outlined]="true"
+                (onClick)="addBand('Annual')"
+                styleClass="w-full sm:w-auto text-blue-700! border-blue-700!"
+              />
+            </div>
+
+            <!-- Desktop table -->
+            <div class="leave-band-desktop">
+              <p-table
+                [value]="annualBands"
+                styleClass="p-datatable-sm leave-band-table"
+              >
+                <ng-template pTemplate="header">
+                  <tr>
+                    <th>Minimum years</th>
+                    <th>Maximum years (exclusive)</th>
+                    <th>Days per year</th>
+                    <th class="w-16 text-center">Action</th>
+                  </tr>
+                </ng-template>
+
+                <ng-template pTemplate="body" let-row let-i="rowIndex">
+                  <tr>
+                    <td>
+                      <p-inputNumber
+                        [(ngModel)]="row.minYearsInclusive"
+                        [min]="0"
+                        styleClass="w-full"
+                        inputStyleClass="w-full"
+                      />
+                    </td>
+                    <td>
+                      <p-inputNumber
+                        [(ngModel)]="row.maxYearsExclusive"
+                        [min]="0"
+                        placeholder="Open"
+                        styleClass="w-full"
+                        inputStyleClass="w-full"
+                      />
+                    </td>
+                    <td>
+                      <p-inputNumber
+                        [(ngModel)]="row.daysPerYear"
+                        [min]="0"
+                        styleClass="w-full"
+                        inputStyleClass="w-full"
+                      />
+                    </td>
+                    <td class="text-center">
+                      <p-button
+                        icon="pi pi-trash"
+                        severity="danger"
+                        [text]="true"
+                        [rounded]="true"
+                        (onClick)="removeBand('Annual', i)"
+                      />
+                    </td>
+                  </tr>
+                </ng-template>
+
+                <ng-template pTemplate="emptymessage">
+                  <tr>
+                    <td
+                      colspan="4"
+                      class="py-8 text-center text-sm text-slate-400"
+                    >
+                      No Annual leave bands configured. Add a band to get
+                      started.
+                    </td>
+                  </tr>
+                </ng-template>
+              </p-table>
+            </div>
+
+            <!-- Mobile cards -->
+            <div class="leave-band-mobile space-y-3">
+              <div
+                *ngFor="let row of annualBands; let i = index"
+                class="leave-band-card"
+              >
+                <div class="mb-3 flex items-center justify-between">
+                  <span class="text-xs font-semibold text-slate-500">
+                    Annual band {{ i + 1 }}
+                  </span>
+                  <p-button
+                    icon="pi pi-trash"
+                    severity="danger"
+                    [text]="true"
+                    [rounded]="true"
+                    size="small"
+                    (onClick)="removeBand('Annual', i)"
+                  />
+                </div>
+
+                <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                  <div>
+                    <label class="leave-field-label">Minimum years</label>
+                    <p-inputNumber
+                      [(ngModel)]="row.minYearsInclusive"
+                      [min]="0"
+                      styleClass="w-full"
+                      inputStyleClass="w-full"
+                    />
+                  </div>
+                  <div>
+                    <label class="leave-field-label">Maximum years</label>
+                    <p-inputNumber
+                      [(ngModel)]="row.maxYearsExclusive"
+                      [min]="0"
+                      placeholder="Open"
+                      styleClass="w-full"
+                      inputStyleClass="w-full"
+                    />
+                    <p class="mt-1 text-[10px] text-slate-400">
+                      Exclusive; leave empty for no limit.
+                    </p>
+                  </div>
+                  <div>
+                    <label class="leave-field-label">Days per year</label>
+                    <p-inputNumber
+                      [(ngModel)]="row.daysPerYear"
+                      [min]="0"
+                      styleClass="w-full"
+                      inputStyleClass="w-full"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div
+                *ngIf="!annualBands.length"
+                class="rounded-lg bg-slate-50 px-4 py-8 text-center"
+              >
+                <i class="pi pi-calendar text-2xl text-slate-300"></i>
+                <p class="mt-2 text-sm font-medium text-slate-600">
+                  No Annual leave bands
+                </p>
+                <p class="mt-1 text-xs text-slate-400">
+                  Add a band to configure entitlement.
+                </p>
+              </div>
+            </div>
+          </section>
+
+          <!-- Medical bands -->
+          <section class="leave-section-card">
+            <div
+              class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
+            >
+              <div class="flex items-center gap-3">
+                <div class="leave-icon-box bg-rose-50 text-rose-700">
+                  <i class="pi pi-heart"></i>
+                </div>
+                <div>
+                  <h2 class="text-sm font-semibold text-slate-800">
+                    Medical leave tenure bands
+                  </h2>
+                  <p class="mt-0.5 text-xs text-slate-500">
+                    Configure medical leave entitlement according to service
+                    years.
+                  </p>
+                </div>
+              </div>
+
+              <p-button
+                label="Add band"
+                icon="pi pi-plus"
+                size="small"
+                [outlined]="true"
+                (onClick)="addBand('Medical')"
+                styleClass="w-full sm:w-auto text-blue-700! border-blue-700!"
+              />
+            </div>
+
+            <!-- Desktop table -->
+            <div class="leave-band-desktop">
+              <p-table
+                [value]="medicalBands"
+                styleClass="p-datatable-sm leave-band-table"
+              >
+                <ng-template pTemplate="header">
+                  <tr>
+                    <th>Minimum years</th>
+                    <th>Maximum years (exclusive)</th>
+                    <th>Days per year</th>
+                    <th class="w-16 text-center">Action</th>
+                  </tr>
+                </ng-template>
+
+                <ng-template pTemplate="body" let-row let-i="rowIndex">
+                  <tr>
+                    <td>
+                      <p-inputNumber
+                        [(ngModel)]="row.minYearsInclusive"
+                        [min]="0"
+                        styleClass="w-full"
+                        inputStyleClass="w-full"
+                      />
+                    </td>
+                    <td>
+                      <p-inputNumber
+                        [(ngModel)]="row.maxYearsExclusive"
+                        [min]="0"
+                        placeholder="Open"
+                        styleClass="w-full"
+                        inputStyleClass="w-full"
+                      />
+                    </td>
+                    <td>
+                      <p-inputNumber
+                        [(ngModel)]="row.daysPerYear"
+                        [min]="0"
+                        styleClass="w-full"
+                        inputStyleClass="w-full"
+                      />
+                    </td>
+                    <td class="text-center">
+                      <p-button
+                        icon="pi pi-trash"
+                        severity="danger"
+                        [text]="true"
+                        [rounded]="true"
+                        (onClick)="removeBand('Medical', i)"
+                      />
+                    </td>
+                  </tr>
+                </ng-template>
+
+                <ng-template pTemplate="emptymessage">
+                  <tr>
+                    <td
+                      colspan="4"
+                      class="py-8 text-center text-sm text-slate-400"
+                    >
+                      No Medical leave bands configured. Add a band to get
+                      started.
+                    </td>
+                  </tr>
+                </ng-template>
+              </p-table>
+            </div>
+
+            <!-- Mobile cards -->
+            <div class="leave-band-mobile space-y-3">
+              <div
+                *ngFor="let row of medicalBands; let i = index"
+                class="leave-band-card"
+              >
+                <div class="mb-3 flex items-center justify-between">
+                  <span class="text-xs font-semibold text-slate-500">
+                    Medical band {{ i + 1 }}
+                  </span>
+                  <p-button
+                    icon="pi pi-trash"
+                    severity="danger"
+                    [text]="true"
+                    [rounded]="true"
+                    size="small"
+                    (onClick)="removeBand('Medical', i)"
+                  />
+                </div>
+
+                <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                  <div>
+                    <label class="leave-field-label">Minimum years</label>
+                    <p-inputNumber
+                      [(ngModel)]="row.minYearsInclusive"
+                      [min]="0"
+                      styleClass="w-full"
+                      inputStyleClass="w-full"
+                    />
+                  </div>
+                  <div>
+                    <label class="leave-field-label">Maximum years</label>
+                    <p-inputNumber
+                      [(ngModel)]="row.maxYearsExclusive"
+                      [min]="0"
+                      placeholder="Open"
+                      styleClass="w-full"
+                      inputStyleClass="w-full"
+                    />
+                    <p class="mt-1 text-[10px] text-slate-400">
+                      Exclusive; leave empty for no limit.
+                    </p>
+                  </div>
+                  <div>
+                    <label class="leave-field-label">Days per year</label>
+                    <p-inputNumber
+                      [(ngModel)]="row.daysPerYear"
+                      [min]="0"
+                      styleClass="w-full"
+                      inputStyleClass="w-full"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div
+                *ngIf="!medicalBands.length"
+                class="rounded-lg bg-slate-50 px-4 py-8 text-center"
+              >
+                <i class="pi pi-heart text-2xl text-slate-300"></i>
+                <p class="mt-2 text-sm font-medium text-slate-600">
+                  No Medical leave bands
+                </p>
+                <p class="mt-1 text-xs text-slate-400">
+                  Add a band to configure entitlement.
+                </p>
+              </div>
+            </div>
+          </section>
+        }
       </div>
 
-      @if (policy) {
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div class="bg-white border border-gray-200 rounded-xl p-4">
-            <label class="text-sm font-semibold text-gray-700 block mb-2">Effective from year</label>
-            <p-inputNumber [(ngModel)]="policy.effectiveFromYear" [useGrouping]="false" class="w-full" />
-            <p class="text-xs text-gray-500 mt-2 m-0">New balances for this year onward use these bands.</p>
-          </div>
-          <div class="bg-white border border-gray-200 rounded-xl p-4">
-            <label class="text-sm font-semibold text-gray-700 block mb-2">Annual use-it-or-lose-it %</label>
-            <p-inputNumber
-              [(ngModel)]="policy.annualCarryForwardPercent"
-              [min]="0"
-              [max]="100"
-              suffix=" %"
-              class="w-full"
-            />
-            <p class="text-xs text-gray-500 mt-2 m-0">
-              At year-end, forfeit = max(0, % × tenure − approved used). Carry = remaining − forfeit (can exceed the %).
-            </p>
-          </div>
-        </div>
-
-        <details class="bg-white border border-gray-200 rounded-xl text-sm text-gray-700 open:[&_summary_i]:rotate-180">
-          <summary class="cursor-pointer list-none flex items-center justify-between gap-3 px-4 py-3 select-none [&::-webkit-details-marker]:hidden">
-            <span class="font-medium text-gray-800">Carry examples</span>
-            <i class="pi pi-chevron-down text-gray-400 text-xs transition-transform"></i>
-          </summary>
-          <div class="px-4 pb-4 pt-0 border-t border-gray-100">
-            <p class="text-xs text-gray-500 m-0 mt-3 mb-2">Tenure 15, carry % = 50 → must use/lose 7.5</p>
-            <ul class="m-0 pl-5 space-y-1 text-sm text-gray-700">
-              <li>15 entitled, used 0 → carry 7.5 → next <strong>22.5</strong></li>
-              <li>22.5 entitled, used 7.5 → carry 15 → next <strong>30</strong></li>
-              <li>30 entitled, used 3 → carry 22.5 → next <strong>37.5</strong></li>
-            </ul>
-          </div>
-        </details>
-
-        <div class="bg-white border border-gray-200 rounded-xl p-4">
-          <div class="flex items-center justify-between mb-3">
-            <h2 class="text-sm font-semibold text-gray-800 m-0">Annual tenure bands</h2>
-            <p-button label="Add band" size="small" [text]="true" (onClick)="addBand('Annual')" />
-          </div>
-          <p-table [value]="annualBands" styleClass="p-datatable-sm">
-            <ng-template pTemplate="header">
-              <tr>
-                <th>Min years</th>
-                <th>Max years (exclusive)</th>
-                <th>Days / year</th>
-                <th></th>
-              </tr>
-            </ng-template>
-            <ng-template pTemplate="body" let-row let-i="rowIndex">
-              <tr>
-                <td><p-inputNumber [(ngModel)]="row.minYearsInclusive" [min]="0" /></td>
-                <td>
-                  <p-inputNumber [(ngModel)]="row.maxYearsExclusive" [min]="0" placeholder="Open" />
-                </td>
-                <td><p-inputNumber [(ngModel)]="row.daysPerYear" [min]="0" /></td>
-                <td>
-                  <p-button icon="pi pi-trash" severity="danger" [text]="true" (onClick)="removeBand('Annual', i)" />
-                </td>
-              </tr>
-            </ng-template>
-          </p-table>
-        </div>
-
-        <div class="bg-white border border-gray-200 rounded-xl p-4">
-          <div class="flex items-center justify-between mb-3">
-            <h2 class="text-sm font-semibold text-gray-800 m-0">Medical (MC) tenure bands</h2>
-            <p-button label="Add band" size="small" [text]="true" (onClick)="addBand('Medical')" />
-          </div>
-          <p-table [value]="medicalBands" styleClass="p-datatable-sm">
-            <ng-template pTemplate="header">
-              <tr>
-                <th>Min years</th>
-                <th>Max years (exclusive)</th>
-                <th>Days / year</th>
-                <th></th>
-              </tr>
-            </ng-template>
-            <ng-template pTemplate="body" let-row let-i="rowIndex">
-              <tr>
-                <td><p-inputNumber [(ngModel)]="row.minYearsInclusive" [min]="0" /></td>
-                <td>
-                  <p-inputNumber [(ngModel)]="row.maxYearsExclusive" [min]="0" placeholder="Open" />
-                </td>
-                <td><p-inputNumber [(ngModel)]="row.daysPerYear" [min]="0" /></td>
-                <td>
-                  <p-button icon="pi pi-trash" severity="danger" [text]="true" (onClick)="removeBand('Medical', i)" />
-                </td>
-              </tr>
-            </ng-template>
-          </p-table>
-        </div>
-      }
-
+      <!-- Replacement leave dialog -->
       <p-dialog
         [(visible)]="creditDialog"
-        header="Grant replacement leave"
         [modal]="true"
-        [style]="{ width: 'min(520px, 95vw)' }"
         [draggable]="false"
+        [resizable]="false"
+        [style]="{ width: '520px', maxWidth: '95vw' }"
+        [breakpoints]="{ '640px': '95vw' }"
+        appendTo="body"
+        styleClass="leave-credit-dialog"
       >
-        <div class="flex flex-col gap-3">
+        <ng-template pTemplate="header">
+          <div class="flex min-w-0 items-center gap-3">
+            <div class="leave-icon-box shrink-0 bg-violet-50 text-violet-700">
+              <i class="pi pi-gift"></i>
+            </div>
+            <div class="min-w-0">
+              <h2 class="text-base font-bold text-slate-800">
+                Grant replacement leave
+              </h2>
+              <p class="mt-0.5 text-xs text-slate-500">
+                Credit leave days to selected employees.
+              </p>
+            </div>
+          </div>
+        </ng-template>
+
+        <div class="flex flex-col gap-4">
           <div>
-            <label class="text-sm text-gray-600 block mb-1">Employees</label>
+            <label class="leave-field-label">Employees</label>
             <p-multiSelect
               class="w-full"
               appendTo="body"
@@ -234,12 +648,14 @@ import { UserDto } from '../../../models/User';
               selectedItemsLabel="{0} employees selected"
               [maxSelectedLabels]="3"
             />
-            <p class="text-xs text-gray-500 mt-1 m-0">
-              Use the header checkbox to select all. Same days/note apply to each selected employee.
+            <p class="mt-1 text-xs text-slate-400">
+              Select one or more employees. The same days and note will apply to
+              everyone selected.
             </p>
           </div>
+
           <div>
-            <label class="text-sm text-gray-600 block mb-1">Replacement leave type</label>
+            <label class="leave-field-label">Replacement leave type</label>
             <p-select
               [options]="replacementTypes"
               [(ngModel)]="creditLeaveTypeId"
@@ -247,29 +663,75 @@ import { UserDto } from '../../../models/User';
               optionValue="id"
               placeholder="Select type"
               class="w-full"
+              styleClass="w-full"
               appendTo="body"
             />
           </div>
+
           <div>
-            <label class="text-sm text-gray-600 block mb-1">Days</label>
-            <p-inputNumber [(ngModel)]="creditDays" [min]="0.5" [minFractionDigits]="0" [maxFractionDigits]="1" />
+            <label class="leave-field-label">Days</label>
+            <p-inputNumber
+              [(ngModel)]="creditDays"
+              [min]="0.5"
+              [minFractionDigits]="0"
+              [maxFractionDigits]="1"
+              styleClass="w-full"
+              inputStyleClass="w-full"
+            />
           </div>
+
           <div>
-            <label class="text-sm text-gray-600 block mb-1">Note (optional)</label>
-            <textarea pTextarea rows="2" class="w-full" [(ngModel)]="creditNote" placeholder="e.g. Worked CNY public holiday"></textarea>
+            <label class="leave-field-label">Note (optional)</label>
+            <textarea
+              pTextarea
+              rows="3"
+              class="w-full"
+              [(ngModel)]="creditNote"
+              placeholder="e.g. Worked on a public holiday"
+            ></textarea>
+          </div>
+
+          <div
+            class="rounded-lg bg-blue-50 p-3 text-xs leading-relaxed text-blue-800"
+          >
+            <i class="pi pi-info-circle mr-1"></i>
+            This will credit
+            <strong>{{ creditEmployeeIds.length }}</strong>
+            employee(s) with
+            <strong>{{ creditDays }}</strong>
+            day(s) each.
           </div>
         </div>
+
         <ng-template pTemplate="footer">
-          <p-button label="Cancel" severity="secondary" [text]="true" (onClick)="creditDialog = false" />
-          <p-button
-            [label]="creditEmployeeIds.length > 1 ? 'Credit ' + creditEmployeeIds.length + ' employees' : 'Credit'"
-            (onClick)="grantCredit()"
-            [loading]="crediting"
-          />
+          <div
+            class="flex w-full flex-col-reverse gap-2 sm:flex-row sm:justify-end"
+          >
+            <p-button
+              label="Cancel"
+              severity="secondary"
+              [outlined]="true"
+              (onClick)="creditDialog = false"
+              styleClass="w-full sm:w-auto"
+            />
+            <p-button
+              [label]="
+                creditEmployeeIds.length > 1
+                  ? 'Credit ' + creditEmployeeIds.length + ' employees'
+                  : 'Credit leave'
+              "
+              icon="pi pi-gift"
+              (onClick)="grantCredit()"
+              [loading]="crediting"
+              [disabled]="crediting"
+              styleClass="w-full sm:w-auto bg-purple-700! hover:bg-purple-500! border-none!"
+            />
+          </div>
         </ng-template>
       </p-dialog>
     </div>
   `,
+  styleUrl: './leave-policy.less',
 })
 export class LeavePolicySettings implements OnInit, OnDestroy {
   private readonly policyService = inject(LeavePolicyService);
@@ -319,7 +781,8 @@ export class LeavePolicySettings implements OnInit, OnDestroy {
   }
 
   removeBand(kind: 'Annual' | 'Medical', index: number): void {
-    if (kind === 'Annual') this.annualBands = this.annualBands.filter((_, i) => i !== index);
+    if (kind === 'Annual')
+      this.annualBands = this.annualBands.filter((_, i) => i !== index);
     else this.medicalBands = this.medicalBands.filter((_, i) => i !== index);
     this.cdr.markForCheck();
   }
@@ -347,7 +810,11 @@ export class LeavePolicySettings implements OnInit, OnDestroy {
       .subscribe({
         next: (p) => {
           this.applyPolicy(p);
-          this.messageService.add({ severity: 'success', summary: 'Saved', detail: 'Leave policy updated.' });
+          this.messageService.add({
+            severity: 'success',
+            summary: 'Saved',
+            detail: 'Leave policy updated.',
+          });
         },
         error: (e) =>
           this.messageService.add({
@@ -364,7 +831,8 @@ export class LeavePolicySettings implements OnInit, OnDestroy {
       this.messageService.add({
         severity: 'warn',
         summary: 'Year required',
-        detail: 'Enter the calendar year to close (e.g. 2025 creates 2026 balances).',
+        detail:
+          'Enter the calendar year to close (e.g. 2025 creates 2026 balances).',
       });
       return;
     }
@@ -417,7 +885,11 @@ export class LeavePolicySettings implements OnInit, OnDestroy {
   }
 
   grantCredit(): void {
-    if (!this.creditEmployeeIds.length || !this.creditLeaveTypeId || this.creditDays <= 0) {
+    if (
+      !this.creditEmployeeIds.length ||
+      !this.creditLeaveTypeId ||
+      this.creditDays <= 0
+    ) {
       this.messageService.add({
         severity: 'warn',
         summary: 'Missing fields',
@@ -468,7 +940,9 @@ export class LeavePolicySettings implements OnInit, OnDestroy {
     this.loadingService.start();
     forkJoin({
       policy: this.policyService.get(),
-      types: this.leaveTypeService.getAll().pipe(catchError(() => of([] as LeaveTypeDto[]))),
+      types: this.leaveTypeService
+        .getAll()
+        .pipe(catchError(() => of([] as LeaveTypeDto[]))),
       users: this.userService
         .GetMany({
           Page: 1,
@@ -478,7 +952,9 @@ export class LeavePolicySettings implements OnInit, OnDestroy {
           Select: null,
           Includes: null,
         })
-        .pipe(catchError(() => of({ data: [] as UserDto[], totalElements: 0 }))),
+        .pipe(
+          catchError(() => of({ data: [] as UserDto[], totalElements: 0 })),
+        ),
     })
       .pipe(
         takeUntil(this.destroy$),
@@ -487,7 +963,9 @@ export class LeavePolicySettings implements OnInit, OnDestroy {
       .subscribe({
         next: ({ policy, types, users }) => {
           this.applyPolicy(policy);
-          this.replacementTypes = types.filter((t) => t.policyKind === 'Replacement');
+          this.replacementTypes = types.filter(
+            (t) => t.policyKind === 'Replacement',
+          );
           if (this.replacementTypes.length && !this.creditLeaveTypeId) {
             this.creditLeaveTypeId = this.replacementTypes[0].id;
           }
@@ -498,7 +976,11 @@ export class LeavePolicySettings implements OnInit, OnDestroy {
           this.cdr.markForCheck();
         },
         error: () => {
-          this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Failed to load leave policy' });
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: 'Failed to load leave policy',
+          });
           this.cdr.markForCheck();
         },
       });
@@ -506,7 +988,11 @@ export class LeavePolicySettings implements OnInit, OnDestroy {
 
   private applyPolicy(p: LeavePolicyDto): void {
     this.policy = p;
-    this.annualBands = p.tenureBands.filter((b) => b.bandKind === 'Annual').map((b) => ({ ...b }));
-    this.medicalBands = p.tenureBands.filter((b) => b.bandKind === 'Medical').map((b) => ({ ...b }));
+    this.annualBands = p.tenureBands
+      .filter((b) => b.bandKind === 'Annual')
+      .map((b) => ({ ...b }));
+    this.medicalBands = p.tenureBands
+      .filter((b) => b.bandKind === 'Medical')
+      .map((b) => ({ ...b }));
   }
 }

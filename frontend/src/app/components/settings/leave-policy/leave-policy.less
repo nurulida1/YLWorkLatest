@@ -1,0 +1,155 @@
+:host {
+  display: block;
+  width: 100%;
+  min-width: 0;
+}
+
+.leave-policy-page {
+  min-width: 0;
+  overflow-x: hidden;
+}
+
+.leave-setting-card,
+.leave-section-card {
+  min-width: 0;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  background: #fff;
+  padding: 1rem;
+}
+
+.leave-section-card {
+  padding: 1rem;
+}
+
+.leave-icon-box {
+  display: flex;
+  width: 2.5rem;
+  height: 2.5rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.75rem;
+  font-size: 1rem;
+}
+
+.leave-field-label {
+  display: block;
+  margin-bottom: 0.375rem;
+  color: #475569;
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.leave-band-desktop {
+  display: block;
+  min-width: 0;
+  overflow-x: auto;
+}
+
+.leave-band-mobile {
+  display: none;
+}
+
+.leave-band-card {
+  min-width: 0;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  background: #fff;
+  padding: 1rem;
+}
+
+:host ::ng-deep .leave-band-table .p-datatable-table {
+  min-width: 650px;
+}
+
+:host ::ng-deep .leave-band-table .p-datatable-thead > tr > th {
+  background: #f8fafc;
+  color: #475569;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+:host ::ng-deep .leave-band-table .p-datatable-tbody > tr > td {
+  padding: 0.75rem;
+  vertical-align: middle;
+}
+
+:host ::ng-deep .leave-band-table .p-inputnumber,
+:host ::ng-deep .leave-band-table .p-inputnumber-input {
+  width: 100%;
+}
+
+:host ::ng-deep .leave-policy-page .p-inputnumber,
+:host ::ng-deep .leave-policy-page .p-select,
+:host ::ng-deep .leave-policy-page .p-multiselect {
+  width: 100%;
+  min-width: 0;
+}
+
+:host ::ng-deep .leave-primary-button {
+  background: #2148bc;
+  border-color: #2148bc;
+}
+
+:host ::ng-deep .leave-primary-button:hover {
+  background: #1d3fa5;
+  border-color: #1d3fa5;
+}
+
+:host ::ng-deep .leave-credit-dialog {
+  max-width: calc(100vw - 1.5rem);
+  overflow: hidden;
+  border-radius: 1rem;
+}
+
+:host ::ng-deep .leave-credit-dialog .p-dialog-header {
+  padding: 1.25rem 1.25rem 1rem;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+:host ::ng-deep .leave-credit-dialog .p-dialog-content {
+  padding: 1.25rem;
+  overflow-y: auto;
+}
+
+:host ::ng-deep .leave-credit-dialog .p-dialog-footer {
+  padding: 1rem 1.25rem 1.25rem;
+  border-top: 1px solid #f1f5f9;
+}
+
+@media (max-width: 767px) {
+  .leave-band-desktop {
+    display: none;
+  }
+
+  .leave-band-mobile {
+    display: block;
+  }
+
+  .leave-setting-card,
+  .leave-section-card {
+    padding: 1rem;
+  }
+
+  :host ::ng-deep .leave-credit-dialog {
+    width: calc(100vw - 1.5rem) !important;
+    max-width: calc(100vw - 1.5rem) !important;
+    margin: 0.75rem;
+  }
+
+  :host ::ng-deep .leave-credit-dialog .p-dialog-content {
+    max-height: 65dvh;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  .leave-band-desktop {
+    overflow-x: auto;
+  }
+
+  .leave-band-mobile {
+    display: none;
+  }
+}

@@ -23,7 +23,9 @@ import { LoadingService } from '../../../services/loading.service';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, RouterLink, ButtonModule],
   template: `
-    <div class="w-full min-h-screen bg-[#f4f6f8] p-6">
+    <div
+      class="w-full min-w-0 min-h-full box-border bg-slate-50 p-4 sm:p-6 lg:p-8"
+    >
       <div class="flex items-center gap-1.5 text-sm text-gray-500 mb-4">
         <a routerLink="/dashboard" class="hover:text-blue-600">Dashboard</a>
         <span>/</span>
@@ -31,16 +33,20 @@ import { LoadingService } from '../../../services/loading.service';
       </div>
 
       <div class="mb-6">
-        <h1 class="text-2xl font-bold text-gray-900 m-0">Leave calendar sync</h1>
+        <h1 class="text-2xl font-bold text-gray-900 m-0">
+          Leave calendar sync
+        </h1>
         <p class="text-sm text-gray-500 mt-1 m-0 max-w-3xl">
-          Connect Google (push) and/or Outlook desktop (ICS subscribe) to see company-wide approved leave.
-          Medical leave appears as “On leave” only.
+          Connect Google (push) and/or Outlook desktop (ICS subscribe) to see
+          company-wide approved leave. Medical leave appears as “On leave” only.
         </p>
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 max-w-5xl">
         <!-- Google -->
-        <div class="bg-white border border-gray-200 rounded-xl p-5 flex flex-col gap-4">
+        <div
+          class="bg-white border border-gray-200 rounded-xl p-5 flex flex-col gap-4"
+        >
           <div class="flex items-start gap-3">
             <div
               class="w-15 h-15 rounded-lg bg-red-50 border border-red-100 flex items-center justify-center shrink-0"
@@ -52,16 +58,22 @@ import { LoadingService } from '../../../services/loading.service';
               />
             </div>
             <div class="min-w-0 flex-1">
-              <h2 class="text-base font-semibold text-gray-900 m-0">Google Calendar</h2>
+              <h2 class="text-base font-semibold text-gray-900 m-0">
+                Google Calendar
+              </h2>
               @if (status?.googleConnected) {
-                <p class="text-sm text-green-700 m-0 mt-1">Connected as {{ status?.googleAccountEmail }}</p>
+                <p class="text-sm text-green-700 m-0 mt-1">
+                  Connected as {{ status?.googleAccountEmail }}
+                </p>
                 @if (status?.lastSyncAtUtc) {
                   <p class="text-xs text-gray-500 m-0 mt-1">
                     Last sync: {{ status?.lastSyncAtUtc | date: 'medium' }}
                   </p>
                 }
                 @if (status?.lastError) {
-                  <p class="text-xs text-red-600 m-0 mt-1">{{ status?.lastError }}</p>
+                  <p class="text-xs text-red-600 m-0 mt-1">
+                    {{ status?.lastError }}
+                  </p>
                 }
               } @else {
                 <p class="text-sm text-gray-500 m-0 mt-1">Not connected</p>
@@ -97,14 +109,22 @@ import { LoadingService } from '../../../services/loading.service';
             }
           </div>
 
-          <div class="text-xs text-gray-500 border-t border-gray-100 pt-4 mt-auto">
-            <p class="m-0 mb-1">Creates “YLWork Company Leave” in your Google account.</p>
-            <p class="m-0">Approved leave is pushed near real-time on approve/cancel.</p>
+          <div
+            class="text-xs text-gray-500 border-t border-gray-100 pt-4 mt-auto"
+          >
+            <p class="m-0 mb-1">
+              Creates “YLWork Company Leave” in your Google account.
+            </p>
+            <p class="m-0">
+              Approved leave is pushed near real-time on approve/cancel.
+            </p>
           </div>
         </div>
 
         <!-- Outlook ICS -->
-        <div class="bg-white border border-gray-200 rounded-xl p-5 flex flex-col gap-4">
+        <div
+          class="bg-white border border-gray-200 rounded-xl p-5 flex flex-col gap-4"
+        >
           <div class="flex items-start gap-3">
             <div
               class="w-15 h-15 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center shrink-0"
@@ -116,12 +136,15 @@ import { LoadingService } from '../../../services/loading.service';
               />
             </div>
             <div class="min-w-0 flex-1">
-              <h2 class="text-base font-semibold text-gray-900 m-0">Outlook (ICS subscribe)</h2>
+              <h2 class="text-base font-semibold text-gray-900 m-0">
+                Outlook (ICS subscribe)
+              </h2>
               @if (status?.outlookConnected) {
                 <p class="text-sm text-green-700 m-0 mt-1">Feed enabled</p>
                 @if (status?.outlookLastAccessedAtUtc) {
                   <p class="text-xs text-gray-500 m-0 mt-1">
-                    Last fetched: {{ status?.outlookLastAccessedAtUtc | date: 'medium' }}
+                    Last fetched:
+                    {{ status?.outlookLastAccessedAtUtc | date: 'medium' }}
                   </p>
                 }
               } @else {
@@ -132,8 +155,12 @@ import { LoadingService } from '../../../services/loading.service';
 
           @if (status?.outlookConnected && status?.outlookFeedUrl) {
             <div class="bg-gray-50 border border-gray-200 rounded-lg p-3">
-              <label class="block text-xs text-gray-500 mb-1">Subscribe URL</label>
-              <p class="text-xs text-gray-800 break-all m-0 font-mono">{{ status?.outlookFeedUrl }}</p>
+              <label class="block text-xs text-gray-500 mb-1"
+                >Subscribe URL</label
+              >
+              <p class="text-xs text-gray-800 break-all m-0 font-mono">
+                {{ status?.outlookFeedUrl }}
+              </p>
             </div>
           }
 
@@ -173,15 +200,21 @@ import { LoadingService } from '../../../services/loading.service';
             }
           </div>
 
-          <div class="text-xs text-gray-500 border-t border-gray-100 pt-4 mt-auto space-y-1">
+          <div
+            class="text-xs text-gray-500 border-t border-gray-100 pt-4 mt-auto space-y-1"
+          >
             <p class="m-0 font-medium text-gray-600">Outlook desktop setup</p>
             <p class="m-0">1. Enable feed and copy the URL</p>
-            <p class="m-0">2. Outlook → Add calendar → From Internet → paste URL</p>
             <p class="m-0">
-              Updates appear when Outlook refreshes the subscription (often 30+ minutes — not instant).
+              2. Outlook → Add calendar → From Internet → paste URL
             </p>
             <p class="m-0">
-              For IMAP mailboxes, ICS subscribe is used (Microsoft Graph push requires Microsoft 365).
+              Updates appear when Outlook refreshes the subscription (often 30+
+              minutes — not instant).
+            </p>
+            <p class="m-0">
+              For IMAP mailboxes, ICS subscribe is used (Microsoft Graph push
+              requires Microsoft 365).
             </p>
           </div>
         </div>
@@ -261,7 +294,11 @@ export class LeaveCalendarSyncSettings implements OnInit, OnDestroy {
       )
       .subscribe({
         next: () => {
-          this.messages.add({ severity: 'success', summary: 'Disconnected', detail: 'Google Calendar removed.' });
+          this.messages.add({
+            severity: 'success',
+            summary: 'Disconnected',
+            detail: 'Google Calendar removed.',
+          });
           this.loadStatus();
         },
         error: (err) => {
@@ -287,7 +324,11 @@ export class LeaveCalendarSyncSettings implements OnInit, OnDestroy {
       )
       .subscribe({
         next: () => {
-          this.messages.add({ severity: 'success', summary: 'Resync', detail: 'Leave events refreshed.' });
+          this.messages.add({
+            severity: 'success',
+            summary: 'Resync',
+            detail: 'Leave events refreshed.',
+          });
           this.loadStatus();
         },
         error: (err) => {
@@ -395,7 +436,11 @@ export class LeaveCalendarSyncSettings implements OnInit, OnDestroy {
     if (!url) return;
     try {
       await navigator.clipboard.writeText(url);
-      this.messages.add({ severity: 'success', summary: 'Copied', detail: 'Feed URL copied to clipboard.' });
+      this.messages.add({
+        severity: 'success',
+        summary: 'Copied',
+        detail: 'Feed URL copied to clipboard.',
+      });
     } catch {
       this.messages.add({
         severity: 'warn',
@@ -431,26 +476,32 @@ export class LeaveCalendarSyncSettings implements OnInit, OnDestroy {
   }
 
   private handleQueryParams(): void {
-    this.route.queryParamMap.pipe(takeUntil(this.destroy$)).subscribe((params) => {
-      if (params.get('connected') === '1') {
-        this.messages.add({
-          severity: 'success',
-          summary: 'Connected',
-          detail: 'Google Calendar connected. Future approved leave will sync automatically.',
-        });
-      } else if (params.get('oauth_failed') === '1') {
-        this.messages.add({
-          severity: 'error',
-          summary: 'Connection failed',
-          detail: 'Google sign-in did not complete. Try again.',
-        });
-      } else if (params.get('invalid_state') === '1' || params.get('missing_code') === '1') {
-        this.messages.add({
-          severity: 'error',
-          summary: 'Connection failed',
-          detail: 'Invalid or expired sign-in session. Try again.',
-        });
-      }
-    });
+    this.route.queryParamMap
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((params) => {
+        if (params.get('connected') === '1') {
+          this.messages.add({
+            severity: 'success',
+            summary: 'Connected',
+            detail:
+              'Google Calendar connected. Future approved leave will sync automatically.',
+          });
+        } else if (params.get('oauth_failed') === '1') {
+          this.messages.add({
+            severity: 'error',
+            summary: 'Connection failed',
+            detail: 'Google sign-in did not complete. Try again.',
+          });
+        } else if (
+          params.get('invalid_state') === '1' ||
+          params.get('missing_code') === '1'
+        ) {
+          this.messages.add({
+            severity: 'error',
+            summary: 'Connection failed',
+            detail: 'Invalid or expired sign-in session. Try again.',
+          });
+        }
+      });
   }
 }

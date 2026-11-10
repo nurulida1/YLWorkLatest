@@ -156,14 +156,14 @@ import { PermissionContextService } from '../../../../services/permission-contex
                 <td class="text-center!">
                   <div class="flex flex-col items-center justify-center gap-1">
                     <span class="font-medium text-gray-800">{{
-                      data.contactPerson1
+                      data.primaryContactPerson
                     }}</span>
 
                     <span
-                      *ngIf="data.contactPerson2"
+                      *ngIf="data.secondaryContactPerson"
                       class="text-xs text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded"
                     >
-                      Alt: {{ data.contactPerson2 }}
+                      Alt: {{ data.secondaryContactPerson }}
                     </span>
                   </div>
                 </td>

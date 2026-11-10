@@ -1,7 +1,9 @@
 export const environment = {
   production: false,
-  ApiBaseUrl: 'http://192.168.1.76:5000/api',
-  RedirectUrl: 'http://192.168.1.76:4200',
-  AttachmentUrl: 'http://192.168.1.76:5000/',
+  /** HTTP for local Angular→API (browser blocks self-signed HTTPS without manual trust). */
+  ApiBaseUrl: 'http://localhost:5000/api',
+  RedirectUrl: 'http://localhost:4200',
+  AttachmentUrl: 'http://localhost:5000/',
   AuthServerUrl: '',
+  HubUrl: 'http://localhost:5000/hubs/notifications',
 };

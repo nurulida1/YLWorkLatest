@@ -32,7 +32,8 @@ namespace YLWorks.Controller
                 return Ok(await _claimService.GetAllAsync());
             }
 
-            return Ok(await _claimService.GetByEmployeeAsync(employeeId ?? userId));
+            // Non-privileged callers may only read their own claims (ignore employeeId).
+            return Ok(await _claimService.GetByEmployeeAsync(userId));
         }
 
         [HttpGet("dashboard")]
@@ -66,6 +67,16 @@ namespace YLWorks.Controller
             [FromQuery] int? year,
             [FromQuery] Guid? excludeRequestId)
         {
+            var userId = GetUserId();
+            var role = User.FindFirst(ClaimTypes.Role)?.Value ?? "";
+            var canViewOthers =
+                ClaimRoles.Hr.Contains(role)
+                || ClaimRoles.Admin.Contains(role)
+                || ClaimRoles.CanApprove.Contains(role);
+
+            if (employeeId != userId && !canViewOthers)
+                return Forbid();
+
             try
             {
                 return Ok(await _claimService.GetMedicalBalanceAsync(employeeId, year, excludeRequestId));

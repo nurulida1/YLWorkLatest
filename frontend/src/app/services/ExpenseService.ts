@@ -46,9 +46,9 @@ export class ExpenseService {
       .pipe(retry(1), catchError(this.handleError('GetMany')));
   }
 
-  Create(request: CreateExpenseRequest): Observable<ExpenseDto> {
+  Create(request: CreateExpenseRequest | FormData): Observable<ExpenseDto> {
     return this.http
-      .post<ExpenseDto>(`${this.url}/Create`, request) // no { Data: ... }
+      .post<ExpenseDto>(`${this.url}/Create`, request)
       .pipe(retry(1), catchError(this.handleError('Create')));
   }
 

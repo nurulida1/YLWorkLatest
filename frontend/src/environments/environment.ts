@@ -1,6 +1,11 @@
 export const environment = {
   production: true,
-  ApiBaseUrl: 'http://localhost:5000/api',
-  RedirectUrl: 'http://localhost:4200',
+  /** Same-origin API when SPA is served from the .NET/IIS site. */
+  ApiBaseUrl: '/api',
+  /** Empty = current origin (LAN IP or Cloudflare hostname). */
+  RedirectUrl: '',
   AuthServerUrl: '',
+  /** Same-origin SignalR hub. */
+  HubUrl: '/hubs/notifications',
+  AttachmentUrl: '/',
 };

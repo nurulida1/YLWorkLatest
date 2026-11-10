@@ -21,11 +21,11 @@ import { Table, TableLazyLoadEvent, TableModule } from 'primeng/table';
 import { PaginatorModule } from 'primeng/paginator';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
-import { TextareaModule } from 'primeng/textarea';
 import { DatePickerModule } from 'primeng/datepicker';
 import { DialogModule } from 'primeng/dialog';
 import { CheckboxModule } from 'primeng/checkbox';
 import { TooltipModule } from 'primeng/tooltip';
+import { EditorModule } from 'primeng/editor';
 
 import { finalize, Subject, takeUntil } from 'rxjs';
 
@@ -35,6 +35,7 @@ import {
 } from '../../../shared/helpers/helpers';
 
 import { CreateNoticeRequest, Notice } from '../../../models/Notice';
+import { environment } from '../../../../environments/environment.development';
 
 @Component({
   selector: 'app-announcements',
@@ -47,11 +48,11 @@ import { CreateNoticeRequest, Notice } from '../../../models/Notice';
     PaginatorModule,
     ButtonModule,
     InputTextModule,
-    TextareaModule,
     DatePickerModule,
     CheckboxModule,
     DialogModule,
     TooltipModule,
+    EditorModule,
   ],
   template: `
     <div class="announcement-page">
@@ -220,9 +221,19 @@ import { CreateNoticeRequest, Notice } from '../../../models/Notice';
 
                 <!-- Content -->
                 <td>
-                  <div class="content-text" [title]="data.content || ''">
-                    {{ data.content || 'No content provided.' }}
-                  </div>
+                  <button
+                    type="button"
+                    class="content-preview-btn"
+                    [title]="plainText(data.content)"
+                    (click)="openNotice(data)"
+                  >
+                    {{
+                      previewText(data.content) || 'No content provided.'
+                    }}
+                    @if (hasMoreContent(data.content)) {
+                      <span class="read-more">Read more</span>
+                    }
+                  </button>
                 </td>
 
                 <!-- Publish Date -->
@@ -325,7 +336,13 @@ import { CreateNoticeRequest, Notice } from '../../../models/Notice';
         <div class="mobile-announcement-list">
           @if (PagingSignal().data.length > 0) {
             @for (data of PagingSignal().data; track data.id; let i = $index) {
-              <article class="announcement-card">
+              <article
+                class="announcement-card is-clickable"
+                role="button"
+                tabindex="0"
+                (click)="openNotice(data)"
+                (keydown.enter)="openNotice(data)"
+              >
                 <div class="mobile-card-header">
                   <div class="mobile-title-group">
                     <div class="mobile-announcement-icon">
@@ -343,7 +360,12 @@ import { CreateNoticeRequest, Notice } from '../../../models/Notice';
                       }
 
                       <div class="mobile-content">
-                        {{ data.content || 'No content provided.' }}
+                        {{
+                          previewText(data.content) || 'No content provided.'
+                        }}
+                        @if (hasMoreContent(data.content)) {
+                          <span class="read-more">Tap to read more</span>
+                        }
                       </div>
                     </div>
                   </div>
@@ -423,7 +445,7 @@ import { CreateNoticeRequest, Notice } from '../../../models/Notice';
                         [rounded]="true"
                         size="small"
                         aria-label="Delete announcement"
-                        (click)="DeleteNotice(data)"
+                        (click)="DeleteNotice(data); $event.stopPropagation()"
                       ></button>
                     }
                   </div>
@@ -458,6 +480,84 @@ import { CreateNoticeRequest, Notice } from '../../../models/Notice';
       </section>
     </div>
 
+    <!-- View Announcement Dialog -->
+    <p-dialog
+      [(visible)]="showViewDialog"
+      [modal]="true"
+      [draggable]="false"
+      [resizable]="false"
+      [style]="{ width: '720px', maxWidth: '95vw' }"
+      [breakpoints]="{ '640px': '95vw' }"
+      styleClass="announcement-view-dialog"
+      (onHide)="closeNotice()"
+    >
+      <ng-template #header>
+        <div class="view-dialog-header">
+          <div class="view-dialog-icon">
+            <i class="pi pi-megaphone"></i>
+          </div>
+          <div class="min-w-0">
+            <h2>{{ selectedNotice?.title }}</h2>
+            <div class="view-dialog-meta">
+              @if (selectedNotice?.isPinned) {
+                <span class="pinned-badge">
+                  <i class="pi pi-thumbtack"></i>
+                  Pinned
+                </span>
+              }
+              <span>
+                {{ selectedNotice?.publishDate | date: 'dd MMM yyyy, hh:mm a' }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </ng-template>
+
+      @if (selectedNotice) {
+        <div class="view-dialog-body">
+          @if (selectedNotice.content) {
+            <div
+              class="announcement-full-content"
+              [innerHTML]="selectedNotice.content"
+            ></div>
+          } @else {
+            <p class="view-empty-content">No content provided.</p>
+          }
+
+          <div class="view-dialog-footer-meta">
+            <span>
+              <i class="pi pi-user"></i>
+              {{
+                selectedNotice.createdBy?.displayName ||
+                  selectedNotice.createdByName ||
+                  'System'
+              }}
+            </span>
+            @if (selectedNotice.expiryDate) {
+              <span>
+                <i class="pi pi-clock"></i>
+                Expires
+                {{ selectedNotice.expiryDate | date: 'dd MMM yyyy' }}
+              </span>
+            }
+          </div>
+        </div>
+      }
+
+      <ng-template #footer>
+        <div class="dialog-footer">
+          <button
+            pButton
+            type="button"
+            label="Close"
+            severity="secondary"
+            [outlined]="true"
+            (click)="closeNotice()"
+          ></button>
+        </div>
+      </ng-template>
+    </p-dialog>
+
     <!-- Create Announcement Dialog -->
     <p-dialog
       header="Create Announcement"
@@ -465,7 +565,7 @@ import { CreateNoticeRequest, Notice } from '../../../models/Notice';
       [modal]="true"
       [draggable]="false"
       [resizable]="false"
-      [style]="{ width: '600px', maxWidth: '95vw' }"
+      [style]="{ width: '860px', maxWidth: '95vw' }"
       [breakpoints]="{ '640px': '95vw' }"
       styleClass="announcement-dialog"
       (onHide)="OnDialogHide()"
@@ -506,15 +606,74 @@ import { CreateNoticeRequest, Notice } from '../../../models/Notice';
         <div class="form-field">
           <label for="noticeContent">Announcement Content</label>
 
-          <textarea
+          <p-editor
             id="noticeContent"
-            pTextarea
             [(ngModel)]="noticeForm.content"
+            [style]="{ height: '240px' }"
             placeholder="Write your announcement..."
-            rows="5"
-            class="w-full"
-            [autoResize]="true"
-          ></textarea>
+            styleClass="announcement-content-editor"
+            (onInit)="onContentEditorInit($event)"
+          >
+            <ng-template #header>
+              <span class="ql-formats">
+                <select class="ql-header">
+                  <option value="1"></option>
+                  <option value="2"></option>
+                  <option value="3"></option>
+                  <option selected></option>
+                </select>
+              </span>
+              <span class="ql-formats">
+                <button type="button" class="ql-bold" aria-label="Bold"></button>
+                <button
+                  type="button"
+                  class="ql-italic"
+                  aria-label="Italic"
+                ></button>
+                <button
+                  type="button"
+                  class="ql-underline"
+                  aria-label="Underline"
+                ></button>
+                <button
+                  type="button"
+                  class="ql-strike"
+                  aria-label="Strike"
+                ></button>
+              </span>
+              <span class="ql-formats">
+                <button
+                  type="button"
+                  class="ql-list"
+                  value="ordered"
+                  aria-label="Ordered List"
+                ></button>
+                <button
+                  type="button"
+                  class="ql-list"
+                  value="bullet"
+                  aria-label="Unordered List"
+                ></button>
+              </span>
+              <span class="ql-formats">
+                <button
+                  type="button"
+                  class="ql-link"
+                  aria-label="Insert Link"
+                ></button>
+                <button
+                  type="button"
+                  class="ql-image"
+                  aria-label="Insert Image"
+                ></button>
+                <button
+                  type="button"
+                  class="ql-clean"
+                  aria-label="Remove Formatting"
+                ></button>
+              </span>
+            </ng-template>
+          </p-editor>
         </div>
 
         <!-- Publish Date -->
@@ -620,7 +779,10 @@ export class Announcements implements OnInit, OnDestroy {
 
   search = '';
   showNoticeDialog = false;
+  showViewDialog = false;
   savingNotice = false;
+  selectedNotice: Notice | null = null;
+  private readonly previewLimit = 120;
 
   noticeForm: CreateNoticeRequest = this.getEmptyNotice();
 
@@ -726,6 +888,97 @@ export class Announcements implements OnInit, OnDestroy {
       publishDate: new Date(),
       expiryDate: undefined,
       isPinned: false,
+    };
+  }
+
+  plainText(html: string | null | undefined): string {
+    if (!html) return '';
+    return html
+      .replace(/<[^>]*>/g, ' ')
+      .replace(/&nbsp;/gi, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  previewText(html: string | null | undefined): string {
+    const text = this.plainText(html);
+    if (text.length <= this.previewLimit) return text;
+    return `${text.slice(0, this.previewLimit).trimEnd()}…`;
+  }
+
+  hasMoreContent(html: string | null | undefined): boolean {
+    return this.plainText(html).length > this.previewLimit || /<img\b/i.test(html || '');
+  }
+
+  openNotice(notice: Notice): void {
+    this.selectedNotice = notice;
+    this.showViewDialog = true;
+    this.cdr.markForCheck();
+  }
+
+  closeNotice(): void {
+    this.showViewDialog = false;
+    this.selectedNotice = null;
+    this.cdr.markForCheck();
+  }
+
+  onContentEditorInit(event: { editor: any }): void {
+    const quill = event?.editor;
+    if (!quill) return;
+
+    const toolbar = quill.getModule('toolbar');
+    toolbar?.addHandler('image', () => this.insertEditorImage(quill));
+  }
+
+  private insertEditorImage(quill: any): void {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/png,image/jpeg,image/jpg,image/gif,image/webp';
+    input.click();
+
+    input.onchange = () => {
+      const file = input.files?.[0];
+      if (!file) return;
+
+      if (file.size > 5_000_000) {
+        this.messageService.add({
+          severity: 'warn',
+          summary: 'Image too large',
+          detail: 'Please choose an image that is 5MB or smaller.',
+        });
+        return;
+      }
+
+      this.messageService.add({
+        severity: 'info',
+        summary: 'Uploading',
+        detail: 'Uploading image…',
+        life: 1500,
+      });
+
+      this.noticeService.UploadImage(file).subscribe({
+        next: (res) => {
+          const relative = (res.url || '').replace(/^\/+/, '');
+          const url = relative.startsWith('http')
+            ? relative
+            : `${environment.AttachmentUrl}${relative}`;
+
+          const range =
+            quill.getSelection(true) || { index: quill.getLength(), length: 0 };
+          quill.insertEmbed(range.index, 'image', url, 'user');
+          quill.setSelection(range.index + 1, 0, 'user');
+          this.cdr.markForCheck();
+        },
+        error: (error) => {
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Upload failed',
+            detail:
+              error?.error?.message ??
+              'Unable to upload image. Please try again.',
+          });
+        },
+      });
     };
   }
 

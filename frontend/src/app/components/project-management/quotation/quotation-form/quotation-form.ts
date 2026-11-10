@@ -2410,13 +2410,12 @@ export class QuotationForm implements OnInit, OnDestroy {
     const list = this.productServiceSignal().data || [];
 
     this.rowSuggestions[rowIndex] = list.filter((p) => {
-      const name = (p.name || '').toLowerCase();
+      const code = (p.itemCode || '').toLowerCase();
       const desc = (p.description || '').toLowerCase();
+      const type = (p.type || '').toLowerCase();
+      const q = keyword.toLowerCase();
 
-      return (
-        name.includes(keyword.toLowerCase()) ||
-        desc.includes(keyword.toLowerCase())
-      );
+      return code.includes(q) || desc.includes(q) || type.includes(q);
     });
   }
 

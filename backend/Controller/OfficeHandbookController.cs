@@ -339,6 +339,60 @@ namespace YLWorks.Controllers
         // HANDBOOK CATEGORIES
         // =========================================================
 
+        // POST: api/OfficeHandbook/upload-image
+        [HttpPost("upload-image")]
+        [RequestSizeLimit(5_000_000)]
+        public async Task<IActionResult> UploadImage(IFormFile file)
+        {
+            if (!CanManageHandbook())
+                return Forbid();
+
+            if (file == null || file.Length == 0)
+            {
+                return BadRequest(new { message = "Image file is required." });
+            }
+
+            var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+            var allowed = new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp" };
+
+            if (!allowed.Contains(extension))
+            {
+                return BadRequest(new
+                {
+                    message = "Only JPG, PNG, GIF and WEBP images are allowed."
+                });
+            }
+
+            if (file.Length > 5_000_000)
+            {
+                return BadRequest(new { message = "Image must be 5MB or smaller." });
+            }
+
+            var uploads = Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "uploads",
+                "handbook");
+
+            if (!Directory.Exists(uploads))
+                Directory.CreateDirectory(uploads);
+
+            var fileName = $"{Guid.NewGuid():N}{extension}";
+            var fullPath = Path.Combine(uploads, fileName);
+
+            await using (var stream = new FileStream(fullPath, FileMode.Create))
+            {
+                await file.CopyToAsync(stream);
+            }
+
+            var relativePath = $"uploads/handbook/{fileName}";
+
+            return Ok(new
+            {
+                url = relativePath,
+                fileName
+            });
+        }
+
         // GET: api/OfficeHandbook/categories
         [HttpGet("categories")]
         public async Task<IActionResult> GetCategories()

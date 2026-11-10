@@ -84,6 +84,9 @@ namespace YLWorks.Data
             await EnsureLeaveCalendarTablesAsync(context, logger);
             await EnsureDefaultLeaveTypesAsync(context, logger);
 
+            // Keep demo logins usable even when sample leave requests already exist.
+            await EnsureSeedUsersLoginReadyAsync(context, logger);
+
             // Demo users / sample leave requests — Development only (caller gates this).
             if (await context.LeaveRequests.AnyAsync())
             {
@@ -487,6 +490,56 @@ namespace YLWorks.Data
             return req;
         }
 
+        private static readonly string[] SeedUserEmails =
+        [
+            "leave.admin@ylwork.local",
+            "leave.hr@ylwork.local",
+            "leave.manager2@ylwork.local",
+            "leave.manager1@ylwork.local",
+            "leave.emp1@ylwork.local",
+            "leave.emp2@ylwork.local",
+            "leave.emp3@ylwork.local",
+            "leave.emp4@ylwork.local",
+            "leave.emp5@ylwork.local",
+            "leave.emp6@ylwork.local",
+        ];
+
+        /// <summary>
+        /// Demo seed accounts must be Active + Approved so login / HOD chain tests work.
+        /// Runs on every Development startup (even when leave requests already exist).
+        /// </summary>
+        private static async Task EnsureSeedUsersLoginReadyAsync(AppDbContext context, ILogger logger)
+        {
+            var users = await context.Users
+                .Where(u => SeedUserEmails.Contains(u.Email))
+                .ToListAsync();
+            if (users.Count == 0)
+                return;
+
+            var changed = 0;
+            foreach (var user in users)
+            {
+                if (!string.Equals(user.Status, "Approved", StringComparison.OrdinalIgnoreCase))
+                {
+                    user.Status = "Approved";
+                    changed++;
+                }
+                if (!user.IsActive)
+                {
+                    user.IsActive = true;
+                    changed++;
+                }
+            }
+
+            if (changed > 0)
+            {
+                await context.SaveChangesAsync();
+                logger.LogInformation(
+                    "Leave seed users login-ready update applied ({Changed} field changes across {Count} users).",
+                    changed, users.Count);
+            }
+        }
+
         private static async Task<Dictionary<string, User>> SeedUsersAsync(
             AppDbContext context, ILogger logger)
         {
@@ -503,6 +556,11 @@ namespace YLWorks.Data
                     {
                         existing.SystemRole = role;
                     }
+                    // Seed demo accounts must be login-ready (Status Approved + active).
+                    if (!string.Equals(existing.Status, "Approved", StringComparison.OrdinalIgnoreCase))
+                        existing.Status = "Approved";
+                    if (!existing.IsActive)
+                        existing.IsActive = true;
                     if (managerId.HasValue &&
                         !existing.ReportingManagers.Any(rm => rm.ManagerId == managerId.Value))
                     {
@@ -525,6 +583,7 @@ namespace YLWorks.Data
                     SystemRole = role,
                     EmployeeNo = $"LV-{key.ToUpper()}",
                     IsActive = true,
+                    Status = "Approved",
                     JoinedDate = DateTime.UtcNow.AddYears(-1),
                     CreatedAt = DateTime.UtcNow
                 };

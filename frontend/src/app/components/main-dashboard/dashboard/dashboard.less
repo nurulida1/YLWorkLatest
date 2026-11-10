@@ -1,3 +1,53 @@
 :host {
   display: block;
 }
+
+.announcement-rich-content {
+  max-height: 200px;
+  overflow: auto;
+  overflow-wrap: anywhere;
+
+  :where(p, ul, ol, h1, h2, h3, h4) {
+    margin: 0.4em 0;
+  }
+
+  :where(ul, ol) {
+    padding-left: 1.25rem;
+  }
+
+  ul {
+    list-style: disc;
+  }
+
+  ol {
+    list-style: decimal;
+  }
+
+  a {
+    color: #1d4ed8;
+    text-decoration: underline;
+  }
+
+  /* Cap display size so large uploads still look compact on desktop + mobile */
+  img {
+    display: block;
+    max-width: min(100%, 240px);
+    max-height: 140px;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    margin: 0.5rem 0;
+    border-radius: 10px;
+  }
+}
+
+@media (max-width: 640px) {
+  .announcement-rich-content {
+    max-height: 180px;
+
+    img {
+      max-width: min(100%, 180px);
+      max-height: 110px;
+    }
+  }
+}

@@ -99,7 +99,12 @@ interface WeekDayCell {
               </div>
 
               <h1 class="text-3xl font-bold tracking-tight text-gray-950">
-                Good morning, {{ currentUser?.displayName || 'Administrator' }}
+                Good morning,
+                {{
+                  currentUser?.displayName ||
+                    currentUser?.fullName ||
+                    'there'
+                }}
               </h1>
 
               <p class="text-gray-500 mt-2">
@@ -552,7 +557,12 @@ interface WeekDayCell {
             </div>
 
             <div class="font-bold text-2xl sm:text-3xl">
-              Welcome back, {{ currentUser?.displayName }}
+              Welcome back,
+              {{
+                currentUser?.displayName ||
+                  currentUser?.fullName ||
+                  'there'
+              }}
             </div>
           </div>
 
@@ -651,11 +661,10 @@ interface WeekDayCell {
 
                     <!-- Content -->
                     @if (announcement.content) {
-                      <p
-                        class="text-sm text-gray-500 mt-2 leading-relaxed line-clamp-2"
-                      >
-                        {{ announcement.content }}
-                      </p>
+                      <div
+                        class="announcement-rich-content text-sm text-gray-500 mt-2 leading-relaxed"
+                        [innerHTML]="announcement.content"
+                      ></div>
                     }
 
                     <!-- Dates -->
@@ -1784,7 +1793,8 @@ export class Dashboard implements OnInit, OnDestroy {
   announcements: Notice[] = [];
 
   currentUser = this.userService.currentUser;
-  name: string = this.currentUser?.displayName || 'User';
+  name: string =
+    this.currentUser?.displayName || this.currentUser?.fullName || 'User';
   systemRole: string = this.currentUser?.systemRole || 'Executive';
   today: Date = new Date();
 

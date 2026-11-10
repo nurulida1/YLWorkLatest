@@ -95,7 +95,9 @@ import { UserService } from '../../../../services/userService.service';
           >
             <i class="pi pi-building text-white! text-xl!"></i>
           </div>
-          <span class="text-sm font-semibold text-blue-800">All (1)</span>
+          <span class="text-sm font-semibold text-blue-800"
+            >All ({{ PagingSignal().totalElements || 0 }})</span
+          >
         </div>
       </div>
     </div>

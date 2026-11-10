@@ -237,12 +237,109 @@ In Cloudflare DNS for your zone:
 - Type **A** (or AAAA): name `ylwork` (or `@` / your chosen host) → server **public** IP
 - Proxy status: **Proxied** (orange cloud)
 
-### 2. SSL/TLS mode
+### 2. SSL/TLS + Origin certificate on IIS
 
 In Cloudflare → SSL/TLS:
 
 - Set encryption mode to **Full (strict)** — do **not** use Flexible
-- Create a **Cloudflare Origin Certificate** (or use another public cert) and bind it in IIS for HTTPS :443 with host name `YOUR_HOSTNAME`
+- Create a **Cloudflare Origin Certificate** (SSL/TLS → Origin Server → Create Certificate)
+  - Hostnames: `YOUR_HOSTNAME` (e.g. `ylworks.ylsduotower.com`)
+  - Download/copy the **Origin Certificate** (`.pem`) and **Private Key** (`.key`)
+  - Keep these files **only on the server** under something like `C:\certs\` — never commit them to git
+
+IIS needs a **`.pfx`**. Convert PEM+key → PFX with OpenSSL (install on the Windows Server if needed), then import and bind.
+
+#### 2a. Install OpenSSL on Windows Server
+
+**Option A — winget** (Windows 11 / Server builds that include winget):
+
+```powershell
+winget install --id ShiningLight.OpenSSL.Light -e --accept-package-agreements --accept-source-agreements
+```
+
+Close and reopen PowerShell, then:
+
+```powershell
+openssl version
+```
+
+If `openssl` is still not found, add it to PATH (System → Environment Variables → Path):
+
+```text
+C:\Program Files\OpenSSL-Win64\bin
+```
+
+Or call it by full path:
+
+```powershell
+& "C:\Program Files\OpenSSL-Win64\bin\openssl.exe" version
+```
+
+**Option B — MSI installer** (any Windows Server):
+
+1. Download **Win64 OpenSSL Light** from [Shining Light Productions](https://slproweb.com/products/Win32OpenSSL.html)
+2. Run the installer → default path `C:\Program Files\OpenSSL-Win64`
+3. When asked where to copy OpenSSL DLLs, choose **The OpenSSL binaries (/bin) directory**
+4. Add `C:\Program Files\OpenSSL-Win64\bin` to PATH (or use the full path above)
+5. Open a **new** PowerShell window and run `openssl version`
+
+**Option C — Git for Windows already installed** (no separate OpenSSL install):
+
+```powershell
+& "C:\Program Files\Git\mingw64\bin\openssl.exe" version
+```
+
+Use that full path in the PFX commands below instead of `openssl`.
+
+#### 2b. Create the `.pfx` on the server
+
+Save Cloudflare files as:
+
+- `C:\certs\YOUR_HOSTNAME-origin.pem` (certificate)
+- `C:\certs\YOUR_HOSTNAME-origin.key` (private key)
+
+PowerShell (Admin):
+
+```powershell
+New-Item -ItemType Directory -Force -Path C:\certs | Out-Null
+
+openssl pkcs12 -export `
+  -out C:\certs\YOUR_HOSTNAME-origin.pfx `
+  -inkey C:\certs\YOUR_HOSTNAME-origin.key `
+  -in C:\certs\YOUR_HOSTNAME-origin.pem `
+  -passout pass:ChooseAStrongPassword
+```
+
+If `openssl` is not on PATH, prefix with the full path from §2a.
+
+Import into the Local Machine store:
+
+```powershell
+Import-PfxCertificate `
+  -FilePath 'C:\certs\YOUR_HOSTNAME-origin.pfx' `
+  -CertStoreLocation 'Cert:\LocalMachine\My' `
+  -Password (ConvertTo-SecureString 'ChooseAStrongPassword' -AsPlainText -Force)
+```
+
+Optional (removes IIS “intermediate certificates missing” warning): install the [Cloudflare Origin CA RSA root](https://developers.cloudflare.com/ssl/static/origin_ca_rsa_root.pem) into **Local Machine → Trusted Root Certification Authorities**. The warning is harmless for Cloudflare Full (strict); browsers never see the origin cert.
+
+#### 2c. Bind HTTPS in IIS
+
+1. IIS Manager → **Sites** → **YLWork** → **Bindings…** → **Add…**
+2. Type: **https**, port **443**
+3. Host name: leave **empty** when this is the only HTTPS site on the server (recommended for a single-app box; avoids SNI/Host mismatches with `127.0.0.1` tests and Cloudflare)
+4. SSL certificate: select the Cloudflare Origin certificate → OK
+5. Ensure **Default Web Site** does **not** also bind https `:443` (that causes HTML 404s while HTTP still works)
+
+IIS may warn that intermediate certificates are missing — click **OK** and continue (see optional root install above).
+
+Verify on the server:
+
+```powershell
+curl.exe -k https://127.0.0.1/health
+```
+
+Expect `Healthy` (or 200), not the IIS HTML “Not Found” page. Then test publicly: `https://YOUR_HOSTNAME/health`.
 
 ### 3. Firewall / router
 
@@ -299,5 +396,8 @@ Recycle the App Pool. Confirm:
 | SignalR fails | WebSockets disabled in IIS or blocked by proxy |
 | Attachments 404 | App Pool cannot read `uploads\`, or wrong path casing on non-Windows |
 | CORS errors in production | Should not appear for same-origin; ensure you are not loading an old build that still points at another host |
+| `http://` works, `https://` times out | Origin has no HTTPS :443, or firewall/router does not forward 443; Cloudflare SSL is Full/Full (strict) waiting on origin TLS |
+| `https://` returns IIS HTML 404, `http://` OK | HTTPS binding is on **Default Web Site** (or wrong site). Bind https `:443` on **YLWork**; remove Default Web Site’s https `:443`. Empty host name on YLWork is fine for a single-app server |
+| `openssl` not recognized | OpenSSL not installed or not on PATH — see Phase 2 §2a |
 
 Out of scope: JasperReports Docker compose, separate API subdomain, CI/CD pipelines.

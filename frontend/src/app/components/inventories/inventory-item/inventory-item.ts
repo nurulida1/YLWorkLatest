@@ -771,8 +771,31 @@ export class InventoryItem implements OnInit, OnDestroy {
     }
 
     this.loadingService.start();
+
+    // API expects [FromForm] multipart — plain JSON leaves Id unbound → 404 "Inventory not found".
+    const formData = new FormData();
+    const formValue = this.FG.getRawValue() as Record<string, unknown>;
+
+    Object.keys(formValue).forEach((key) => {
+      const value = formValue[key];
+
+      if (key === 'attachment') {
+        if (value instanceof File) {
+          formData.append('attachment', value);
+        }
+        return;
+      }
+
+      if (value !== null && value !== undefined) {
+        formData.append(
+          key,
+          value instanceof Date ? value.toISOString() : String(value),
+        );
+      }
+    });
+
     this.inventoryService
-      .Update(this.FG.getRawValue())
+      .Update(formData)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (res) => {

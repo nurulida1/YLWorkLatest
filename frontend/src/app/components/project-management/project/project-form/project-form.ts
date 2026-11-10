@@ -171,7 +171,7 @@ import { TagModule } from 'primeng/tag';
               <!-- Client -->
               <div class="flex flex-col gap-2">
                 <label class="text-sm font-semibold text-slate-700">
-                  Client
+                  Client *
                 </label>
 
                 <p-select
@@ -187,6 +187,16 @@ import { TagModule } from 'primeng/tag';
                   styleClass="!w-full !rounded-lg"
                   panelStyleClass="!rounded-lg"
                 ></p-select>
+
+                <small
+                  *ngIf="
+                    FG.get('clientId')?.invalid &&
+                    FG.get('clientId')?.touched
+                  "
+                  class="text-red-500 text-xs"
+                >
+                  Client is required.
+                </small>
               </div>
 
               <!-- Priority -->
@@ -689,7 +699,7 @@ export class ProjectForm implements OnInit, OnDestroy {
       projectCode: new FormControl<string | null>(null),
       projectTitle: new FormControl<string | null>(null, Validators.required),
       location: new FormControl<string | null>(null),
-      clientId: new FormControl<string | null>(null),
+      clientId: new FormControl<string | null>(null, Validators.required),
       projectLeaderId: new FormControl<string | null>(null),
       startDate: new FormControl<Date | null>(null),
       estimatedCompletedDate: new FormControl<Date | null>(null),

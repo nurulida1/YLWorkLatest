@@ -75,9 +75,9 @@ export class PaymentService {
     );
   }
 
-  Create(request: CreatePaymentRequest): Observable<PaymentDto> {
+  Create(request: CreatePaymentRequest | FormData): Observable<PaymentDto> {
     return this.http
-      .post<PaymentDto>(`${this.url}/Create`, request) // no { Data: ... }
+      .post<PaymentDto>(`${this.url}/Create`, request)
       .pipe(retry(1), catchError(this.handleError('Create')));
   }
 

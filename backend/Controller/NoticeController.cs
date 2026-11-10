@@ -322,6 +322,56 @@ namespace YLWorks.Controller
             return Ok(data);
         }
 
+        // POST: api/Notice/upload-image
+        [Authorize(Roles = "HR,SuperAdmin")]
+        [HttpPost("upload-image")]
+        [RequestSizeLimit(5_000_000)]
+        public async Task<IActionResult> UploadImage(IFormFile file)
+        {
+            if (file == null || file.Length == 0)
+            {
+                return BadRequest(new { message = "Image file is required." });
+            }
+
+            var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+            var allowed = new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp" };
+
+            if (!allowed.Contains(extension))
+            {
+                return BadRequest(new
+                {
+                    message = "Only JPG, PNG, GIF and WEBP images are allowed."
+                });
+            }
+
+            if (file.Length > 5_000_000)
+            {
+                return BadRequest(new { message = "Image must be 5MB or smaller." });
+            }
+
+            var uploads = Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "uploads",
+                "notices");
+
+            if (!Directory.Exists(uploads))
+                Directory.CreateDirectory(uploads);
+
+            var fileName = $"{Guid.NewGuid():N}{extension}";
+            var fullPath = Path.Combine(uploads, fileName);
+
+            await using (var stream = new FileStream(fullPath, FileMode.Create))
+            {
+                await file.CopyToAsync(stream);
+            }
+
+            return Ok(new
+            {
+                url = $"uploads/notices/{fileName}",
+                fileName
+            });
+        }
+
         // POST: api/Notice/Create
         [Authorize(Roles = "HR,SuperAdmin")]
         [HttpPost("Create")]

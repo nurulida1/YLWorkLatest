@@ -9,6 +9,7 @@ export interface Notice extends BaseModel {
   isPinned: boolean;
   isActive: boolean;
   createdById: string;
+  createdByName?: string;
   createdBy?: UserDto;
 }
 

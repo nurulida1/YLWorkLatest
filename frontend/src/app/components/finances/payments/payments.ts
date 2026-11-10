@@ -235,7 +235,7 @@ import {
             <div class="col-span-12 lg:col-span-6 flex flex-col gap-1">
               <div>Invoice No</div>
               <p-select
-                [options]="clients || []"
+                [options]="invoices || []"
                 appendTo="body"
                 styleClass="text-[15px]!"
                 inputStyleClass="text-[15px]!"
@@ -432,6 +432,7 @@ export class Payments implements OnInit, OnDestroy {
   menuItems: MenuItem[] = [];
 
   clients: { label: string; value: string }[] = [];
+  invoices: { label: string; value: string }[] = [];
 
   constructor() {
     this.Query.Page = 1;
@@ -442,7 +443,28 @@ export class Payments implements OnInit, OnDestroy {
     this.Query.Includes = 'Client,Supplier';
   }
 
-  ngOnInit(): void {}
+  ngOnInit(): void {
+    this.loadDropdowns();
+  }
+
+  loadDropdowns() {
+    this.paymentService
+      .GetDropdown()
+      .pipe(takeUntil(this.ngUnsubscribe))
+      .subscribe({
+        next: (res) => {
+          this.clients = (res?.companies || []).map((c: any) => ({
+            label: c.name,
+            value: c.id,
+          }));
+          this.invoices = (res?.invoices || []).map((i: any) => ({
+            label: i.invoiceNo,
+            value: i.id,
+          }));
+          this.cdr.markForCheck();
+        },
+      });
+  }
 
   GetData() {
     this.loadingService.start();
@@ -529,11 +551,11 @@ export class Payments implements OnInit, OnDestroy {
     this.FG = new FormGroup({
       id: new FormControl<string | null>({ value: null, disabled: true }),
       paymentNo: new FormControl<string | null>(null),
-      clientId: new FormControl<string | null>(null, Validators.required),
+      clientId: new FormControl<string | null>(null),
       invoiceId: new FormControl<string | null>(null),
       referenceNo: new FormControl<string | null>(null),
       paymentDate: new FormControl<Date | null>(null, Validators.required),
-      paymentMode: new FormControl<string | null>(null),
+      paymentMode: new FormControl<string | null>(null, Validators.required),
       amount: new FormControl<number | null>(null, Validators.required),
       paidAmount: new FormControl<number | null>(null),
       dueAmount: new FormControl<number | null>(null),
@@ -595,8 +617,34 @@ export class Payments implements OnInit, OnDestroy {
     if (!this.FG.valid) return;
 
     this.loadingService.start();
+
+    const formData = new FormData();
+    const raw = this.FG.getRawValue();
+
+    Object.entries(raw).forEach(([key, value]) => {
+      if (
+        value === null ||
+        value === undefined ||
+        key === 'id' ||
+        key === 'paidAmount' ||
+        key === 'dueAmount'
+      ) {
+        return;
+      }
+
+      if (value instanceof Date) {
+        value = value.toISOString();
+      }
+
+      if (typeof value === 'object' && !(value instanceof File)) {
+        value = JSON.stringify(value);
+      }
+
+      formData.append(key, value as any);
+    });
+
     this.paymentService
-      .Create(this.FG.value)
+      .Create(formData)
       .pipe(takeUntil(this.ngUnsubscribe))
       .subscribe({
         next: (res) => {

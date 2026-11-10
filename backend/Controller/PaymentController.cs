@@ -117,6 +117,30 @@ namespace YLWorks.Controller
             }
         }
 
+        [HttpGet("GetDropdown")]
+        public async Task<IActionResult> GetDropdown()
+        {
+            var companies = await _context.Companies
+                .OrderBy(c => c.Name)
+                .Select(c => new { c.Id, c.Name })
+                .ToListAsync();
+
+            var invoices = await _context.Invoices
+                .OrderByDescending(i => i.CreatedAt)
+                .Select(i => new
+                {
+                    i.Id,
+                    i.InvoiceNo,
+                    i.ClientId,
+                    i.SupplierId,
+                    i.TotalAmount,
+                    i.PaidAmount
+                })
+                .ToListAsync();
+
+            return Ok(new { companies, invoices });
+        }
+
         [HttpPost("MarkAsPaid")]
         public async Task<IActionResult> MarkAsPaid([FromForm] CreatePaymentRequest request)
         {
@@ -204,6 +228,80 @@ namespace YLWorks.Controller
                 expense,
                 invoice
             });
+        }
+
+        [HttpPost("Create")]
+        public async Task<IActionResult> Create([FromForm] CreatePaymentRequest request)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim))
+                return Unauthorized();
+
+            var userId = Guid.Parse(userIdClaim);
+
+            string? filePath = null;
+
+            if (request.Attachment != null)
+            {
+                var uploads = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/uploads/payments");
+
+                if (!Directory.Exists(uploads))
+                    Directory.CreateDirectory(uploads);
+
+                var fileName = $"{Guid.NewGuid()}_{request.Attachment.FileName}";
+                var fullPath = Path.Combine(uploads, fileName);
+
+                using (var stream = new FileStream(fullPath, FileMode.Create))
+                {
+                    await request.Attachment.CopyToAsync(stream);
+                }
+
+                filePath = $"uploads/payments/{fileName}";
+            }
+
+            var payment = new Payments
+            {
+                Id = Guid.NewGuid(),
+                PaymentNo = string.IsNullOrWhiteSpace(request.PaymentNo)
+                    ? GeneratePaymentNo()
+                    : request.PaymentNo,
+                ClientId = request.ClientId,
+                SupplierId = request.SupplierId,
+                InvoiceId = request.InvoiceId,
+                ReferenceNo = request.ReferenceNo,
+                PaymentDate = request.PaymentDate,
+                PaymentMode = request.PaymentMode ?? string.Empty,
+                Amount = request.Amount,
+                Notes = request.Notes,
+                Attachment = filePath,
+                Status = "Paid",
+                ProcessedById = userId
+            };
+
+            _context.Payments.Add(payment);
+
+            if (request.InvoiceId.HasValue)
+            {
+                var invoice = await _context.Invoices
+                    .FirstOrDefaultAsync(x => x.Id == request.InvoiceId.Value);
+
+                if (invoice != null)
+                {
+                    var totalPaid = await _context.Payments
+                        .Where(x => x.InvoiceId == request.InvoiceId.Value)
+                        .SumAsync(x => x.Amount ?? 0);
+
+                    totalPaid += request.Amount;
+                    invoice.PaidAmount = totalPaid;
+                    invoice.Status = totalPaid >= invoice.TotalAmount
+                        ? "Paid"
+                        : "PartiallyPaid";
+                }
+            }
+
+            await _context.SaveChangesAsync();
+
+            return Ok(payment);
         }
 
         private string GeneratePaymentNo()

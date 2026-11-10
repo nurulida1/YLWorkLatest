@@ -23,6 +23,8 @@ import { OfficeHandbookService } from '../../services/OfficeHandbookService';
 import { DialogModule } from 'primeng/dialog';
 import { CheckboxModule } from 'primeng/checkbox';
 import { SelectModule } from 'primeng/select';
+import { EditorModule } from 'primeng/editor';
+import { environment } from '../../../environments/environment.development';
 
 @Component({
   selector: 'app-office-handbook',
@@ -34,6 +36,7 @@ import { SelectModule } from 'primeng/select';
     DialogModule,
     CheckboxModule,
     SelectModule,
+    EditorModule,
   ],
   template: ` <div class="handbook-page min-h-screen bg-slate-50">
       <div
@@ -612,7 +615,7 @@ import { SelectModule } from 'primeng/select';
       [modal]="true"
       [draggable]="false"
       [resizable]="false"
-      [style]="{ width: '750px', maxWidth: '95vw' }"
+      [style]="{ width: '860px', maxWidth: '95vw' }"
       [breakpoints]="{ '768px': '95vw' }"
       styleClass="handbook-dialog"
       (onHide)="resetArticleForm()"
@@ -701,16 +704,92 @@ import { SelectModule } from 'primeng/select';
             Article Content <span class="text-red-500">*</span>
           </label>
 
-          <textarea
+          <p-editor
             [(ngModel)]="articleForm.content"
-            rows="12"
+            [style]="{ height: '280px' }"
             placeholder="Write your handbook article here..."
-            class="w-full resize-y rounded-xl border border-slate-200 px-4 py-3 text-sm leading-relaxed outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
-          ></textarea>
+            styleClass="handbook-content-editor"
+            (onInit)="onContentEditorInit($event)"
+          >
+            <ng-template #header>
+              <span class="ql-formats">
+                <select class="ql-header">
+                  <option value="1"></option>
+                  <option value="2"></option>
+                  <option value="3"></option>
+                  <option selected></option>
+                </select>
+              </span>
+              <span class="ql-formats">
+                <button
+                  type="button"
+                  class="ql-bold"
+                  aria-label="Bold"
+                ></button>
+                <button
+                  type="button"
+                  class="ql-italic"
+                  aria-label="Italic"
+                ></button>
+                <button
+                  type="button"
+                  class="ql-underline"
+                  aria-label="Underline"
+                ></button>
+                <button
+                  type="button"
+                  class="ql-strike"
+                  aria-label="Strike"
+                ></button>
+              </span>
+              <span class="ql-formats">
+                <button
+                  type="button"
+                  class="ql-list"
+                  value="ordered"
+                  aria-label="Ordered List"
+                ></button>
+                <button
+                  type="button"
+                  class="ql-list"
+                  value="bullet"
+                  aria-label="Unordered List"
+                ></button>
+                <button
+                  type="button"
+                  class="ql-indent"
+                  value="-1"
+                  aria-label="Decrease Indent"
+                ></button>
+                <button
+                  type="button"
+                  class="ql-indent"
+                  value="+1"
+                  aria-label="Increase Indent"
+                ></button>
+              </span>
+              <span class="ql-formats">
+                <button
+                  type="button"
+                  class="ql-link"
+                  aria-label="Insert Link"
+                ></button>
+                <button
+                  type="button"
+                  class="ql-image"
+                  aria-label="Insert Image"
+                ></button>
+                <button
+                  type="button"
+                  class="ql-clean"
+                  aria-label="Remove Formatting"
+                ></button>
+              </span>
+            </ng-template>
+          </p-editor>
 
           <p class="mt-1 text-xs text-slate-400">
-            You can enter plain text for now. Rich text formatting can be added
-            later.
+            Use the toolbar to format headings, lists, links and emphasis.
           </p>
         </div>
 
@@ -1358,6 +1437,64 @@ export class OfficeHandbookComponent implements OnInit {
       .replace(/-+/g, '-');
   }
 
+  onContentEditorInit(event: { editor: any }): void {
+    const quill = event?.editor;
+    if (!quill) return;
+
+    const toolbar = quill.getModule('toolbar');
+    toolbar?.addHandler('image', () => this.insertEditorImage(quill));
+  }
+
+  private insertEditorImage(quill: any): void {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/png,image/jpeg,image/jpg,image/gif,image/webp';
+    input.click();
+
+    input.onchange = () => {
+      const file = input.files?.[0];
+      if (!file) return;
+
+      if (file.size > 5_000_000) {
+        this.messageService.add({
+          severity: 'warn',
+          summary: 'Image too large',
+          detail: 'Please choose an image that is 5MB or smaller.',
+        });
+        return;
+      }
+
+      this.messageService.add({
+        severity: 'info',
+        summary: 'Uploading',
+        detail: 'Uploading image…',
+        life: 1500,
+      });
+
+      this.handbookService.UploadImage(file).subscribe({
+        next: (res) => {
+          const relative = (res.url || '').replace(/^\/+/, '');
+          const url = relative.startsWith('http')
+            ? relative
+            : `${environment.AttachmentUrl}${relative}`;
+
+          const range = quill.getSelection(true) || { index: quill.getLength(), length: 0 };
+          quill.insertEmbed(range.index, 'image', url, 'user');
+          quill.setSelection(range.index + 1, 0, 'user');
+          this.cdr.markForCheck();
+        },
+        error: (error) => {
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Upload failed',
+            detail:
+              error?.error?.message ?? 'Unable to upload image. Please try again.',
+          });
+        },
+      });
+    };
+  }
+
   // ==========================================
   // SAVE ARTICLE
   // ==========================================
@@ -1369,10 +1506,15 @@ export class OfficeHandbookComponent implements OnInit {
 
     const title = this.articleForm.title.trim();
     const slug = this.articleForm.slug.trim();
-    const content = this.articleForm.content.trim();
+    const content = (this.articleForm.content || '').trim();
     const categoryId = this.articleForm.categoryId;
+    const plainContent = content
+      .replace(/<[^>]*>/g, ' ')
+      .replace(/&nbsp;/gi, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
 
-    if (!title || !slug || !content || !categoryId) {
+    if (!title || !slug || !plainContent || !categoryId) {
       this.messageService.add({
         severity: 'warn',
         summary: 'Required Fields',

@@ -217,14 +217,14 @@ import {
                     type="text"
                     pInputText
                     class="w-full"
-                    formControlName="contactPerson1"
+                    formControlName="primaryContactPerson"
                     placeholder="Primary Contact Person"
                   />
                   <input
                     type="text"
                     pInputText
                     class="w-full"
-                    formControlName="contactPerson2"
+                    formControlName="secondaryContactPerson"
                     placeholder="Secondary Contact Person"
                   />
                 </div>
@@ -507,8 +507,8 @@ export class SupplierForm implements OnInit, OnDestroy {
       name: new FormControl<string | null>(null, Validators.required),
       logoImage: new FormControl<string | null>(null),
       contactNo: new FormControl<string | null>(null),
-      contactPerson1: new FormControl<string | null>(null),
-      contactPerson2: new FormControl<string | null>(null),
+      primaryContactPerson: new FormControl<string | null>(null),
+      secondaryContactPerson: new FormControl<string | null>(null),
       faxNo: new FormControl<string | null>(null),
       acNo: new FormControl<string | null>(null),
       email: new FormControl<string | null>(null, Validators.email),

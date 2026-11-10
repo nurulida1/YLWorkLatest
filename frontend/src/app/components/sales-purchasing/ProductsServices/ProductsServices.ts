@@ -33,12 +33,14 @@ import {
   FormGroup,
   FormsModule,
   ReactiveFormsModule,
+  Validators,
 } from '@angular/forms';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 import { TagModule } from 'primeng/tag';
 import { EditorModule } from 'primeng/editor';
+import { SelectModule } from 'primeng/select';
 
 @Component({
   selector: 'app-products-services',
@@ -54,6 +56,7 @@ import { EditorModule } from 'primeng/editor';
     TagModule,
     ReactiveFormsModule,
     EditorModule,
+    SelectModule,
   ],
   template: `
     <div
@@ -192,22 +195,22 @@ import { EditorModule } from 'primeng/editor';
                 <ng-template #header>
                   <tr>
                     <th
-                      pSortableColumn="Code"
+                      pSortableColumn="ItemCode"
                       class="products-th w-[12%]! text-center!"
                     >
                       <div class="flex items-center justify-center gap-2">
                         <span>Code</span>
-                        <p-sortIcon field="Code" />
+                        <p-sortIcon field="ItemCode" />
                       </div>
                     </th>
 
-                    <th class="products-th w-[12%]! text-center!">Item</th>
+                    <th class="products-th w-[12%]! text-center!">Type</th>
 
                     <th class="products-th w-[36%]! text-left!">Description</th>
 
                     <th class="products-th w-[10%]! text-center!">Unit</th>
 
-                    <th class="products-th w-[10%]! text-center!">Quantity</th>
+                    <th class="products-th w-[10%]! text-center!">Stock</th>
 
                     <th class="products-th w-[12%]! text-right!">Price (RM)</th>
 
@@ -222,13 +225,13 @@ import { EditorModule } from 'primeng/editor';
                       <span
                         class="inline-flex rounded-lg bg-slate-100 px-2.5 py-1 font-semibold text-slate-700"
                       >
-                        {{ data.code }}
+                        {{ data.itemCode }}
                       </span>
                     </td>
 
                     <td class="text-center!">
                       <span class="font-semibold text-slate-800">
-                        {{ data.name }}
+                        {{ data.type }}
                       </span>
                     </td>
 
@@ -249,7 +252,7 @@ import { EditorModule } from 'primeng/editor';
 
                     <td class="text-center!">
                       <span class="font-medium tabular-nums text-slate-700">
-                        {{ data.quantity ?? 0 }}
+                        {{ data.availableStock ?? 0 }}
                       </span>
                     </td>
 
@@ -388,29 +391,7 @@ import { EditorModule } from 'primeng/editor';
               class="grid grid-cols-12 gap-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:gap-5 sm:p-6"
               [formGroup]="FG"
             >
-              <!-- Name -->
-              <div class="col-span-12 flex flex-col gap-2 md:col-span-6">
-                <label class="text-sm font-semibold text-slate-700">
-                  Name <span class="text-rose-500">*</span>
-                </label>
-
-                <input
-                  type="text"
-                  pInputText
-                  class="w-full! rounded-lg!"
-                  placeholder="e.g. Premium Cloud Storage"
-                  formControlName="name"
-                />
-
-                <small
-                  *ngIf="FG.get('name')?.invalid && FG.get('name')?.touched"
-                  class="text-xs text-red-500"
-                >
-                  Name is required.
-                </small>
-              </div>
-
-              <!-- Code -->
+              <!-- Item Code -->
               <div class="col-span-12 flex flex-col gap-2 md:col-span-6">
                 <label class="text-sm font-semibold text-slate-700">
                   Code <span class="text-rose-500">*</span>
@@ -421,21 +402,44 @@ import { EditorModule } from 'primeng/editor';
                   pInputText
                   class="w-full! rounded-lg! uppercase"
                   placeholder="e.g. PCS-100"
-                  formControlName="code"
+                  formControlName="itemCode"
                 />
 
                 <small
-                  *ngIf="FG.get('code')?.invalid && FG.get('code')?.touched"
+                  *ngIf="
+                    FG.get('itemCode')?.invalid && FG.get('itemCode')?.touched
+                  "
                   class="text-xs text-red-500"
                 >
                   Code is required.
                 </small>
               </div>
 
+              <!-- Type -->
+              <div class="col-span-12 flex flex-col gap-2 md:col-span-6">
+                <label class="text-sm font-semibold text-slate-700">
+                  Type <span class="text-rose-500">*</span>
+                </label>
+
+                <p-select
+                  formControlName="type"
+                  [options]="typeOptions"
+                  placeholder="Select type"
+                  styleClass="w-full!"
+                ></p-select>
+
+                <small
+                  *ngIf="FG.get('type')?.invalid && FG.get('type')?.touched"
+                  class="text-xs text-red-500"
+                >
+                  Type is required.
+                </small>
+              </div>
+
               <!-- Description -->
               <div class="col-span-12 flex flex-col gap-2">
                 <label class="text-sm font-semibold text-slate-700">
-                  Description
+                  Description <span class="text-rose-500">*</span>
                 </label>
 
                 <div class="products-editor">
@@ -478,10 +482,20 @@ import { EditorModule } from 'primeng/editor';
                     </ng-template>
                   </p-editor>
                 </div>
+
+                <small
+                  *ngIf="
+                    FG.get('description')?.invalid &&
+                    FG.get('description')?.touched
+                  "
+                  class="text-xs text-red-500"
+                >
+                  Description is required.
+                </small>
               </div>
 
               <!-- Unit -->
-              <div class="col-span-12 flex flex-col gap-2 sm:col-span-4">
+              <div class="col-span-12 flex flex-col gap-2 sm:col-span-6">
                 <label class="text-sm font-semibold text-slate-700">
                   Unit
                 </label>
@@ -495,22 +509,8 @@ import { EditorModule } from 'primeng/editor';
                 />
               </div>
 
-              <!-- Quantity -->
-              <div class="col-span-12 flex flex-col gap-2 sm:col-span-4">
-                <label class="text-sm font-semibold text-slate-700">
-                  Quantity
-                </label>
-
-                <p-inputNumber
-                  formControlName="quantity"
-                  styleClass="w-full!"
-                  inputStyleClass="w-full! rounded-lg!"
-                  placeholder="0"
-                ></p-inputNumber>
-              </div>
-
               <!-- Price -->
-              <div class="col-span-12 flex flex-col gap-2 sm:col-span-4">
+              <div class="col-span-12 flex flex-col gap-2 sm:col-span-6">
                 <label class="text-sm font-semibold text-slate-700">
                   Price (RM)
                 </label>
@@ -577,6 +577,7 @@ export class ProductsServices implements OnInit, OnDestroy {
 
   search: string = '';
   menuItems: MenuItem[] = [];
+  typeOptions = ['Product', 'Service'];
 
   FG!: FormGroup;
 
@@ -636,7 +637,7 @@ export class ProductsServices implements OnInit, OnDestroy {
     this.search = data;
 
     const filter = {
-      Name: [
+      Description: [
         {
           value: data,
           matchMode: '=',
@@ -691,11 +692,10 @@ export class ProductsServices implements OnInit, OnDestroy {
         value: null,
         disabled: true,
       }),
-      name: new FormControl<string | null>(null),
-      code: new FormControl<string | null>(null),
-      description: new FormControl<string | null>(null),
+      itemCode: new FormControl<string | null>(null, Validators.required),
+      type: new FormControl<string | null>('Product', Validators.required),
+      description: new FormControl<string | null>(null, Validators.required),
       unit: new FormControl<string | null>(null),
-      quantity: new FormControl<number | null>(1),
       price: new FormControl<number | null>(null),
     });
   }
@@ -704,8 +704,10 @@ export class ProductsServices implements OnInit, OnDestroy {
     if (this.FG.valid) {
       this.loadingService.start();
 
+      const { id, ...payload } = this.FG.getRawValue();
+
       this.productServiceService
-        .Create(this.FG.getRawValue())
+        .Create(payload)
         .pipe(takeUntil(this.ngUnsubscribe))
         .subscribe({
           next: (res) => {
@@ -730,8 +732,17 @@ export class ProductsServices implements OnInit, OnDestroy {
               detail: 'Item created successfully',
             });
           },
-          error: () => {
+          error: (err) => {
             this.loadingService.stop();
+            this.messageService.add({
+              severity: 'error',
+              summary: 'Error',
+              detail:
+                err?.error?.title ||
+                err?.error?.Error ||
+                err?.message ||
+                'Failed to create product/service',
+            });
             this.cdr.markForCheck();
           },
         });

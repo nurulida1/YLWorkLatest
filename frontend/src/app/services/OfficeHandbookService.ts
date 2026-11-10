@@ -48,6 +48,17 @@ export class OfficeHandbookService {
     return this.http.post<OfficeHandbook>(this.apiUrl, data);
   }
 
+  // POST: api/OfficeHandbook/upload-image
+  UploadImage(file: File): Observable<{ url: string; fileName: string }> {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    return this.http.post<{ url: string; fileName: string }>(
+      `${this.apiUrl}/upload-image`,
+      formData,
+    );
+  }
+
   // PUT: api/OfficeHandbook/{id}
   UpdateHandbook(
     id: string,

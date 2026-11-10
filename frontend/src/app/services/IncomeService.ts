@@ -46,9 +46,9 @@ export class IncomeService {
       .pipe(retry(1), catchError(this.handleError('GetMany')));
   }
 
-  Create(request: CreateIncomeRequest): Observable<IncomeDto> {
+  Create(request: CreateIncomeRequest | FormData): Observable<IncomeDto> {
     return this.http
-      .post<IncomeDto>(`${this.url}/Create`, request) // no { Data: ... }
+      .post<IncomeDto>(`${this.url}/Create`, request)
       .pipe(retry(1), catchError(this.handleError('Create')));
   }
 

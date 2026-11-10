@@ -43,6 +43,18 @@ export class NoticeService {
       .pipe(catchError(this.handleError('load notice')));
   }
 
+  UploadImage(file: File) {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    return this.http
+      .post<{ url: string; fileName: string }>(
+        `${this.url}/upload-image`,
+        formData,
+      )
+      .pipe(catchError(this.handleError('upload notice image')));
+  }
+
   Create(data: CreateNoticeRequest) {
     return this.http
       .post<any>(`${this.url}/Create`, data)

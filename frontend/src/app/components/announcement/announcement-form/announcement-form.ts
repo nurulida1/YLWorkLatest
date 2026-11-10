@@ -12,14 +12,15 @@ import { Router, RouterLink } from '@angular/router';
 import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
-import { TextareaModule } from 'primeng/textarea';
 import { DatePickerModule } from 'primeng/datepicker';
 import { CheckboxModule } from 'primeng/checkbox';
+import { EditorModule } from 'primeng/editor';
 import { finalize, Subject, takeUntil } from 'rxjs';
 import { CreateNoticeRequest } from '../../../models/Notice';
 import { LoadingService } from '../../../services/loading.service';
 import { NoticeService } from '../../../services/NoticeService';
 import { UserService } from '../../../services/userService.service';
+import { environment } from '../../../../environments/environment.development';
 
 @Component({
   selector: 'app-announcement-form',
@@ -30,9 +31,9 @@ import { UserService } from '../../../services/userService.service';
     RouterLink,
     ButtonModule,
     InputTextModule,
-    TextareaModule,
     DatePickerModule,
     CheckboxModule,
+    EditorModule,
   ],
   template: `
     <div class="announcement-form-page">
@@ -95,15 +96,78 @@ import { UserService } from '../../../services/userService.service';
           <div class="form-field">
             <label for="noticeContent">Announcement Content</label>
 
-            <textarea
+            <p-editor
               id="noticeContent"
-              pTextarea
               [(ngModel)]="noticeForm.content"
+              [style]="{ height: '280px' }"
               placeholder="Write your announcement..."
-              rows="6"
-              class="w-full"
-              [autoResize]="true"
-            ></textarea>
+              styleClass="announcement-content-editor"
+              (onInit)="onContentEditorInit($event)"
+            >
+              <ng-template #header>
+                <span class="ql-formats">
+                  <select class="ql-header">
+                    <option value="1"></option>
+                    <option value="2"></option>
+                    <option value="3"></option>
+                    <option selected></option>
+                  </select>
+                </span>
+                <span class="ql-formats">
+                  <button
+                    type="button"
+                    class="ql-bold"
+                    aria-label="Bold"
+                  ></button>
+                  <button
+                    type="button"
+                    class="ql-italic"
+                    aria-label="Italic"
+                  ></button>
+                  <button
+                    type="button"
+                    class="ql-underline"
+                    aria-label="Underline"
+                  ></button>
+                  <button
+                    type="button"
+                    class="ql-strike"
+                    aria-label="Strike"
+                  ></button>
+                </span>
+                <span class="ql-formats">
+                  <button
+                    type="button"
+                    class="ql-list"
+                    value="ordered"
+                    aria-label="Ordered List"
+                  ></button>
+                  <button
+                    type="button"
+                    class="ql-list"
+                    value="bullet"
+                    aria-label="Unordered List"
+                  ></button>
+                </span>
+                <span class="ql-formats">
+                  <button
+                    type="button"
+                    class="ql-link"
+                    aria-label="Insert Link"
+                  ></button>
+                  <button
+                    type="button"
+                    class="ql-image"
+                    aria-label="Insert Image"
+                  ></button>
+                  <button
+                    type="button"
+                    class="ql-clean"
+                    aria-label="Remove Formatting"
+                  ></button>
+                </span>
+              </ng-template>
+            </p-editor>
           </div>
 
           <!-- Dates -->
@@ -234,6 +298,66 @@ export class AnnouncementForm implements OnInit, OnDestroy {
     if (!this.savingNotice) {
       this.router.navigate(['/announcements']);
     }
+  }
+
+  onContentEditorInit(event: { editor: any }): void {
+    const quill = event?.editor;
+    if (!quill) return;
+
+    const toolbar = quill.getModule('toolbar');
+    toolbar?.addHandler('image', () => this.insertEditorImage(quill));
+  }
+
+  private insertEditorImage(quill: any): void {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/png,image/jpeg,image/jpg,image/gif,image/webp';
+    input.click();
+
+    input.onchange = () => {
+      const file = input.files?.[0];
+      if (!file) return;
+
+      if (file.size > 5_000_000) {
+        this.messageService.add({
+          severity: 'warn',
+          summary: 'Image too large',
+          detail: 'Please choose an image that is 5MB or smaller.',
+        });
+        return;
+      }
+
+      this.messageService.add({
+        severity: 'info',
+        summary: 'Uploading',
+        detail: 'Uploading image…',
+        life: 1500,
+      });
+
+      this.noticeService.UploadImage(file).subscribe({
+        next: (res) => {
+          const relative = (res.url || '').replace(/^\/+/, '');
+          const url = relative.startsWith('http')
+            ? relative
+            : `${environment.AttachmentUrl}${relative}`;
+
+          const range =
+            quill.getSelection(true) || { index: quill.getLength(), length: 0 };
+          quill.insertEmbed(range.index, 'image', url, 'user');
+          quill.setSelection(range.index + 1, 0, 'user');
+          this.cdr.markForCheck();
+        },
+        error: (error) => {
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Upload failed',
+            detail:
+              error?.error?.message ??
+              'Unable to upload image. Please try again.',
+          });
+        },
+      });
+    };
   }
 
   SaveNotice(): void {

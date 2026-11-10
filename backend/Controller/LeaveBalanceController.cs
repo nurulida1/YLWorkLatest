@@ -17,12 +17,32 @@ namespace YLWorks.Controller
             _balanceService = balanceService;
 
         [HttpGet("{employeeId:guid}")]
-        public async Task<ActionResult<List<LeaveBalanceDto>>> GetBalances(Guid employeeId) =>
-            Ok(await _balanceService.GetAllBalancesForEmployeeAsync(employeeId, DateTime.UtcNow.Year));
+        public async Task<ActionResult<List<LeaveBalanceDto>>> GetBalances(Guid employeeId)
+        {
+            if (!CanViewEmployeeBalances(employeeId))
+                return Forbid();
+            return Ok(await _balanceService.GetAllBalancesForEmployeeAsync(employeeId, DateTime.UtcNow.Year));
+        }
 
         [HttpGet("{employeeId:guid}/{year:int}")]
-        public async Task<ActionResult<List<LeaveBalanceDto>>> GetBalancesForYear(Guid employeeId, int year) =>
-            Ok(await _balanceService.GetAllBalancesForEmployeeAsync(employeeId, year));
+        public async Task<ActionResult<List<LeaveBalanceDto>>> GetBalancesForYear(Guid employeeId, int year)
+        {
+            if (!CanViewEmployeeBalances(employeeId))
+                return Forbid();
+            return Ok(await _balanceService.GetAllBalancesForEmployeeAsync(employeeId, year));
+        }
+
+        private bool CanViewEmployeeBalances(Guid employeeId)
+        {
+            var idClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!Guid.TryParse(idClaim, out var userId))
+                return false;
+            if (userId == employeeId)
+                return true;
+
+            var role = User.FindFirst(ClaimTypes.Role)?.Value ?? "";
+            return LeaveRoles.CanApprove.Contains(role) || LeaveRoles.Admin.Contains(role);
+        }
 
         [HttpPost("credit")]
         [Authorize(Roles = "HOD,Management,HR,SuperAdmin")]

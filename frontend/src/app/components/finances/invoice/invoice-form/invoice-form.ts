@@ -526,24 +526,20 @@ export class InvoiceForm implements OnInit, OnDestroy {
           this.FG.patchValue({
             ...res,
             invoiceDate: res?.invoiceDate ? new Date(res.invoiceDate) : null,
+            dueDate: res?.dueDate ? new Date(res.dueDate) : null,
           });
           this.Items.clear();
 
-          if (res?.invoiceItems?.length) {
-            res.invoiceItems.forEach((item: any) => {
-              this.Items.push(this.createItem(item));
-            });
-          }
-
           res?.invoiceItems
-            ?.sort((a: any, b: any) => a.sortOrder - b.sortOrder)
+            ?.slice()
+            .sort((a: any, b: any) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
             .forEach((item: any) => {
-              const group = this.createItem({
-                ...item,
-                description: denormalizeHtml(item.description),
-              });
-
-              this.Items.push(group);
+              this.Items.push(
+                this.createItem({
+                  ...item,
+                  description: denormalizeHtml(item.description),
+                }),
+              );
             });
 
           this.calculateTotals();
@@ -563,13 +559,13 @@ export class InvoiceForm implements OnInit, OnDestroy {
   createItem(data?: any): FormGroup {
     const group = this.fb.group({
       id: [data?.id ?? null],
-      item: [data?.id ?? null],
+      item: [data?.item ?? null],
       description: [data?.description ?? null],
-      quantity: [data?.quantity ?? null],
-      unit: [data?.unit ?? null],
-      unitPrice: [data?.unitPrice ?? null],
-      discount: [data?.discount ?? null],
-      amount: [data?.amount ?? null],
+      quantity: [data?.quantity ?? 1],
+      unit: [data?.unit ?? 'Pcs'],
+      unitPrice: [data?.unitPrice ?? 0],
+      discount: [data?.discount ?? 0],
+      amount: [data?.amount ?? 0],
     });
 
     group.valueChanges.pipe(takeUntil(this.ngUnsubscribe)).subscribe(() => {
@@ -657,7 +653,12 @@ export class InvoiceForm implements OnInit, OnDestroy {
 
     const items = raw.invoiceItems.map((item: any) => ({
       ...item,
+      item: item.item ?? '',
       description: normalizeHtml(item.description),
+      quantity: Number(item.quantity ?? 0),
+      unitPrice: Number(item.unitPrice ?? 0),
+      discount: Number(item.discount ?? 0),
+      amount: Number(item.amount ?? 0),
     }));
 
     formData.append('invoiceItems', JSON.stringify(items));

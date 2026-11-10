@@ -471,8 +471,8 @@ export class Expense implements OnInit, OnDestroy {
     this.FG = new FormGroup({
       id: new FormControl<string | null>({ value: null, disabled: true }),
       amount: new FormControl<number | null>(null, Validators.required),
-      expenseDate: new FormControl<Date | null>(new Date()),
-      paymentMode: new FormControl<string | null>(null),
+      expenseDate: new FormControl<Date | null>(new Date(), Validators.required),
+      paymentMode: new FormControl<string | null>(null, Validators.required),
       description: new FormControl<string | null>(null),
     });
   }
@@ -483,8 +483,26 @@ export class Expense implements OnInit, OnDestroy {
     if (!this.FG.valid) return;
 
     this.loadingService.start();
+
+    const formData = new FormData();
+    const raw = this.FG.getRawValue();
+
+    Object.entries(raw).forEach(([key, value]) => {
+      if (value === null || value === undefined || key === 'id') return;
+
+      if (value instanceof Date) {
+        value = value.toISOString();
+      }
+
+      if (typeof value === 'object' && !(value instanceof File)) {
+        value = JSON.stringify(value);
+      }
+
+      formData.append(key, value as any);
+    });
+
     this.expenseService
-      .Create(this.FG.value)
+      .Create(formData)
       .pipe(takeUntil(this.ngUnsubscribe))
       .subscribe({
         next: (res) => {

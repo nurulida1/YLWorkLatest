@@ -1147,6 +1147,7 @@ export class SupplierPurchaseOrder implements OnDestroy {
 
   isPurchasing(): boolean {
     return (
+      this.currentUser?.systemRole === 'SuperAdmin' ||
       this.currentUser?.jobTitle === 'Senior Procurement Executive' ||
       this.currentUser?.jobTitle === 'Purchasing Executive' ||
       this.currentUser?.jobTitle === 'Project Director' ||

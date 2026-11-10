@@ -376,6 +376,11 @@ namespace YLWorks.Controller
             if (string.IsNullOrWhiteSpace(request.ProjectCode))
                 return BadRequest(new { Error = "Project Code is required." });
 
+            if (string.IsNullOrWhiteSpace(request.ProjectTitle))
+                return BadRequest(new { Error = "Project Name is required." });
+
+            if (request.ClientId == Guid.Empty)
+                return BadRequest(new { Error = "Client is required." });
 
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
@@ -387,6 +392,10 @@ namespace YLWorks.Controller
             {
                 var userId = Guid.Parse(userIdClaim);
 
+                var clientExists = await _context.Companies
+                    .AnyAsync(c => c.Id == request.ClientId);
+                if (!clientExists)
+                    return BadRequest(new { Error = "Selected client was not found." });
 
                 var project = new Project
                 {

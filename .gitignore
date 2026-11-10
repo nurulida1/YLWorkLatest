@@ -1,2 +1,11 @@
 # Local publish / build output
 artifacts/
+
+# Local TLS / Origin certs (never commit private keys)
+ylwork-origin.key
+ylwork-origin.pem
+*.key
+*.pem
+
+# Generated local smoke output
+frontend/scripts/smoke-routes-result.json

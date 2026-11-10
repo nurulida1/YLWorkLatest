@@ -66,7 +66,11 @@ import { InputTextModule } from 'primeng/inputtext';
               class="w-10 h-10 rounded-full bg-[#FCDF7B] border border-[#e5c85f] flex items-center justify-center"
             >
               <span class="font-bold text-slate-800 text-sm">
-                {{ getInitial(currentUser?.displayName) }}
+                {{
+                  getInitial(
+                    currentUser?.displayName || currentUser?.fullName
+                  )
+                }}
               </span>
             </div>
           </div>
@@ -75,7 +79,11 @@ import { InputTextModule } from 'primeng/inputtext';
             <p class="text-white/70 text-sm">Welcome back,</p>
 
             <h1 class="text-2xl font-bold text-white mt-1">
-              {{ currentUser?.displayName || 'Employee' }}
+              {{
+                currentUser?.displayName ||
+                  currentUser?.fullName ||
+                  'Employee'
+              }}
             </h1>
 
             <div class="flex items-center gap-2 mt-2 text-white/80 text-sm">

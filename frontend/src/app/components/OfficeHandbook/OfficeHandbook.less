@@ -398,6 +398,27 @@
 
 /* Article content in read dialog */
 
+:host ::ng-deep .handbook-content-editor {
+  .p-editor,
+  .p-editor-container {
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+  }
+
+  .p-editor-toolbar {
+    border-bottom: 1px solid #e2e8f0;
+    background: #f8fafc;
+  }
+
+  .p-editor-content,
+  .p-editor-content .ql-editor {
+    min-height: 220px;
+    font-size: 14px;
+    line-height: 1.7;
+  }
+}
+
 .handbook-article-content {
   color: #334155;
   font-size: 14px;
@@ -437,8 +458,10 @@
   }
 
   img {
+    display: block;
     max-width: 100%;
     height: auto;
+    margin: 0.75rem 0;
     border-radius: 10px;
   }
 

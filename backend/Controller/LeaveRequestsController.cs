@@ -22,20 +22,19 @@ namespace YLWorks.Controller
             _logger = logger;
         }
 
-        /// <summary>Gets leave requests for the current user or all if HR/Admin.</summary>
+        /// <summary>Gets leave requests for the current user, or a specific employee if HR/Admin.</summary>
         [HttpGet]
         public async Task<ActionResult<List<LeaveRequestDto>>> GetAll([FromQuery] Guid? employeeId)
         {
             var userId = GetUserId();
             var role = User.FindFirst(ClaimTypes.Role)?.Value ?? "";
+            var canViewOthers = LeaveRoles.Hr.Contains(role) || LeaveRoles.Admin.Contains(role);
 
-            if (LeaveRoles.Hr.Contains(role) || LeaveRoles.Admin.Contains(role))
-            {
-                if (employeeId.HasValue)
-                    return Ok(await _leaveService.GetByEmployeeAsync(employeeId.Value));
-            }
+            if (canViewOthers && employeeId.HasValue)
+                return Ok(await _leaveService.GetByEmployeeAsync(employeeId.Value));
 
-            return Ok(await _leaveService.GetByEmployeeAsync(employeeId ?? userId));
+            // Non-privileged callers may only read their own leave (ignore employeeId).
+            return Ok(await _leaveService.GetByEmployeeAsync(userId));
         }
 
         /// <summary>Company-wide approved leave calendar for a date range.</summary>

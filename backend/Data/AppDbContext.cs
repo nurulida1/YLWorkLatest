@@ -1038,27 +1038,40 @@ namespace YLWorks.Data
                 .HasForeignKey(x => x.StaffTaskId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+
             // =======================
             // HARDWARE REQUEST
             // =======================
 
+            // HardwareRequest -> Items
             modelBuilder.Entity<HardwareRequest>()
                 .HasMany(x => x.Items)
                 .WithOne(x => x.HardwareRequest)
                 .HasForeignKey(x => x.HardwareRequestId)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            // HardwareRequest -> Project
             modelBuilder.Entity<HardwareRequest>()
-                .HasOne(r => r.ResponsibleDepartment)
+                .HasOne(x => x.Project)
+                .WithMany(x => x.HardwareRequests)
+                .HasForeignKey(x => x.ProjectId)
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            // HardwareRequest -> Responsible Department
+            modelBuilder.Entity<HardwareRequest>()
+                .HasOne(x => x.ResponsibleDepartment)
                 .WithMany()
-                .HasForeignKey(r => r.ResponsibleDepartmentId)
+                .HasForeignKey(x => x.ResponsibleDepartmentId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            // HardwareRequestItem -> Inventory
             modelBuilder.Entity<HardwareRequestItem>()
                 .HasOne(x => x.Inventory)
                 .WithMany()
                 .HasForeignKey(x => x.InventoryId)
                 .OnDelete(DeleteBehavior.Restrict);
+
         }
     }
 }

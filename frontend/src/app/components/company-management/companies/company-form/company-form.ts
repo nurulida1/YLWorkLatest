@@ -367,55 +367,6 @@ import { CheckboxModule } from 'primeng/checkbox';
                 <div class="border-t border-gray-100 space-y-5 pt-3">
                   <div>
                     <h3
-                      class="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-500"
-                    >
-                      Company Contact Information
-                    </h3>
-
-                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                      <div class="flex flex-col gap-1.5">
-                        <label class="text-sm font-medium text-gray-700"
-                          >Company Email</label
-                        >
-                        <input
-                          type="email"
-                          pInputText
-                          class="w-full"
-                          formControlName="email"
-                          placeholder="example@company.com"
-                        />
-                      </div>
-
-                      <div class="flex flex-col gap-1.5">
-                        <label class="text-sm font-medium text-gray-700"
-                          >Company Contact Number</label
-                        >
-                        <input
-                          type="text"
-                          pInputText
-                          class="w-full"
-                          formControlName="contactNo"
-                          placeholder="Enter company contact number"
-                        />
-                      </div>
-
-                      <div class="flex flex-col gap-1.5 sm:col-span-2">
-                        <label class="text-sm font-medium text-gray-700"
-                          >Fax Number</label
-                        >
-                        <input
-                          type="text"
-                          pInputText
-                          class="w-full"
-                          formControlName="faxNo"
-                          placeholder="Enter fax number"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div class="border-t border-gray-100 pt-5">
-                    <h3
                       class="mb-1 text-sm font-semibold uppercase tracking-wide text-gray-500"
                     >
                       Primary Contact Person

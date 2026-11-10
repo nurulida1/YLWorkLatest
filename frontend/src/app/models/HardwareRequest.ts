@@ -115,8 +115,9 @@ export interface HardwareRequestDto {
 
   projectId?: string | null;
   projectName?: string | null;
-  siteName?: string | null;
+  project?: HardwareRequestProject | null;
 
+  siteName?: string | null;
   location?: string | null;
   locationDetails?: string | null;
 
@@ -135,16 +136,16 @@ export interface HardwareRequestDto {
   adminRemarks?: string | null;
   rejectionReason?: string | null;
 
-  // Bug Report fields
   affectedModule?: string | null;
   bugCategory?: BugReportCategory | string | null;
   stepsToReproduce?: string | null;
   expectedResult?: string | null;
   actualResult?: string | null;
 
+  createdAt: Date;
+
   items: HardwareRequestItem[];
 }
-
 // =====================================================
 // APPROVE REQUEST
 // =====================================================
@@ -209,4 +210,51 @@ export interface HardwareRequestApiResponse {
   message: string;
   requestId?: string;
   status?: HardwareRequestStatus;
+}
+
+export interface HardwareRequestProject {
+  id: string;
+  projectCode: string;
+  projectTitle: string;
+  status: string;
+}
+
+export interface SiteMaterialRequestDto {
+  id: string;
+  subject: string;
+  description?: string | null;
+  requestType: string;
+  priority: string;
+  status: string;
+  createdAt: Date | string;
+  neededBy?: Date | string | null;
+
+  projectId?: string | null;
+  projectName?: string | null;
+  siteName?: string | null;
+  location?: string | null;
+  locationDetails?: string | null;
+
+  requestedBy?: {
+    id: string;
+    fullName?: string;
+    displayName?: string;
+  } | null;
+
+  items: SiteMaterialRequestItemDto[];
+}
+
+export interface SiteMaterialRequestItemDto {
+  id: string;
+  inventoryId?: string | null;
+  itemName: string;
+  itemCode?: string | null;
+  description?: string | null;
+  unit?: string | null;
+  requestedQuantity: number;
+  approvedQuantity: number;
+  issuedQuantity: number;
+  reservedQuantity: number;
+  status: string;
+  remarks?: string | null;
 }

@@ -54,7 +54,8 @@ namespace YLWorks.Controller
                 .Include(x => x.RequestedBy)
                 .Include(x => x.ApprovedBy)
                 .Include(x => x.AssignedTo)
-                .Include(x => x.ResponsibleDepartment);
+                .Include(x => x.ResponsibleDepartment)
+                .Include(x => x.Project);
         }
 
         private bool IsNonInventoryRequest(string requestType)
@@ -225,6 +226,17 @@ namespace YLWorks.Controller
             if (string.IsNullOrWhiteSpace(dto.Description))
                 return BadRequest("Description is required.");
 
+            Project? linkedProject = null;
+
+            if (dto.ProjectId.HasValue)
+            {
+                linkedProject = await _context.Projects
+                    .FirstOrDefaultAsync(x => x.Id == dto.ProjectId.Value);
+
+                if (linkedProject == null)
+                    return BadRequest("Selected project was not found.");
+            }
+
             // Hardware and Site Material require items.
             // IT Support and Bug Report do not.
             if (!IsNonInventoryRequest(dto.RequestType) &&
@@ -292,8 +304,8 @@ namespace YLWorks.Controller
 
                     ResponsibleDepartmentId = responsibleDepartment.Id,
 
-                    ProjectId = dto.ProjectId,
-                    ProjectName = dto.ProjectName,
+                    ProjectId = linkedProject?.Id,
+                    ProjectName = linkedProject?.ProjectTitle ?? dto.ProjectName,
                     SiteName = dto.SiteName,
                     Location = dto.Location,
                     LocationDetails = dto.LocationDetails,
@@ -457,7 +469,20 @@ namespace YLWorks.Controller
                         : null,
 
                     x.ProjectId,
-                    x.ProjectName,
+
+                    ProjectName = x.Project != null
+    ? x.Project.ProjectTitle
+    : x.ProjectName,
+
+                    Project = x.Project == null
+    ? null
+    : new
+    {
+        x.Project.Id,
+        x.Project.ProjectCode,
+        x.Project.ProjectTitle,
+        x.Project.Status
+    },
                     x.SiteName,
                     x.Location,
                     x.LocationDetails,
@@ -531,7 +556,20 @@ namespace YLWorks.Controller
                         : null,
 
                     x.ProjectId,
-                    x.ProjectName,
+
+                    ProjectName = x.Project != null
+    ? x.Project.ProjectTitle
+    : x.ProjectName,
+
+                    Project = x.Project == null
+    ? null
+    : new
+    {
+        x.Project.Id,
+        x.Project.ProjectCode,
+        x.Project.ProjectTitle,
+        x.Project.Status
+    },
                     x.SiteName,
                     x.Location,
                     x.LocationDetails,
@@ -632,7 +670,17 @@ namespace YLWorks.Controller
                     request.ResponsibleDepartment?.Name,
 
                 request.ProjectId,
-                request.ProjectName,
+                ProjectName = request.Project?.ProjectTitle ?? request.ProjectName,
+
+                Project = request.Project == null
+    ? null
+    : new
+    {
+        request.Project.Id,
+        request.Project.ProjectCode,
+        request.Project.ProjectTitle,
+        request.Project.Status
+    },
                 request.SiteName,
                 request.Location,
                 request.LocationDetails,
@@ -1454,7 +1502,20 @@ namespace YLWorks.Controller
                         : null,
 
                     x.ProjectId,
-                    x.ProjectName,
+
+                    ProjectName = x.Project != null
+    ? x.Project.ProjectTitle
+    : x.ProjectName,
+
+                    Project = x.Project == null
+    ? null
+    : new
+    {
+        x.Project.Id,
+        x.Project.ProjectCode,
+        x.Project.ProjectTitle,
+        x.Project.Status
+    },
                     x.SiteName,
                     x.Location,
                     x.LocationDetails,

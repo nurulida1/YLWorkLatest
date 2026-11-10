@@ -8,7 +8,10 @@ namespace YLWorks.Model
     {
         public Guid Id { get; set; }
 
-        // Request information
+        // ==========================================
+        // REQUEST INFORMATION
+        // ==========================================
+
         [Required]
         [MaxLength(50)]
         public string RequestType { get; set; } = "Hardware";
@@ -33,15 +36,24 @@ namespace YLWorks.Model
         // Pending, Approved, Rejected, PartiallyIssued,
         // Issued, InProgress, Resolved, Cancelled
 
-        // Employee
+        // ==========================================
+        // EMPLOYEE
+        // ==========================================
+
         [Required]
         public Guid RequestedById { get; set; }
 
         [ForeignKey(nameof(RequestedById))]
         public User? RequestedBy { get; set; }
 
-        // Project / Site
+        // ==========================================
+        // PROJECT / SITE
+        // ==========================================
+
         public Guid? ProjectId { get; set; }
+
+        [ForeignKey(nameof(ProjectId))]
+        public Project? Project { get; set; }
 
         [MaxLength(200)]
         public string? ProjectName { get; set; }
@@ -55,7 +67,10 @@ namespace YLWorks.Model
         [MaxLength(200)]
         public string? LocationDetails { get; set; }
 
-        // Request dates
+        // ==========================================
+        // REQUEST DATES
+        // ==========================================
+
         public DateTime? NeededBy { get; set; }
 
         public DateTime? ApprovedAt { get; set; }
@@ -65,7 +80,10 @@ namespace YLWorks.Model
         [ForeignKey(nameof(ApprovedById))]
         public User? ApprovedBy { get; set; }
 
-        // IT / Inventory assignment
+        // ==========================================
+        // IT / INVENTORY ASSIGNMENT
+        // ==========================================
+
         public Guid? AssignedToId { get; set; }
 
         [ForeignKey(nameof(AssignedToId))]
@@ -79,13 +97,19 @@ namespace YLWorks.Model
         [MaxLength(2000)]
         public string? RejectionReason { get; set; }
 
-        // Responsible Department / HOD Approval
+        // ==========================================
+        // RESPONSIBLE DEPARTMENT / HOD APPROVAL
+        // ==========================================
+
         public Guid? ResponsibleDepartmentId { get; set; }
 
         [ForeignKey(nameof(ResponsibleDepartmentId))]
         public Department? ResponsibleDepartment { get; set; }
 
-        // Bug Report Information
+        // ==========================================
+        // BUG REPORT INFORMATION
+        // ==========================================
+
         [MaxLength(100)]
         public string? AffectedModule { get; set; }
 
@@ -101,30 +125,43 @@ namespace YLWorks.Model
         [MaxLength(2000)]
         public string? ActualResult { get; set; }
 
-        // Navigation
+        // ==========================================
+        // REQUEST ITEMS
+        // ==========================================
+
         public ICollection<HardwareRequestItem> Items { get; set; }
             = new List<HardwareRequestItem>();
     }
+
+    // ==========================================
+    // HARDWARE REQUEST ITEM
+    // ==========================================
 
     public class HardwareRequestItem : BaseEntity
     {
         public Guid Id { get; set; }
 
-        [Required]
         public Guid HardwareRequestId { get; set; }
 
         [ForeignKey(nameof(HardwareRequestId))]
         public HardwareRequest? HardwareRequest { get; set; }
 
-        // Link to existing Inventory record.
-        // Nullable so employees can request an item
-        // that does not exist in the inventory catalogue.
+        // ==========================================
+        // INVENTORY LINK
+        // ==========================================
+
+        // Nullable because employees can request
+        // items that do not exist in inventory.
+
         public Guid? InventoryId { get; set; }
 
         [ForeignKey(nameof(InventoryId))]
         public Inventory? Inventory { get; set; }
 
-        // Snapshot of item details at request time.
+        // ==========================================
+        // ITEM INFORMATION
+        // ==========================================
+
         [Required]
         [MaxLength(100)]
         public string ItemName { get; set; } = string.Empty;
@@ -138,7 +175,10 @@ namespace YLWorks.Model
         [MaxLength(50)]
         public string? Unit { get; set; }
 
-        // Quantities
+        // ==========================================
+        // QUANTITIES
+        // ==========================================
+
         [Column(TypeName = "decimal(18,2)")]
         public decimal RequestedQuantity { get; set; }
 
@@ -151,7 +191,10 @@ namespace YLWorks.Model
         [Column(TypeName = "decimal(18,2)")]
         public decimal ReservedQuantity { get; set; }
 
-        // Item-level status
+        // ==========================================
+        // ITEM STATUS
+        // ==========================================
+
         [MaxLength(50)]
         public string Status { get; set; } = "Pending";
 
@@ -159,7 +202,10 @@ namespace YLWorks.Model
         public string? Remarks { get; set; }
     }
 
-    // Create Request
+    // ==========================================
+    // CREATE HARDWARE REQUEST DTO
+    // ==========================================
+
     public class CreateHardwareRequestDto
     {
         public string RequestType { get; set; } = "Hardware";
@@ -170,7 +216,10 @@ namespace YLWorks.Model
 
         public string Priority { get; set; } = "Normal";
 
-        // Project / Site
+        // ==========================================
+        // PROJECT / SITE
+        // ==========================================
+
         public Guid? ProjectId { get; set; }
 
         public string? ProjectName { get; set; }
@@ -183,7 +232,10 @@ namespace YLWorks.Model
 
         public DateTime? NeededBy { get; set; }
 
-        // Bug Report Information
+        // ==========================================
+        // BUG REPORT INFORMATION
+        // ==========================================
+
         public string? AffectedModule { get; set; }
 
         public string? BugCategory { get; set; }
@@ -194,10 +246,17 @@ namespace YLWorks.Model
 
         public string? ActualResult { get; set; }
 
-        // Hardware / Site Material Items
+        // ==========================================
+        // HARDWARE / SITE MATERIAL ITEMS
+        // ==========================================
+
         public List<CreateHardwareRequestItemDto> Items { get; set; }
             = new();
     }
+
+    // ==========================================
+    // CREATE HARDWARE REQUEST ITEM DTO
+    // ==========================================
 
     public class CreateHardwareRequestItemDto
     {
@@ -216,12 +275,15 @@ namespace YLWorks.Model
         public string? Remarks { get; set; }
     }
 
-    // Approve Request
+    // ==========================================
+    // APPROVE REQUEST DTO
+    // ==========================================
+
     public class ApproveHardwareRequestDto
     {
         public string? Remarks { get; set; }
 
-        // Optional: if null, assign to the approver.
+        // If null, assign to the approver.
         public Guid? AssignedToId { get; set; }
 
         public List<ApproveHardwareRequestItemDto>? Items { get; set; }
@@ -236,19 +298,28 @@ namespace YLWorks.Model
         public string? Remarks { get; set; }
     }
 
-    // Reject Request
+    // ==========================================
+    // REJECT REQUEST DTO
+    // ==========================================
+
     public class RejectHardwareRequestDto
     {
         public string? Reason { get; set; }
     }
 
-    // Assign Request
+    // ==========================================
+    // ASSIGN REQUEST DTO
+    // ==========================================
+
     public class AssignHardwareRequestDto
     {
         public Guid AssignedToId { get; set; }
     }
 
-    // Issue Request
+    // ==========================================
+    // ISSUE REQUEST DTO
+    // ==========================================
+
     public class IssueHardwareRequestDto
     {
         public List<IssueHardwareRequestItemDto> Items { get; set; }
@@ -264,7 +335,10 @@ namespace YLWorks.Model
         public string? Remarks { get; set; }
     }
 
-    // Update Request Status
+    // ==========================================
+    // UPDATE REQUEST STATUS DTO
+    // ==========================================
+
     public class UpdateHardwareRequestStatusDto
     {
         public string Status { get; set; } = string.Empty;

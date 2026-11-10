@@ -69,9 +69,7 @@ import { DrawerModule } from 'primeng/drawer';
   template: `
     <main class="project-details min-h-screen bg-slate-50 p-3 sm:p-5 lg:p-6">
       <!-- Breadcrumb -->
-      <nav
-        class="mb-5 flex flex-wrap items-center gap-2 text-xs text-slate-500"
-      >
+      <nav class="mb-5 flex flex-wrap items-center gap-2 text-slate-500">
         <a routerLink="/dashboard" class="transition hover:text-blue-700"
           >Dashboard</a
         >
@@ -176,7 +174,7 @@ import { DrawerModule } from 'primeng/drawer';
       <section class="mt-5 grid grid-cols-2 gap-3 xl:grid-cols-4">
         <article class="project-summary-card">
           <div class="flex items-center justify-between gap-2">
-            <span class="project-summary-label">Project progress</span>
+            <span class="text-gray-500 text-sm">Project progress</span>
             <span class="project-summary-icon"
               ><i class="pi pi-chart-line"></i
             ></span>
@@ -188,7 +186,7 @@ import { DrawerModule } from 'primeng/drawer';
           <p-progressbar
             [value]="0"
             [showValue]="false"
-            styleClass="mt-3 h-1.5"
+            styleClass="mt-3 h-1.5!"
           ></p-progressbar>
           <p class="mt-2 text-[11px] text-slate-400">
             Overall project completion
@@ -197,7 +195,7 @@ import { DrawerModule } from 'primeng/drawer';
 
         <article class="project-summary-card">
           <div class="flex items-center justify-between gap-2">
-            <span class="project-summary-label">Estimated budget</span>
+            <span class="text-gray-500 text-sm">Estimated budget</span>
             <span class="project-summary-icon"
               ><i class="pi pi-wallet"></i
             ></span>
@@ -215,7 +213,7 @@ import { DrawerModule } from 'primeng/drawer';
 
         <article class="project-summary-card">
           <div class="flex items-center justify-between gap-2">
-            <span class="project-summary-label">Project tasks</span>
+            <span class="text-gray-500 text-sm">Project tasks</span>
             <span class="project-summary-icon"
               ><i class="pi pi-list-check"></i
             ></span>
@@ -228,11 +226,11 @@ import { DrawerModule } from 'primeng/drawer';
 
         <article class="project-summary-card">
           <div class="flex items-center justify-between gap-2">
-            <span class="project-summary-label">Material requests</span>
+            <span class="text-gray-500 text-sm">Material requests</span>
             <span class="project-summary-icon"><i class="pi pi-box"></i></span>
           </div>
           <p class="project-summary-value mt-4">
-            {{ PagingSignal().materialRequests.length || 0 }}
+            {{ PagingSignal().siteMaterialRequests?.length || 0 }}
           </p>
           <p class="mt-2 text-[11px] text-slate-400">Total material requests</p>
         </article>
@@ -254,7 +252,7 @@ import { DrawerModule } from 'primeng/drawer';
             <p-tab value="2">
               <i class="pi pi-box mr-2"></i>Materials
               <span class="project-tab-count">{{
-                PagingSignal().materialRequests.length || 0
+                PagingSignal().siteMaterialRequests?.length || 0
               }}</span>
             </p-tab>
             <p-tab value="3">
@@ -776,11 +774,12 @@ import { DrawerModule } from 'primeng/drawer';
             <p-tabpanel value="2">
               <div class="project-section-toolbar">
                 <div>
-                  <h2 class="project-section-title">Material requests</h2>
+                  <h2 class="project-section-title">Site material requests</h2>
                   <p class="project-section-description">
                     Review materials requested for this project.
                   </p>
                 </div>
+
                 <p-button
                   label="Request materials"
                   icon="pi pi-plus"
@@ -790,30 +789,40 @@ import { DrawerModule } from 'primeng/drawer';
                 ></p-button>
               </div>
 
-              <!-- Mobile material cards -->
+              <!-- Mobile cards -->
               <div class="space-y-3 lg:hidden">
                 <ng-container
                   *ngIf="
-                    PagingSignal().materialRequests?.length;
+                    PagingSignal().siteMaterialRequests?.length;
                     else noMaterials
                   "
                 >
                   <article
-                    *ngFor="let data of PagingSignal().materialRequests"
+                    *ngFor="let data of PagingSignal().siteMaterialRequests"
                     class="project-record"
                   >
                     <div class="flex items-start justify-between gap-3">
-                      <div>
-                        <p class="text-[11px] text-slate-400">
-                          Document number
+                      <div class="min-w-0">
+                        <p class="text-xs font-semibold text-blue-700">
+                          {{ data.subject }}
                         </p>
-                        <p class="mt-1 text-sm font-semibold text-blue-700">
-                          {{ data.documentNo }}
+                        <p class="mt-1 text-sm text-slate-500">
+                          {{ data.description || 'No description provided.' }}
                         </p>
                       </div>
+
                       <p-tag
                         [value]="data.status || 'Pending'"
-                        severity="warn"
+                        [severity]="
+                          data.status === 'Approved' || data.status === 'Issued'
+                            ? 'success'
+                            : data.status === 'Rejected' ||
+                                data.status === 'Cancelled'
+                              ? 'danger'
+                              : data.status === 'PartiallyIssued'
+                                ? 'warn'
+                                : 'info'
+                        "
                       ></p-tag>
                     </div>
 
@@ -821,13 +830,32 @@ import { DrawerModule } from 'primeng/drawer';
                       <div>
                         <p class="text-[11px] text-slate-400">Request date</p>
                         <p class="mt-1 text-sm font-medium text-slate-700">
-                          {{ data.requestDate | date: 'dd MMM yyyy' }}
+                          {{ data.createdAt | date: 'dd MMM yyyy' }}
                         </p>
                       </div>
+
+                      <div>
+                        <p class="text-[11px] text-slate-400">Needed by</p>
+                        <p class="mt-1 text-sm font-medium text-slate-700">
+                          {{
+                            data.neededBy
+                              ? (data.neededBy | date: 'dd MMM yyyy')
+                              : '-'
+                          }}
+                        </p>
+                      </div>
+
+                      <div>
+                        <p class="text-[11px] text-slate-400">Priority</p>
+                        <p class="mt-1 text-sm font-medium text-slate-700">
+                          {{ data.priority }}
+                        </p>
+                      </div>
+
                       <div>
                         <p class="text-[11px] text-slate-400">Total items</p>
                         <p class="mt-1 text-sm font-medium text-slate-700">
-                          {{ data.materialItems.length || 0 }} items
+                          {{ data.items?.length || 0 }} items
                         </p>
                       </div>
                     </div>
@@ -836,34 +864,65 @@ import { DrawerModule } from 'primeng/drawer';
                       <p class="mb-2 text-xs font-semibold text-slate-700">
                         Requested materials
                       </p>
+
                       <div
-                        *ngFor="let item of data.materialItems"
-                        class="flex justify-between gap-3 py-1.5 text-xs"
+                        *ngFor="let item of data.items"
+                        class="border-b border-slate-50 py-2 last:border-0"
                       >
-                        <span class="min-w-0 break-words text-slate-600">{{
-                          item.description
-                        }}</span>
-                        <span class="shrink-0 font-semibold text-slate-800"
-                          >{{ item.quantity }} {{ item.unit }}</span
+                        <div class="flex items-start justify-between gap-3">
+                          <div class="min-w-0">
+                            <p
+                              class="break-words text-sm font-medium text-slate-800"
+                            >
+                              {{ item.itemName }}
+                            </p>
+                            <p class="mt-0.5 text-xs text-slate-400">
+                              {{ item.itemCode || item.description || '-' }}
+                            </p>
+                          </div>
+
+                          <span
+                            class="shrink-0 text-sm font-semibold text-slate-800"
+                          >
+                            {{ item.requestedQuantity }} {{ item.unit || '' }}
+                          </span>
+                        </div>
+
+                        <div
+                          class="mt-2 flex flex-wrap gap-2 text-[11px] text-slate-500"
                         >
+                          <span>Approved: {{ item.approvedQuantity }}</span>
+                          <span>Issued: {{ item.issuedQuantity }}</span>
+                          <span>Reserved: {{ item.reservedQuantity }}</span>
+                        </div>
                       </div>
+
                       <p
-                        *ngIf="!data.materialItems?.length"
+                        *ngIf="!data.items?.length"
                         class="text-xs text-slate-400"
                       >
                         No material items.
                       </p>
                     </div>
+
+                    <div
+                      *ngIf="data.requestedBy"
+                      class="mt-3 border-t border-slate-100 pt-3 text-xs text-slate-500"
+                    >
+                      <i class="pi pi-user mr-1"></i>
+                      Requested by:
+                      {{ data.requestedBy || '-' }}
+                    </div>
                   </article>
                 </ng-container>
               </div>
 
-              <!-- Desktop material table -->
+              <!-- Desktop table -->
               <div
                 class="hidden overflow-hidden rounded-lg border border-slate-200 lg:block"
               >
                 <p-table
-                  [value]="PagingSignal().materialRequests || []"
+                  [value]="PagingSignal().siteMaterialRequests || []"
                   [expandedRowKeys]="expandedRows"
                   dataKey="id"
                   [showGridlines]="false"
@@ -873,12 +932,15 @@ import { DrawerModule } from 'primeng/drawer';
                   <ng-template #header>
                     <tr>
                       <th class="w-12"></th>
-                      <th>Document number</th>
+                      <th>Request subject</th>
                       <th>Request date</th>
+                      <th>Needed by</th>
                       <th class="text-center!">Items</th>
+                      <th class="text-center!">Priority</th>
                       <th class="text-center!">Status</th>
                     </tr>
                   </ng-template>
+
                   <ng-template #body let-data let-expanded="expanded">
                     <tr>
                       <td>
@@ -894,52 +956,122 @@ import { DrawerModule } from 'primeng/drawer';
                           "
                         ></p-button>
                       </td>
-                      <td class="font-semibold text-blue-700">
-                        {{ data.documentNo }}
+
+                      <td>
+                        <p class="font-semibold text-slate-800">
+                          {{ data.subject }}
+                        </p>
+                        <p
+                          class="mt-1 max-w-xs truncate text-xs text-slate-400"
+                        >
+                          {{ data.description || '-' }}
+                        </p>
                       </td>
-                      <td>{{ data.requestDate | date: 'dd MMM yyyy' }}</td>
+
+                      <td>
+                        {{ data.createdAt | date: 'dd MMM yyyy' }}
+                      </td>
+
+                      <td>
+                        {{
+                          data.neededBy
+                            ? (data.neededBy | date: 'dd MMM yyyy')
+                            : '-'
+                        }}
+                      </td>
+
                       <td class="text-center!">
-                        {{ data.materialItems?.length || 0 }}
+                        {{ data.items?.length || 0 }}
                       </td>
+
+                      <td class="text-center!">
+                        <p-tag
+                          [value]="data.priority"
+                          [severity]="
+                            data.priority === 'Urgent'
+                              ? 'danger'
+                              : data.priority === 'High'
+                                ? 'warn'
+                                : data.priority === 'Normal'
+                                  ? 'info'
+                                  : 'secondary'
+                          "
+                        ></p-tag>
+                      </td>
+
                       <td class="text-center!">
                         <p-tag
                           [value]="data.status || 'Pending'"
-                          severity="warn"
+                          [severity]="
+                            data.status === 'Approved' ||
+                            data.status === 'Issued'
+                              ? 'success'
+                              : data.status === 'Rejected' ||
+                                  data.status === 'Cancelled'
+                                ? 'danger'
+                                : data.status === 'PartiallyIssued'
+                                  ? 'warn'
+                                  : 'info'
+                          "
                         ></p-tag>
                       </td>
                     </tr>
                   </ng-template>
+
+                  <!-- Expanded items -->
                   <ng-template #expandedrow let-data>
                     <tr>
-                      <td colspan="5" class="bg-slate-50! p-4!">
-                        <p-table
-                          [value]="data.materialItems || []"
-                          size="small"
-                        >
+                      <td colspan="7" class="bg-slate-50! p-4!">
+                        <p-table [value]="data.items || []" size="small">
                           <ng-template #header>
                             <tr>
+                              <th>Item name</th>
+                              <th>Item code</th>
                               <th>Description</th>
-                              <th>Brand</th>
-                              <th>Type number</th>
                               <th>Unit</th>
-                              <th class="text-right!">Quantity</th>
+                              <th class="text-right!">Requested</th>
+                              <th class="text-right!">Approved</th>
+                              <th class="text-right!">Issued</th>
+                              <th class="text-right!">Reserved</th>
+                              <th class="text-center!">Status</th>
                               <th>Remarks</th>
                             </tr>
                           </ng-template>
+
                           <ng-template #body let-item>
                             <tr>
-                              <td>{{ item.description }}</td>
-                              <td>{{ item.brand || '-' }}</td>
-                              <td>{{ item.typeNo || '-' }}</td>
+                              <td class="font-medium text-slate-800">
+                                {{ item.itemName }}
+                              </td>
+                              <td>{{ item.itemCode || '-' }}</td>
+                              <td>{{ item.description || '-' }}</td>
                               <td>{{ item.unit || '-' }}</td>
-                              <td class="text-right!">{{ item.quantity }}</td>
+                              <td class="text-right!">
+                                {{ item.requestedQuantity }}
+                              </td>
+                              <td class="text-right!">
+                                {{ item.approvedQuantity }}
+                              </td>
+                              <td class="text-right!">
+                                {{ item.issuedQuantity }}
+                              </td>
+                              <td class="text-right!">
+                                {{ item.reservedQuantity }}
+                              </td>
+                              <td class="text-center!">
+                                <p-tag
+                                  [value]="item.status"
+                                  severity="info"
+                                ></p-tag>
+                              </td>
                               <td>{{ item.remarks || '-' }}</td>
                             </tr>
                           </ng-template>
+
                           <ng-template #emptymessage>
                             <tr>
                               <td
-                                colspan="6"
+                                colspan="10"
                                 class="py-5! text-center! text-slate-400"
                               >
                                 No material items found.
@@ -950,13 +1082,14 @@ import { DrawerModule } from 'primeng/drawer';
                       </td>
                     </tr>
                   </ng-template>
+
                   <ng-template #emptymessage>
                     <tr>
                       <td
-                        colspan="5"
+                        colspan="7"
                         class="py-10! text-center! text-slate-400"
                       >
-                        No material requests found.
+                        No site material requests found.
                       </td>
                     </tr>
                   </ng-template>
@@ -966,7 +1099,7 @@ import { DrawerModule } from 'primeng/drawer';
               <ng-template #noMaterials>
                 <div class="project-empty">
                   <i class="pi pi-box"></i>
-                  <p>No material requests found.</p>
+                  <p>No site material requests found.</p>
                 </div>
               </ng-template>
             </p-tabpanel>
@@ -1431,6 +1564,8 @@ export class ProjectDetails implements OnInit, OnDestroy {
                   new Date(a.createdAt).getTime() -
                   new Date(b.createdAt).getTime(),
               ) ?? [];
+
+            res.siteMaterialRequests = res.siteMaterialRequests ?? [];
 
             this.PagingSignal.set(res);
             this.jobSheets = res.jobSheets ?? [];

@@ -7,38 +7,62 @@ namespace YLWorks.Model
     {
         public Guid Id { get; set; }
 
-        // Project Information
+        // ==========================================
+        // PROJECT INFORMATION
+        // ==========================================
+
         public string ProjectCode { get; set; } = string.Empty;
         public string ProjectTitle { get; set; } = string.Empty;
 
-        // Client
+        // ==========================================
+        // CLIENT
+        // ==========================================
+
         public Guid ClientId { get; set; }
         public Company Client { get; set; } = null!;
 
-        // Project Status
+        // ==========================================
+        // PROJECT STATUS
+        // ==========================================
+
         public string Status { get; set; } = string.Empty;
 
-        // Project Dates
+        // ==========================================
+        // PROJECT DATES
+        // ==========================================
+
         public DateTime? StartDate { get; set; }
         public DateTime? EndDate { get; set; }
         public DateTime? EstimatedCompletedDate { get; set; }
         public DateTime? DueDate { get; set; }
 
-        // Project Details
+        // ==========================================
+        // PROJECT DETAILS
+        // ==========================================
+
         public string? Location { get; set; }
         public double? EstimatedBudget { get; set; }
         public string? Description { get; set; }
         public string? Priority { get; set; }
 
-        // Project Creator
+        // ==========================================
+        // PROJECT CREATOR
+        // ==========================================
+
         public Guid CreatedById { get; set; }
         public User CreatedBy { get; set; } = null!;
 
-        // Project Leader
+        // ==========================================
+        // PROJECT LEADER
+        // ==========================================
+
         public Guid? ProjectLeaderId { get; set; }
         public User? ProjectLeader { get; set; }
 
-        // Project Relationships
+        // ==========================================
+        // PROJECT RELATIONSHIPS
+        // ==========================================
+
         public ICollection<AttachmentDto> Attachments { get; set; }
             = new List<AttachmentDto>();
 
@@ -48,7 +72,6 @@ namespace YLWorks.Model
         public ICollection<ProjectMember> ProjectMembers { get; set; }
             = new List<ProjectMember>();
 
-        // One Project can have multiple WorkOrders
         public ICollection<WorkOrder> WorkOrders { get; set; }
             = new List<WorkOrder>();
 
@@ -58,8 +81,9 @@ namespace YLWorks.Model
         public ICollection<PurchaseOrder> PurchaseOrders { get; set; }
             = new List<PurchaseOrder>();
 
-        public ICollection<MaterialRequest> MaterialRequest { get; set; }
-            = new List<MaterialRequest>();
+        // Hardware, Site Material, IT Support and Bug Reports
+        public ICollection<HardwareRequest> HardwareRequests { get; set; }
+            = new List<HardwareRequest>();
     }
 
     // ==========================================
@@ -91,6 +115,7 @@ namespace YLWorks.Model
     public class CreateProjectRequest
     {
         public string? ProjectCode { get; set; } = string.Empty;
+
         public string ProjectTitle { get; set; } = string.Empty;
 
         public Guid ClientId { get; set; }
@@ -139,6 +164,7 @@ namespace YLWorks.Model
     public class UpdateProjectStatusRequest
     {
         public Guid ProjectId { get; set; }
+
         public string Status { get; set; } = string.Empty;
     }
 

@@ -1,5 +1,6 @@
 import { BaseModel } from './BaseModel';
 import { CompanyDto } from './Company';
+import { HardwareRequestDto } from './HardwareRequest';
 import { JobSheetDto } from './JobSheets';
 import { MaterialRequestDto } from './MaterialRequest';
 import { ProjectTaskDto } from './ProjectTask';
@@ -10,50 +11,39 @@ import { WorkOrderDto } from './WorkOrder';
 
 export interface ProjectDto extends BaseModel {
   id: string;
-
   projectCode: string;
-
   projectTitle: string;
 
   clientId: string;
-
   client: CompanyDto;
 
   status: string;
 
   startDate: Date;
-
   endDate: Date;
-
   estimatedCompletedDate: Date;
-
-  estimatedBudget: number;
-
-  location: string;
-
   dueDate: Date;
 
-  createdById: string;
+  estimatedBudget: number;
+  location: string;
 
+  createdById: string;
   createdBy: UserDto;
 
   description: string;
-
   priority: string;
 
   projectLeaderId: string;
-
   projectLeader: UserDto;
 
   projectMembers: ProjectMember[];
 
   workOrders: WorkOrderDto[];
-
   quotations: QuotationDto[];
-
   purchaseOrders: PurchaseOrderDto[];
 
-  materialRequests: MaterialRequestDto[];
+  // Site Material Requests linked to this project
+  siteMaterialRequests?: HardwareRequestDto[];
 
   projectTasks: ProjectTaskDto[];
   jobSheets?: JobSheetDto[];

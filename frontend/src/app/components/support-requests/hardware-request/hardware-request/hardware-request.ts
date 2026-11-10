@@ -765,10 +765,10 @@ export class HardwareRequest implements OnInit {
 
   private readonly OTHER_PROJECT_VALUE = '__OTHER__';
 
-  loading = false;
-  submitting = false;
-  inventoryLoading = false;
-  projectsLoading = false;
+  loading: boolean = false;
+  submitting: boolean = false;
+  inventoryLoading: boolean = false;
+  projectsLoading: boolean = false;
 
   inventoryItems: InventoryDropdownItem[] = [];
   requests: HardwareRequestDto[] = [];

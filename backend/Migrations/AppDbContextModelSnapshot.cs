@@ -1538,6 +1538,8 @@ namespace YLWorks.Migrations
 
                     b.HasIndex("AssignedToId");
 
+                    b.HasIndex("ProjectId");
+
                     b.HasIndex("RequestedById");
 
                     b.HasIndex("ResponsibleDepartmentId");
@@ -5298,6 +5300,11 @@ namespace YLWorks.Migrations
                         .WithMany()
                         .HasForeignKey("AssignedToId");
 
+                    b.HasOne("YLWorks.Model.Project", "Project")
+                        .WithMany("HardwareRequests")
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("YLWorks.Model.User", "RequestedBy")
                         .WithMany()
                         .HasForeignKey("RequestedById")
@@ -5312,6 +5319,8 @@ namespace YLWorks.Migrations
                     b.Navigation("ApprovedBy");
 
                     b.Navigation("AssignedTo");
+
+                    b.Navigation("Project");
 
                     b.Navigation("RequestedBy");
 
@@ -5724,7 +5733,7 @@ namespace YLWorks.Migrations
                         .HasForeignKey("ClientId");
 
                     b.HasOne("YLWorks.Model.Project", "Project")
-                        .WithMany("MaterialRequest")
+                        .WithMany()
                         .HasForeignKey("ProjectId");
 
                     b.HasOne("YLWorks.Model.PurchaseOrder", "PurchaseOrder")
@@ -6458,9 +6467,9 @@ namespace YLWorks.Migrations
                 {
                     b.Navigation("Attachments");
 
-                    b.Navigation("JobSheets");
+                    b.Navigation("HardwareRequests");
 
-                    b.Navigation("MaterialRequest");
+                    b.Navigation("JobSheets");
 
                     b.Navigation("ProjectMembers");
 

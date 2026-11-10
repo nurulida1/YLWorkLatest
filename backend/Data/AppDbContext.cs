@@ -403,12 +403,43 @@ namespace YLWorks.Data
                     .HasColumnType("decimal(18,2)");
             });
 
-            modelBuilder.Entity<DORMAItem>(entity =>
+            modelBuilder.Entity<DeliveryOrderRMA>(entity =>
             {
-                entity.HasKey(e => e.Id);
-                entity.Property(e => e.Quantity).HasColumnType("decimal(18,2)");
-            });
+                entity.HasKey(x => x.Id);
 
+                entity.HasIndex(x => x.DeliveryOrderRMANo)
+                    .IsUnique();
+
+                entity.HasOne(x => x.DeliveryOrder)
+                    .WithMany()
+                    .HasForeignKey(x => x.DeliveryOrderId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(x => x.SenderCompany)
+                    .WithMany()
+                    .HasForeignKey(x => x.SenderCompanyId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(x => x.ReceiverCompany)
+                    .WithMany()
+                    .HasForeignKey(x => x.ReceiverCompanyId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasMany(x => x.DORMAItems)
+                    .WithOne(x => x.DeliveryOrderRMA)
+                    .HasForeignKey(x => x.DeliveryOrderRMAId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasMany(x => x.DORMAProofImages)
+                    .WithOne(x => x.DeliveryOrderRMA)
+                    .HasForeignKey(x => x.DeliveryOrderRMAId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasMany(x => x.DORMAStatusHistories)
+                    .WithOne(x => x.DeliveryOrderRMA)
+                    .HasForeignKey(x => x.RMAId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
             // =======================
             // FINANCE
             // =======================

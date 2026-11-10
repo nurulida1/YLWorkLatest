@@ -57,3 +57,9 @@ export interface CreateCompanyRequest {
 export interface UpdateCompanyRequest extends CreateCompanyRequest {
   id: string;
 }
+
+export interface CompanyDropdownItem {
+  id: string;
+  name: string;
+  type?: CompanyType;
+}

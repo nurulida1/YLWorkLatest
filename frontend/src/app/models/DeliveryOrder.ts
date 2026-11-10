@@ -162,3 +162,22 @@ export interface BulkDOShipmentPayload {
 export interface BulkDORequest {
   deliveryOrders: BulkDOShipmentPayload[];
 }
+
+export interface DODropdownDto {
+  id: string;
+  deliveryOrderNo: string;
+
+  projectId?: string;
+  projectName?: string;
+
+  salesOrderId?: string;
+  salesOrderNo?: string;
+
+  senderCompanyId?: string;
+  senderCompanyName?: string;
+
+  receiverCompanyId?: string;
+  receiverCompanyName?: string;
+
+  status?: string;
+}

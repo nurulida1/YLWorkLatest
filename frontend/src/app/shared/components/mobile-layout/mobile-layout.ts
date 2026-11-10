@@ -412,15 +412,15 @@ export class MobileLayout implements OnInit {
   // STATE
   // ==========================================
 
-  showQuickActions = false;
-  showWorkMenu = false;
+  showQuickActions: boolean = false;
+  showWorkMenu: boolean = false;
 
   openMenu: string | null = null;
 
   currentUser: LoginResponse | null = null;
-  currentUrl = '';
+  currentUrl: string = '';
 
-  unreadCount = 0;
+  unreadCount: number = 0;
 
   // ==========================================
   // MENU DESCRIPTIONS
@@ -540,10 +540,7 @@ export class MobileLayout implements OnInit {
   // ==========================================
 
   getMenuDescription(item: AppNavItem): string {
-    return (
-      this.menuDescriptions[item.label] ||
-      `Access ${item.label}`
-    );
+    return this.menuDescriptions[item.label] || `Access ${item.label}`;
   }
 
   // ==========================================
@@ -593,12 +590,38 @@ export class MobileLayout implements OnInit {
     return currentRoute === route || currentRoute.startsWith(`${route}/`);
   }
 
+  private getAllNavigationRoutes(): string[] {
+    const moduleRoutes = this.allModuleItems.flatMap((item) => [
+      ...(item.route ? [item.route] : []),
+      ...(item.items
+        ?.map((sub) => sub.route)
+        .filter((route): route is string => !!route) ?? []),
+    ]);
+
+    const workRoutes = this.allMyWorkItems.map((item) => item.route);
+
+    return [...new Set([...moduleRoutes, ...workRoutes])];
+  }
+
   isActive(route?: string, item?: AppNavItem): boolean {
+    // Parent group: active when one of its children is active
     if (item?.items?.length) {
       return item.items.some((sub) => this.isActive(sub.route, sub));
     }
 
-    return this.isRouteMatch(route);
+    if (!route || !this.isRouteMatch(route)) {
+      return false;
+    }
+
+    // Check whether a more specific menu route also matches
+    const hasMoreSpecificMatch = this.getAllNavigationRoutes().some(
+      (otherRoute) =>
+        otherRoute !== route &&
+        otherRoute.length > route.length &&
+        this.isRouteMatch(otherRoute),
+    );
+
+    return !hasMoreSpecificMatch;
   }
 
   syncOpenMenuWithRoute(): void {

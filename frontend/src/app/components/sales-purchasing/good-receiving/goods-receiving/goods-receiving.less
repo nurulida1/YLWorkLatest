@@ -1,3 +1,107 @@
 :host {
   display: block;
+  width: 100%;
+  min-width: 0;
+}
+
+.grn-mobile-list {
+  display: none;
+}
+
+/* Desktop table */
+:host ::ng-deep .grn-table {
+  width: 100%;
+}
+
+:host ::ng-deep .grn-table .p-datatable-table {
+  min-width: 70rem;
+}
+
+:host ::ng-deep .grn-table .p-datatable-thead > tr > th {
+  white-space: nowrap;
+  font-size: 12px;
+  font-weight: 600;
+  color: #475569;
+}
+
+:host ::ng-deep .grn-table .p-datatable-tbody > tr > td {
+  font-size: 13px;
+}
+
+/* Invoice dialog */
+:host ::ng-deep .grn-invoice-dialog {
+  width: min(900px, calc(100vw - 2rem));
+  max-width: 900px;
+  max-height: 95dvh;
+  overflow: hidden;
+  border-radius: 14px;
+}
+
+:host ::ng-deep .grn-invoice-dialog .p-dialog-content {
+  padding: 0;
+  overflow: hidden;
+}
+
+/* Tablet and mobile */
+@media screen and (max-width: 767px) {
+  .grn-mobile-list {
+    display: block;
+  }
+
+  :host ::ng-deep .grn-table .p-datatable-table {
+    min-width: 0 !important;
+  }
+
+  :host ::ng-deep .grn-table .p-datatable-thead,
+  :host ::ng-deep .grn-table .p-datatable-tbody {
+    display: none;
+  }
+
+  :host ::ng-deep .grn-table .p-paginator {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.25rem;
+    padding: 0.75rem 0.25rem;
+  }
+
+  :host ::ng-deep .grn-table .p-paginator-current {
+    width: 100%;
+    margin: 0;
+    text-align: center;
+    font-size: 11px;
+  }
+
+  :host ::ng-deep .grn-table .p-paginator-rpp-dropdown {
+    margin-left: 0.25rem;
+  }
+
+  :host ::ng-deep .grn-invoice-dialog {
+    width: calc(100vw - 1rem) !important;
+    max-width: none !important;
+    max-height: calc(100dvh - 1rem) !important;
+    margin: 0.5rem;
+    border-radius: 12px;
+  }
+
+  :host ::ng-deep .grn-invoice-dialog .p-dialog-content {
+    max-height: calc(100dvh - 1rem);
+    overflow: hidden;
+  }
+
+  :host ::ng-deep .grn-invoice-dialog .p-datepicker {
+    width: 100%;
+  }
+
+  :host ::ng-deep .grn-invoice-dialog .p-datepicker-input {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+@media screen and (max-width: 380px) {
+  :host ::ng-deep .grn-invoice-dialog {
+    width: calc(100vw - 0.5rem) !important;
+    margin: 0.25rem;
+  }
 }

@@ -657,7 +657,7 @@ import { ActivatedRoute } from '@angular/router';
                     }
                   </div>
 
-                  @if (request.items?.length) {
+                  @if (request.items.length) {
                     <div class="request-items">
                       <strong>Items:</strong>
 
@@ -980,17 +980,7 @@ export class HardwareRequest implements OnInit {
 
     this.items.push(this.createItemForm());
 
-    this.cdr.detectChanges();
-
-    setTimeout(() => {
-      const itemCards = document.querySelectorAll('.item-card');
-      const lastItem = itemCards[itemCards.length - 1];
-
-      lastItem?.scrollIntoView({
-        behavior: 'smooth',
-        block: 'center',
-      });
-    }, 50);
+    this.cdr.markForCheck();
   }
 
   // =====================================================

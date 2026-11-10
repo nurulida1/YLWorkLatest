@@ -589,7 +589,7 @@ const APPROVER_ROLES = [
         class="flex flex-col md:flex-row md:items-center justify-between gap-4"
       >
         <div>
-          <div class="flex items-center gap-2 text-xs text-slate-400 mb-2">
+          <div class="flex items-center gap-2 text-slate-400 mb-2">
             <a
               routerLink="/dashboard"
               class="hover:text-blue-700 transition-colors"
@@ -597,12 +597,12 @@ const APPROVER_ROLES = [
               Dashboard
             </a>
 
-            <i class="pi pi-angle-right text-[10px]"></i>
+            <i class="pi pi-angle-right text-[10px]!"></i>
 
             <span class="font-semibold text-slate-600"> Leave Management </span>
           </div>
 
-          <h1 class="text-2xl font-bold text-slate-900 tracking-tight">
+          <h1 class="mt-4 text-2xl font-bold text-slate-900 tracking-tight">
             Leave Overview
           </h1>
 

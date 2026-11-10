@@ -36,7 +36,7 @@ import { LoadingService } from '../../../services/loading.service';
         class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4"
       >
         <div>
-          <div class="flex items-center gap-2 text-xs text-slate-400 mb-2">
+          <div class="flex items-center gap-2 text-slate-400 mb-2">
             <a routerLink="/dashboard" class="hover:text-blue-600">
               Dashboard
             </a>
@@ -45,7 +45,7 @@ import { LoadingService } from '../../../services/loading.service';
           </div>
 
           <h1
-            class="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 m-0"
+            class="mt-4 text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 m-0"
           >
             Claims
           </h1>
@@ -255,7 +255,7 @@ import { LoadingService } from '../../../services/loading.service';
                     [routerLink]="['/claims', row.requestId]"
                   >
                     View details
-                    <i class="pi pi-arrow-up-right text-xs"></i>
+                    <i class="pi pi-arrow-up-right text-xs!"></i>
                   </a>
                 </td>
               </tr>

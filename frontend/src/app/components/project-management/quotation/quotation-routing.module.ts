@@ -16,13 +16,13 @@ const routes: Routes = [
     path: 'form',
     component: QuotationForm,
     canActivate: [modulePermissionGuard],
-    data: { moduleKey: 'quotations' },
+    data: { moduleKey: 'quotations/form' },
   },
   {
     path: 'details',
     component: ViewDetails,
     canActivate: [modulePermissionGuard],
-    data: { moduleKey: 'quotations' },
+    data: { moduleKey: 'quotations/details' },
   },
 ];
 

@@ -430,7 +430,6 @@ namespace YLWorks.Controller
 
             rma.Status = request.Status;
             rma.ActionUserId = Guid.Parse(userId);
-            rma.ActionUserName = request.ActionUserName;
             rma.Remarks = request.Remarks;
             rma.StatusUpdatedAt = DateTime.UtcNow;
 

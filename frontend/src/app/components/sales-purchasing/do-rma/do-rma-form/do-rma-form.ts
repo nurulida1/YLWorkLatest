@@ -3,406 +3,837 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
-  inject,
   OnDestroy,
   OnInit,
+  inject,
   signal,
 } from '@angular/core';
 import {
   FormArray,
   FormBuilder,
-  FormControl,
   FormGroup,
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { MessageService } from 'primeng/api';
+import { ButtonModule } from 'primeng/button';
 import { DatePickerModule } from 'primeng/datepicker';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
 import { TextareaModule } from 'primeng/textarea';
-import { Subject, takeUntil } from 'rxjs';
-import { FileUploadModule } from 'primeng/fileupload';
-import { ButtonModule } from 'primeng/button';
-import { TableModule } from 'primeng/table';
+import { Subject, finalize, takeUntil } from 'rxjs';
+
 import { DeliveryOrderRMAService } from '../../../../services/DeliveryOrderRMAService';
 import { LoadingService } from '../../../../services/loading.service';
 
 @Component({
   selector: 'app-do-rma-form',
+  standalone: true,
   imports: [
     CommonModule,
-    InputTextModule,
-    DatePickerModule,
-    TextareaModule,
     ReactiveFormsModule,
-    InputNumberModule,
-    SelectModule,
-    FileUploadModule,
     RouterLink,
     ButtonModule,
-    TableModule,
+    InputTextModule,
+    DatePickerModule,
+    InputNumberModule,
+    SelectModule,
+    TextareaModule,
   ],
-  template: `<div
-    class="w-full min-h-screen bg-gray-50/50 p-6 sm:p-8 font-sans antialiased"
-  >
-    <nav class="flex items-center gap-2 text-gray-500 tracking-wide mb-6">
-      <a
-        [routerLink]="'/dashboard'"
-        class="hover:text-gray-900 transition-colors"
-        >Dashboard</a
+  template: `
+    <div
+      class="min-h-screen w-full bg-gray-50/70 p-3 font-sans antialiased
+             sm:p-6 lg:p-8"
+    >
+      <!-- Breadcrumb -->
+      <nav
+        class="mb-5 flex flex-wrap items-center gap-2 text-xs text-gray-500 sm:text-sm"
       >
-      <span class="text-gray-300">/</span>
-      <a [routerLink]="'/do-rma'" class="hover:text-gray-900 transition-colors"
-        >DO RMA</a
-      >
-      <span class="text-gray-300">/</span>
-      <span class="text-gray-800 font-semibold"
-        >{{ currentId ? 'Update' : 'New' }} Request</span
-      >
-    </nav>
+        <a
+          routerLink="/dashboard"
+          class="transition-colors hover:text-blue-600"
+        >
+          Dashboard
+        </a>
 
-    <div [formGroup]="rmaForm" class="mx-auto flex flex-col gap-6">
-      <div
-        class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 border border-gray-200/80 rounded-xl shadow-sm"
+        <i class="pi pi-angle-right text-xs text-gray-400"></i>
+
+        <a routerLink="/do-rma" class="transition-colors hover:text-blue-600">
+          DO RMA
+        </a>
+
+        <i class="pi pi-angle-right text-xs text-gray-400"></i>
+
+        <span class="font-semibold text-gray-800">
+          {{ currentId ? 'Update Request' : 'New Request' }}
+        </span>
+      </nav>
+
+      <form
+        [formGroup]="rmaForm"
+        (ngSubmit)="onSubmit()"
+        class="mx-auto flex flex-col gap-5"
       >
-        <div>
-          <h1 class="text-2xl text-gray-900 font-bold">
-            {{ currentId ? 'Modify RMA Request' : 'Create New RMA Request' }}
-          </h1>
-          <p class="text-gray-500 mt-0.5 tracking-wide">
-            Fill out order metadata, validation reasons, and line items below.
-          </p>
-        </div>
-        <div class="flex items-center gap-3 w-full sm:w-auto justify-end">
-          <p-button
-            label="Cancel"
-            severity="secondary"
-            styleClass="p-button-outlined font-medium px-4!"
-            [routerLink]="'/do-rma'"
-          >
-          </p-button>
-          <p-button
-            type="submit"
-            [label]="currentId ? 'Update RMA' : 'Submit Request'"
-            severity="info"
-            styleClass="font-medium shadow-sm"
-            [disabled]="rmaForm.invalid"
-          >
-          </p-button>
-        </div>
-      </div>
-
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-        <div class="lg:col-span-2 flex flex-col gap-6">
-          <div
-            class="bg-white rounded-xl border border-gray-200/80 shadow-sm p-6 flex flex-col gap-4"
-          >
-            <h2
-              class="text-sm font-bold uppercase tracking-wider text-gray-400 border-b border-gray-100 pb-2"
-            >
-              Document Details
-            </h2>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div class="flex flex-col gap-1.5">
-                <label class="font-semibold text-gray-700"
-                  >Request No <span class="text-red-500">*</span></label
-                >
-                <input
-                  pInputText
-                  formControlName="deliveryOrderRMANo"
-                  class="w-full bg-gray-50 text-gray-500"
-                  placeholder="System generated"
-                  readonly
-                />
+        <!-- Page Header -->
+        <div
+          class="flex flex-col gap-4 rounded-xl border border-gray-200
+                 bg-white p-4 shadow-sm sm:flex-row sm:items-center
+                 sm:justify-between sm:p-6"
+        >
+          <div class="min-w-0">
+            <div class="flex items-center gap-2">
+              <div
+                class="flex h-10 w-10 shrink-0 items-center justify-center
+                       rounded-lg bg-blue-50 text-blue-600"
+              >
+                <i class="pi pi-replay text-lg"></i>
               </div>
 
-              <div class="flex flex-col gap-1.5">
-                <label class="font-semibold text-gray-700"
-                  >Source Delivery Order ID
-                  <span class="text-red-500">*</span></label
-                >
-                <p-select
-                  formControlName="deliveryOrderId"
-                  styleClass="w-full!"
-                  appendTo="body"
-                  [options]="deliveryOrderSelection"
-                  placeholder="Ex: DO-99812-X"
-                />
-              </div>
+              <div class="min-w-0">
+                <h1 class="text-xl font-bold text-gray-900 sm:text-2xl">
+                  {{ currentId ? 'Update RMA Request' : 'Create RMA Request' }}
+                </h1>
 
-              <div class="flex flex-col gap-1.5">
-                <label class="font-semibold text-gray-700"
-                  >Date <span class="text-red-500">*</span></label
-                >
-                <p-datepicker
-                  formControlName="date"
-                  [showIcon]="true"
-                  styleClass="w-full"
-                  inputStyleClass="w-full"
-                  dateFormat="dd/mm/yy"
-                ></p-datepicker>
-              </div>
-
-              <div class="flex flex-col gap-1.5">
-                <label class="font-semibold text-gray-700"
-                  >Return Method <span class="text-red-500">*</span></label
-                >
-                <p-select
-                  [options]="returnMethods"
-                  formControlName="returnMethod"
-                  styleClass="w-full"
-                  placeholder="Select return method"
-                  appendTo="body"
-                ></p-select
-                ><input
-                  *ngIf="rmaForm.get('returnMethod')?.value === 'Other'"
-                  pInputText
-                  formControlName="returnMethodOther"
-                  class="w-full mt-2"
-                  placeholder="Specify return method..."
-                />
+                <p class="mt-1 text-xs text-gray-500 sm:text-sm">
+                  Manage delivery order return information and documentation.
+                </p>
               </div>
             </div>
           </div>
 
           <div
-            class="bg-white rounded-xl border border-gray-200/80 shadow-sm p-6 flex flex-col gap-4"
+            class="hidden sm:flex w-full flex-col-reverse gap-2 sm:w-auto sm:flex-row"
           >
-            <div
-              class="flex justify-between items-center border-b border-gray-100 pb-2"
-            >
-              <h2
-                class="text-sm font-bold uppercase tracking-wider text-gray-400"
-              >
-                RMA Line Inventory
-              </h2>
-              <p-button
-                label="Add Item Row"
-                icon="pi pi-plus"
-                severity="secondary"
-                styleClass="p-button-text font-semibold"
-                (click)="addItemRow()"
-              ></p-button>
-            </div>
+            <p-button
+              type="button"
+              label="Cancel"
+              severity="secondary"
+              [outlined]="true"
+              styleClass="w-full sm:w-auto"
+              routerLink="/do-rma"
+            ></p-button>
 
-            <div class="overflow-x-auto -mx-6">
-              <p-table [value]="itemControls.controls" class="min-w-[700px]">
-                <ng-template #header>
-                  <tr
-                    class="bg-gray-50/70 border-b border-gray-200 text-gray-500 font-semibold uppercase"
+            <p-button
+              type="submit"
+              [label]="currentId ? 'Update RMA' : 'Submit Request'"
+              severity="info"
+              styleClass="w-full sm:w-auto bg-blue-700! border-none! hover:bg-blue-500!"
+              [disabled]="rmaForm.invalid || isSubmitting"
+              [loading]="isSubmitting"
+            ></p-button>
+          </div>
+        </div>
+
+        <!-- Form Content -->
+        <div class="grid grid-cols-1 items-start gap-5 lg:grid-cols-3">
+          <!-- Left Column -->
+          <div class="flex min-w-0 flex-col gap-5 lg:col-span-2">
+            <!-- Document Details -->
+            <section
+              class="rounded-xl border border-gray-200 bg-white p-4
+                     shadow-sm sm:p-6"
+            >
+              <div
+                class="mb-5 flex items-center gap-3 border-b border-gray-100 pb-3"
+              >
+                <div
+                  class="flex h-9 w-9 items-center justify-center
+                         rounded-lg bg-blue-50 text-blue-600"
+                >
+                  <i class="pi pi-file-edit"></i>
+                </div>
+
+                <div>
+                  <h2 class="font-bold text-gray-800">Document Details</h2>
+                  <p class="text-xs text-gray-400">
+                    Basic RMA request information
+                  </p>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <!-- RMA Number -->
+                <div class="flex flex-col gap-1.5">
+                  <label class="text-sm font-semibold text-gray-700">
+                    Request No
+                  </label>
+
+                  <input
+                    pInputText
+                    formControlName="deliveryOrderRMANo"
+                    class="w-full"
+                    placeholder="Generating request number..."
+                  />
+
+                  <small class="text-xs text-gray-400">
+                    Automatically generated by the system.
+                  </small>
+                </div>
+
+                <!-- Delivery Order -->
+                <div class="flex flex-col gap-1.5">
+                  <label class="text-sm font-semibold text-gray-700">
+                    Source Delivery Order
+                    <span class="text-red-500">*</span>
+                  </label>
+
+                  <p-select
+                    formControlName="deliveryOrderId"
+                    [options]="deliveryOrderSelection"
+                    optionLabel="label"
+                    optionValue="value"
+                    placeholder="Select delivery order"
+                    [filter]="true"
+                    filterBy="label"
+                    [showClear]="true"
+                    appendTo="body"
+                    styleClass="w-full"
+                  ></p-select>
+
+                  <small
+                    *ngIf="isInvalid('deliveryOrderId')"
+                    class="text-xs text-red-500"
                   >
-                    <th class="bg-gray-200! w-[45%] text-left">Description</th>
-                    <th class="bg-gray-200! w-[15%] text-center!">Qty</th>
-                    <th class="bg-gray-200! w-[15%] text-center!">Unit</th>
-                    <th class="bg-gray-200! w-[20%] text-left">Condition</th>
-                    <th class="bg-gray-200! w-[5%] text-center!"></th>
-                  </tr>
-                </ng-template>
-                <ng-template #body let-control let-i="rowIndex">
-                  <tr
-                    [formGroup]="control"
-                    class="border-b border-gray-100 align-top"
+                    Please select a delivery order.
+                  </small>
+                </div>
+
+                <!-- Date -->
+                <div class="flex flex-col gap-1.5">
+                  <label class="text-sm font-semibold text-gray-700">
+                    RMA Date
+                    <span class="text-red-500">*</span>
+                  </label>
+
+                  <p-datepicker
+                    formControlName="date"
+                    [showIcon]="true"
+                    [showButtonBar]="true"
+                    dateFormat="dd/mm/yy"
+                    placeholder="Select date"
+                    appendTo="body"
+                    styleClass="w-full"
+                    inputStyleClass="w-full"
+                  ></p-datepicker>
+
+                  <small *ngIf="isInvalid('date')" class="text-xs text-red-500">
+                    Please select a date.
+                  </small>
+                </div>
+
+                <!-- Return Type -->
+                <div class="flex flex-col gap-1.5">
+                  <label class="text-sm font-semibold text-gray-700">
+                    Return Type
+                  </label>
+
+                  <input
+                    pInputText
+                    formControlName="returnType"
+                    class="w-full"
+                    placeholder="Enter return type"
+                  />
+                </div>
+
+                <!-- Return Quantity -->
+                <div class="flex flex-col gap-1.5">
+                  <label class="text-sm font-semibold text-gray-700">
+                    Return Quantity
+                  </label>
+
+                  <p-inputnumber
+                    formControlName="returnQuantity"
+                    [min]="0"
+                    [minFractionDigits]="0"
+                    [maxFractionDigits]="3"
+                    styleClass="w-full"
+                    inputStyleClass="w-full"
+                    placeholder="Enter quantity"
+                  ></p-inputnumber>
+                </div>
+
+                <!-- Sender Company -->
+                <div class="flex flex-col gap-1.5">
+                  <label class="text-sm font-semibold text-gray-700">
+                    Sender Company
+                  </label>
+
+                  <p-select
+                    formControlName="senderCompanyId"
+                    [options]="companySelection"
+                    optionLabel="label"
+                    optionValue="value"
+                    placeholder="Select sender company"
+                    [filter]="true"
+                    appendTo="body"
+                    styleClass="w-full"
+                  ></p-select>
+                </div>
+
+                <!-- Receiver Company -->
+                <div class="flex flex-col gap-1.5">
+                  <label class="text-sm font-semibold text-gray-700">
+                    Receiver Company
+                  </label>
+
+                  <p-select
+                    formControlName="receiverCompanyId"
+                    [options]="companySelection"
+                    optionLabel="label"
+                    optionValue="value"
+                    placeholder="Select receiver company"
+                    [filter]="true"
+                    appendTo="body"
+                    styleClass="w-full"
+                  ></p-select>
+                </div>
+
+                <!-- Return Method -->
+                <div class="flex flex-col gap-1.5">
+                  <label class="text-sm font-semibold text-gray-700">
+                    Return Method
+                    <span class="text-red-500">*</span>
+                  </label>
+
+                  <p-select
+                    formControlName="returnMethod"
+                    [options]="returnMethods"
+                    optionLabel="label"
+                    optionValue="value"
+                    placeholder="Select return method"
+                    appendTo="body"
+                    styleClass="w-full"
+                  ></p-select>
+
+                  <input
+                    *ngIf="rmaForm.get('returnMethod')?.value === 'Other'"
+                    pInputText
+                    formControlName="returnMethodOther"
+                    class="mt-2 w-full"
+                    placeholder="Specify return method"
+                  />
+
+                  <small
+                    *ngIf="isInvalid('returnMethod')"
+                    class="text-xs text-red-500"
                   >
-                    <td class="p-2">
+                    Please select a return method.
+                  </small>
+
+                  <small
+                    *ngIf="isInvalid('returnMethodOther')"
+                    class="text-xs text-red-500"
+                  >
+                    Please specify the return method.
+                  </small>
+                </div>
+              </div>
+            </section>
+
+            <!-- RMA Items -->
+            <section
+              class="rounded-xl border border-gray-200 bg-white p-4
+                     shadow-sm sm:p-6"
+            >
+              <div
+                class="mb-5 flex flex-col gap-3 border-b border-gray-100
+                       pb-3 sm:flex-row sm:items-center sm:justify-between"
+              >
+                <div class="flex items-center gap-3">
+                  <div
+                    class="flex h-9 w-9 items-center justify-center
+                           rounded-lg bg-indigo-50 text-indigo-600"
+                  >
+                    <i class="pi pi-box"></i>
+                  </div>
+
+                  <div>
+                    <h2 class="font-bold text-gray-800">RMA Line Items</h2>
+                    <p class="text-xs text-gray-400">Items being returned</p>
+                  </div>
+                </div>
+
+                <p-button
+                  type="button"
+                  label="Add Item"
+                  icon="pi pi-plus"
+                  severity="secondary"
+                  [outlined]="true"
+                  size="small"
+                  styleClass="w-full sm:w-auto"
+                  (onClick)="addItemRow()"
+                ></p-button>
+              </div>
+
+              <div formArrayName="doRMAItems" class="flex flex-col gap-4">
+                <div
+                  *ngFor="let control of itemControls.controls; let i = index"
+                  [formGroupName]="i"
+                  class="rounded-xl border border-gray-200 bg-gray-50/60 p-3
+                         sm:p-4"
+                >
+                  <!-- Item Header -->
+                  <div
+                    class="mb-4 flex items-center justify-between border-b
+                           border-gray-200 pb-3"
+                  >
+                    <div class="flex items-center gap-2">
+                      <span
+                        class="flex h-7 w-7 items-center justify-center
+                               rounded-full bg-blue-100 text-xs font-bold
+                               text-blue-700"
+                      >
+                        {{ i + 1 }}
+                      </span>
+
+                      <span class="text-sm font-semibold text-gray-800">
+                        Item {{ i + 1 }}
+                      </span>
+                    </div>
+
+                    <button
+                      type="button"
+                      class="flex items-center gap-1 rounded-lg px-2 py-1.5
+                             text-xs font-medium text-red-500
+                             transition-colors hover:bg-red-50
+                             hover:text-red-700"
+                      [disabled]="itemControls.length === 1"
+                      [class.opacity-40]="itemControls.length === 1"
+                      (click)="removeItemRow(i)"
+                    >
+                      <i class="pi pi-trash"></i>
+                      Remove
+                    </button>
+                  </div>
+
+                  <!-- Item Fields -->
+                  <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <div class="flex flex-col gap-1.5 sm:col-span-2">
+                      <label class="text-xs font-semibold text-gray-600">
+                        Description
+                        <span class="text-red-500">*</span>
+                      </label>
+
                       <input
                         pInputText
                         formControlName="description"
                         class="w-full"
-                        placeholder="Item spec detail"
+                        placeholder="Enter item description or specification"
                       />
-                    </td>
-                    <td class="p-2">
-                      <p-inputnumber
-                        formControlName="quantity"
-                        mode="decimal"
-                        [minFractionDigits]="2"
-                        [maxFractionDigits]="3"
-                        [min]="0"
-                        styleClass="w-full"
-                        inputStyleClass="w-full text-center p-inputtext-sm"
-                        placeholder="0.00"
-                      />
-                    </td>
-                    <td class="p-2">
-                      <input
-                        pInputText
-                        formControlName="unit"
-                        class="w-full text-center"
-                        placeholder="Ex: PCS"
-                      />
-                    </td>
-                    <td class="p-2">
-                      <p-select
-                        [options]="itemConditions"
-                        formControlName="condition"
-                        styleClass="w-full"
-                        appendTo="body"
-                      ></p-select>
-                    </td>
-                    <td class="p-2 text-center">
-                      <div class="flex items-center justify-center">
-                        <button
-                          pButton
-                          type="button"
-                          icon="pi pi-trash"
-                          class="p-button-text p-button-danger mt-1"
-                          (click)="removeItemRow(i)"
-                        ></button>
+
+                      <small
+                        *ngIf="isItemInvalid(i, 'description')"
+                        class="text-xs text-red-500"
+                      >
+                        Description is required.
+                      </small>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                      <div class="flex flex-col gap-1.5">
+                        <label class="text-xs font-semibold text-gray-600">
+                          Quantity
+                          <span class="text-red-500">*</span>
+                        </label>
+
+                        <p-inputnumber
+                          formControlName="quantity"
+                          [min]="1"
+                          [minFractionDigits]="0"
+                          [maxFractionDigits]="3"
+                          placeholder="0"
+                          styleClass="w-full"
+                          inputStyleClass="w-full"
+                        ></p-inputnumber>
+
+                        <small
+                          *ngIf="isItemInvalid(i, 'quantity')"
+                          class="text-xs text-red-500"
+                        >
+                          Enter a quantity of at least 1.
+                        </small>
                       </div>
-                    </td>
-                  </tr>
-                </ng-template>
-              </p-table>
 
-              <div
-                *ngIf="itemControls.length === 0"
-                class="text-center text-sm text-gray-400 py-8"
-              >
-                No tracking items assigned. Click "Add Item Row" above.
-              </div>
-            </div>
-          </div>
-        </div>
+                      <div class="flex flex-col gap-1.5">
+                        <label class="text-xs font-semibold text-gray-600">
+                          Unit
+                          <span class="text-red-500">*</span>
+                        </label>
 
-        <div class="flex flex-col gap-6">
-          <div
-            class="bg-white rounded-xl border border-gray-200/80 shadow-sm p-6 flex flex-col gap-4"
-          >
-            <h2
-              class="text-sm font-bold uppercase tracking-wider text-gray-400 border-b border-gray-100 pb-2"
-            >
-              Logistics Configuration
-            </h2>
+                        <input
+                          pInputText
+                          formControlName="unit"
+                          class="w-full"
+                          placeholder="PCS"
+                        />
 
-            <div class="flex flex-col gap-1.5">
-              <label class="font-semibold text-gray-700"
-                >Select Resolution <span class="text-red-500">*</span></label
-              >
-              <p-select
-                [options]="returnActions"
-                formControlName="returnAction"
-                styleClass="w-full"
-                appendTo="body"
-              ></p-select
-              ><input
-                *ngIf="rmaForm.get('returnAction')?.value === 'Other'"
-                pInputText
-                formControlName="returnActionOther"
-                class="w-full mt-2"
-                placeholder="Specify resolution..."
-              />
-            </div>
+                        <small
+                          *ngIf="isItemInvalid(i, 'unit')"
+                          class="text-xs text-red-500"
+                        >
+                          Unit is required.
+                        </small>
+                      </div>
+                    </div>
 
-            <div class="flex flex-col gap-1.5">
-              <label class="font-semibold text-gray-700">
-                Reason Category <span class="text-red-500">*</span>
-              </label>
+                    <div class="flex flex-col gap-1.5">
+                      <label class="text-xs font-semibold text-gray-600">
+                        Item Condition
+                        <span class="text-red-500">*</span>
+                      </label>
 
-              <p-select
-                [options]="returnReasons"
-                formControlName="reason"
-                styleClass="w-full"
-                placeholder="Select reason category"
-                appendTo="body"
-              ></p-select>
+                      <p-select
+                        formControlName="condition"
+                        [options]="itemConditions"
+                        optionLabel="label"
+                        optionValue="value"
+                        placeholder="Select condition"
+                        appendTo="body"
+                        styleClass="w-full"
+                      ></p-select>
 
-              <small class="text-gray-400">
-                Choose the main reason for this return </small
-              ><input
-                *ngIf="rmaForm.get('reason')?.value === 'Other'"
-                pInputText
-                formControlName="reasonOther"
-                class="w-full mt-2"
-                placeholder="Specify reason..."
-              />
-            </div>
+                      <small
+                        *ngIf="isItemInvalid(i, 'condition')"
+                        class="text-xs text-red-500"
+                      >
+                        Please select item condition.
+                      </small>
+                    </div>
 
-            <div class="flex flex-col gap-1.5">
-              <label class="font-semibold text-gray-700">Remarks</label>
-              <textarea
-                pInputTextarea
-                formControlName="remarks"
-                rows="3"
-                [autoResize]="true"
-                class="w-full text-sm"
-                placeholder="Provide extra handling notes..."
-              ></textarea>
-            </div>
-          </div>
+                    <div class="flex flex-col gap-1.5 sm:col-span-2">
+                      <label class="text-xs font-semibold text-gray-600">
+                        Item Remarks
+                      </label>
 
-          <div
-            class="bg-white rounded-xl border border-gray-200/80 shadow-sm p-6 flex flex-col gap-4"
-          >
-            <h2
-              class="text-sm font-bold uppercase tracking-wider text-gray-400 border-b border-gray-100 pb-2"
-            >
-              Proof Documentation
-            </h2>
+                      <textarea
+                        pTextarea
+                        formControlName="remarks"
+                        rows="2"
+                        [autoResize]="true"
+                        class="w-full"
+                        placeholder="Additional information about this item"
+                      ></textarea>
+                    </div>
+                  </div>
+                </div>
 
-            <input
-              type="file"
-              #fileInput
-              multiple
-              accept="image/*"
-              class="hidden"
-              (change)="onFileSelect($event)"
-            />
-
-            <div
-              (click)="fileInput.click()"
-              class="border-2 border-dashed border-gray-200 hover:border-primary-500 hover:bg-gray-50/50 rounded-xl p-6 text-center cursor-pointer transition-all group flex flex-col items-center justify-center gap-2"
-            >
-              <div
-                class="w-10 h-10 rounded-full bg-gray-50 group-hover:bg-white flex items-center justify-center border border-gray-100 shadow-sm transition-colors"
-              >
-                <i
-                  class="pi pi-cloud-upload text-gray-500 group-hover:text-primary-600 text-lg"
-                ></i>
-              </div>
-              <div class="flex flex-col gap-0.5">
-                <p class="text-sm font-semibold text-gray-700">
-                  Click to upload
-                  <span class="text-blue-600 font-medium"
-                    >or drag and drop</span
-                  >
-                </p>
-                <p class="text-xs text-gray-400">PNG, JPG or JPEG up to 5MB</p>
-              </div>
-            </div>
-
-            <div
-              class="grid grid-cols-4 gap-3 mt-1"
-              *ngIf="uploadedImages().length > 0"
-            >
-              <div
-                *ngFor="let img of uploadedImages(); let idx = index"
-                class="relative aspect-square rounded-lg border border-gray-200 overflow-hidden bg-gray-50 group shadow-sm transition-all hover:border-gray-300"
-              >
-                <img
-                  [src]="img"
-                  class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                />
-
+                <!-- Empty State -->
                 <div
-                  (click)="removeImage(idx); $event.stopPropagation()"
-                  class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center gap-1 transition-opacity cursor-pointer duration-200"
+                  *ngIf="itemControls.length === 0"
+                  class="rounded-xl border border-dashed border-gray-300
+                         py-10 text-center"
                 >
-                  <i class="pi pi-trash text-white text-base"></i>
-                  <span class="text-[10px] text-white font-medium tracking-wide"
-                    >Remove</span
-                  >
+                  <i class="pi pi-box text-3xl text-gray-300"></i>
+
+                  <p class="mt-3 text-sm font-medium text-gray-600">
+                    No items added
+                  </p>
+
+                  <p class="mt-1 text-xs text-gray-400">
+                    Add at least one item to continue.
+                  </p>
+
+                  <p-button
+                    type="button"
+                    label="Add First Item"
+                    icon="pi pi-plus"
+                    size="small"
+                    [outlined]="true"
+                    styleClass="mt-4"
+                    (onClick)="addItemRow()"
+                  ></p-button>
                 </div>
               </div>
-            </div>
+            </section>
+          </div>
+
+          <!-- Right Column -->
+          <div class="flex min-w-0 flex-col gap-5">
+            <!-- Logistics Configuration -->
+            <section
+              class="rounded-xl border border-gray-200 bg-white p-4
+                     shadow-sm sm:p-6"
+            >
+              <div
+                class="mb-5 flex items-center gap-3 border-b border-gray-100 pb-3"
+              >
+                <div
+                  class="flex h-9 w-9 items-center justify-center
+                         rounded-lg bg-amber-50 text-amber-600"
+                >
+                  <i class="pi pi-truck"></i>
+                </div>
+
+                <div>
+                  <h2 class="font-bold text-gray-800">Resolution Details</h2>
+                  <p class="text-xs text-gray-400">
+                    Return reason and resolution
+                  </p>
+                </div>
+              </div>
+
+              <div class="flex flex-col gap-4">
+                <!-- Return Action -->
+                <div class="flex flex-col gap-1.5">
+                  <label class="text-sm font-semibold text-gray-700">
+                    Select Resolution
+                    <span class="text-red-500">*</span>
+                  </label>
+
+                  <p-select
+                    formControlName="returnAction"
+                    [options]="returnActions"
+                    optionLabel="label"
+                    optionValue="value"
+                    placeholder="Select resolution"
+                    appendTo="body"
+                    styleClass="w-full"
+                  ></p-select>
+
+                  <input
+                    *ngIf="rmaForm.get('returnAction')?.value === 'Other'"
+                    pInputText
+                    formControlName="returnActionOther"
+                    class="mt-2 w-full"
+                    placeholder="Specify resolution"
+                  />
+
+                  <small
+                    *ngIf="isInvalid('returnAction')"
+                    class="text-xs text-red-500"
+                  >
+                    Please select a resolution.
+                  </small>
+
+                  <small
+                    *ngIf="isInvalid('returnActionOther')"
+                    class="text-xs text-red-500"
+                  >
+                    Please specify the resolution.
+                  </small>
+                </div>
+
+                <!-- Reason -->
+                <div class="flex flex-col gap-1.5">
+                  <label class="text-sm font-semibold text-gray-700">
+                    Reason Category
+                    <span class="text-red-500">*</span>
+                  </label>
+
+                  <p-select
+                    formControlName="reason"
+                    [options]="returnReasons"
+                    optionLabel="label"
+                    optionValue="value"
+                    placeholder="Select reason"
+                    appendTo="body"
+                    styleClass="w-full"
+                  ></p-select>
+
+                  <small class="text-xs text-gray-400">
+                    Choose the main reason for this return.
+                  </small>
+
+                  <input
+                    *ngIf="rmaForm.get('reason')?.value === 'Other'"
+                    pInputText
+                    formControlName="reasonOther"
+                    class="mt-2 w-full"
+                    placeholder="Specify reason"
+                  />
+
+                  <small
+                    *ngIf="isInvalid('reason')"
+                    class="text-xs text-red-500"
+                  >
+                    Please select a reason.
+                  </small>
+
+                  <small
+                    *ngIf="isInvalid('reasonOther')"
+                    class="text-xs text-red-500"
+                  >
+                    Please specify the reason.
+                  </small>
+                </div>
+
+                <!-- Remarks -->
+                <div class="flex flex-col gap-1.5">
+                  <label class="text-sm font-semibold text-gray-700">
+                    General Remarks
+                  </label>
+
+                  <textarea
+                    pTextarea
+                    formControlName="remarks"
+                    rows="4"
+                    [autoResize]="true"
+                    class="w-full"
+                    placeholder="Provide additional handling notes..."
+                  ></textarea>
+                </div>
+              </div>
+            </section>
+
+            <!-- Proof Documentation -->
+            <section
+              class="rounded-xl border border-gray-200 bg-white p-4
+                     shadow-sm sm:p-6"
+            >
+              <div
+                class="mb-5 flex items-center gap-3 border-b border-gray-100 pb-3"
+              >
+                <div
+                  class="flex h-9 w-9 items-center justify-center
+                         rounded-lg bg-emerald-50 text-emerald-600"
+                >
+                  <i class="pi pi-images"></i>
+                </div>
+
+                <div>
+                  <h2 class="font-bold text-gray-800">Proof Documentation</h2>
+                  <p class="text-xs text-gray-400">
+                    Attach images as supporting evidence
+                  </p>
+                </div>
+              </div>
+
+              <input
+                type="file"
+                #fileInput
+                multiple
+                accept="image/png,image/jpeg,image/jpg,image/webp"
+                class="hidden"
+                (change)="onFileSelect($event)"
+              />
+
+              <button
+                type="button"
+                class="flex w-full flex-col items-center justify-center
+                       rounded-xl border-2 border-dashed border-gray-200
+                       bg-gray-50/50 px-4 py-7 text-center
+                       transition-all hover:border-blue-400
+                       hover:bg-blue-50/40"
+                (click)="fileInput.click()"
+              >
+                <span
+                  class="flex h-12 w-12 items-center justify-center
+                         rounded-full border border-gray-200 bg-white
+                         text-blue-600 shadow-sm"
+                >
+                  <i class="pi pi-cloud-upload text-xl"></i>
+                </span>
+
+                <span class="mt-3 text-sm font-semibold text-gray-700">
+                  Click to upload images
+                </span>
+
+                <span class="mt-1 text-xs text-gray-400">
+                  PNG, JPG or WEBP · Maximum 5MB per image
+                </span>
+              </button>
+
+              <!-- Image Preview -->
+              <div *ngIf="uploadedImages().length > 0" class="mt-4">
+                <div class="mb-2 flex items-center justify-between">
+                  <span class="text-xs font-semibold text-gray-600">
+                    Uploaded Images
+                  </span>
+
+                  <span class="text-xs text-gray-400">
+                    {{ uploadedImages().length }} image(s)
+                  </span>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                  <div
+                    *ngFor="let img of uploadedImages(); let idx = index"
+                    class="group relative aspect-square overflow-hidden
+                           rounded-lg border border-gray-200 bg-gray-50"
+                  >
+                    <img
+                      [src]="img"
+                      [alt]="'RMA proof image ' + (idx + 1)"
+                      class="h-full w-full object-cover"
+                    />
+
+                    <button
+                      type="button"
+                      class="absolute right-2 top-2 flex h-8 w-8
+                             items-center justify-center rounded-full
+                             bg-black/60 text-white opacity-100
+                             transition-all hover:bg-red-600
+                             sm:opacity-0 sm:group-hover:opacity-100"
+                      (click)="removeImage(idx)"
+                      aria-label="Remove image"
+                    >
+                      <i class="pi pi-trash text-xs"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <p
+                *ngIf="uploadedImages().length === 0"
+                class="mt-4 text-center text-xs text-gray-400"
+              >
+                No proof images attached yet.
+              </p>
+            </section>
+
+            <!-- Form Summary -->
+            <section
+              class="rounded-xl border border-blue-100 bg-blue-50/60 p-4"
+            >
+              <div class="flex items-start gap-3">
+                <i class="pi pi-info-circle mt-0.5 text-blue-600"></i>
+
+                <div>
+                  <h3 class="text-sm font-semibold text-blue-900">
+                    Before submitting
+                  </h3>
+
+                  <p class="mt-1 text-xs leading-relaxed text-blue-800/80">
+                    Ensure the delivery order, returned item quantities, return
+                    reason and supporting documentation are correct.
+                  </p>
+                </div>
+              </div>
+            </section>
           </div>
         </div>
-      </div>
+
+        <!-- Bottom Actions for Mobile -->
+        <div
+          class="w-full sticky bottom-0 z-10 -mx-3 flex gap-2 border-t
+                 border-gray-200 bg-white/95 p-3 backdrop-blur
+                 sm:hidden"
+        >
+          <p-button
+            type="button"
+            label="Cancel"
+            severity="secondary"
+            [outlined]="true"
+            class="w-full"
+            styleClass="w-full! py-3!"
+            routerLink="/do-rma"
+          ></p-button>
+
+          <p-button
+            type="submit"
+            [label]="currentId ? 'Update' : 'Submit'"
+            severity="info"
+            class="w-full"
+            styleClass="w-full! bg-blue-700! hover:bg-blue-500! border-none! py-3!"
+            [disabled]="rmaForm.invalid || isSubmitting"
+            [loading]="isSubmitting"
+          ></p-button>
+        </div>
+      </form>
     </div>
-  </div>`,
+  `,
   styleUrl: './do-rma-form.less',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -415,47 +846,108 @@ export class DoRmaForm implements OnInit, OnDestroy {
   private readonly deliveryOrderRMAService = inject(DeliveryOrderRMAService);
   private readonly loadingService = inject(LoadingService);
 
-  protected ngUnsubscribe: Subject<void> = new Subject<void>();
+  private readonly ngUnsubscribe = new Subject<void>();
 
   rmaForm!: FormGroup;
+
   uploadedImages = signal<string[]>([]);
 
   currentId: string | null = null;
+  isSubmitting = false;
+
+  deliveryOrderSelection: {
+    label: string;
+    value: string;
+  }[] = [];
+
+  companySelection: {
+    label: string;
+    value: string;
+  }[] = [];
 
   returnMethods = [
-    { label: 'Third-Party Courier Service (3PL)', value: 'Courier' },
-    { label: 'Company Pickup Arrangement', value: 'SelfCollect' },
-    { label: 'Customer Drop-Off at Warehouse', value: 'DropOff' },
-    { label: 'Other (Specify)', value: 'Other' },
+    {
+      label: 'Third-Party Courier Service (3PL)',
+      value: 'Courier',
+    },
+    {
+      label: 'Company Pickup Arrangement',
+      value: 'SelfCollect',
+    },
+    {
+      label: 'Customer Drop-Off at Warehouse',
+      value: 'DropOff',
+    },
+    {
+      label: 'Other (Specify)',
+      value: 'Other',
+    },
   ];
 
   returnActions = [
-    { label: 'Item Replacement (Re-issue)', value: 'Replacement' },
-    { label: 'Issue Credit Note / Refund', value: 'CreditNote' },
-    { label: 'Repair and Return to Customer', value: 'Repair' },
-    { label: 'Other Resolution (Specify)', value: 'Other' },
+    {
+      label: 'Item Replacement (Re-issue)',
+      value: 'Replacement',
+    },
+    {
+      label: 'Issue Credit Note / Refund',
+      value: 'CreditNote',
+    },
+    {
+      label: 'Repair and Return to Customer',
+      value: 'Repair',
+    },
+    {
+      label: 'Other Resolution (Specify)',
+      value: 'Other',
+    },
   ];
 
   returnReasons = [
-    { label: 'Damaged During Delivery', value: 'Damaged' },
-    { label: 'Product Defect / Faulty', value: 'Faulty' },
-    { label: 'Incorrect Item Received', value: 'WrongItem' },
-    { label: 'Mismatch with Order Specification', value: 'NotAsOrdered' },
-    { label: 'Other (Specify)', value: 'Other' },
+    {
+      label: 'Damaged During Delivery',
+      value: 'Damaged',
+    },
+    {
+      label: 'Product Defect / Faulty',
+      value: 'Faulty',
+    },
+    {
+      label: 'Incorrect Item Received',
+      value: 'WrongItem',
+    },
+    {
+      label: 'Mismatch with Order Specification',
+      value: 'NotAsOrdered',
+    },
+    {
+      label: 'Other (Specify)',
+      value: 'Other',
+    },
   ];
 
   itemConditions = [
-    { label: 'Unopened / Box Pristine', value: 'Excellent' },
-    { label: 'Damaged Internal Content', value: 'Damaged' },
-    { label: 'Defective Technical Internals', value: 'Faulty' },
+    {
+      label: 'Unopened / Box Pristine',
+      value: 'Excellent',
+    },
+    {
+      label: 'Damaged Internal Content',
+      value: 'Damaged',
+    },
+    {
+      label: 'Defective Technical Internals',
+      value: 'Faulty',
+    },
   ];
 
-  deliveryOrderSelection: { label: string; value: string }[] = [];
-
   ngOnInit(): void {
-    this.loadDropdown();
     this.initForm();
-    this.currentId = this.activatedRoute.snapshot.queryParams['id'];
+
+    this.currentId = this.activatedRoute.snapshot.queryParamMap.get('id');
+
+    this.loadDropdown();
+
     if (this.currentId) {
       this.loadFormData();
     } else {
@@ -463,126 +955,185 @@ export class DoRmaForm implements OnInit, OnDestroy {
     }
   }
 
-  loadDropdown() {
-    this.deliveryOrderRMAService
-      .GetDropdown()
-      .pipe(takeUntil(this.ngUnsubscribe))
-      .subscribe({
-        next: (res) => {
-          this.deliveryOrderSelection = res.deliveryOrders.map(
-            (doItem: any) => ({
-              label: `${doItem.deliveryOrderNo} - ${doItem.salesOrderNo}`,
-              value: doItem.id,
-            }),
-          );
-          this.cdr.markForCheck();
-        },
-        error: (err) => {
-          this.messageService.add({
-            severity: 'error',
-            summary: 'Error',
-            detail: 'Failed to load delivery order options.',
-          });
-        },
-      });
-  }
-
-  generateRMANo() {
-    this.deliveryOrderRMAService
-      .GenerateNo()
-      .pipe(takeUntil(this.ngUnsubscribe))
-      .subscribe({
-        next: (res) => {
-          this.rmaForm.get('deliveryOrderRMANo')?.setValue(res.rmaNo);
-          this.cdr.markForCheck();
-        },
-      });
-  }
+  // ---------------------------------------------------------
+  // Form initialization
+  // ---------------------------------------------------------
 
   private initForm(): void {
-    this.rmaForm = new FormGroup({
-      deliveryOrderRMANo: new FormControl(null),
-      deliveryOrderId: new FormControl(null),
-      salesOrderId: new FormControl(null),
-      date: new FormControl(new Date()),
-      returnMethod: new FormControl(null),
-      returnAction: new FormControl(null),
-      reason: new FormControl(null),
-      reasonOther: new FormControl(null),
-      remarks: new FormControl(null),
-      doRMAItems: new FormArray([]),
+    this.rmaForm = this.fb.group({
+      deliveryOrderRMANo: [{ value: null, disabled: true }],
+      deliveryOrderId: [null, Validators.required],
+      date: [new Date(), Validators.required],
+
+      returnType: [null],
+      returnQuantity: [null],
+      senderCompanyId: [null],
+      receiverCompanyId: [null],
+
+      returnMethod: [null, Validators.required],
+      returnMethodOther: [null],
+
+      returnAction: [null, Validators.required],
+      returnActionOther: [null],
+
+      reason: [null, Validators.required],
+      reasonOther: [null],
+
+      remarks: [null],
+      doRMAItems: this.fb.array([]),
     });
+
     this.addItemRow();
 
-    this.rmaForm.get('reason')?.valueChanges.subscribe((val) => {
-      const control = this.rmaForm.get('reasonOther');
-      if (val === 'Other') {
-        control?.setValidators([Validators.required]);
-      } else {
-        control?.clearValidators();
-        control?.setValue(null);
-      }
-      control?.updateValueAndValidity();
-    });
+    this.setupOtherFieldValidation('returnMethod', 'returnMethodOther');
+
+    this.setupOtherFieldValidation('returnAction', 'returnActionOther');
+
+    this.setupOtherFieldValidation('reason', 'reasonOther');
+  }
+
+  private setupOtherFieldValidation(
+    sourceName: string,
+    otherName: string,
+  ): void {
+    const source = this.rmaForm.get(sourceName);
+    const other = this.rmaForm.get(otherName);
+
+    source?.valueChanges
+      .pipe(takeUntil(this.ngUnsubscribe))
+      .subscribe((value) => {
+        if (value === 'Other') {
+          other?.setValidators([Validators.required]);
+        } else {
+          other?.clearValidators();
+          other?.setValue(null);
+        }
+
+        other?.updateValueAndValidity({
+          emitEvent: false,
+        });
+
+        this.cdr.markForCheck();
+      });
   }
 
   get itemControls(): FormArray {
     return this.rmaForm.get('doRMAItems') as FormArray;
   }
 
+  // ---------------------------------------------------------
+  // Item management
+  // ---------------------------------------------------------
+
   addItemRow(): void {
-    const itemRow = this.fb.group({
-      description: ['', [Validators.required]],
-      quantity: [1, [Validators.required, Validators.min(1)]],
-      unit: ['PCS', [Validators.required]],
-      condition: ['Excellent', [Validators.required]],
-      remarks: [''],
-    });
-    this.itemControls.push(itemRow);
+    this.itemControls.push(
+      this.fb.group({
+        description: ['', Validators.required],
+
+        quantity: [1, [Validators.required, Validators.min(1)]],
+
+        unit: ['PCS', Validators.required],
+
+        condition: ['Excellent', Validators.required],
+
+        remarks: [''],
+      }),
+    );
+
+    this.cdr.markForCheck();
   }
 
   removeItemRow(index: number): void {
+    if (index < 0 || index >= this.itemControls.length) {
+      return;
+    }
+
     this.itemControls.removeAt(index);
-  }
-
-  onFileSelect(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    if (!input.files || input.files.length === 0) return;
-
-    const files = Array.from(input.files);
-
-    files.forEach((file) => {
-      if (file.size > 5 * 1024 * 1024) {
-        this.messageService.add({
-          severity: 'warn',
-          summary: 'File Too Large',
-          detail: `${file.name} exceeds the 5MB maximum limit.`,
-        });
-        return;
-      }
-
-      const reader = new FileReader();
-      reader.onload = (e: ProgressEvent<FileReader>) => {
-        const result = e.target?.result as string;
-        if (result) {
-          this.uploadedImages.update((current) => [...current, result]);
-          this.cdr.markForCheck();
-        }
-      };
-      reader.readAsDataURL(file);
-    });
-
-    input.value = '';
-  }
-
-  removeImage(index: number): void {
-    this.uploadedImages.update((current) =>
-      current.filter((_, i) => i !== index),
-    );
     this.cdr.markForCheck();
   }
-  loadFormData() {
+
+  isItemInvalid(index: number, controlName: string): boolean {
+    const control = this.itemControls.at(index).get(controlName);
+
+    return !!(control?.invalid && (control.dirty || control.touched));
+  }
+
+  isInvalid(controlName: string): boolean {
+    const control = this.rmaForm.get(controlName);
+
+    return !!(control?.invalid && (control.dirty || control.touched));
+  }
+
+  // ---------------------------------------------------------
+  // Dropdown
+  // ---------------------------------------------------------
+
+  loadDropdown(): void {
+    this.deliveryOrderRMAService
+      .GetDropdown()
+      .pipe(takeUntil(this.ngUnsubscribe))
+      .subscribe({
+        next: (res: any) => {
+          this.deliveryOrderSelection = (res?.deliveryOrders ?? []).map(
+            (item: any) => ({
+              label: `${item.deliveryOrderNo ?? ''} - ${item.salesOrderNo ?? ''}`,
+              value: item.id,
+            }),
+          );
+
+          this.companySelection = (res?.companies ?? []).map(
+            (company: any) => ({
+              label: company.name,
+              value: company.id,
+            }),
+          );
+
+          this.cdr.markForCheck();
+        },
+        error: () => {
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: 'Failed to load dropdown options.',
+          });
+        },
+      });
+  }
+
+  // ---------------------------------------------------------
+  // Generate RMA number
+  // ---------------------------------------------------------
+
+  generateRMANo(): void {
+    this.deliveryOrderRMAService
+      .GenerateNo()
+      .pipe(takeUntil(this.ngUnsubscribe))
+      .subscribe({
+        next: (res: any) => {
+          this.rmaForm.get('deliveryOrderRMANo')?.setValue(res?.rmaNo ?? null);
+
+          this.cdr.markForCheck();
+        },
+
+        error: () => {
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: 'Failed to generate RMA request number.',
+          });
+        },
+      });
+  }
+
+  // ---------------------------------------------------------
+  // Load existing RMA
+  // ---------------------------------------------------------
+
+  loadFormData(): void {
+    if (!this.currentId) return;
+
     this.loadingService.start();
+
     this.deliveryOrderRMAService
       .GetOne({
         Page: 1,
@@ -592,67 +1143,332 @@ export class DoRmaForm implements OnInit, OnDestroy {
         Filter: `Id=${this.currentId}`,
         OrderBy: null,
       })
-      .pipe(takeUntil(this.ngUnsubscribe))
-      .subscribe({
-        next: (data) => {
+      .pipe(
+        takeUntil(this.ngUnsubscribe),
+        finalize(() => {
           this.loadingService.stop();
-
+        }),
+      )
+      .subscribe({
+        next: (data: any) => {
           if (!data) {
             this.messageService.add({
               severity: 'error',
-              summary: 'Error',
+              summary: 'Not Found',
               detail: 'RMA request not found.',
             });
+
             this.router.navigate(['/do-rma']);
             return;
           }
+
           this.itemControls.clear();
 
+          const returnMethod = this.resolveOtherValue(
+            data.returnMethod,
+            this.returnMethods,
+          );
+
+          const returnAction = this.resolveOtherValue(
+            data.returnAction,
+            this.returnActions,
+          );
+
+          const reason = this.resolveOtherValue(
+            data.reason,
+            this.returnReasons,
+          );
+
           this.rmaForm.patchValue({
-            id: data.id,
-            deliveryOrderRMANo: data.deliveryOrderRMANo,
-            deliveryOrderId: data.deliveryOrderId,
-            date: new Date(data.date),
-            returnMethod: data.returnMethod,
-            returnAction: data.returnAction,
-            reason: data.reason,
-            remarks: data.remarks,
+            deliveryOrderRMANo: data.deliveryOrderRMANo ?? null,
+            deliveryOrderId: data.deliveryOrderId ?? null,
+            date: data.date ? new Date(data.date) : new Date(),
+
+            returnType: data.returnType ?? null,
+            returnQuantity: data.returnQuantity ?? null,
+            senderCompanyId: data.senderCompanyId ?? null,
+            receiverCompanyId: data.receiverCompanyId ?? null,
+
+            returnMethod: returnMethod.value,
+            returnMethodOther: returnMethod.other,
+
+            returnAction: returnAction.value,
+            returnActionOther: returnAction.other,
+
+            reason: reason.value,
+            reasonOther: reason.other,
+
+            remarks: data.remarks ?? null,
           });
 
-          data.doRMAItems.forEach((item) => {
+          // Restore RMA items
+          const items = data.dormaItems ?? [];
+
+          items.forEach((item: any) => {
             this.itemControls.push(
               this.fb.group({
-                description: [item.description, Validators.required],
+                description: [item.description ?? '', Validators.required],
+
                 quantity: [
-                  item.quantity,
+                  item.quantity ?? 1,
                   [Validators.required, Validators.min(1)],
                 ],
-                unit: [item.unit, Validators.required],
-                condition: [item.condition, Validators.required],
-                remarks: [item.remarks],
+
+                unit: [item.unit ?? 'PCS', Validators.required],
+
+                condition: [item.condition ?? 'Excellent', Validators.required],
+
+                remarks: [item.remarks ?? ''],
               }),
             );
           });
 
-          if (data.doRMAProofImages) {
-            this.uploadedImages.set(
-              data.doRMAProofImages.map((img) => img.url),
-            );
+          if (this.itemControls.length === 0) {
+            this.addItemRow();
           }
+
+          // Restore proof images
+          const images = data.dormaProofImages ?? [];
+
+          this.uploadedImages.set(
+            images
+              .map((img: any) => img.url)
+              .filter(
+                (url: unknown): url is string =>
+                  typeof url === 'string' && url.length > 0,
+              ),
+          );
+
+          this.rmaForm.updateValueAndValidity();
+          this.cdr.markForCheck();
         },
-        error: (err) => {
-          this.loadingService.stop();
+
+        error: () => {
           this.messageService.add({
             severity: 'error',
             summary: 'Error',
             detail: 'Failed to load RMA request data.',
           });
+
           this.router.navigate(['/do-rma']);
         },
       });
   }
 
-  onSubmit(): void {}
+  private resolveOtherValue(
+    value: string | null,
+    options: { label: string; value: string }[],
+  ): {
+    value: string | null;
+    other: string | null;
+  } {
+    if (!value) {
+      return {
+        value: null,
+        other: null,
+      };
+    }
 
-  ngOnDestroy(): void {}
+    const exists = options.some((option) => option.value === value);
+
+    if (exists) {
+      return {
+        value,
+        other: null,
+      };
+    }
+
+    return {
+      value: 'Other',
+      other: value,
+    };
+  }
+
+  // ---------------------------------------------------------
+  // Proof image management
+  // ---------------------------------------------------------
+
+  onFileSelect(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const files = Array.from(input.files ?? []);
+
+    files.forEach((file) => {
+      if (!file.type.startsWith('image/')) {
+        this.messageService.add({
+          severity: 'warn',
+          summary: 'Invalid File',
+          detail: `${file.name} is not an image.`,
+        });
+
+        return;
+      }
+
+      if (file.size > 5 * 1024 * 1024) {
+        this.messageService.add({
+          severity: 'warn',
+          summary: 'File Too Large',
+          detail: `${file.name} exceeds the 5MB maximum limit.`,
+        });
+
+        return;
+      }
+
+      const reader = new FileReader();
+
+      reader.onload = () => {
+        if (typeof reader.result === 'string') {
+          this.uploadedImages.update((current) => [
+            ...current,
+            reader.result as string,
+          ]);
+
+          this.cdr.markForCheck();
+        }
+      };
+
+      reader.onerror = () => {
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Upload Error',
+          detail: `Unable to read ${file.name}.`,
+        });
+      };
+
+      reader.readAsDataURL(file);
+    });
+
+    // Allow selecting the same file again
+    input.value = '';
+  }
+
+  removeImage(index: number): void {
+    this.uploadedImages.update((current) =>
+      current.filter((_, i) => i !== index),
+    );
+
+    this.cdr.markForCheck();
+  }
+
+  // ---------------------------------------------------------
+  // Submit
+  // ---------------------------------------------------------
+
+  onSubmit(): void {
+    if (this.isSubmitting) return;
+
+    if (this.rmaForm.invalid) {
+      this.rmaForm.markAllAsTouched();
+
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Incomplete Form',
+        detail: 'Please complete all required fields.',
+      });
+
+      return;
+    }
+
+    if (this.itemControls.length === 0) {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Missing Items',
+        detail: 'Please add at least one RMA item.',
+      });
+
+      return;
+    }
+
+    const formValue = this.rmaForm.getRawValue();
+
+    const payload = {
+      deliveryOrderRMANo: formValue.deliveryOrderRMANo,
+
+      deliveryOrderId: formValue.deliveryOrderId,
+
+      date: formValue.date ? new Date(formValue.date).toISOString() : null,
+
+      returnType: formValue.returnType,
+      returnQuantity: formValue.returnQuantity,
+
+      senderCompanyId: formValue.senderCompanyId,
+      receiverCompanyId: formValue.receiverCompanyId,
+
+      returnMethod:
+        formValue.returnMethod === 'Other'
+          ? formValue.returnMethodOther
+          : formValue.returnMethod,
+
+      returnAction:
+        formValue.returnAction === 'Other'
+          ? formValue.returnActionOther
+          : formValue.returnAction,
+
+      reason:
+        formValue.reason === 'Other' ? formValue.reasonOther : formValue.reason,
+
+      remarks: formValue.remarks,
+
+      dormaItems: formValue.doRMAItems.map((item: any) => ({
+        description: item.description,
+        quantity: item.quantity,
+        unit: item.unit,
+        condition: item.condition,
+        remarks: item.remarks,
+      })),
+
+      dormaProofImages: this.uploadedImages().map((url) => ({
+        url,
+      })),
+    };
+
+    this.isSubmitting = true;
+    this.loadingService.start();
+
+    const request$ = this.currentId
+      ? this.deliveryOrderRMAService.Update({
+          id: this.currentId,
+          ...payload,
+        })
+      : this.deliveryOrderRMAService.Create(payload);
+
+    request$
+      .pipe(
+        takeUntil(this.ngUnsubscribe),
+        finalize(() => {
+          this.isSubmitting = false;
+          this.loadingService.stop();
+          this.cdr.markForCheck();
+        }),
+      )
+      .subscribe({
+        next: () => {
+          this.messageService.add({
+            severity: 'success',
+            summary: 'Success',
+            detail: this.currentId
+              ? 'RMA request updated successfully.'
+              : 'RMA request created successfully.',
+          });
+
+          this.router.navigate(['/do-rma']);
+        },
+
+        error: (err: any) => {
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: err?.error?.message ?? 'Failed to save RMA request.',
+          });
+        },
+      });
+  }
+
+  // ---------------------------------------------------------
+  // Cleanup
+  // ---------------------------------------------------------
+
+  ngOnDestroy(): void {
+    this.ngUnsubscribe.next();
+    this.ngUnsubscribe.complete();
+  }
 }

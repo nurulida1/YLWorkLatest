@@ -29,6 +29,7 @@ import { HardwareRequestService } from '../../../../services/HardwareRequestServ
 import { InventoryService } from '../../../../services/InventoryService';
 import { InventoryDropdownItem } from '../../../../models/Inventory';
 import { ActivatedRoute } from '@angular/router';
+import { ProjectService } from '../../../../services/ProjectService';
 
 @Component({
   selector: 'app-hardware-request',
@@ -161,14 +162,49 @@ import { ActivatedRoute } from '@angular/router';
 
                 <div class="form-grid">
                   <div class="form-field">
-                    <label>Project Name</label>
+                    <label>Project <span>*</span></label>
 
-                    <input
-                      type="text"
-                      formControlName="projectName"
-                      placeholder="Enter project name"
+                    <p-select
+                      formControlName="projectId"
+                      [options]="projectSelection"
+                      optionLabel="label"
+                      optionValue="value"
+                      placeholder="Select Project"
+                      [filter]="true"
+                      appendTo="body"
+                      styleClass="w-full"
+                      (onChange)="onProjectSelectionChange()"
                     />
+
+                    @if (
+                      form.get('projectId')?.touched &&
+                      form.get('projectId')?.invalid
+                    ) {
+                      <small class="error-text">Please select a project.</small>
+                    }
                   </div>
+
+                  @if (isOtherProject) {
+                    <div class="form-field">
+                      <label>Project Name <span>*</span></label>
+
+                      <input
+                        type="text"
+                        formControlName="projectName"
+                        placeholder="Enter project name"
+                        maxlength="150"
+                      />
+
+                      @if (
+                        form.get('projectName')?.touched &&
+                        form.get('projectName')?.invalid
+                      ) {
+                        <small class="error-text">
+                          Please enter the project name.
+                        </small>
+                      }
+                    </div>
+                  }
 
                   <div class="form-field">
                     <label>Site Name</label>
@@ -724,15 +760,20 @@ export class HardwareRequest implements OnInit {
   private hardwareRequestService = inject(HardwareRequestService);
   private messageService = inject(MessageService);
   private inventoryService = inject(InventoryService);
+  private projectService = inject(ProjectService);
   private readonly route = inject(ActivatedRoute);
 
-  loading: boolean = false;
-  submitting: boolean = false;
+  private readonly OTHER_PROJECT_VALUE = '__OTHER__';
 
-  inventoryLoading: boolean = false;
+  loading = false;
+  submitting = false;
+  inventoryLoading = false;
+  projectsLoading = false;
+
   inventoryItems: InventoryDropdownItem[] = [];
-
   requests: HardwareRequestDto[] = [];
+
+  projectSelection: { label: string; value: string }[] = [];
 
   affectedModuleOptions = [
     { label: 'Dashboard', value: 'Dashboard' },
@@ -754,10 +795,6 @@ export class HardwareRequest implements OnInit {
     { label: 'Incorrect Data', value: 'Data' },
     { label: 'Other', value: 'Other' },
   ];
-
-  // =====================================================
-  // REQUEST TYPES
-  // =====================================================
 
   requestTypes: {
     label: string;
@@ -789,10 +826,6 @@ export class HardwareRequest implements OnInit {
 
   priorities: HardwareRequestPriority[] = ['Low', 'Normal', 'High', 'Urgent'];
 
-  // =====================================================
-  // MAIN FORM
-  // =====================================================
-
   form = this.fb.group({
     requestType: ['Hardware' as HardwareRequestType, Validators.required],
 
@@ -802,16 +835,15 @@ export class HardwareRequest implements OnInit {
 
     priority: ['Normal' as HardwareRequestPriority, Validators.required],
 
-    projectId: [''],
+    projectId: ['' as string | null],
     projectName: [''],
-    siteName: [''],
 
+    siteName: [''],
     location: [''],
     locationDetails: [''],
 
     neededBy: [null as Date | null],
 
-    // Bug Report fields
     affectedModule: [''],
     bugCategory: [''],
     stepsToReproduce: [''],
@@ -826,26 +858,102 @@ export class HardwareRequest implements OnInit {
   // =====================================================
 
   ngOnInit(): void {
+    this.loadMyRequests();
+    this.loadInventoryItems();
+    this.loadProjects();
+
     this.route.queryParamMap.subscribe((params) => {
       const type = params.get('type');
+      const projectId = params.get('projectId');
 
-      if (type === 'BugReport') {
+      if (type && this.isValidRequestType(type)) {
         this.form.patchValue({
-          requestType: 'BugReport',
+          requestType: type,
         });
 
         this.onRequestTypeChange();
       }
-    });
 
-    this.loadMyRequests();
-    this.loadInventoryItems();
+      if (projectId) {
+        this.form.patchValue({
+          projectId,
+        });
+      }
+
+      this.cdr.markForCheck();
+    });
 
     this.updateConditionalValidators();
 
     if (this.showItems && this.items.length === 0) {
       this.addItem();
     }
+  }
+
+  private isValidRequestType(type: string): type is HardwareRequestType {
+    return ['Hardware', 'SiteMaterial', 'ITSupport', 'BugReport'].includes(
+      type,
+    );
+  }
+
+  // =====================================================
+  // LOAD PROJECTS
+  // =====================================================
+
+  loadProjects(): void {
+    this.projectsLoading = true;
+
+    this.projectService
+      .GetMany({
+        Page: 1,
+        PageSize: 1000,
+        Filter: null,
+        OrderBy: 'ProjectTitle',
+        Includes: null,
+        Select: null,
+      })
+      .subscribe({
+        next: (response) => {
+          const projects = response?.data ?? [];
+
+          this.projectSelection = projects.map((project) => ({
+            label: `${project.projectCode} - ${project.projectTitle}`,
+            value: project.id,
+          }));
+
+          // Always provide the manual project option.
+          this.projectSelection.push({
+            label: 'Other (Enter Project Name)',
+            value: this.OTHER_PROJECT_VALUE,
+          });
+
+          this.projectsLoading = false;
+          this.cdr.markForCheck();
+        },
+
+        error: (error) => {
+          console.error('Failed to load projects:', error);
+
+          // Still allow users to enter a project manually.
+          this.projectSelection = [
+            {
+              label: 'Other (Enter Project Name)',
+              value: this.OTHER_PROJECT_VALUE,
+            },
+          ];
+
+          this.projectsLoading = false;
+
+          this.messageService.add({
+            severity: 'warn',
+            summary: 'Projects Unavailable',
+            detail:
+              'Unable to load projects. You can select Other and enter the project name manually.',
+          });
+
+          this.cdr.markForCheck();
+        },
+      });
   }
 
   // =====================================================
@@ -859,7 +967,6 @@ export class HardwareRequest implements OnInit {
       next: (response) => {
         this.inventoryItems = response ?? [];
         this.inventoryLoading = false;
-
         this.cdr.markForCheck();
       },
 
@@ -911,6 +1018,44 @@ export class HardwareRequest implements OnInit {
     );
   }
 
+  get isOtherProject(): boolean {
+    return (
+      this.isSiteMaterial &&
+      this.form.get('projectId')?.value === this.OTHER_PROJECT_VALUE
+    );
+  }
+
+  // =====================================================
+  // PROJECT SELECTION
+  // =====================================================
+
+  onProjectSelectionChange(): void {
+    const projectIdControl = this.form.get('projectId');
+    const projectNameControl = this.form.get('projectName');
+
+    if (!projectIdControl || !projectNameControl) {
+      return;
+    }
+
+    if (projectIdControl.value === this.OTHER_PROJECT_VALUE) {
+      projectNameControl.setValidators([
+        Validators.required,
+        Validators.maxLength(150),
+      ]);
+    } else {
+      projectNameControl.clearValidators();
+      projectNameControl.setValue('');
+      projectNameControl.markAsUntouched();
+    }
+
+    projectNameControl.updateValueAndValidity({
+      emitEvent: false,
+    });
+
+    this.updateConditionalValidators();
+    this.cdr.markForCheck();
+  }
+
   // =====================================================
   // CONDITIONAL VALIDATORS
   // =====================================================
@@ -939,12 +1084,44 @@ export class HardwareRequest implements OnInit {
       } else {
         control.clearValidators();
         control.setValue('');
+        control.markAsUntouched();
       }
 
       control.updateValueAndValidity({
         emitEvent: false,
       });
     }
+
+    // Project selection is required only for Site Material requests.
+    const projectIdControl = this.form.get('projectId');
+    const projectNameControl = this.form.get('projectName');
+
+    if (this.isSiteMaterial) {
+      projectIdControl?.setValidators([Validators.required]);
+    } else {
+      projectIdControl?.clearValidators();
+      projectIdControl?.setValue('');
+      projectIdControl?.markAsUntouched();
+
+      projectNameControl?.clearValidators();
+      projectNameControl?.setValue('');
+      projectNameControl?.markAsUntouched();
+    }
+
+    if (this.isOtherProject) {
+      projectNameControl?.setValidators([
+        Validators.required,
+        Validators.maxLength(150),
+      ]);
+    }
+
+    projectIdControl?.updateValueAndValidity({
+      emitEvent: false,
+    });
+
+    projectNameControl?.updateValueAndValidity({
+      emitEvent: false,
+    });
   }
 
   // =====================================================
@@ -979,7 +1156,6 @@ export class HardwareRequest implements OnInit {
     }
 
     this.items.push(this.createItemForm());
-
     this.cdr.markForCheck();
   }
 
@@ -999,7 +1175,6 @@ export class HardwareRequest implements OnInit {
     }
 
     this.items.removeAt(index);
-
     this.cdr.markForCheck();
   }
 
@@ -1009,30 +1184,33 @@ export class HardwareRequest implements OnInit {
 
   onInventorySelected(index: number): void {
     const itemGroup = this.items.at(index);
-
     const inventoryId = itemGroup.get('inventoryId')?.value;
 
-    // User wants to enter a custom item.
     if (!inventoryId) {
       itemGroup.patchValue({
-        inventoryId: null,
+        inventoryId: '',
+        itemName: '',
+        itemCode: '',
       });
 
       this.cdr.markForCheck();
       return;
     }
 
-    const selectedItem = this.inventoryItems.find((x) => x.id === inventoryId);
+    const selectedItem = this.inventoryItems.find(
+      (item) => item.id === inventoryId,
+    );
 
     if (!selectedItem) {
       return;
     }
 
-    // Populate from existing inventory.
     itemGroup.patchValue({
       itemName: selectedItem.itemName,
       itemCode: selectedItem.itemCode ?? '',
     });
+
+    itemGroup.get('itemName')?.updateValueAndValidity();
 
     this.cdr.markForCheck();
   }
@@ -1042,16 +1220,13 @@ export class HardwareRequest implements OnInit {
   // =====================================================
 
   onRequestTypeChange(): void {
-    // Clear or restore inventory items depending on request type.
     if (!this.showItems) {
       this.items.clear();
     } else if (this.items.length === 0) {
       this.addItem();
     }
 
-    // Bug-report fields are required only for BugReport.
     this.updateConditionalValidators();
-
     this.cdr.markForCheck();
   }
 
@@ -1066,7 +1241,6 @@ export class HardwareRequest implements OnInit {
       next: (response) => {
         this.requests = response ?? [];
         this.loading = false;
-
         this.cdr.markForCheck();
       },
 
@@ -1098,6 +1272,27 @@ export class HardwareRequest implements OnInit {
       return;
     }
 
+    const value = this.form.getRawValue();
+
+    // Helper for nullable text fields.
+    const cleanText = (input: string | null | undefined): string =>
+      (input ?? '').trim();
+
+    const subject = cleanText(value.subject);
+    const description = cleanText(value.description);
+
+    if (!subject || !description) {
+      this.form.markAllAsTouched();
+
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Incomplete Form',
+        detail: 'Subject and description are required.',
+      });
+
+      return;
+    }
+
     if (this.showItems && this.items.length === 0) {
       this.messageService.add({
         severity: 'warn',
@@ -1108,66 +1303,103 @@ export class HardwareRequest implements OnInit {
       return;
     }
 
+    // Explicitly type FormArray values.
+    const requestItems = (value.items ?? []) as Array<{
+      inventoryId: string | null;
+      itemName: string | null;
+      itemCode: string | null;
+      description: string | null;
+      unit: string | null;
+      requestedQuantity: number | null;
+      remarks: string | null;
+    }>;
+
+    // Validate item names after trimming.
+    if (
+      this.showItems &&
+      requestItems.some((item) => !cleanText(item.itemName))
+    ) {
+      this.items.markAllAsTouched();
+
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Missing Item Name',
+        detail: 'Please enter an item name for every requested item.',
+      });
+
+      return;
+    }
+
+    const requestType = value.requestType as HardwareRequestType;
+    const priority = value.priority as HardwareRequestPriority;
+
+    const isSiteMaterial = requestType === 'SiteMaterial';
+    const isBugReport = requestType === 'BugReport';
+
+    const isOtherProject =
+      isSiteMaterial && value.projectId === this.OTHER_PROJECT_VALUE;
+
     this.submitting = true;
 
-    const value = this.form.getRawValue();
-
     const request: CreateHardwareRequest = {
-      requestType: value.requestType as HardwareRequestType,
+      requestType,
 
-      subject: value.subject!.trim(),
+      subject,
 
-      description: value.description!.trim(),
+      description,
 
-      priority: value.priority as HardwareRequestPriority,
+      priority,
 
-      projectId: value.projectId || null,
+      // Existing project: send its ID.
+      // Other: send null and use the manually entered project name.
+      projectId:
+        isSiteMaterial && !isOtherProject ? value.projectId || null : null,
 
-      projectName: value.projectName?.trim() || null,
+      projectName: isOtherProject ? cleanText(value.projectName) || null : null,
 
-      siteName: value.siteName?.trim() || null,
+      siteName: isSiteMaterial ? cleanText(value.siteName) || null : null,
 
-      location: value.location?.trim() || null,
+      location: isSiteMaterial ? cleanText(value.location) || null : null,
 
-      locationDetails: value.locationDetails?.trim() || null,
+      locationDetails: isSiteMaterial
+        ? cleanText(value.locationDetails) || null
+        : null,
 
       neededBy: value.neededBy ? value.neededBy.toISOString() : null,
 
       // Bug Report fields.
-      affectedModule: this.isBugReport
-        ? value.affectedModule?.trim() || null
+      affectedModule: isBugReport
+        ? cleanText(value.affectedModule) || null
         : null,
 
-      bugCategory: this.isBugReport ? value.bugCategory || null : null,
+      bugCategory: isBugReport ? value.bugCategory || null : null,
 
-      stepsToReproduce: this.isBugReport
-        ? value.stepsToReproduce?.trim() || null
+      stepsToReproduce: isBugReport
+        ? cleanText(value.stepsToReproduce) || null
         : null,
 
-      expectedResult: this.isBugReport
-        ? value.expectedResult?.trim() || null
+      expectedResult: isBugReport
+        ? cleanText(value.expectedResult) || null
         : null,
 
-      actualResult: this.isBugReport
-        ? value.actualResult?.trim() || null
-        : null,
+      actualResult: isBugReport ? cleanText(value.actualResult) || null : null,
 
-      // Only Hardware and SiteMaterial contain inventory items.
+      // Only Hardware and SiteMaterial contain items.
       items: this.showItems
-        ? value.items.map((item: any) => ({
+        ? requestItems.map((item) => ({
             inventoryId: item.inventoryId || null,
 
-            itemName: item.itemName?.trim(),
+            itemName: cleanText(item.itemName),
 
-            itemCode: item.itemCode?.trim() || null,
+            itemCode: cleanText(item.itemCode) || null,
 
-            description: item.description?.trim() || null,
+            description: cleanText(item.description) || null,
 
-            unit: item.unit?.trim() || null,
+            unit: cleanText(item.unit) || null,
 
             requestedQuantity: Number(item.requestedQuantity),
 
-            remarks: item.remarks?.trim() || null,
+            remarks: cleanText(item.remarks) || null,
           }))
         : [],
     };
@@ -1189,6 +1421,8 @@ export class HardwareRequest implements OnInit {
       },
 
       error: (error) => {
+        console.error('Failed to submit request:', error);
+
         this.submitting = false;
 
         this.messageService.add({
@@ -1212,17 +1446,14 @@ export class HardwareRequest implements OnInit {
   resetForm(): void {
     this.form.reset({
       requestType: 'Hardware',
-
       subject: '',
-
       description: '',
-
       priority: 'Normal',
 
       projectId: '',
       projectName: '',
-      siteName: '',
 
+      siteName: '',
       location: '',
       locationDetails: '',
 
@@ -1285,16 +1516,12 @@ export class HardwareRequest implements OnInit {
     switch (type) {
       case 'Hardware':
         return 'Hardware';
-
       case 'SiteMaterial':
         return 'Site Material';
-
       case 'ITSupport':
         return 'IT Support';
-
       case 'BugReport':
         return 'Bug Report';
-
       default:
         return type;
     }
@@ -1304,22 +1531,16 @@ export class HardwareRequest implements OnInit {
     switch (category) {
       case 'Functional':
         return 'Feature Not Working';
-
       case 'Display':
         return 'UI / Display Issue';
-
       case 'Performance':
         return 'Performance Issue';
-
       case 'Access':
         return 'Login / Permission Issue';
-
       case 'Data':
         return 'Incorrect Data';
-
       case 'Other':
         return 'Other';
-
       default:
         return category;
     }

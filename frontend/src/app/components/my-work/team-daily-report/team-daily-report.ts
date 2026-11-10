@@ -8,6 +8,7 @@ import {
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DailyReportService } from '../../../services/DailyReportService';
+import { ButtonModule } from 'primeng/button';
 
 interface TeamReportTask {
   id: string;
@@ -39,7 +40,7 @@ interface TeamReport {
 @Component({
   selector: 'app-team-daily-report',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ButtonModule],
   template: `
     <div class="team-report-page">
       <!-- Page Header -->
@@ -291,17 +292,15 @@ interface TeamReport {
 
                     <td>
                       <span class="task-count">
-                        {{ report.tasks.length || 0 }}
-                        {{ report.tasks.length === 1 ? 'Task' : 'Tasks' }}
+                        {{ report.tasks?.length || 0 }}
+                        {{ report.tasks?.length === 1 ? 'Task' : 'Tasks' }}
                       </span>
                     </td>
 
                     <td>
-                      {{
-                        report.submittedAt
-                          ? (report.submittedAt | date: 'dd MMM yyyy, h:mm a')
-                          : '—'
-                      }}
+                      {{ report.submittedAt }}
+                      {{ report.tasks.length || 0 }}
+                      {{ report.tasks.length === 1 ? 'Task' : 'Tasks' }}
                     </td>
 
                     <td>
@@ -316,15 +315,14 @@ interface TeamReport {
 
                     <td>
                       <div class="action-buttons">
-                        <button
-                          type="button"
-                          class="view-button"
-                          (click)="openReport(report)"
-                          title="View Report"
+                        <p-button
+                          icon="pi pi-eye"
+                          size="small"
+                          label="View"
+                          styleClass="bg-blue-100! text-blue-700! border-none! hover:bg-none!"
+                          (onClick)="openReport(report)"
                         >
-                          <i class="pi pi-eye"></i>
-                          View
-                        </button>
+                        </p-button>
 
                         @if (
                           report.canReview && report.status === 'Submitted'

@@ -263,7 +263,9 @@ import { UserService } from '../../../services/userService.service';
               }
             </p>
             @if (cascadePreview || cascadeNeedsOverflowChoice) {
-              <div class="rounded-md bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-950 space-y-2">
+              <div
+                class="rounded-md bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-950 space-y-2"
+              >
                 <p class="font-semibold m-0">
                   {{
                     selectedLeaveType?.isEmergency
@@ -277,11 +279,14 @@ import { UserService } from '../../../services/userService.service';
                   } @else {
                     Not enough remaining on {{ selectedLeaveType?.name }}.
                     Choose where the remaining
-                    <strong>{{ formatDays(cascadeOverflowDays) }}</strong> day(s) should come from:
+                    <strong>{{ formatDays(cascadeOverflowDays) }}</strong>
+                    day(s) should come from:
                   }
                 </p>
 
-                @if (!selectedLeaveType?.isEmergency && cascadeNeedsOverflowChoice) {
+                @if (
+                  !selectedLeaveType?.isEmergency && cascadeNeedsOverflowChoice
+                ) {
                   <div class="flex flex-col gap-2 pt-1">
                     <div class="flex items-center gap-2">
                       <p-radioButton
@@ -293,7 +298,8 @@ import { UserService } from '../../../services/userService.service';
                         Annual Leave
                         @if (annualRemainingForCascade !== null) {
                           <span class="text-amber-800">
-                            (remaining: {{ formatDays(annualRemainingForCascade) }})
+                            (remaining:
+                            {{ formatDays(annualRemainingForCascade) }})
                           </span>
                         }
                       </label>
@@ -314,10 +320,16 @@ import { UserService } from '../../../services/userService.service';
                 @if (cascadePreview) {
                   <p class="m-0 font-medium">Split preview:</p>
                   <ul class="m-0 pl-5 list-disc">
-                    @for (line of cascadePreview.lines; track line.leaveTypeName + line.sortOrder) {
+                    @for (
+                      line of cascadePreview.lines;
+                      track line.leaveTypeName + line.sortOrder
+                    ) {
                       <li>
-                        {{ line.leaveTypeName }}: <strong>{{ formatDays(line.days) }}</strong> day(s)
-                        @if (line.isUnpaidBucket) { (unpaid) }
+                        {{ line.leaveTypeName }}:
+                        <strong>{{ formatDays(line.days) }}</strong> day(s)
+                        @if (line.isUnpaidBucket) {
+                          (unpaid)
+                        }
                       </li>
                     }
                   </ul>
@@ -327,12 +339,17 @@ import { UserService } from '../../../services/userService.service';
                       [binary]="true"
                       inputId="cascadeAccept"
                     />
-                    <label for="cascadeAccept" class="text-sm text-amber-950 cursor-pointer">
+                    <label
+                      for="cascadeAccept"
+                      class="text-sm text-amber-950 cursor-pointer"
+                    >
                       I understand and agree to this balance split
                     </label>
                   </div>
                 } @else if (!selectedLeaveType?.isEmergency) {
-                  <p class="m-0 text-amber-800">Select Annual Leave or Unpaid Leave to see the split.</p>
+                  <p class="m-0 text-amber-800">
+                    Select Annual Leave or Unpaid Leave to see the split.
+                  </p>
                 }
               </div>
             } @else if (isInsufficientBalance) {
@@ -460,10 +477,12 @@ import { UserService } from '../../../services/userService.service';
             }
           </div>
 
-          <div class="border-t border-gray-200 flex justify-end gap-2 pt-2">
+          <div
+            class="border-t border-gray-200 flex flex-row justify-end gap-2 pt-2"
+          >
             <p-button
               type="submit"
-              styleClass="bg-blue-600! border-none! hover:bg-blue-700! px-5!"
+              styleClass="w-full! sm:w-fit! bg-blue-600! border-none! hover:bg-blue-700! px-5!"
               [label]="isEditMode ? 'Update request' : 'Submit request'"
               [disabled]="
                 !pageReady ||
@@ -476,7 +495,7 @@ import { UserService } from '../../../services/userService.service';
               type="button"
               label="Cancel"
               severity="secondary"
-              styleClass="px-5!"
+              styleClass="w-full! sm:w-fit! px-5!"
               routerLink="/leave"
             />
           </div>
@@ -608,11 +627,16 @@ export class LeaveApply implements OnInit, OnDestroy {
   /** Overflow days beyond selected-type balance (paid cascade types only). */
   get cascadeOverflowDays(): number {
     if (this.isShortNoticeAnnual) return 0;
-    if (!this.selectedLeaveType?.isPaid || !this.selectedLeaveType.allowsBalanceCascade) return 0;
+    if (
+      !this.selectedLeaveType?.isPaid ||
+      !this.selectedLeaveType.allowsBalanceCascade
+    )
+      return 0;
     if (this.selectedLeaveType.isEmergency) return 0;
     if (this.chargeableDays === null || this.chargeableDays <= 0) return 0;
     const primaryAvail = Math.max(0, this.effectiveRemaining);
-    const rest = Math.round((this.chargeableDays - primaryAvail) * 10000) / 10000;
+    const rest =
+      Math.round((this.chargeableDays - primaryAvail) * 10000) / 10000;
     return rest > 0 ? rest : 0;
   }
 
@@ -625,7 +649,9 @@ export class LeaveApply implements OnInit, OnDestroy {
   }
 
   get annualRemainingForCascade(): number | null {
-    const annual = this.allLeaveTypes.find((t) => this.isAnnualLeaveName(t.name) && t.isPaid);
+    const annual = this.allLeaveTypes.find(
+      (t) => this.isAnnualLeaveName(t.name) && t.isPaid,
+    );
     if (!annual) return null;
     return Math.max(0, this.effectiveRemainingForType(annual.id));
   }
@@ -665,7 +691,9 @@ export class LeaveApply implements OnInit, OnDestroy {
       });
     }
 
-    const isAnnualSelected = this.isAnnualLeaveName(this.selectedLeaveType.name);
+    const isAnnualSelected = this.isAnnualLeaveName(
+      this.selectedLeaveType.name,
+    );
     const target = this.form.value.cascadeOverflowTarget;
     if (!isAnnualSelected && !target) {
       // Waiting for user choice — preview appears after they pick Annual or Unpaid.
@@ -673,9 +701,14 @@ export class LeaveApply implements OnInit, OnDestroy {
     }
 
     if (!isAnnualSelected && target === 'Annual') {
-      const annualType = this.allLeaveTypes.find((t) => this.isAnnualLeaveName(t.name) && t.isPaid);
+      const annualType = this.allLeaveTypes.find(
+        (t) => this.isAnnualLeaveName(t.name) && t.isPaid,
+      );
       if (annualType) {
-        const annualAvail = Math.max(0, this.effectiveRemainingForType(annualType.id));
+        const annualAvail = Math.max(
+          0,
+          this.effectiveRemainingForType(annualType.id),
+        );
         const annualTake = Math.min(annualAvail, rest);
         if (annualTake > 0) {
           lines.push({
@@ -894,7 +927,10 @@ export class LeaveApply implements OnInit, OnDestroy {
       .subscribe(() => {
         // New choice invalidates a previous confirm until they re-check.
         if (this.form.value.acceptBalanceCascade) {
-          this.form.patchValue({ acceptBalanceCascade: false }, { emitEvent: false });
+          this.form.patchValue(
+            { acceptBalanceCascade: false },
+            { emitEvent: false },
+          );
         }
         this.cdr.detectChanges();
       });
@@ -928,15 +964,24 @@ export class LeaveApply implements OnInit, OnDestroy {
         { emitEvent: false },
       );
     }
-    if (!this.cascadeNeedsOverflowChoice && !this.selectedLeaveType?.isEmergency) {
-      if (this.form.value.acceptBalanceCascade || this.form.value.cascadeOverflowTarget) {
+    if (
+      !this.cascadeNeedsOverflowChoice &&
+      !this.selectedLeaveType?.isEmergency
+    ) {
+      if (
+        this.form.value.acceptBalanceCascade ||
+        this.form.value.cascadeOverflowTarget
+      ) {
         this.form.patchValue(
           { acceptBalanceCascade: false, cascadeOverflowTarget: null },
           { emitEvent: false },
         );
       }
     } else if (!this.cascadePreview && this.form.value.acceptBalanceCascade) {
-      this.form.patchValue({ acceptBalanceCascade: false }, { emitEvent: false });
+      this.form.patchValue(
+        { acceptBalanceCascade: false },
+        { emitEvent: false },
+      );
     }
     // OnPush: markForCheck alone was leaving a stale deduct preview after date picks.
     this.cdr.detectChanges();
@@ -1186,9 +1231,11 @@ export class LeaveApply implements OnInit, OnDestroy {
       this.messageService.add({
         severity: 'warn',
         summary: 'Balance split confirmation required',
-        detail: this.cascadeNeedsOverflowChoice && !this.form.value.cascadeOverflowTarget
-          ? 'Choose Annual Leave or Unpaid Leave for the remaining days, then confirm the split.'
-          : 'Confirm the balance split before submitting.',
+        detail:
+          this.cascadeNeedsOverflowChoice &&
+          !this.form.value.cascadeOverflowTarget
+            ? 'Choose Annual Leave or Unpaid Leave for the remaining days, then confirm the split.'
+            : 'Confirm the balance split before submitting.',
       });
       return;
     }
@@ -1467,12 +1514,22 @@ export class LeaveApply implements OnInit, OnDestroy {
     isEmergency: boolean,
   ): 'Annual' | 'Unpaid' | null {
     if (isEmergency) return null;
-    const overflow = allocations.filter((a) => a.leaveTypeId !== primaryLeaveTypeId);
+    const overflow = allocations.filter(
+      (a) => a.leaveTypeId !== primaryLeaveTypeId,
+    );
     if (overflow.length === 0) return null;
-    if (overflow.some((a) => this.isAnnualLeaveName(a.leaveTypeName) && !a.isUnpaidBucket)) {
+    if (
+      overflow.some(
+        (a) => this.isAnnualLeaveName(a.leaveTypeName) && !a.isUnpaidBucket,
+      )
+    ) {
       return 'Annual';
     }
-    if (overflow.some((a) => a.isUnpaidBucket || this.isUnpaidLeaveName(a.leaveTypeName))) {
+    if (
+      overflow.some(
+        (a) => a.isUnpaidBucket || this.isUnpaidLeaveName(a.leaveTypeName),
+      )
+    ) {
       return 'Unpaid';
     }
     return null;
@@ -1533,7 +1590,8 @@ export class LeaveApply implements OnInit, OnDestroy {
             reason: request.reason,
             acceptShortNoticeAsUnpaid: !!request.isShortNoticeAnnual,
             acceptBalanceCascade:
-              !!request.isEmergency || (request.balanceAllocations?.length ?? 0) > 1,
+              !!request.isEmergency ||
+              (request.balanceAllocations?.length ?? 0) > 1,
             cascadeOverflowTarget: this.inferCascadeOverflowTarget(
               request.balanceAllocations ?? [],
               request.leaveTypeId,

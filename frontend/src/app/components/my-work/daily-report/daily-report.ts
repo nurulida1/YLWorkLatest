@@ -224,10 +224,10 @@ import { DatePickerModule } from 'primeng/datepicker';
       <!-- CREATE / EDIT DIALOG -->
       @if (showFormDialog) {
         <div
-          class="fixed inset-0 z-[1000] flex items-center justify-center overflow-y-auto bg-black/50 p-2 sm:p-5"
+          class="fixed inset-0 z-[1000] flex items-center justify-center overflow-y-auto bg-black/50 p-2 sm:p-5 h-full"
         >
           <div
-            class="my-auto flex max-h-[calc(100dvh-1rem)] w-full max-w-4xl flex-col overflow-hidden rounded-xl bg-white shadow-2xl sm:max-h-[95dvh]"
+            class="my-auto flex max-h-[80%] md:max-h-[90%] w-full max-w-4xl flex-col overflow-hidden rounded-xl bg-white shadow-2xl sm:max-h-[95dvh]"
           >
             <!-- HEADER -->
             <div

@@ -66,342 +66,605 @@ import { DrawerModule } from 'primeng/drawer';
     ConfirmDialogModule,
     DrawerModule,
   ],
-  template: `<div class="w-full min-h-[92.9vh] flex flex-col p-5">
-      <div class="flex flex-row items-center justify-between">
-        <div
-          class="flex flex-row items-center gap-1 text-gray-500 tracking-wide"
-        >
-          <div
-            [routerLink]="'/dashboard'"
-            class="cursor-pointer hover:text-gray-600"
-          >
-            Dashboard
-          </div>
-          <i class="pi pi-chevron-right text-[8px]! text-gray-500!"></i>
-          <div
-            [routerLink]="'/projects'"
-            class="cursor-pointer hover:text-gray-600"
-          >
-            Projects
-          </div>
-          <i class="pi pi-chevron-right text-[8px]! text-gray-500!"></i>
-          <div class="text-gray-700 font-semibold">
-            {{ PagingSignal().projectCode }}
-          </div>
-        </div>
-      </div>
-
-      <div
-        class="flex flex-col lg:flex-row lg:items-center justify-between mt-4 gap-3"
+  template: `
+    <main class="project-details min-h-screen bg-slate-50 p-3 sm:p-5 lg:p-6">
+      <!-- Breadcrumb -->
+      <nav
+        class="mb-5 flex flex-wrap items-center gap-2 text-xs text-slate-500"
       >
-        <div class="flex flex-row items-center gap-3">
-          <div
-            class="w-16 h-16 rounded-lg bg-blue-100 flex items-center justify-center"
-          >
-            <i class="pi pi-hammer text-blue-900! text-3xl!"></i>
+        <a routerLink="/dashboard" class="transition hover:text-blue-700"
+          >Dashboard</a
+        >
+        <i class="pi pi-angle-right text-[10px]"></i>
+        <a routerLink="/projects" class="transition hover:text-blue-700"
+          >Projects</a
+        >
+        <i class="pi pi-angle-right text-[10px]"></i>
+        <span class="font-semibold text-slate-800">
+          {{ PagingSignal().projectCode || 'Project Details' }}
+        </span>
+      </nav>
+
+      <!-- Project heading -->
+      <section class="project-heading">
+        <div class="flex min-w-0 items-start gap-4">
+          <div class="project-heading-icon">
+            <i class="pi pi-briefcase"></i>
           </div>
-          <div class="flex flex-col gap-1">
-            <div class="font-bold text-2xl text-gray-800">
-              {{ PagingSignal().projectTitle }}
-            </div>
-            <span class="text-gray-500 tracking-wide"
-              >PROJECT ID: {{ PagingSignal().projectCode }}</span
+
+          <div class="min-w-0 flex-1">
+            <p
+              class="mb-1 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400"
             >
+              Project details
+            </p>
+
+            <h1
+              class="break-words text-xl font-bold tracking-tight text-slate-900 sm:text-2xl"
+            >
+              {{ PagingSignal().projectTitle || 'Loading project...' }}
+            </h1>
+
+            <div
+              class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500 sm:text-sm"
+            >
+              <span class="font-semibold text-blue-700">
+                {{ PagingSignal().projectCode || '-' }}
+              </span>
+              <span class="hidden text-slate-300 sm:inline">|</span>
+              <span>
+                <i class="pi pi-building mr-1 text-slate-400"></i>
+                {{ PagingSignal().client?.name || 'No client assigned' }}
+              </span>
+            </div>
           </div>
         </div>
-        <div class="flex flex-row items-center gap-2">
-          <p-select
-            appendTo="body"
-            [options]="[
-              { label: 'Draft', value: 'Draft' },
-              { label: 'Planning', value: 'Planning' },
-              { label: 'WIP', value: 'WIP' },
-              { label: 'On Hold', value: 'OnHold' },
-              { label: 'Cancel', value: 'Cancelled' },
-            ]"
-            [(ngModel)]="PagingSignal().status"
-          ></p-select>
+
+        <div class="project-heading-actions">
+          <div class="flex flex-col gap-1">
+            <label class="text-[11px] font-semibold text-slate-500"
+              >Project status</label
+            >
+            <p-select
+              appendTo="body"
+              [options]="[
+                { label: 'Draft', value: 'Draft' },
+                { label: 'Planning', value: 'Planning' },
+                { label: 'WIP', value: 'WIP' },
+                { label: 'On Hold', value: 'OnHold' },
+                { label: 'Cancelled', value: 'Cancelled' },
+              ]"
+              [(ngModel)]="PagingSignal().status"
+              styleClass="w-full sm:min-w-40"
+            ></p-select>
+          </div>
+
           <p-button
             label="Export Report"
             icon="pi pi-file-pdf"
-            severity="info"
-            styleClass="bg-blue-800! px-5! border-none!"
+            severity="secondary"
+            [outlined]="true"
+            styleClass="w-full sm:w-auto"
           ></p-button>
         </div>
-      </div>
 
-      <div class="grid grid-cols-12 gap-4 justify-between mt-6">
-        <div
-          class="col-span-6 xl:col-span-3 border rounded-lg border-gray-200 bg-white p-5 flex flex-row items-center justify-between"
-        >
-          <div class="flex flex-col gap-2 w-full">
-            <div class="text-gray-500">Project Progress</div>
-            <div class="text-4xl text-gray-800 font-bold">0%</div>
+        <div class="project-heading-meta">
+          <span class="project-meta-item">
+            <i class="pi pi-circle-fill text-[7px]!"></i>
+            {{
+              PagingSignal().status === 'InProgress'
+                ? 'In Progress'
+                : PagingSignal().status || 'Not set'
+            }}
+          </span>
+          <span class="project-meta-item">
+            <i class="pi pi-flag"></i>
+            {{ PagingSignal().priority || 'Normal' }} priority
+          </span>
+          <span class="project-meta-item">
+            <i class="pi pi-calendar"></i>
+            {{
+              PagingSignal().startDate
+                ? (PagingSignal().startDate | date: 'dd MMM yyyy')
+                : 'No start date'
+            }}
+          </span>
+        </div>
+      </section>
 
-            <div class="w-full">
-              <p-progressbar
-                [value]="50"
-                [showValue]="false"
-                [style]="{
-                  height: '6px',
-                }"
-              />
-            </div>
+      <!-- Summary -->
+      <section class="mt-5 grid grid-cols-2 gap-3 xl:grid-cols-4">
+        <article class="project-summary-card">
+          <div class="flex items-center justify-between gap-2">
+            <span class="project-summary-label">Project progress</span>
+            <span class="project-summary-icon"
+              ><i class="pi pi-chart-line"></i
+            ></span>
           </div>
-        </div>
-        <div
-          class="col-span-6 xl:col-span-3 border rounded-lg border-gray-200 bg-white p-5 flex flex-row items-center justify-between"
-        >
-          <div class="flex flex-col gap-2 w-full">
-            <div class="text-gray-500">Budget</div>
-            <div class="text-3xl text-gray-800 font-bold">
-              {{
-                PagingSignal().estimatedBudget
-                  | currency: 'RM ' : 'symbol' : '1.2-2'
-              }}
-            </div>
+          <div class="mt-4 flex items-end justify-between gap-2">
+            <span class="project-summary-value">0%</span>
+            <span class="text-[10px] text-slate-400">Completion</span>
           </div>
-          <div
-            class="w-15 h-15 rounded-lg bg-green-100 flex items-center justify-center"
-          >
-            <i class="pi pi-money-bill text-green-700! text-4xl!"></i>
-          </div>
-        </div>
-        <div
-          class="col-span-6 xl:col-span-3 border rounded-lg border-gray-200 bg-white p-5 flex flex-row items-center justify-between"
-        >
-          <div class="flex flex-col gap-2">
-            <div class="text-gray-500">Active Tasks</div>
-            <div class="text-4xl text-gray-800 font-bold">0</div>
-          </div>
-          <div
-            class="w-15 h-15 rounded-lg bg-blue-100 flex items-center justify-center"
-          >
-            <i class="pi pi-check-circle text-blue-700! text-4xl!"></i>
-          </div>
-        </div>
+          <p-progressbar
+            [value]="0"
+            [showValue]="false"
+            styleClass="mt-3 h-1.5"
+          ></p-progressbar>
+          <p class="mt-2 text-[11px] text-slate-400">
+            Overall project completion
+          </p>
+        </article>
 
-        <div
-          class="col-span-6 xl:col-span-3 border rounded-lg border-gray-200 bg-white p-5 flex flex-row items-center justify-between"
-        >
-          <div class="flex flex-col gap-2">
-            <div class="text-gray-500">Pending Materials</div>
-            <div class="text-4xl text-gray-800 font-bold">0</div>
+        <article class="project-summary-card">
+          <div class="flex items-center justify-between gap-2">
+            <span class="project-summary-label">Estimated budget</span>
+            <span class="project-summary-icon"
+              ><i class="pi pi-wallet"></i
+            ></span>
           </div>
-          <div
-            class="w-15 h-15 rounded-lg bg-amber-100 flex items-center justify-center"
-          >
-            <i class="pi pi-box text-amber-700! text-4xl!"></i>
-          </div>
-        </div>
-      </div>
+          <p class="project-summary-value mt-4 break-words text-xl sm:text-2xl">
+            {{
+              PagingSignal().estimatedBudget
+                | currency: 'RM ' : 'symbol' : '1.2-2'
+            }}
+          </p>
+          <p class="mt-2 text-[11px] text-slate-400">
+            Allocated project budget
+          </p>
+        </article>
 
-      <div class="bg-white mt-3 p-5 border border-gray-200 flex flex-col">
+        <article class="project-summary-card">
+          <div class="flex items-center justify-between gap-2">
+            <span class="project-summary-label">Project tasks</span>
+            <span class="project-summary-icon"
+              ><i class="pi pi-list-check"></i
+            ></span>
+          </div>
+          <p class="project-summary-value mt-4">
+            {{ PagingSignal().projectTasks?.length || 0 }}
+          </p>
+          <p class="mt-2 text-[11px] text-slate-400">Total assigned tasks</p>
+        </article>
+
+        <article class="project-summary-card">
+          <div class="flex items-center justify-between gap-2">
+            <span class="project-summary-label">Material requests</span>
+            <span class="project-summary-icon"><i class="pi pi-box"></i></span>
+          </div>
+          <p class="project-summary-value mt-4">
+            {{ PagingSignal().materialRequests?.length || 0 }}
+          </p>
+          <p class="mt-2 text-[11px] text-slate-400">Total material requests</p>
+        </article>
+      </section>
+
+      <!-- Main tabs -->
+      <section class="project-main mt-5">
         <p-tabs value="0">
-          <p-tablist>
-            <p-tab value="0">Overview</p-tab>
-            <p-tab value="1">Tasks</p-tab>
-            <p-tab value="2">Material Requests</p-tab>
-            <p-tab value="3">Job Sheets</p-tab>
+          <p-tablist styleClass="project-detail-tabs">
+            <p-tab value="0">
+              <i class="pi pi-th-large mr-2"></i>Overview
+            </p-tab>
+            <p-tab value="1">
+              <i class="pi pi-list-check mr-2"></i>Tasks
+              <span class="project-tab-count">{{
+                PagingSignal().projectTasks?.length || 0
+              }}</span>
+            </p-tab>
+            <p-tab value="2">
+              <i class="pi pi-box mr-2"></i>Materials
+              <span class="project-tab-count">{{
+                PagingSignal().materialRequests?.length || 0
+              }}</span>
+            </p-tab>
+            <p-tab value="3">
+              <i class="pi pi-clipboard mr-2"></i>Job Sheets
+              <span class="project-tab-count">{{ jobSheets.length }}</span>
+            </p-tab>
           </p-tablist>
+
           <p-tabpanels>
+            <!-- OVERVIEW -->
             <p-tabpanel value="0">
-              <div class="grid grid-cols-12 gap-10 justify-between mt-3">
-                <div class="col-span-12 lg:col-span-8 flex flex-col gap-5">
-                  <div class="flex flex-col gap-3">
-                    <div class="uppercase text-lg font-semibold text-gray-700">
-                      Project Description
-                    </div>
-                    <div class="tracking-wide text-gray-600 text-justify">
-                      {{ PagingSignal().description }}
-                    </div>
-                  </div>
-                  <div class="grid grid-cols-12 gap-5">
-                    <div
-                      class="col-span-12 xl:col-span-6 bg-gray-100 border border-gray-200 p-3 flex flex-col gap-3"
-                    >
-                      <div class="text-gray-500">Client</div>
-                      <div class="flex flex-col gap-1">
-                        <div class="font-semibold">
-                          {{ PagingSignal().client.name }}
-                        </div>
-                        <div class="flex flex-row items-center gap-2">
-                          <i
-                            class="pi pi-map-marker text-blue-700! text-sm!"
-                          ></i>
-                          <div class="text-gray-500 text-sm">
-                            {{ PagingSignal().location }}
-                          </div>
-                        </div>
+              <div class="grid grid-cols-1 gap-5 xl:grid-cols-3">
+                <div class="min-w-0 space-y-5 xl:col-span-2">
+                  <!-- Description -->
+                  <section class="project-panel">
+                    <div class="project-panel-heading">
+                      <span class="project-panel-icon"
+                        ><i class="pi pi-align-left"></i
+                      ></span>
+                      <div>
+                        <h2 class="project-panel-title">Project description</h2>
+                        <p class="project-panel-subtitle">
+                          Overview and scope of work
+                        </p>
                       </div>
                     </div>
-                    <div
-                      class="col-span-12 xl:col-span-6 bg-gray-100 border border-gray-200 p-3 flex flex-col gap-3"
+                    <p
+                      class="whitespace-pre-line text-sm leading-7 text-slate-600"
                     >
-                      <div class="flex flex-row items-center gap-2">
-                        <div class="text-gray-500">Project Leader</div>
+                      {{
+                        PagingSignal().description ||
+                          'No project description provided.'
+                      }}
+                    </p>
+                  </section>
+
+                  <!-- Client and project leader -->
+                  <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <section class="project-panel">
+                      <div class="project-panel-heading">
+                        <span class="project-panel-icon"
+                          ><i class="pi pi-building"></i
+                        ></span>
+                        <div>
+                          <h3 class="project-panel-title">
+                            Client information
+                          </h3>
+                          <p class="project-panel-subtitle">
+                            Customer and project location
+                          </p>
+                        </div>
                       </div>
-                      <div class="flex flex-row items-center gap-2">
-                        <div
-                          class="w-10 h-10 font-semibold text-blue-800 bg-blue-100 rounded-full flex items-center justify-center"
-                        >
+
+                      <p class="text-sm font-semibold text-slate-900">
+                        {{
+                          PagingSignal().client?.name || 'No client assigned'
+                        }}
+                      </p>
+
+                      <div
+                        class="mt-4 flex items-start gap-2 border-t border-slate-100 pt-3 text-sm text-slate-500"
+                      >
+                        <i class="pi pi-map-marker mt-0.5 text-slate-400"></i>
+                        <span>{{
+                          PagingSignal().location || 'No location provided'
+                        }}</span>
+                      </div>
+                    </section>
+
+                    <section class="project-panel">
+                      <div class="project-panel-heading">
+                        <span class="project-panel-icon"
+                          ><i class="pi pi-user"></i
+                        ></span>
+                        <div>
+                          <h3 class="project-panel-title">Project leader</h3>
+                          <p class="project-panel-subtitle">
+                            Person responsible for this project
+                          </p>
+                        </div>
+                      </div>
+
+                      <div class="flex min-w-0 items-center gap-3">
+                        <div class="project-person-avatar">
                           {{
-                            getInitial(PagingSignal().projectLeader.fullName)
+                            getInitial(PagingSignal().projectLeader?.fullName)
                           }}
                         </div>
-                        <div class="flex flex-col">
-                          <div class="font-semibold">
-                            {{ PagingSignal().projectLeader.fullName }}
-                          </div>
-                          <div class="text-sm text-gray-500">
-                            {{ PagingSignal().projectLeader.jobTitle }}
-                          </div>
+                        <div class="min-w-0">
+                          <p
+                            class="truncate text-sm font-semibold text-slate-900"
+                          >
+                            {{
+                              PagingSignal().projectLeader?.fullName ||
+                                'Not assigned'
+                            }}
+                          </p>
+                          <p class="mt-1 truncate text-xs text-slate-500">
+                            {{ PagingSignal().projectLeader?.jobTitle || '-' }}
+                          </p>
+                        </div>
+                      </div>
+                    </section>
+                  </div>
+
+                  <!-- Team -->
+                  <section class="project-panel">
+                    <div class="mb-4 flex items-center justify-between gap-3">
+                      <div>
+                        <h3 class="project-panel-title">Project team</h3>
+                        <p class="project-panel-subtitle mt-1">
+                          {{ PagingSignal().projectMembers?.length || 0 }} team
+                          members assigned
+                        </p>
+                      </div>
+                      <span class="project-panel-icon"
+                        ><i class="pi pi-users"></i
+                      ></span>
+                    </div>
+
+                    <div
+                      *ngIf="
+                        PagingSignal().projectMembers?.length;
+                        else noTeamMembers
+                      "
+                      class="grid grid-cols-1 gap-2 sm:grid-cols-2"
+                    >
+                      <div
+                        *ngFor="let member of PagingSignal().projectMembers"
+                        class="flex min-w-0 items-center gap-3 rounded-lg border border-slate-100 p-3"
+                      >
+                        <div class="project-person-avatar">
+                          {{ getInitial(member.user?.fullName) }}
+                        </div>
+                        <div class="min-w-0">
+                          <p
+                            class="truncate text-sm font-semibold text-slate-800"
+                          >
+                            {{ member.user?.fullName || 'Unknown user' }}
+                          </p>
+                          <p class="mt-1 truncate text-xs text-slate-500">
+                            {{ member.user?.jobTitle || '-' }}
+                          </p>
                         </div>
                       </div>
                     </div>
+
+                    <ng-template #noTeamMembers>
+                      <div class="project-empty py-7">
+                        <i class="pi pi-users"></i>
+                        <p>No project team members assigned.</p>
+                      </div>
+                    </ng-template>
+                  </section>
+                </div>
+
+                <!-- Timeline -->
+                <aside class="project-panel h-fit">
+                  <div class="project-panel-heading">
+                    <span class="project-panel-icon"
+                      ><i class="pi pi-calendar"></i
+                    ></span>
+                    <div>
+                      <h3 class="project-panel-title">Project timeline</h3>
+                      <p class="project-panel-subtitle">
+                        Important project dates
+                      </p>
+                    </div>
                   </div>
 
-                  <div class="flex flex-col gap-3 mt-4">
-                    <div class="text-lg uppercase font-semibold">
-                      Project Team
+                  <div class="space-y-5">
+                    <div class="project-timeline-item">
+                      <span class="project-timeline-dot"></span>
+                      <div>
+                        <p class="text-xs text-slate-500">Start date</p>
+                        <p class="mt-1 text-sm font-semibold text-slate-900">
+                          {{
+                            PagingSignal().startDate
+                              ? (PagingSignal().startDate | date: 'dd MMM yyyy')
+                              : '-'
+                          }}
+                        </p>
+                      </div>
                     </div>
-                    <div class="grid grid-cols-12 gap-4">
-                      <ng-container
-                        *ngFor="let member of PagingSignal().projectMembers"
+
+                    <div class="project-timeline-item">
+                      <span class="project-timeline-dot"></span>
+                      <div>
+                        <p class="text-xs text-slate-500">
+                          Estimated completion
+                        </p>
+                        <p class="mt-1 text-sm font-semibold text-slate-900">
+                          {{
+                            PagingSignal().estimatedCompletedDate
+                              ? (PagingSignal().estimatedCompletedDate
+                                | date: 'dd MMM yyyy')
+                              : '-'
+                          }}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div class="border-t border-slate-100 pt-4">
+                      <p class="text-xs font-medium text-slate-500">
+                        Remaining days
+                      </p>
+                      <span
+                        class="mt-2 inline-flex rounded-md px-3 py-1.5 text-xs font-semibold"
+                        [ngClass]="{
+                          'bg-red-50 text-red-700':
+                            getRemainingDaysValue(
+                              PagingSignal().estimatedCompletedDate
+                            ) < 0,
+                          'bg-amber-50 text-amber-700':
+                            getRemainingDaysValue(
+                              PagingSignal().estimatedCompletedDate
+                            ) >= 0 &&
+                            getRemainingDaysValue(
+                              PagingSignal().estimatedCompletedDate
+                            ) <= 7,
+                          'bg-slate-100 text-slate-700':
+                            getRemainingDaysValue(
+                              PagingSignal().estimatedCompletedDate
+                            ) > 7,
+                        }"
                       >
-                        <div
-                          class="col-span-12 xl:col-span-6 flex flex-row items-center justify-between p-5 bg-gray-100 border border-gray-200"
-                        >
-                          <div class="flex flex-row items-center gap-2">
-                            <div
-                              class="w-10 h-10 rounded-full bg-blue-100 text-blue-800 flex items-center justify-center font-semibold"
-                            >
-                              {{ getInitial(member.user.fullName) }}
-                            </div>
-                            <div class="flex flex-col">
-                              <div>{{ member.user.fullName }}</div>
-                              <div class="text-sm text-gray-500">
-                                {{ member.user.jobTitle }}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </ng-container>
+                        {{
+                          getRemainingDays(
+                            PagingSignal().estimatedCompletedDate
+                          )
+                        }}
+                      </span>
                     </div>
                   </div>
-                </div>
-
-                <div
-                  class="h-fit col-span-12 lg:col-span-4 border border-gray-200 p-5 bg-gray-100 flex flex-col gap-3"
-                >
-                  <div class="uppercase text-lg tracking-wide font-semibold">
-                    TIMELINE
-                  </div>
-
-                  <div class="flex flex-row items-center justify-between">
-                    <div>Start Date</div>
-                    <div>
-                      {{ PagingSignal().startDate | date: 'dd MMM, yyyy' }}
-                    </div>
-                  </div>
-                  <div class="flex flex-row items-center justify-between">
-                    <div>Est. Completion</div>
-                    <div>
-                      {{
-                        PagingSignal().estimatedCompletedDate
-                          | date: 'dd MMM, yyyy'
-                      }}
-                    </div>
-                  </div>
-
-                  <div class="border-b border-gray-300"></div>
-                  <div class="flex flex-row items-center justify-between">
-                    <div class="font-semibold">Remaining Days</div>
-
-                    <div
-                      [ngClass]="{
-                        'text-red-600':
-                          getRemainingDaysValue(
-                            PagingSignal().estimatedCompletedDate
-                          ) < 0,
-                        'text-orange-500':
-                          getRemainingDaysValue(
-                            PagingSignal().estimatedCompletedDate
-                          ) >= 0 &&
-                          getRemainingDaysValue(
-                            PagingSignal().estimatedCompletedDate
-                          ) <= 7,
-                        'text-blue-600':
-                          getRemainingDaysValue(
-                            PagingSignal().estimatedCompletedDate
-                          ) > 7,
-                      }"
-                    >
-                      {{
-                        getRemainingDays(PagingSignal().estimatedCompletedDate)
-                      }}
-                    </div>
-                  </div>
-                </div>
+                </aside>
               </div>
             </p-tabpanel>
 
+            <!-- TASKS -->
             <p-tabpanel value="1">
-              <div class="flex flex-row items-center justify-between mt-3">
-                <div class="text-xl font-semibold">Milestone Tasks</div>
+              <div class="project-section-toolbar">
+                <div>
+                  <h2 class="project-section-title">Project tasks</h2>
+                  <p class="project-section-description">
+                    Manage milestones, task progress and team assignments.
+                  </p>
+                </div>
                 <p-button
-                  label="Add Task"
+                  label="Add task"
                   icon="pi pi-plus"
-                  severity="contrast"
                   size="small"
-                  styleClass="px-5! rounded-sm!"
+                  styleClass="w-full sm:w-auto py-3! bg-blue-700! hover:bg-blue-500! border-none!"
                   (onClick)="OpenTaskDialog()"
                 ></p-button>
               </div>
 
-              <div class="mt-4">
-                <p-table
-                  #fTable
-                  size="small"
-                  [value]="PagingSignal().projectTasks"
-                  [tableStyle]="{ 'min-width': '80rem' }"
-                  styleClass="p-datatable-sm"
-                  showGridlines
-                  [rowHover]="true"
-                  [scrollable]="true"
-                  scrollHeight="400px"
+              <!-- Mobile task cards -->
+              <div class="space-y-3 lg:hidden">
+                <ng-container
+                  *ngIf="PagingSignal().projectTasks?.length; else noTasks"
                 >
-                  <ng-template pTemplate="header">
+                  <article
+                    *ngFor="let data of PagingSignal().projectTasks"
+                    class="project-record"
+                  >
+                    <div class="flex items-start justify-between gap-3">
+                      <div class="min-w-0">
+                        <p class="text-xs font-semibold text-blue-700">
+                          {{ data.taskCode }}
+                        </p>
+                        <h3
+                          class="mt-1 break-words text-sm font-semibold text-slate-900"
+                        >
+                          {{ data.title }}
+                        </h3>
+                      </div>
+                      <p-tag
+                        [value]="data.status"
+                        [severity]="
+                          data.status === 'Completed'
+                            ? 'success'
+                            : data.status === 'InProgress'
+                              ? 'info'
+                              : data.status === 'Review'
+                                ? 'warn'
+                                : data.status === 'Cancelled'
+                                  ? 'danger'
+                                  : 'secondary'
+                        "
+                      ></p-tag>
+                    </div>
+
+                    <p
+                      class="mt-3 whitespace-pre-line text-sm leading-6 text-slate-500"
+                    >
+                      {{ data.description || 'No description provided.' }}
+                    </p>
+
+                    <div class="mt-3 flex flex-wrap items-center gap-2">
+                      <p-tag
+                        [value]="data.priority"
+                        [severity]="
+                          data.priority === 'Critical'
+                            ? 'danger'
+                            : data.priority === 'High'
+                              ? 'warn'
+                              : data.priority === 'Medium'
+                                ? 'info'
+                                : 'success'
+                        "
+                        [rounded]="true"
+                      ></p-tag>
+                      <span class="text-xs text-slate-500">
+                        <i class="pi pi-calendar mr-1"></i>
+                        {{
+                          data.dueDate
+                            ? (data.dueDate | date: 'dd MMM yyyy')
+                            : 'No due date'
+                        }}
+                      </span>
+                    </div>
+
+                    <div
+                      class="mt-4 flex items-center justify-between gap-3 border-t border-slate-100 pt-3"
+                    >
+                      <div class="flex flex-wrap items-center gap-1">
+                        <ng-container
+                          *ngFor="let member of data.assignedTaskMembers"
+                        >
+                          <p-avatar
+                            [label]="getInitial(member.user?.fullName)"
+                            shape="circle"
+                            pTooltip="{{ member.user?.fullName }}"
+                            styleClass="bg-slate-100! text-slate-700! text-xs!"
+                          ></p-avatar>
+                        </ng-container>
+                        <span
+                          *ngIf="!data.assignedTaskMembers?.length"
+                          class="text-xs text-slate-400"
+                          >No assignee</span
+                        >
+                      </div>
+
+                      <div
+                        *ngIf="
+                          data.status !== 'Completed' &&
+                          data.status !== 'Cancelled'
+                        "
+                        class="flex gap-1"
+                      >
+                        <p-button
+                          icon="pi pi-pencil"
+                          [text]="true"
+                          [rounded]="true"
+                          severity="secondary"
+                          size="small"
+                          pTooltip="Edit task"
+                          (onClick)="EditTask(data)"
+                        ></p-button>
+                        <p-button
+                          *ngIf="data.status === 'NotStarted'"
+                          icon="pi pi-trash"
+                          [text]="true"
+                          [rounded]="true"
+                          severity="danger"
+                          size="small"
+                          pTooltip="Delete task"
+                          (onClick)="RemoveTaskClick(data)"
+                        ></p-button>
+                      </div>
+                    </div>
+                  </article>
+                </ng-container>
+              </div>
+
+              <!-- Desktop task table -->
+              <div
+                class="hidden overflow-hidden rounded-lg border border-slate-200 lg:block"
+              >
+                <p-table
+                  [value]="PagingSignal().projectTasks || []"
+                  [tableStyle]="{ 'min-width': '65rem' }"
+                  [rowHover]="true"
+                  size="small"
+                >
+                  <ng-template #header>
                     <tr>
-                      <th class="bg-gray-100! w-[10%]!">Task ID</th>
-                      <th class="bg-gray-100! w-[20%]!">Task Name</th>
-                      <th class="bg-gray-100! w-[30%]!">Description</th>
-                      <th class="bg-gray-100! text-center w-[10%]!">Status</th>
-                      <th class="bg-gray-100! w-[15%]!">Assignee</th>
-                      <th class="bg-gray-100! text-center! w-[10%]!">
-                        Priority
-                      </th>
-                      <th class="bg-gray-100! text-center! w-[10%]!">Action</th>
+                      <th>Task ID</th>
+                      <th>Task name</th>
+                      <th>Description</th>
+                      <th class="text-center!">Status</th>
+                      <th>Assignee</th>
+                      <th class="text-center!">Priority</th>
+                      <th class="text-center!">Actions</th>
                     </tr>
                   </ng-template>
-
-                  <ng-template pTemplate="body" let-data>
-                    <tr class="align-middle">
-                      <td>
-                        <span class="font-semibold text-blue-700">
-                          {{ data.taskCode }}
-                        </span>
+                  <ng-template #body let-data>
+                    <tr>
+                      <td class="font-semibold text-blue-700">
+                        {{ data.taskCode }}
                       </td>
-                      <td>
-                        <div class="font-medium">
-                          {{ data.title }}
-                        </div>
+                      <td class="font-medium text-slate-800">
+                        {{ data.title }}
                       </td>
-                      <td>
-                        {{ data.description }}
+                      <td
+                        class="max-w-xs whitespace-normal text-sm text-slate-500"
+                      >
+                        {{ data.description || '-' }}
                       </td>
-
-                      <td class="text-center">
+                      <td class="text-center!">
                         <p-tag
                           [value]="data.status"
                           [severity]="
@@ -413,32 +676,27 @@ import { DrawerModule } from 'primeng/drawer';
                                   ? 'warn'
                                   : data.status === 'Cancelled'
                                     ? 'danger'
-                                    : data.status === 'OnHold'
-                                      ? 'contrast'
-                                      : 'secondary'
+                                    : 'secondary'
                           "
                         ></p-tag>
                       </td>
-
                       <td>
-                        <div class="flex flex-wrap gap-2">
+                        <div class="flex flex-wrap gap-1">
                           <ng-container
                             *ngFor="let member of data.assignedTaskMembers"
                           >
                             <p-avatar
-                              [label]="getInitial(member.user.fullName)"
+                              [label]="getInitial(member.user?.fullName)"
                               shape="circle"
-                              pTooltip="{{ member.user.fullName }}"
-                              tooltipPosition="top"
-                              styleClass="cursor-pointer font-semibold! bg-blue-100! text-blue-800!"
+                              pTooltip="{{ member.user?.fullName }}"
+                              styleClass="bg-slate-100! text-slate-700!"
                             ></p-avatar>
                           </ng-container>
                           <span
                             *ngIf="!data.assignedTaskMembers?.length"
-                            class="text-gray-400 italic"
+                            class="text-xs text-slate-400"
+                            >No assignee</span
                           >
-                            No assignee
-                          </span>
                         </div>
                       </td>
                       <td class="text-center!">
@@ -454,346 +712,436 @@ import { DrawerModule } from 'primeng/drawer';
                                   : 'success'
                           "
                           [rounded]="true"
-                        >
-                          <ng-template pTemplate="content">
-                            <i
-                              class="pi mr-1"
-                              [ngClass]="{
-                                'pi-exclamation-triangle':
-                                  data.priority === 'Critical',
-                                'pi-arrow-up': data.priority === 'High',
-                                'pi-minus': data.priority === 'Medium',
-                                'pi-arrow-down': data.priority === 'Low',
-                              }"
-                            ></i>
-                            {{ data.priority }}
-                          </ng-template>
-                        </p-tag>
+                        ></p-tag>
                       </td>
-                      <td>
+                      <td class="text-center!">
                         <div
-                          class="flex justify-center gap-2"
                           *ngIf="
                             data.status !== 'Completed' &&
                             data.status !== 'Cancelled'
                           "
+                          class="flex justify-center gap-1"
                         >
-                          <button
-                            pButton
+                          <p-button
                             icon="pi pi-pencil"
-                            rounded
-                            text
-                            severity="warn"
-                            (click)="EditTask(data)"
-                          ></button>
-                          <button
+                            [text]="true"
+                            [rounded]="true"
+                            severity="secondary"
+                            size="small"
+                            pTooltip="Edit"
+                            (onClick)="EditTask(data)"
+                          ></p-button>
+                          <p-button
                             *ngIf="data.status === 'NotStarted'"
-                            pButton
                             icon="pi pi-trash"
-                            rounded
-                            text
+                            [text]="true"
+                            [rounded]="true"
                             severity="danger"
-                            (click)="RemoveTaskClick(data)"
-                          ></button>
+                            size="small"
+                            pTooltip="Delete"
+                            (onClick)="RemoveTaskClick(data)"
+                          ></p-button>
                         </div>
+                        <span
+                          *ngIf="
+                            data.status === 'Completed' ||
+                            data.status === 'Cancelled'
+                          "
+                          class="text-slate-300"
+                          >—</span
+                        >
                       </td>
                     </tr>
                   </ng-template>
-
-                  <ng-template pTemplate="emptymessage">
+                  <ng-template #emptymessage>
                     <tr>
-                      <td colspan="100%">
-                        <div class="py-8 text-center text-gray-500">
-                          <i class="pi pi-inbox text-3xl mb-3"></i>
-                          <div>No tasks assigned.</div>
-                        </div>
+                      <td
+                        colspan="7"
+                        class="py-10! text-center! text-sm text-slate-400"
+                      >
+                        No tasks assigned to this project.
                       </td>
                     </tr>
                   </ng-template>
                 </p-table>
               </div>
+
+              <ng-template #noTasks>
+                <div class="project-empty">
+                  <i class="pi pi-list-check"></i>
+                  <p>No tasks assigned to this project.</p>
+                </div>
+              </ng-template>
             </p-tabpanel>
+
+            <!-- MATERIALS -->
             <p-tabpanel value="2">
-              <div class="mt-3 flex flex-row items-center justify-between">
-                <div class="text-lg font-semibold">Material Procurement</div>
+              <div class="project-section-toolbar">
+                <div>
+                  <h2 class="project-section-title">Material requests</h2>
+                  <p class="project-section-description">
+                    Review materials requested for this project.
+                  </p>
+                </div>
                 <p-button
-                  label="Request Materials"
-                  icon="pi pi-shopping-cart"
-                  severity="contrast"
+                  label="Request materials"
+                  icon="pi pi-plus"
                   size="small"
-                  styleClass="px-5! rounded-sm!"
+                  styleClass="w-full sm:w-auto bg-blue-700! border-none! hover:bg-blue-500! py-3!"
+                  (onClick)="ActionClick('requestMaterial')"
                 ></p-button>
               </div>
-              <div class="mt-3">
+
+              <!-- Mobile material cards -->
+              <div class="space-y-3 lg:hidden">
+                <ng-container
+                  *ngIf="
+                    PagingSignal().materialRequests?.length;
+                    else noMaterials
+                  "
+                >
+                  <article
+                    *ngFor="let data of PagingSignal().materialRequests"
+                    class="project-record"
+                  >
+                    <div class="flex items-start justify-between gap-3">
+                      <div>
+                        <p class="text-[11px] text-slate-400">
+                          Document number
+                        </p>
+                        <p class="mt-1 text-sm font-semibold text-blue-700">
+                          {{ data.documentNo }}
+                        </p>
+                      </div>
+                      <p-tag
+                        [value]="data.status || 'Pending'"
+                        severity="warn"
+                      ></p-tag>
+                    </div>
+
+                    <div class="mt-4 grid grid-cols-2 gap-3">
+                      <div>
+                        <p class="text-[11px] text-slate-400">Request date</p>
+                        <p class="mt-1 text-sm font-medium text-slate-700">
+                          {{ data.requestDate | date: 'dd MMM yyyy' }}
+                        </p>
+                      </div>
+                      <div>
+                        <p class="text-[11px] text-slate-400">Total items</p>
+                        <p class="mt-1 text-sm font-medium text-slate-700">
+                          {{ data.materialItems?.length || 0 }} items
+                        </p>
+                      </div>
+                    </div>
+
+                    <div class="mt-4 border-t border-slate-100 pt-3">
+                      <p class="mb-2 text-xs font-semibold text-slate-700">
+                        Requested materials
+                      </p>
+                      <div
+                        *ngFor="let item of data.materialItems"
+                        class="flex justify-between gap-3 py-1.5 text-xs"
+                      >
+                        <span class="min-w-0 break-words text-slate-600">{{
+                          item.description
+                        }}</span>
+                        <span class="shrink-0 font-semibold text-slate-800"
+                          >{{ item.quantity }} {{ item.unit }}</span
+                        >
+                      </div>
+                      <p
+                        *ngIf="!data.materialItems?.length"
+                        class="text-xs text-slate-400"
+                      >
+                        No material items.
+                      </p>
+                    </div>
+                  </article>
+                </ng-container>
+              </div>
+
+              <!-- Desktop material table -->
+              <div
+                class="hidden overflow-hidden rounded-lg border border-slate-200 lg:block"
+              >
                 <p-table
-                  [value]="PagingSignal().materialRequests"
-                  [lazy]="false"
-                  [showGridlines]="true"
+                  [value]="PagingSignal().materialRequests || []"
                   [expandedRowKeys]="expandedRows"
                   dataKey="id"
+                  [showGridlines]="false"
+                  [rowHover]="true"
                   size="small"
-                  [tableStyle]="{ 'min-width': '60rem' }"
                 >
                   <ng-template #header>
                     <tr>
-                      <th class="bg-gray-100! w-[25%]!">SKU/Item</th>
-                      <th class="text-center! bg-gray-100! w-[15%]!">
-                        Quantity
-                      </th>
-                      <th class="text-center! bg-gray-100! w-[10%]!">Status</th>
-                      <th class="text-center! bg-gray-100! w-[15%]!">
-                        Requested By
-                      </th>
-                      <th class="text-right! bg-gray-100! w-[15%]!">
-                        Requested Date
-                      </th>
+                      <th class="w-12"></th>
+                      <th>Document number</th>
+                      <th>Request date</th>
+                      <th class="text-center!">Items</th>
+                      <th class="text-center!">Status</th>
                     </tr>
                   </ng-template>
                   <ng-template #body let-data let-expanded="expanded">
                     <tr>
                       <td>
-                        <div class="flex items-center justify-center">
-                          <p-button
-                            pRipple
-                            [pRowToggler]="data"
-                            [text]="true"
-                            severity="secondary"
-                            [rounded]="true"
-                            [icon]="
-                              expanded
-                                ? 'pi pi-chevron-down'
-                                : 'pi pi-chevron-right'
-                            "
-                          />
-                        </div>
+                        <p-button
+                          [pRowToggler]="data"
+                          [text]="true"
+                          [rounded]="true"
+                          severity="secondary"
+                          [icon]="
+                            expanded
+                              ? 'pi pi-chevron-down'
+                              : 'pi pi-chevron-right'
+                          "
+                        ></p-button>
                       </td>
-                      <td class="text-center! font-semibold">
+                      <td class="font-semibold text-blue-700">
                         {{ data.documentNo }}
                       </td>
-                      <td class="text-center!">
-                        {{ data.requestDate | date: 'dd MMM, yyyy' }}
-                      </td>
+                      <td>{{ data.requestDate | date: 'dd MMM yyyy' }}</td>
                       <td class="text-center!">
                         {{ data.materialItems?.length || 0 }}
                       </td>
-                    </tr> </ng-template
-                  ><ng-template pTemplate="rowexpansion" let-data>
-                    <tr>
-                      <td colspan="4">
-                        <div class="p-4 bg-gray-50 border rounded-md">
-                          <div class="font-semibold text-gray-700 mb-3">
-                            Material Items
-                          </div>
-
-                          <p-table
-                            [value]="data.materialItems"
-                            [showGridlines]="true"
-                            styleClass="p-datatable-sm"
-                          >
-                            <ng-template pTemplate="header">
-                              <tr>
-                                <th>Description</th>
-                                <th>Brand</th>
-                                <th>Type No</th>
-                                <th>Unit</th>
-                                <th class="text-right">Quantity</th>
-                                <th>Remarks</th>
-                              </tr>
-                            </ng-template>
-
-                            <ng-template pTemplate="body" let-item>
-                              <tr>
-                                <td>{{ item.description }}</td>
-                                <td>{{ item.brand }}</td>
-                                <td>{{ item.typeNo }}</td>
-                                <td>{{ item.unit }}</td>
-                                <td class="text-right">{{ item.quantity }}</td>
-                                <td>{{ item.remarks }}</td>
-                              </tr>
-                            </ng-template>
-
-                            <ng-template pTemplate="emptymessage">
-                              <tr>
-                                <td
-                                  colspan="100%"
-                                  class="text-center! text-gray-500 py-2!"
-                                >
-                                  No material items found.
-                                </td>
-                              </tr>
-                            </ng-template>
-                          </p-table>
-                        </div>
+                      <td class="text-center!">
+                        <p-tag
+                          [value]="data.status || 'Pending'"
+                          severity="warn"
+                        ></p-tag>
                       </td>
                     </tr>
                   </ng-template>
-
+                  <ng-template #expandedrow let-data>
+                    <tr>
+                      <td colspan="5" class="bg-slate-50! p-4!">
+                        <p-table
+                          [value]="data.materialItems || []"
+                          size="small"
+                        >
+                          <ng-template #header>
+                            <tr>
+                              <th>Description</th>
+                              <th>Brand</th>
+                              <th>Type number</th>
+                              <th>Unit</th>
+                              <th class="text-right!">Quantity</th>
+                              <th>Remarks</th>
+                            </tr>
+                          </ng-template>
+                          <ng-template #body let-item>
+                            <tr>
+                              <td>{{ item.description }}</td>
+                              <td>{{ item.brand || '-' }}</td>
+                              <td>{{ item.typeNo || '-' }}</td>
+                              <td>{{ item.unit || '-' }}</td>
+                              <td class="text-right!">{{ item.quantity }}</td>
+                              <td>{{ item.remarks || '-' }}</td>
+                            </tr>
+                          </ng-template>
+                          <ng-template #emptymessage>
+                            <tr>
+                              <td
+                                colspan="6"
+                                class="py-5! text-center! text-slate-400"
+                              >
+                                No material items found.
+                              </td>
+                            </tr>
+                          </ng-template>
+                        </p-table>
+                      </td>
+                    </tr>
+                  </ng-template>
                   <ng-template #emptymessage>
                     <tr>
-                      <td colspan="100%">
-                        <div
-                          class="flex items-center justify-center text-gray-500 py-2!"
-                        >
-                          No request.
-                        </div>
+                      <td
+                        colspan="5"
+                        class="py-10! text-center! text-slate-400"
+                      >
+                        No material requests found.
                       </td>
                     </tr>
                   </ng-template>
                 </p-table>
               </div>
+
+              <ng-template #noMaterials>
+                <div class="project-empty">
+                  <i class="pi pi-box"></i>
+                  <p>No material requests found.</p>
+                </div>
+              </ng-template>
             </p-tabpanel>
 
+            <!-- JOB SHEETS -->
             <p-tabpanel value="3">
-              <div class="flex flex-row items-center justify-between mt-3">
-                <div class="text-lg font-semibold">Job Sheet Logs</div>
-
+              <div class="project-section-toolbar">
+                <div>
+                  <h2 class="project-section-title">Job sheet logs</h2>
+                  <p class="project-section-description">
+                    Track work performed by project technicians.
+                  </p>
+                </div>
                 <p-button
-                  label="Create Job Sheet"
-                  icon="pi pi-clipboard"
-                  severity="contrast"
+                  label="Create job sheet"
+                  icon="pi pi-plus"
                   size="small"
-                  styleClass="px-5! rounded-sm!"
+                  styleClass="w-full sm:w-auto bg-blue-700! border-none! hover:bg-blue-500! py-3!"
                   (onClick)="OpenJobSheetDialog()"
                 ></p-button>
               </div>
 
-              <div class="mt-4 grid grid-cols-12 gap-5">
-                <ng-container *ngIf="jobSheets.length > 0; else noJobSheet">
-                  <div
+              <ng-container *ngIf="jobSheets.length > 0; else noJobSheet">
+                <div
+                  class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3"
+                >
+                  <article
                     *ngFor="let item of jobSheets"
-                    class="col-span-12 md:col-span-6 xl:col-span-4 p-4 bg-gray-100 border border-gray-200 flex flex-col justify-between h-32"
+                    class="project-record flex min-h-40 flex-col justify-between"
                   >
-                    <div class="flex flex-row items-center justify-between">
-                      <div class="flex flex-col gap-1">
-                        <span class="text-sm text-gray-500">
-                          JS: {{ item.jobSheetNo }}
-                        </span>
-
-                        <div class="font-semibold">
-                          {{ item.workDescription }}
+                    <div>
+                      <div class="flex items-start justify-between gap-3">
+                        <div class="min-w-0">
+                          <p class="text-xs font-semibold text-blue-700">
+                            {{ item.jobSheetNo }}
+                          </p>
+                          <h3
+                            class="mt-2 line-clamp-3 text-sm font-semibold leading-6 text-slate-800"
+                          >
+                            {{ item.workDescription || 'No work description' }}
+                          </h3>
                         </div>
+                        <span class="project-panel-icon shrink-0"
+                          ><i class="pi pi-clipboard"></i
+                        ></span>
                       </div>
-
-                      <i class="pi pi-clipboard text-blue-800! text-lg!"></i>
                     </div>
 
                     <div
-                      class="flex flex-row items-center justify-between text-sm"
+                      class="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-3"
                     >
-                      <div
-                        class="font-semibold"
-                        [ngClass]="{
-                          'text-yellow-600': item.status === 'Draft',
-                          'text-blue-700': item.status === 'In Progress',
-                          'text-green-700': item.status === 'Completed',
-                          'text-red-700': item.status === 'Rejected',
-                        }"
-                      >
-                        {{ item.status }}
-                      </div>
-
-                      <div>
-                        {{ item.workDate | date: 'MMM dd, yyyy' }}
-                      </div>
+                      <p-tag
+                        [value]="item.status"
+                        [severity]="
+                          item.status === 'Completed'
+                            ? 'success'
+                            : item.status === 'Rejected'
+                              ? 'danger'
+                              : item.status === 'Draft'
+                                ? 'secondary'
+                                : 'info'
+                        "
+                      ></p-tag>
+                      <span class="text-xs text-slate-500">
+                        <i class="pi pi-calendar mr-1"></i>
+                        {{ item.workDate | date: 'dd MMM yyyy' }}
+                      </span>
                     </div>
-                  </div>
-                </ng-container>
+                  </article>
+                </div>
+              </ng-container>
 
-                <ng-template #noJobSheet>
-                  <div class="col-span-12 text-center text-gray-500 py-10">
-                    No Job Sheet available
-                  </div>
-                </ng-template>
-              </div>
+              <ng-template #noJobSheet>
+                <div class="project-empty">
+                  <i class="pi pi-clipboard"></i>
+                  <p>No job sheets available for this project.</p>
+                </div>
+              </ng-template>
             </p-tabpanel>
-          </p-tabpanels></p-tabs
-        >
-      </div>
-    </div>
+          </p-tabpanels>
+        </p-tabs>
+      </section>
+    </main>
 
+    <!-- DELETE TASK DIALOG -->
     <p-dialog
       [(visible)]="deleteTaskDialog"
       [modal]="true"
       [draggable]="false"
       [closable]="false"
       [style]="{ width: '420px' }"
+      [breakpoints]="{ '640px': 'calc(100vw - 2rem)' }"
+      appendTo="body"
     >
       <ng-template #headless>
-        <div class="p-6 flex flex-col items-center text-center">
+        <div class="p-6 text-center">
           <div
-            class="w-14 h-14 rounded-full bg-red-100 flex items-center justify-center mb-4"
+            class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-50 text-red-600"
           >
-            <i class="pi pi-trash text-red-600 text-2xl"></i>
+            <i class="pi pi-trash text-xl"></i>
           </div>
-
-          <div class="text-xl font-semibold">Delete Task?</div>
-
-          <div class="text-gray-500 mt-2">
+          <h2 class="text-lg font-bold text-slate-900">Delete task?</h2>
+          <p class="mt-2 text-sm leading-6 text-slate-500">
             Are you sure you want to delete
-            <span class="font-semibold"> {{ taskToDelete?.taskCode }} </span>?
-          </div>
-
-          <div class="flex justify-center gap-3 mt-6 w-full">
+            <span class="font-semibold text-slate-800">{{
+              taskToDelete?.taskCode
+            }}</span
+            >? This action cannot be undone.
+          </p>
+          <div class="mt-6 flex justify-center gap-2">
             <p-button
-              label="No"
+              label="Cancel"
               severity="secondary"
               [outlined]="true"
               (onClick)="CancelDeleteTask()"
             ></p-button>
-
             <p-button
-              label="Yes"
+              label="Delete task"
+              icon="pi pi-trash"
               severity="danger"
               (onClick)="ConfirmDeleteTask()"
-              styleClass="bg-red-600! border-none!"
             ></p-button>
           </div>
         </div>
       </ng-template>
     </p-dialog>
 
+    <!-- TASK DIALOG -->
     <p-dialog
       [(visible)]="taskDialog"
       [modal]="true"
       [draggable]="false"
       [closable]="true"
       (onHide)="taskDialog = false"
-      styleClass="relative! border-0! bg-white! overflow-y-auto! w-[80%]! md:w-[50%]!"
+      appendTo="body"
+      [style]="{ width: 'min(720px, calc(100vw - 2rem))' }"
+      [breakpoints]="{ '640px': 'calc(100vw - 1rem)' }"
+      styleClass="project-form-dialog"
     >
       <ng-template #headless>
-        <div class="flex flex-col">
-          <div
-            class="px-5 pt-3 pb-2 flex flex-row items-center justify-between"
-          >
-            <div class="text-lg font-semibold">
+        <div class="flex flex-col" [formGroup]="taskForm">
+          <div class="border-b border-slate-100 px-5 py-4 sm:px-6">
+            <p
+              class="text-[10px] font-bold uppercase tracking-wider text-slate-400"
+            >
+              Project task
+            </p>
+            <h2 class="mt-1 text-lg font-bold text-slate-900">
               {{
                 taskUpdate
-                  ? 'Update Task: ' + selectedTask?.taskCode
-                  : 'Add New Task'
+                  ? 'Update task: ' + selectedTask?.taskCode
+                  : 'Create new task'
               }}
-            </div>
-            <i
-              class="pi pi-times text-gray-600! cursor-pointer!"
-              (click)="taskDialog = false"
-            ></i>
+            </h2>
+            <p class="mt-1 text-xs text-slate-500">
+              Enter the task details and assign team members.
+            </p>
           </div>
-          <div class="border-b border-gray-200 mb-2"></div>
-          <div class="p-5 grid grid-cols-12 gap-4" [formGroup]="taskForm">
-            <div class="col-span-12 flex flex-col gap-1">
-              <div class="uppercase text-sm">Task Name</div>
+
+          <div class="grid grid-cols-1 gap-4 p-5 sm:grid-cols-2 sm:p-6">
+            <div class="flex flex-col gap-1.5 sm:col-span-2">
+              <label class="project-form-label">Task name</label>
               <input
-                type="text"
                 pInputText
                 class="w-full"
                 formControlName="title"
-                placeholder="e.g., Pressure Valve Inspection"
+                placeholder="e.g. Pressure Valve Inspection"
               />
             </div>
-            <div class="col-span-12 flex flex-col gap-1">
-              <div class="uppercase text-sm">Description</div>
+
+            <div class="flex flex-col gap-1.5 sm:col-span-2">
+              <label class="project-form-label">Description</label>
               <textarea
-                name=""
-                id=""
                 pTextarea
                 class="w-full"
                 [rows]="4"
@@ -802,11 +1150,13 @@ import { DrawerModule } from 'primeng/drawer';
                 placeholder="Describe the task requirements..."
               ></textarea>
             </div>
-            <div class="col-span-4 flex flex-col gap-1">
-              <div class="uppercase text-sm">Priority</div>
+
+            <div class="flex flex-col gap-1.5">
+              <label class="project-form-label">Priority</label>
               <p-select
                 formControlName="priority"
                 appendTo="body"
+                styleClass="w-full"
                 [options]="[
                   { label: 'Low', value: 'Low' },
                   { label: 'Medium', value: 'Medium' },
@@ -815,23 +1165,25 @@ import { DrawerModule } from 'primeng/drawer';
                 ]"
               ></p-select>
             </div>
-            <div class="col-span-4 flex flex-col gap-1">
-              <div class="uppercase text-sm">Due Date</div>
+
+            <div class="flex flex-col gap-1.5">
+              <label class="project-form-label">Due date</label>
               <p-datepicker
                 formControlName="dueDate"
-                showIcon="true"
+                [showIcon]="true"
                 dateFormat="dd/mm/yy"
                 placeholder="dd/mm/yyyy"
-                styleClass="w-full!"
+                styleClass="w-full"
                 appendTo="body"
               ></p-datepicker>
             </div>
 
-            <div class="col-span-4 flex flex-col gap-1">
-              <div class="uppercase text-sm">Status</div>
+            <div class="flex flex-col gap-1.5 sm:col-span-2">
+              <label class="project-form-label">Status</label>
               <p-select
                 formControlName="status"
                 appendTo="body"
+                styleClass="w-full"
                 [options]="[
                   { label: 'Not Started', value: 'NotStarted' },
                   { label: 'In Progress', value: 'InProgress' },
@@ -843,149 +1195,169 @@ import { DrawerModule } from 'primeng/drawer';
               ></p-select>
             </div>
 
-            <div class="col-span-12 flex flex-col gap-1">
-              <div class="uppercase text-sm">Assignee</div>
+            <div class="flex flex-col gap-1.5 sm:col-span-2">
+              <label class="project-form-label">Assignees</label>
               <p-multiselect
                 formControlName="assignedUserIds"
                 appendTo="body"
+                styleClass="w-full"
                 [options]="userSelection"
                 [filter]="true"
-                placeholder="Select Team Member"
+                [showClear]="true"
+                placeholder="Select team members"
               ></p-multiselect>
             </div>
           </div>
+
           <div
-            class="p-5 bg-gray-100 flex flex-row items-center justify-end gap-2"
+            class="flex flex-col-reverse gap-2 border-t border-slate-100 bg-slate-50 px-5 py-4 sm:flex-row sm:justify-end sm:px-6"
           >
             <p-button
               label="Cancel"
               severity="secondary"
-              [text]="true"
+              [outlined]="true"
+              styleClass="w-full!"
               (onClick)="taskDialog = false"
             ></p-button>
             <p-button
               (onClick)="SaveTask()"
-              [label]="taskUpdate ? 'Save Changes' : 'Create Task'"
-              severity="info"
-              styleClass="bg-blue-800! px-5! border-none!"
+              styleClass="w-full! bg-blue-700! hover:bg-blue-500! border-none!"
+              [label]="taskUpdate ? 'Save changes' : 'Create task'"
             ></p-button>
           </div>
         </div>
       </ng-template>
     </p-dialog>
 
+    <!-- JOB SHEET DRAWER -->
     <p-drawer
       [(visible)]="jobSheetDialog"
       position="right"
       [modal]="true"
       [dismissible]="true"
-      [showCloseIcon]="false"
-      styleClass="w-full md:w-[550px]!"
+      [showCloseIcon]="true"
+      appendTo="body"
+      styleClass="project-job-drawer w-full! sm:w-[50%]! lg:w-[40%]!"
       [header]="
-        taskUpdate
-          ? 'Update JobSheet: ' + selectedJobSheet?.jobSheetNo
-          : 'New JobSheet'
+        jobSheetUpdate
+          ? 'Update Job Sheet: ' + selectedJobSheet?.jobSheetNo
+          : 'New Job Sheet'
       "
     >
-      <div class="grid grid-cols-12 gap-6" [formGroup]="jobSheetForm">
-        <div class="col-span-12 flex flex-col gap-1">
-          <div class="uppercase text-sm">Job Sheet No</div>
-          <input
-            type="text"
-            pInputText
-            class="w-full"
-            formControlName="jobSheetNo"
-          />
-        </div>
-        <div class="col-span-12 flex flex-col gap-1">
-          <div class="uppercase text-sm">Line Task</div>
-          <p-select
-            formControlName="projectTaskId"
-            appendTo="body"
-            optionLabel="title"
-            optionValue="id"
-            [options]="PagingSignal().projectTasks"
-          ></p-select>
-        </div>
-        <div class="col-span-12 flex flex-col gap-1">
-          <div class="uppercase text-sm">Technician Assignment</div>
-          <p-multiselect
-            formControlName="members"
-            appendTo="body"
-            [options]="userSelection"
-            [filter]="true"
-            placeholder="Select Team Member"
-          ></p-multiselect>
-        </div>
-        <div class="col-span-4 flex flex-col gap-1">
-          <div class="uppercase text-sm">Date</div>
-          <p-datepicker
-            formControlName="workDate"
-            showIcon="true"
-            dateFormat="dd/mm/yy"
-            placeholder="dd/mm/yyyy"
-            styleClass="w-full!"
-            appendTo="body"
-          ></p-datepicker>
-        </div>
-        <div class="col-span-4 flex flex-col gap-1">
-          <div class="uppercase text-sm">Start Time</div>
-          <p-datepicker
-            formControlName="startTime"
-            [timeOnly]="true"
-            hourFormat="24"
-            showIcon="true"
-            placeholder="HH:mm"
-            styleClass="w-full!"
-            appendTo="body"
-          ></p-datepicker>
-        </div>
-        <div class="col-span-4 flex flex-col gap-1">
-          <div class="uppercase text-sm">End Time</div>
-          <p-datepicker
-            formControlName="endTime"
-            [timeOnly]="true"
-            hourFormat="24"
-            showIcon="true"
-            placeholder="HH:mm"
-            styleClass="w-full!"
-            appendTo="body"
-          ></p-datepicker>
-        </div>
-        <div class="col-span-12 flex flex-col gap-1">
-          <div class="uppercase text-sm">Work Description</div>
-          <textarea
-            name=""
-            id=""
-            pTextarea
-            class="w-full"
-            [rows]="4"
-            [autoResize]="true"
-            formControlName="workDescription"
-            placeholder="Describe the work performed..."
-          ></textarea>
-        </div>
+      <div class="flex h-full flex-col" [formGroup]="jobSheetForm">
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div class="flex flex-col gap-1.5 sm:col-span-2">
+            <label class="project-form-label">Job sheet number</label>
+            <input pInputText class="w-full" formControlName="jobSheetNo" />
+          </div>
 
-        <div class="col-span-12 flex flex-col gap-1">
-          <div class="uppercase text-sm">Remarks</div>
-          <input
-            type="text"
-            pInputText
-            class="w-full"
-            placeholder="Additional notes..."
-            formControlName="remarks"
-          />
+          <div class="flex flex-col gap-1.5 sm:col-span-2">
+            <label class="project-form-label">Related task</label>
+            <p-select
+              formControlName="projectTaskId"
+              appendTo="body"
+              styleClass="w-full"
+              optionLabel="title"
+              optionValue="id"
+              [options]="PagingSignal().projectTasks || []"
+              placeholder="Select project task"
+            ></p-select>
+          </div>
+
+          <div class="flex flex-col gap-1.5 sm:col-span-2">
+            <label class="project-form-label">Technician assignment</label>
+            <p-multiselect
+              formControlName="members"
+              appendTo="body"
+              styleClass="w-full"
+              [options]="userSelection"
+              [filter]="true"
+              [showClear]="true"
+              placeholder="Select team members"
+            ></p-multiselect>
+          </div>
+
+          <div class="flex flex-col gap-1.5">
+            <label class="project-form-label">Work date</label>
+            <p-datepicker
+              formControlName="workDate"
+              [showIcon]="true"
+              dateFormat="dd/mm/yy"
+              placeholder="dd/mm/yyyy"
+              styleClass="w-full"
+              appendTo="body"
+            ></p-datepicker>
+          </div>
+
+          <div class="flex flex-col gap-1.5">
+            <label class="project-form-label">Start time</label>
+            <p-datepicker
+              formControlName="startTime"
+              [timeOnly]="true"
+              hourFormat="24"
+              [showIcon]="true"
+              placeholder="HH:mm"
+              styleClass="w-full"
+              appendTo="body"
+            ></p-datepicker>
+          </div>
+
+          <div class="flex flex-col gap-1.5 sm:col-span-2">
+            <label class="project-form-label">End time</label>
+            <p-datepicker
+              formControlName="endTime"
+              [timeOnly]="true"
+              hourFormat="24"
+              [showIcon]="true"
+              placeholder="HH:mm"
+              styleClass="w-full"
+              appendTo="body"
+            ></p-datepicker>
+          </div>
+
+          <div class="flex flex-col gap-1.5 sm:col-span-2">
+            <label class="project-form-label">Work description</label>
+            <textarea
+              pTextarea
+              class="w-full"
+              [rows]="5"
+              [autoResize]="true"
+              formControlName="workDescription"
+              placeholder="Describe the work performed..."
+            ></textarea>
+          </div>
+
+          <div class="flex flex-col gap-1.5 sm:col-span-2">
+            <label class="project-form-label">Remarks</label>
+            <input
+              pInputText
+              class="w-full"
+              formControlName="remarks"
+              placeholder="Additional notes..."
+            />
+          </div>
         </div>
       </div>
       <ng-template #footer>
-        <p-button
-          (onClick)="SaveJobSheet()"
-          class="w-full!"
-          [label]="taskUpdate ? 'Save Changes' : 'Save JobSheet'"
-          styleClass="rounded-sm! bg-sky-700! w-full! border-none!"
-        ></p-button>
+        <div class="flex gap-2 w-full">
+          <p-button
+            label="Close"
+            severity="secondary"
+            [outlined]="true"
+            class="flex-1!"
+            styleClass="w-full! py-3!"
+            (onClick)="jobSheetDialog = false"
+          ></p-button>
+          <p-button
+            (onClick)="SaveJobSheet()"
+            class="flex-1!"
+            [label]="jobSheetUpdate ? 'Save changes' : 'Save job sheet'"
+            styleClass="w-full bg-blue-700! border-none! hover:bg-blue-500! py-3!"
+          ></p-button>
+        </div>
       </ng-template>
-    </p-drawer> `,
+    </p-drawer>
+  `,
   styleUrl: './project-details.less',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -1056,14 +1428,15 @@ export class ProjectDetails implements OnInit, OnDestroy {
 
           if (res) {
             res.projectTasks =
-              res.projectTasks?.sort((a: any, b: any) => {
-                return (
+              res.projectTasks?.sort(
+                (a: any, b: any) =>
                   new Date(a.createdAt).getTime() -
-                  new Date(b.createdAt).getTime()
-                );
-              }) ?? [];
+                  new Date(b.createdAt).getTime(),
+              ) ?? [];
 
             this.PagingSignal.set(res);
+            this.jobSheets = res.jobSheets ?? [];
+
             this.cdr.markForCheck();
           }
         },
@@ -1075,8 +1448,9 @@ export class ProjectDetails implements OnInit, OnDestroy {
 
   ActionClick(type: string) {
     if (type === 'requestMaterial') {
-      this.router.navigate(['/material-requests/form'], {
+      this.router.navigate(['/hardware-request'], {
         queryParams: {
+          type: 'SiteMaterial',
           projectId: this.PagingSignal()?.id,
         },
       });

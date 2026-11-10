@@ -69,10 +69,10 @@ import {
   template: `
     <ng-container>
       <!-- ================= MOBILE ================= -->
-      <div class="lg:hidden min-h-screen bg-slate-50 pb-8">
+      <div class="lg:hidden bg-slate-50 pb-8">
         <!-- Header -->
         <div
-          class="relative overflow-hidden rounded-b-[2rem] bg-gradient-to-br from-blue-700 via-blue-600 to-indigo-700 px-5 pt-6 pb-8"
+          class="relative overflow-hidden bg-gradient-to-br from-blue-700 via-blue-600 to-indigo-700 px-5 pt-6 pb-8"
         >
           <div
             class="absolute -right-12 -top-16 h-48 w-48 rounded-full border border-white/10"
@@ -553,7 +553,10 @@ import {
                       <span class="font-medium text-slate-700">
                         {{ data.startDate | date: 'dd MMM yyyy' }}
                       </span>
-                      <span class="text-slate-400">
+                      <span
+                        class="text-slate-400"
+                        *ngIf="data.startDate && data.estimatedCompletedDate"
+                      >
                         to
                         {{ data.estimatedCompletedDate | date: 'dd MMM yyyy' }}
                       </span>
@@ -585,10 +588,10 @@ import {
                     </span>
                   </td>
 
-                  <td class="text-center!">
+                  <td class="flex items-center! justify-center!">
                     <button
                       type="button"
-                      class="flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-blue-700"
+                      class="cursor-pointer! flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-blue-700"
                       aria-label="Project actions"
                       (click)="onEllipsisClick($event, data, menu)"
                     >
@@ -1087,14 +1090,24 @@ export class Project implements OnInit, OnDestroy {
   }
 
   ActionClick(data: ProjectDto | null, action: string) {
-    if (action === 'Edit') {
-      this.router.navigate(['/projects/form'], {
-        queryParams: { id: data?.id },
-      });
+    if (!data) return;
+
+    switch (action) {
+      case 'Details':
+        this.router.navigate(['/projects/details'], {
+          queryParams: { id: data.id },
+        });
+        break;
+
+      case 'Edit':
+        this.router.navigate(['/projects/form'], {
+          queryParams: { id: data.id },
+        });
+        break;
     }
   }
 
-  onEllipsisClick(event: any, project: any, menu: any) {
+  onEllipsisClick(event: any, project: ProjectDto, menu: any) {
     const statusFlow: Record<string, string[]> = {
       Planning: ['Start Progress'],
       InProgress: ['Put On Hold', 'Mark Completed'],
@@ -1106,15 +1119,25 @@ export class Project implements OnInit, OnDestroy {
 
     this.menuItems = [
       {
+        label: 'Details',
+        icon: 'pi pi-eye',
+        command: () => this.ActionClick(project, 'Details'),
+      },
+      {
         label: 'Edit',
         icon: 'pi pi-pencil',
         command: () => this.ActionClick(project, 'Edit'),
       },
-      ...actions.map((action) => ({
-        label: action,
-        icon: this.getStatusIcon(action),
-        command: () => this.handleStatusChange(project, action),
-      })),
+      ...(project.status !== 'Completed'
+        ? [
+            { separator: true },
+            ...actions.map((action) => ({
+              label: action,
+              icon: this.getStatusIcon(action),
+              command: () => this.handleStatusChange(project, action),
+            })),
+          ]
+        : []),
     ];
 
     menu.toggle(event);

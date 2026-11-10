@@ -114,7 +114,7 @@ import { DrawerModule } from 'primeng/drawer';
               <span class="hidden text-slate-300 sm:inline">|</span>
               <span>
                 <i class="pi pi-building mr-1 text-slate-400"></i>
-                {{ PagingSignal().client?.name || 'No client assigned' }}
+                {{ PagingSignal().client.name || 'No client assigned' }}
               </span>
             </div>
           </div>
@@ -221,7 +221,7 @@ import { DrawerModule } from 'primeng/drawer';
             ></span>
           </div>
           <p class="project-summary-value mt-4">
-            {{ PagingSignal().projectTasks?.length || 0 }}
+            {{ PagingSignal().projectTasks.length || 0 }}
           </p>
           <p class="mt-2 text-[11px] text-slate-400">Total assigned tasks</p>
         </article>
@@ -232,7 +232,7 @@ import { DrawerModule } from 'primeng/drawer';
             <span class="project-summary-icon"><i class="pi pi-box"></i></span>
           </div>
           <p class="project-summary-value mt-4">
-            {{ PagingSignal().materialRequests?.length || 0 }}
+            {{ PagingSignal().materialRequests.length || 0 }}
           </p>
           <p class="mt-2 text-[11px] text-slate-400">Total material requests</p>
         </article>
@@ -248,13 +248,13 @@ import { DrawerModule } from 'primeng/drawer';
             <p-tab value="1">
               <i class="pi pi-list-check mr-2"></i>Tasks
               <span class="project-tab-count">{{
-                PagingSignal().projectTasks?.length || 0
+                PagingSignal().projectTasks.length || 0
               }}</span>
             </p-tab>
             <p-tab value="2">
               <i class="pi pi-box mr-2"></i>Materials
               <span class="project-tab-count">{{
-                PagingSignal().materialRequests?.length || 0
+                PagingSignal().materialRequests.length || 0
               }}</span>
             </p-tab>
             <p-tab value="3">
@@ -309,9 +309,7 @@ import { DrawerModule } from 'primeng/drawer';
                       </div>
 
                       <p class="text-sm font-semibold text-slate-900">
-                        {{
-                          PagingSignal().client?.name || 'No client assigned'
-                        }}
+                        {{ PagingSignal().client.name || 'No client assigned' }}
                       </p>
 
                       <div
@@ -340,7 +338,7 @@ import { DrawerModule } from 'primeng/drawer';
                       <div class="flex min-w-0 items-center gap-3">
                         <div class="project-person-avatar">
                           {{
-                            getInitial(PagingSignal().projectLeader?.fullName)
+                            getInitial(PagingSignal().projectLeader.fullName)
                           }}
                         </div>
                         <div class="min-w-0">
@@ -348,12 +346,12 @@ import { DrawerModule } from 'primeng/drawer';
                             class="truncate text-sm font-semibold text-slate-900"
                           >
                             {{
-                              PagingSignal().projectLeader?.fullName ||
+                              PagingSignal().projectLeader.fullName ||
                                 'Not assigned'
                             }}
                           </p>
                           <p class="mt-1 truncate text-xs text-slate-500">
-                            {{ PagingSignal().projectLeader?.jobTitle || '-' }}
+                            {{ PagingSignal().projectLeader.jobTitle || '-' }}
                           </p>
                         </div>
                       </div>
@@ -366,7 +364,7 @@ import { DrawerModule } from 'primeng/drawer';
                       <div>
                         <h3 class="project-panel-title">Project team</h3>
                         <p class="project-panel-subtitle mt-1">
-                          {{ PagingSignal().projectMembers?.length || 0 }} team
+                          {{ PagingSignal().projectMembers.length || 0 }} team
                           members assigned
                         </p>
                       </div>
@@ -377,7 +375,7 @@ import { DrawerModule } from 'primeng/drawer';
 
                     <div
                       *ngIf="
-                        PagingSignal().projectMembers?.length;
+                        PagingSignal().projectMembers.length;
                         else noTeamMembers
                       "
                       class="grid grid-cols-1 gap-2 sm:grid-cols-2"
@@ -387,16 +385,16 @@ import { DrawerModule } from 'primeng/drawer';
                         class="flex min-w-0 items-center gap-3 rounded-lg border border-slate-100 p-3"
                       >
                         <div class="project-person-avatar">
-                          {{ getInitial(member.user?.fullName) }}
+                          {{ getInitial(member.user.fullName) }}
                         </div>
                         <div class="min-w-0">
                           <p
                             class="truncate text-sm font-semibold text-slate-800"
                           >
-                            {{ member.user?.fullName || 'Unknown user' }}
+                            {{ member.user.fullName || 'Unknown user' }}
                           </p>
                           <p class="mt-1 truncate text-xs text-slate-500">
-                            {{ member.user?.jobTitle || '-' }}
+                            {{ member.user.jobTitle || '-' }}
                           </p>
                         </div>
                       </div>
@@ -585,14 +583,14 @@ import { DrawerModule } from 'primeng/drawer';
                           *ngFor="let member of data.assignedTaskMembers"
                         >
                           <p-avatar
-                            [label]="getInitial(member.user?.fullName)"
+                            [label]="getInitial(member.user.fullName)"
                             shape="circle"
-                            pTooltip="{{ member.user?.fullName }}"
+                            pTooltip="{{ member.user.fullName }}"
                             styleClass="bg-slate-100! text-slate-700! text-xs!"
                           ></p-avatar>
                         </ng-container>
                         <span
-                          *ngIf="!data.assignedTaskMembers?.length"
+                          *ngIf="!data.assignedTaskMembers.length"
                           class="text-xs text-slate-400"
                           >No assignee</span
                         >
@@ -829,7 +827,7 @@ import { DrawerModule } from 'primeng/drawer';
                       <div>
                         <p class="text-[11px] text-slate-400">Total items</p>
                         <p class="mt-1 text-sm font-medium text-slate-700">
-                          {{ data.materialItems?.length || 0 }} items
+                          {{ data.materialItems.length || 0 }} items
                         </p>
                       </div>
                     </div>

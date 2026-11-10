@@ -508,13 +508,15 @@ table {
 
 .modal-overlay {
   position: fixed;
-  z-index: 1000;
+  z-index: 10000;
   inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 20px;
   background: rgb(15 23 42 / 45%);
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .modal-container {
@@ -813,8 +815,12 @@ table {
 }
 
 @media (max-width: 600px) {
+  .modal-overlay {
+    align-items: flex-start;
+    padding: 16px 12px 120px;
+  }
   .modal-body {
-    max-height: calc(80vh - 245px);
+    max-height: calc(78vh - 145px);
   }
   .team-report-page {
     padding: 15px;

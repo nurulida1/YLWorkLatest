@@ -864,9 +864,21 @@ import { environment } from '../../../../environments/environment.development';
       [modal]="true"
       [draggable]="false"
       [closable]="true"
+      [baseZIndex]="10000"
+      [appendTo]="'body'"
+      [autoZIndex]="true"
       [dismissableMask]="!saving"
       (onHide)="onInventoryDialogHide()"
-      [style]="{ width: 'min(95vw, 900px)' }"
+      [style]="{
+        width: '560px',
+        'max-width': 'calc(100vw - 1.5rem)',
+      }"
+      [breakpoints]="{ '640px': 'calc(100vw - 1.5rem)' }"
+      [contentStyle]="{
+        'max-height': 'calc(100dvh - 180px)',
+        'overflow-y': 'auto',
+        'overflow-x': 'hidden',
+      }"
       styleClass="inventory-dialog"
     >
       <ng-template #header>

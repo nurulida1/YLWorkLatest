@@ -244,23 +244,44 @@ export class Sidemenu implements OnInit {
   }
 
   isActive(route?: string, item?: AppNavItem): boolean {
+    const cleanUrl = this.currentUrl.split('?')[0].split('#')[0];
+
     if (item?.items?.length) {
-      return item.items.some((sub) =>
-        this.isRouteMatch(this.currentUrl, sub.route),
-      );
+      const matchedRoutes = item.items
+        .map((sub) => sub.route)
+        .filter((subRoute): subRoute is string =>
+          this.isRouteMatch(cleanUrl, subRoute),
+        );
+
+      return matchedRoutes.length > 0;
     }
 
     if (!route) return false;
 
-    return this.isRouteMatch(this.currentUrl, route);
+    // Only the most specific matching route should be active.
+    const matchingRoutes = [
+      ...this.mainMenu,
+      ...this.management.flatMap((menu) => [menu, ...(menu.items ?? [])]),
+    ]
+      .map((menu) => menu.route)
+      .filter(
+        (menuRoute): menuRoute is string =>
+          !!menuRoute && this.isRouteMatch(cleanUrl, menuRoute),
+      );
+
+    const mostSpecificRoute = matchingRoutes.sort(
+      (a, b) => b.length - a.length,
+    )[0];
+
+    return route === mostSpecificRoute;
   }
 
   private isRouteMatch(currentUrl: string, route?: string): boolean {
     if (!route) return false;
 
-    const cleanUrl = currentUrl.split('?')[0].split('#')[0];
+    const cleanRoute = route.split('?')[0].split('#')[0];
 
-    return cleanUrl === route || cleanUrl.startsWith(`${route}/`);
+    return currentUrl === cleanRoute || currentUrl.startsWith(`${cleanRoute}/`);
   }
 
   getAllowedSubItems(item: AppNavItem): AppNavItem[] {

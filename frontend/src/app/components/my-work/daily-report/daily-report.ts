@@ -49,7 +49,7 @@ import { DatePickerModule } from 'primeng/datepicker';
         <button
           type="button"
           (click)="openCreate()"
-          class="w-full rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-blue-700 sm:w-auto"
+          class="w-full rounded-lg bg-blue-600 px-4 py-3 sm:py-2.5 text-sm font-medium text-white hover:bg-blue-700 sm:w-auto"
         >
           <i class="pi pi-plus mr-2"></i>
           Create Daily Report
@@ -224,10 +224,10 @@ import { DatePickerModule } from 'primeng/datepicker';
       <!-- CREATE / EDIT DIALOG -->
       @if (showFormDialog) {
         <div
-          class="fixed inset-0 z-[1000] flex items-center justify-center overflow-y-auto bg-black/50 p-2 sm:p-5 h-full"
+          class="fixed inset-0 z-[10000] flex items-start justify-center overflow-y-auto bg-black/50 p-2 pt-4 pb-28 sm:items-center sm:p-5"
         >
           <div
-            class="my-auto flex max-h-[80%] md:max-h-[90%] w-full max-w-4xl flex-col overflow-hidden rounded-xl bg-white shadow-2xl sm:max-h-[95dvh]"
+            class="my-auto flex max-h-[90%] w-full max-w-4xl flex-col overflow-hidden rounded-xl bg-white shadow-2xl sm:max-h-[95dvh]"
           >
             <!-- HEADER -->
             <div
@@ -476,7 +476,7 @@ import { DatePickerModule } from 'primeng/datepicker';
 
             <!-- FIXED FOOTER -->
             <div
-              class="flex shrink-0 flex-col-reverse gap-2 border-t border-gray-200 bg-white px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:flex-row sm:justify-end sm:px-5 sm:py-4"
+              class="flex shrink-0 flex-col-reverse gap-2 border-t border-gray-200 bg-white pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:flex-row sm:justify-end px-5 py-4"
             >
               <button
                 type="button"

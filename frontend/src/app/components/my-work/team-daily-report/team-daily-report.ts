@@ -292,8 +292,8 @@ interface TeamReport {
 
                     <td>
                       <span class="task-count">
-                        {{ report.tasks?.length || 0 }}
-                        {{ report.tasks?.length === 1 ? 'Task' : 'Tasks' }}
+                        {{ report.tasks.length || 0 }}
+                        {{ report.tasks.length === 1 ? 'Task' : 'Tasks' }}
                       </span>
                     </td>
 

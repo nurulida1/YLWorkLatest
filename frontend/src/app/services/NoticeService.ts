@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { MessageService } from 'primeng/api';
 import { throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
-import { environment } from '../../environments/environment.development';
+import { environment } from '../../environments/environment';
 import { CreateNoticeRequest, UpdateNoticeRequest } from '../models/Notice';
 
 @Injectable({

@@ -39,13 +39,26 @@ namespace YLWorks.Controller
         {
             try
             {
-                var query = _context.SalesOrders.AsQueryable();
+                var query = _context.SalesOrders.AsNoTracking().AsQueryable();
 
                 if (!string.IsNullOrWhiteSpace(includes))
                 {
                     foreach (var include in includes.Split(',', StringSplitOptions.RemoveEmptyEntries))
                     {
-                        query = query.Include(include.Trim());
+                        var path = include.Trim();
+                        if (string.IsNullOrEmpty(path)) continue;
+                        try
+                        {
+                            query = query.Include(path);
+                        }
+                        catch (Exception includeEx)
+                        {
+                            return StatusCode(500, new
+                            {
+                                Error = "Search failed.",
+                                Details = $"Invalid include '{path}': {includeEx.Message}"
+                            });
+                        }
                     }
                 }
 
@@ -140,7 +153,12 @@ namespace YLWorks.Controller
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { Error = "Search failed.", Details = ex.Message });
+                return StatusCode(500, new
+                {
+                    Error = "Search failed.",
+                    Details = ex.Message,
+                    Inner = ex.InnerException?.Message
+                });
             }
         }
 

@@ -3,7 +3,7 @@ import { Injectable } from '@angular/core';
 import { MessageService } from 'primeng/api';
 import { Observable, retry, catchError, of, throwError } from 'rxjs';
 
-import { environment } from '../../environments/environment.development';
+import { environment } from '../../environments/environment';
 
 import {
   CreateHardwareRequest,

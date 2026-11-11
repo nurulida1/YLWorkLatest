@@ -47,7 +47,7 @@ import {
 } from '../../../shared/helpers/helpers';
 
 import { InventoryQrDialog } from '../shared/inventory-qr-dialog';
-import { environment } from '../../../../environments/environment.development';
+import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'app-inventory',

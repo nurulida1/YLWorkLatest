@@ -26,7 +26,7 @@ import { UserService } from '../../../services/userService.service';
 import { catchError, finalize, forkJoin, of, Subject, takeUntil } from 'rxjs';
 import { AuthService } from '../../../services/authService';
 import { HttpClient } from '@angular/common/http';
-import { environment } from '../../../../environments/environment.development';
+import { environment } from '../../../../environments/environment';
 import { ClaimRequestService } from '../../../services/claim-request.service';
 import { LeaveRequestService } from '../../../services/leave-request.service';
 

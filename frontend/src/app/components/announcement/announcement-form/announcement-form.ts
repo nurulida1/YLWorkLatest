@@ -20,7 +20,7 @@ import { CreateNoticeRequest } from '../../../models/Notice';
 import { LoadingService } from '../../../services/loading.service';
 import { NoticeService } from '../../../services/NoticeService';
 import { UserService } from '../../../services/userService.service';
-import { environment } from '../../../../environments/environment.development';
+import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'app-announcement-form',

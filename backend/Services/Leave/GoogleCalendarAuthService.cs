@@ -82,8 +82,19 @@ namespace YLWorks.Services.Leave
             {
                 EnsureConfigured();
                 var flow = CreateFlow();
-                var token = await flow.ExchangeCodeForTokenAsync(
-                    userId.ToString(), code, _options.RedirectUri, ct);
+                TokenResponse token;
+                try
+                {
+                    token = await flow.ExchangeCodeForTokenAsync(
+                        userId.ToString(), code, _options.RedirectUri, ct);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex,
+                        "Google token exchange failed for user {UserId}. RedirectUri={RedirectUri}",
+                        userId, _options.RedirectUri);
+                    return BuildFrontendRedirect("oauth_token_failed");
+                }
 
                 var credential = new UserCredential(flow, userId.ToString(), token);
                 var calendarService = new CalendarService(new BaseClientService.Initializer
@@ -92,8 +103,18 @@ namespace YLWorks.Services.Leave
                     ApplicationName = "YLWork Leave Sync"
                 });
 
-                // Calendar first so connection succeeds even if email lookup fails.
-                var calendarId = await _syncService.FindOrCreateCalendarAsync(calendarService, ct);
+                string calendarId;
+                try
+                {
+                    // Calendar first so connection succeeds even if email lookup fails.
+                    calendarId = await _syncService.FindOrCreateCalendarAsync(calendarService, ct);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Google Calendar create/list failed for user {UserId}", userId);
+                    return BuildFrontendRedirect("oauth_calendar_failed");
+                }
+
                 var email = await TryGetAccountEmailAsync(credential, calendarService, ct);
 
                 var existing = await _context.LeaveCalendarConnections
@@ -113,17 +134,37 @@ namespace YLWorks.Services.Leave
                 }
 
                 existing.AccessTokenProtected = _tokenProtector.Protect(token.AccessToken);
-                existing.RefreshTokenProtected = string.IsNullOrEmpty(token.RefreshToken)
-                    ? existing.RefreshTokenProtected
-                    : _tokenProtector.Protect(token.RefreshToken);
+                // New rows require a non-null refresh token column; keep prior value on reconnect if Google omits it.
+                if (!string.IsNullOrEmpty(token.RefreshToken))
+                    existing.RefreshTokenProtected = _tokenProtector.Protect(token.RefreshToken);
+                else if (string.IsNullOrEmpty(existing.RefreshTokenProtected))
+                    existing.RefreshTokenProtected = _tokenProtector.Protect($"missing-refresh:{userId:N}");
+
                 existing.TokenExpiresAtUtc = token.IssuedUtc.AddSeconds(token.ExpiresInSeconds ?? 3600);
                 existing.ExternalCalendarId = calendarId;
                 existing.ExternalAccountEmail = email;
                 existing.LastError = null;
                 existing.UpdatedAt = DateTimeHelper.Now();
 
-                await _context.SaveChangesAsync(ct);
-                await _coordinator.BackfillConnectionAsync(existing.Id, ct);
+                try
+                {
+                    await _context.SaveChangesAsync(ct);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Google Calendar connection save failed for user {UserId}", userId);
+                    return BuildFrontendRedirect("oauth_save_failed");
+                }
+
+                try
+                {
+                    await _coordinator.BackfillConnectionAsync(existing.Id, ct);
+                }
+                catch (Exception ex)
+                {
+                    // Connection is already saved; do not fail the OAuth redirect.
+                    _logger.LogWarning(ex, "Google Calendar backfill failed after connect for user {UserId}", userId);
+                }
 
                 return BuildFrontendRedirect("connected");
             }

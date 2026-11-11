@@ -486,11 +486,32 @@ export class LeaveCalendarSyncSettings implements OnInit, OnDestroy {
             detail:
               'Google Calendar connected. Future approved leave will sync automatically.',
           });
+        } else if (params.get('oauth_token_failed') === '1') {
+          this.messages.add({
+            severity: 'error',
+            summary: 'Connection failed',
+            detail:
+              'Google token exchange failed. Check ClientId/ClientSecret and RedirectUri on the server.',
+          });
+        } else if (params.get('oauth_calendar_failed') === '1') {
+          this.messages.add({
+            severity: 'error',
+            summary: 'Connection failed',
+            detail:
+              'Google Calendar API failed. Enable Calendar API for this Google Cloud project.',
+          });
+        } else if (params.get('oauth_save_failed') === '1') {
+          this.messages.add({
+            severity: 'error',
+            summary: 'Connection failed',
+            detail:
+              'Could not save Google tokens to the database. Check server logs / column sizes.',
+          });
         } else if (params.get('oauth_failed') === '1') {
           this.messages.add({
             severity: 'error',
             summary: 'Connection failed',
-            detail: 'Google sign-in did not complete. Try again.',
+            detail: 'Google sign-in did not complete. Check server logs for details.',
           });
         } else if (
           params.get('invalid_state') === '1' ||

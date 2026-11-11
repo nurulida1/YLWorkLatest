@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
   Updates a Cloudflare DNS A record when this machine's public IP changes (DDNS).
 
@@ -6,9 +6,10 @@
   Intended for Windows Server behind a dynamic ISP IP. Run on a schedule
   (Task Scheduler every 5–15 minutes). Creates or updates one A record.
 
-  Uses curl.exe with short hard timeouts so a dead IP-lookup host cannot
-  hang PowerShell for 1–2 minutes (Invoke-RestMethod -TimeoutSec often
-  does not cancel TCP connect delays on Windows PowerShell 5.1).
+  All HTTPS uses curl.exe with -4 (IPv4 only). Some Windows Servers hang for
+  ~30s on api.cloudflare.com when .NET tries IPv6 first; curl -4 avoids that.
+  Request bodies are written to a temp file (--data-binary @file) so GET never
+  sends an empty --data-binary argument.
 
   Requires a Cloudflare API token with:
     Zone → Zone → Read
@@ -22,6 +23,7 @@
     -RecordName 'ylworks.ylsduotower.com'
 
 .NOTES
+  ScriptVersion: 2026-11-11f
   Prefer storing the token in an environment variable or Task Scheduler
   "hidden" argument — do not commit tokens to git.
 #>
@@ -43,13 +45,17 @@ param(
   # Optional: skip the zone lookup round-trip once you know the ID
   [string]$ZoneId = '',
 
-  [int]$HttpTimeoutSec = 5
+  [int]$IpLookupTimeoutSec = 5,
+
+  [int]$ApiTimeoutSec = 30
 )
 
 $ErrorActionPreference = 'Stop'
+$Script:ScriptVersion = '2026-11-11f'
 
 function Write-Log([string]$Message) {
-  $line = '{0:u} {1}' -f (Get-Date).ToUniversalTime(), $Message
+  # Local server time with offset (e.g. 2026-11-11 09:47:01 +08:00), not UTC
+  $line = '{0:yyyy-MM-dd HH:mm:ss zzz} {1}' -f (Get-Date), $Message
   $dir = Split-Path -Parent $LogPath
   if ($dir -and -not (Test-Path $dir)) {
     New-Item -ItemType Directory -Force -Path $dir | Out-Null
@@ -64,101 +70,129 @@ function Get-CurlPath {
   throw 'curl.exe not found. Install curl or use Windows 10/11 / Server 2019+ where it is built in.'
 }
 
-function Invoke-CurlJson {
+function Invoke-Curl {
   param(
-    [Parameter(Mandatory = $true)][ValidateSet('GET', 'POST', 'PUT', 'PATCH', 'DELETE')]
-    [string]$Method,
-    [Parameter(Mandatory = $true)][string]$Uri,
-    [hashtable]$Headers = @{},
-    [string]$Body = $null
+    [Parameter(Mandatory = $true)][string[]]$CurlArgs
   )
 
   $curl = Get-CurlPath
-  $args = @(
-    '-4', '-sS', '--fail-with-body',
-    '-m', "$HttpTimeoutSec",
-    '--connect-timeout', "$HttpTimeoutSec",
-    '-X', $Method,
-    $Uri
-  )
-  foreach ($key in $Headers.Keys) {
-    $args += @('-H', ('{0}: {1}' -f $key, $Headers[$key]))
-  }
-  if ($null -ne $Body) {
-    $args += @('-H', 'Content-Type: application/json', '--data-binary', $Body)
-  }
-
   $stderrFile = [System.IO.Path]::GetTempFileName()
   try {
-    $stdout = & $curl @args 2>$stderrFile
+    $stdout = & $curl @CurlArgs 2>$stderrFile
     $exit = $LASTEXITCODE
-    $stderr = (Get-Content -Path $stderrFile -Raw -ErrorAction SilentlyContinue)
-    if ($exit -ne 0) {
-      $detail = if ($stdout) { $stdout } elseif ($stderr) { $stderr.Trim() } else { "curl exit $exit" }
-      throw $detail
+    $stderr = ''
+    if (Test-Path $stderrFile) {
+      $stderr = (Get-Content -Path $stderrFile -Raw -ErrorAction SilentlyContinue)
     }
-    if ([string]::IsNullOrWhiteSpace($stdout)) {
-      throw "Empty response from $Uri"
+    return @{
+      ExitCode = $exit
+      StdOut   = $stdout
+      StdErr   = $(if ($stderr) { $stderr.Trim() } else { '' })
     }
-    return ($stdout | ConvertFrom-Json)
   }
   finally {
     Remove-Item -Path $stderrFile -Force -ErrorAction SilentlyContinue
   }
 }
 
-function Invoke-CfApi([string]$Method, [string]$Uri, $Body = $null) {
-  $headers = @{ Authorization = "Bearer $ApiToken" }
-  $jsonBody = $null
-  if ($null -ne $Body) {
-    $jsonBody = ($Body | ConvertTo-Json -Compress)
+function Invoke-CfApi {
+  param(
+    [Parameter(Mandatory = $true)][ValidateSet('GET', 'POST', 'PUT', 'PATCH', 'DELETE')]
+    [string]$Method,
+    [Parameter(Mandatory = $true)][string]$Uri,
+    $Body = $null
+  )
+
+  $bodyFile = $null
+  $userAgent = "User-Agent: YLWork-Cloudflare-DDNS/$Script:ScriptVersion"
+  $curlArgs = @(
+    '-4', '-sS',
+    '-m', "$ApiTimeoutSec",
+    '--connect-timeout', "$ApiTimeoutSec",
+    '-X', $Method,
+    '-H', "Authorization: Bearer $ApiToken",
+    '-H', $userAgent
+  )
+
+  try {
+    if ($null -ne $Body) {
+      $json = ($Body | ConvertTo-Json -Compress)
+      $bodyFile = [System.IO.Path]::GetTempFileName()
+      # curl --data-binary @file requires a non-empty path argument; never pass inline JSON.
+      [System.IO.File]::WriteAllText($bodyFile, $json, [Text.UTF8Encoding]::new($false))
+      $curlArgs += @(
+        '-H', 'Content-Type: application/json',
+        '--data-binary', "@$bodyFile"
+      )
+    }
+
+    $curlArgs += $Uri
+    $result = Invoke-Curl -CurlArgs $curlArgs
+
+    if ($result.ExitCode -ne 0) {
+      $detail = if ($result.StdErr) { $result.StdErr } elseif ($result.StdOut) { $result.StdOut } else { "curl exit $($result.ExitCode)" }
+      if ($detail -match 'timed out|Timeout was reached') {
+        throw "Cloudflare API timed out after ${ApiTimeoutSec}s ($Method $Uri). From this server run: curl.exe -4 -v -m 20 https://api.cloudflare.com/client/v4/zones"
+      }
+      throw "Cloudflare API curl failed ($Method $Uri): $detail"
+    }
+
+    if ([string]::IsNullOrWhiteSpace($result.StdOut)) {
+      throw "Empty response from $Uri"
+    }
+
+    $parsed = $result.StdOut | ConvertFrom-Json
+    if (-not $parsed.success) {
+      throw ("Cloudflare API error: {0}" -f ($parsed.errors | ConvertTo-Json -Compress))
+    }
+    return $parsed
   }
-  $response = Invoke-CurlJson -Method $Method -Uri $Uri -Headers $headers -Body $jsonBody
-  if (-not $response.success) {
-    throw ("Cloudflare API error: {0}" -f ($response.errors | ConvertTo-Json -Compress))
+  finally {
+    if ($bodyFile -and (Test-Path $bodyFile)) {
+      Remove-Item -Path $bodyFile -Force -ErrorAction SilentlyContinue
+    }
   }
-  return $response
 }
 
 function Get-PublicIPv4 {
-  # Prefer endpoints that worked quickly on this network; avoid slow/blocked hosts.
   $sources = @(
     @{ Uri = 'https://1.1.1.1/cdn-cgi/trace'; Parse = 'trace' },
     @{ Uri = 'https://cloudflare.com/cdn-cgi/trace'; Parse = 'trace' },
     @{ Uri = 'https://ifconfig.me/ip'; Parse = 'plain' }
   )
 
-  $curl = Get-CurlPath
   foreach ($source in $sources) {
-    try {
-      $stdout = & $curl -4 -sS -m $HttpTimeoutSec --connect-timeout $HttpTimeoutSec $source.Uri 2>$null
-      if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($stdout)) { continue }
+    $result = Invoke-Curl -CurlArgs @(
+      '-4', '-sS',
+      '-m', "$IpLookupTimeoutSec",
+      '--connect-timeout', "$IpLookupTimeoutSec",
+      $source.Uri
+    )
+    if ($result.ExitCode -ne 0 -or [string]::IsNullOrWhiteSpace($result.StdOut)) { continue }
 
-      $candidate = $null
-      switch ($source.Parse) {
-        'plain' { $candidate = $stdout.Trim() }
-        'trace' {
-          $match = [regex]::Match($stdout, '(?m)^ip=([0-9.]+)$')
-          if ($match.Success) { $candidate = $match.Groups[1].Value }
-        }
-      }
-      if ($candidate -match '^\d{1,3}(\.\d{1,3}){3}$') {
-        return $candidate
+    $candidate = $null
+    switch ($source.Parse) {
+      'plain' { $candidate = $result.StdOut.Trim() }
+      'trace' {
+        $match = [regex]::Match($result.StdOut, '(?m)^ip=([0-9.]+)$')
+        if ($match.Success) { $candidate = $match.Groups[1].Value }
       }
     }
-    catch {
-      # try next source
+    if ($candidate -match '^\d{1,3}(\.\d{1,3}){3}$') {
+      return $candidate
     }
   }
-  throw "Could not determine public IPv4 within ${HttpTimeoutSec}s per source"
+  throw "Could not determine public IPv4 within ${IpLookupTimeoutSec}s per source"
 }
 
 try {
   $sw = [System.Diagnostics.Stopwatch]::StartNew()
+  Write-Log "Start Update-CloudflareDns.ps1 $Script:ScriptVersion"
   $publicIp = Get-PublicIPv4
+  Write-Log "Public IP detected: $publicIp"
 
   if (-not $ZoneId) {
-    $zoneResp = Invoke-CfApi GET "https://api.cloudflare.com/client/v4/zones?name=$([uri]::EscapeDataString($ZoneName))"
+    $zoneResp = Invoke-CfApi -Method GET -Uri "https://api.cloudflare.com/client/v4/zones?name=$([uri]::EscapeDataString($ZoneName))"
     if (-not $zoneResp.result -or $zoneResp.result.Count -lt 1) {
       throw "Zone not found: $ZoneName"
     }
@@ -166,7 +200,7 @@ try {
   }
 
   $encodedName = [uri]::EscapeDataString($RecordName)
-  $dnsResp = Invoke-CfApi GET "https://api.cloudflare.com/client/v4/zones/$ZoneId/dns_records?type=A&name=$encodedName"
+  $dnsResp = Invoke-CfApi -Method GET -Uri "https://api.cloudflare.com/client/v4/zones/$ZoneId/dns_records?type=A&name=$encodedName"
   $existing = $null
   if ($dnsResp.result -and $dnsResp.result.Count -gt 0) {
     $existing = $dnsResp.result[0]
@@ -186,11 +220,11 @@ try {
   }
 
   if ($existing) {
-    Invoke-CfApi PUT "https://api.cloudflare.com/client/v4/zones/$ZoneId/dns_records/$($existing.id)" $payload | Out-Null
+    Invoke-CfApi -Method PUT -Uri "https://api.cloudflare.com/client/v4/zones/$ZoneId/dns_records/$($existing.id)" -Body $payload | Out-Null
     Write-Log ("Updated: {0} {1} -> {2} ({3}ms)" -f $RecordName, $existing.content, $publicIp, $sw.ElapsedMilliseconds)
   }
   else {
-    Invoke-CfApi POST "https://api.cloudflare.com/client/v4/zones/$ZoneId/dns_records" $payload | Out-Null
+    Invoke-CfApi -Method POST -Uri "https://api.cloudflare.com/client/v4/zones/$ZoneId/dns_records" -Body $payload | Out-Null
     Write-Log ("Created: {0} -> {1} (proxied={2}, {3}ms)" -f $RecordName, $publicIp, $Proxied, $sw.ElapsedMilliseconds)
   }
 }

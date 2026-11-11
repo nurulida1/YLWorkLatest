@@ -16,6 +16,7 @@ namespace YLWorks.Data
         {
             await EnsurePolicyAndKindsAsync(context, logger);
             await EnsureDefaultLeaveTypesAsync(context, logger);
+            await EnsureLeaveCalendarRefreshTokenColumnAsync(context, logger);
         }
 
         /// <summary>
@@ -82,6 +83,7 @@ namespace YLWorks.Data
             await EnsurePolicyAndKindsAsync(context, logger);
             await EnsureLeaveSettingsModulesAsync(context, logger);
             await EnsureLeaveCalendarTablesAsync(context, logger);
+            await EnsureLeaveCalendarRefreshTokenColumnAsync(context, logger);
             await EnsureDefaultLeaveTypesAsync(context, logger);
 
             // Keep demo logins usable even when sample leave requests already exist.
@@ -360,6 +362,61 @@ namespace YLWorks.Data
             catch (Exception ex)
             {
                 logger.LogWarning(ex, "EnsureLeaveSettingsModules skipped.");
+            }
+        }
+
+        /// <summary>
+        /// Google OAuth stores Data Protection–encrypted refresh tokens that exceed varchar(255).
+        /// Idempotent widen + prefix index for Outlook ICS hash lookups.
+        /// </summary>
+        public static async Task EnsureLeaveCalendarRefreshTokenColumnAsync(AppDbContext context, ILogger logger)
+        {
+            try
+            {
+                await context.Database.ExecuteSqlRawAsync("""
+                    SET @db = DATABASE();
+
+                    SET @needs_widen := (
+                        SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+                        WHERE TABLE_SCHEMA = @db
+                          AND TABLE_NAME = 'LeaveCalendarConnections'
+                          AND COLUMN_NAME = 'RefreshTokenProtected'
+                          AND DATA_TYPE = 'varchar'
+                    );
+
+                    SET @sql := IF(
+                        @needs_widen > 0,
+                        'ALTER TABLE `LeaveCalendarConnections` DROP INDEX `IX_LeaveCalendarConnections_RefreshTokenProtected`',
+                        'SELECT 1'
+                    );
+                    PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+                    SET @sql := IF(
+                        @needs_widen > 0,
+                        'ALTER TABLE `LeaveCalendarConnections` MODIFY `RefreshTokenProtected` longtext CHARACTER SET utf8mb4 NOT NULL',
+                        'SELECT 1'
+                    );
+                    PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+                    SET @idx_exists := (
+                        SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS
+                        WHERE TABLE_SCHEMA = @db
+                          AND TABLE_NAME = 'LeaveCalendarConnections'
+                          AND INDEX_NAME = 'IX_LeaveCalendarConnections_RefreshTokenProtected'
+                    );
+                    SET @sql := IF(
+                        @needs_widen > 0 AND @idx_exists = 0,
+                        'ALTER TABLE `LeaveCalendarConnections` ADD INDEX `IX_LeaveCalendarConnections_RefreshTokenProtected` (`RefreshTokenProtected`(64))',
+                        'SELECT 1'
+                    );
+                    PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+                    """);
+
+                logger.LogInformation("LeaveCalendarConnections.RefreshTokenProtected column ensured (longtext).");
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "EnsureLeaveCalendarRefreshTokenColumn skipped.");
             }
         }
 

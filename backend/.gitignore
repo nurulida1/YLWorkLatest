@@ -15,6 +15,9 @@ appsettings.Production.Local.json
 uploads/
 !uploads/.gitkeep
 
+# ASP.NET Data Protection keys (encrypt calendar OAuth tokens) — never commit
+dp-keys/
+
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
 

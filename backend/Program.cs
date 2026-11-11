@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using Microsoft.Extensions.FileProviders;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 using YLWorks.Data;
 using YLWorks.Services;
@@ -110,6 +111,14 @@ builder.Services.AddCors(options =>
 
 
 builder.Services.AddMemoryCache();
+
+// Persist keys so encrypted calendar tokens survive app-pool recycles on IIS.
+var dpKeysPath = Path.Combine(builder.Environment.ContentRootPath, "dp-keys");
+Directory.CreateDirectory(dpKeysPath);
+builder.Services.AddDataProtection()
+    .PersistKeysToFileSystem(new DirectoryInfo(dpKeysPath))
+    .SetApplicationName("YLWork");
+
 builder.Services.Configure<YLWorks.Services.Leave.GoogleCalendarOptions>(
     builder.Configuration.GetSection(YLWorks.Services.Leave.GoogleCalendarOptions.SectionName));
 builder.Services.Configure<YLWorks.Services.Leave.LeaveCalendarIcsOptions>(

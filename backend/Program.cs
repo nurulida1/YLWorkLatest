@@ -137,6 +137,7 @@ builder.Services.AddScoped<YLWorks.Services.Leave.LeaveNotificationHelper>();
 builder.Services.AddScoped<YLWorks.Services.Leave.EmergencyLeaveApprovalScheduler>();
 builder.Services.AddScoped<YLWorks.Services.Leave.LeaveHolidayService>();
 builder.Services.AddScoped<YLWorks.Services.Leave.LeaveRequestService>();
+builder.Services.AddSingleton<YLWorks.Services.Leave.GoogleIpv4HttpClientFactory>();
 builder.Services.AddScoped<YLWorks.Services.Leave.LeaveCalendarTokenProtector>();
 builder.Services.AddScoped<YLWorks.Services.Leave.GoogleCalendarLeaveSyncService>();
 builder.Services.AddScoped<YLWorks.Services.Leave.LeaveExternalCalendarSyncCoordinator>();

@@ -17,17 +17,20 @@ namespace YLWorks.Services.Leave
         private readonly AppDbContext _context;
         private readonly LeaveCalendarTokenProtector _tokenProtector;
         private readonly GoogleCalendarOptions _options;
+        private readonly GoogleIpv4HttpClientFactory _googleHttpClientFactory;
         private readonly ILogger<GoogleCalendarLeaveSyncService> _logger;
 
         public GoogleCalendarLeaveSyncService(
             AppDbContext context,
             LeaveCalendarTokenProtector tokenProtector,
             IOptions<GoogleCalendarOptions> options,
+            GoogleIpv4HttpClientFactory googleHttpClientFactory,
             ILogger<GoogleCalendarLeaveSyncService> logger)
         {
             _context = context;
             _tokenProtector = tokenProtector;
             _options = options.Value;
+            _googleHttpClientFactory = googleHttpClientFactory;
             _logger = logger;
         }
 
@@ -59,7 +62,8 @@ namespace YLWorks.Services.Leave
                         ClientId = _options.ClientId,
                         ClientSecret = _options.ClientSecret
                     },
-                    Scopes = [CalendarService.Scope.Calendar]
+                    Scopes = [CalendarService.Scope.Calendar],
+                    HttpClientFactory = _googleHttpClientFactory
                 });
 
                 var token = new TokenResponse
@@ -89,6 +93,7 @@ namespace YLWorks.Services.Leave
                 return new CalendarService(new BaseClientService.Initializer
                 {
                     HttpClientInitializer = credential,
+                    HttpClientFactory = _googleHttpClientFactory,
                     ApplicationName = "YLWork Leave Sync"
                 });
             }

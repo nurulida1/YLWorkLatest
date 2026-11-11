@@ -21,6 +21,7 @@ import { SuperAdminDashboardDto } from '../../../models/AppModels';
 import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
 import { InputTextModule } from 'primeng/inputtext';
+import { TranslateDirective, TranslatePipe } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-mobile-dashboard',
@@ -31,6 +32,8 @@ import { InputTextModule } from 'primeng/inputtext';
     ButtonModule,
     CheckboxModule,
     InputTextModule,
+    TranslateDirective,
+    TranslatePipe,
   ],
   template: `
     <div class="min-h-screen bg-slate-50 flex flex-col pb-8">
@@ -56,7 +59,10 @@ import { InputTextModule } from 'primeng/inputtext';
                 <div class="text-white font-bold tracking-wide">
                   Works Enterprise
                 </div>
-                <div class="text-white/60 text-[10px] tracking-widest">
+                <div
+                  class="text-white/60 text-[10px] tracking-widest"
+                  translate
+                >
                   OFFICE MANAGEMENT
                 </div>
               </div>
@@ -67,29 +73,25 @@ import { InputTextModule } from 'primeng/inputtext';
             >
               <span class="font-bold text-slate-800 text-sm">
                 {{
-                  getInitial(
-                    currentUser?.displayName || currentUser?.fullName
-                  )
+                  getInitial(currentUser?.displayName || currentUser?.fullName)
                 }}
               </span>
             </div>
           </div>
 
           <div class="mt-8">
-            <p class="text-white/70 text-sm">Welcome back,</p>
+            <p class="text-white/70 text-sm" translate>Welcome back,</p>
 
             <h1 class="text-2xl font-bold text-white mt-1">
               {{
-                currentUser?.displayName ||
-                  currentUser?.fullName ||
-                  'Employee'
+                currentUser?.displayName || currentUser?.fullName || 'Employee'
               }}
             </h1>
 
             <div class="flex items-center gap-2 mt-2 text-white/80 text-sm">
               <i class="pi pi-briefcase text-sm!"></i>
-              <span>{{
-                currentUser?.jobTitle || currentUser?.systemRole || 'Employee'
+              <span translate>{{
+                currentUser?.jobTitle || currentUser?.systemRole || 'Staff'
               }}</span>
             </div>
 
@@ -97,7 +99,7 @@ import { InputTextModule } from 'primeng/inputtext';
               <input
                 pInputText
                 [(ngModel)]="searchTerm"
-                placeholder="Search your tasks..."
+                [placeholder]="'Search your tasks...' | translate"
                 class="w-full rounded-xl! bg-white! border-0! py-3! pl-11! pr-4! text-sm!"
               />
 
@@ -116,82 +118,82 @@ import { InputTextModule } from 'primeng/inputtext';
             @if (isSuperAdmin) {
               <a routerLink="/user-management" class="quick-action">
                 <i class="pi pi-users text-blue-600"></i>
-                <span>Users</span>
+                <span translate>Users</span>
               </a>
 
               <a routerLink="/inventory/listing" class="quick-action">
                 <i class="pi pi-box text-green-600"></i>
-                <span>Inventory</span>
+                <span translate>Inventory</span>
               </a>
 
               <a routerLink="/announcements" class="quick-action">
                 <i class="pi pi-megaphone text-violet-600"></i>
-                <span>News</span>
+                <span translate>News</span>
               </a>
 
               <a routerLink="/activity-log" class="quick-action">
                 <i class="pi pi-history text-amber-600"></i>
-                <span>Activity</span>
+                <span translate>Activity</span>
               </a>
             } @else if (isHR) {
               <a routerLink="/user-management" class="quick-action">
                 <i class="pi pi-users text-blue-600"></i>
-                <span>Employees</span>
+                <span translate>Employees</span>
               </a>
 
               <a routerLink="/leave" class="quick-action">
                 <i class="pi pi-calendar text-amber-600"></i>
-                <span>Leave</span>
+                <span translate>Leave</span>
               </a>
 
               <a routerLink="/announcements" class="quick-action">
                 <i class="pi pi-megaphone text-violet-600"></i>
-                <span>News</span>
+                <span translate>News</span>
               </a>
 
               <a routerLink="/directory" class="quick-action">
                 <i class="pi pi-address-book text-green-600"></i>
-                <span>Directory</span>
+                <span translate>Directory</span>
               </a>
             } @else if (isLogistics) {
               <a routerLink="/inventory/listing" class="quick-action">
                 <i class="pi pi-box text-green-600"></i>
-                <span>Inventory</span>
+                <span translate>Inventory</span>
               </a>
 
               <a routerLink="/hardware-request" class="quick-action">
                 <i class="pi pi-file text-orange-600"></i>
-                <span>Requests</span>
+                <span translate>Requests</span>
               </a>
 
               <a routerLink="/my-tasks" class="quick-action">
                 <i class="pi pi-list-check text-blue-600"></i>
-                <span>My Tasks</span>
+                <span translate>My Tasks</span>
               </a>
 
               <a routerLink="/announcements" class="quick-action">
                 <i class="pi pi-megaphone text-violet-600"></i>
-                <span>News</span>
+                <span translate>News</span>
               </a>
             } @else {
               <a routerLink="/claims" class="quick-action">
                 <i class="pi pi-wallet text-green-600"></i>
-                <span>Claims</span>
+                <span translate>Claims</span>
               </a>
 
               <a routerLink="/my-tasks" class="quick-action">
                 <i class="pi pi-list-check text-blue-600"></i>
-                <span>My Tasks</span>
+                <span translate>My Tasks</span>
               </a>
 
               <a routerLink="/leave" class="quick-action">
                 <i class="pi pi-calendar text-amber-600"></i>
-                <span>Leave</span>
+                <span translate>Leave</span>
               </a>
 
               <a routerLink="/announcements" class="quick-action">
                 <i class="pi pi-megaphone text-violet-600"></i>
-                <span>News</span>
+                <span translate>News</span>
               </a>
             }
           </div>
@@ -203,10 +205,12 @@ import { InputTextModule } from 'primeng/inputtext';
         <main class="dashboard-content">
           <div class="dashboard-section-heading">
             <div>
-              <h2>Company Overview</h2>
-              <p>Company statistics and system activities</p>
+              <h2 translate>Company Overview</h2>
+              <p translate>Company statistics and system activities</p>
             </div>
-            <span class="role-label role-superadmin">Super Admin</span>
+            <span class="role-label role-superadmin" translate
+              >Super Admin</span
+            >
           </div>
 
           @if (dashboard(); as data) {
@@ -216,10 +220,10 @@ import { InputTextModule } from 'primeng/inputtext';
                   <div class="stat-icon stat-blue">
                     <i class="pi pi-users"></i>
                   </div>
-                  <span class="text-xs text-slate-400">Users</span>
+                  <span class="text-xs text-slate-400" translate>Users</span>
                 </div>
                 <div class="stat-value">{{ data.totalUsers }}</div>
-                <div class="stat-label">Total Users</div>
+                <div class="stat-label" translate>Total Users</div>
               </div>
 
               <div class="dashboard-stat-card">
@@ -227,10 +231,10 @@ import { InputTextModule } from 'primeng/inputtext';
                   <div class="stat-icon stat-green">
                     <i class="pi pi-check-circle"></i>
                   </div>
-                  <span class="text-xs text-slate-400">Active</span>
+                  <span class="text-xs text-slate-400" translate>Active</span>
                 </div>
                 <div class="stat-value">{{ data.activeUsers }}</div>
-                <div class="stat-label">Active Users</div>
+                <div class="stat-label" translate>Active Users</div>
               </div>
 
               <div class="dashboard-stat-card">
@@ -238,10 +242,10 @@ import { InputTextModule } from 'primeng/inputtext';
                   <div class="stat-icon stat-red">
                     <i class="pi pi-user-minus"></i>
                   </div>
-                  <span class="text-xs text-slate-400">Inactive</span>
+                  <span class="text-xs text-slate-400" translate>Inactive</span>
                 </div>
                 <div class="stat-value">{{ data.inactiveUsers }}</div>
-                <div class="stat-label">Inactive Users</div>
+                <div class="stat-label" translate>Inactive Users</div>
               </div>
 
               <div class="dashboard-stat-card">
@@ -249,10 +253,10 @@ import { InputTextModule } from 'primeng/inputtext';
                   <div class="stat-icon stat-amber">
                     <i class="pi pi-user-plus"></i>
                   </div>
-                  <span class="text-xs text-slate-400">Pending</span>
+                  <span class="text-xs text-slate-400" translate>Pending</span>
                 </div>
                 <div class="stat-value">{{ data.pendingApprovals }}</div>
-                <div class="stat-label">Pending Approvals</div>
+                <div class="stat-label" translate>Pending Approvals</div>
               </div>
 
               <div class="dashboard-stat-card">
@@ -260,10 +264,12 @@ import { InputTextModule } from 'primeng/inputtext';
                   <div class="stat-icon stat-violet">
                     <i class="pi pi-sitemap"></i>
                   </div>
-                  <span class="text-xs text-slate-400">Departments</span>
+                  <span class="text-xs text-slate-400" translate
+                    >Departments</span
+                  >
                 </div>
                 <div class="stat-value">{{ data.totalDepartments }}</div>
-                <div class="stat-label">Departments</div>
+                <div class="stat-label" translate>Departments</div>
               </div>
 
               <div class="dashboard-stat-card">
@@ -271,12 +277,14 @@ import { InputTextModule } from 'primeng/inputtext';
                   <div class="stat-icon stat-cyan">
                     <i class="pi pi-box"></i>
                   </div>
-                  <span class="text-xs text-slate-400">Inventory</span>
+                  <span class="text-xs text-slate-400" translate
+                    >Inventory</span
+                  >
                 </div>
                 <div class="stat-value">
                   {{ data.totalInventoryItems }}
                 </div>
-                <div class="stat-label">Inventory Items</div>
+                <div class="stat-label" translate>Inventory Items</div>
               </div>
 
               <div class="dashboard-stat-card">
@@ -284,10 +292,12 @@ import { InputTextModule } from 'primeng/inputtext';
                   <div class="stat-icon stat-orange">
                     <i class="pi pi-exclamation-triangle"></i>
                   </div>
-                  <span class="text-xs text-slate-400">Low Stock</span>
+                  <span class="text-xs text-slate-400" translate
+                    >Low Stock</span
+                  >
                 </div>
                 <div class="stat-value">{{ data.lowStockItems }}</div>
-                <div class="stat-label">Low Stock Items</div>
+                <div class="stat-label" translate>Low Stock Items</div>
               </div>
 
               <div class="dashboard-stat-card">
@@ -295,10 +305,10 @@ import { InputTextModule } from 'primeng/inputtext';
                   <div class="stat-icon stat-rose">
                     <i class="pi pi-wrench"></i>
                   </div>
-                  <span class="text-xs text-slate-400">Faulty</span>
+                  <span class="text-xs text-slate-400" translate>Faulty</span>
                 </div>
                 <div class="stat-value">{{ data.faultyItems }}</div>
-                <div class="stat-label">Faulty Items</div>
+                <div class="stat-label" translate>Faulty Items</div>
               </div>
             </div>
 
@@ -306,10 +316,10 @@ import { InputTextModule } from 'primeng/inputtext';
             <section class="dashboard-card">
               <div class="dashboard-card-heading">
                 <div>
-                  <h3>Pending Registrations</h3>
-                  <p>Users waiting for account approval</p>
+                  <h3 translate>Pending Registrations</h3>
+                  <p translate>Users waiting for account approval</p>
                 </div>
-                <a routerLink="/user-management">View All</a>
+                <a routerLink="/user-management" translate>View All</a>
               </div>
 
               @if (data.pendingUsers.length) {
@@ -327,17 +337,19 @@ import { InputTextModule } from 'primeng/inputtext';
                             user.displayName ||
                             'New User'
                         }}</strong>
-                        <span>{{ user.email || 'Pending registration' }}</span>
+                        <span translate>{{
+                          user.email || 'Pending registration'
+                        }}</span>
                       </div>
 
-                      <span class="leave-days">Pending</span>
+                      <span class="leave-days" translate>Pending</span>
                     </div>
                   }
                 </div>
               } @else {
                 <div class="dashboard-empty">
                   <i class="pi pi-check-circle"></i>
-                  <span>No pending registrations</span>
+                  <span translate>No pending registrations</span>
                 </div>
               }
             </section>
@@ -346,8 +358,8 @@ import { InputTextModule } from 'primeng/inputtext';
             <section class="dashboard-card">
               <div class="dashboard-card-heading">
                 <div>
-                  <h3>Recent Activities</h3>
-                  <p>Latest actions in the system</p>
+                  <h3 translate>Recent Activities</h3>
+                  <p translate>Latest actions in the system</p>
                 </div>
               </div>
 
@@ -386,14 +398,14 @@ import { InputTextModule } from 'primeng/inputtext';
               } @else {
                 <div class="dashboard-empty">
                   <i class="pi pi-history"></i>
-                  <span>No recent activities available</span>
+                  <span translate>No recent activities available</span>
                 </div>
               }
             </section>
           } @else {
             <div class="dashboard-loading">
               <i class="pi pi-spin pi-spinner"></i>
-              <span>Loading company dashboard...</span>
+              <span translate>Loading company dashboard...</span>
             </div>
           }
         </main>
@@ -403,10 +415,10 @@ import { InputTextModule } from 'primeng/inputtext';
         <main class="dashboard-content">
           <div class="dashboard-section-heading">
             <div>
-              <h2>HR Overview</h2>
-              <p>Employee and leave management summary</p>
+              <h2 translate>HR Overview</h2>
+              <p translate>Employee and leave management summary</p>
             </div>
-            <span class="role-label role-hr">Human Resources</span>
+            <span class="role-label role-hr" translate>Human Resources</span>
           </div>
 
           @if (hrDashboard(); as data) {
@@ -416,10 +428,12 @@ import { InputTextModule } from 'primeng/inputtext';
                   <div class="stat-icon stat-blue">
                     <i class="pi pi-users"></i>
                   </div>
-                  <span class="text-xs text-slate-400">Employees</span>
+                  <span class="text-xs text-slate-400" translate
+                    >Employees</span
+                  >
                 </div>
                 <div class="stat-value">{{ data.totalEmployees }}</div>
-                <div class="stat-label">Total Employees</div>
+                <div class="stat-label" translate>Total Employees</div>
               </div>
 
               <div class="dashboard-stat-card">
@@ -427,10 +441,10 @@ import { InputTextModule } from 'primeng/inputtext';
                   <div class="stat-icon stat-amber">
                     <i class="pi pi-clock"></i>
                   </div>
-                  <span class="text-xs text-slate-400">Pending</span>
+                  <span class="text-xs text-slate-400" translate>Pending</span>
                 </div>
                 <div class="stat-value">{{ data.pendingLeave }}</div>
-                <div class="stat-label">Pending Leave Requests</div>
+                <div class="stat-label" translate>Pending Leave Requests</div>
               </div>
 
               <div class="dashboard-stat-card">
@@ -438,10 +452,10 @@ import { InputTextModule } from 'primeng/inputtext';
                   <div class="stat-icon stat-orange">
                     <i class="pi pi-calendar-minus"></i>
                   </div>
-                  <span class="text-xs text-slate-400">Today</span>
+                  <span class="text-xs text-slate-400" translate>Today</span>
                 </div>
                 <div class="stat-value">{{ data.onLeaveToday }}</div>
-                <div class="stat-label">On Leave Today</div>
+                <div class="stat-label" translate>On Leave Today</div>
               </div>
 
               <div class="dashboard-stat-card">
@@ -449,12 +463,12 @@ import { InputTextModule } from 'primeng/inputtext';
                   <div class="stat-icon stat-green">
                     <i class="pi pi-user-check"></i>
                   </div>
-                  <span class="text-xs text-slate-400">Present</span>
+                  <span class="text-xs text-slate-400" translate>Present</span>
                 </div>
                 <div class="stat-value">
                   {{ data.assumedPresentToday }}
                 </div>
-                <div class="stat-label">Assumed Present Today</div>
+                <div class="stat-label" translate>Assumed Present Today</div>
               </div>
 
               <div class="dashboard-stat-card">
@@ -462,10 +476,10 @@ import { InputTextModule } from 'primeng/inputtext';
                   <div class="stat-icon stat-red">
                     <i class="pi pi-user-minus"></i>
                   </div>
-                  <span class="text-xs text-slate-400">Resigned</span>
+                  <span class="text-xs text-slate-400" translate>Resigned</span>
                 </div>
                 <div class="stat-value">{{ data.resignedStaff }}</div>
-                <div class="stat-label">Resigned Staff</div>
+                <div class="stat-label" translate>Resigned Staff</div>
               </div>
 
               <div class="dashboard-stat-card">
@@ -473,12 +487,14 @@ import { InputTextModule } from 'primeng/inputtext';
                   <div class="stat-icon stat-violet">
                     <i class="pi pi-user-plus"></i>
                   </div>
-                  <span class="text-xs text-slate-400">New Staff</span>
+                  <span class="text-xs text-slate-400" translate
+                    >New Staff</span
+                  >
                 </div>
                 <div class="stat-value">
                   {{ data.newStaffUnderOneYear }}
                 </div>
-                <div class="stat-label">Joined Within One Year</div>
+                <div class="stat-label" translate>Joined Within One Year</div>
               </div>
             </div>
 
@@ -486,8 +502,8 @@ import { InputTextModule } from 'primeng/inputtext';
             <section class="dashboard-card">
               <div class="dashboard-card-heading">
                 <div>
-                  <h3>Department Distribution</h3>
-                  <p>Employee count by department</p>
+                  <h3 translate>Department Distribution</h3>
+                  <p translate>Employee count by department</p>
                 </div>
               </div>
 
@@ -517,7 +533,7 @@ import { InputTextModule } from 'primeng/inputtext';
               } @else {
                 <div class="dashboard-empty">
                   <i class="pi pi-chart-bar"></i>
-                  <span>No department data available</span>
+                  <span translate>No department data available</span>
                 </div>
               }
             </section>
@@ -526,10 +542,10 @@ import { InputTextModule } from 'primeng/inputtext';
             <section class="dashboard-card">
               <div class="dashboard-card-heading">
                 <div>
-                  <h3>Employees on Leave Today</h3>
-                  <p>Today's leave schedule</p>
+                  <h3 translate>Employees on Leave Today</h3>
+                  <p translate>Today's leave schedule</p>
                 </div>
-                <a routerLink="/leave">View All</a>
+                <a routerLink="/leave" translate>View All</a>
               </div>
 
               @if (data.todayLeaveEvents.length) {
@@ -562,14 +578,14 @@ import { InputTextModule } from 'primeng/inputtext';
               } @else {
                 <div class="dashboard-empty">
                   <i class="pi pi-calendar-check"></i>
-                  <span>No employees on leave today</span>
+                  <span translate>No employees on leave today</span>
                 </div>
               }
             </section>
           } @else {
             <div class="dashboard-loading">
               <i class="pi pi-spin pi-spinner"></i>
-              <span>Loading HR dashboard...</span>
+              <span translate>Loading HR dashboard...</span>
             </div>
           }
         </main>
@@ -579,10 +595,10 @@ import { InputTextModule } from 'primeng/inputtext';
         <main class="dashboard-content">
           <div class="dashboard-section-heading">
             <div>
-              <h2>Logistics Overview</h2>
-              <p>Inventory and warehouse summary</p>
+              <h2 translate>Logistics Overview</h2>
+              <p translate>Inventory and warehouse summary</p>
             </div>
-            <span class="role-label role-logistics">Logistics</span>
+            <span class="role-label role-logistics" translate>Logistics</span>
           </div>
 
           @if (logisticsDashboard(); as data) {
@@ -592,10 +608,10 @@ import { InputTextModule } from 'primeng/inputtext';
                   <div class="stat-icon stat-blue">
                     <i class="pi pi-box"></i>
                   </div>
-                  <span class="text-xs text-slate-400">Items</span>
+                  <span class="text-xs text-slate-400" translate>Items</span>
                 </div>
                 <div class="stat-value">{{ data.totalItems }}</div>
-                <div class="stat-label">Total Inventory Items</div>
+                <div class="stat-label" translate>Total Inventory Items</div>
               </div>
 
               <div class="dashboard-stat-card">
@@ -603,10 +619,12 @@ import { InputTextModule } from 'primeng/inputtext';
                   <div class="stat-icon stat-amber">
                     <i class="pi pi-exclamation-triangle"></i>
                   </div>
-                  <span class="text-xs text-slate-400">Low Stock</span>
+                  <span class="text-xs text-slate-400" translate
+                    >Low Stock</span
+                  >
                 </div>
                 <div class="stat-value">{{ data.lowStockItems }}</div>
-                <div class="stat-label">Low Stock Items</div>
+                <div class="stat-label" translate>Low Stock Items</div>
               </div>
 
               <div class="dashboard-stat-card">
@@ -614,10 +632,10 @@ import { InputTextModule } from 'primeng/inputtext';
                   <div class="stat-icon stat-red">
                     <i class="pi pi-wrench"></i>
                   </div>
-                  <span class="text-xs text-slate-400">Faulty</span>
+                  <span class="text-xs text-slate-400" translate>Faulty</span>
                 </div>
                 <div class="stat-value">{{ data.faultyItems }}</div>
-                <div class="stat-label">Faulty Items</div>
+                <div class="stat-label" translate>Faulty Items</div>
               </div>
 
               <div class="dashboard-stat-card">
@@ -625,10 +643,10 @@ import { InputTextModule } from 'primeng/inputtext';
                   <div class="stat-icon stat-violet">
                     <i class="pi pi-file-edit"></i>
                   </div>
-                  <span class="text-xs text-slate-400">Requests</span>
+                  <span class="text-xs text-slate-400" translate>Requests</span>
                 </div>
                 <div class="stat-value">{{ data.pendingRequests }}</div>
-                <div class="stat-label">Pending Requests</div>
+                <div class="stat-label" translate>Pending Requests</div>
               </div>
             </div>
 
@@ -636,10 +654,10 @@ import { InputTextModule } from 'primeng/inputtext';
             <section class="dashboard-card">
               <div class="dashboard-card-heading">
                 <div>
-                  <h3>Restock Alerts</h3>
-                  <p>Items that need replenishment</p>
+                  <h3 translate>Restock Alerts</h3>
+                  <p translate>Items that need replenishment</p>
                 </div>
-                <a routerLink="/inventory/listing">Inventory</a>
+                <a routerLink="/inventory/listing" translate>Inventory</a>
               </div>
 
               @if (data.restockAlerts.length) {
@@ -670,7 +688,7 @@ import { InputTextModule } from 'primeng/inputtext';
               } @else {
                 <div class="dashboard-empty">
                   <i class="pi pi-check-circle"></i>
-                  <span>No restock alerts</span>
+                  <span translate>No restock alerts</span>
                 </div>
               }
             </section>
@@ -679,8 +697,8 @@ import { InputTextModule } from 'primeng/inputtext';
             <section class="dashboard-card">
               <div class="dashboard-card-heading">
                 <div>
-                  <h3>Inventory by Category</h3>
-                  <p>Items grouped by category</p>
+                  <h3 translate>Inventory by Category</h3>
+                  <p translate>Items grouped by category</p>
                 </div>
               </div>
 
@@ -710,14 +728,14 @@ import { InputTextModule } from 'primeng/inputtext';
               } @else {
                 <div class="dashboard-empty">
                   <i class="pi pi-chart-bar"></i>
-                  <span>No category data available</span>
+                  <span translate>No category data available</span>
                 </div>
               }
             </section>
           } @else {
             <div class="dashboard-loading">
               <i class="pi pi-spin pi-spinner"></i>
-              <span>Loading logistics dashboard...</span>
+              <span translate>Loading logistics dashboard...</span>
             </div>
           }
         </main>
@@ -727,19 +745,19 @@ import { InputTextModule } from 'primeng/inputtext';
         <main class="dashboard-content">
           <div class="dashboard-section-heading">
             <div>
-              <h2>My Workspace</h2>
-              <p>Your tasks and frequently used modules</p>
+              <h2 translate>My Workspace</h2>
+              <p translate>Your tasks and frequently used modules</p>
             </div>
-            <span class="role-label role-staff">
-              {{ currentUser?.systemRole || 'Employee' }}
+            <span class="role-label role-staff" translate>
+              {{ currentUser?.systemRole || 'Staff' }}
             </span>
           </div>
 
           <!-- QUICK ACCESS -->
           <section>
             <div class="section-title">
-              <h3>Quick Access</h3>
-              <p>Frequently used modules</p>
+              <h3 translate>Quick Access</h3>
+              <p translate>Frequently used modules</p>
             </div>
 
             <div class="dashboard-quick-grid">
@@ -748,8 +766,8 @@ import { InputTextModule } from 'primeng/inputtext';
                   <i class="pi pi-users"></i>
                 </div>
                 <div>
-                  <strong>Directory</strong>
-                  <span>Find coworkers</span>
+                  <strong translate>Directory</strong>
+                  <span translate>Find coworkers</span>
                 </div>
                 <i class="pi pi-chevron-right quick-arrow"></i>
               </a>
@@ -759,8 +777,8 @@ import { InputTextModule } from 'primeng/inputtext';
                   <i class="pi pi-briefcase"></i>
                 </div>
                 <div>
-                  <strong>Projects</strong>
-                  <span>Project updates</span>
+                  <strong translate>Projects</strong>
+                  <span translate>Project updates</span>
                 </div>
                 <i class="pi pi-chevron-right quick-arrow"></i>
               </a>
@@ -770,8 +788,8 @@ import { InputTextModule } from 'primeng/inputtext';
                   <i class="pi pi-box"></i>
                 </div>
                 <div>
-                  <strong>Inventory</strong>
-                  <span>Warehouse stock</span>
+                  <strong translate>Inventory</strong>
+                  <span translate>Warehouse stock</span>
                 </div>
                 <i class="pi pi-chevron-right quick-arrow"></i>
               </a>
@@ -781,8 +799,8 @@ import { InputTextModule } from 'primeng/inputtext';
                   <i class="pi pi-file"></i>
                 </div>
                 <div>
-                  <strong>Hardware</strong>
-                  <span>Request equipment</span>
+                  <strong translate>Hardware</strong>
+                  <span translate>Request equipment</span>
                 </div>
                 <i class="pi pi-chevron-right quick-arrow"></i>
               </a>
@@ -793,11 +811,11 @@ import { InputTextModule } from 'primeng/inputtext';
           <section>
             <div class="section-title section-title-action">
               <div>
-                <h3>Tasks to Do</h3>
-                <p>Your assigned tasks</p>
+                <h3 translate>Tasks to Do</h3>
+                <p translate>Your assigned tasks</p>
               </div>
 
-              <a routerLink="/my-tasks">
+              <a routerLink="/my-tasks" translate>
                 View All <i class="pi pi-chevron-right text-[9px]"></i>
               </a>
             </div>
@@ -849,11 +867,11 @@ import { InputTextModule } from 'primeng/inputtext';
               <div class="task-empty p-6 text-center">
                 <i class="pi pi-check-circle text-2xl text-green-500"></i>
                 <p class="mt-2">
-                  <strong>
+                  <strong translate>
                     {{ searchTerm ? 'No matching tasks' : 'No pending tasks' }}
                   </strong>
                 </p>
-                <p class="text-xs text-slate-400 mt-1">
+                <p class="text-xs text-slate-400 mt-1" translate>
                   {{
                     searchTerm
                       ? 'Try another search keyword.'

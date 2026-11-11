@@ -34,6 +34,7 @@ import {
   MobileQuickAction,
   MobileWorkMenuItem,
 } from '../../navigation/app-navigation';
+import { TranslateDirective, TranslatePipe } from '@ngx-translate/core';
 
 // ==========================================
 // COMPONENT
@@ -42,7 +43,13 @@ import {
 @Component({
   selector: 'app-mobile-layout',
   standalone: true,
-  imports: [CommonModule, RouterLink, RouterLinkActive, RouterOutlet],
+  imports: [
+    CommonModule,
+    RouterLink,
+    RouterLinkActive,
+    RouterOutlet,
+    TranslateDirective,
+  ],
   template: `
     <div class="mobile-layout">
       <!-- ====================================== -->
@@ -67,7 +74,7 @@ import {
           (click)="closeAllSheets()"
         >
           <i class="pi pi-home"></i>
-          <span>Home</span>
+          <span translate>Home</span>
         </a>
 
         <!-- MY WORK -->
@@ -79,7 +86,7 @@ import {
           (click)="toggleWorkMenu()"
         >
           <i class="pi pi-briefcase"></i>
-          <span>My Work</span>
+          <span translate>My Work</span>
         </button>
 
         <!-- CREATE -->
@@ -99,7 +106,7 @@ import {
             ></i>
           </button>
 
-          <span class="quick-action-label">Create</span>
+          <span class="quick-action-label" translate>Create</span>
         </div>
 
         <!-- NOTIFICATIONS -->
@@ -119,7 +126,7 @@ import {
             }
           </span>
 
-          <span>Notifications</span>
+          <span translate>Notifications</span>
         </a>
 
         <!-- SETTINGS -->
@@ -130,7 +137,7 @@ import {
           (click)="closeAllSheets()"
         >
           <i class="pi pi-cog"></i>
-          <span>Settings</span>
+          <span translate>Settings</span>
         </a>
       </nav>
 
@@ -160,8 +167,8 @@ import {
         <!-- SHEET HEADER -->
         <div class="sheet-header">
           <div>
-            <h3>My Work</h3>
-            <p>Your work and application modules</p>
+            <h3 translate>My Work</h3>
+            <p translate>Your work and application modules</p>
           </div>
 
           <button
@@ -186,8 +193,8 @@ import {
               </div>
 
               <div>
-                <h4>My Work</h4>
-                <p>Your daily work activities</p>
+                <h4 translate>My Work</h4>
+                <p translate>Your daily work activities</p>
               </div>
             </div>
 
@@ -204,11 +211,11 @@ import {
                   </div>
 
                   <div class="work-menu-text">
-                    <span class="work-menu-title">
+                    <span class="work-menu-title" translate>
                       {{ item.label }}
                     </span>
 
-                    <span class="work-menu-description">
+                    <span class="work-menu-description" translate>
                       {{ item.description }}
                     </span>
                   </div>
@@ -230,8 +237,8 @@ import {
               </div>
 
               <div>
-                <h4>All Modules</h4>
-                <p>Explore other application modules</p>
+                <h4 translate>All Modules</h4>
+                <p translate>Explore other application modules</p>
               </div>
             </div>
 
@@ -254,11 +261,11 @@ import {
                         </div>
 
                         <div class="work-menu-text">
-                          <span class="work-menu-title">
+                          <span class="work-menu-title" translate>
                             {{ item.label }}
                           </span>
 
-                          <span class="work-menu-description">
+                          <span class="work-menu-description" translate>
                             {{ getMenuDescription(item) }}
                           </span>
                         </div>
@@ -288,7 +295,7 @@ import {
                                 [class]="'pi ' + (sub.icon || 'pi-circle')"
                               ></i>
 
-                              <span>{{ sub.label }}</span>
+                              <span translate>{{ sub.label }}</span>
 
                               @if (isActive(sub.route)) {
                                 <i class="pi pi-check submenu-active-icon"></i>
@@ -313,11 +320,11 @@ import {
                       </div>
 
                       <div class="work-menu-text">
-                        <span class="work-menu-title">
+                        <span class="work-menu-title" translate>
                           {{ item.label }}
                         </span>
 
-                        <span class="work-menu-description">
+                        <span class="work-menu-description" translate>
                           {{ getMenuDescription(item) }}
                         </span>
                       </div>
@@ -346,8 +353,8 @@ import {
 
         <div class="sheet-header">
           <div>
-            <h3>Create New</h3>
-            <p>What would you like to create?</p>
+            <h3 translate>Create New</h3>
+            <p translate>What would you like to create?</p>
           </div>
 
           <button
@@ -376,11 +383,11 @@ import {
               </div>
 
               <div class="action-text">
-                <span class="action-title">
+                <span class="action-title" translate>
                   {{ action.label }}
                 </span>
 
-                <span class="action-description">
+                <span class="action-description" translate>
                   {{ action.description }}
                 </span>
               </div>
@@ -444,8 +451,10 @@ export class MobileLayout implements OnInit {
   private readonly allMyWorkItems = MOBILE_WORK_MENU;
 
   get visibleMyWorkItems(): MobileWorkMenuItem[] {
-    return this.allMyWorkItems.filter((item) =>
-      this.permissionService.canReadModule(item.moduleKey),
+    return this.allMyWorkItems.filter(
+      (item) =>
+        item.public === true ||
+        this.permissionService.canReadModule(item.moduleKey),
     );
   }
 
@@ -465,11 +474,12 @@ export class MobileLayout implements OnInit {
   private readonly allQuickActions = MOBILE_QUICK_ACTIONS;
 
   get visibleQuickActions(): MobileQuickAction[] {
-    return this.allQuickActions.filter((action) =>
-      this.permissionService.canReadModule(action.moduleKey),
+    return this.allQuickActions.filter(
+      (action) =>
+        action.public === true ||
+        this.permissionService.canReadModule(action.moduleKey),
     );
   }
-
   // ==========================================
   // INITIALIZATION
   // ==========================================
@@ -561,6 +571,10 @@ export class MobileLayout implements OnInit {
   }
 
   canView(item: AppNavItem): boolean {
+    if (item.public === true) {
+      return true;
+    }
+
     if (item.items?.length) {
       return this.hasVisibleSubItems(item);
     }

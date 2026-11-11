@@ -63,10 +63,10 @@ import {
     FormsModule,
   ],
   template: `
-    <div class="w-full min-h-[92.9vh] flex flex-col p-4 sm:p-5">
+    <div class="w-full min-h-0 flex flex-col p-4 sm:p-5">
       <!-- BREADCRUMB -->
       <div
-        class="flex flex-wrap items-center gap-1 text-gray-500 tracking-wide text-sm"
+        class="flex flex-wrap items-center gap-1 text-gray-500 tracking-wide"
       >
         <div
           [routerLink]="'/dashboard'"

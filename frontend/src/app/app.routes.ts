@@ -196,7 +196,7 @@ export const routes: Routes = [
 
   {
     path: 'leave',
-    // canActivate: [...protectedGuards],
+    data: { moduleKey: 'leave' },
     loadComponent: () =>
       import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
         (m) => m.ResponsiveLayout,
@@ -717,7 +717,6 @@ export const routes: Routes = [
   // Directory
   {
     path: 'directory',
-    data: { moduleKey: 'directory' },
     loadComponent: () =>
       import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
         (m) => m.ResponsiveLayout,
@@ -725,18 +724,10 @@ export const routes: Routes = [
     children: [
       {
         path: '',
-        data: { moduleKey: 'directory' },
-        loadComponent: () => {
-          const isMobile = window.innerWidth < 768;
-
-          return isMobile
-            ? import('./components/company-management/directory/directory').then(
-                (m) => m.Directory,
-              )
-            : import('./components/main-dashboard/dashboard/dashboard').then(
-                (m) => m.Dashboard,
-              );
-        },
+        loadComponent: () =>
+          import('./components/company-management/directory/directory').then(
+            (m) => m.Directory,
+          ),
       },
     ],
   },

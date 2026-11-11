@@ -80,8 +80,8 @@ import { UserService } from '../../../services/userService.service';
                 {{ name }}
               </h2>
 
-              <p class="text-sm text-blue-100 mt-1 truncate">
-                {{ currentUser?.jobTitle || 'Employee' }}
+              <p class="text-sm text-blue-100 mt-1 truncate" translate>
+                {{ currentUser?.jobTitle || 'Staff' }}
               </p>
 
               <div
@@ -94,15 +94,6 @@ import { UserService } from '../../../services/userService.service';
                 </span>
               </div>
             </div>
-
-            <a
-              routerLink="/profile-settings/personal-info"
-              class="w-9 h-9 shrink-0 rounded-xl bg-white/15
-                   flex items-center justify-center"
-              aria-label="Edit profile"
-            >
-              <i class="pi pi-pencil text-white text-sm"></i>
-            </a>
           </div>
         </div>
       </div>
@@ -385,7 +376,7 @@ import { UserService } from '../../../services/userService.service';
 
         <div class="text-center mt-5">
           <p class="text-xs text-slate-400 font-medium">OfficeHub</p>
-          <p class="text-[11px] text-slate-400 mt-1">Version 1.0.0</p>
+          <p class="text-[11px] text-slate-400 mt-1" translate>Version 1.0.0</p>
         </div>
       </div>
     </div>
@@ -421,14 +412,17 @@ import { UserService } from '../../../services/userService.service';
     <!-- Language Bottom Sheet -->
     @if (isLanguageDialogOpen()) {
       <div
-        class="pb-23 fixed inset-0 z-50 bg-slate-950/50 backdrop-blur-sm
-             flex items-end"
+        class="fixed inset-x-0 top-0 z-50
+           bottom-[calc(4.5rem+env(safe-area-inset-bottom))]
+           bg-slate-950/50 backdrop-blur-sm
+           flex items-end"
         (click)="isLanguageDialogOpen.set(false)"
       >
         <div
           class="w-full bg-white rounded-t-3xl px-5 pt-3 pb-8
-               animate-[slideUp_0.25s_ease-out]"
+             animate-[slideUp_0.25s_ease-out]"
           (click)="$event.stopPropagation()"
+          ss
         >
           <!-- Sheet Handle -->
           <div class="w-10 h-1 rounded-full bg-slate-300 mx-auto mb-5"></div>

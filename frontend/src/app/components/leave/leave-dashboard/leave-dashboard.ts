@@ -661,7 +661,7 @@ const APPROVER_ROLES = [
                 <!-- KPI CARDS -->
                 <section>
                   <div class="flex items-center justify-between mb-3">
-                    <h2 class="text-sm font-bold text-slate-800">
+                    <h2 class="text-lg font-bold text-slate-800">
                       Leave Summary
                     </h2>
 
@@ -938,11 +938,9 @@ const APPROVER_ROLES = [
                 <section>
                   <div class="flex items-center justify-between mb-3">
                     <div>
-                      <h2 class="text-sm font-bold text-slate-800">
-                        Leave Balances
-                      </h2>
+                      <h2 class="font-bold text-slate-800">Leave Balances</h2>
 
-                      <p class="text-xs text-slate-400 mt-1">
+                      <p class="text-sm text-slate-400 mt-1">
                         Your entitlement and usage for {{ currentYear }}
                       </p>
                     </div>
@@ -999,7 +997,7 @@ const APPROVER_ROLES = [
                             </div>
                           </div>
 
-                          <div class="space-y-2 text-xs text-slate-600">
+                          <div class="space-y-2 text-sm text-slate-600">
                             <div
                               class="flex items-center justify-between gap-2"
                             >
@@ -1100,7 +1098,7 @@ const APPROVER_ROLES = [
                             </div>
                           </div>
 
-                          <div class="space-y-2 text-xs text-slate-600">
+                          <div class="space-y-2 text-sm text-slate-600">
                             <div class="flex items-center justify-between">
                               <span>Approved</span>
 
@@ -1173,11 +1171,11 @@ const APPROVER_ROLES = [
                     class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-5 py-4 border-b border-slate-100"
                   >
                     <div>
-                      <h2 class="text-sm font-bold text-slate-800">
+                      <h2 class="font-bold text-slate-800">
                         Recent Leave Requests
                       </h2>
 
-                      <p class="text-xs text-slate-400 mt-1">
+                      <p class="text-sm text-slate-400 mt-1">
                         Your latest leave application history
                       </p>
                     </div>

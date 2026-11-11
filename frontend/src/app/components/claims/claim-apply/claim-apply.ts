@@ -52,7 +52,7 @@ import { UserService } from '../../../services/userService.service';
   template: `
     <div class="claim-apply-page min-h-screen bg-slate-50 p-4 sm:p-6 lg:p-8">
       <!-- Breadcrumb -->
-      <div class="flex items-center gap-2 text-xs text-slate-400 mb-5">
+      <div class="flex items-center gap-2 text-slate-400 mb-5">
         <a routerLink="/claims" class="hover:text-blue-600 transition-colors">
           Claims
         </a>
@@ -122,7 +122,7 @@ import { UserService } from '../../../services/userService.service';
                 optionValue="value"
                 placeholder="Select claim type"
                 appendTo="body"
-                styleClass="w-full claim-select"
+                styleClass="w-full text-xl! py-2!"
                 (onChange)="onTypeChange()"
               />
             </div>

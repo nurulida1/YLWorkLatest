@@ -15,6 +15,7 @@ import { finalize } from 'rxjs';
 import { CLAIM_TYPE_LABELS, ClaimRequestDto } from '../../../models/Claim';
 import { ClaimRequestService } from '../../../services/claim-request.service';
 import { LoadingService } from '../../../services/loading.service';
+import { SelectModule } from 'primeng/select';
 
 @Component({
   selector: 'app-claim-dashboard',
@@ -26,6 +27,7 @@ import { LoadingService } from '../../../services/loading.service';
     ButtonModule,
     TableModule,
     TagModule,
+    SelectModule,
   ],
   template: `
     <div
@@ -103,19 +105,21 @@ import { LoadingService } from '../../../services/loading.service';
                 Search claims
               </label>
 
-              <div class="claim-search-box">
-                <i class="pi pi-search text-slate-400"></i>
+              <div class="claim-search-box relative">
+                <i
+                  class="pi pi-search text-slate-400 absolute! top-3! left-3!"
+                ></i>
                 <input
                   id="claim-search"
                   type="text"
                   [(ngModel)]="searchTerm"
                   placeholder="Search claim type, remarks or destination..."
-                  class="claim-search-input"
+                  class="claim-search-input py-2! px-10!"
                 />
                 @if (searchTerm) {
                   <button
                     type="button"
-                    class="text-slate-400 hover:text-slate-700"
+                    class="text-slate-400 hover:text-slate-700 px-4"
                     (click)="searchTerm = ''"
                     aria-label="Clear search"
                   >
@@ -130,17 +134,17 @@ import { LoadingService } from '../../../services/loading.service';
               <label class="claim-filter-label" for="claim-status">
                 Status
               </label>
-              <select
-                id="claim-status"
+              <p-select
+                inputId="claim-status"
                 [(ngModel)]="selectedStatus"
-                class="claim-filter-select"
-              >
-                <option value="All">All statuses</option>
-                <option value="Pending">Pending</option>
-                <option value="Approved">Approved</option>
-                <option value="Rejected">Rejected</option>
-                <option value="Cancelled">Cancelled</option>
-              </select>
+                [options]="statusOptions"
+                optionLabel="label"
+                optionValue="value"
+                placeholder="All statuses"
+                styleClass="w-full"
+                [showClear]="false"
+                appendTo="body"
+              />
             </div>
 
             <!-- Claim type filter -->
@@ -148,18 +152,17 @@ import { LoadingService } from '../../../services/loading.service';
               <label class="claim-filter-label" for="claim-type">
                 Claim type
               </label>
-              <select
-                id="claim-type"
+              <p-select
+                inputId="claim-type"
                 [(ngModel)]="selectedClaimType"
-                class="claim-filter-select"
-              >
-                <option value="All">All claim types</option>
-                @for (type of claimTypes; track type.value) {
-                  <option [value]="type.value">
-                    {{ type.label }}
-                  </option>
-                }
-              </select>
+                [options]="claimTypeOptions"
+                optionLabel="label"
+                optionValue="value"
+                placeholder="All claim types"
+                styleClass="w-full"
+                [showClear]="false"
+                appendTo="body"
+              />
             </div>
           </div>
 
@@ -321,9 +324,17 @@ export class ClaimDashboard implements OnInit {
 
   claims: ClaimRequestDto[] = [];
 
-  searchTerm = '';
-  selectedStatus = 'All';
-  selectedClaimType = 'All';
+  searchTerm: string = '';
+  selectedStatus: string = 'All';
+  selectedClaimType: string = 'All';
+
+  statusOptions = [
+    { label: 'All statuses', value: 'All' },
+    { label: 'Pending', value: 'Pending' },
+    { label: 'Approved', value: 'Approved' },
+    { label: 'Rejected', value: 'Rejected' },
+    { label: 'Cancelled', value: 'Cancelled' },
+  ];
 
   get filteredClaims(): ClaimRequestDto[] {
     const search = this.searchTerm.trim().toLowerCase();
@@ -421,5 +432,9 @@ export class ClaimDashboard implements OnInit {
       default:
         return 'secondary';
     }
+  }
+
+  get claimTypeOptions() {
+    return [{ label: 'All claim types', value: 'All' }, ...this.claimTypes];
   }
 }

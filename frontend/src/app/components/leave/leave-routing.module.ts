@@ -10,38 +10,32 @@ const routes: Routes = [
   {
     path: '',
     component: LeaveDashboard,
-    // canActivate: [modulePermissionGuard],
     data: { moduleKey: 'leave' },
   },
   {
     path: 'apply',
     component: LeaveApply,
-    // canActivate: [modulePermissionGuard],
     data: { moduleKey: 'leave-apply' },
   },
   {
     path: 'apply/:id',
     component: LeaveApply,
-    // canActivate: [modulePermissionGuard],
     data: { moduleKey: 'leave-apply' },
   },
   {
     path: 'history',
     component: LeaveHistory,
-    // canActivate: [modulePermissionGuard],
     data: { moduleKey: 'leave-history' },
   },
   {
     path: 'approvals',
     component: LeaveApprovals,
-    // canActivate: [modulePermissionGuard],
     data: { moduleKey: 'leave-approvals' },
   },
 
   {
     path: ':id',
     component: LeaveDetail,
-    // canActivate: [modulePermissionGuard],
     data: { moduleKey: 'leave' },
   },
 ];

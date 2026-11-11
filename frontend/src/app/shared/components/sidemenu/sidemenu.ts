@@ -298,6 +298,10 @@ export class Sidemenu implements OnInit {
   }
 
   canView(item: AppNavItem): boolean {
+    if (item.public) {
+      return true;
+    }
+
     if (item.items?.length) {
       return this.hasVisibleSubItems(item);
     }

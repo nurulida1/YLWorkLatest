@@ -375,6 +375,55 @@ Recycle the App Pool. Confirm:
 - Basic WAF / bot fight as appropriate for an internal business app exposed publicly
 - Optional: Cloudflare Access / IP allowlist if only certain offices should reach the app
 
+### 6. Dynamic public IP (DDNS)
+
+If the ISP changes your public IP, Cloudflare’s **A** record must follow it, or the site goes offline until you edit DNS by hand.
+
+**Recommended for dynamic IP long-term:** [Cloudflare Tunnel](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/) (`cloudflared`) — no port forward and no A-record IP updates. Keep the DDNS approach below if you want to stay on the current IIS + port 443/80 setup.
+
+#### Option A — Auto-update the Cloudflare A record (DDNS)
+
+1. In Cloudflare → **My Profile** → **API Tokens** → **Create Token**
+   - Use template **Edit zone DNS**, or custom permissions:
+     - Zone → Zone → **Read**
+     - Zone → DNS → **Edit**
+   - Zone Resources: include only `ylsduotower.com` (your zone)
+2. Copy the token once; store it on the server only (env var or Task Scheduler), **never in git**.
+3. Copy `scripts\Update-CloudflareDns.ps1` to the server (e.g. `C:\inetpub\ylwork\scripts\`).
+4. Test once (PowerShell as Admin):
+
+```powershell
+$env:CF_API_TOKEN = 'paste-token-here'
+.\Update-CloudflareDns.ps1 `
+  -ApiToken $env:CF_API_TOKEN `
+  -ZoneName 'ylsduotower.com' `
+  -RecordName 'ylworks.ylsduotower.com'
+```
+
+Expect a log line under `C:\inetpub\ylwork\logs\cloudflare-ddns.log` (`Created` / `Updated` / `No change`) including elapsed ms. Typical run is a few seconds.
+
+The script uses `curl.exe` with a **5s** connect/request cap per URL. That avoids the old PowerShell `Invoke-RestMethod` behavior where a blocked IP-lookup host (e.g. ipify) could hang for **1–2 minutes** because `-TimeoutSec` often does not cancel TCP connect delays.
+
+Optional: pass `-ZoneId '0d57fa11e7ebf7224ef9ed6d46110da7'` (your zone’s ID from Cloudflare) to skip one API lookup each run.
+
+5. Schedule it — **Task Scheduler**:
+   - Trigger: every **5–15 minutes**
+   - Action: `powershell.exe`
+   - Arguments (example):
+
+```text
+-NoProfile -ExecutionPolicy Bypass -File "C:\inetpub\ylwork\scripts\Update-CloudflareDns.ps1" -ApiToken "YOUR_TOKEN" -ZoneName "ylsduotower.com" -RecordName "ylworks.ylsduotower.com" -ZoneId "YOUR_ZONE_ID"
+```
+
+   - Run whether user is logged on; use a service account if your policy requires it.
+   - Prefer storing the token as a machine environment variable `CF_API_TOKEN` and passing `-ApiToken %CF_API_TOKEN%` / `$env:CF_API_TOKEN` instead of putting the raw token in the task XML if you can.
+
+Keep the DNS record **Proxied** (orange cloud). TTL can stay Auto; the script sets `ttl=1` (Auto).
+
+#### Option B — Cloudflare Tunnel (no public IP needed)
+
+With a tunnel, Cloudflare connects **out** from your server; you can close inbound 80/443 on the router. DNS becomes a Cloudflare-managed CNAME to the tunnel, so ISP IP changes do not matter. See Cloudflare Zero Trust → Networks → Tunnels. This is a different topology than “IIS public :443 + Origin Certificate”; plan a cutover if you switch.
+
 ---
 
 ## Secrets hygiene
@@ -399,5 +448,6 @@ Recycle the App Pool. Confirm:
 | `http://` works, `https://` times out | Origin has no HTTPS :443, or firewall/router does not forward 443; Cloudflare SSL is Full/Full (strict) waiting on origin TLS |
 | `https://` returns IIS HTML 404, `http://` OK | HTTPS binding is on **Default Web Site** (or wrong site). Bind https `:443` on **YLWork**; remove Default Web Site’s https `:443`. Empty host name on YLWork is fine for a single-app server |
 | `openssl` not recognized | OpenSSL not installed or not on PATH — see Phase 2 §2a |
+| DDNS script hangs ~1–2 minutes | Old PowerShell HTTP client waiting on a blocked IP service. Use the current `Update-CloudflareDns.ps1` (`curl.exe` + 5s timeouts); copy the updated script to the server |
 
 Out of scope: JasperReports Docker compose, separate API subdomain, CI/CD pipelines.

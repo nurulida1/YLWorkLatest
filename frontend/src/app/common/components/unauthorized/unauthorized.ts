@@ -1,6 +1,6 @@
 import { CommonModule, Location } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 
 @Component({
   selector: 'app-unauthorized',
@@ -160,9 +160,7 @@ import { Router } from '@angular/router';
               <p
                 class="mt-4 text-sm sm:text-base text-slate-500 leading-7 max-w-md mx-auto lg:mx-0"
               >
-                You don't have the required permission to view this page. Your
-                account may not have access to this particular module or
-                resource.
+                {{ denialMessage }}
               </p>
             </div>
 
@@ -184,7 +182,11 @@ import { Router } from '@angular/router';
 
                   <p class="mt-1.5 text-xs sm:text-sm text-slate-600 leading-6">
                     Please contact your department administrator or system
-                    administrator to request the necessary permissions.
+                    administrator to request the necessary permissions
+                    @if (moduleLabel) {
+                      for <span class="font-semibold">{{ moduleLabel }}</span>
+                    }
+                    .
                   </p>
                 </div>
               </div>
@@ -232,9 +234,40 @@ import { Router } from '@angular/router';
 })
 export class Unauthorized {
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   private readonly location = inject(Location);
 
   year = new Date().getFullYear();
+
+  readonly moduleKey =
+    this.route.snapshot.queryParamMap.get('module')?.trim() || null;
+  readonly fromUrl =
+    this.route.snapshot.queryParamMap.get('from')?.trim() || null;
+
+  readonly moduleLabel = this.resolveModuleLabel(this.moduleKey, this.fromUrl);
+
+  readonly denialMessage = this.moduleLabel
+    ? `You don't have permission to access ${this.moduleLabel}. If you scanned an item QR code, ask an administrator to grant Inventory access.`
+    : `You don't have the required permission to view this page. Your account may not have access to this particular module or resource.`;
+
+  private resolveModuleLabel(
+    moduleKey: string | null,
+    fromUrl: string | null,
+  ): string | null {
+    const key = (moduleKey || '').toLowerCase();
+    const from = (fromUrl || '').toLowerCase();
+
+    if (key.startsWith('inventory') || from.includes('/inventory')) {
+      return 'Inventory';
+    }
+    if (!moduleKey) return null;
+
+    return moduleKey
+      .split(/[-_/]/)
+      .filter(Boolean)
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(' ');
+  }
 
   goBack(): void {
     if (window.history.length > 1) {

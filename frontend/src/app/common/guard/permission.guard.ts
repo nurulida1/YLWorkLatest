@@ -41,13 +41,21 @@ export const permissionGuard = (
 
         const allowed = actionList.some((action) => rights?.[action]);
 
-        return allowed ? true : router.createUrlTree(['/unauthorized']);
+        return allowed
+          ? true
+          : router.createUrlTree(['/unauthorized'], {
+              queryParams: { module: moduleKey },
+            });
       }),
 
       catchError((error) => {
         console.error(error);
 
-        return of(router.createUrlTree(['/unauthorized']));
+        return of(
+          router.createUrlTree(['/unauthorized'], {
+            queryParams: { module: moduleKey },
+          }),
+        );
       }),
     );
   };

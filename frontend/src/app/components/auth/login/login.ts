@@ -911,11 +911,26 @@ export class Login implements OnDestroy, OnInit {
         Validators.email,
       ]),
       password: new FormControl<string | null>(null, Validators.required),
-      rememberMe: new FormControl<boolean>(false),
+      // Mobile / PWA: persist JWT in localStorage so QR deep links in a new tab
+      // can reuse the same session within this browser profile.
+      rememberMe: new FormControl<boolean>(this.shouldDefaultRememberMe()),
     });
   }
 
   ngOnInit(): void {}
+
+  /** Prefer durable session on phones and installed Home Screen apps. */
+  private shouldDefaultRememberMe(): boolean {
+    if (typeof window === 'undefined') return false;
+
+    const standalone =
+      window.matchMedia('(display-mode: standalone)').matches ||
+      ('standalone' in navigator &&
+        (navigator as Navigator & { standalone?: boolean }).standalone === true);
+
+    const mobileUa = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    return standalone || this.isMobile || mobileUa;
+  }
 
   CancelDialog() {
     this.error = false;

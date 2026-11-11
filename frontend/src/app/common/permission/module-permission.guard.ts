@@ -106,11 +106,20 @@ export const modulePermissionGuard: CanActivateFn = (route, state) => {
 
       if (!moduleKey) {
         console.warn('No system module registered for URL:', state.url);
-        return of(router.createUrlTree(['/unauthorized']));
+        return of(
+          router.createUrlTree(['/unauthorized'], {
+            queryParams: { from: state.url },
+          }),
+        );
       }
 
       const actions = resolveActions(route, state.url);
       context.setModuleKey(moduleKey);
+
+      const unauthorizedTree = () =>
+        router.createUrlTree(['/unauthorized'], {
+          queryParams: { module: moduleKey, from: state.url },
+        });
 
       const user = permissionService.currentUser;
       if (user?.systemRole === 'SuperAdmin') {
@@ -124,11 +133,11 @@ export const modulePermissionGuard: CanActivateFn = (route, state) => {
         map(() => {
           const rights = permissionService.getModuleRights(moduleKey)();
           const allowed = hasAnyAction(rights, actions);
-          return allowed ? true : router.createUrlTree(['/unauthorized']);
+          return allowed ? true : unauthorizedTree();
         }),
         catchError((err) => {
           console.error('Module permission guard failed', err);
-          return of(router.createUrlTree(['/unauthorized']));
+          return of(unauthorizedTree());
         }),
       );
     }),

@@ -20,7 +20,7 @@ import {
   Validators,
 } from '@angular/forms';
 
-import { finalize, Observable, Subject, takeUntil } from 'rxjs';
+import { finalize, Observable, Subject, Subscription, takeUntil } from 'rxjs';
 import { Table, TableLazyLoadEvent, TableModule } from 'primeng/table';
 import { MenuItem, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -47,6 +47,12 @@ import {
 
 import { InventoryQrDialog } from '../shared/inventory-qr-dialog';
 import { InventoryQrScanDialog } from '../shared/inventory-qr-scan-dialog';
+import {
+  INVENTORY_CREATE_STATUS_OPTIONS,
+  INVENTORY_EDIT_STATUS_OPTIONS,
+  INVENTORY_FILTER_STATUS_OPTIONS,
+  resolveInventoryEditStatus,
+} from '../shared/inventory-status.util';
 import { environment } from '../../../../environments/environment';
 
 @Component({
@@ -262,116 +268,6 @@ import { environment } from '../../../../environments/environment';
       </div>
 
       <!-- ============================================== -->
-      <!-- MOBILE RESTOCK ALERT -->
-      <!-- ============================================== -->
-      <div class="lg:hidden px-5 mt-4">
-        <button
-          type="button"
-          class="w-full flex items-center gap-3 p-3.5 rounded-2xl border text-left transition-all"
-          [ngClass]="
-            (dashboardCount?.restock ?? 0) > 0
-              ? 'bg-red-50 border-red-200'
-              : 'bg-green-50 border-green-200'
-          "
-          [disabled]="(dashboardCount?.restock ?? 0) <= 0"
-          (click)="applyRestockFilter()"
-        >
-          <div
-            class="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
-            [ngClass]="
-              (dashboardCount?.restock ?? 0) > 0
-                ? 'bg-red-100 text-red-600'
-                : 'bg-green-100 text-green-600'
-            "
-          >
-            <i
-              [ngClass]="
-                (dashboardCount?.restock ?? 0) > 0
-                  ? 'pi pi-exclamation-triangle'
-                  : 'pi pi-check-circle'
-              "
-              class="text-lg"
-            ></i>
-          </div>
-
-          <div class="flex-1 min-w-0">
-            <p
-              class="text-sm font-bold"
-              [ngClass]="
-                (dashboardCount?.restock ?? 0) > 0
-                  ? 'text-red-800'
-                  : 'text-green-800'
-              "
-            >
-              {{
-                (dashboardCount?.restock ?? 0) > 0
-                  ? 'Restock Required'
-                  : 'Stock Levels Healthy'
-              }}
-            </p>
-            <p class="text-xs text-gray-500 mt-1">
-              {{ dashboardCount?.restock ?? 0 }} items need attention
-            </p>
-          </div>
-
-          <i
-            *ngIf="(dashboardCount?.restock ?? 0) > 0"
-            class="pi pi-arrow-right text-red-500"
-          ></i>
-        </button>
-      </div>
-
-      <!-- ============================================== -->
-      <!-- DESKTOP RESTOCK ALERT -->
-      <!-- ============================================== -->
-      <div class="hidden lg:block px-6 mt-5">
-        <div
-          class="flex items-center justify-between gap-3 p-4 rounded-xl border"
-          [ngClass]="
-            (dashboardCount?.restock ?? 0) > 0
-              ? 'bg-red-50 border-red-200'
-              : 'bg-white border-gray-200'
-          "
-        >
-          <div class="flex items-center gap-3">
-            <div
-              class="w-10 h-10 rounded-xl flex items-center justify-center"
-              [ngClass]="
-                (dashboardCount?.restock ?? 0) > 0
-                  ? 'bg-red-100 text-red-700'
-                  : 'bg-green-100 text-green-700'
-              "
-            >
-              <i class="pi pi-exclamation-triangle"></i>
-            </div>
-
-            <div>
-              <p class="font-bold text-sm text-gray-800">
-                {{
-                  (dashboardCount?.restock ?? 0) > 0
-                    ? 'Restock Attention Required'
-                    : 'Stock Levels Healthy'
-                }}
-              </p>
-              <p class="text-xs text-gray-500 mt-1">
-                {{ dashboardCount?.restock ?? 0 }} items require restocking
-              </p>
-            </div>
-          </div>
-
-          <button
-            *ngIf="(dashboardCount?.restock ?? 0) > 0"
-            type="button"
-            class="text-xs font-bold text-red-700 whitespace-nowrap"
-            (click)="applyRestockFilter()"
-          >
-            View Items
-            <i class="pi pi-arrow-right ml-1"></i>
-          </button>
-        </div>
-      </div>
-
-      <!-- ============================================== -->
       <!-- MOBILE SEARCH AND FILTERS -->
       <!-- ============================================== -->
       <div class="lg:hidden px-5 mt-5">
@@ -428,7 +324,7 @@ import { environment } from '../../../../environments/environment';
             ></p-select>
 
             <p-select
-              [options]="statusOptions"
+              [options]="statusFilterOptions"
               [(ngModel)]="selectedStatus"
               placeholder="All Status"
               appendTo="body"
@@ -476,7 +372,7 @@ import { environment } from '../../../../environments/environment';
             ></p-select>
 
             <p-select
-              [options]="statusOptions"
+              [options]="statusFilterOptions"
               [(ngModel)]="selectedStatus"
               placeholder="All Status"
               appendTo="body"
@@ -791,8 +687,14 @@ import { environment } from '../../../../environments/environment';
             </ng-template>
 
             <ng-template #body let-data>
-              <tr [ngClass]="data.status === 'Restock' ? 'bg-red-50/50' : ''">
-                <td>
+              <tr
+                [ngClass]="
+                  data.status === 'Restock' ||
+                  data.status === 'Restock (Low Stock)'
+                    ? 'bg-red-50/50'
+                    : ''
+                "
+              >                <td>
                   <div
                     class="w-12 h-12 rounded-lg bg-gray-100 overflow-hidden flex items-center justify-center"
                   >
@@ -1096,7 +998,7 @@ import { environment } from '../../../../environments/environment';
                 formControlName="status"
                 appendTo="body"
                 styleClass="w-full"
-                [options]="statusOptions"
+                [options]="formStatusOptions"
                 placeholder="Select Status"
               ></p-select>
             </div>
@@ -1577,6 +1479,7 @@ export class Inventory implements OnInit, OnDestroy {
   private readonly router = inject(Router);
 
   protected ngUnsubscribe = new Subject<void>();
+  private quantityStatusSub?: Subscription;
 
   PagingSignal = signal<PagingContent<InventoryDto>>({
     data: [],
@@ -1594,15 +1497,16 @@ export class Inventory implements OnInit, OnDestroy {
   sectionFilter: { label: string; value: string }[] = [];
   categoryFilter: { label: string; value: string | null }[] = [];
 
-  statusOptions = [
-    { label: 'All Status', value: 'All' },
-    { label: 'In Stock', value: 'In Stock' },
-    { label: 'Low Stock', value: 'Low Stock' },
-    { label: 'Restock', value: 'Restock' },
-    { label: 'FOC', value: 'FOC' },
-    { label: 'Faulty', value: 'Faulty' },
-    { label: 'Under Repair', value: 'Under Repair' },
-  ];
+  statusFilterOptions = INVENTORY_FILTER_STATUS_OPTIONS;
+  createStatusOptions = INVENTORY_CREATE_STATUS_OPTIONS;
+  editStatusOptions = INVENTORY_EDIT_STATUS_OPTIONS;
+
+  /** Quantity when the edit dialog was opened — used for Restock comparisons. */
+  private baselineQuantity = 0;
+
+  get formStatusOptions() {
+    return this.isUpdate ? this.editStatusOptions : this.createStatusOptions;
+  }
 
   unitOptions = [
     { label: 'Pcs', value: 'Pcs' },
@@ -1842,18 +1746,6 @@ export class Inventory implements OnInit, OnDestroy {
     this.GetData();
   }
 
-  applyRestockFilter(): void {
-    this.selectedStatus = 'Restock';
-    this.Query.Page = 1;
-    this.Query.Filter = this.buildFilters();
-
-    if (this.fTable) {
-      this.fTable.first = 0;
-    }
-
-    this.GetData();
-  }
-
   changeMobilePage(direction: number): void {
     const nextPage = this.Query.Page + direction;
 
@@ -1905,12 +1797,56 @@ export class Inventory implements OnInit, OnDestroy {
       costs: new FormControl<number | null>(0),
       attachment: new FormControl<File | string | null>(null),
     });
+
+    this.wireQuantityStatusSync();
+  }
+
+  private wireQuantityStatusSync(): void {
+    this.quantityStatusSub?.unsubscribe();
+
+    const quantityCtrl = this.FG.get('quantity');
+    const parCtrl = this.FG.get('parLevel');
+    if (!quantityCtrl || !parCtrl) {
+      return;
+    }
+
+    this.quantityStatusSub = new Subscription();
+    this.quantityStatusSub.add(
+      quantityCtrl.valueChanges.subscribe(() => {
+        if (!this.isUpdate) return;
+        this.applyEditStatusRules();
+        this.cdr.markForCheck();
+      }),
+    );
+    this.quantityStatusSub.add(
+      parCtrl.valueChanges.subscribe(() => {
+        if (!this.isUpdate) return;
+        this.applyEditStatusRules();
+        this.cdr.markForCheck();
+      }),
+    );
+  }
+
+  private applyEditStatusRules(): void {
+    if (!this.isUpdate) return;
+
+    const nextStatus = resolveInventoryEditStatus({
+      oldQuantity: this.baselineQuantity,
+      newQuantity: this.FG.get('quantity')?.value,
+      parLevel: this.FG.get('parLevel')?.value,
+      currentStatus: this.FG.get('status')?.value,
+    });
+
+    if (this.FG.get('status')?.value !== nextStatus) {
+      this.FG.get('status')?.setValue(nextStatus, { emitEvent: false });
+    }
   }
 
   ActionClick(data: InventoryDto | null, action: string): void {
     if (action === 'Update' && data) {
       this.isUpdate = true;
       this.title = 'Edit Inventory Item';
+      this.baselineQuantity = Number(data.quantity ?? 0);
 
       this.initForm();
 
@@ -1936,6 +1872,7 @@ export class Inventory implements OnInit, OnDestroy {
     if (action === 'add') {
       this.isUpdate = false;
       this.title = 'New Inventory Item';
+      this.baselineQuantity = 0;
 
       this.initForm();
 
@@ -2026,6 +1963,8 @@ export class Inventory implements OnInit, OnDestroy {
     if (this.saving) {
       return;
     }
+
+    this.applyEditStatusRules();
 
     this.saving = true;
     this.loadingService.start();
@@ -2292,13 +2231,6 @@ export class Inventory implements OnInit, OnDestroy {
                   0,
                 );
                 break;
-
-              case 'Restock':
-                this.dashboardCount.restock = Math.max(
-                  (this.dashboardCount.restock ?? 0) - 1,
-                  0,
-                );
-                break;
             }
 
             if ((item.reservedQuantity ?? 0) > 0) {
@@ -2397,9 +2329,10 @@ export class Inventory implements OnInit, OnDestroy {
         return 'bg-purple-100 text-purple-700';
 
       case 'Low Stock':
+      case 'Out of Stock':
       case 'Restock':
+      case 'Restock (Low Stock)':
         return 'bg-red-100 text-red-700 animate-pulse';
-
       case 'Faulty':
       case 'Faulty/Repair':
       case 'Under Repair':
@@ -2415,6 +2348,7 @@ export class Inventory implements OnInit, OnDestroy {
   // ---------------------------------------------------------
 
   ngOnDestroy(): void {
+    this.quantityStatusSub?.unsubscribe();
     this.ngUnsubscribe.next();
     this.ngUnsubscribe.complete();
 

@@ -27,6 +27,10 @@ import { InventoryService } from '../../../services/InventoryService';
 import { LoadingService } from '../../../services/loading.service';
 import { PermissionContextService } from '../../../services/permission-context.service';
 import { InventoryQrDialog } from '../shared/inventory-qr-dialog';
+import {
+  INVENTORY_EDIT_STATUS_OPTIONS,
+  resolveInventoryEditStatus,
+} from '../shared/inventory-status.util';
 
 @Component({
   selector: 'app-inventory-item',
@@ -604,14 +608,10 @@ export class InventoryItem implements OnInit, OnDestroy {
     { label: 'Unit', value: 'Unit' },
   ];
 
-  statusOptions = [
-    { label: 'In Stock', value: 'In Stock' },
-    { label: 'Low Stock', value: 'Low Stock' },
-    { label: 'Restock', value: 'Restock' },
-    { label: 'FOC', value: 'FOC' },
-    { label: 'Faulty', value: 'Faulty' },
-    { label: 'Under Repair', value: 'Under Repair' },
-  ];
+  statusOptions = INVENTORY_EDIT_STATUS_OPTIONS;
+
+  /** Quantity when the item was loaded — used for Restock comparisons. */
+  private baselineQuantity = 0;
 
   get canEdit(): boolean {
     return !!this.rights().canUpdate;
@@ -651,6 +651,33 @@ export class InventoryItem implements OnInit, OnDestroy {
       costs: new FormControl<number | null>(null),
       attachment: new FormControl<string | null>(null),
     });
+
+    this.FG.get('quantity')
+      ?.valueChanges.pipe(takeUntil(this.destroy$))
+      .subscribe(() => {
+        this.applyEditStatusRules();
+        this.cdr.markForCheck();
+      });
+
+    this.FG.get('parLevel')
+      ?.valueChanges.pipe(takeUntil(this.destroy$))
+      .subscribe(() => {
+        this.applyEditStatusRules();
+        this.cdr.markForCheck();
+      });
+  }
+
+  private applyEditStatusRules(): void {
+    const nextStatus = resolveInventoryEditStatus({
+      oldQuantity: this.baselineQuantity,
+      newQuantity: this.FG.get('quantity')?.value,
+      parLevel: this.FG.get('parLevel')?.value,
+      currentStatus: this.FG.get('status')?.value,
+    });
+
+    if (this.FG.get('status')?.value !== nextStatus) {
+      this.FG.get('status')?.setValue(nextStatus, { emitEvent: false });
+    }
   }
 
   getDropdown(): void {
@@ -713,10 +740,14 @@ export class InventoryItem implements OnInit, OnDestroy {
             this.audits = [];
           } else {
             this.item = res;
-            this.FG.patchValue({
-              ...res,
-              date: res.date ? new Date(res.date) : null,
-            });
+            this.baselineQuantity = Number(res.quantity ?? 0);
+            this.FG.patchValue(
+              {
+                ...res,
+                date: res.date ? new Date(res.date) : null,
+              },
+              { emitEvent: false },
+            );
             if (!this.canEdit) {
               this.FG.disable({ emitEvent: false });
             } else {
@@ -770,6 +801,8 @@ export class InventoryItem implements OnInit, OnDestroy {
       return;
     }
 
+    this.applyEditStatusRules();
+
     this.loadingService.start();
 
     // API expects [FromForm] multipart — plain JSON leaves Id unbound → 404 "Inventory not found".
@@ -801,11 +834,15 @@ export class InventoryItem implements OnInit, OnDestroy {
         next: (res) => {
           this.loadingService.stop();
           this.item = res;
+          this.baselineQuantity = Number(res.quantity ?? 0);
 
-          this.FG.patchValue({
-            ...res,
-            date: res.date ? new Date(res.date) : null,
-          });
+          this.FG.patchValue(
+            {
+              ...res,
+              date: res.date ? new Date(res.date) : null,
+            },
+            { emitEvent: false },
+          );
           this.messageService.add({
             severity: 'success',
             summary: 'Saved',

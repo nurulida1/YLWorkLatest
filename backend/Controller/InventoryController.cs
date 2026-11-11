@@ -603,23 +603,14 @@ namespace YLWorks.Controller
                     attachmentPath = $"/uploads/inventory/{fileName}";
                 }
 
-                var reservedQuantity = request.ReservedQuantity ?? 0m;
-                var availableQuantity = request.Quantity - reservedQuantity;
-
-                string status;
-
-                if (availableQuantity <= 0)
-                {
-                    status = "Out of Stock";
-                }
-                else if (request.ParLevel.HasValue && availableQuantity < request.ParLevel.Value)
-                {
-                    status = "Low Stock";
-                }
-                else
-                {
-                    status = "In Stock";
-                }
+                var oldQuantity = inventory.Quantity ?? 0m;
+                var incomingStatus = request.Status ?? inventory.Status;
+                var resolvedStatus = ResolveInventoryEditStatus(
+                    oldQuantity,
+                    request.Quantity,
+                    request.ParLevel,
+                    incomingStatus
+                );
 
                 inventory.ItemCode = request.ItemCode;
                 inventory.ItemName = request.ItemName;
@@ -636,7 +627,7 @@ namespace YLWorks.Controller
                 inventory.SectionId = request.SectionId;
                 inventory.ParLevel = request.ParLevel;
                 inventory.Date = request.Date;
-                inventory.Status = request.Status ?? status;
+                inventory.Status = resolvedStatus;
                 inventory.Remarks = request.Remarks;
                 inventory.Costs = request.Costs;
                 if (request.Attachment != null)
@@ -861,6 +852,65 @@ namespace YLWorks.Controller
 
             _context.InventoryAudits.RemoveRange(excess);
             await _context.SaveChangesAsync();
+        }
+
+        private static readonly HashSet<string> InventoryAutoStatuses = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "In Stock",
+            "Low Stock",
+            "Out of Stock",
+            "Restock",
+            "Restock (Low Stock)",
+        };
+
+        /// <summary>
+        /// Edit-time status rules. Manual statuses (FOC / Faulty / Under Repair) are unchanged.
+        /// Priority: Out of Stock → Restock (Low Stock) → Restock → Low Stock → keep current.
+        /// </summary>
+        private static string ResolveInventoryEditStatus(
+            decimal oldQuantity,
+            decimal newQuantity,
+            decimal? parLevel,
+            string? currentStatus)
+        {
+            var current = string.IsNullOrWhiteSpace(currentStatus) ? "In Stock" : currentStatus.Trim();
+
+            if (!InventoryAutoStatuses.Contains(current))
+            {
+                return current;
+            }
+
+            if (newQuantity == 0m)
+            {
+                return "Out of Stock";
+            }
+
+            var increased = newQuantity > oldQuantity;
+            var par = parLevel ?? 0m;
+            var belowPar = par > 0m && newQuantity < par;
+
+            if (increased && belowPar)
+            {
+                return "Restock (Low Stock)";
+            }
+
+            if (increased)
+            {
+                return "Restock";
+            }
+
+            if (belowPar)
+            {
+                return "Low Stock";
+            }
+
+            // Qty > 0 and not below par — never keep a stale Out of Stock.
+            if (string.Equals(current, "Out of Stock", StringComparison.OrdinalIgnoreCase))
+            {
+                return "Restock";
+            }
+
+            return current;
         }
 
         private static InventoryAuditChangesPayload BuildCreateChanges(Inventory inventory)

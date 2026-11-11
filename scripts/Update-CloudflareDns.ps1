@@ -69,8 +69,39 @@ function Invoke-CfApi([string]$Method, [string]$Uri, $Body = $null) {
   return $response
 }
 
+function Get-PublicIPv4 {
+  $sources = @(
+    @{ Uri = 'https://cloudflare.com/cdn-cgi/trace'; Parse = 'trace' },
+    @{ Uri = 'https://1.1.1.1/cdn-cgi/trace'; Parse = 'trace' },
+    @{ Uri = 'https://ifconfig.me/ip'; Parse = 'plain' },
+    @{ Uri = 'https://api.ipify.org?format=json'; Parse = 'json' }
+  )
+  foreach ($source in $sources) {
+    try {
+      $raw = Invoke-RestMethod -Uri $source.Uri -TimeoutSec 10
+      $candidate = $null
+      switch ($source.Parse) {
+        'json' { $candidate = $raw.ip }
+        'plain' { $candidate = ($raw | Out-String).Trim() }
+        'trace' {
+          $text = if ($raw -is [string]) { $raw } else { $raw | Out-String }
+          $match = [regex]::Match($text, '(?m)^ip=([0-9.]+)$')
+          if ($match.Success) { $candidate = $match.Groups[1].Value }
+        }
+      }
+      if ($candidate -match '^\d{1,3}(\.\d{1,3}){3}$') {
+        return $candidate
+      }
+    }
+    catch {
+      # try next source
+    }
+  }
+  throw 'Could not determine public IPv4 from any source'
+}
+
 try {
-  $publicIp = (Invoke-RestMethod -Uri 'https://api.ipify.org?format=json').ip
+  $publicIp = Get-PublicIPv4
   if ($publicIp -notmatch '^\d{1,3}(\.\d{1,3}){3}$') {
     throw "Could not determine public IPv4 (got: $publicIp)"
   }

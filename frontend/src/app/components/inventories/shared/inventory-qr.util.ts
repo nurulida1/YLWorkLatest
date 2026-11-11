@@ -9,6 +9,41 @@ export function buildInventoryItemUrl(id: string): string {
   return `${base}/inventory/item/${id}`;
 }
 
+const GUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * Extract inventory item id from a scanned QR payload.
+ * Accepts full deep links (.../inventory/item/{guid}) or a bare GUID.
+ */
+export function parseInventoryItemIdFromQr(raw: string): string | null {
+  const text = (raw || '').trim();
+  if (!text) return null;
+
+  if (GUID_RE.test(text)) {
+    return text;
+  }
+
+  try {
+    const url = new URL(text, window.location.origin);
+    const match = url.pathname.match(
+      /\/inventory\/item\/([0-9a-f-]{36})\/?/i,
+    );
+    if (match?.[1] && GUID_RE.test(match[1])) {
+      return match[1];
+    }
+  } catch {
+    // not a URL — fall through
+  }
+
+  const pathMatch = text.match(/\/inventory\/item\/([0-9a-f-]{36})/i);
+  if (pathMatch?.[1] && GUID_RE.test(pathMatch[1])) {
+    return pathMatch[1];
+  }
+
+  return null;
+}
+
 export async function generateInventoryQrDataUrl(
   id: string,
   size = 280,

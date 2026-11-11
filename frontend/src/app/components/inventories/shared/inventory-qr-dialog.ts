@@ -55,10 +55,6 @@ import {
             <div class="text-[11px] text-gray-400 break-all mt-1 max-w-xs">
               {{ itemUrl }}
             </div>
-            <p class="text-[11px] text-gray-500 mt-3 max-w-xs leading-5">
-              Scan opens YL Works. Use Add to Home Screen and sign in once with
-              Remember me for fastest access on your phone.
-            </p>
           </div>
         }
 

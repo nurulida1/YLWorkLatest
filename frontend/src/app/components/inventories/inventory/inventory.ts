@@ -20,8 +20,7 @@ import {
   Validators,
 } from '@angular/forms';
 
-import { Observable, Subject, takeUntil } from 'rxjs';
-
+import { finalize, Observable, Subject, takeUntil } from 'rxjs';
 import { Table, TableLazyLoadEvent, TableModule } from 'primeng/table';
 import { MenuItem, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -47,6 +46,7 @@ import {
 } from '../../../shared/helpers/helpers';
 
 import { InventoryQrDialog } from '../shared/inventory-qr-dialog';
+import { InventoryQrScanDialog } from '../shared/inventory-qr-scan-dialog';
 import { environment } from '../../../../environments/environment';
 
 @Component({
@@ -69,6 +69,7 @@ import { environment } from '../../../../environments/environment';
     ImageModule,
     ProgressBarModule,
     InventoryQrDialog,
+    InventoryQrScanDialog,
   ],
   template: `
     <div class="min-h-screen bg-slate-50">
@@ -89,12 +90,22 @@ import { environment } from '../../../../environments/environment';
             </p>
           </div>
 
-          <div
-            class="w-11 h-11 rounded-2xl bg-white/15 border border-white/20 flex items-center justify-center"
-          >
-            <span class="text-sm font-bold text-white">
-              {{ getInitial(currentUser?.displayName) }}
-            </span>
+          <div class="flex items-center gap-2">
+            <button
+              type="button"
+              class="w-11 h-11 rounded-2xl bg-white/15 border border-white/20 flex items-center justify-center text-white"
+              (click)="openScanDialog()"
+              aria-label="Scan item QR"
+            >
+              <i class="pi pi-qrcode text-lg"></i>
+            </button>
+            <div
+              class="w-11 h-11 rounded-2xl bg-white/15 border border-white/20 flex items-center justify-center"
+            >
+              <span class="text-sm font-bold text-white">
+                {{ getInitial(currentUser?.displayName) }}
+              </span>
+            </div>
           </div>
         </div>
 
@@ -155,26 +166,45 @@ import { environment } from '../../../../environments/environment';
             </p>
           </div>
 
-          <p-button
-            label="New Inventory"
-            icon="pi pi-plus"
-            styleClass="bg-blue-900! border-none! hover:bg-blue-700! cursor-pointer!"
-            (onClick)="ActionClick(null, 'add')"
-          ></p-button>
+          <div class="flex items-center gap-2">
+            <p-button
+              type="button"
+              label="Scan QR"
+              icon="pi pi-qrcode"
+              [outlined]="true"
+              styleClass="cursor-pointer!"
+              (onClick)="openScanDialog()"
+            ></p-button>
+            <p-button
+              type="button"
+              label="New Inventory"
+              icon="pi pi-plus"
+              styleClass="bg-blue-900! border-none! hover:bg-blue-700! cursor-pointer!"
+              (onClick)="ActionClick(null, 'add')"
+            ></p-button>
+          </div>
         </div>
       </div>
 
       <!-- ============================================== -->
-      <!-- MOBILE ADD BUTTON -->
+      <!-- MOBILE ADD / SCAN -->
       <!-- ============================================== -->
-      <div class="lg:hidden px-5 mt-5">
+      <div class="lg:hidden px-5 mt-5 grid grid-cols-2 gap-2">
+        <button
+          type="button"
+          class="w-full flex items-center justify-center gap-2 bg-white border border-blue-200 text-blue-900 hover:bg-blue-50 active:scale-[0.98] rounded-2xl py-3.5 font-bold text-sm shadow-sm transition-all"
+          (click)="openScanDialog()"
+        >
+          <i class="pi pi-qrcode"></i>
+          Scan QR
+        </button>
         <button
           type="button"
           class="w-full flex items-center justify-center gap-2 bg-blue-700 hover:bg-blue-800 active:scale-[0.98] text-white rounded-2xl py-3.5 font-bold text-sm shadow-lg shadow-blue-900/15 transition-all"
           (click)="ActionClick(null, 'add')"
         >
           <i class="pi pi-plus"></i>
-          Add New Inventory
+          Add New
         </button>
       </div>
 
@@ -1528,6 +1558,10 @@ import { environment } from '../../../../environments/environment';
       [itemName]="qrItemName"
       [itemCode]="qrItemCode"
     ></app-inventory-qr-dialog>
+
+    <app-inventory-qr-scan-dialog
+      [(visible)]="scanVisible"
+    ></app-inventory-qr-scan-dialog>
   `,
   styleUrl: './inventory.less',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -1587,9 +1621,12 @@ export class Inventory implements OnInit, OnDestroy {
   qrItemId: string | null = null;
   qrItemName: string | null = null;
   qrItemCode: string | null = null;
+  scanVisible = false;
 
   saving = false;
   deleting = false;
+  /** Table/list fetch only — do not use full-screen spinner (it blocks header buttons). */
+  listLoading = false;
 
   attachmentPreview: string | null = null;
 
@@ -1683,11 +1720,20 @@ export class Inventory implements OnInit, OnDestroy {
   }
 
   GetData(): void {
-    this.loadingService.start();
+    this.listLoading = true;
+    this.cdr.markForCheck();
 
     this.inventoryService
       .GetMany(this.Query)
-      .pipe(takeUntil(this.ngUnsubscribe))
+      .pipe(
+        takeUntil(this.ngUnsubscribe),
+        finalize(() => {
+          this.listLoading = false;
+          // Ensure any leftover full-screen spinner from older calls is cleared.
+          this.loadingService.stop();
+          this.cdr.markForCheck();
+        }),
+      )
       .subscribe({
         next: (res) => {
           const updatedRes = {
@@ -1701,17 +1747,15 @@ export class Inventory implements OnInit, OnDestroy {
           };
 
           this.PagingSignal.set(updatedRes);
-          this.loadingService.stop();
           this.cdr.markForCheck();
         },
         error: () => {
-          this.loadingService.stop();
-
           this.messageService.add({
             severity: 'error',
             summary: 'Error',
             detail: 'Unable to load inventory items.',
           });
+          this.cdr.markForCheck();
         },
       });
   }
@@ -2177,6 +2221,11 @@ export class Inventory implements OnInit, OnDestroy {
 
     this.qrVisible = true;
     this.cdr.markForCheck();
+  }
+
+  openScanDialog(): void {
+    this.scanVisible = true;
+    this.cdr.detectChanges();
   }
 
   // ---------------------------------------------------------

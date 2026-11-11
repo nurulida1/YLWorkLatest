@@ -842,10 +842,12 @@ namespace YLWorks.Data
                     .HasConversion<string>()
                     .HasMaxLength(20);
 
+                // Encrypted Google OAuth tokens exceed varchar(255); Outlook ICS stores a 64-char SHA-256 hash.
+                entity.Property(e => e.AccessTokenProtected).HasColumnType("longtext");
+                entity.Property(e => e.RefreshTokenProtected).HasColumnType("longtext");
+
                 entity.HasIndex(e => new { e.UserId, e.Provider })
                     .IsUnique();
-
-                entity.HasIndex(e => e.RefreshTokenProtected);
 
                 entity.HasOne(e => e.User)
                     .WithMany()

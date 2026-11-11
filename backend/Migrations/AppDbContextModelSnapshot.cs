@@ -2292,7 +2292,7 @@ namespace YLWorks.Migrations
 
                     b.Property<string>("RefreshTokenProtected")
                         .IsRequired()
-                        .HasColumnType("varchar(255)");
+                        .HasColumnType("longtext");
 
                     b.Property<DateTime>("TokenExpiresAtUtc")
                         .HasColumnType("datetime(6)");
@@ -2307,8 +2307,6 @@ namespace YLWorks.Migrations
                         .HasColumnType("char(36)");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("RefreshTokenProtected");
 
                     b.HasIndex("UserId", "Provider")
                         .IsUnique();

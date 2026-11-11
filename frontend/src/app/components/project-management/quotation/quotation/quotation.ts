@@ -1508,7 +1508,7 @@ export class Quotation implements OnInit, OnDestroy {
       this.displayConvertSODialog = true;
       this.cdr.markForCheck();
     } else if (action === 'Download') {
-      this.quotationService.downloadPdf(data.id);
+      // this.quotationService.downloadPdf(data.id);
     } else if (action === 'Reviewed') {
       this.selectedQuotation = data;
       this.displayDetailsDrawer = true;
@@ -1936,24 +1936,22 @@ export class Quotation implements OnInit, OnDestroy {
   }
 
   convert(type: 'Invoice' | 'SO', data: any) {
-    this.loadingService.start();
-
-    const action$: Observable<any> =
-      type === 'Invoice'
-        ? this.quotationService.ConvertToInvoice(data.id)
-        : this.quotationService.ConvertToSalesOrder(data.id);
-
-    action$.subscribe({
-      next: (res: any) => {
-        this.loadingService.stop();
-        this.messageService.add({
-          severity: 'success',
-          summary: 'Converted Successfully',
-          detail: `${type} generated: ${res.invoiceNo || res.salesOrderNo}`,
-        });
-      },
-      error: () => this.loadingService.stop(),
-    });
+    // this.loadingService.start();
+    // const action$: Observable<any> =
+    //   type === 'Invoice'
+    //     ? this.quotationService.ConvertToInvoice(data.id)
+    //     : this.quotationService.ConvertToSalesOrder(data.id);
+    // action$.subscribe({
+    //   next: (res: any) => {
+    //     this.loadingService.stop();
+    //     this.messageService.add({
+    //       severity: 'success',
+    //       summary: 'Converted Successfully',
+    //       detail: `${type} generated: ${res.invoiceNo || res.salesOrderNo}`,
+    //     });
+    //   },
+    //   error: () => this.loadingService.stop(),
+    // });
   }
 
   deleteQuotation(id: string) {

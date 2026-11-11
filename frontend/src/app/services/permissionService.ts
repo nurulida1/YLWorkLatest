@@ -1,7 +1,18 @@
-import { Injectable, inject, signal, computed } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { catchError, tap } from 'rxjs/operators';
-import { of } from 'rxjs';
+import {
+  Injectable,
+  DestroyRef,
+  inject,
+  signal,
+  computed,
+} from '@angular/core';
+
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+
+import { catchError, finalize, shareReplay, tap } from 'rxjs/operators';
+
+import { Observable, of } from 'rxjs';
+
 import { UserService } from './userService.service';
 import { ModuleRights, RolePermissionDto } from '../models/RolePermission';
 import { environment } from '../../environments/environment';
@@ -12,92 +23,137 @@ import { environment } from '../../environments/environment';
 export class PermissionService {
   private readonly http = inject(HttpClient);
   private readonly userService = inject(UserService);
+  private readonly destroyRef = inject(DestroyRef);
+
   private readonly _matrix = signal<RolePermissionDto[]>([]);
-  public readonly matrix = this._matrix.asReadonly();
+  private permissionsRequestUserId: string | null = null;
+  readonly matrix = this._matrix.asReadonly();
+
   private cachedUserId: string | null = null;
+  private permissionsLoadedForUserId: string | null = null;
+
+  private permissionsRequest$: Observable<RolePermissionDto[]> | null = null;
+
+  private requestVersion = 0;
+
+  // Restore your original endpoint here.
+  private readonly permissionUrl = `${environment.ApiBaseUrl}/RolePermission/by-matrix`;
 
   constructor() {
-    this.userService.currentUser$.subscribe((user) => {
-      if (!user) {
-        this.clearCache();
-        this.cachedUserId = null;
-        return;
-      }
-      if (this.cachedUserId !== user.userId) {
-        this.clearCache();
-        this.cachedUserId = user.userId;
-      }
-    });
+    this.userService.currentUser$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((user) => {
+        const userId = user?.userId ?? null;
+
+        if (this.cachedUserId !== userId) {
+          this.cachedUserId = userId;
+          this.clearPermissions();
+        }
+      });
   }
 
   get currentUser() {
     return this.userService.currentUser;
   }
 
-  clearCache(): void {
+  /**
+   * Clear cached permissions and invalidate pending requests.
+   */
+  clearPermissions(): void {
+    this.requestVersion++;
+
     this._matrix.set([]);
+    this.permissionsLoadedForUserId = null;
+
+    this.permissionsRequest$ = null;
+    this.permissionsRequestUserId = null;
   }
 
-  loadPermissions() {
+  /**
+   * Backward-compatible alias.
+   */
+  clearCache(): void {
+    this.clearPermissions();
+  }
+
+  /**
+   * Load permissions once per authenticated user.
+   * Subsequent calls reuse the cached result.
+   */
+
+  loadPermissions(forceRefresh = false): Observable<RolePermissionDto[]> {
     const user = this.currentUser;
 
-    if (!user?.systemRole) {
-      this._matrix.set([]);
+    if (!user?.userId) {
+      this.clearPermissions();
       return of([]);
     }
 
-    const role = user.systemRole;
+    const userId = user.userId;
 
-    const departmentIds = user.departmentIds ?? [];
-
-    let url = `${environment.ApiBaseUrl}/RolePermission/by-matrix?systemRole=${encodeURIComponent(role)}`;
-
-    if (departmentIds.length > 0) {
-      departmentIds.forEach((id: string) => {
-        url += `&departmentIds=${id}`;
-      });
+    // Return cached permissions.
+    if (!forceRefresh && this.permissionsLoadedForUserId === userId) {
+      return of(this._matrix());
     }
 
-    return this.http.get<RolePermissionDto[] | Record<string, unknown>[]>(url).pipe(
-      tap((permissions) => {
-        const rows = (Array.isArray(permissions) ? permissions : []).map((row) => {
-          const r = row as Record<string, unknown>;
-          return {
-            id: String(r['id'] ?? r['Id'] ?? ''),
-            systemRole: String(r['systemRole'] ?? r['SystemRole'] ?? ''),
-            departmentId: (() => {
-              const raw = r['departmentId'] ?? r['DepartmentId'];
-              return raw == null || raw === '' ? null : String(raw);
-            })(),
-            systemModuleId: String(
-              r['systemModuleId'] ?? r['SystemModuleId'] ?? r['moduleId'] ?? r['ModuleId'] ?? '',
-            ),
-            moduleName: String(r['moduleName'] ?? r['ModuleName'] ?? ''),
-            moduleKey: String(r['moduleKey'] ?? r['ModuleKey'] ?? ''),
-            canCreate: Boolean(r['canCreate'] ?? r['CanCreate'] ?? false),
-            canRead: Boolean(r['canRead'] ?? r['CanRead'] ?? false),
-            canUpdate: Boolean(r['canUpdate'] ?? r['CanUpdate'] ?? false),
-            canDelete: Boolean(r['canDelete'] ?? r['CanDelete'] ?? false),
-            canUpdateStatus: Boolean(r['canUpdateStatus'] ?? r['CanUpdateStatus'] ?? false),
-          } as RolePermissionDto;
-        });
-        this._matrix.set(rows);
-      }),
+    // Share an existing request for this user.
+    if (
+      !forceRefresh &&
+      this.permissionsRequest$ &&
+      this.permissionsRequestUserId === userId
+    ) {
+      return this.permissionsRequest$;
+    }
 
-      catchError((error) => {
-        console.error('Permission load failed:', error);
+    const version = ++this.requestVersion;
 
-        this._matrix.set([]);
+    let params = new HttpParams().set('systemRole', user.systemRole ?? '');
 
-        return of([]);
-      }),
-    );
+    if (user.departmentIds?.length) {
+      params = params.set('departmentIds', user.departmentIds.join(','));
+    }
+
+    const request$ = this.http
+      .get<RolePermissionDto[]>(this.permissionUrl, { params })
+      .pipe(
+        tap((result) => {
+          if (
+            version !== this.requestVersion ||
+            this.currentUser?.userId !== userId
+          ) {
+            return;
+          }
+
+          this._matrix.set(result ?? []);
+          this.permissionsLoadedForUserId = userId;
+        }),
+
+        catchError((error) => {
+          console.error('Failed to load permissions:', error);
+          return of([]);
+        }),
+
+        finalize(() => {
+          if (version === this.requestVersion) {
+            this.permissionsRequest$ = null;
+            this.permissionsRequestUserId = null;
+          }
+        }),
+
+        shareReplay(1),
+      );
+
+    this.permissionsRequest$ = request$;
+    this.permissionsRequestUserId = userId;
+
+    return request$;
   }
 
+  /**
+   * Get reactive permissions for a module.
+   */
   getModuleRights(moduleKey: string) {
     return computed((): ModuleRights => {
-      const allPerms = this._matrix();
-
       const isSuperAdmin = this.currentUser?.systemRole === 'SuperAdmin';
 
       if (isSuperAdmin) {
@@ -111,8 +167,9 @@ export class PermissionService {
       }
 
       const keyLower = moduleKey.toLowerCase();
-      const matches = allPerms.filter(
-        (p) => (p.moduleKey ?? '').toLowerCase() === keyLower,
+
+      const matches = this._matrix().filter(
+        (permission) => (permission.moduleKey ?? '').toLowerCase() === keyLower,
       );
 
       if (!matches.length) {
@@ -128,13 +185,9 @@ export class PermissionService {
       return matches.reduce<ModuleRights>(
         (acc, curr) => ({
           canCreate: acc.canCreate || curr.canCreate,
-
           canRead: acc.canRead || curr.canRead,
-
           canUpdate: acc.canUpdate || curr.canUpdate,
-
           canDelete: acc.canDelete || curr.canDelete,
-
           canUpdateStatus: acc.canUpdateStatus || curr.canUpdateStatus,
         }),
         {
@@ -148,7 +201,9 @@ export class PermissionService {
     });
   }
 
-  /** Menu / nav visibility: SuperAdmin always; otherwise RolePermission canRead. */
+  /**
+   * Check whether the current user can view a module.
+   */
   canReadModule(moduleKey: string | null | undefined): boolean {
     if (!moduleKey) {
       return false;

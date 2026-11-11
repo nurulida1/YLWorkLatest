@@ -37,7 +37,7 @@ import { PermissionService } from '../../../services/permissionService';
     TranslatePipe,
   ],
   template: `
-    <div class="min-h-screen bg-slate-50 flex flex-col pb-8">
+    <div class="min-h-0 bg-slate-50 flex flex-col pb-8">
       <!-- HEADER -->
       <header class="relative overflow-hidden bg-[#2148BC] rounded-b-[2rem]">
         <div

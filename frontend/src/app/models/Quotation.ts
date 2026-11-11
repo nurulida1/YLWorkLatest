@@ -86,9 +86,7 @@ export interface QuotationItemDto {
 export interface QuotationItemBase {
   id?: string | null;
   quotationId?: string;
-
   productServiceId?: string | null;
-
   rowType: string;
   item: string;
   description: string;
@@ -113,20 +111,15 @@ export interface CreateQuotationRequest {
   clientId: string;
   projectCode: string;
   subject: string;
-
   taxAmount: number;
   discount: number;
   subTotal: number;
   totalAmount: number;
-
   paymentTerms: string;
   validity: number;
   validityType: string;
-
   quotationItems: QuotationItemRequest[];
-
   termsAndConditions: TermsAndConditionOrderDto[];
-
   otherInformations: QuotationOtherInformation[];
 }
 
@@ -149,8 +142,9 @@ export interface QuotationOtherInformation {
   sortOrder?: number;
 }
 
+// Matches backend TermsAndConditionOrderDto
 export interface TermsAndConditionOrderDto {
-  termsAndConditionId?: string | null;
+  id?: string | null;
   title?: string;
   description?: string;
   sortOrder: number;

@@ -1,12 +1,28 @@
-import { CommonModule } from '@angular/common';
-import { Component, inject, OnDestroy, OnInit, signal } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
+import {
+  Component,
+  inject,
+  OnDestroy,
+  OnInit,
+  signal,
+  PLATFORM_ID,
+} from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 
 import { SpinnerComponent } from './common/components/spinner/spinner.component';
 import { ToastModule } from 'primeng/toast';
 import { ConfirmPopupModule } from 'primeng/confirmpopup';
 
-import { delay, Subject, take, takeUntil, distinctUntilChanged } from 'rxjs';
+import {
+  delay,
+  Subject,
+  take,
+  takeUntil,
+  distinctUntilChanged,
+  catchError,
+  switchMap,
+  of,
+} from 'rxjs';
 
 import { LoadingService } from './services/loading.service';
 import { NotificationService } from './services/notificationService.service';
@@ -31,6 +47,8 @@ export class App implements OnInit, OnDestroy {
 
   private readonly destroy$ = new Subject<void>();
 
+  private readonly platformId = inject(PLATFORM_ID);
+
   private readonly notificationService = inject(NotificationService);
   private readonly userService = inject(UserService);
   private readonly authService = inject(AuthService);
@@ -40,46 +58,47 @@ export class App implements OnInit, OnDestroy {
   isSpinning$ = this.loadingService.isLoading$.pipe(delay(0));
 
   ngOnInit(): void {
-    const savedLanguage = localStorage.getItem('language');
+    this.initializeLanguage();
+    this.initializeAuthentication();
+    this.initializeNotifications();
+  }
+
+  private initializeLanguage(): void {
+    const savedLanguage = isPlatformBrowser(this.platformId)
+      ? localStorage.getItem('language')
+      : null;
 
     const language: 'en' | 'zh' | 'ms' =
       savedLanguage === 'ms' || savedLanguage === 'zh' ? savedLanguage : 'en';
 
     this.translate.setFallbackLang('en');
     this.translate.use(language);
+  }
 
-    // Initialize authentication first.
-    // This also ensures expired tokens are refreshed before
-    // starting the notification connection.
+  private initializeAuthentication(): void {
     this.authService
       .initAuth()
-      .pipe(take(1))
-      .subscribe({
-        next: () => {
-          // Listen for login/logout/account changes.
-          this.userService.currentUser$
-            .pipe(
-              distinctUntilChanged(
-                (previous, current) => previous?.userId === current?.userId,
-              ),
-              takeUntil(this.destroy$),
-            )
-            .subscribe((user) => {
-              const userId = user?.userId ?? null;
-
-              console.log('Notification account changed:', userId);
-
-              this.notificationService.setUser(userId);
-            });
-        },
-        error: (error) => {
+      .pipe(
+        take(1),
+        catchError((error) => {
           console.error('Authentication initialization failed:', error);
-
-          this.notificationService.setUser(null);
-        },
+          return of(null);
+        }),
+        switchMap(() =>
+          this.userService.currentUser$.pipe(
+            distinctUntilChanged(
+              (previous, current) => previous?.userId === current?.userId,
+            ),
+          ),
+        ),
+        takeUntil(this.destroy$),
+      )
+      .subscribe((user) => {
+        this.notificationService.setUser(user?.userId ?? null);
       });
+  }
 
-    // Optional: listen globally for new notifications.
+  private initializeNotifications(): void {
     this.notificationService.message$
       .pipe(takeUntil(this.destroy$))
       .subscribe((msg) => {

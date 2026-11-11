@@ -733,7 +733,7 @@ export class ViewDetails implements OnInit, OnDestroy {
     this.loadingService.start();
 
     this.quotationService
-      .UpdateStatus(this.currentId, status, this.remarks)
+      .UpdateStatus(this.currentId, status)
       .pipe(takeUntil(this.ngUnsubscribe))
       .subscribe({
         next: (res) => {

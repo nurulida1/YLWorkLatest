@@ -129,6 +129,11 @@ namespace YLWorks.Data
         public DbSet<QuotationTermsAndCondition> QuotationTermsAndConditions { get; set; }
         public DbSet<QuotationOtherInformation> QuotationOtherInformations { get; set; }
 
+        public DbSet<QuotationTemplate> QuotationTemplates { get; set; }
+        public DbSet<QuotationTemplateItem> QuotationTemplateItems { get; set; }
+        public DbSet<QuotationTemplateTerm> QuotationTemplateTerms { get; set; }
+        public DbSet<QuotationDocument> QuotationDocuments { get; set; }
+
         public DbSet<PurchaseOrder> PurchaseOrders { get; set; }
         public DbSet<PurchaseOrderItem> PurchaseOrderItems { get; set; }
         public DbSet<PurchaseOrderStatusHistory> PurchaseOrderStatusHistories { get; set; }
@@ -503,10 +508,33 @@ namespace YLWorks.Data
                     .IsRequired()
                     .HasMaxLength(50);
 
+                entity.HasIndex(e => e.QuotationNo)
+                    .IsUnique();
+
                 entity.HasMany(q => q.QuotationItems)
                     .WithOne(qi => qi.Quotation)
                     .HasForeignKey(qi => qi.QuotationId)
                     .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasMany(q => q.QuotationStatusHistories)
+                    .WithOne(sh => sh.Quotation)
+                    .HasForeignKey(sh => sh.QuotationId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasMany(q => q.Documents)
+                    .WithOne(d => d.Quotation)
+                    .HasForeignKey(d => d.QuotationId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(q => q.CreatedBy)
+                    .WithMany()
+                    .HasForeignKey(q => q.CreatedById)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(q => q.LastGeneratedBy)
+                    .WithMany()
+                    .HasForeignKey(q => q.LastGeneratedById)
+                    .OnDelete(DeleteBehavior.SetNull);
             });
 
             modelBuilder.Entity<QuotationItems>(entity =>
@@ -529,11 +557,43 @@ namespace YLWorks.Data
             modelBuilder.Entity<QuotationStatusHistory>(entity =>
             {
                 entity.HasKey(e => e.Id);
-
-                entity.HasOne(sh => sh.Quotation)
-                    .WithMany(q => q.QuotationStatusHistories)
-                    .HasForeignKey(sh => sh.QuotationId);
             });
+
+            modelBuilder.Entity<QuotationDocument>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.ContentType)
+                    .HasMaxLength(100)
+                    .HasDefaultValue("application/pdf");
+            });
+
+            // =======================
+            // QUOTATION TEMPLATES
+            // =======================
+
+            modelBuilder.Entity<QuotationTemplate>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+
+                entity.HasIndex(e => e.Name);
+
+                entity.HasMany(x => x.Items)
+                    .WithOne(x => x.Template)
+                    .HasForeignKey(x => x.TemplateId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasMany(x => x.Terms)
+                    .WithOne(x => x.Template)
+                    .HasForeignKey(x => x.TemplateId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<QuotationTemplateItem>()
+                .HasKey(x => x.Id);
+
+            modelBuilder.Entity<QuotationTemplateTerm>()
+                .HasKey(x => x.Id);
 
             modelBuilder.Entity<ProductService>(entity =>
             {

@@ -5,19 +5,12 @@ import {
   Component,
   DestroyRef,
   inject,
-  OnInit,
 } from '@angular/core';
 import { NavigationEnd, Router, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { filter } from 'rxjs';
-
-import { TooltipModule } from 'primeng/tooltip';
-import { DialogModule } from 'primeng/dialog';
-import { ButtonModule } from 'primeng/button';
-
+import { distinctUntilChanged, filter, of, switchMap } from 'rxjs';
 import { UserService } from '../../../services/userService.service';
 import { LoginResponse } from '../../../models/User';
-import { AuthService } from '../../../services/authService';
 import { PermissionService } from '../../../services/permissionService';
 import {
   APP_MAIN_MENU,
@@ -27,13 +20,7 @@ import {
 
 @Component({
   selector: 'app-sidemenu',
-  imports: [
-    CommonModule,
-    RouterLink,
-    TooltipModule,
-    DialogModule,
-    ButtonModule,
-  ],
+  imports: [CommonModule, RouterLink],
   template: `
     <div
       class="h-full flex flex-col justify-between pt-7 pb-5 border-r border-gray-200 text-white"
@@ -91,20 +78,30 @@ import {
           >
             <ng-container *ngFor="let item of management">
               <div
-                *ngIf="canView(item) || hasVisibleSubItems(item)"
+                *ngIf="canView(item)"
                 class="flex flex-col gap-2 w-full"
                 [ngClass]="{
                   'lg:hidden': item.mobileOnly,
                 }"
               >
                 <!-- Parent Menu -->
-                <div
-                  class="flex flex-row lg:pl-4 items-center justify-between gap-3 py-2 rounded-lg px-2"
+                <button
+                  type="button"
+                  class="flex w-full flex-row lg:pl-4 items-center justify-between
+         gap-3 py-2 rounded-lg px-2 text-left"
                   [ngClass]="{
                     'bg-blue-500 text-white': isActive(item.route, item),
-                    'hover:text-gray-400 cursor-pointer text-gray-300':
-                      !isActive(item.route, item),
+                    'text-gray-300 hover:text-white cursor-pointer': !isActive(
+                      item.route,
+                      item
+                    ),
                   }"
+                  [attr.aria-controls]="
+                    item.items ? 'submenu-' + item.label : null
+                  "
+                  [attr.aria-expanded]="
+                    item.items ? openMenu === item.label : null
+                  "
                   (click)="
                     item.items
                       ? toggleMenu(item.label)
@@ -133,14 +130,15 @@ import {
                       'pi-chevron-down': openMenu === item.label,
                     }"
                   ></i>
-                </div>
+                </button>
 
                 <!-- Submenu -->
                 <div
                   *ngIf="item.items && openMenu === item.label"
+                  [id]="'submenu-' + item.label"
                   class="ml-10 flex flex-col gap-1"
                 >
-                  <div
+                  <a
                     *ngFor="let sub of getAllowedSubItems(item)"
                     class="py-3 px-3 rounded-md cursor-pointer"
                     [ngClass]="{
@@ -153,9 +151,10 @@ import {
                       'lg:hidden': sub.mobileOnly,
                     }"
                     [routerLink]="sub.route"
+                    [attr.aria-current]="isActive(sub.route) ? 'page' : null"
                   >
                     {{ sub.label }}
-                  </div>
+                  </a>
                 </div>
               </div>
             </ng-container>
@@ -167,21 +166,17 @@ import {
   styleUrl: './sidemenu.less',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class Sidemenu implements OnInit {
+export class Sidemenu {
   readonly router = inject(Router);
 
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly destroyRef = inject(DestroyRef);
 
   private readonly userService = inject(UserService);
-  private readonly authService = inject(AuthService);
   private readonly permissionService = inject(PermissionService);
 
   currentUrl = '';
   currentUser: LoginResponse | null = null;
-
-  showDialog = false;
-  signOutDialog = false;
 
   openMenu: string | null = null;
 
@@ -193,30 +188,29 @@ export class Sidemenu implements OnInit {
     this.initializeRouteTracking();
   }
 
-  ngOnInit(): void {
-    this.reloadPermissions();
-  }
-
   private initializeCurrentUser(): void {
     this.currentUser = this.userService.currentUser;
 
     this.userService.currentUser$
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((user) => {
-        this.currentUser = user;
-        if (user) {
-          this.reloadPermissions();
-        } else {
-          this.cdr.markForCheck();
-        }
-      });
-  }
+      .pipe(
+        distinctUntilChanged(
+          (previous, current) => previous?.userId === current?.userId,
+        ),
+        switchMap((user) => {
+          this.currentUser = user;
 
-  private reloadPermissions(): void {
-    this.permissionService.loadPermissions().subscribe({
-      next: () => this.cdr.markForCheck(),
-      error: () => this.cdr.markForCheck(),
-    });
+          if (!user) {
+            this.permissionService.clearPermissions();
+            return of([]);
+          }
+
+          return this.permissionService.loadPermissions();
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe(() => {
+        this.cdr.markForCheck();
+      });
   }
 
   private initializeRouteTracking(): void {
@@ -247,31 +241,24 @@ export class Sidemenu implements OnInit {
     const cleanUrl = this.currentUrl.split('?')[0].split('#')[0];
 
     if (item?.items?.length) {
-      const matchedRoutes = item.items
-        .map((sub) => sub.route)
-        .filter((subRoute): subRoute is string =>
-          this.isRouteMatch(cleanUrl, subRoute),
-        );
-
-      return matchedRoutes.length > 0;
+      return item.items.some((sub) => this.isRouteMatch(cleanUrl, sub.route));
     }
 
     if (!route) return false;
 
-    // Only the most specific matching route should be active.
-    const matchingRoutes = [
+    const allRoutes = [
       ...this.mainMenu,
       ...this.management.flatMap((menu) => [menu, ...(menu.items ?? [])]),
     ]
       .map((menu) => menu.route)
-      .filter(
-        (menuRoute): menuRoute is string =>
-          !!menuRoute && this.isRouteMatch(cleanUrl, menuRoute),
-      );
+      .filter((value): value is string => !!value);
 
-    const mostSpecificRoute = matchingRoutes.sort(
-      (a, b) => b.length - a.length,
-    )[0];
+    const mostSpecificRoute = allRoutes
+      .filter((value) => this.isRouteMatch(cleanUrl, value))
+      .reduce(
+        (longest, value) => (value.length > longest.length ? value : longest),
+        '',
+      );
 
     return route === mostSpecificRoute;
   }
@@ -307,20 +294,5 @@ export class Sidemenu implements OnInit {
     }
 
     return this.permissionService.canReadModule(item.moduleKey);
-  }
-
-  signOutClick(): void {
-    this.signOutDialog = true;
-    this.cdr.markForCheck();
-  }
-
-  toggleDialog(): void {
-    this.showDialog = !this.showDialog;
-    this.cdr.markForCheck();
-  }
-
-  LogOut(): void {
-    this.signOutDialog = false;
-    this.authService.logout();
   }
 }

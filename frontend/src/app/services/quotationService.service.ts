@@ -3,11 +3,13 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, retry, catchError, of, throwError } from 'rxjs';
 import { MessageService } from 'primeng/api';
 import { environment } from '../../environments/environment';
+
 import {
   CreateQuotationRequest,
   QuotationDto,
   UpdateQuotationRequest,
 } from '../models/Quotation';
+
 import {
   GridifyQueryExtend,
   PagingContent,
@@ -25,36 +27,93 @@ export class QuotationService {
     private messageService: MessageService,
   ) {}
 
+  // =========================================================
+  // QUERY PARAMETERS
+  // =========================================================
+
   private buildParams(query: GridifyQueryExtend): HttpParams {
     let params = new HttpParams()
       .set('page', query.Page.toString())
       .set('pageSize', query.PageSize.toString());
 
-    if (query.Select) params = params.set('select', query.Select);
-    if (query.OrderBy) params = params.set('orderBy', query.OrderBy);
-    if (query.Filter) params = params.set('filter', query.Filter);
-    if (query.Includes) params = params.set('includes', query.Includes);
+    if (query.Select) {
+      params = params.set('select', query.Select);
+    }
+
+    if (query.OrderBy) {
+      params = params.set('orderBy', query.OrderBy);
+    }
+
+    if (query.Filter) {
+      params = params.set('filter', query.Filter);
+    }
+
+    if (query.Includes) {
+      params = params.set('includes', query.Includes);
+    }
 
     return params;
   }
 
+  private handleError = (context: string) => (error: any) => {
+    this.messageService.add({
+      severity: 'error',
+      summary: `Error in ${context}`,
+      detail:
+        error?.error?.Error ||
+        error?.error?.error ||
+        error?.error?.detail ||
+        error?.message ||
+        'Unexpected error occurred.',
+    });
+
+    return throwError(() => error);
+  };
+
+  // =========================================================
+  // GET MANY
+  // =========================================================
+
   GetMany(query: GridifyQueryExtend): Observable<PagingContent<QuotationDto>> {
     const params = this.buildParams(query);
+
     return this.http
-      .get<PagingContent<QuotationDto>>(`${this.url}/GetMany`, { params })
+      .get<PagingContent<QuotationDto>>(`${this.url}/GetMany`, {
+        params,
+      })
       .pipe(retry(1), catchError(this.handleError('GetMany')));
   }
 
+  // =========================================================
+  // GET ONE
+  // =========================================================
+
   GetOne(query: GridifyQueryExtend): Observable<QuotationDto | null> {
-    const params = this.buildParams(query);
-    return this.http.get<QuotationDto>(`${this.url}/GetOne`, { params }).pipe(
-      retry(1),
-      catchError((error) => {
-        if (error.status === 404) return of(null);
-        return this.handleError('GetOne')(error);
-      }),
-    );
+    let params = new HttpParams();
+
+    if (query.Filter) {
+      params = params.set('filter', query.Filter);
+    }
+
+    return this.http
+      .get<QuotationDto>(`${this.url}/GetOne`, {
+        params,
+      })
+      .pipe(
+        retry(1),
+        catchError((error) => {
+          if (error.status === 404) {
+            return of(null);
+          }
+
+          return this.handleError('GetOne')(error);
+        }),
+      );
   }
+
+  // =========================================================
+  // CREATE
+  // =========================================================
 
   Create(request: CreateQuotationRequest): Observable<QuotationDto> {
     return this.http
@@ -62,45 +121,53 @@ export class QuotationService {
       .pipe(retry(1), catchError(this.handleError('Create')));
   }
 
+  // =========================================================
+  // UPDATE
+  // =========================================================
+
   Update(request: UpdateQuotationRequest): Observable<QuotationDto> {
     return this.http
       .put<QuotationDto>(`${this.url}/Update`, request)
       .pipe(retry(1), catchError(this.handleError('Update')));
   }
 
-  Preview(request: CreateQuotationRequest | QuotationDto): Observable<any> {
+  // =========================================================
+  // CLONE
+  // =========================================================
+
+  Clone(id: string): Observable<QuotationDto> {
     return this.http
-      .post<any>(`${this.url}/Preview`, request)
-      .pipe(retry(1), catchError(this.handleError('Preview')));
+      .post<QuotationDto>(`${this.url}/Clone/${id}`, {})
+      .pipe(retry(1), catchError(this.handleError('Clone')));
   }
 
-  UpdateStatus(
-    id: string,
-    status: string,
-    userId?: string | null,
-  ): Observable<any> {
-    const params: any = {
-      id,
-      status,
-    };
-    if (userId) {
-      params.userId = userId;
-    }
+  // =========================================================
+  // GENERATE QUOTATION NUMBER
+  // =========================================================
+
+  GenerateNo(): Observable<{ quotationNo: string }> {
     return this.http
-      .put<any>(`${this.url}/UpdateStatus`, null, { params })
+      .get<{ quotationNo: string }>(`${this.url}/generate-no`)
+      .pipe(retry(1), catchError(this.handleError('GenerateNo')));
+  }
+
+  // =========================================================
+  // UPDATE STATUS
+  // =========================================================
+
+  UpdateStatus(id: string, status: string): Observable<any> {
+    const params = new HttpParams().set('id', id).set('status', status);
+
+    return this.http
+      .put<any>(`${this.url}/UpdateStatus`, null, {
+        params,
+      })
       .pipe(retry(1), catchError(this.handleError('UpdateStatus')));
   }
 
-  ConvertToInvoice(
-    id: string,
-  ): Observable<{ message: string; invoiceNo: string }> {
-    return this.http
-      .post<{
-        message: string;
-        invoiceNo: string;
-      }>(`${this.url}/ConvertToInvoice/${id}`, {})
-      .pipe(retry(1), catchError(this.handleError('ConvertToInvoice')));
-  }
+  // =========================================================
+  // CONVERT TO SALES ORDER
+  // =========================================================
 
   ConvertToSalesOrder(
     quotationId: string,
@@ -115,9 +182,18 @@ export class QuotationService {
   }> {
     const formData = new FormData();
 
-    if (clientPONumber) formData.append('ClientPONumber', clientPONumber);
-    if (clientPODate) formData.append('ClientPODate', clientPODate);
-    if (remarks) formData.append('Remarks', remarks);
+    if (clientPONumber) {
+      formData.append('ClientPONumber', clientPONumber);
+    }
+
+    if (clientPODate) {
+      formData.append('ClientPODate', clientPODate);
+    }
+
+    if (remarks) {
+      formData.append('Remarks', remarks);
+    }
+
     if (clientPOAttachment) {
       formData.append(
         'ClientPOAttachment',
@@ -135,42 +211,35 @@ export class QuotationService {
       .pipe(retry(1), catchError(this.handleError('ConvertToSalesOrder')));
   }
 
-  GetDashboardCount(): Observable<{
-    pending: number;
-    approved: number;
-    rejected: number;
-  }> {
-    return this.http
-      .get<{
-        pending: number;
-        approved: number;
-        rejected: number;
-      }>(`${this.url}/DashboardCount`)
-      .pipe(retry(1), catchError(this.handleError('GetDashboardCount')));
-  }
-
-  downloadPdf(id: string) {
-    const url = `${environment.ApiBaseUrl}/Quotation/DownloadPdf/${id}`;
-    return this.http.get(url, { responseType: 'blob' });
-  }
-
-  GenerateNo() {
-    return this.http.get<{ quotationNo: string }>(`${this.url}/generate-no`);
-  }
+  // =========================================================
+  // DELETE QUOTATION
+  // =========================================================
 
   Delete(id: string): Observable<BaseResponse> {
-    const params = { id };
+    const params = new HttpParams().set('id', id);
 
     return this.http
-      .delete<BaseResponse>(`${this.url}/Delete`, { params })
+      .delete<BaseResponse>(`${this.url}/Delete`, {
+        params,
+      })
       .pipe(retry(1), catchError(this.handleError('Delete')));
   }
 
+  // =========================================================
+  // EXPORT EXCEL
+  // =========================================================
+
   ExportToExcel(): Observable<Blob> {
-    return this.http.get(`${this.url}/ExportExcel`, {
-      responseType: 'blob',
-    });
+    return this.http
+      .get(`${this.url}/ExportExcel`, {
+        responseType: 'blob',
+      })
+      .pipe(retry(1), catchError(this.handleError('ExportToExcel')));
   }
+
+  // =========================================================
+  // DROPDOWN
+  // =========================================================
 
   GetDropdown(): Observable<any> {
     return this.http
@@ -178,16 +247,60 @@ export class QuotationService {
       .pipe(retry(1), catchError(this.handleError('GetDropdown')));
   }
 
-  private handleError = (context: string) => (error: any) => {
-    this.messageService.add({
-      severity: 'error',
-      summary: `Error in ${context}`,
-      detail:
-        error?.error?.Error ||
-        error?.error?.detail ||
-        error?.message ||
-        'Unexpected error occurred.',
+  // =========================================================
+  // SAVE AS TEMPLATE
+  // =========================================================
+
+  SaveAsTemplate(
+    quotationId: string,
+    templateName: string,
+  ): Observable<{
+    message: string;
+    templateId: string;
+    name: string;
+  }> {
+    return this.http
+      .post<{
+        message: string;
+        templateId: string;
+        name: string;
+      }>(`${this.url}/SaveAsTemplate/${quotationId}`, templateName)
+      .pipe(retry(1), catchError(this.handleError('SaveAsTemplate')));
+  }
+
+  // =========================================================
+  // GET TEMPLATES
+  // =========================================================
+
+  GetTemplates(): Observable<any[]> {
+    return this.http
+      .get<any[]>(`${this.url}/GetTemplates`)
+      .pipe(retry(1), catchError(this.handleError('GetTemplates')));
+  }
+
+  // =========================================================
+  // GET TEMPLATE
+  // =========================================================
+
+  GetTemplate(id: string): Observable<any> {
+    return this.http
+      .get<any>(`${this.url}/GetTemplate/${id}`)
+      .pipe(retry(1), catchError(this.handleError('GetTemplate')));
+  }
+
+  // =========================================================
+  // DELETE TEMPLATE
+  // =========================================================
+
+  DeleteTemplate(id: string): Observable<BaseResponse> {
+    return this.http
+      .delete<BaseResponse>(`${this.url}/DeleteTemplate/${id}`)
+      .pipe(retry(1), catchError(this.handleError('DeleteTemplate')));
+  }
+
+  downloadPdf(id: string): Observable<Blob> {
+    return this.http.get(`${this.url}/DownloadPdf/${id}`, {
+      responseType: 'blob',
     });
-    return throwError(() => error);
-  };
+  }
 }

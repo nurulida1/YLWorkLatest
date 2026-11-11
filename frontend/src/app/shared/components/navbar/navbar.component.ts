@@ -11,7 +11,7 @@ import {
 } from '@angular/core';
 
 import { NavigationEnd, Router, RouterLink } from '@angular/router';
-import { Subject, filter, takeUntil } from 'rxjs';
+import { Subject, distinctUntilChanged, filter, takeUntil } from 'rxjs';
 
 import { AvatarModule } from 'primeng/avatar';
 import { ButtonModule } from 'primeng/button';
@@ -594,16 +594,13 @@ export class NavbarComponent implements OnDestroy, OnInit {
   currentUser: LoginResponse | null = null;
 
   constructor() {
-    this.currentUser = this.userService.currentUser;
-    this.userId = this.currentUser?.userId ?? null;
+    const savedLanguage = localStorage.getItem('language');
+    const currentLanguage = this.translate.currentLang;
 
-    this.userService.currentUser$
-      .pipe(takeUntil(this.destroy$))
-      .subscribe((user) => {
-        this.currentUser = user;
-        this.userId = user?.userId ?? null;
-        this.cdr.markForCheck();
-      });
+    const language = savedLanguage || currentLanguage || 'en';
+
+    this.selectedLanguage =
+      language === 'zh' || language === 'ms' ? language : 'en';
 
     this.router.events
       .pipe(
@@ -620,11 +617,19 @@ export class NavbarComponent implements OnDestroy, OnInit {
   }
 
   ngOnInit(): void {
-    const savedLanguage = localStorage.getItem('language');
+    // Language
+    this.translate.onLangChange
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((event) => {
+        const language = event.lang;
 
-    this.selectedLanguage =
-      savedLanguage === 'zh' || savedLanguage === 'ms' ? savedLanguage : 'en';
+        if (language === 'en' || language === 'zh' || language === 'ms') {
+          this.selectedLanguage = language;
+          this.cdr.markForCheck();
+        }
+      });
 
+    // Notification list
     this.notificationService.notifications$
       .pipe(takeUntil(this.destroy$))
       .subscribe((notifications) => {
@@ -632,6 +637,7 @@ export class NavbarComponent implements OnDestroy, OnInit {
         this.cdr.markForCheck();
       });
 
+    // Unread count
     this.notificationService.unreadCount$
       .pipe(takeUntil(this.destroy$))
       .subscribe((count) => {
@@ -639,14 +645,8 @@ export class NavbarComponent implements OnDestroy, OnInit {
         this.cdr.markForCheck();
       });
 
-    this.notificationService
-      .GetNotifications()
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        error: (err) => console.error('Failed to load notifications:', err),
-      });
-
-    this.notificationService.refreshUnreadCount();
+    // Authenticated user
+    this.subscribeToCurrentUser();
   }
 
   // ----------------------------------------
@@ -718,6 +718,7 @@ export class NavbarComponent implements OnDestroy, OnInit {
   onBellClick(): void {
     if (this.isMobile) {
       this.notificationVisible = false;
+      this.profileMenuVisible = false;
       this.router.navigate(['/notifications']);
       return;
     }
@@ -770,13 +771,9 @@ export class NavbarComponent implements OnDestroy, OnInit {
       .MarkRead(notification.id)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: () => {
-          notification.isRead = true;
-          this.unreadCount = Math.max(0, this.unreadCount - 1);
-          this.cdr.markForCheck();
+        error: (err) => {
+          console.error('Failed to mark notification as read:', err);
         },
-        error: (err) =>
-          console.error('Failed to mark notification as read:', err),
       });
   }
 
@@ -841,6 +838,22 @@ export class NavbarComponent implements OnDestroy, OnInit {
     }
 
     this.cdr.markForCheck();
+  }
+
+  private subscribeToCurrentUser(): void {
+    this.userService.currentUser$
+      .pipe(
+        distinctUntilChanged(
+          (previous, current) => previous?.userId === current?.userId,
+        ),
+        takeUntil(this.destroy$),
+      )
+      .subscribe((user) => {
+        this.currentUser = user;
+        this.userId = user?.userId ?? null;
+
+        this.cdr.markForCheck();
+      });
   }
 
   // ----------------------------------------

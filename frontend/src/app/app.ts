@@ -12,6 +12,7 @@ import { LoadingService } from './services/loading.service';
 import { NotificationService } from './services/notificationService.service';
 import { AuthService } from './services/authService';
 import { UserService } from './services/userService.service';
+import { TranslateService } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-root',
@@ -34,10 +35,19 @@ export class App implements OnInit, OnDestroy {
   private readonly userService = inject(UserService);
   private readonly authService = inject(AuthService);
   private readonly loadingService = inject(LoadingService);
+  private readonly translate = inject(TranslateService);
 
   isSpinning$ = this.loadingService.isLoading$.pipe(delay(0));
 
   ngOnInit(): void {
+    const savedLanguage = localStorage.getItem('language');
+
+    const language: 'en' | 'zh' | 'ms' =
+      savedLanguage === 'ms' || savedLanguage === 'zh' ? savedLanguage : 'en';
+
+    this.translate.setFallbackLang('en');
+    this.translate.use(language);
+
     // Initialize authentication first.
     // This also ensures expired tokens are refreshed before
     // starting the notification connection.

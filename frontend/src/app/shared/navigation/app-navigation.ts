@@ -11,6 +11,8 @@ export interface AppNavItem {
   moduleKey?: string;
   /** Show only in mobile layouts when true. */
   mobileOnly?: boolean;
+  public?: boolean;
+
   items?: AppNavItem[];
 }
 
@@ -22,6 +24,7 @@ export interface MobileQuickAction {
   moduleKey: string;
   color: string;
   background: string;
+  public?: boolean;
 }
 
 export interface MobileWorkMenuItem {
@@ -30,6 +33,7 @@ export interface MobileWorkMenuItem {
   icon: string;
   route: string;
   moduleKey: string;
+  public?: boolean;
 }
 
 /** Top-level items shown above grouped management menus (desktop sidemenu). */
@@ -39,12 +43,14 @@ export const APP_MAIN_MENU: AppNavItem[] = [
     route: '/dashboard',
     icon: 'pi-home',
     moduleKey: 'dashboard',
+    public: true,
   },
   {
     label: 'Office Handbook',
     route: '/office-handbook',
     icon: 'pi-book',
     moduleKey: 'office-handbook',
+    public: true,
   },
 ];
 
@@ -59,18 +65,21 @@ export const APP_MANAGEMENT_MENU: AppNavItem[] = [
         route: '/meeting',
         icon: 'pi-calendar-clock',
         moduleKey: 'meeting',
+        public: true,
       },
       {
         label: 'My Tasks',
         route: '/my-tasks',
         icon: 'pi-list-check',
         moduleKey: 'my-tasks',
+        public: true,
       },
       {
         label: 'My Daily Reports',
         route: '/daily-reports',
         icon: 'pi-file-edit',
         moduleKey: 'daily-reports',
+        public: true,
       },
       {
         label: 'Team Daily Reports',
@@ -88,6 +97,13 @@ export const APP_MANAGEMENT_MENU: AppNavItem[] = [
         label: 'Leave Application',
         route: '/leave',
         moduleKey: 'leave',
+        public: true,
+      },
+      {
+        label: 'Apply Leave',
+        route: '/leave/apply',
+        moduleKey: 'leave/apply',
+        public: true,
       },
       {
         label: 'Leave Approvals',
@@ -103,6 +119,7 @@ export const APP_MANAGEMENT_MENU: AppNavItem[] = [
         label: 'Apply Claim',
         route: '/claims/apply',
         moduleKey: 'apply',
+        public: true,
       },
       {
         label: 'Claim Approvals',
@@ -120,6 +137,7 @@ export const APP_MANAGEMENT_MENU: AppNavItem[] = [
         route: '/hardware-request',
         icon: 'pi-wrench',
         moduleKey: 'hardware-request',
+        public: true,
       },
       {
         label: 'Incoming Requests',
@@ -261,6 +279,7 @@ export const APP_MANAGEMENT_MENU: AppNavItem[] = [
         label: 'Department',
         route: '/department',
         moduleKey: 'department',
+        public: true,
       },
       {
         label: 'Suppliers',
@@ -272,7 +291,20 @@ export const APP_MANAGEMENT_MENU: AppNavItem[] = [
         route: '/clients',
         moduleKey: 'clients',
       },
+      {
+        label: 'Directory',
+        route: '/directory',
+        moduleKey: 'directory',
+        public: true,
+      },
     ],
+  },
+  {
+    label: 'Profile Settings',
+    route: '/profile-settings',
+    icon: 'pi-user',
+    moduleKey: 'profile-settings',
+    public: true,
   },
   {
     label: 'Administration Settings',
@@ -283,12 +315,7 @@ export const APP_MANAGEMENT_MENU: AppNavItem[] = [
         route: '/user-management',
         moduleKey: 'user-management',
       },
-      {
-        label: 'Profile Settings',
-        route: '/profile-settings',
-        icon: 'pi-user',
-        moduleKey: 'profile-settings',
-      },
+
       {
         label: 'System Module',
         route: '/settings/system-module',
@@ -337,6 +364,7 @@ export const APP_MANAGEMENT_MENU: AppNavItem[] = [
     route: '/announcements',
     icon: 'pi-bell',
     moduleKey: 'announcement',
+    public: true,
   },
 ];
 
@@ -347,6 +375,7 @@ export const MOBILE_WORK_MENU: MobileWorkMenuItem[] = [
     icon: 'pi pi-calendar-clock',
     route: '/meeting',
     moduleKey: 'meeting',
+    public: true,
   },
   {
     label: 'My Tasks',
@@ -354,6 +383,7 @@ export const MOBILE_WORK_MENU: MobileWorkMenuItem[] = [
     icon: 'pi pi-list-check',
     route: '/my-tasks',
     moduleKey: 'my-tasks',
+    public: true,
   },
   {
     label: 'My Daily Reports',
@@ -361,6 +391,7 @@ export const MOBILE_WORK_MENU: MobileWorkMenuItem[] = [
     icon: 'pi pi-file-edit',
     route: '/daily-reports',
     moduleKey: 'daily-reports',
+    public: true,
   },
   {
     label: 'Team Daily Reports',
@@ -380,6 +411,7 @@ export const MOBILE_QUICK_ACTIONS: MobileQuickAction[] = [
     moduleKey: 'leave-apply',
     color: '#2563eb',
     background: '#eff6ff',
+    public: true,
   },
   {
     label: 'Apply Claim',
@@ -389,6 +421,7 @@ export const MOBILE_QUICK_ACTIONS: MobileQuickAction[] = [
     moduleKey: 'apply',
     color: '#059669',
     background: '#ecfdf5',
+    public: true,
   },
   {
     label: 'Daily Report',
@@ -398,6 +431,7 @@ export const MOBILE_QUICK_ACTIONS: MobileQuickAction[] = [
     moduleKey: 'daily-reports',
     color: '#7c3aed',
     background: '#f5f3ff',
+    public: true,
   },
   {
     label: 'Hardware Request',
@@ -407,6 +441,7 @@ export const MOBILE_QUICK_ACTIONS: MobileQuickAction[] = [
     moduleKey: 'hardware-request',
     color: '#ea580c',
     background: '#fff7ed',
+    public: true,
   },
   {
     label: 'Create Meeting',
@@ -416,5 +451,6 @@ export const MOBILE_QUICK_ACTIONS: MobileQuickAction[] = [
     moduleKey: 'meeting',
     color: '#0891b2',
     background: '#ecfeff',
+    public: true,
   },
 ];

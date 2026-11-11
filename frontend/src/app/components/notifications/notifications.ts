@@ -12,10 +12,11 @@ import { of, Subject, switchMap, takeUntil } from 'rxjs';
 import { NotificationDto } from '../../models/Notifications';
 import { UserService } from '../../services/userService.service';
 import { NotificationService } from '../../services/notificationService.service';
+import { TranslateDirective } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-notifications',
-  imports: [CommonModule],
+  imports: [CommonModule, TranslateDirective],
 
   template: `
     <div class="min-h-screen bg-[#F8FAFC]">
@@ -36,10 +37,16 @@ import { NotificationService } from '../../services/notificationService.service'
               </button>
 
               <div>
-                <h1 class="text-lg sm:text-xl font-bold text-gray-900 m-0">
+                <h1
+                  class="text-lg sm:text-xl font-bold text-gray-900 m-0"
+                  translate
+                >
                   Notifications
                 </h1>
-                <p class="text-xs sm:text-sm text-gray-500 mt-0.5 mb-0">
+                <p
+                  class="text-xs sm:text-sm text-gray-500 mt-0.5 mb-0"
+                  translate
+                >
                   Stay updated with your latest activities
                 </p>
               </div>
@@ -67,18 +74,11 @@ import { NotificationService } from '../../services/notificationService.service'
           <div
             class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
           >
-            <div>
-              <h2 class="text-base sm:text-xl font-bold text-gray-800 m-0">
-                Notifications
-              </h2>
-
-              <p class="text-xs sm:text-sm text-gray-500 mt-1 mb-0">
-                Stay updated with your latest activities.
-              </p>
-            </div>
-
             <div class="flex items-center justify-between sm:justify-end gap-3">
-              <span class="text-xs text-gray-400 font-medium whitespace-nowrap">
+              <span
+                class="text-xs text-gray-400 font-medium whitespace-nowrap"
+                translate
+              >
                 {{ notificationsList.length }} notifications
                 <span class="text-blue-700"> ({{ unreadCount }} unread) </span>
               </span>
@@ -92,6 +92,7 @@ import { NotificationService } from '../../services/notificationService.service'
                  text-xs font-semibold text-blue-700 bg-blue-50
                  hover:bg-blue-100 rounded-lg transition-colors
                  disabled:opacity-50 disabled:cursor-not-allowed"
+                  translate
                 >
                   <i
                     class="pi"
@@ -208,7 +209,7 @@ import { NotificationService } from '../../services/notificationService.service'
 
         <!-- Footer -->
         <div class="text-center mt-6">
-          <p class="text-[11px] sm:text-xs text-gray-400 m-0">
+          <p class="text-[11px] sm:text-xs text-gray-400 m-0" translate>
             YL Works · Notification Centre
           </p>
         </div>

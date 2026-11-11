@@ -47,8 +47,8 @@ import { TextareaModule } from 'primeng/textarea';
 import { DatePickerModule } from 'primeng/datepicker';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { Notice } from '../../../models/Notice';
-import { HardwareRequestService } from '../../../services/HardwareRequestService';
 import { HardwareRequestDto } from '../../../models/HardwareRequest';
+import { TranslateDirective, TranslatePipe } from '@ngx-translate/core';
 
 interface PersonalTask {
   title: string;
@@ -81,6 +81,8 @@ interface WeekDayCell {
     TextareaModule,
     DatePickerModule,
     InputNumberModule,
+    TranslateDirective,
+    TranslatePipe,
   ],
   template: `
     @if (isSuperAdmin) {
@@ -101,9 +103,7 @@ interface WeekDayCell {
               <h1 class="text-3xl font-bold tracking-tight text-gray-950">
                 Good morning,
                 {{
-                  currentUser?.displayName ||
-                    currentUser?.fullName ||
-                    'there'
+                  currentUser?.displayName || currentUser?.fullName || 'there'
                 }}
               </h1>
 
@@ -556,13 +556,13 @@ interface WeekDayCell {
               </span>
             </div>
 
-            <div class="font-bold text-2xl sm:text-3xl">
-              Welcome back,
-              {{
-                currentUser?.displayName ||
-                  currentUser?.fullName ||
-                  'there'
-              }}
+            <div
+              class="flex flex-row items-center gap-1 font-bold text-2xl sm:text-3xl"
+            >
+              <div translate>Welcome back,</div>
+              <span>{{
+                currentUser?.displayName || currentUser?.fullName || 'there'
+              }}</span>
             </div>
           </div>
 
@@ -570,8 +570,8 @@ interface WeekDayCell {
             class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2"
           >
             <p-button
-              (onClick)="showDialogReceipt()"
-              label="New Claim"
+              [routerLink]="'/claims/apply'"
+              [label]="'New Claim' | translate"
               severity="secondary"
               icon="pi pi-money-bill"
               styleClass="bg-white! border-gray-300! px-5!"
@@ -579,7 +579,7 @@ interface WeekDayCell {
 
             <p-button
               [routerLink]="'/leave/apply'"
-              label="Apply Leave"
+              [label]="'Apply Leave' | translate"
               severity="info"
               icon="pi pi-plus"
               styleClass="bg-blue-800! border-none! px-5!"
@@ -603,8 +603,10 @@ interface WeekDayCell {
               </div>
 
               <div>
-                <h3 class="text-sm font-bold text-gray-800">Announcements</h3>
-                <p class="text-xs text-gray-400 mt-0.5">
+                <h3 class="text-sm font-bold text-gray-800" translate>
+                  Announcements
+                </h3>
+                <p class="text-xs text-gray-400 mt-0.5" translate>
                   Latest company updates
                 </p>
               </div>
@@ -621,6 +623,7 @@ interface WeekDayCell {
             <a
               routerLink="/announcements"
               class="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-700 hover:text-blue-900 transition-colors whitespace-nowrap"
+              translate
             >
               View all
               <i class="pi pi-arrow-up-right text-[10px]"></i>
@@ -651,9 +654,10 @@ interface WeekDayCell {
 
                       @if (announcement.isPinned) {
                         <span
+                          translate
                           class="inline-flex items-center gap-1 text-[10px] font-semibold text-orange-700 bg-orange-50 border border-orange-100 px-2 py-0.5 rounded-full"
                         >
-                          <i class="pi pi-thumbtack text-[9px]"></i>
+                          <i class="pi pi-thumbtack text-[9px]!"></i>
                           Pinned
                         </span>
                       }
@@ -674,16 +678,16 @@ interface WeekDayCell {
                       <span
                         class="inline-flex items-center gap-1.5 text-xs text-gray-400"
                       >
-                        <i class="pi pi-calendar text-[11px]"></i>
+                        <i class="pi pi-calendar text-[11px]!"></i>
                         {{ announcement.publishDate | date: 'dd MMM yyyy' }}
                       </span>
 
                       @if (announcement.expiryDate) {
                         <span
-                          class="inline-flex items-center gap-1.5 text-xs text-gray-400"
+                          class="inline-flex items-center gap-1 text-xs text-gray-400"
                         >
-                          <i class="pi pi-clock text-[11px]"></i>
-                          Expires
+                          <i class="pi pi-clock text-[11px]!"></i>
+                          <span translate>Expires -</span>
                           {{ announcement.expiryDate | date: 'dd MMM yyyy' }}
                         </span>
                       }
@@ -702,10 +706,10 @@ interface WeekDayCell {
                   <i class="pi pi-megaphone text-gray-300 text-xl"></i>
                 </div>
 
-                <p class="text-sm font-medium text-gray-600">
+                <p class="text-sm font-medium text-gray-600" translate>
                   No announcements yet
                 </p>
-                <p class="text-xs text-gray-400 mt-1">
+                <p class="text-xs text-gray-400 mt-1" translate>
                   Company updates will appear here.
                 </p>
               </div>
@@ -717,10 +721,12 @@ interface WeekDayCell {
             <div class="px-5 py-3 bg-gray-50/70 border-t border-gray-100">
               <a
                 routerLink="/announcements"
-                class="flex items-center justify-center gap-2 text-xs font-semibold text-gray-500 hover:text-blue-700 transition-colors"
+                class="flex items-center justify-center gap-1 text-xs font-semibold text-gray-500 hover:text-blue-700 transition-colors"
               >
-                See all {{ announcements.length }} announcements
-                <i class="pi pi-arrow-right text-[10px]"></i>
+                <span translate>See all</span>
+                {{ announcements.length }}
+                <span translate>announcements</span>
+                <i class="pi pi-arrow-right text-[10px]!"></i>
               </a>
             </div>
           }
@@ -744,7 +750,7 @@ interface WeekDayCell {
 
                 <div>
                   <div class="flex items-center gap-2">
-                    <h2 class="font-bold text-gray-900 text-lg">
+                    <h2 class="font-bold text-gray-900 text-lg" translate>
                       Pending Approvals
                     </h2>
 
@@ -767,6 +773,7 @@ interface WeekDayCell {
               <a
                 routerLink="/hardware-request"
                 class="text-sm font-semibold text-blue-700 hover:underline whitespace-nowrap"
+                translate
               >
                 View All Requests
                 <i class="pi pi-arrow-up-right text-xs ml-1"></i>
@@ -777,7 +784,7 @@ interface WeekDayCell {
             @if (hardwareRequestLoading) {
               <div class="flex items-center justify-center gap-3 py-8">
                 <i class="pi pi-spin pi-spinner text-blue-700"></i>
-                <span class="text-sm text-gray-500">
+                <span class="text-sm text-gray-500" translate>
                   Loading pending approvals...
                 </span>
               </div>
@@ -906,7 +913,9 @@ interface WeekDayCell {
             class="min-h-40 lg:col-span-3 flex flex-col gap-3 justify-center p-5 rounded-xl border border-gray-200 bg-white shadow-sm"
           >
             <div class="flex flex-row items-center justify-between">
-              <div class="font-semibold text-gray-500">Annual Leave</div>
+              <div class="font-semibold text-gray-500" translate>
+                Annual Leave
+              </div>
 
               <div
                 class="w-10 h-10 flex items-center justify-center bg-gray-50 rounded-xl"
@@ -939,7 +948,9 @@ interface WeekDayCell {
             class="min-h-40 lg:col-span-3 flex flex-col gap-3 justify-center p-5 rounded-xl border border-gray-200 bg-white shadow-sm"
           >
             <div class="flex flex-row items-center justify-between">
-              <div class="font-semibold text-gray-500">Meetings Today</div>
+              <div class="font-semibold text-gray-500" translate>
+                Meetings Today
+              </div>
 
               <div
                 class="w-10 h-10 flex items-center justify-center bg-blue-50 rounded-xl"
@@ -950,13 +961,13 @@ interface WeekDayCell {
 
             <div class="flex flex-row items-end gap-2">
               <b class="text-5xl text-gray-700">{{ todayMeetingCount }}</b>
-              <span class="text-gray-400 mb-1">sessions</span>
+              <span class="text-gray-400 mb-1" translate>sessions</span>
             </div>
 
             <div class="flex items-center gap-2 text-sm">
               @if (todayMeetingsLoading) {
                 <i class="pi pi-spin pi-spinner text-blue-600"></i>
-                <span class="text-gray-500">Loading meetings...</span>
+                <span class="text-gray-500" translate>Loading meetings...</span>
               } @else if (todayMeetingCount > 0) {
                 <i class="pi pi-circle-fill text-green-500! text-[7px]!"></i>
                 <span class="text-green-600">
@@ -964,7 +975,7 @@ interface WeekDayCell {
                 </span>
               } @else {
                 <i class="pi pi-circle-fill text-gray-400! text-[7px]!"></i>
-                <span class="text-gray-500">No meetings today</span>
+                <span class="text-gray-500" translate>No meetings today</span>
               }
             </div>
           </div>
@@ -974,7 +985,9 @@ interface WeekDayCell {
             class="min-h-40 lg:col-span-3 flex flex-col gap-3 justify-center p-5 rounded-xl border border-gray-200 bg-white shadow-sm"
           >
             <div class="flex flex-row items-center justify-between">
-              <div class="font-semibold text-gray-500">Pending Claims</div>
+              <div class="font-semibold text-gray-500" translate>
+                Pending Claims
+              </div>
 
               <div
                 class="w-10 h-10 flex items-center justify-center bg-gray-50 rounded-xl"
@@ -988,9 +1001,12 @@ interface WeekDayCell {
             <div
               class="flex flex-row items-center justify-between gap-2 text-sm"
             >
-              <span class="text-gray-500">No claims under review</span>
+              <span class="text-gray-500" translate
+                >No claims under review</span
+              >
 
               <a
+                translate
                 routerLink="/claims"
                 class="hover:underline text-blue-700 cursor-pointer whitespace-nowrap"
               >
@@ -1004,7 +1020,9 @@ interface WeekDayCell {
             class="min-h-40 lg:col-span-3 flex flex-col gap-3 justify-center p-5 rounded-xl border border-gray-200 bg-white shadow-sm"
           >
             <div class="flex flex-row items-center justify-between">
-              <div class="font-semibold text-gray-500">Team In Office</div>
+              <div class="font-semibold text-gray-500" translate>
+                Team In Office
+              </div>
 
               <div
                 class="w-10 h-10 flex items-center justify-center bg-green-50 rounded-xl"
@@ -1036,7 +1054,9 @@ interface WeekDayCell {
               >
                 <div class="flex flex-col">
                   <div class="flex items-center gap-2">
-                    <b class="text-xl text-gray-800">Today's Schedule</b>
+                    <b class="text-xl text-gray-800" translate
+                      >Today's Schedule</b
+                    >
 
                     @if (!todayMeetingsLoading && todayMeetingCount > 0) {
                       <span
@@ -1047,14 +1067,14 @@ interface WeekDayCell {
                     }
                   </div>
 
-                  <span class="text-gray-400 text-sm mt-1">
+                  <span class="text-gray-400 text-sm mt-1" translate>
                     Meetings you've organised or been invited to today
                   </span>
                 </div>
 
                 <p-button
                   [routerLink]="'/meeting'"
-                  label="Full Calendar"
+                  [label]="'Full Calendar' | translate"
                   icon="pi pi-calendar"
                   severity="secondary"
                   size="small"
@@ -1069,7 +1089,7 @@ interface WeekDayCell {
                     <i
                       class="pi pi-spin pi-spinner text-2xl text-blue-600 mb-3"
                     ></i>
-                    <span class="text-sm text-gray-500">
+                    <span class="text-sm text-gray-500" translate>
                       Loading today's schedule...
                     </span>
                   </div>
@@ -1159,13 +1179,16 @@ interface WeekDayCell {
                         <i class="pi pi-calendar text-2xl text-blue-300"></i>
                       </div>
 
-                      <b class="text-gray-700">No meetings scheduled</b>
+                      <b class="text-gray-700" translate
+                        >No meetings scheduled</b
+                      >
 
-                      <span class="text-sm text-gray-400 mt-1">
+                      <span class="text-sm text-gray-400 mt-1" translate>
                         Your schedule for today is clear.
                       </span>
 
                       <a
+                        translate
                         routerLink="/meeting"
                         class="mt-4 text-sm font-semibold text-blue-700 hover:text-blue-900"
                       >
@@ -1198,10 +1221,10 @@ interface WeekDayCell {
                     </div>
 
                     <div class="min-w-0">
-                      <h3 class="text-sm font-bold text-slate-800">
+                      <h3 class="text-sm font-bold text-slate-800" translate>
                         Team Absence
                       </h3>
-                      <p class="text-xs text-slate-400 mt-1">
+                      <p class="text-xs text-slate-400 mt-1" translate>
                         Approved leave today
                       </p>
                     </div>
@@ -1220,7 +1243,7 @@ interface WeekDayCell {
                       {{ teamAbsenceCount }}
                     </span>
 
-                    <span class="text-[11px] text-slate-400 mt-1">
+                    <span class="text-[11px] text-slate-400 mt-1" translate>
                       {{
                         teamAbsenceCount === 1 ? 'person away' : 'people away'
                       }}
@@ -1235,7 +1258,7 @@ interface WeekDayCell {
                     [queryParams]="{ type: 'calendar' }"
                     class="flex items-center justify-between text-xs font-semibold text-blue-600 hover:text-blue-700 transition-colors group"
                   >
-                    <span>View full leave calendar</span>
+                    <span translate>View full leave calendar</span>
                     <i
                       class="pi pi-arrow-up-right text-[10px] group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform"
                     ></i>
@@ -1387,8 +1410,8 @@ interface WeekDayCell {
                 class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-100 pb-2"
               >
                 <div class="flex flex-col">
-                  <b class="text-xl">Recent Claims & Expenses</b>
-                  <span class="text-gray-400 text-sm">
+                  <b class="text-xl" translate>Recent Claims & Expenses</b>
+                  <span class="text-gray-400 text-sm" translate>
                     Monthly reimbursement pool balance:
                   </span>
                 </div>
@@ -1396,7 +1419,7 @@ interface WeekDayCell {
                 <div class="flex flex-row items-center gap-2">
                   <p-button
                     [routerLink]="'/claims'"
-                    label="View Ledger"
+                    [label]="'View Ledger' | translate"
                     severity="info"
                     size="small"
                     styleClass="bg-blue-50! text-blue-800! border-none!"
@@ -1408,10 +1431,10 @@ interface WeekDayCell {
                 <p-table size="small">
                   <ng-template #header>
                     <tr>
-                      <th class="text-sm!">EXPENSE</th>
-                      <th class="text-sm!">CATEGORY</th>
-                      <th class="text-sm!">DATE</th>
-                      <th class="text-sm!">AMOUNT</th>
+                      <th class="text-sm!" translate>EXPENSE</th>
+                      <th class="text-sm!" translate>CATEGORY</th>
+                      <th class="text-sm!" translate>DATE</th>
+                      <th class="text-sm!" translate>AMOUNT</th>
                       <th class="text-sm!">STATUS</th>
                     </tr>
                   </ng-template>
@@ -1439,7 +1462,7 @@ interface WeekDayCell {
               <div
                 class="flex flex-row items-center gap-2 border-b border-gray-100 pb-2"
               >
-                <b>WORKSPACE SHORTCUTS</b>
+                <b translate>WORKSPACE SHORTCUTS</b>
               </div>
 
               <div class="flex flex-col gap-3 mt-4">
@@ -1454,8 +1477,8 @@ interface WeekDayCell {
                     <i class="pi pi-desktop"></i>
                   </div>
                   <div class="flex flex-col">
-                    <b>Hardware / IT Support</b>
-                    <span class="text-sm text-gray-400">
+                    <b translate>Hardware / IT Support</b>
+                    <span class="text-sm text-gray-400" translate>
                       Request equipment or technical assistance
                     </span>
                   </div>
@@ -1472,8 +1495,8 @@ interface WeekDayCell {
                     <i class="pi pi-calendar"></i>
                   </div>
                   <div class="flex flex-col">
-                    <b>Company Calendar</b>
-                    <span class="text-sm text-gray-400">
+                    <b translate>Company Calendar</b>
+                    <span class="text-sm text-gray-400" translate>
                       View meetings and upcoming events
                     </span>
                   </div>
@@ -1490,7 +1513,7 @@ interface WeekDayCell {
                     <i class="pi pi-folder"></i>
                   </div>
                   <div class="flex flex-col">
-                    <b>Company Documents</b>
+                    <b translate>Company Documents</b>
                     <span class="text-sm text-gray-400">
                       Access forms, SOPs and policies
                     </span>
@@ -1508,8 +1531,8 @@ interface WeekDayCell {
                     <i class="pi pi-users"></i>
                   </div>
                   <div class="flex flex-col">
-                    <b>Employee Directory</b>
-                    <span class="text-sm text-gray-400">
+                    <b translate>Employee Directory</b>
+                    <span class="text-sm text-gray-400" translate>
                       Find colleagues and contact details
                     </span>
                   </div>
@@ -1520,255 +1543,6 @@ interface WeekDayCell {
         </div>
       </div>
     }
-
-    <p-dialog
-      [visible]="showReceipt"
-      [modal]="true"
-      styleClass="w-[60%]! max-h-[90vh]!"
-      [closable]="false"
-      [contentStyle]="{
-        padding: '0',
-        overflow: 'hidden',
-      }"
-    >
-      <ng-template #headless>
-        <div
-          class="rounded-xl flex flex-col max-h-[90vh] overflow-hidden bg-white"
-        >
-          <div
-            class="shrink-0 z-10 bg-white flex flex-row items-center justify-between border-b border-gray-100 px-5 py-4"
-          >
-            <div class="flex flex-row items-center gap-3">
-              <div
-                class="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center text-blue-800"
-              >
-                <i class="pi pi-receipt"></i>
-              </div>
-
-              <div class="flex flex-col">
-                <b class="text-lg">Upload Receipt Claim</b>
-
-                <span class="text-sm text-gray-400">
-                  Upload receipt image or PDF for automated AI extraction
-                </span>
-              </div>
-            </div>
-
-            <i
-              class="pi pi-times text-lg! text-gray-400! cursor-pointer! hover:text-gray-500!"
-              (click)="showReceipt = false"
-            ></i>
-          </div>
-
-          <div class="flex-1 min-h-0 overflow-y-auto p-5">
-            <div
-              class="flex flex-col gap-3 items-center justify-center bg-blue-50 border-2 border-dashed border-blue-300 h-45 w-full rounded-lg"
-            >
-              <div
-                class="w-15 h-15 rounded-full flex items-center justify-center bg-blue-100 text-blue-600"
-              >
-                <i class="pi pi-cloud-upload text-2xl!"></i>
-              </div>
-
-              <b>
-                Drag & drop your receipt here, or
-                <i class="text-blue-700">Browse Files</i>
-              </b>
-
-              <span class="text-gray-400 text-sm">
-                Supports PNG, JPG, PDF (up to 15MB)
-              </span>
-            </div>
-
-            <div class="mt-6 grid grid-cols-12 gap-4" [formGroup]="claimForm">
-              <div class="col-span-12 flex flex-col gap-1">
-                <div>Claim Type</div>
-
-                <p-select
-                  appendTo="body"
-                  [options]="claimTypeOptions"
-                  formControlName="claimType"
-                ></p-select>
-              </div>
-
-              <div class="col-span-12 flex flex-col gap-1">
-                <div>Remarks</div>
-
-                <textarea
-                  pTextarea
-                  formControlName="remarks"
-                  rows="3"
-                  [autoResize]="true"
-                  class="w-full"
-                ></textarea>
-              </div>
-
-              <div class="col-span-12 w-full border-b border-gray-200"></div>
-
-              <div class="col-span-12 flex flex-col">
-                <div class="flex flex-row items-center justify-between">
-                  <b>Line Items</b>
-
-                  <p-button
-                    label="Add line"
-                    icon="pi pi-plus"
-                    severity="info"
-                    size="small"
-                    styleClass="px-3! py-2! bg-blue-800! text-white! border-none!"
-                  ></p-button>
-                </div>
-
-                <div class="mt-3 flex flex-col gap-3" formArrayName="lineItems">
-                  @for (
-                    ctrl of lineItems.controls;
-                    track $index;
-                    let i = $index
-                  ) {
-                    <div
-                      class="p-5 border border-gray-200 rounded-lg grid grid-cols-12 gap-4"
-                      [formGroupName]="i"
-                    >
-                      <div
-                        class="pb-2 border-b border-gray-100 col-span-12 flex flex-row items-center justify-between"
-                      >
-                        <div class="font-semibold">Line {{ i + 1 }}</div>
-
-                        <i
-                          class="pi pi-trash text-red-500! cursor-pointer! hover:text-red-400!"
-                        ></i>
-                      </div>
-
-                      @if (
-                        claimForm.value.claimType === 'MonthlyReimbursement'
-                      ) {
-                        <div class="col-span-12 flex flex-col gap-1">
-                          <div>Category</div>
-
-                          <p-select
-                            formControlName="category"
-                            appendTo="body"
-                            [options]="[
-                              {
-                                label: 'Medical',
-                                value: 'Medical',
-                              },
-                              {
-                                label: 'Safety shoes',
-                                value: 'SafetyShoes',
-                              },
-                              {
-                                label: 'General purchase',
-                                value: 'GeneralPurchase',
-                              },
-                            ]"
-                          ></p-select>
-                        </div>
-
-                        <div
-                          class="col-span-12 lg:col-span-6 flex flex-col gap-1"
-                        >
-                          <div>Purchase Date</div>
-
-                          <p-datepicker
-                            appendTo="body"
-                            formControlName="purchaseDate"
-                            dateFormat="dd/mm/yy"
-                            [showIcon]="true"
-                            styleClass="w-full"
-                          ></p-datepicker>
-                        </div>
-
-                        <div
-                          class="col-span-12 lg:col-span-6 flex flex-col gap-1"
-                        >
-                          <div>Amount (RM)</div>
-
-                          <p-inputnumber
-                            formControlName="amount"
-                            mode="decimal"
-                            [minFractionDigits]="2"
-                            styleClass="w-full"
-                          ></p-inputnumber>
-                        </div>
-
-                        @if (
-                          claimForm.get('category')?.value === 'Medical' &&
-                          medicalBalance
-                        ) {
-                          <div
-                            class="bg-blue-100 border border-blue-700 rounded-sm text-blue-800 col-span-12 flex flex-row items-center gap-1"
-                          >
-                            <div>
-                              Medical balance: {{ medicalBalance.year }}:
-                            </div>
-                          </div>
-                        }
-                      }
-
-                      <div class="col-span-12 flex flex-col gap-1">
-                        <div>Description</div>
-
-                        <textarea
-                          pTextarea
-                          [rows]="3"
-                          [autoResize]="true"
-                          formControlName="description"
-                          class="w-full"
-                        ></textarea>
-                      </div>
-
-                      <div
-                        class="col-span-12 flex flex-col gap-3 items-center justify-center bg-blue-50 border-2 border-dashed border-blue-300 h-45 w-full rounded-lg"
-                      >
-                        <div
-                          class="w-15 h-15 rounded-full flex items-center justify-center bg-blue-100 text-blue-600"
-                        >
-                          <i class="pi pi-cloud-upload text-2xl!"></i>
-                        </div>
-
-                        <b>
-                          Drag & drop your receipt here, or
-                          <i class="text-blue-700"> Browse Files </i>
-                        </b>
-
-                        <span class="text-gray-400 text-sm">
-                          Supports PNG, JPG, PDF (up to 15MB)
-                        </span>
-                      </div>
-                    </div>
-                  }
-                </div>
-              </div>
-            </div>
-          </div>
-          <div
-            class="shrink-0 z-10 bg-white flex flex-row items-center justify-between border-t border-gray-200 px-5 py-4"
-          >
-            <div class="flex flex-row items-center justify-between">
-              <p-button
-                label="Save as Draft"
-                severity="secondary"
-                styleClass="bg-white! border-gray-200!"
-              ></p-button>
-            </div>
-            <div class="flex flex-row items-center gap-2">
-              <p-button
-                (onClick)="showReceipt = false"
-                label="Cancel"
-                [text]="true"
-                severity="secondary"
-              ></p-button>
-              <p-button
-                label="Submit Claim"
-                severity="info"
-                icon="pi pi-send"
-                styleClass="bg-blue-800! border-none! text-white!"
-              ></p-button>
-            </div>
-          </div>
-        </div>
-      </ng-template>
-    </p-dialog>
   `,
   styleUrl: './dashboard.less',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -1787,7 +1561,6 @@ export class Dashboard implements OnInit, OnDestroy {
   pendingHardwareRequests: HardwareRequestDto[] = [];
   hardwareRequestLoading: boolean = false;
   dashboardLoading: boolean = false;
-  showReceipt: boolean = false;
   showAllTeamAbsences: boolean = false;
 
   announcements: Notice[] = [];
@@ -2199,12 +1972,6 @@ export class Dashboard implements OnInit, OnDestroy {
           this.cdr.markForCheck();
         },
       });
-  }
-
-  showDialogReceipt() {
-    this.initReceiptForm();
-    this.showReceipt = true;
-    this.cdr.detectChanges();
   }
 
   initReceiptForm() {

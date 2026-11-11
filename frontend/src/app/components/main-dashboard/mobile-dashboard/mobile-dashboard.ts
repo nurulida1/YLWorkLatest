@@ -22,6 +22,7 @@ import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
 import { InputTextModule } from 'primeng/inputtext';
 import { TranslateDirective, TranslatePipe } from '@ngx-translate/core';
+import { PermissionService } from '../../../services/permissionService';
 
 @Component({
   selector: 'app-mobile-dashboard',
@@ -760,51 +761,34 @@ import { TranslateDirective, TranslatePipe } from '@ngx-translate/core';
               <p translate>Frequently used modules</p>
             </div>
 
-            <div class="dashboard-quick-grid">
-              <a routerLink="/directory" class="dashboard-quick-card">
-                <div class="quick-icon quick-blue">
-                  <i class="pi pi-users"></i>
-                </div>
-                <div>
-                  <strong translate>Directory</strong>
-                  <span translate>Find coworkers</span>
-                </div>
-                <i class="pi pi-chevron-right quick-arrow"></i>
-              </a>
+            @if (visibleQuickAccessItems.length) {
+              <div class="dashboard-quick-grid">
+                @for (item of visibleQuickAccessItems; track item.route) {
+                  <a [routerLink]="item.route" class="dashboard-quick-card">
+                    <div class="quick-icon" [ngClass]="item.color">
+                      <i [class]="item.icon"></i>
+                    </div>
 
-              <a routerLink="/projects" class="dashboard-quick-card">
-                <div class="quick-icon quick-violet">
-                  <i class="pi pi-briefcase"></i>
-                </div>
-                <div>
-                  <strong translate>Projects</strong>
-                  <span translate>Project updates</span>
-                </div>
-                <i class="pi pi-chevron-right quick-arrow"></i>
-              </a>
+                    <div class="min-w-0 flex-1">
+                      <strong translate>{{ item.label }}</strong>
+                      <span translate>{{ item.description }}</span>
+                    </div>
 
-              <a routerLink="/inventory/listing" class="dashboard-quick-card">
-                <div class="quick-icon quick-green">
-                  <i class="pi pi-box"></i>
-                </div>
-                <div>
-                  <strong translate>Inventory</strong>
-                  <span translate>Warehouse stock</span>
-                </div>
-                <i class="pi pi-chevron-right quick-arrow"></i>
-              </a>
-
-              <a routerLink="/hardware-request" class="dashboard-quick-card">
-                <div class="quick-icon quick-orange">
-                  <i class="pi pi-file"></i>
-                </div>
-                <div>
-                  <strong translate>Hardware</strong>
-                  <span translate>Request equipment</span>
-                </div>
-                <i class="pi pi-chevron-right quick-arrow"></i>
-              </a>
-            </div>
+                    <i class="pi pi-chevron-right quick-arrow"></i>
+                  </a>
+                }
+              </div>
+            } @else {
+              <div class="task-empty p-5 text-center">
+                <i class="pi pi-th-large text-2xl text-slate-400"></i>
+                <p class="mt-2 text-sm font-semibold text-slate-600" translate>
+                  No modules available
+                </p>
+                <p class="text-xs text-slate-400 mt-1" translate>
+                  You currently have no additional module access.
+                </p>
+              </div>
+            }
           </section>
 
           <!-- TASKS -->
@@ -896,7 +880,7 @@ export class MobileDashboard implements OnInit, OnDestroy {
   private readonly staffTaskService = inject(StaffTaskService);
   private readonly userService = inject(UserService);
   private readonly cdr = inject(ChangeDetectorRef);
-
+  private readonly permissionService = inject(PermissionService);
   private readonly ngUnsubscribe = new Subject<void>();
 
   currentUser = this.userService.currentUser;
@@ -921,6 +905,17 @@ export class MobileDashboard implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    // Load permissions first
+    this.permissionService.loadPermissions().subscribe({
+      next: () => {
+        this.cdr.markForCheck();
+      },
+      error: (err) => {
+        console.error('Failed to load permissions:', err);
+        this.cdr.markForCheck();
+      },
+    });
+
     if (this.isSuperAdmin) {
       this.loadSuperAdminDashboard();
     } else if (this.isHR) {
@@ -1094,5 +1089,53 @@ export class MobileDashboard implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.ngUnsubscribe.next();
     this.ngUnsubscribe.complete();
+  }
+
+  // QUICK ACCESS MODULES
+  private readonly allQuickAccessItems = [
+    {
+      label: 'Directory',
+      description: 'Find coworkers',
+      icon: 'pi pi-users',
+      route: '/directory',
+      moduleKey: 'directory',
+      color: 'quick-blue',
+      public: true,
+    },
+    {
+      label: 'Projects',
+      description: 'Project updates',
+      icon: 'pi pi-briefcase',
+      route: '/projects',
+      moduleKey: 'projects',
+      color: 'quick-violet',
+      public: false,
+    },
+    {
+      label: 'Inventory',
+      description: 'Warehouse stock',
+      icon: 'pi pi-box',
+      route: '/inventory/listing',
+      moduleKey: 'inventory-listing',
+      color: 'quick-green',
+      public: false,
+    },
+    {
+      label: 'Hardware',
+      description: 'Request equipment',
+      icon: 'pi pi-file',
+      route: '/hardware-request',
+      moduleKey: 'hardware-request',
+      color: 'quick-orange',
+      public: true,
+    },
+  ];
+
+  // Display public modules or modules the user has permission to access.
+  get visibleQuickAccessItems() {
+    return this.allQuickAccessItems.filter(
+      (item) =>
+        item.public || this.permissionService.canReadModule(item.moduleKey),
+    );
   }
 }

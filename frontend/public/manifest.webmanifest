@@ -8,6 +8,9 @@
   "orientation": "portrait-primary",
   "background_color": "#000000",
   "theme_color": "#000000",
+  "launch_handler": {
+    "client_mode": ["navigate-existing", "auto"]
+  },
   "icons": [
     {
       "src": "assets/icons/icon-192.png",

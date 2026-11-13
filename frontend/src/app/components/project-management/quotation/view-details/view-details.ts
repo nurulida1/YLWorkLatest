@@ -40,22 +40,23 @@ import autoTable from 'jspdf-autotable';
     DialogModule,
     DatePickerModule,
   ],
+
   template: `
-    <div class="min-h-screen bg-slate-50/80 px-4 py-5 sm:px-6 lg:px-8">
-      <div class="mx-auto flex w-full flex-col gap-6">
-        <!-- Breadcrumb and heading -->
+    <div class="min-h-screen bg-slate-100 px-4 py-6 sm:px-6 lg:px-8">
+      <div class="mx-auto flex w-full max-w-7xl flex-col gap-6">
+        <!-- Page navigation and actions -->
         <div class="flex flex-col gap-4">
-          <nav class="flex flex-wrap items-center gap-2s">
+          <nav class="flex flex-wrap items-center gap-2">
             <a
               routerLink="/dashboard"
-              class="text-slate-500 transition hover:text-blue-600"
+              class="text-slate-500 hover:text-blue-600"
             >
               Dashboard
             </a>
             <i class="pi pi-angle-right text-xs text-slate-300"></i>
             <a
               routerLink="/quotations"
-              class="text-slate-500 transition hover:text-blue-600"
+              class="text-slate-500 hover:text-blue-600"
             >
               Quotations
             </a>
@@ -68,16 +69,8 @@ import autoTable from 'jspdf-autotable';
           <div
             class="flex flex-col justify-between gap-4 sm:flex-row sm:items-center"
           >
-            <div class="flex items-start gap-3">
-              <a
-                routerLink="/quotations"
-                class="mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600"
-                aria-label="Back to quotations"
-              >
-                <i class="pi pi-arrow-left"></i>
-              </a>
-
-              <div class="min-w-0">
+            <div class="flex items-center gap-3">
+              <div>
                 <div class="flex flex-wrap items-center gap-3">
                   <h1
                     class="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl"
@@ -89,16 +82,15 @@ import autoTable from 'jspdf-autotable';
                     *ngIf="quotationData()?.status"
                     class="inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold"
                     [ngClass]="{
-                      'bg-slate-100 text-slate-600':
+                      'bg-amber-200 text-amber-700':
                         quotationData()?.status === 'Draft',
-                      'bg-blue-50 text-blue-700':
+                      'bg-blue-100 text-blue-700':
                         quotationData()?.status === 'Sent',
-                      'bg-emerald-50 text-emerald-700':
+                      'bg-emerald-100 text-emerald-700':
                         quotationData()?.status === 'Approved' ||
                         quotationData()?.status === 'Accepted',
-                      'bg-red-50 text-red-700':
-                        quotationData()?.status === 'Rejected',
-                      'bg-amber-50 text-amber-700':
+                      'bg-red-100 text-red-700':
+                        quotationData()?.status === 'Rejected' ||
                         quotationData()?.status === 'Expired',
                     }"
                   >
@@ -106,15 +98,13 @@ import autoTable from 'jspdf-autotable';
                     {{ quotationData()?.status }}
                   </span>
                 </div>
-
-                <p class="mt-1 text-sm text-slate-500">
-                  Review quotation information, order lines and available
-                  actions.
+                <p class="mt-1 text-slate-500">
+                  Review and manage your quotation.
                 </p>
               </div>
             </div>
 
-            <!-- Actions -->
+            <!-- Quotation actions -->
             <div class="flex flex-wrap items-center gap-2 sm:justify-end">
               <p-select
                 [options]="actionMenus"
@@ -141,11 +131,10 @@ import autoTable from 'jspdf-autotable';
                     >
                       <i class="pi" [ngClass]="[item.icon, item.color]"></i>
                     </div>
-
                     <div class="flex min-w-0 flex-col gap-0.5">
-                      <span class="font-medium text-slate-800">
-                        {{ item.label }}
-                      </span>
+                      <span class="font-medium text-slate-800">{{
+                        item.label
+                      }}</span>
                       <span
                         *ngIf="item.description"
                         class="text-xs leading-relaxed text-slate-500"
@@ -160,392 +149,254 @@ import autoTable from 'jspdf-autotable';
           </div>
         </div>
 
-        <!-- Main quotation card -->
+        <!-- Document preview -->
         <div
-          class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"
+          class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm"
         >
-          <!-- Quotation overview -->
-          <div
-            class="border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white px-5 py-6 sm:px-8"
-          >
-            <div class="mb-5 flex items-center gap-2">
+          <!-- Document content -->
+          <div class="p-5 sm:p-8 lg:p-12">
+            <!-- Company header -->
+            <div class="flex flex-col gap-6 border-b border-slate-800 pb-3">
               <div
-                class="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-600"
+                class="flex min-w-0 flex-1 flex-col gap-4 sm:flex-row sm:items-start"
               >
-                <i class="pi pi-file-edit"></i>
+                <div
+                  *ngIf="quotationData()?.fromCompany?.logoImage"
+                  class="flex h-35 w-45 shrink-0 items-center justify-center"
+                >
+                  <img
+                    [src]="quotationData()?.fromCompany?.logoImage"
+                    alt="Company logo"
+                    class="h-full w-full object-fill"
+                  />
+                </div>
+
+                <div class="min-w-0">
+                  <div class="flex flex-row items-end gap-2">
+                    <div class="text-xl font-extrabold uppercase tracking-wide">
+                      {{ quotationData()?.fromCompany?.name || 'Company Name' }}
+                    </div>
+
+                    <div
+                      *ngIf="
+                        quotationData()?.fromCompany?.registrationNo ||
+                        quotationData()?.fromCompany?.ssmRegNo
+                      "
+                    >
+                      {{
+                        quotationData()?.fromCompany?.registrationNo ||
+                          quotationData()?.fromCompany?.ssmRegNo
+                      }}
+                    </div>
+                    <div *ngIf="quotationData()?.fromCompany?.tinNo">
+                      {{ quotationData()?.fromCompany?.tinNo }}
+                    </div>
+                    <div *ngIf="quotationData()?.fromCompany?.sstRegNo">
+                      {{ quotationData()?.fromCompany?.sstRegNo }}
+                    </div>
+                  </div>
+                  <div class="mt-1 leading-relaxed">
+                    <p>
+                      {{
+                        quotationData()?.fromCompany?.billingAddress
+                          ?.addressLine1
+                      }}
+                    </p>
+                    <p
+                      *ngIf="
+                        quotationData()?.fromCompany?.billingAddress
+                          ?.addressLine2
+                      "
+                    >
+                      {{
+                        quotationData()?.fromCompany?.billingAddress
+                          ?.addressLine2
+                      }}
+                    </p>
+                    <p>
+                      {{
+                        quotationData()?.fromCompany?.billingAddress?.postcode
+                      }}
+                      {{ quotationData()?.fromCompany?.billingAddress?.city }}
+                      {{ quotationData()?.fromCompany?.billingAddress?.state }}
+                    </p>
+                    <div class="flex flex-row items-center gap-1">
+                      <p *ngIf="quotationData()?.fromCompany?.contactNo">
+                        Tel: {{ quotationData()?.fromCompany?.contactNo }}
+                      </p>
+                      <p *ngIf="quotationData()?.fromCompany?.faxNo">
+                        Fax: {{ quotationData()?.fromCompany?.faxNo }}
+                      </p>
+                    </div>
+                    <a
+                      *ngIf="quotationData()?.fromCompany?.websiteUrl"
+                      class="underline"
+                    >
+                      {{ quotationData()?.fromCompany?.websiteUrl }}
+                    </a>
+                  </div>
+                </div>
               </div>
-              <div>
-                <h2 class="font-semibold text-slate-900">
-                  Quotation Information
-                </h2>
-                <p class="text-sm text-slate-500">Basic quotation details</p>
+
+              <div class="shrink-0 text-center sm:min-w-[220px]">
+                <h1
+                  class="text-3xl font-extrabold tracking-widest text-slate-900"
+                >
+                  QUOTATION
+                </h1>
               </div>
             </div>
 
-            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <div class="rounded-xl border border-slate-200/80 bg-white p-4">
-                <p
-                  class="mb-2 text-xs font-medium uppercase tracking-wider text-slate-400"
-                >
-                  Quotation Number
-                </p>
-                <p class="break-all text-sm font-bold text-slate-900">
+            <div class="mt-4 space-y-2 flex flex-col items-start">
+              <div
+                class="grid grid-cols-12 items-center font-medium gap-2 text-slate-900"
+              >
+                <span class="col-span-1">Ref. No:</span>
+                <span class="col-span-11">
                   {{ quotationData()?.quotationNo || '-' }}
-                </p>
+                </span>
               </div>
-
-              <div class="rounded-xl border border-slate-200/80 bg-white p-4">
-                <p
-                  class="mb-2 text-xs font-medium uppercase tracking-wider text-slate-400"
-                >
-                  Quotation Date
-                </p>
-                <p class="text-sm font-semibold text-slate-800">
-                  {{ quotationData()?.quotationDate | date: 'dd MMM yyyy' }}
-                </p>
-              </div>
-
-              <div class="rounded-xl border border-slate-200/80 bg-white p-4">
-                <p
-                  class="mb-2 text-xs font-medium uppercase tracking-wider text-slate-400"
-                >
-                  Client
-                </p>
-                <p class="truncate text-sm font-semibold text-slate-800">
-                  {{ quotationData()?.client?.name || '-' }}
-                </p>
-              </div>
-
-              <div class="rounded-xl border border-slate-200/80 bg-white p-4">
-                <p
-                  class="mb-2 text-xs font-medium uppercase tracking-wider text-slate-400"
-                >
-                  Total Amount
-                </p>
-                <p class="text-lg font-bold text-blue-700">
-                  RM {{ quotationData()?.totalAmount | number: '1.2-2' }}
-                </p>
+              <div
+                class="grid grid-cols-12 items-center font-medium gap-2 text-slate-900"
+              >
+                <span class="col-span-1">Date</span>
+                <span class="col-span-11">
+                  {{ quotationData()?.quotationDate | date: 'dd/MM/yyyy' }}
+                </span>
               </div>
             </div>
-          </div>
 
-          <div class="space-y-8 p-5 sm:p-8">
-            <!-- Company and client -->
-            <section>
-              <div class="mb-5 flex items-center justify-between">
-                <div>
-                  <h2 class="font-semibold text-slate-900">
-                    Parties & Addresses
-                  </h2>
-                  <p class="mt-1 text-sm text-slate-500">
-                    Company and client billing and delivery information
+            <!-- Client details -->
+            <div class="grid grid-cols-1 gap-8 py-7 md:grid-cols-2">
+              <!-- Bill to -->
+              <div>
+                <h3 class="text-base font-bold">
+                  {{ quotationData()?.client?.name || '-' }}
+                </h3>
+
+                <div class="mt-1 leading-relaxed">
+                  <p>
+                    {{ quotationData()?.client?.billingAddress?.addressLine1 }}
+                  </p>
+                  <p
+                    *ngIf="
+                      quotationData()?.client?.billingAddress?.addressLine2
+                    "
+                  >
+                    {{ quotationData()?.client?.billingAddress?.addressLine2 }}
+                  </p>
+                  <p>
+                    {{ quotationData()?.client?.billingAddress?.city }}
+                  </p>
+                  <p>
+                    {{ quotationData()?.client?.billingAddress?.postcode }},
+                    {{ quotationData()?.client?.billingAddress?.state }}
+                  </p>
+
+                  <p
+                    *ngIf="quotationData()?.client?.primaryContactNo"
+                    class="pt-2"
+                  >
+                    Tel: {{ quotationData()?.client?.primaryContactNo }}
+                  </p>
+                  <p *ngIf="quotationData()?.client?.secondaryContactNo">
+                    Tel: {{ quotationData()?.client?.secondaryContactNo }}
                   </p>
                 </div>
               </div>
 
-              <div class="grid grid-cols-1 gap-5 xl:grid-cols-2">
-                <!-- From company -->
-                <div class="overflow-hidden rounded-xl border border-slate-200">
-                  <div
-                    class="flex items-center gap-3 border-b border-slate-100 bg-slate-50 px-4 py-3"
-                  >
-                    <div
-                      class="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-100 text-blue-700"
-                    >
-                      <i class="pi pi-building"></i>
-                    </div>
-                    <div>
-                      <h3 class="font-semibold text-slate-900">From</h3>
-                      <p class="text-sm text-slate-500">Your company</p>
-                    </div>
+              <!-- Contact No -->
+              <div class="md:text-right font-bold">
+                <div class="space-y-1">
+                  <div *ngIf="quotationData()?.client?.contactNo">
+                    <span>Tel No: </span>
+                    <span>
+                      {{ quotationData()?.client?.contactNo }}
+                    </span>
                   </div>
 
-                  <div class="grid grid-cols-1 gap-3 p-4 sm:grid-cols-2">
-                    <div class="rounded-lg bg-slate-50 p-4">
-                      <div
-                        class="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-500"
-                      >
-                        <i class="pi pi-receipt text-blue-600"></i>
-                        Billing Address
-                      </div>
-                      <p
-                        class="whitespace-pre-line break-words text-sm leading-6 text-slate-700"
-                      >
-                        {{
-                          quotationData()?.fromCompany?.billingAddress
-                            ?.addressLine1
-                        }}
-                        <ng-container
-                          *ngIf="
-                            quotationData()?.fromCompany?.billingAddress
-                              ?.addressLine2
-                          "
-                        >
-                          {{
-                            quotationData()?.fromCompany?.billingAddress
-                              ?.addressLine2
-                          }}
-                        </ng-container>
-                        {{
-                          quotationData()?.fromCompany?.billingAddress?.postcode
-                        }}
-                        {{ quotationData()?.fromCompany?.billingAddress?.city }}
-                        {{
-                          quotationData()?.fromCompany?.billingAddress?.state
-                        }}
-                      </p>
-                    </div>
-
-                    <div class="rounded-lg bg-slate-50 p-4">
-                      <div
-                        class="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-500"
-                      >
-                        <i class="pi pi-truck text-blue-600"></i>
-                        Delivery Address
-                      </div>
-                      <p
-                        class="whitespace-pre-line break-words text-sm leading-6 text-slate-700"
-                      >
-                        {{
-                          quotationData()?.fromCompany?.deliveryAddress
-                            ?.addressLine1
-                        }}
-                        <ng-container
-                          *ngIf="
-                            quotationData()?.fromCompany?.deliveryAddress
-                              ?.addressLine2
-                          "
-                        >
-                          {{
-                            quotationData()?.fromCompany?.deliveryAddress
-                              ?.addressLine2
-                          }}
-                        </ng-container>
-                        {{
-                          quotationData()?.fromCompany?.deliveryAddress
-                            ?.postcode
-                        }}
-                        {{
-                          quotationData()?.fromCompany?.deliveryAddress?.city
-                        }}
-                        {{
-                          quotationData()?.fromCompany?.deliveryAddress?.state
-                        }}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Client -->
-                <div class="overflow-hidden rounded-xl border border-slate-200">
-                  <div
-                    class="flex items-center gap-3 border-b border-slate-100 bg-slate-50 px-4 py-3"
-                  >
-                    <div
-                      class="flex h-9 w-9 items-center justify-center rounded-lg bg-violet-100 text-violet-700"
-                    >
-                      <i class="pi pi-user"></i>
-                    </div>
-                    <div>
-                      <h3 class="font-semibold text-slate-900">Client</h3>
-                      <p class="text-sm text-slate-500">Customer information</p>
-                    </div>
-                  </div>
-
-                  <div class="grid grid-cols-1 gap-3 p-4 sm:grid-cols-2">
-                    <div class="rounded-lg bg-slate-50 p-4">
-                      <div
-                        class="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-500"
-                      >
-                        <i class="pi pi-receipt text-violet-600"></i>
-                        Billing Address
-                      </div>
-                      <p
-                        class="whitespace-pre-line break-words text-sm leading-6 text-slate-700"
-                      >
-                        {{
-                          quotationData()?.client?.billingAddress?.addressLine1
-                        }}
-                        <ng-container
-                          *ngIf="
-                            quotationData()?.client?.billingAddress
-                              ?.addressLine2
-                          "
-                        >
-                          {{
-                            quotationData()?.client?.billingAddress
-                              ?.addressLine2
-                          }}
-                        </ng-container>
-                        {{ quotationData()?.client?.billingAddress?.postcode }}
-                        {{ quotationData()?.client?.billingAddress?.city }}
-                        {{ quotationData()?.client?.billingAddress?.state }}
-                      </p>
-                    </div>
-
-                    <div class="rounded-lg bg-slate-50 p-4">
-                      <div
-                        class="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-500"
-                      >
-                        <i class="pi pi-truck text-violet-600"></i>
-                        Delivery Address
-                      </div>
-                      <p
-                        class="whitespace-pre-line break-words text-sm leading-6 text-slate-700"
-                      >
-                        {{
-                          quotationData()?.client?.deliveryAddress?.addressLine1
-                        }}
-                        <ng-container
-                          *ngIf="
-                            quotationData()?.client?.deliveryAddress
-                              ?.addressLine2
-                          "
-                        >
-                          {{
-                            quotationData()?.client?.deliveryAddress
-                              ?.addressLine2
-                          }}
-                        </ng-container>
-                        {{ quotationData()?.client?.deliveryAddress?.postcode }}
-                        {{ quotationData()?.client?.deliveryAddress?.city }}
-                        {{ quotationData()?.client?.deliveryAddress?.state }}
-                      </p>
-                    </div>
+                  <div *ngIf="quotationData()?.client?.faxNo">
+                    <span>Fax: </span>
+                    <span>
+                      {{ quotationData()?.client?.faxNo }}
+                    </span>
                   </div>
                 </div>
               </div>
-            </section>
+            </div>
 
-            <!-- Attention and subject -->
-            <section
-              class="grid grid-cols-1 gap-4 rounded-xl border border-slate-200 bg-slate-50/70 p-5 sm:grid-cols-2"
-            >
-              <div>
-                <p
-                  class="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-400"
+            <!-- Attention -->
+            <div class="flex flex-row items-center font-bold gap-2">
+              <span>Attention: </span>
+              <span>
+                {{ quotationData()?.client?.primaryContactPerson || '-' }}
+                <ng-container
+                  *ngIf="quotationData()?.client?.secondaryContactPerson"
                 >
-                  Attention
-                </p>
-                <div
-                  class="flex items-center gap-2 text-sm font-semibold text-slate-800"
-                >
-                  <i class="pi pi-user text-blue-600"></i>
-                  <span>
-                    {{ quotationData()?.client?.primaryContactPerson || '-' }}
-                    <ng-container
-                      *ngIf="quotationData()?.client?.secondaryContactPerson"
-                    >
-                      / {{ quotationData()?.client?.secondaryContactPerson }}
-                    </ng-container>
-                  </span>
-                </div>
-              </div>
+                  / {{ quotationData()?.client?.secondaryContactPerson }}
+                </ng-container>
+              </span>
+            </div>
 
-              <div>
-                <p
-                  class="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-400"
-                >
-                  Subject
-                </p>
-                <p class="text-sm font-semibold leading-relaxed text-slate-800">
-                  {{ quotationData()?.subject || '-' }}
-                </p>
-              </div>
-            </section>
+            <!-- Subject -->
+            <div class="mb-4 py-3 font-bold">
+              <p class="leading-relaxed">
+                <span>Re: </span>
+                {{ quotationData()?.subject || '-' }}
+              </p>
+            </div>
 
-            <!-- Order lines -->
-            <section>
-              <div
-                class="mb-4 flex flex-col justify-between gap-2 sm:flex-row sm:items-center"
-              >
-                <div class="flex items-center gap-3">
-                  <div
-                    class="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-600"
-                  >
-                    <i class="pi pi-list"></i>
-                  </div>
-                  <div>
-                    <h2 class="font-semibold text-slate-900">Order Lines</h2>
-                    <p class="text-sm text-slate-500">
-                      Items and pricing breakdown
-                    </p>
-                  </div>
-                </div>
-
-                <span class="text-xs font-medium text-slate-500">
-                  {{ quotationData()?.quotationItems?.length || 0 }} records
-                </span>
-              </div>
-
-              <div class="overflow-hidden rounded-xl border border-slate-200">
+            <!-- Quotation items -->
+            <div class="mb-8">
+              <div class="overflow-x-auto">
                 <p-table
                   [value]="quotationData()?.quotationItems || []"
                   dataKey="id"
-                  [showGridlines]="false"
                   [paginator]="false"
                   [scrollable]="true"
                   responsiveLayout="scroll"
                   size="small"
-                  styleClass="quotation-detail-table"
+                  showGridlines
                 >
-                  <!-- Header -->
                   <ng-template #header>
                     <tr>
-                      <th class="w-16 text-center! py-3!">Item</th>
-                      <th class="min-w-[260px]">Description</th>
-                      <th class="w-20 text-center!">Unit</th>
-                      <th class="w-20 text-center!">Qty</th>
-                      <th class="w-24 text-center!">Disc (%)</th>
-                      <th class="w-36 text-right!">Unit Price (RM)</th>
-                      <th class="w-40 text-right!">Total (RM)</th>
+                      <th class="w-14 text-center!">Item</th>
+                      <th class="min-w-[240px]">Description</th>
+                      <th class="w-16 text-center!">Unit</th>
+                      <th class="w-16 text-center!">Qty</th>
+                      <th class="w-20 text-center!">Disc (%)</th>
+                      <th class="w-32 text-right!">Unit Price (RM)</th>
+                      <th class="w-32 text-right!">Total (RM)</th>
                     </tr>
                   </ng-template>
 
-                  <!-- Body -->
                   <ng-template #body let-row>
-                    <tr
-                      [ngClass]="{
-                        'bg-blue-50/60': row.rowType === 'CategoryHeader',
-                        'bg-slate-50/70': row.rowType === 'NoteRow',
-                      }"
-                    >
-                      <!-- Normal Line Item -->
+                    <tr>
                       <ng-container *ngIf="row.rowType === 'LineItem'">
-                        <td class="text-center! text-slate-500">
+                        <td class="text-center!">
                           {{ row.item || '—' }}
                         </td>
-
                         <td>
                           <div
-                            class="quotation-item-description"
+                            class="quotation-item-description leading-relaxed"
                             [innerHTML]="row.description || '—'"
                           ></div>
                         </td>
-
-                        <td class="text-center! text-slate-600">
-                          {{ row.unit || '—' }}
-                        </td>
-
-                        <td class="text-center! text-slate-700 tabular-nums">
+                        <td class="text-center!">{{ row.unit || '—' }}</td>
+                        <td class="text-center! tabular-nums">
                           {{ row.quantity ?? '—' }}
                         </td>
-
-                        <td class="text-center! text-slate-600 tabular-nums">
+                        <td class="text-center! tabular-nums">
                           {{ row.discount ?? 0 }}
                         </td>
-
-                        <td class="text-right! text-slate-700 tabular-nums">
+                        <td class="text-right! tabular-nums">
                           {{
                             row.unitPrice != null
                               ? (row.unitPrice | number: '1.2-2')
                               : '—'
                           }}
                         </td>
-
-                        <td
-                          class="text-right! font-semibold text-slate-900 tabular-nums"
-                        >
+                        <td class="text-right! font-semibold tabular-nums">
                           {{
                             row.totalPrice != null
                               ? (row.totalPrice | number: '1.2-2')
@@ -554,342 +405,316 @@ import autoTable from 'jspdf-autotable';
                         </td>
                       </ng-container>
 
-                      <!-- Category Header -->
                       <ng-container *ngIf="row.rowType === 'CategoryHeader'">
                         <td></td>
-                        <td colspan="6" class="font-semibold text-blue-800">
-                          <div class="flex items-center gap-2">
-                            <i class="pi pi-folder-open text-xs"></i>
-                            <span>{{ row.description }}</span>
-                          </div>
+                        <td colspan="6" class="font-bold">
+                          {{ row.description }}
                         </td>
                       </ng-container>
 
-                      <!-- Note Row -->
                       <ng-container *ngIf="row.rowType === 'NoteRow'">
-                        <td class="text-center! italic text-slate-400">
+                        <td class="text-center! italic">
                           {{ row.item || '' }}
                         </td>
-
-                        <td colspan="6" class="italic text-slate-500">
+                        <td colspan="6" class="italic">
                           <div [innerHTML]="row.description || ''"></div>
                         </td>
                       </ng-container>
                     </tr>
                   </ng-template>
 
-                  <!-- Footer -->
                   <ng-template #footer>
                     <tr>
-                      <td
-                        colspan="6"
-                        class="text-right! font-medium text-slate-600"
-                      >
-                        Subtotal
+                      <td colspan="6" class="text-right! font-semibold">
+                        Sub Total
                       </td>
-                      <td
-                        class="text-right! font-medium text-slate-800 tabular-nums"
-                      >
-                        RM
-                        {{ quotationData()?.subTotal ?? 0 | number: '1.2-2' }}
-                      </td>
-                    </tr>
-
-                    <tr *ngIf="(quotationData()?.discount ?? 0) !== 0">
-                      <td
-                        colspan="6"
-                        class="text-right! font-medium text-red-600"
-                      >
-                        Discount
-                      </td>
-                      <td
-                        class="text-right! font-medium text-red-600 tabular-nums"
-                      >
-                        - RM {{ quotationData()?.discount | number: '1.2-2' }}
+                      <td class="text-right! font-semibold tabular-nums">
+                        {{ quotationData()?.subTotal ?? 0.0 | number: '1.2-2' }}
                       </td>
                     </tr>
 
                     <tr>
-                      <td
-                        colspan="6"
-                        class="bg-slate-50 text-right! font-bold text-slate-900"
-                      >
+                      <td colspan="6" class="text-right! font-semibold">
+                        Discount
+                      </td>
+                      <td class="text-right! font-semibold tabular-nums">
+                        {{ quotationData()?.discount ?? 0.0 | number: '1.2-2' }}
+                      </td>
+                    </tr>
+
+                    <tr>
+                      <td colspan="6" class="text-right! font-bold">
                         Total Amount
                       </td>
-
                       <td
-                        class="bg-slate-50 text-right! text-base font-bold text-blue-700 tabular-nums"
+                        class="text-right! text-base font-extrabold tabular-nums"
                       >
-                        RM
                         {{
-                          quotationData()?.totalAmount ?? 0 | number: '1.2-2'
+                          quotationData()?.totalAmount ?? 0.0 | number: '1.2-2'
                         }}
                       </td>
                     </tr>
                   </ng-template>
 
-                  <!-- Empty State -->
                   <ng-template #emptymessage>
                     <tr>
-                      <td colspan="7">
-                        <div
-                          class="flex flex-col items-center gap-2 py-10 text-slate-400"
-                        >
-                          <i class="pi pi-inbox text-3xl"></i>
-                          <span class="text-sm">No quotation items found</span>
-                        </div>
+                      <td colspan="7" class="py-8 text-center text-sm">
+                        No quotation items found.
                       </td>
                     </tr>
                   </ng-template>
                 </p-table>
               </div>
-            </section>
+            </div>
 
             <!-- Terms and conditions -->
-            <section>
-              <div class="mb-4 flex items-center gap-3">
-                <div
-                  class="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-50 text-amber-600"
+            <div class="mb-8">
+              <h3 class="mb-3 underline font-extrabold">Terms & Conditions</h3>
+
+              <div class="grid grid-cols-12 items-center leading-relaxed ">
+                <div class="col-span-2 font-bold">Payment Terms</div>
+                <span class="col-span-10">
+                  : {{ quotationData()?.paymentTerms || '-' }}</span
                 >
-                  <i class="pi pi-file-edit"></i>
+
+                <div
+                  class="col-span-2 font-bold"
+                  *ngIf="quotationData()?.validity"
+                >
+                  Validity
                 </div>
-                <div>
-                  <h2 class="font-semibold text-slate-900">
-                    Terms & Conditions
-                  </h2>
-                  <p class="text-sm text-slate-500">
-                    Payment, validity and additional terms
-                  </p>
-                </div>
+                <span class="col-span-10" *ngIf="quotationData()?.validity">
+                  : {{ quotationData()?.validity }}
+                  {{ quotationData()?.validityType }}
+                  (with effect from the date of this quotation)
+                </span>
+                <ng-container
+                  *ngFor="let term of quotationData()?.termsAndConditions"
+                >
+                  <div class="col-span-2 font-bold">
+                    {{ term?.title }}
+                  </div>
+                  <p class="col-span-10">
+                    : {{ term?.description }}
+                  </p></ng-container
+                >
               </div>
 
-              <div class="overflow-hidden rounded-xl border border-slate-200">
-                <div
-                  class="grid grid-cols-1 gap-1 border-b border-slate-100 p-4 last:border-b-0 sm:grid-cols-[180px_1fr] sm:gap-4"
-                >
-                  <p class="text-sm font-semibold text-slate-700">Terms</p>
-                  <p class="text-sm leading-relaxed text-slate-600">
-                    {{ quotationData()?.paymentTerms || '-' }}
-                  </p>
-                </div>
+              <!-- Signature -->
+              <div class="grid grid-cols-12 gap-8 pt-6">
+                <div class="col-span-3">
+                  <p class="">Yours faithfully,</p>
 
-                <div
-                  *ngIf="quotationData()?.validity"
-                  class="grid grid-cols-1 gap-1 border-b border-slate-100 p-4 last:border-b-0 sm:grid-cols-[180px_1fr] sm:gap-4"
-                >
-                  <p class="text-sm font-semibold text-slate-700">Validity</p>
-                  <p class="text-sm leading-relaxed text-slate-600">
-                    {{ quotationData()?.validity || '-' }}
-                    {{ quotationData()?.validityType }} (with effect from the
-                    date of this quotation)
-                  </p>
-                </div>
+                  <div class="mt-16 border-b"></div>
 
-                <div
-                  *ngIf="quotationData()?.termsAndConditions?.length"
-                  class="border-t border-slate-100"
-                >
-                  <div
-                    *ngFor="let term of quotationData()?.termsAndConditions"
-                    class="grid grid-cols-1 gap-1 border-b border-slate-100 p-4 last:border-b-0 sm:grid-cols-[180px_1fr] sm:gap-4"
-                  >
-                    <p class="text-sm font-semibold text-slate-700">
-                      {{ term?.title }}
+                  <div class="mt-3 space-y-1">
+                    <p>
+                      {{ quotationData()?.createdBy?.fullName || '-' }}
                     </p>
-                    <p class="text-sm leading-relaxed text-slate-600">
-                      {{ term?.description }}
+                    <p>
+                      {{ quotationData()?.createdBy?.jobTitle || '' }}
+                    </p>
+                    <p>
+                      {{ quotationData()?.createdBy?.email || '' }}
                     </p>
                   </div>
+                  <p class="font-medium italic pt-10">
+                    Your ELV Solution Provider
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Convert to Sales Order Dialog -->
+        <p-dialog
+          [(visible)]="SODialog"
+          [modal]="true"
+          [draggable]="false"
+          [resizable]="false"
+          [style]="{ width: 'min(520px, calc(100vw - 2rem))' }"
+          appendTo="body"
+          styleClass="quotation-convert-dialog"
+          (onHide)="resetConvertForm()"
+        >
+          <ng-template #header>
+            <div class="flex items-center gap-3">
+              <div
+                class="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600"
+              >
+                <i class="pi pi-file-edit text-lg"></i>
+              </div>
+              <div>
+                <h2 class="font-semibold text-slate-900">
+                  Convert to Sales Order
+                </h2>
+                <p class="mt-0.5 text-xs text-slate-500">
+                  Enter the client's purchase order details
+                </p>
+              </div>
+            </div>
+          </ng-template>
+
+          <div class="flex flex-col gap-5 py-2">
+            <div class="rounded-xl border border-blue-100 bg-blue-50/70 p-3">
+              <div class="flex items-start gap-2">
+                <i class="pi pi-info-circle mt-0.5 text-blue-600"></i>
+                <p class="text-xs leading-relaxed text-blue-800">
+                  Please provide the client PO number and attachment before
+                  converting this quotation into a Sales Order.
+                </p>
+              </div>
+            </div>
+
+            <div class="flex flex-col gap-2">
+              <label class="text-sm font-semibold text-slate-700">
+                Client PO Number <span class="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                pInputText
+                [(ngModel)]="soForm.clientPONumber"
+                placeholder="e.g. PO-12345"
+                class="w-full"
+              />
+            </div>
+
+            <div class="flex flex-col gap-2">
+              <label class="text-sm font-semibold text-slate-700">
+                PO Received Date
+              </label>
+              <p-datepicker
+                [(ngModel)]="soForm.clientPODate"
+                appendTo="body"
+                [showIcon]="true"
+                dateFormat="dd/mm/yy"
+                placeholder="Select received date"
+                inputStyleClass="w-full"
+                styleClass="w-full"
+              ></p-datepicker>
+            </div>
+
+            <div class="flex flex-col gap-2">
+              <label class="text-sm font-semibold text-slate-700"
+                >Remarks</label
+              >
+              <input
+                type="text"
+                pInputText
+                [(ngModel)]="soForm.remarks"
+                placeholder="Optional notes..."
+                class="w-full"
+              />
+            </div>
+
+            <div class="flex flex-col gap-2">
+              <label class="text-sm font-semibold text-slate-700">
+                PO Attachment <span class="text-red-500">*</span>
+              </label>
+
+              <input
+                type="file"
+                id="poFile"
+                (change)="onFileSelected($event)"
+                accept=".pdf,.png,.jpg,.jpeg"
+                class="hidden"
+                #fileInput
+              />
+
+              <div
+                class="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-4 transition hover:border-blue-300 hover:bg-blue-50/40"
+              >
+                <div
+                  *ngIf="!soForm.clientPOAttachment"
+                  class="flex flex-col items-center gap-2 py-3"
+                >
+                  <div
+                    class="flex h-11 w-11 items-center justify-center rounded-full bg-white text-blue-600 shadow-sm"
+                  >
+                    <i class="pi pi-cloud-upload text-xl"></i>
+                  </div>
+                  <p class="text-sm font-medium text-slate-700">
+                    Upload client PO
+                  </p>
+                  <p class="text-xs text-slate-500">PDF, PNG or JPG</p>
+                  <p-button
+                    label="Choose File"
+                    icon="pi pi-upload"
+                    size="small"
+                    severity="secondary"
+                    [outlined]="true"
+                    (onClick)="fileInput.click()"
+                  ></p-button>
                 </div>
 
                 <div
-                  *ngIf="!quotationData()?.termsAndConditions?.length"
-                  class="border-t border-slate-100 px-4 py-5 text-center text-sm text-slate-400"
+                  *ngIf="soForm.clientPOAttachment"
+                  class="flex items-center gap-3"
                 >
-                  No additional terms and conditions.
+                  <div
+                    class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-red-50 text-red-600"
+                  >
+                    <i class="pi pi-file-pdf text-lg"></i>
+                  </div>
+
+                  <div class="min-w-0 flex-1">
+                    <p class="truncate text-sm font-semibold text-slate-800">
+                      {{ soForm.clientPOAttachment.name }}
+                    </p>
+                    <p class="text-xs text-slate-500">
+                      {{
+                        soForm.clientPOAttachment.size / 1024 | number: '1.0-0'
+                      }}
+                      KB
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    class="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-red-50 hover:text-red-600"
+                    (click)="
+                      soForm.clientPOAttachment = null; fileInput.value = ''
+                    "
+                    aria-label="Remove attachment"
+                  >
+                    <i class="pi pi-trash"></i>
+                  </button>
                 </div>
               </div>
-            </section>
+            </div>
           </div>
-        </div>
-      </div>
-    </div>
 
-    <!-- Convert to Sales Order Dialog -->
-    <p-dialog
-      [(visible)]="SODialog"
-      [modal]="true"
-      [draggable]="false"
-      [resizable]="false"
-      [style]="{ width: 'min(520px, calc(100vw - 2rem))' }"
-      appendTo="body"
-      styleClass="quotation-convert-dialog"
-      (onHide)="resetConvertForm()"
-    >
-      <ng-template #header>
-        <div class="flex items-center gap-3">
-          <div
-            class="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600"
-          >
-            <i class="pi pi-file-edit text-lg"></i>
-          </div>
-          <div>
-            <h2 class="font-semibold text-slate-900">Convert to Sales Order</h2>
-            <p class="mt-0.5 text-xs text-slate-500">
-              Enter the client's purchase order details
-            </p>
-          </div>
-        </div>
-      </ng-template>
-
-      <div class="flex flex-col gap-5 py-2">
-        <div class="rounded-xl border border-blue-100 bg-blue-50/70 p-3">
-          <div class="flex items-start gap-2">
-            <i class="pi pi-info-circle mt-0.5 text-blue-600"></i>
-            <p class="text-xs leading-relaxed text-blue-800">
-              Please provide the client PO number and attachment before
-              converting this quotation into a Sales Order.
-            </p>
-          </div>
-        </div>
-
-        <div class="flex flex-col gap-2">
-          <label class="text-sm font-semibold text-slate-700">
-            Client PO Number <span class="text-red-500">*</span>
-          </label>
-          <input
-            type="text"
-            pInputText
-            [(ngModel)]="soForm.clientPONumber"
-            placeholder="e.g. PO-12345"
-            class="w-full"
-          />
-        </div>
-
-        <div class="flex flex-col gap-2">
-          <label class="text-sm font-semibold text-slate-700">
-            PO Received Date
-          </label>
-          <p-datepicker
-            [(ngModel)]="soForm.clientPODate"
-            appendTo="body"
-            [showIcon]="true"
-            dateFormat="dd/mm/yy"
-            placeholder="Select received date"
-            inputStyleClass="w-full"
-            styleClass="w-full"
-          ></p-datepicker>
-        </div>
-
-        <div class="flex flex-col gap-2">
-          <label class="text-sm font-semibold text-slate-700">Remarks</label>
-          <input
-            type="text"
-            pInputText
-            [(ngModel)]="soForm.remarks"
-            placeholder="Optional notes..."
-            class="w-full"
-          />
-        </div>
-
-        <div class="flex flex-col gap-2">
-          <label class="text-sm font-semibold text-slate-700">
-            PO Attachment <span class="text-red-500">*</span>
-          </label>
-
-          <input
-            type="file"
-            id="poFile"
-            (change)="onFileSelected($event)"
-            accept=".pdf,.png,.jpg,.jpeg"
-            class="hidden"
-            #fileInput
-          />
-
-          <div
-            class="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-4 transition hover:border-blue-300 hover:bg-blue-50/40"
-          >
+          <ng-template #footer>
             <div
-              *ngIf="!soForm.clientPOAttachment"
-              class="flex flex-col items-center gap-2 py-3"
+              class="flex flex-col-reverse gap-2 border-t border-slate-100 pt-4 sm:flex-row sm:justify-end"
             >
-              <div
-                class="flex h-11 w-11 items-center justify-center rounded-full bg-white text-blue-600 shadow-sm"
-              >
-                <i class="pi pi-cloud-upload text-xl"></i>
-              </div>
-              <p class="text-sm font-medium text-slate-700">Upload client PO</p>
-              <p class="text-xs text-slate-500">PDF, PNG or JPG</p>
               <p-button
-                label="Choose File"
-                icon="pi pi-upload"
-                size="small"
+                label="Cancel"
                 severity="secondary"
                 [outlined]="true"
-                (onClick)="fileInput.click()"
+                (onClick)="SODialog = false"
+              ></p-button>
+
+              <p-button
+                label="Convert to Sales Order"
+                icon="pi pi-arrow-right"
+                iconPos="right"
+                severity="success"
+                [disabled]="
+                  !soForm.clientPONumber.trim() ||
+                  !soForm.clientPOAttachment ||
+                  !soForm.quotationData
+                "
+                (onClick)="submitConvertToSO()"
               ></p-button>
             </div>
-
-            <div
-              *ngIf="soForm.clientPOAttachment"
-              class="flex items-center gap-3"
-            >
-              <div
-                class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-red-50 text-red-600"
-              >
-                <i class="pi pi-file-pdf text-lg"></i>
-              </div>
-
-              <div class="min-w-0 flex-1">
-                <p class="truncate text-sm font-semibold text-slate-800">
-                  {{ soForm.clientPOAttachment.name }}
-                </p>
-                <p class="text-xs text-slate-500">
-                  {{ soForm.clientPOAttachment.size / 1024 | number: '1.0-0' }}
-                  KB
-                </p>
-              </div>
-
-              <button
-                type="button"
-                class="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-red-50 hover:text-red-600"
-                (click)="soForm.clientPOAttachment = null; fileInput.value = ''"
-                aria-label="Remove attachment"
-              >
-                <i class="pi pi-trash"></i>
-              </button>
-            </div>
-          </div>
-        </div>
+          </ng-template>
+        </p-dialog>
       </div>
-
-      <ng-template #footer>
-        <div
-          class="flex flex-col-reverse gap-2 border-t border-slate-100 pt-4 sm:flex-row sm:justify-end"
-        >
-          <p-button
-            label="Cancel"
-            severity="secondary"
-            [outlined]="true"
-            (onClick)="SODialog = false"
-          ></p-button>
-
-          <p-button
-            label="Convert to Sales Order"
-            icon="pi pi-arrow-right"
-            iconPos="right"
-            severity="success"
-            [disabled]="
-              !soForm.clientPONumber.trim() ||
-              !soForm.clientPOAttachment ||
-              !soForm.quotationData
-            "
-            (onClick)="submitConvertToSO()"
-          ></p-button>
-        </div>
-      </ng-template>
-    </p-dialog>
+    </div>
   `,
+
   styleUrl: './view-details.less',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -1127,13 +952,12 @@ export class ViewDetails implements OnInit, OnDestroy {
     }
 
     this.selectedAction = null;
+
+    this.cdr.markForCheck();
   }
 
   onActionChange(value: string | null): void {
     if (!value) return;
-
-    // Reset the dropdown so the same action can be selected again if needed.
-    this.selectedAction = null;
 
     switch (value) {
       case 'Print':
@@ -1161,8 +985,10 @@ export class ViewDetails implements OnInit, OnDestroy {
       default:
         break;
     }
-
-    this.cdr.markForCheck();
+    setTimeout(() => {
+      this.selectedAction = null;
+      this.cdr.markForCheck();
+    });
   }
 
   updateStatus(status: string) {
@@ -1541,36 +1367,19 @@ export class ViewDetails implements OnInit, OnDestroy {
       // Calculate section height
       const clientAddressHeight = billingText.length;
 
-      y += Math.max(20, clientAddressHeight * 4 + 14);
+      y += Math.max(20, clientAddressHeight * 4 + 16);
 
       // Client contact information
-      addText(
-        `Attention: ${client?.primaryContactPerson || '-'}`,
-        margin,
-        y,
-        9,
-        darkColor,
-        true,
-      );
+      const attention = [
+        client?.primaryContactPerson,
+        client?.secondaryContactPerson,
+      ]
+        .filter(Boolean)
+        .join(' / ');
 
-      y += 5;
+      addText(`Attention: ${attention || '-'}`, margin, y, 9, darkColor, true);
 
-      const contactDetails = [
-        client?.primaryContactNo ? `Contact: ${client.primaryContactNo}` : '',
-        client?.secondaryContactPerson
-          ? `Secondary Contact: ${client.secondaryContactPerson}`
-          : '',
-        client?.secondaryContactNo
-          ? `Secondary No: ${client.secondaryContactNo}`
-          : '',
-      ].filter(Boolean);
-
-      contactDetails.forEach((detail) => {
-        addText(detail, margin, y, 8, mutedColor);
-        y += 4;
-      });
-
-      y += 3;
+      y += 7;
 
       // =====================================================
       // 4. SUBJECT
@@ -1917,7 +1726,7 @@ export class ViewDetails implements OnInit, OnDestroy {
     this.messageService.add({
       severity: 'success',
       summary: 'PDF Generated',
-      detail: 'Quotation PDF downloaded successfully.',
+      detail: `${filename} downloaded successfully.`,
     });
   }
 

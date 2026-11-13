@@ -171,6 +171,11 @@ export const APP_MANAGEMENT_MENU: AppNavItem[] = [
         route: '/quotations',
         moduleKey: 'quotations',
       },
+      {
+        label: 'Quotation Templates',
+        route: '/quotation-template',
+        moduleKey: 'quotation-template',
+      },
     ],
   },
   {

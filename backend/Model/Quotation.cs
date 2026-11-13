@@ -364,7 +364,7 @@ namespace YLWorks.Model
     // QUOTATION TEMPLATE
     // =========================================================
 
-    public class QuotationTemplate
+    public class QuotationTemplate : BaseEntity
     {
         public Guid Id { get; set; }
 
@@ -394,9 +394,11 @@ namespace YLWorks.Model
         public bool IsActive { get; set; } = true;
 
         public Guid CreatedById { get; set; }
+        public User CreatedBy { get; set; } = null!;
 
         public DateTime CreatedAt { get; set; }
 
+        public Guid? UpdatedById { get; set; }
         public DateTime? UpdatedAt { get; set; }
 
         public ICollection<QuotationTemplateItem> Items { get; set; }
@@ -415,7 +417,6 @@ namespace YLWorks.Model
         public Guid Id { get; set; }
 
         public Guid TemplateId { get; set; }
-
         public QuotationTemplate Template { get; set; } = null!;
 
         public Guid? ProductServiceId { get; set; }
@@ -448,7 +449,6 @@ namespace YLWorks.Model
         public Guid Id { get; set; }
 
         public Guid TemplateId { get; set; }
-
         public QuotationTemplate Template { get; set; } = null!;
 
         public Guid? TermsAndConditionId { get; set; }
@@ -527,6 +527,52 @@ namespace YLWorks.Model
     public class UpdateQuotationTemplateRequest : CreateQuotationTemplateRequest
     {
         public Guid Id { get; set; }
+    }
+
+    public class QuotationTemplateDto
+    {
+        public Guid Id { get; set; }
+
+        public string Name { get; set; } = string.Empty;
+
+        public string? Description { get; set; }
+
+        public Guid FromCompanyId { get; set; }
+
+        public string? CompanyName { get; set; }
+
+        public string? Subject { get; set; }
+
+        public string? ProjectCode { get; set; }
+
+        public decimal? Discount { get; set; }
+
+        public decimal? TaxAmount { get; set; }
+
+        public string? PaymentTerms { get; set; }
+
+        public bool NoValidity { get; set; }
+
+        public int? Validity { get; set; }
+
+        public string? ValidityType { get; set; }
+
+        public bool IsActive { get; set; }
+
+        public string? CreatedByName { get; set; }
+
+        public DateTime CreatedAt { get; set; }
+
+        public List<QuotationItemDto> Items { get; set; } = new();
+
+        public List<TermsAndConditionOrderDto> TermsAndConditions { get; set; } = new();
+    }
+
+    public class SaveQuotationAsTemplateRequest
+    {
+        public string Name { get; set; } = string.Empty;
+
+        public string? Description { get; set; }
     }
 
 }

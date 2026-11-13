@@ -6,8 +6,12 @@ import { environment } from '../../environments/environment';
 
 import {
   CreateQuotationRequest,
+  CreateQuotationTemplateRequest,
   QuotationDto,
+  QuotationTemplateDto,
+  SaveQuotationAsTemplateRequest,
   UpdateQuotationRequest,
+  UpdateQuotationTemplateRequest,
 } from '../models/Quotation';
 
 import {
@@ -253,28 +257,19 @@ export class QuotationService {
 
   SaveAsTemplate(
     quotationId: string,
-    templateName: string,
-  ): Observable<{
-    message: string;
-    templateId: string;
-    name: string;
-  }> {
+    request: SaveQuotationAsTemplateRequest,
+  ): Observable<any> {
     return this.http
-      .post<{
-        message: string;
-        templateId: string;
-        name: string;
-      }>(`${this.url}/SaveAsTemplate/${quotationId}`, templateName)
+      .post<any>(`${this.url}/SaveAsTemplate/${quotationId}`, request)
       .pipe(retry(1), catchError(this.handleError('SaveAsTemplate')));
   }
-
   // =========================================================
   // GET TEMPLATES
   // =========================================================
 
-  GetTemplates(): Observable<any[]> {
+  GetTemplates(): Observable<QuotationTemplateDto[]> {
     return this.http
-      .get<any[]>(`${this.url}/GetTemplates`)
+      .get<QuotationTemplateDto[]>(`${this.url}/GetTemplates`)
       .pipe(retry(1), catchError(this.handleError('GetTemplates')));
   }
 
@@ -282,10 +277,22 @@ export class QuotationService {
   // GET TEMPLATE
   // =========================================================
 
-  GetTemplate(id: string): Observable<any> {
+  GetTemplate(id: string): Observable<QuotationTemplateDto> {
     return this.http
-      .get<any>(`${this.url}/GetTemplate/${id}`)
+      .get<QuotationTemplateDto>(`${this.url}/GetTemplate/${id}`)
       .pipe(retry(1), catchError(this.handleError('GetTemplate')));
+  }
+
+  CreateTemplate(request: CreateQuotationTemplateRequest): Observable<any> {
+    return this.http
+      .post<any>(`${this.url}/CreateTemplate`, request)
+      .pipe(retry(1), catchError(this.handleError('CreateTemplate')));
+  }
+
+  UpdateTemplate(request: UpdateQuotationTemplateRequest): Observable<any> {
+    return this.http
+      .put<any>(`${this.url}/UpdateTemplate`, request)
+      .pipe(retry(1), catchError(this.handleError('UpdateTemplate')));
   }
 
   // =========================================================

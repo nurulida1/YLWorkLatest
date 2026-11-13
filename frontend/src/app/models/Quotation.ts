@@ -20,8 +20,10 @@ export interface QuotationDto extends BaseModel {
   taxAmount: number;
   totalAmount: number;
   paymentTerms: string;
+  noValidity: boolean;
   validity: number;
   validityType: string;
+  dueDate: Date;
   status: string;
   remarks: string;
   quotationItems: QuotationItems[];
@@ -29,7 +31,6 @@ export interface QuotationDto extends BaseModel {
   termsAndConditions: QuotationTermsAndCondition[];
   otherInformations: QuotationOtherInformation[];
   createdBy: UserDto;
-  dueDate: Date;
 }
 
 export interface QuotationStatusHistory extends BaseModel {
@@ -66,6 +67,9 @@ export interface QuotationTermsAndCondition {
   termsAndConditionId: string;
   termsAndCondition: TermsAndConditionDto;
   sortOrder: number;
+  title: string;
+  description: string;
+  selected?: boolean;
 }
 
 export interface QuotationItemDto {
@@ -116,6 +120,7 @@ export interface CreateQuotationRequest {
   subTotal: number;
   totalAmount: number;
   paymentTerms: string;
+  noValidity: boolean;
   validity: number;
   validityType: string;
   quotationItems: QuotationItemRequest[];
@@ -148,4 +153,82 @@ export interface TermsAndConditionOrderDto {
   title?: string;
   description?: string;
   sortOrder: number;
+}
+
+// Save quotation as template
+export interface SaveQuotationAsTemplateRequest {
+  name: string;
+  description?: string;
+}
+
+// Create quotation template
+export interface CreateQuotationTemplateRequest {
+  name: string;
+  description?: string;
+  fromCompanyId: string;
+  subject?: string;
+  projectCode?: string;
+  discount?: number;
+  taxAmount?: number;
+  paymentTerms?: string;
+  noValidity: boolean;
+  validity?: number;
+  validityType?: string;
+  items: QuotationTemplateItem[];
+  termsAndConditions: TermsAndConditionOrderDto[];
+}
+
+// Update quotation template
+export interface UpdateQuotationTemplateRequest extends CreateQuotationTemplateRequest {
+  id: string;
+}
+
+// Template response
+export interface QuotationTemplateDto {
+  id: string;
+  name: string;
+  description?: string;
+  fromCompanyId: string;
+  subject?: string;
+  projectCode?: string;
+  discount?: number;
+  taxAmount?: number;
+  paymentTerms?: string;
+  noValidity: boolean;
+  validity?: number;
+  validityType?: string;
+  isActive?: boolean;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
+  createdById?: string;
+  createdByName?: string;
+  createdBy?: UserDto | null;
+  items?: QuotationTemplateItem[];
+  terms?: QuotationTemplateTerm[];
+}
+
+// Template item
+export interface QuotationTemplateItem {
+  id?: string;
+  templateId?: string;
+  productServiceId?: string;
+  rowType?: string;
+  item?: string;
+  description?: string;
+  quantity?: number;
+  unit?: string;
+  unitPrice?: number;
+  discount?: number;
+  totalPrice?: number;
+  sortOrder?: number;
+}
+
+// Template terms and conditions
+export interface QuotationTemplateTerm {
+  id?: string;
+  templateId?: string;
+  termsAndConditionId?: string;
+  title?: string;
+  description?: string;
+  sortOrder?: number;
 }

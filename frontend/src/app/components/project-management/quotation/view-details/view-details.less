@@ -1,3 +1,100 @@
 :host {
   display: block;
+  min-height: 100%;
+}
+
+:host ::ng-deep .quotation-action-select {
+  min-width: 210px;
+  border-radius: 10px;
+  border-color: #e2e8f0;
+  background: #fff;
+}
+
+:host ::ng-deep .quotation-action-select .p-select-label {
+  padding: 0.7rem 0.9rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+:host ::ng-deep .quotation-action-select:not(.p-disabled):hover {
+  border-color: #93c5fd;
+}
+
+:host ::ng-deep .quotation-action-select.p-focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgb(59 130 246 / 10%);
+}
+
+:host ::ng-deep .p-select-overlay {
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 12px 30px rgb(15 23 42 / 10%);
+  overflow: hidden;
+}
+
+:host ::ng-deep .p-select-option {
+  padding: 0.75rem 0.9rem;
+}
+
+:host ::ng-deep .quotation-detail-table .p-datatable-thead > tr > th {
+  background: #f8fafc;
+  color: #64748b;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border-bottom: 1px solid #e2e8f0;
+  white-space: nowrap;
+}
+
+:host ::ng-deep .quotation-detail-table .p-datatable-tbody > tr > td {
+  padding: 0.9rem 1rem;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 0.85rem;
+  vertical-align: middle;
+}
+
+:host
+  ::ng-deep
+  .quotation-detail-table
+  .p-datatable-tbody
+  > tr:last-child
+  > td {
+  border-bottom: 0;
+}
+
+:host ::ng-deep .quotation-detail-table .p-datatable-tfoot > tr > td {
+  padding: 0.85rem 1rem;
+  border-top: 1px solid #e2e8f0;
+  font-size: 0.875rem;
+}
+
+:host ::ng-deep .quotation-convert-dialog {
+  max-width: calc(100vw - 2rem);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+:host ::ng-deep .quotation-convert-dialog .p-dialog-header {
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+:host ::ng-deep .quotation-convert-dialog .p-dialog-content {
+  padding: 1.25rem 1.5rem;
+}
+
+:host ::ng-deep .quotation-convert-dialog .p-dialog-footer {
+  padding: 0 1.5rem 1.25rem;
+}
+
+@media (max-width: 640px) {
+  :host ::ng-deep .quotation-action-select {
+    width: 100%;
+  }
+
+  :host ::ng-deep .quotation-convert-dialog {
+    width: calc(100vw - 2rem) !important;
+  }
 }

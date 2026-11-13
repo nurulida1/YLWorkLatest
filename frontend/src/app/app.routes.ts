@@ -439,6 +439,26 @@ export const routes: Routes = [
     ],
   },
 
+  // Quotation Templates
+  {
+    path: 'quotation-template',
+    canActivate: [...protectedGuards],
+    data: { moduleKey: 'quotation-template' },
+    loadComponent: () =>
+      import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
+        (m) => m.ResponsiveLayout,
+      ),
+    children: [
+      {
+        path: '',
+        loadChildren: () =>
+          import('./components/project-management/quotation-template/quotation-template-routing.module').then(
+            (m) => m.QuotationTemplateRoutingModule,
+          ),
+      },
+    ],
+  },
+
   // =========================================================
   // 09. SALES & PURCHASING
   // =========================================================

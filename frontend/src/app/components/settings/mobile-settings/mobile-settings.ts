@@ -6,6 +6,9 @@ import {
   inject,
   OnDestroy,
   signal,
+  TemplateRef,
+  ViewChild,
+  ViewContainerRef,
 } from '@angular/core';
 import { TagModule } from 'primeng/tag';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
@@ -22,6 +25,9 @@ import { LoginResponse } from '../../../models/User';
 import { AppConfigService } from '../../../services/appConfig.service';
 import { AuthService } from '../../../services/authService';
 import { UserService } from '../../../services/userService.service';
+import { Overlay, OverlayRef } from '@angular/cdk/overlay';
+
+import { TemplatePortal } from '@angular/cdk/portal';
 
 @Component({
   selector: 'app-mobile-settings',
@@ -382,32 +388,47 @@ import { UserService } from '../../../services/userService.service';
     </div>
 
     <!-- Signing Out Overlay -->
-    @if (isLoggingOut()) {
+    <ng-template #logoutOverlay>
       <div
-        class="fixed inset-0 z-50 bg-slate-950/50 backdrop-blur-sm
-             flex items-center justify-center px-6"
+        class="w-full h-full min-h-[100dvh] flex items-center justify-center
+           bg-slate-950/70 backdrop-blur-md px-6"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="logout-title"
       >
         <div
           class="w-full max-w-xs bg-white rounded-3xl px-8 py-8
-               flex flex-col items-center gap-4 shadow-2xl"
+             flex flex-col items-center gap-5 shadow-2xl"
         >
           <div
             class="w-16 h-16 rounded-2xl bg-blue-50
-                 flex items-center justify-center"
+               flex items-center justify-center"
           >
             <i class="pi pi-spin pi-spinner text-3xl text-blue-600"></i>
           </div>
 
           <div class="text-center">
-            <p class="font-bold text-slate-900" translate>Signing Out...</p>
+            <h2
+              id="logout-title"
+              class="font-bold text-slate-900 text-lg"
+              translate
+            >
+              Signing Out...
+            </h2>
 
-            <p class="text-sm text-slate-500 mt-1" translate>
-              Please wait a moment
+            <p class="text-sm text-slate-500 mt-2" translate>
+              Please wait while we securely end your session.
             </p>
+          </div>
+
+          <div class="w-full h-1.5 rounded-full bg-slate-100 overflow-hidden">
+            <div
+              class="h-full w-1/2 rounded-full bg-blue-600 animate-pulse"
+            ></div>
           </div>
         </div>
       </div>
-    }
+    </ng-template>
 
     <!-- Language Bottom Sheet -->
     @if (isLanguageDialogOpen()) {
@@ -422,7 +443,6 @@ import { UserService } from '../../../services/userService.service';
           class="w-full bg-white rounded-t-3xl px-5 pt-3 pb-8
              animate-[slideUp_0.25s_ease-out]"
           (click)="$event.stopPropagation()"
-          ss
         >
           <!-- Sheet Handle -->
           <div class="w-10 h-1 rounded-full bg-slate-300 mx-auto mb-5"></div>
@@ -550,6 +570,9 @@ export class MobileSettings implements OnDestroy {
   private readonly translate = inject(TranslateService);
   private readonly appConfigService = inject(AppConfigService);
   private readonly cdr = inject(ChangeDetectorRef);
+  private readonly overlay = inject(Overlay);
+  private readonly viewContainerRef = inject(ViewContainerRef);
+  private logoutOverlayRef: OverlayRef | null = null;
 
   private readonly destroy$ = new Subject<void>();
 
@@ -564,6 +587,9 @@ export class MobileSettings implements OnDestroy {
   selectedLanguage = signal<'en' | 'zh' | 'ms'>(
     (localStorage.getItem('language') as 'en' | 'zh' | 'ms') ?? 'en',
   );
+
+  @ViewChild('logoutOverlay')
+  logoutOverlay!: TemplateRef<unknown>;
 
   constructor() {
     this.currentUser = this.userService.currentUser;
@@ -604,10 +630,28 @@ export class MobileSettings implements OnDestroy {
 
     this.isLoggingOut.set(true);
 
-    // Small delay to show the signing-out animation.
+    this.logoutOverlayRef = this.overlay.create({
+      hasBackdrop: true,
+      backdropClass: 'logout-overlay-backdrop',
+      panelClass: 'logout-overlay-panel',
+
+      positionStrategy: this.overlay
+        .position()
+        .global()
+        .top('0')
+        .left('0')
+        .width('100%')
+        .height('100%'),
+
+      scrollStrategy: this.overlay.scrollStrategies.block(),
+    });
+
+    this.logoutOverlayRef.attach(
+      new TemplatePortal(this.logoutOverlay, this.viewContainerRef),
+    );
+
     await new Promise((resolve) => setTimeout(resolve, 700));
 
-    // Use AuthService to revoke refresh token and clear session.
     this.authService.logout();
   }
 
@@ -646,6 +690,9 @@ export class MobileSettings implements OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.logoutOverlayRef?.dispose();
+    this.logoutOverlayRef = null;
+
     this.destroy$.next();
     this.destroy$.complete();
   }

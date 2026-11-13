@@ -4,13 +4,10 @@ import {
   ChangeDetectorRef,
   Component,
   computed,
-  ElementRef,
-  HostListener,
   inject,
   OnDestroy,
   OnInit,
   signal,
-  ViewChild,
 } from '@angular/core';
 import {
   FormArray,
@@ -45,7 +42,6 @@ import { ClientService } from '../../../../services/ClientService';
 import { CompanyService } from '../../../../services/companyService';
 import { LoadingService } from '../../../../services/loading.service';
 import { PaymentTermService } from '../../../../services/PaymentTermService';
-import { ProductServicesService } from '../../../../services/productServicesService';
 import { QuotationService } from '../../../../services/quotationService.service';
 import { TermsAndConditionService } from '../../../../services/TermsAndConditionService';
 import { CompanyType } from '../../../../shared/enum/enum';
@@ -55,7 +51,17 @@ import {
   normalizeHtml,
   ValidateAllFormFields,
 } from '../../../../shared/helpers/helpers';
-import { QuotationDto } from '../../../../models/Quotation';
+import {
+  QuotationDto,
+  SaveQuotationAsTemplateRequest,
+} from '../../../../models/Quotation';
+import { OverlayModule } from '@angular/cdk/overlay';
+import { CdkOverlayOrigin } from '@angular/cdk/overlay';
+import {
+  DragDropModule,
+  CdkDragDrop,
+  moveItemInArray,
+} from '@angular/cdk/drag-drop';
 
 @Component({
   selector: 'app-quotation-form',
@@ -78,6 +84,8 @@ import { QuotationDto } from '../../../../models/Quotation';
     PopoverModule,
     OrderListModule,
     CheckboxModule,
+    OverlayModule,
+    DragDropModule,
   ],
   template: `
     <div class="min-h-screen bg-slate-50 px-3 py-5 sm:px-5 lg:px-8">
@@ -98,12 +106,6 @@ import { QuotationDto } from '../../../../models/Quotation';
             class="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between"
           >
             <div class="flex items-start gap-4">
-              <div
-                class="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-lg shadow-blue-600/20"
-              >
-                <i class="pi pi-file-edit text-2xl"></i>
-              </div>
-
               <div class="min-w-0">
                 <div class="flex flex-wrap items-center gap-2">
                   <h1 class="text-2xl font-bold tracking-tight text-slate-900">
@@ -117,26 +119,9 @@ import { QuotationDto } from '../../../../models/Quotation';
                   </span>
                 </div>
 
-                <p class="mt-1 text-sm text-slate-500">
+                <p class="mt-1 text-slate-500">
                   Prepare and manage your business quotation.
                 </p>
-
-                <div
-                  class="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-slate-500"
-                >
-                  <span class="flex items-center gap-2">
-                    <i class="pi pi-hashtag text-xs!"></i>
-                    {{ FG.get('quotationNo')?.value || 'Not assigned' }}
-                  </span>
-
-                  <span class="flex items-center gap-2">
-                    <i class="pi pi-calendar text-xs!"></i>
-                    {{
-                      FG.get('quotationDate')?.value || today
-                        | date: 'dd MMM yyyy'
-                    }}
-                  </span>
-                </div>
               </div>
             </div>
 
@@ -167,10 +152,54 @@ import { QuotationDto } from '../../../../models/Quotation';
               />
 
               <p-button
-                label="Generate PDF"
-                icon="pi pi-file-pdf"
-                (onClick)="GenerateQuotation()"
-                styleClass="!bg-blue-600 !border-blue-600 hover:!bg-blue-700 shadow-md shadow-blue-600/20"
+                label="Submit Quotation"
+                icon="pi pi-send"
+                severity="primary"
+                styleClass="bg-blue-700! border-none! hover:bg-blue-500!"
+                (onClick)="SaveQuotation()"
+              />
+            </div>
+          </div>
+        </section>
+
+        <!-- USE QUOTATION TEMPLATE -->
+        <section
+          class="rounded-2xl border border-blue-200 bg-blue-50/50 p-5 shadow-sm"
+        >
+          <div
+            class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
+          >
+            <div class="flex items-center gap-3">
+              <div
+                class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-100 text-blue-700"
+              >
+                <i class="pi pi-book text-lg"></i>
+              </div>
+
+              <div>
+                <h2 class="font-bold text-slate-900">Use Quotation Template</h2>
+                <p class="text-sm text-slate-500">
+                  Select a saved template to automatically populate this
+                  quotation.
+                </p>
+              </div>
+            </div>
+
+            <div class="w-full sm:max-w-md">
+              <p-select
+                [options]="quotationTemplates"
+                optionLabel="name"
+                optionValue="id"
+                placeholder="Choose a quotation template"
+                filterPlaceholder="Search templates..."
+                [filter]="true"
+                [showClear]="true"
+                [loading]="loadingTemplates"
+                appendTo="body"
+                styleClass="w-full"
+                [(ngModel)]="selectedTemplateId"
+                [ngModelOptions]="{ standalone: true }"
+                (onChange)="onQuotationTemplateChange($event.value)"
               />
             </div>
           </div>
@@ -180,7 +209,7 @@ import { QuotationDto } from '../../../../models/Quotation';
         <section class="grid grid-cols-2 gap-3 xl:grid-cols-4">
           <div class="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
             <div class="flex items-center justify-between">
-              <span class="text-xs font-semibold text-slate-500">Subtotal</span>
+              <span class="text-sm font-semibold text-slate-500">Subtotal</span>
               <i class="pi pi-calculator text-slate-400"></i>
             </div>
             <p class="mt-3 text-xl font-bold text-slate-900">
@@ -190,7 +219,7 @@ import { QuotationDto } from '../../../../models/Quotation';
 
           <div class="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
             <div class="flex items-center justify-between">
-              <span class="text-xs font-semibold text-slate-500">Discount</span>
+              <span class="text-sm font-semibold text-slate-500">Discount</span>
               <i class="pi pi-percentage text-red-400"></i>
             </div>
             <p class="mt-3 text-xl font-bold text-red-500">
@@ -200,13 +229,13 @@ import { QuotationDto } from '../../../../models/Quotation';
 
           <div class="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
             <div class="flex items-center justify-between">
-              <span class="text-xs font-semibold text-slate-500"
+              <span class="text-sm font-semibold text-slate-500"
                 >Order Items</span
               >
               <i class="pi pi-list text-slate-400"></i>
             </div>
             <p class="mt-3 text-xl font-bold text-slate-900">
-              {{ Items.length }}
+              {{ getLineItemCount() }}
             </p>
           </div>
 
@@ -214,7 +243,7 @@ import { QuotationDto } from '../../../../models/Quotation';
             class="rounded-2xl border border-blue-600 bg-blue-600 p-4 text-white shadow-md shadow-blue-600/10 sm:p-5"
           >
             <div class="flex items-center justify-between">
-              <span class="text-xs font-semibold text-blue-100"
+              <span class="text-sm font-semibold text-blue-100"
                 >Grand Total</span
               >
               <i class="pi pi-wallet text-blue-200"></i>
@@ -241,14 +270,14 @@ import { QuotationDto } from '../../../../models/Quotation';
               </div>
               <div>
                 <h2 class="font-bold text-slate-900">Quotation Details</h2>
-                <p class="text-xs text-slate-500">
+                <p class="text-sm text-slate-500">
                   Basic information about this quotation.
                 </p>
               </div>
             </div>
 
             <div class="grid grid-cols-1 gap-5 p-5 sm:grid-cols-2 sm:p-7">
-              <div class="space-y-2">
+              <div class="space-y-2 flex flex-col">
                 <label class="text-sm font-semibold text-slate-700"
                   >Quotation Number</label
                 >
@@ -260,7 +289,7 @@ import { QuotationDto } from '../../../../models/Quotation';
                 />
               </div>
 
-              <div class="space-y-2">
+              <div class="space-y-2 flex flex-col">
                 <label class="text-sm font-semibold text-slate-700"
                   >Quotation Date</label
                 >
@@ -277,17 +306,15 @@ import { QuotationDto } from '../../../../models/Quotation';
                 <label class="text-sm font-semibold text-slate-700"
                   >Subject</label
                 >
-                <div
-                  class="flex flex-col gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3 sm:flex-row sm:items-center"
-                >
-                  <span class="shrink-0 text-sm font-semibold text-slate-600">
+                <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+                  <span class="shrink-0 font-semibold text-slate-600">
                     Re: Request for quotation -
                   </span>
                   <input
                     pInputText
                     formControlName="subject"
                     placeholder="Enter quotation subject"
-                    class="w-full border-0! bg-transparent! shadow-none!"
+                    class="w-full"
                   />
                 </div>
               </div>
@@ -304,7 +331,7 @@ import { QuotationDto } from '../../../../models/Quotation';
               </div>
               <div>
                 <h2 class="font-bold text-slate-900">Parties Involved</h2>
-                <p class="text-xs text-slate-500">
+                <p class="text-sm text-slate-500">
                   Select the issuing company and recipient.
                 </p>
               </div>
@@ -353,7 +380,7 @@ import { QuotationDto } from '../../../../models/Quotation';
                 >
                   <div class="rounded-xl bg-slate-50 p-4">
                     <div
-                      class="mb-2 flex items-center gap-2 text-xs font-bold text-slate-700"
+                      class="mb-2 flex items-center gap-2 text-sm font-bold text-slate-700"
                     >
                       <i class="pi pi-credit-card text-blue-600"></i>
                       Billing Address
@@ -376,7 +403,7 @@ import { QuotationDto } from '../../../../models/Quotation';
 
                   <div class="rounded-xl bg-slate-50 p-4">
                     <div
-                      class="mb-2 flex items-center gap-2 text-xs font-bold text-slate-700"
+                      class="mb-2 flex items-center gap-2 text-sm font-bold text-slate-700"
                     >
                       <i class="pi pi-truck text-blue-600"></i>
                       Delivery Address
@@ -451,15 +478,15 @@ import { QuotationDto } from '../../../../models/Quotation';
                 >
                   <div class="rounded-xl bg-slate-50 p-4">
                     <div
-                      class="mb-2 flex items-center gap-2 text-xs font-bold text-slate-700"
+                      class="mb-2 flex items-center gap-2 text-sm font-bold text-slate-700"
                     >
                       <i class="pi pi-credit-card text-blue-600"></i>
                       Billing Address
                     </div>
                     <p class="mb-2 text-xs font-semibold text-slate-700">
-                      Attn: {{ selectedClient.contactPerson1 }}
-                      <span *ngIf="selectedClient.contactPerson2">
-                        / {{ selectedClient.contactPerson2 }}
+                      Attn: {{ selectedClient.primaryContactPerson }}
+                      <span *ngIf="selectedClient.secondaryContactPerson">
+                        / {{ selectedClient.secondaryContactPerson }}
                       </span>
                     </p>
                     <p
@@ -478,7 +505,7 @@ import { QuotationDto } from '../../../../models/Quotation';
 
                   <div class="rounded-xl bg-slate-50 p-4">
                     <div
-                      class="mb-2 flex items-center gap-2 text-xs font-bold text-slate-700"
+                      class="mb-2 flex items-center gap-2 text-sm font-bold text-slate-700"
                     >
                       <i class="pi pi-truck text-blue-600"></i>
                       Delivery Address
@@ -526,7 +553,7 @@ import { QuotationDto } from '../../../../models/Quotation';
                 </div>
                 <div>
                   <h2 class="font-bold text-slate-900">Quotation Items</h2>
-                  <p class="text-xs text-slate-500">
+                  <p class="text-sm text-slate-500">
                     Manage products, services and line descriptions.
                   </p>
                 </div>
@@ -560,12 +587,12 @@ import { QuotationDto } from '../../../../models/Quotation';
               </div>
             </div>
 
-            <div class="overflow-x-auto">
+            <div class="overflow-x-auto p-5">
               <p-table
                 [value]="Items.controls"
-                [showGridlines]="false"
                 [paginator]="false"
                 [scrollable]="true"
+                showGridlines
                 responsiveLayout="scroll"
                 size="small"
               >
@@ -587,7 +614,7 @@ import { QuotationDto } from '../../../../models/Quotation';
                 </ng-template>
 
                 <ng-template pTemplate="body" let-row let-rowIndex="rowIndex">
-                  <tr [formGroup]="row">
+                  <tr [formGroup]="row" [pReorderableRow]="rowIndex">
                     <ng-container
                       *ngIf="row.get('isEdit')?.value; else viewMode"
                     >
@@ -721,14 +748,7 @@ import { QuotationDto } from '../../../../models/Quotation';
                       <ng-container
                         *ngIf="row.get('rowType')?.value === 'NoteRow'"
                       >
-                        <td>
-                          <input
-                            pInputText
-                            formControlName="item"
-                            class="w-full text-center italic"
-                          />
-                        </td>
-                        <td colspan="6">
+                        <td colspan="7">
                           <textarea
                             pTextarea
                             formControlName="description"
@@ -740,12 +760,35 @@ import { QuotationDto } from '../../../../models/Quotation';
 
                       <td>
                         <div class="flex items-center justify-center gap-1">
+                          <!-- Move Up -->
+                          <p-button
+                            icon="pi pi-arrow-up"
+                            [text]="true"
+                            severity="secondary"
+                            [disabled]="rowIndex === 0"
+                            pTooltip="Move Up"
+                            (onClick)="moveItem(rowIndex, -1)"
+                          />
+
+                          <!-- Move Down -->
+                          <p-button
+                            icon="pi pi-arrow-down"
+                            [text]="true"
+                            severity="secondary"
+                            [disabled]="rowIndex === Items.length - 1"
+                            pTooltip="Move Down"
+                            (onClick)="moveItem(rowIndex, 1)"
+                          />
+
+                          <!-- Save -->
                           <p-button
                             icon="pi pi-check"
                             [text]="true"
                             severity="success"
                             (onClick)="row.get('isEdit')?.setValue(false)"
                           />
+
+                          <!-- Delete -->
                           <p-button
                             icon="pi pi-trash"
                             [text]="true"
@@ -787,7 +830,7 @@ import { QuotationDto } from '../../../../models/Quotation';
                         <ng-container *ngSwitchCase="'CategoryHeader'">
                           <td
                             colspan="7"
-                            class="bg-slate-50! font-bold text-slate-800"
+                            class="pl-12! font-bold text-slate-800"
                           >
                             {{ row.get('description')?.value }}
                           </td>
@@ -806,11 +849,30 @@ import { QuotationDto } from '../../../../models/Quotation';
                       <td>
                         <div class="flex items-center justify-center gap-1">
                           <p-button
+                            icon="pi pi-arrow-up"
+                            [text]="true"
+                            severity="secondary"
+                            [disabled]="rowIndex === 0"
+                            pTooltip="Move Up"
+                            (onClick)="moveItem(rowIndex, -1)"
+                          />
+
+                          <p-button
+                            icon="pi pi-arrow-down"
+                            [text]="true"
+                            severity="secondary"
+                            [disabled]="rowIndex === Items.length - 1"
+                            pTooltip="Move Down"
+                            (onClick)="moveItem(rowIndex, 1)"
+                          />
+
+                          <p-button
                             icon="pi pi-pencil"
                             [text]="true"
                             severity="info"
                             (onClick)="row.get('isEdit')?.setValue(true)"
                           />
+
                           <p-button
                             icon="pi pi-trash"
                             [text]="true"
@@ -820,6 +882,47 @@ import { QuotationDto } from '../../../../models/Quotation';
                         </div>
                       </td>
                     </ng-template>
+                  </tr>
+                </ng-template>
+
+                <ng-template #footer>
+                  <tr>
+                    <td colspan="6" class="text-right! font-medium">
+                      Subtotal (RM)
+                    </td>
+                    <td class="text-right! font-semibold">
+                      {{ subTotal() | number: '1.2-2' }}
+                    </td>
+                    <td></td>
+                  </tr>
+
+                  <tr>
+                    <td colspan="6" class="text-right! font-medium">
+                      Discount (RM)
+                    </td>
+                    <td>
+                      <p-inputNumber
+                        formControlName="discount"
+                        mode="decimal"
+                        [min]="0"
+                        [minFractionDigits]="2"
+                        [maxFractionDigits]="2"
+                        styleClass="w-full"
+                        inputStyleClass="w-full text-right!"
+                        (onInput)="calculateTotal()"
+                      ></p-inputNumber>
+                    </td>
+                    <td></td>
+                  </tr>
+
+                  <tr>
+                    <td colspan="6" class="text-right! font-bold text-base">
+                      Total Amount (RM)
+                    </td>
+                    <td class="text-right! font-bold text-blue-700 text-lg">
+                      {{ totalAmount() | number: '1.2-2' }}
+                    </td>
+                    <td></td>
                   </tr>
                 </ng-template>
 
@@ -846,44 +949,6 @@ import { QuotationDto } from '../../../../models/Quotation';
                 </ng-template>
               </p-table>
             </div>
-
-            <!-- TOTALS -->
-            <div
-              class="flex justify-end border-t border-slate-100 bg-slate-50/70 p-5 sm:p-7"
-            >
-              <div class="w-full max-w-md space-y-3">
-                <div
-                  class="flex items-center justify-between text-sm text-slate-600"
-                >
-                  <span>Subtotal</span>
-                  <span class="font-semibold text-slate-900"
-                    >RM {{ subTotal() | number: '1.2-2' }}</span
-                  >
-                </div>
-
-                <div
-                  class="flex items-center justify-between gap-4 text-sm text-red-500"
-                >
-                  <span>Discount</span>
-                  <p-inputnumber
-                    mode="decimal"
-                    [minFractionDigits]="2"
-                    [maxFractionDigits]="5"
-                    inputStyleClass="w-36! text-right! text-red-500!"
-                    formControlName="discount"
-                  />
-                </div>
-
-                <div class="border-t border-slate-200 pt-3">
-                  <div class="flex items-center justify-between">
-                    <span class="font-bold text-slate-900">Total Amount</span>
-                    <span class="text-xl font-bold text-blue-700">
-                      RM {{ totalAmount() | number: '1.2-2' }}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
           </section>
 
           <!-- TERMS AND CONDITIONS -->
@@ -900,7 +965,7 @@ import { QuotationDto } from '../../../../models/Quotation';
               </div>
               <div>
                 <h2 class="font-bold text-slate-900">Terms & Conditions</h2>
-                <p class="text-xs text-slate-500">
+                <p class="text-sm text-slate-500">
                   Configure payment terms and quotation validity.
                 </p>
               </div>
@@ -910,7 +975,7 @@ import { QuotationDto } from '../../../../models/Quotation';
               <div
                 class="grid grid-cols-1 gap-3 sm:grid-cols-[180px_1fr] sm:items-center"
               >
-                <label class="text-sm font-semibold text-slate-700"
+                <label class="font-semibold text-slate-700"
                   >Payment Terms</label
                 >
                 <input
@@ -924,7 +989,7 @@ import { QuotationDto } from '../../../../models/Quotation';
               <div
                 class="grid grid-cols-1 gap-3 sm:grid-cols-[180px_1fr] sm:items-center"
               >
-                <label class="text-sm font-semibold text-slate-700"
+                <label class="font-semibold text-slate-700"
                   >Quotation Validity</label
                 >
 
@@ -956,7 +1021,8 @@ import { QuotationDto } from '../../../../models/Quotation';
                       { label: 'Months', value: 'months' },
                       { label: 'Years', value: 'years' },
                     ]"
-                    styleClass="min-w-28"
+                    styleClass="w-fit!"
+                    class="w-fit!"
                     [disabled]="FG.get('noValidity')?.value"
                   />
                 </div>
@@ -968,10 +1034,8 @@ import { QuotationDto } from '../../../../models/Quotation';
               <div class="space-y-3">
                 <div class="flex items-center justify-between">
                   <div>
-                    <h3 class="text-sm font-bold text-slate-800">
-                      Additional Terms
-                    </h3>
-                    <p class="text-xs text-slate-500">
+                    <h3 class="font-bold text-slate-800">Additional Terms</h3>
+                    <p class="text-sm text-slate-500">
                       Add reusable conditions to this quotation.
                     </p>
                   </div>
@@ -1008,70 +1072,110 @@ import { QuotationDto } from '../../../../models/Quotation';
 
               <!-- ADD TERM -->
               <div
-                class="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-4 sm:p-5"
+                class="relative overflow-visible rounded-xl border border-dashed border-slate-300 bg-slate-50 p-4 sm:p-5"
               >
                 <h3 class="mb-4 text-sm font-bold text-slate-800">
                   Add a Term
                 </h3>
 
                 <div
-                  class="grid grid-cols-1 gap-3 lg:grid-cols-[220px_1fr_auto]"
+                  class="grid grid-cols-1 gap-3 overflow-visible lg:grid-cols-[220px_1fr_auto]"
                 >
                   <div class="relative">
                     <input
                       pInputText
+                      cdkOverlayOrigin
+                      #titleOrigin="cdkOverlayOrigin"
                       [ngModel]="title()"
-                      (ngModelChange)="title.set($event)"
+                      (ngModelChange)="
+                        title.set($event);
+                        selectedExistingTerm.set(null);
+                        activeField.set('title')
+                      "
                       (focus)="activeField.set('title')"
                       [ngModelOptions]="{ standalone: true }"
                       class="w-full"
                       placeholder="Term title"
                     />
 
-                    <div
-                      *ngIf="
-                        activeField() === 'title' && filteredTerms().length
+                    <ng-template
+                      cdkConnectedOverlay
+                      [cdkConnectedOverlayOrigin]="titleOrigin"
+                      [cdkConnectedOverlayOpen]="
+                        activeField() === 'title' && filteredTerms().length > 0
                       "
-                      class="absolute left-0 top-full z-50 mt-1 max-h-40 w-full overflow-auto rounded-xl border border-slate-200 bg-white shadow-xl"
+                      [cdkConnectedOverlayWidth]="
+                        titleOrigin.elementRef.nativeElement.offsetWidth
+                      "
+                      [cdkConnectedOverlayHasBackdrop]="false"
+                      [cdkConnectedOverlayPush]="true"
                     >
                       <div
-                        *ngFor="let term of filteredTerms()"
-                        class="cursor-pointer p-3 text-sm hover:bg-blue-50"
-                        (click)="SelectTerm(term)"
+                        class="mt-1 max-h-48 w-full overflow-y-auto rounded-lg border border-slate-200 bg-white shadow-xl"
                       >
-                        {{ term.title }}
+                        <div
+                          *ngFor="let term of filteredTerms()"
+                          class="cursor-pointer p-3 text-sm hover:bg-blue-50"
+                          (click)="SelectTerm(term)"
+                        >
+                          <div class="font-medium">{{ term.title }}</div>
+                          <div class="mt-1 text-xs text-gray-500">
+                            {{ term.description }}
+                          </div>
+                        </div>
                       </div>
-                    </div>
+                    </ng-template>
                   </div>
 
+                  <!-- Description -->
                   <div class="relative">
                     <input
                       pInputText
+                      cdkOverlayOrigin
+                      #descriptionOrigin="cdkOverlayOrigin"
                       [ngModel]="description()"
-                      (ngModelChange)="description.set($event)"
+                      (ngModelChange)="
+                        description.set($event);
+                        selectedExistingTerm.set(null);
+                        activeField.set('description')
+                      "
                       (focus)="activeField.set('description')"
                       [ngModelOptions]="{ standalone: true }"
                       class="w-full"
                       placeholder="Enter term description"
                     />
 
-                    <div
-                      *ngIf="
+                    <ng-template
+                      cdkConnectedOverlay
+                      [cdkConnectedOverlayOrigin]="descriptionOrigin"
+                      [cdkConnectedOverlayOpen]="
                         activeField() === 'description' &&
-                        filteredTerms().length
+                        filteredTerms().length > 0
                       "
-                      class="absolute left-0 top-full z-50 mt-1 max-h-40 w-full overflow-auto rounded-xl border border-slate-200 bg-white shadow-xl"
+                      [cdkConnectedOverlayWidth]="
+                        descriptionOrigin.elementRef.nativeElement.offsetWidth
+                      "
+                      [cdkConnectedOverlayHasBackdrop]="false"
+                      [cdkConnectedOverlayPush]="true"
                     >
                       <div
-                        *ngFor="let term of filteredTerms()"
-                        class="cursor-pointer p-3 text-sm hover:bg-blue-50"
-                        (click)="SelectTerm(term)"
+                        class="mt-1 max-h-48 w-full overflow-y-auto rounded-lg border border-slate-200 bg-white shadow-xl"
                       >
-                        {{ term.description }}
+                        <div
+                          *ngFor="let term of filteredTerms()"
+                          class="cursor-pointer p-3 text-sm hover:bg-blue-50"
+                          (click)="SelectTerm(term)"
+                        >
+                          <div class="font-medium">{{ term.description }}</div>
+                          <div class="mt-1 text-xs text-gray-500">
+                            {{ term.title }}
+                          </div>
+                        </div>
                       </div>
-                    </div>
+                    </ng-template>
                   </div>
 
+                  <!-- Add Term -->
                   <p-button
                     label="Add Term"
                     icon="pi pi-plus"
@@ -1520,15 +1624,67 @@ import { QuotationDto } from '../../../../models/Quotation';
         </div>
       </ng-template>
     </p-dialog>
+
+    <p-dialog
+      header="Save as Template"
+      [(visible)]="showTemplateDialog"
+      [modal]="true"
+      [draggable]="false"
+      [resizable]="false"
+      [closable]="!savingTemplate"
+      [dismissableMask]="!savingTemplate"
+      [style]="{ width: '450px', maxWidth: '95vw' }"
+      styleClass="rounded-xl"
+    >
+      <div class="flex flex-col gap-4">
+        <div>
+          <label class="mb-2 block text-sm font-semibold text-slate-700">
+            Template Name <span class="text-red-500">*</span>
+          </label>
+
+          <input
+            pInputText
+            [(ngModel)]="templateName"
+            [ngModelOptions]="{ standalone: true }"
+            placeholder="Enter quotation template name"
+            class="w-full"
+            [disabled]="savingTemplate"
+            (keydown.enter)="ConfirmSaveAsTemplate()"
+          />
+
+          <small class="mt-1 block text-slate-500">
+            Save this quotation's details as a reusable template.
+          </small>
+        </div>
+      </div>
+
+      <ng-template pTemplate="footer">
+        <div class="flex justify-end gap-2">
+          <p-button
+            label="Cancel"
+            severity="secondary"
+            [outlined]="true"
+            [disabled]="savingTemplate"
+            (onClick)="showTemplateDialog = false"
+          />
+
+          <p-button
+            label="Save Template"
+            icon="pi pi-save"
+            [loading]="savingTemplate"
+            [disabled]="!templateName.trim()"
+            (onClick)="ConfirmSaveAsTemplate()"
+            styleClass="!bg-blue-600 !border-blue-600"
+          />
+        </div>
+      </ng-template>
+    </p-dialog>
   `,
   styleUrl: './quotation-form.less',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class QuotationForm implements OnInit, OnDestroy {
-  @ViewChild('termBox') termBox!: ElementRef;
-
   private readonly termsAndConditionService = inject(TermsAndConditionService);
-  private readonly productServicesService = inject(ProductServicesService);
   private readonly paymentTermService = inject(PaymentTermService);
   private readonly loadingService = inject(LoadingService);
   private readonly quotationService = inject(QuotationService);
@@ -1553,8 +1709,13 @@ export class QuotationForm implements OnInit, OnDestroy {
   clientDialog: boolean = false;
   companyDialog: boolean = false;
   showNewPaymentTermInput: boolean = false;
-  productServiceDialog: boolean = false;
   showProductForm: boolean = false;
+  showTemplateDialog: boolean = false;
+  savingTemplate: boolean = false;
+
+  templateName: string = '';
+
+  selectedExistingTerm = signal<any | null>(null);
 
   dragIndex: number | null = null;
   today = new Date();
@@ -1619,21 +1780,19 @@ export class QuotationForm implements OnInit, OnDestroy {
   discount = signal<number>(0);
   totalAmount = signal<number>(0);
 
-  @HostListener('document:click', ['$event'])
-  onOutsideClick(event: MouseEvent) {
-    if (!this.termBox) return;
+  // ==========================================
+  // QUOTATION TEMPLATES
+  // ==========================================
 
-    const clickedInside = this.termBox.nativeElement.contains(event.target);
-
-    if (!clickedInside) {
-      this.activeField.set(null);
-    }
-  }
+  quotationTemplates: any[] = [];
+  selectedTemplateId: string | null = null;
+  loadingTemplates: boolean = false;
 
   ngOnInit(): void {
     this.currentId = this.activatedRoute.snapshot.queryParams['id'];
 
     this.getDropdown();
+    this.LoadQuotationTemplates();
     this.initForm();
 
     if (!this.currentId) {
@@ -1641,6 +1800,196 @@ export class QuotationForm implements OnInit, OnDestroy {
     } else {
       this.LoadForm();
     }
+  }
+
+  // ==========================================
+  // LOAD QUOTATION TEMPLATES
+  // ==========================================
+
+  LoadQuotationTemplates(): void {
+    this.loadingTemplates = true;
+
+    this.quotationService
+      .GetTemplates()
+      .pipe(takeUntil(this.ngUnsubscribe))
+      .subscribe({
+        next: (res: any) => {
+          this.quotationTemplates = res?.data ?? res?.templates ?? res ?? [];
+
+          this.loadingTemplates = false;
+          this.cdr.markForCheck();
+        },
+        error: (err) => {
+          console.error('Failed to load quotation templates:', err);
+
+          this.loadingTemplates = false;
+          this.cdr.markForCheck();
+        },
+      });
+  }
+
+  // ==========================================
+  // SELECT QUOTATION TEMPLATE
+  // ==========================================
+
+  onQuotationTemplateChange(templateId: string | null): void {
+    if (!templateId) {
+      this.selectedTemplateId = null;
+      return;
+    }
+
+    this.loadingService.start();
+
+    this.quotationService
+      .GetTemplate(templateId)
+      .pipe(takeUntil(this.ngUnsubscribe))
+      .subscribe({
+        next: (res: any) => {
+          this.loadingService.stop();
+
+          const template = res?.template ?? res?.data ?? res;
+
+          if (!template) {
+            this.messageService.add({
+              severity: 'error',
+              summary: 'Template Not Found',
+              detail: 'Unable to load the selected quotation template.',
+            });
+            return;
+          }
+
+          this.ApplyQuotationTemplate(template);
+
+          this.messageService.add({
+            severity: 'success',
+            summary: 'Template Applied',
+            detail: `${template.name} has been applied to this quotation.`,
+          });
+
+          this.cdr.markForCheck();
+        },
+        error: (err) => {
+          this.loadingService.stop();
+
+          console.error('Failed to load quotation template:', err);
+
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Error',
+            detail:
+              err?.error?.Error ||
+              'Unable to load the selected quotation template.',
+          });
+        },
+      });
+  }
+
+  // ==========================================
+  // APPLY QUOTATION TEMPLATE
+  // ==========================================
+
+  ApplyQuotationTemplate(template: any): void {
+    if (!template) return;
+
+    // ----------------------------------------
+    // 1. PATCH BASIC QUOTATION INFORMATION
+    // ----------------------------------------
+    this.FG.patchValue(
+      {
+        fromCompanyId: template.fromCompanyId ?? null,
+        subject: template.subject ?? '',
+        discount: Number(template.discount) || 0,
+        paymentTerms: template.paymentTerms ?? '',
+        noValidity: template.noValidity ?? false,
+        validity: template.noValidity ? null : (template.validity ?? null),
+        validityType: template.validityType ?? 'Days',
+      },
+      { emitEvent: false },
+    );
+
+    // ----------------------------------------
+    // 2. UPDATE SELECTED COMPANY
+    // ----------------------------------------
+
+    this.selectedCompany =
+      this.companySignal().data?.find(
+        (company: any) => company.id === template.fromCompanyId,
+      ) ?? null;
+
+    // Do not change selectedClient or clientId.
+    // The template does not determine the quotation recipient.
+
+    // ----------------------------------------
+    // 3. REPLACE QUOTATION ITEMS
+    // ----------------------------------------
+
+    this.Items.clear();
+
+    const templateItems = [...(template.items ?? [])].sort(
+      (a: any, b: any) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0),
+    );
+
+    templateItems.forEach((item: any) => {
+      const group = this.createItemGroup({
+        // Do not reuse the template item's database ID.
+        id: null,
+
+        rowType: item.rowType ?? 'LineItem',
+        productServiceId: item.productServiceId ?? null,
+        item: item.item ?? null,
+        description: denormalizeHtml(item.description ?? ''),
+        quantity: item.quantity ?? null,
+        unit: item.unit ?? null,
+        unitPrice: item.unitPrice ?? null,
+        discount: item.discount ?? 0,
+        totalPrice: item.totalPrice ?? 0,
+      });
+
+      // Recalculate line item total using the quotation formula.
+      if (item.rowType === 'LineItem') {
+        const quantity = Number(item.quantity) || 0;
+        const unitPrice = Number(item.unitPrice) || 0;
+        const discount = Number(item.discount) || 0;
+
+        group.patchValue(
+          {
+            totalPrice: quantity * unitPrice * (1 - discount / 100),
+            isEdit: false,
+          },
+          { emitEvent: false },
+        );
+      }
+
+      this.Items.push(group);
+    });
+
+    // ----------------------------------------
+    // 4. REPLACE ADDITIONAL TERMS
+    // ----------------------------------------
+
+    this.selectedTerms = (template.termsAndConditions ?? template.terms ?? [])
+      .sort((a: any, b: any) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
+      .map((term: any, index: number) => ({
+        // Template term's ID is the reusable
+        // TermsAndCondition ID, if available.
+        id: term.termsAndConditionId ?? term.id ?? null,
+
+        title: term.title ?? '',
+        description: term.description ?? '',
+        sortOrder: index + 1,
+      }));
+
+    this.syncTermsToForm();
+
+    // ----------------------------------------
+    // 5. RECALCULATE FINANCIAL TOTALS
+    // ----------------------------------------
+
+    this.calculateTotal();
+
+    this.FG.updateValueAndValidity();
+
+    this.cdr.markForCheck();
   }
 
   LoadForm() {
@@ -1679,9 +2028,13 @@ export class QuotationForm implements OnInit, OnDestroy {
                   description: denormalizeHtml(item.description),
                 });
 
+                const qty = Number(item.quantity) || 0;
+                const price = Number(item.unitPrice) || 0;
+                const discount = Number(item.discount) || 0;
+
                 group.patchValue(
                   {
-                    totalPrice: (item.quantity ?? 0) * (item.unitPrice ?? 0),
+                    totalPrice: qty * price * (1 - discount / 100),
                   },
                   { emitEvent: false },
                 );
@@ -1691,7 +2044,7 @@ export class QuotationForm implements OnInit, OnDestroy {
 
             if (res.termsAndConditions) {
               this.selectedTerms = res.termsAndConditions.map((x: any) => ({
-                ...x.termsAndCondition,
+                ...x,
                 sortOrder: x.sortOrder,
               }));
 
@@ -1699,6 +2052,17 @@ export class QuotationForm implements OnInit, OnDestroy {
             }
 
             this.calculateTotal();
+
+            this.otherInfo.clear();
+
+            (res.otherInformations || []).forEach((item: any) => {
+              this.otherInfo.push(
+                this.fb.group({
+                  field: [item.key || ''],
+                  value: [item.value || ''],
+                }),
+              );
+            });
             this.cdr.markForCheck();
           }
         },
@@ -1841,7 +2205,11 @@ export class QuotationForm implements OnInit, OnDestroy {
     return new FormGroup({
       id: new FormControl(data?.id ?? null),
       rowType: new FormControl(data?.rowType ?? 'LineItem'),
-      productServiceId: new FormControl<string | null>(null),
+      sortOrder: new FormControl(data?.sortOrder ?? 0),
+
+      productServiceId: new FormControl<string | null>(
+        data?.productServiceId ?? null,
+      ),
       item: new FormControl(data?.item ?? null),
       description: new FormControl(data?.description ?? ''),
       quantity: new FormControl(data?.quantity ?? null),
@@ -1925,18 +2293,29 @@ export class QuotationForm implements OnInit, OnDestroy {
   private buildQuotationItemsPayload() {
     const items = this.Items.getRawValue();
 
-    return items.map((x, index) => ({
-      id: x.id || null,
-      rowType: x.rowType,
-      item: x.item,
-      description: normalizeHtml(x.description),
-      quantity: x.quantity,
-      unit: x.unit,
-      unitPrice: x.unitPrice,
-      discount: x.discount,
-      totalPrice: (x.quantity || 0) * (x.unitPrice || 0),
-      sortOrder: index,
-    }));
+    return items.map((x: any, index: number) => {
+      const isLineItem = x.rowType === 'LineItem';
+
+      const quantity = Number(x.quantity) || 0;
+      const unitPrice = Number(x.unitPrice) || 0;
+      const discount = Number(x.discount) || 0;
+
+      return {
+        id: x.id || null,
+        productServiceId: x.productServiceId || null,
+        rowType: x.rowType,
+        item: x.item,
+        description: normalizeHtml(x.description || ''),
+        quantity: isLineItem ? quantity : null,
+        unit: x.unit,
+        unitPrice: isLineItem ? unitPrice : null,
+        discount: isLineItem ? discount : 0,
+        totalPrice: isLineItem
+          ? quantity * unitPrice * (1 - discount / 100)
+          : 0,
+        sortOrder: index,
+      };
+    });
   }
 
   getItemNumber(index: number): number {
@@ -2189,22 +2568,13 @@ export class QuotationForm implements OnInit, OnDestroy {
 
     this.loadingService.start();
 
-    const formValues = this.FG.getRawValue();
-
-    const termsAndConditions = this.selectedTerms
-      .filter((term: any) => !!term.id)
-      .map((term: any, index: number) => ({
-        id: term.id,
-        title: term.title,
-        description: term.description,
-        sortOrder: index + 1,
-      }));
-
-    const payload = {
-      ...formValues,
-      quotationItems: this.buildQuotationItemsPayload(),
-      termsAndConditions,
+    const payload: any = {
+      ...this.buildQuotationPayload(),
     };
+
+    if (this.currentId) {
+      payload.id = this.currentId;
+    }
 
     const request$ = this.currentId
       ? this.quotationService.Update(payload)
@@ -2284,9 +2654,12 @@ export class QuotationForm implements OnInit, OnDestroy {
     );
   });
 
-  SelectTerm(term: any) {
-    this.title.set(term.title);
-    this.description.set(term.description);
+  SelectTerm(term: any): void {
+    if (!term) return;
+
+    this.selectedExistingTerm.set(term);
+    this.title.set(term.title ?? '');
+    this.description.set(term.description ?? '');
     this.activeField.set(null);
   }
 
@@ -2399,31 +2772,6 @@ export class QuotationForm implements OnInit, OnDestroy {
       });
   }
 
-  AddProductServiceClick() {
-    const state = this.productServiceSignal();
-
-    if (!state.data || state.data.length === 0) {
-      this.getDropdown();
-    }
-
-    this.productServiceDialog = true;
-  }
-
-  removeProductService(index: number) {
-    this.Items.removeAt(index);
-  }
-
-  filteredItems = computed(() => {
-    const state = this.productServiceSignal();
-    const keyword = this.searchItem().toLowerCase();
-
-    return (state.data || []).filter(
-      (x: any) =>
-        x.name?.toLowerCase().includes(keyword) ||
-        x.description?.toLowerCase().includes(keyword),
-    );
-  });
-
   ItemTypeClick(type: 'lines' | 'section' | 'notes') {
     let rowType: 'LineItem' | 'CategoryHeader' | 'NoteRow';
 
@@ -2446,23 +2794,6 @@ export class QuotationForm implements OnInit, OnDestroy {
     );
 
     this.cdr.markForCheck();
-  }
-
-  onProductSelect(group: FormGroup) {
-    const product = group.get('product')?.value;
-
-    if (!product) return;
-
-    group.patchValue({
-      productServiceId: product.id,
-      item: product.name,
-      description: product.description,
-      unit: product.unit,
-      quantity: product.quantity,
-      unitPrice: product.price,
-    });
-
-    this.recalculateRow(group);
   }
 
   recalculateRow(group: FormGroup) {
@@ -2532,12 +2863,14 @@ export class QuotationForm implements OnInit, OnDestroy {
     editor.clipboard.dangerouslyPasteHTML(editor.getLength(), html);
 
     row.patchValue({
+      productServiceId: product.id,
+      item: product.itemCode || product.description,
       unit: product.unit,
       unitPrice: product.price,
       quantity: product.quantity,
       description: editor.root.innerHTML,
     });
-
+    this.recalculateRow(row);
     this.rowSuggestions[rowIndex] = [];
     this.activeSuggestionIndex = null;
   }
@@ -2554,11 +2887,48 @@ export class QuotationForm implements OnInit, OnDestroy {
 
     if (!title || !description) return;
 
-    const exists = this.selectedTerms.some(
+    // Check whether an existing term was selected.
+    const existingTerm = this.selectedExistingTerm();
+
+    if (existingTerm?.id) {
+      const alreadyAdded = this.selectedTerms.some(
+        (term: any) => term.id === existingTerm.id,
+      );
+
+      if (alreadyAdded) {
+        this.messageService.add({
+          severity: 'warn',
+          summary: 'Duplicate Term',
+          detail: 'This term has already been added.',
+        });
+        return;
+      }
+
+      this.selectedTerms = [
+        ...this.selectedTerms,
+        {
+          ...existingTerm,
+          sortOrder: this.selectedTerms.length + 1,
+        },
+      ];
+
+      this.syncTermsToForm();
+
+      this.title.set('');
+      this.description.set('');
+      this.selectedExistingTerm.set(null);
+      this.activeField.set(null);
+
+      this.cdr.markForCheck();
+      return;
+    }
+
+    // Otherwise, create a new term.
+    const duplicate = this.selectedTerms.some(
       (term: any) => (term.title || '').toLowerCase() === title.toLowerCase(),
     );
 
-    if (exists) {
+    if (duplicate) {
       this.messageService.add({
         severity: 'warn',
         summary: 'Duplicate Term',
@@ -2583,6 +2953,15 @@ export class QuotationForm implements OnInit, OnDestroy {
             return;
           }
 
+          // Add to available terms.
+          const current = this.termsAndConditionSignal().data || [];
+
+          this.termsAndConditionSignal.set({
+            ...this.termsAndConditionSignal(),
+            data: [...current, newTerm],
+          });
+
+          // Add to quotation.
           this.selectedTerms = [
             ...this.selectedTerms,
             {
@@ -2591,17 +2970,11 @@ export class QuotationForm implements OnInit, OnDestroy {
             },
           ];
 
-          const current = this.termsAndConditionSignal().data || [];
-
-          this.termsAndConditionSignal.set({
-            ...this.termsAndConditionSignal(),
-            data: [...current, newTerm],
-          });
-
           this.syncTermsToForm();
 
           this.title.set('');
           this.description.set('');
+          this.selectedExistingTerm.set(null);
           this.activeField.set(null);
 
           this.loadingService.stop();
@@ -2761,24 +3134,34 @@ export class QuotationForm implements OnInit, OnDestroy {
       return;
     }
 
-    const templateName = window.prompt(
-      'Enter a name for this quotation template:',
-    );
+    this.templateName = '';
+    this.showTemplateDialog = true;
+  }
 
-    if (!templateName || !templateName.trim()) {
+  ConfirmSaveAsTemplate(): void {
+    const name = this.templateName.trim();
+
+    if (!name) {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Required',
+        detail: 'Please enter a template name.',
+      });
       return;
     }
 
+    this.savingTemplate = true;
     this.loadingService.start();
 
-    // Save quotation first to ensure the latest changes are included.
+    // Save quotation first, then save it as a template.
     this.saveQuotation()
       .pipe(takeUntil(this.ngUnsubscribe))
       .subscribe({
-        next: (res: any) => {
+        next: (res: QuotationDto) => {
           const quotationId = res?.id ?? this.currentId;
 
           if (!quotationId) {
+            this.savingTemplate = false;
             this.loadingService.stop();
 
             this.messageService.add({
@@ -2792,12 +3175,19 @@ export class QuotationForm implements OnInit, OnDestroy {
 
           this.currentId = quotationId;
 
+          const request: SaveQuotationAsTemplateRequest = {
+            name,
+            description: '',
+          };
+
           this.quotationService
-            .SaveAsTemplate(quotationId, templateName.trim())
+            .SaveAsTemplate(quotationId, request)
             .pipe(takeUntil(this.ngUnsubscribe))
             .subscribe({
               next: (result) => {
+                this.savingTemplate = false;
                 this.loadingService.stop();
+                this.showTemplateDialog = false;
 
                 this.messageService.add({
                   severity: 'success',
@@ -2806,154 +3196,40 @@ export class QuotationForm implements OnInit, OnDestroy {
                     result?.message || 'Quotation template saved successfully.',
                 });
 
+                this.templateName = '';
                 this.cdr.markForCheck();
               },
+
               error: (err) => {
                 console.error('Save template error:', err);
+
+                this.savingTemplate = false;
                 this.loadingService.stop();
 
                 this.messageService.add({
                   severity: 'error',
                   summary: 'Template Failed',
                   detail:
-                    err?.error?.Error || 'Unable to save quotation template.',
+                    err?.error?.Error ||
+                    err?.error?.error ||
+                    'Unable to save quotation template.',
                 });
               },
             });
         },
+
         error: (err) => {
           console.error('Save before template error:', err);
+
+          this.savingTemplate = false;
           this.loadingService.stop();
 
           this.messageService.add({
             severity: 'error',
             summary: 'Save Failed',
-            detail: 'Unable to save quotation before creating template.',
-          });
-        },
-      });
-  }
-
-  // ==========================================
-  // PREVIEW QUOTATION
-  // ==========================================
-
-  PreviewQuotation(): void {
-    if (this.FG.invalid) {
-      this.FG.markAllAsTouched();
-      return;
-    }
-
-    this.messageService.add({
-      severity: 'info',
-      summary: 'Preview Not Available',
-      detail:
-        'The quotation preview endpoint has not been implemented in the backend yet.',
-    });
-
-    // Once POST /Quotation/Preview is implemented,
-    // connect this method to quotationService.Preview().
-  }
-
-  // ==========================================
-  // GENERATE QUOTATION PDF
-  // ==========================================
-
-  GenerateQuotation(): void {
-    if (this.FG.invalid || this.Items.length === 0) {
-      this.FG.markAllAsTouched();
-
-      this.messageService.add({
-        severity: 'warn',
-        summary: 'Incomplete Quotation',
-        detail: 'Please complete the quotation and add at least one item.',
-      });
-
-      return;
-    }
-
-    this.loadingService.start();
-
-    // Save the latest quotation details first.
-    this.saveQuotation()
-      .pipe(takeUntil(this.ngUnsubscribe))
-      .subscribe({
-        next: (res: any) => {
-          const quotationId = res?.id ?? this.currentId;
-
-          if (!quotationId) {
-            this.loadingService.stop();
-
-            this.messageService.add({
-              severity: 'error',
-              summary: 'Error',
-              detail: 'Unable to retrieve quotation ID.',
-            });
-
-            return;
-          }
-
-          this.currentId = quotationId;
-
-          // Download generated PDF from backend.
-          this.quotationService
-            .downloadPdf(quotationId)
-            .pipe(takeUntil(this.ngUnsubscribe))
-            .subscribe({
-              next: (blob) => {
-                this.loadingService.stop();
-
-                if (!blob || blob.size === 0) {
-                  this.messageService.add({
-                    severity: 'error',
-                    summary: 'PDF Generation Failed',
-                    detail: 'The generated PDF is empty.',
-                  });
-                  return;
-                }
-
-                const url = window.URL.createObjectURL(blob);
-                const link = document.createElement('a');
-
-                link.href = url;
-                link.download = `Quotation_${res.quotationNo || quotationId}.pdf`;
-
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-
-                window.URL.revokeObjectURL(url);
-
-                this.messageService.add({
-                  severity: 'success',
-                  summary: 'PDF Generated',
-                  detail: 'Quotation PDF downloaded successfully.',
-                });
-
-                this.cdr.markForCheck();
-              },
-              error: (err) => {
-                console.error('PDF generation error:', err);
-                this.loadingService.stop();
-
-                this.messageService.add({
-                  severity: 'error',
-                  summary: 'PDF Generation Failed',
-                  detail:
-                    err?.error?.Error ||
-                    'Unable to generate or download quotation PDF.',
-                });
-              },
-            });
-        },
-        error: (err) => {
-          console.error('Save before PDF generation error:', err);
-          this.loadingService.stop();
-
-          this.messageService.add({
-            severity: 'error',
-            summary: 'Save Failed',
-            detail: 'Unable to save quotation before generating PDF.',
+            detail:
+              err?.error?.Error ||
+              'Unable to save quotation before creating template.',
           });
         },
       });
@@ -2962,16 +3238,89 @@ export class QuotationForm implements OnInit, OnDestroy {
   private buildQuotationPayload() {
     const formValues = this.FG.getRawValue();
 
+    const otherInformations = this.otherInfo
+      .getRawValue()
+      .map((item: any, index: number) => ({
+        key: item.field,
+        value: item.value,
+        sortOrder: index,
+      }));
+
     return {
       ...formValues,
+
       quotationItems: this.buildQuotationItemsPayload(),
-      termsAndConditions: this.selectedTerms.map((term, index) => ({
-        id: term.id ?? null,
-        title: term.title,
-        description: term.description,
-        sortOrder: index + 1,
-      })),
+
+      termsAndConditions: this.selectedTerms.map(
+        (term: any, index: number) => ({
+          id: term.id ?? null,
+          title: term.title,
+          description: term.description,
+          sortOrder: index + 1,
+        }),
+      ),
+
+      otherInformations,
     };
+  }
+
+  removeProductService(index: number) {
+    this.Items.removeAt(index);
+  }
+
+  dropItem(event: CdkDragDrop<any[]>): void {
+    if (event.previousIndex === event.currentIndex) {
+      return;
+    }
+
+    moveItemInArray(
+      this.Items.controls,
+      event.previousIndex,
+      event.currentIndex,
+    );
+
+    this.Items.updateValueAndValidity();
+    this.calculateTotal();
+    this.cdr.markForCheck();
+  }
+
+  moveItem(currentIndex: number, direction: -1 | 1): void {
+    const newIndex = currentIndex + direction;
+
+    // Check valid position
+    if (
+      currentIndex < 0 ||
+      currentIndex >= this.Items.length ||
+      newIndex < 0 ||
+      newIndex >= this.Items.length
+    ) {
+      return;
+    }
+
+    // Get the existing FormGroup
+    const currentItem = this.Items.at(currentIndex);
+
+    // Move the row
+    this.Items.removeAt(currentIndex, { emitEvent: false });
+    this.Items.insert(newIndex, currentItem, { emitEvent: false });
+
+    // Update sort order
+    this.Items.controls.forEach((control, index) => {
+      control.get('sortOrder')?.setValue(index + 1, {
+        emitEvent: false,
+      });
+    });
+
+    this.Items.updateValueAndValidity();
+
+    this.calculateTotal();
+    this.cdr.markForCheck();
+  }
+
+  getLineItemCount(): number {
+    return this.Items.controls.filter(
+      (item) => item.get('rowType')?.value === 'LineItem',
+    ).length;
   }
 
   ngOnDestroy(): void {

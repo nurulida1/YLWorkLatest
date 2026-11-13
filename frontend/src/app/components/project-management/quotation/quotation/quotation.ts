@@ -18,14 +18,11 @@ import { MenuModule } from 'primeng/menu';
 import { SelectModule } from 'primeng/select';
 import { Table, TableLazyLoadEvent, TableModule } from 'primeng/table';
 import { MenuItem, MessageService } from 'primeng/api';
-import { map, Observable, Subject, takeUntil } from 'rxjs';
+import { Subject, takeUntil } from 'rxjs';
 import { TimelineModule } from 'primeng/timeline';
 import { DatePickerModule } from 'primeng/datepicker';
 import { DrawerModule } from 'primeng/drawer';
-import {
-  QuotationDto,
-  QuotationStatusHistory,
-} from '../../../../models/Quotation';
+import { QuotationDto } from '../../../../models/Quotation';
 import { LoadingService } from '../../../../services/loading.service';
 import { QuotationService } from '../../../../services/quotationService.service';
 import { UserService } from '../../../../services/userService.service';
@@ -36,6 +33,7 @@ import {
   BuildFilterText,
 } from '../../../../shared/helpers/helpers';
 import { PaginatorModule } from 'primeng/paginator';
+import { TooltipModule } from 'primeng/tooltip';
 
 @Component({
   selector: 'app-quotation',
@@ -53,6 +51,7 @@ import { PaginatorModule } from 'primeng/paginator';
     DatePickerModule,
     DrawerModule,
     PaginatorModule,
+    TooltipModule,
   ],
   template: `<div class="quotation-page">
       <div class="quotation-container">
@@ -66,10 +65,6 @@ import { PaginatorModule } from 'primeng/paginator';
         <!-- Page heading -->
         <div class="page-heading">
           <div class="heading-copy">
-            <div class="heading-icon">
-              <i class="pi pi-file-edit"></i>
-            </div>
-
             <div>
               <h1>Quotations</h1>
               <p>Manage, review and track your project quotations.</p>
@@ -160,14 +155,14 @@ import { PaginatorModule } from 'primeng/paginator';
                   <th class="expand-column"></th>
 
                   <th pSortableColumn="QuotationNo">
-                    Quotation
+                    Ref No
                     <p-sortIcon field="QuotationNo"></p-sortIcon>
                   </th>
 
                   <th>Client</th>
                   <th>Created By</th>
 
-                  <th pSortableColumn="QuotationDate">
+                  <th pSortableColumn="QuotationDate" class="text-center!">
                     Quotation Date
                     <p-sortIcon field="QuotationDate"></p-sortIcon>
                   </th>
@@ -182,7 +177,7 @@ import { PaginatorModule } from 'primeng/paginator';
                     <p-sortIcon field="Status"></p-sortIcon>
                   </th>
 
-                  <th class="action-column">Actions</th>
+                  <th class="action-column text-center!">Actions</th>
                 </tr>
               </ng-template>
 
@@ -210,29 +205,29 @@ import { PaginatorModule } from 'primeng/paginator';
                   </td>
 
                   <td>
-                    <div class="quotation-number">
+                    <div class="flex flex-row items-center gap-2">
                       <span class="quotation-number-icon">
                         <i class="pi pi-file"></i>
                       </span>
-                      <span>{{ data.quotationNo }}</span>
+                      <b>{{ data.quotationNo }}</b>
                     </div>
                   </td>
 
                   <td>
                     <div class="client-cell">
                       <span class="client-name">
-                        {{ data.client.name || '—' }}
+                        {{ data.client?.name || '—' }}
                       </span>
                     </div>
                   </td>
 
                   <td>
                     <span class="muted-cell">
-                      {{ data.createdBy.displayName || '—' }}
+                      {{ data.createdBy?.displayName || '—' }}
                     </span>
                   </td>
 
-                  <td>
+                  <td class="text-center!">
                     <span class="date-cell">
                       {{ data.quotationDate | date: 'dd MMM yyyy' }}
                     </span>
@@ -265,27 +260,18 @@ import { PaginatorModule } from 'primeng/paginator';
                     </span>
                   </td>
 
-                  <td>
+                  <td class="text-center">
                     <div class="table-actions">
-                      <p-button
-                        label="Convert to SO"
-                        icon="pi pi-arrow-right-arrow-left"
-                        size="small"
-                        [outlined]="true"
-                        severity="info"
-                        styleClass="convert-button"
-                        [disabled]="data.status !== 'Sent'"
-                        (onClick)="ActionClick(data, 'Convert')"
-                      ></p-button>
-
                       <button
                         *ngIf="data.status !== 'Cancelled'"
                         type="button"
                         class="icon-action-button"
                         aria-label="Quotation actions"
+                        pTooltip="More actions"
+                        tooltipPosition="top"
                         (click)="onEllipsisClick($event, data, menu)"
                       >
-                        <i class="pi pi-ellipsis-v"></i>
+                        <i class="pi pi-ellipsis-h"></i>
                       </button>
                     </div>
                   </td>
@@ -295,11 +281,11 @@ import { PaginatorModule } from 'primeng/paginator';
               <!-- Expanded quotation history -->
               <ng-template #expandedrow let-item>
                 <tr>
-                  <td colspan="8">
-                    <div class="history-container">
+                  <td colspan="8" class="!p-0">
+                    <div class="history-container px-7 py-4">
                       <div class="history-heading">
                         <i class="pi pi-history"></i>
-                        <span>Quotation Status History</span>
+                        <span>Quotation History</span>
                       </div>
 
                       <p-timeline
@@ -309,9 +295,9 @@ import { PaginatorModule } from 'primeng/paginator';
                         class="quotation-timeline"
                       >
                         <ng-template #marker let-event>
-                          <div
+                          <span
                             class="timeline-marker"
-                            [class.timeline-marker-active]="event.actionAt"
+                            [class.timeline-marker-completed]="event.verified"
                           >
                             <i
                               class="pi"
@@ -319,12 +305,15 @@ import { PaginatorModule } from 'primeng/paginator';
                                 event.verified ? 'pi-check' : 'pi-circle-fill'
                               "
                             ></i>
-                          </div>
+                          </span>
                         </ng-template>
 
                         <ng-template #content let-event>
                           <div class="timeline-content">
-                            <span class="timeline-status">
+                            <span
+                              class="timeline-status"
+                              [class.timeline-status-completed]="event.verified"
+                            >
                               {{ event.status }}
                             </span>
 
@@ -345,7 +334,6 @@ import { PaginatorModule } from 'primeng/paginator';
                   </td>
                 </tr>
               </ng-template>
-
               <ng-template #emptymessage>
                 <tr>
                   <td colspan="8">
@@ -492,7 +480,8 @@ import { PaginatorModule } from 'primeng/paginator';
       #menu
       [model]="menuItems"
       [popup]="true"
-      [style]="{ transform: 'translate(20px, 8px)' }"
+      appendTo="body"
+      styleClass="quotation-action-menu"
     ></p-menu>
 
     <p-dialog
@@ -1097,7 +1086,7 @@ import { PaginatorModule } from 'primeng/paginator';
 
               <ng-template #body let-item>
                 <tr
-                  *ngIf="item.type === 'Category'"
+                  *ngIf="item.rowType === 'Category'"
                   class="quotation-category-row"
                 >
                   <td colspan="6">
@@ -1105,7 +1094,7 @@ import { PaginatorModule } from 'primeng/paginator';
                   </td>
                 </tr>
 
-                <tr *ngIf="item.type === 'Item'">
+                <tr *ngIf="item.rowType === 'Item'">
                   <td class="text-center!">
                     {{ item.item || '-' }}
                   </td>
@@ -1309,7 +1298,45 @@ import { PaginatorModule } from 'primeng/paginator';
           </div>
         </div>
       </div>
-    </p-drawer> `,
+    </p-drawer>
+    <p-dialog
+      header="Confirm Delete"
+      [(visible)]="displayDeleteDialog"
+      [modal]="true"
+      [draggable]="false"
+      [resizable]="false"
+      [style]="{ width: '420px', maxWidth: '95vw' }"
+      [closable]="true"
+      (onHide)="cancelDeleteQuotation()"
+    >
+      <div class="flex items-start gap-3">
+        <i class="pi pi-exclamation-triangle text-red-500 text-2xl mt-1"></i>
+
+        <div>
+          <p class="font-semibold text-gray-900 mb-1">Delete this quotation?</p>
+          <p class="text-sm text-gray-500">
+            Are you sure you want to delete this quotation? This action cannot
+            be undone.
+          </p>
+        </div>
+      </div>
+
+      <ng-template #footer>
+        <p-button
+          label="Cancel"
+          severity="secondary"
+          [outlined]="true"
+          (onClick)="cancelDeleteQuotation()"
+        ></p-button>
+
+        <p-button
+          label="Delete"
+          icon="pi pi-trash"
+          severity="danger"
+          (onClick)="deleteQuotation()"
+        ></p-button>
+      </ng-template>
+    </p-dialog>`,
   styleUrl: './quotation.less',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -1324,9 +1351,12 @@ export class Quotation implements OnInit, OnDestroy {
   private readonly router = inject(Router);
   protected ngUnsubscribe: Subject<void> = new Subject<void>();
 
-  PagingSignal = signal<PagingContent<QuotationDto>>(
-    {} as PagingContent<QuotationDto>,
-  );
+  PagingSignal = signal<PagingContent<QuotationDto>>({
+    data: [],
+    page: 1,
+    pageSize: 10,
+    totalElements: 0,
+  } as PagingContent<QuotationDto>);
   Query: GridifyQueryExtend = {} as GridifyQueryExtend;
   expandedRows: { [key: string]: boolean } = {};
 
@@ -1352,10 +1382,13 @@ export class Quotation implements OnInit, OnDestroy {
   soForm = {
     quotationData: null as any,
     clientPONumber: '',
-    clientPODate: '',
+    clientPODate: null as Date | null,
     remarks: '',
     clientPOAttachment: null as File | null,
   };
+
+  selectedQuotationId: string | null = null;
+  displayDeleteDialog: boolean = false;
 
   constructor() {
     this.Query.Page = 1;
@@ -1364,12 +1397,12 @@ export class Quotation implements OnInit, OnDestroy {
     this.Query.OrderBy = 'CreatedAt desc';
     this.Query.Select = null;
     this.Query.Includes =
-      'FromCompany.BillingAddress,Client.BillingAddress,QuotationStatusHistories,QuotationStatusHistories.ActionUser,QuotationItems,Project';
+      'FromCompany.BillingAddress,Client.BillingAddress,QuotationStatusHistories,QuotationStatusHistories.ActionUser,QuotationItems,Project,CreatedBy';
   }
 
   ngOnInit(): void {}
 
-  GetData() {
+  GetData(): void {
     this.loadingService.start();
 
     this.quotationService
@@ -1378,50 +1411,17 @@ export class Quotation implements OnInit, OnDestroy {
       .subscribe({
         next: (res) => {
           this.loadingService.stop();
+
           this.PagingSignal.set(res);
+          console.log(res);
 
-          const statusOrder = [
-            'Draft',
-            'Approved',
-            'Sent',
-            'Accepted',
-            'Rejected',
-            'Cancelled',
-            'Expired',
-          ];
+          const timelines: { [key: string]: any[] } = {};
 
-          const allHistories = res.data.flatMap(
-            (x) => x.quotationStatusHistories || [],
-          );
-
-          const latestByStatus = new Map<string, any>();
-
-          for (const h of allHistories) {
-            const existing = latestByStatus.get(h.status);
-
-            if (
-              !existing ||
-              new Date(h.actionAt) > new Date(existing.actionAt)
-            ) {
-              latestByStatus.set(h.status, h);
-            }
+          for (const quotation of res.data || []) {
+            timelines[quotation.id] = this.buildTimeline(quotation);
           }
 
-          const reachedIndex =
-            Math.max(
-              ...allHistories.map((h) => statusOrder.indexOf(h.status)),
-            ) ?? -1;
-
-          this.events = statusOrder.map((status, index) => {
-            const item = latestByStatus.get(status);
-
-            return {
-              status,
-              actionAt: item?.actionAt ?? null,
-              actionUser: item?.actionUser?.displayName,
-              verified: index <= reachedIndex,
-            };
-          });
+          this.timelineMap = timelines;
 
           this.cdr.markForCheck();
         },
@@ -1431,14 +1431,15 @@ export class Quotation implements OnInit, OnDestroy {
       });
   }
 
-  NextPage(event: TableLazyLoadEvent) {
-    if ((event?.first || event?.first === 0) && event?.rows) {
-      this.Query.Page = event.first / event.rows + 1 || 1;
-      this.Query.PageSize = event.rows;
-    }
+  NextPage(event: TableLazyLoadEvent): void {
+    const first = event.first ?? 0;
+    const rows = event.rows ?? this.Query.PageSize ?? 10;
+
+    this.Query.Page = Math.floor(first / rows) + 1;
+    this.Query.PageSize = rows;
 
     const sortText = BuildSortText(event);
-    this.Query.OrderBy = sortText ? sortText : 'CreatedAt desc';
+    this.Query.OrderBy = sortText || 'CreatedAt desc';
 
     this.Query.Filter = BuildFilterText(event);
 
@@ -1456,25 +1457,25 @@ export class Quotation implements OnInit, OnDestroy {
     }
   }
 
-  Search(data: string) {
+  Search(data: string): void {
     const filter = {
       QuotationNo: [
         {
-          value: data,
-          matchMode: '=',
+          value: data.trim(),
+          matchMode: 'contains',
           operator: 'and',
         },
       ],
     };
 
-    if (this.fTable != null) {
+    if (this.fTable) {
       this.fTable.first = 0;
       this.fTable.filters = filter;
     }
 
     const event: TableLazyLoadEvent = {
       first: 0,
-      rows: this.fTable?.rows,
+      rows: this.fTable?.rows || this.Query.PageSize,
       sortField: null,
       sortOrder: null,
       filters: filter,
@@ -1483,16 +1484,16 @@ export class Quotation implements OnInit, OnDestroy {
     this.NextPage(event);
   }
 
-  ResetTable() {
+  ResetTable(): void {
     this.search = '';
+    this.Query.Page = 1;
+    this.Query.Filter = null;
 
     if (this.fTable) {
       this.fTable.first = 0;
       this.fTable.clearFilterValues();
-      this.fTable.saveState();
     }
 
-    this.Query.Filter = null;
     this.GetData();
   }
 
@@ -1543,16 +1544,27 @@ export class Quotation implements OnInit, OnDestroy {
               queryParams: { id: quotation.id },
             }),
         },
+        {
+          separator: true,
+        },
+        {
+          label: 'Delete',
+          icon: 'pi pi-trash',
+          command: () => this.confirmDeleteQuotation(quotation.id),
+        },
       );
     }
 
     if (status === 'Sent') {
       this.menuItems.push(
-        // {
-        //   label: 'Convert to SO',
-        //   icon: 'pi pi-file',
-        //   command: () => this.ActionClick(quotation, 'Convert'),
-        // },
+        {
+          label: 'Convert to SO',
+          icon: 'pi pi-arrow-right-arrow-left',
+          command: () => this.ActionClick(quotation, 'Convert'),
+        },
+        {
+          separator: true,
+        },
         {
           label: 'Rejected',
           icon: 'pi pi-times-circle',
@@ -1592,14 +1604,6 @@ export class Quotation implements OnInit, OnDestroy {
       );
     }
 
-    if (status === 'Draft') {
-      this.menuItems.push({
-        label: 'Delete',
-        icon: 'pi pi-trash',
-        command: () => this.deleteQuotation(quotation.id),
-      });
-    }
-
     if (status === 'Accepted') {
       this.menuItems.push(
         {
@@ -1615,32 +1619,25 @@ export class Quotation implements OnInit, OnDestroy {
           icon: 'pi pi-file-pdf',
           command: () => this.ActionClick(quotation, 'Download'),
         },
-        // { separator: true },
-        // {
-        //   label: 'Attach PO',
-        //   icon: 'pi pi-paperclip',
-        //   command: () => this.ActionClick(quotation, 'PO'),
-        // },
-        // {
-        //   label: 'Attach Work Order',
-        //   icon: 'pi pi-paperclip',
-        //   command: () => this.ActionClick(quotation, 'WO'),
-        // },
-        // {
-        //   label: 'Attach Bill',
-        //   icon: 'pi pi-paperclip',
-        //   command: () => this.ActionClick(quotation, 'Bill'),
-        // },
       );
-    } else if (status === 'Rejected' || status == 'Expired') {
-      this.menuItems.push({
-        label: 'View Details',
-        icon: 'pi pi-eye',
-        command: () =>
-          this.router.navigate(['/quotations/details'], {
-            queryParams: { id: quotation.id },
-          }),
-      });
+    }
+
+    if (status === 'Rejected' || status === 'Expired') {
+      this.menuItems.push(
+        {
+          label: 'View Details',
+          icon: 'pi pi-eye',
+          command: () =>
+            this.router.navigate(['/quotations/details'], {
+              queryParams: { id: quotation.id },
+            }),
+        },
+        {
+          label: 'Delete',
+          icon: 'pi pi-trash',
+          command: () => this.confirmDeleteQuotation(quotation.id),
+        },
+      );
     }
 
     if (this.menuItems.length > 0) {
@@ -1648,84 +1645,51 @@ export class Quotation implements OnInit, OnDestroy {
     }
   }
 
-  openDetailsDrawer(data: QuotationDto) {
+  openDetailsDrawer(data: QuotationDto): void {
+    this.selectedQuotation = data;
+    this.loadingDetails = false;
     this.displayDetailsDrawer = true;
-    this.loadingDetails = true;
-    setTimeout(() => {
-      this.selectedQuotation = data;
-      this.loadingDetails = false;
-    }, 100);
+
     this.cdr.markForCheck();
   }
 
-  updateQuotationStatus(id: string, newStatus: string) {
+  updateQuotationStatus(id: string, newStatus: string): void {
     this.loadingService.start();
 
     this.quotationService
       .UpdateStatus(id, newStatus)
       .pipe(takeUntil(this.ngUnsubscribe))
       .subscribe({
-        next: (res: any) => {
+        next: () => {
           this.loadingService.stop();
-
-          const currentPaging = this.PagingSignal();
-
-          const updatedData = currentPaging.data.map((q) => {
-            if (q.id !== id) return q;
-
-            const newHistory = {
-              id: res.id,
-              status: res.status,
-              actionAt: res.actionAt,
-              remarks: res.remarks,
-              actionUser: res.actionUser,
-              quotationId: id,
-              actionUserId: res.actionUser?.id,
-              createdAt: res.actionAt,
-              signatureImage: null,
-            } as any;
-
-            const updatedHistories = [
-              ...(q.quotationStatusHistories || []),
-              newHistory,
-            ];
-
-            const updatedQuotation = {
-              ...q,
-              status: res.status,
-              quotationStatusHistories: updatedHistories,
-            };
-
-            this.timelineMap = {
-              ...this.timelineMap,
-              [id]: this.buildTimeline(updatedQuotation),
-            };
-
-            return updatedQuotation;
-          });
-
-          this.PagingSignal.set({
-            ...currentPaging,
-            data: updatedData,
-          });
 
           this.messageService.add({
             severity: 'success',
             summary: 'Status Updated',
-            detail: `Quotation is now ${res.status}`,
+            detail: `Quotation is now ${newStatus}.`,
           });
+
           this.displayDetailsDrawer = false;
+          this.selectedQuotation = null;
+
+          // Retrieve the actual status history from the backend.
+          this.GetData();
+
           this.cdr.markForCheck();
         },
-
         error: (err) => {
           this.loadingService.stop();
 
           this.messageService.add({
             severity: 'error',
             summary: 'Update Failed',
-            detail: err.error?.error || 'Invalid status transition.',
+            detail:
+              err?.error?.error ||
+              err?.error?.Error ||
+              'Invalid status transition.',
           });
+
+          this.cdr.markForCheck();
         },
       });
   }
@@ -1746,54 +1710,79 @@ export class Quotation implements OnInit, OnDestroy {
     return items;
   }
 
-  generatePDF() {}
+  generatePDF(): void {
+    const quotation = this.selectedQuotation;
 
-  buildTimeline(quotation: QuotationDto): any[] {
-    const statusOrder = [
-      'Draft',
-      'Approved',
-      'Sent',
-      'Accepted',
-      'Rejected',
-      'Cancelled',
-      'Expired',
-    ];
-
-    const histories = quotation.quotationStatusHistories || [];
-    const latestByStatus = new Map<string, any>();
-
-    for (const h of histories) {
-      const existing = latestByStatus.get(h.status);
-
-      if (!existing || new Date(h.actionAt) > new Date(existing.actionAt)) {
-        latestByStatus.set(h.status, h);
-      }
+    if (!quotation?.id) {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Quotation Not Found',
+        detail: 'Unable to generate the quotation PDF.',
+      });
+      return;
     }
 
-    const reachedIndex =
-      Math.max(...histories.map((h) => statusOrder.indexOf(h.status))) ?? -1;
+    this.loadingService.start();
 
-    return statusOrder.map((status, index) => {
-      const item = latestByStatus.get(status);
+    this.quotationService
+      .downloadPdf(quotation.id)
+      .pipe(takeUntil(this.ngUnsubscribe))
+      .subscribe({
+        next: (blob) => {
+          this.loadingService.stop();
 
-      return {
-        status,
-        actionAt: item?.actionAt ?? null,
-        actionUser: item?.actionUser?.displayName || 'System',
-        verified: index <= reachedIndex,
-      };
-    });
+          const url = window.URL.createObjectURL(blob);
+          const link = document.createElement('a');
+
+          link.href = url;
+          link.download = `${quotation.quotationNo || 'Quotation'}.pdf`;
+
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+
+          setTimeout(() => {
+            window.URL.revokeObjectURL(url);
+          }, 1000);
+        },
+        error: () => {
+          this.loadingService.stop();
+
+          this.messageService.add({
+            severity: 'error',
+            summary: 'PDF Generation Failed',
+            detail: 'Unable to download the quotation PDF.',
+          });
+        },
+      });
+  }
+
+  buildTimeline(quotation: QuotationDto): any[] {
+    const histories = [...(quotation.quotationStatusHistories || [])];
+
+    return histories
+      .sort(
+        (a, b) =>
+          new Date(a.actionAt).getTime() - new Date(b.actionAt).getTime(),
+      )
+      .map((history) => ({
+        status: history.status,
+        actionAt: history.actionAt,
+        actionUser: history.actionUser?.fullName || 'System',
+        remarks: history.remarks,
+        verified: true,
+      }));
   }
 
   onFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
 
-    if (!file) {
-      return;
-    }
+    if (!file) return;
 
     const allowedTypes = ['application/pdf', 'image/png', 'image/jpeg'];
+
+    const maxSize = 10 * 1024 * 1024; // 10 MB
 
     if (!allowedTypes.includes(file.type)) {
       this.messageService.add({
@@ -1806,15 +1795,28 @@ export class Quotation implements OnInit, OnDestroy {
       return;
     }
 
+    if (file.size > maxSize) {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'File Too Large',
+        detail: 'Maximum attachment size is 10 MB.',
+      });
+
+      input.value = '';
+      return;
+    }
+
     this.soForm.clientPOAttachment = file;
     this.cdr.markForCheck();
   }
 
-  submitConvertToSO() {
+  submitConvertToSO(): void {
+    const quotation = this.soForm.quotationData;
+
     if (
-      !this.soForm.clientPONumber ||
+      !this.soForm.clientPONumber.trim() ||
       !this.soForm.clientPOAttachment ||
-      !this.soForm.quotationData
+      !quotation?.id
     ) {
       this.messageService.add({
         severity: 'warn',
@@ -1825,86 +1827,61 @@ export class Quotation implements OnInit, OnDestroy {
     }
 
     this.loadingService.start();
-    this.displayConvertSODialog = false;
 
-    const quotationId = this.soForm.quotationData.id;
+    const quotationId = quotation.id;
 
-    let formattedPODate: string | undefined = undefined;
-    if (this.soForm.clientPODate) {
-      const dateObj = new Date(this.soForm.clientPODate);
-      if (!isNaN(dateObj.getTime())) {
-        formattedPODate = dateObj.toISOString().split('T')[0];
-      }
+    let formattedPODate: string | undefined;
+
+    if (this.soForm.clientPODate instanceof Date) {
+      const date = this.soForm.clientPODate;
+
+      formattedPODate = [
+        date.getFullYear(),
+        String(date.getMonth() + 1).padStart(2, '0'),
+        String(date.getDate()).padStart(2, '0'),
+      ].join('-');
     }
 
     this.quotationService
       .ConvertToSalesOrder(
         quotationId,
-        this.soForm.clientPONumber,
-        formattedPODate || undefined,
-        this.soForm.clientPOAttachment || undefined,
-        this.soForm.remarks || undefined,
+        this.soForm.clientPONumber.trim(),
+        formattedPODate,
+        this.soForm.clientPOAttachment,
+        this.soForm.remarks.trim() || undefined,
       )
       .pipe(takeUntil(this.ngUnsubscribe))
       .subscribe({
-        next: (res: any) => {
+        next: (res) => {
           this.loadingService.stop();
+
           this.messageService.add({
             severity: 'success',
             summary: 'Converted Successfully',
             detail: `Sales Order generated: ${res.salesOrderNo}`,
           });
 
-          const currentPaging = this.PagingSignal();
-
-          const newHistory: QuotationStatusHistory = {
-            id: res.id ?? crypto.randomUUID(),
-            status: 'Accepted',
-            actionAt: new Date(),
-            remarks: `Converted into Sales Order ${res.salesOrderNo}`,
-            actionUser: this.currentUser
-              ? {
-                  id: this.currentUser.userId,
-                  fullName: this.currentUser.fullName,
-                }
-              : undefined,
-            actionUserId: this.currentUser?.userId || '',
-            quotationId: quotationId,
-
-            quotation: null as any,
-          };
-
-          const updatedData: QuotationDto[] = currentPaging.data.map((q) => {
-            if (q.id !== quotationId) return q;
-
-            const updatedHistories: QuotationStatusHistory[] = [
-              ...(q.quotationStatusHistories || []),
-              newHistory,
-            ];
-
-            const updatedQuotation: QuotationDto = {
-              ...q,
-              status: 'Accepted',
-              quotationStatusHistories: updatedHistories,
-            };
-
-            this.timelineMap = {
-              ...this.timelineMap,
-              [quotationId]: this.buildTimeline(updatedQuotation),
-            };
-
-            return updatedQuotation;
-          });
-
-          this.PagingSignal.set({
-            ...currentPaging,
-            data: updatedData,
-          });
+          this.displayConvertSODialog = false;
           this.resetConvertForm();
+
+          // Reload actual quotation status and history.
+          this.GetData();
+
           this.cdr.markForCheck();
         },
-        error: () => {
+        error: (err) => {
           this.loadingService.stop();
+
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Conversion Failed',
+            detail:
+              err?.error?.error ||
+              err?.error?.Error ||
+              'Unable to convert quotation to Sales Order.',
+          });
+
+          this.cdr.markForCheck();
         },
       });
   }
@@ -1929,7 +1906,7 @@ export class Quotation implements OnInit, OnDestroy {
     this.soForm = {
       quotationData: null,
       clientPONumber: '',
-      clientPODate: '',
+      clientPODate: null as Date | null,
       remarks: '',
       clientPOAttachment: null,
     };
@@ -1954,7 +1931,21 @@ export class Quotation implements OnInit, OnDestroy {
     // });
   }
 
-  deleteQuotation(id: string) {
+  confirmDeleteQuotation(id: string): void {
+    this.selectedQuotationId = id;
+    this.displayDeleteDialog = true;
+  }
+
+  cancelDeleteQuotation(): void {
+    this.displayDeleteDialog = false;
+    this.selectedQuotationId = null;
+  }
+
+  deleteQuotation(): void {
+    const id = this.selectedQuotationId;
+
+    if (!id) return;
+
     this.loadingService.start();
 
     this.quotationService
@@ -1973,33 +1964,59 @@ export class Quotation implements OnInit, OnDestroy {
           this.messageService.add({
             severity: 'success',
             summary: 'Deleted',
-            detail: 'Quotation removed successfully',
+            detail: 'Quotation removed successfully.',
+          });
+
+          this.cancelDeleteQuotation();
+          this.cdr.markForCheck();
+        },
+        error: (error) => {
+          this.loadingService.stop();
+
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Delete Failed',
+            detail:
+              error?.error?.error ||
+              error?.error?.Error ||
+              'Unable to delete quotation.',
           });
 
           this.cdr.markForCheck();
+        },
+      });
+  }
+
+  exportToExcel(): void {
+    this.loadingService.start();
+
+    this.quotationService
+      .ExportToExcel()
+      .pipe(takeUntil(this.ngUnsubscribe))
+      .subscribe({
+        next: (blob) => {
+          this.loadingService.stop();
+
+          const url = window.URL.createObjectURL(blob);
+          const link = document.createElement('a');
+
+          link.href = url;
+          link.download = `Quotations_${new Date()
+            .toISOString()
+            .slice(0, 10)}.xlsx`;
+
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+
+          setTimeout(() => {
+            window.URL.revokeObjectURL(url);
+          }, 1000);
         },
         error: () => {
           this.loadingService.stop();
         },
       });
-  }
-
-  exportToExcel() {
-    this.quotationService.ExportToExcel().subscribe({
-      next: (blob) => {
-        const url = window.URL.createObjectURL(blob);
-
-        const link = document.createElement('a');
-        link.href = url;
-
-        const fileName = `Quotation_${new Date().getTime()}.xlsx`;
-
-        link.download = fileName;
-        link.click();
-
-        window.URL.revokeObjectURL(url);
-      },
-    });
   }
 
   formatFileSize(bytes: number): string {

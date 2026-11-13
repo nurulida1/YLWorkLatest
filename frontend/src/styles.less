@@ -1,6 +1,7 @@
 /* Global Styles */
 @import "../node_modules/primeicons/primeicons.css";
 @import "./themes/dark-mode.less";
+@import "@angular/cdk/overlay-prebuilt.css";
 
 html,
 body {
@@ -73,4 +74,22 @@ button {
 * {
   scrollbar-width: thin;
   scrollbar-color: #9ca3af #e5e7eb;
+}
+
+.cdk-overlay-container {
+  z-index: 10000 !important;
+}
+
+.logout-overlay-backdrop {
+  background: transparent !important;
+}
+
+.logout-overlay-panel {
+  z-index: 10001 !important;
+}
+
+.logout-overlay-content {
+  position: fixed;
+  inset: 0;
+  z-index: 10001;
 }

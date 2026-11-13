@@ -129,9 +129,13 @@ namespace YLWorks.Controller
         }
 
         private async Task ExpireQuotationIfRequired(
-            Quotation quotation,
-            CancellationToken cancellationToken = default)
+    Quotation quotation,
+    CancellationToken cancellationToken = default)
         {
+            // Draft quotations must never expire automatically.
+            if (quotation.Status == "Draft")
+                return;
+
             if (!quotation.DueDate.HasValue ||
                 quotation.DueDate.Value >= Now() ||
                 IsFinalStatus(quotation.Status))
@@ -288,37 +292,42 @@ namespace YLWorks.Controller
             return result;
         }
 
-        private async Task<List<QuotationTermsAndCondition>>
-    BuildQuotationTerms(
-        IEnumerable<TermsAndConditionOrderDto>? requests,
-        Guid quotationId,
-        CancellationToken cancellationToken = default)
+        private async Task<List<QuotationTermsAndCondition>> BuildQuotationTerms(
+    List<TermsAndConditionOrderDto>? requestTerms,
+    Guid quotationId,
+    CancellationToken cancellationToken)
         {
             var result = new List<QuotationTermsAndCondition>();
 
-            foreach (var item in (requests ?? Enumerable.Empty<TermsAndConditionOrderDto>())
-                         .OrderBy(x => x.SortOrder))
+            if (requestTerms == null || requestTerms.Count == 0)
+                return result;
+
+            var termIds = requestTerms
+                .Where(x => x.Id != Guid.Empty)
+                .Select(x => x.Id)
+                .Distinct()
+                .ToList();
+
+            var existingTerms = await _context.TermsAndConditions
+                .Where(x => termIds.Contains(x.Id))
+                .ToDictionaryAsync(x => x.Id, cancellationToken);
+
+            foreach (var term in requestTerms.OrderBy(x => x.SortOrder))
             {
-                if (!item.Id.HasValue || item.Id.Value == Guid.Empty)
-                    continue;
-
-                var exists = await _context.TermsAndConditions
-                    .AnyAsync(
-                        x => x.Id == item.Id.Value,
-                        cancellationToken);
-
-                if (!exists)
+                if (!term.Id.HasValue ||
+    term.Id.Value == Guid.Empty ||
+    !existingTerms.TryGetValue(term.Id.Value, out var existingTerm))
                 {
                     throw new InvalidOperationException(
-                        $"Terms and condition '{item.Id}' was not found.");
+                        $"Terms and Conditions record not found: {term.Id}");
                 }
 
                 result.Add(new QuotationTermsAndCondition
                 {
                     Id = Guid.NewGuid(),
                     QuotationId = quotationId,
-                    TermsAndConditionId = item.Id.Value,
-                    SortOrder = item.SortOrder
+                    TermsAndConditionId = existingTerm.Id,
+                    SortOrder = term.SortOrder
                 });
             }
 
@@ -505,6 +514,9 @@ namespace YLWorks.Controller
                 company.PrimaryContactPerson,
                 company.SecondaryContactPerson,
                 company.FaxNo,
+                company.LogoImage,
+                company.WebsiteUrl,
+                company.SSMRegNo,
                 BillingAddress = MapAddress(company.BillingAddress),
                 DeliveryAddress = MapAddress(company.DeliveryAddress)
             };
@@ -550,13 +562,14 @@ namespace YLWorks.Controller
 
                 // Expiry is updated in the database before paging.
                 var expired = await _context.Quotations
-                    .Where(x =>
-                        x.DueDate.HasValue &&
-                        x.DueDate.Value < now &&
-                        x.Status != "Expired" &&
-                        x.Status != "Accepted" &&
-                        x.Status != "Cancelled")
-                    .ToListAsync(cancellationToken);
+    .Where(x =>
+        x.DueDate.HasValue &&
+        x.DueDate.Value < now &&
+        x.Status != "Draft" &&
+        x.Status != "Expired" &&
+        x.Status != "Accepted" &&
+        x.Status != "Cancelled")
+    .ToListAsync(cancellationToken);
 
                 foreach (var quotation in expired)
                 {
@@ -1038,6 +1051,7 @@ namespace YLWorks.Controller
                 quotation.ProjectCode = request.ProjectCode;
 
                 quotation.PaymentTerms = request.PaymentTerms;
+                quotation.NoValidity = request.NoValidity;
                 quotation.Validity = request.Validity;
                 quotation.ValidityType = request.ValidityType;
 
@@ -1325,11 +1339,12 @@ namespace YLWorks.Controller
             }
 
             if (quotation.Status != "Draft" &&
-                quotation.Status != "Rejected")
+    quotation.Status != "Rejected" &&
+    quotation.Status != "Expired")
             {
                 return Conflict(new
                 {
-                    Error = "Only Draft or Rejected quotations can be deleted."
+                    Error = "Only Draft, Rejected or Expired quotations can be deleted."
                 });
             }
 
@@ -1845,6 +1860,7 @@ namespace YLWorks.Controller
         // DROPDOWN
         // =========================================================
 
+
         [HttpGet("GetDropdown")]
         public async Task<IActionResult> GetQuoteDropdown(
             CancellationToken cancellationToken)
@@ -1863,7 +1879,14 @@ namespace YLWorks.Controller
                         x.Name,
                         x.Type,
                         x.BillingAddress,
-                        x.DeliveryAddress
+                        x.DeliveryAddress,
+
+                        // Contact information
+                        x.PrimaryContactPerson,
+                        x.SecondaryContactPerson,
+                        x.ContactNo,
+                        x.FaxNo,
+                        x.Email
                     })
                     .ToListAsync(cancellationToken);
 
@@ -1884,6 +1907,11 @@ namespace YLWorks.Controller
                     {
                         Id = x.Id,
                         Name = x.Name,
+                        PrimaryContactPerson = x.PrimaryContactPerson,
+                        SecondaryContactPerson = x.SecondaryContactPerson,
+                        ContactNo = x.ContactNo,
+                        FaxNo = x.FaxNo,
+                        Email = x.Email,
                         BillingAddress = x.BillingAddress,
                         DeliveryAddress = x.DeliveryAddress
                     })
@@ -1895,7 +1923,8 @@ namespace YLWorks.Controller
                     .Select(x => new TermsAndConditionOrderDto
                     {
                         Id = x.Id,
-                        Title = x.Title
+                        Title = x.Title,
+                        Description = x.Description
                     })
                     .ToListAsync(cancellationToken);
 
@@ -1923,13 +1952,24 @@ namespace YLWorks.Controller
                     })
                     .ToListAsync(cancellationToken);
 
+                var projects = await _context.Projects.AsNoTracking()
+                    .OrderBy(x => x.ProjectCode)
+                    .Select(x => new Project
+                    {
+                        Id = x.Id,
+                        ProjectCode = x.ProjectCode,
+                        ProjectTitle = x.ProjectTitle,
+                    })
+                    .ToListAsync(cancellationToken);
+
                 return Ok(new
                 {
                     Companies = ownCompanies,
                     Clients = clients,
                     TermsAndConditions = terms,
                     Inventories = inventories,
-                    ProductAndServices = productServices
+                    ProductAndServices = productServices,
+                    Projects = projects
                 });
             }
             catch (Exception ex)
@@ -1946,16 +1986,16 @@ namespace YLWorks.Controller
         // SAVE AS TEMPLATE
         // =========================================================
 
-        [HttpPost("SaveAsTemplate/{quotationId}")]
+        [HttpPost("SaveAsTemplate/{quotationId:guid}")]
         public async Task<IActionResult> SaveAsTemplate(
-            Guid quotationId,
-            [FromBody] string templateName,
-            CancellationToken cancellationToken)
+    Guid quotationId,
+    [FromBody] SaveQuotationAsTemplateRequest request,
+    CancellationToken cancellationToken)
         {
             if (CurrentUserId == null)
                 return Unauthorized();
 
-            if (string.IsNullOrWhiteSpace(templateName))
+            if (string.IsNullOrWhiteSpace(request.Name))
             {
                 return BadRequest(new
                 {
@@ -1979,11 +2019,12 @@ namespace YLWorks.Controller
                 });
             }
 
-            var name = templateName.Trim();
+            var name = request.Name.Trim();
 
             var duplicate = await _context.QuotationTemplates
                 .AnyAsync(
                     x => x.IsActive &&
+                         x.FromCompanyId == quotation.FromCompanyId &&
                          x.Name.ToLower() == name.ToLower(),
                     cancellationToken);
 
@@ -1991,7 +2032,7 @@ namespace YLWorks.Controller
             {
                 return Conflict(new
                 {
-                    Error = "A template with this name already exists."
+                    Error = "A template with this name already exists for this company."
                 });
             }
 
@@ -2002,16 +2043,15 @@ namespace YLWorks.Controller
             {
                 Id = templateId,
                 Name = name,
-                Description = quotation.Subject,
-
+                Description = request.Description,
                 FromCompanyId = quotation.FromCompanyId,
                 Subject = quotation.Subject,
-                ProjectCode = quotation.ProjectCode,
 
                 Discount = quotation.Discount,
                 TaxAmount = quotation.TaxAmount,
 
                 PaymentTerms = quotation.PaymentTerms,
+                NoValidity = quotation.NoValidity,
                 Validity = quotation.Validity,
                 ValidityType = quotation.ValidityType,
 
@@ -2026,18 +2066,15 @@ namespace YLWorks.Controller
                 {
                     Id = Guid.NewGuid(),
                     TemplateId = templateId,
-
                     ProductServiceId = x.ProductServiceId,
                     RowType = x.RowType,
                     Item = x.Item,
                     Description = x.Description,
-
                     Quantity = x.Quantity,
                     Unit = x.Unit,
                     UnitPrice = x.UnitPrice,
                     Discount = x.Discount,
                     TotalPrice = x.TotalPrice,
-
                     SortOrder = x.SortOrder
                 })
                 .ToList();
@@ -2068,6 +2105,129 @@ namespace YLWorks.Controller
             });
         }
 
+
+        [HttpPost("CreateTemplate")]
+        public async Task<IActionResult> CreateTemplate(
+            [FromBody] CreateQuotationTemplateRequest request,
+            CancellationToken cancellationToken)
+        {
+            if (CurrentUserId == null)
+                return Unauthorized(new { Error = "Invalid token." });
+
+            if (string.IsNullOrWhiteSpace(request.Name))
+            {
+                return BadRequest(new
+                {
+                    Error = "Template name is required."
+                });
+            }
+
+            if (request.FromCompanyId == Guid.Empty)
+            {
+                return BadRequest(new
+                {
+                    Error = "A company is required."
+                });
+            }
+
+            var companyExists = await _context.Companies
+                .AnyAsync(
+                    x => x.Id == request.FromCompanyId,
+                    cancellationToken);
+
+            if (!companyExists)
+            {
+                return BadRequest(new
+                {
+                    Error = "Selected company was not found."
+                });
+            }
+
+            var name = request.Name.Trim();
+
+            var duplicate = await _context.QuotationTemplates
+                .AnyAsync(
+                    x => x.IsActive &&
+                         x.FromCompanyId == request.FromCompanyId &&
+                         x.Name.ToLower() == name.ToLower(),
+                    cancellationToken);
+
+            if (duplicate)
+            {
+                return Conflict(new
+                {
+                    Error = "A template with this name already exists for this company."
+                });
+            }
+
+            var templateId = Guid.NewGuid();
+            var now = Now();
+
+            var template = new QuotationTemplate
+            {
+                Id = templateId,
+                Name = name,
+                Description = request.Description,
+                FromCompanyId = request.FromCompanyId,
+                Subject = request.Subject,
+                ProjectCode = request.ProjectCode,
+                Discount = request.Discount,
+                TaxAmount = request.TaxAmount,
+                PaymentTerms = request.PaymentTerms,
+                NoValidity = request.NoValidity,
+                Validity = request.NoValidity ? null : request.Validity,
+                ValidityType = request.NoValidity ? null : request.ValidityType,
+                IsActive = true,
+                CreatedById = CurrentUserId.Value,
+                CreatedAt = now
+            };
+
+            template.Items = (request.Items ?? new List<QuotationItemRequest>())
+                .OrderBy(x => x.SortOrder)
+                .Select(x => new QuotationTemplateItem
+                {
+                    Id = Guid.NewGuid(),
+                    TemplateId = templateId,
+                    ProductServiceId = x.ProductServiceId,
+                    RowType = x.RowType,
+                    Item = x.Item,
+                    Description = x.Description,
+                    Quantity = x.Quantity,
+                    Unit = x.Unit,
+                    UnitPrice = x.UnitPrice,
+                    Discount = x.Discount,
+                    TotalPrice = x.TotalPrice,
+                    SortOrder = x.SortOrder
+                })
+                .ToList();
+
+            template.Terms = (request.TermsAndConditions ??
+                              new List<TermsAndConditionOrderDto>())
+                .OrderBy(x => x.SortOrder)
+                .Select(x => new QuotationTemplateTerm
+                {
+                    Id = Guid.NewGuid(),
+                    TemplateId = templateId,
+                    TermsAndConditionId = x.Id,
+                    Title = x.Title ?? string.Empty,
+                    Description = x.Description,
+                    SortOrder = x.SortOrder
+                })
+                .ToList();
+
+            _context.QuotationTemplates.Add(template);
+
+            await _context.SaveChangesAsync(cancellationToken);
+
+            return Ok(new
+            {
+                Message = "Quotation template created successfully.",
+                template.Id,
+                template.Name
+            });
+        }
+
+
         // =========================================================
         // GET TEMPLATES
         // =========================================================
@@ -2088,6 +2248,12 @@ namespace YLWorks.Controller
                     x.Subject,
                     x.FromCompanyId,
                     x.CreatedAt,
+                    CreatedBy = x.CreatedBy != null
+            ? new {
+                FullName = x.CreatedBy.FullName,
+                DisplayName = x.CreatedBy.DisplayName
+                }
+            : null,
                     ItemCount = x.Items.Count
                 })
                 .ToListAsync(cancellationToken);
@@ -2136,7 +2302,7 @@ namespace YLWorks.Controller
                 template.PaymentTerms,
                 template.Validity,
                 template.ValidityType,
-
+                template.NoValidity,
                 Items = template.Items
                     .OrderBy(x => x.SortOrder)
                     .Select(x => new
@@ -2154,7 +2320,7 @@ namespace YLWorks.Controller
                     })
                     .ToList(),
 
-                TermsAndConditions = template.Terms
+                Terms = template.Terms
                     .OrderBy(x => x.SortOrder)
                     .Select(x => new
                     {
@@ -2171,10 +2337,10 @@ namespace YLWorks.Controller
         // DELETE TEMPLATE (SOFT DELETE)
         // =========================================================
 
-        [HttpDelete("DeleteTemplate/{id}")]
+        [HttpDelete("DeleteTemplate/{id:guid}")]
         public async Task<IActionResult> DeleteTemplate(
-            Guid id,
-            CancellationToken cancellationToken)
+     Guid id,
+     CancellationToken cancellationToken)
         {
             var template = await _context.QuotationTemplates
                 .FirstOrDefaultAsync(
@@ -2189,16 +2355,7 @@ namespace YLWorks.Controller
                 });
             }
 
-            if (!template.IsActive)
-            {
-                return BadRequest(new
-                {
-                    Error = "Template is already inactive."
-                });
-            }
-
-            template.IsActive = false;
-            template.UpdatedAt = Now();
+            _context.QuotationTemplates.Remove(template);
 
             await _context.SaveChangesAsync(cancellationToken);
 
@@ -2206,6 +2363,179 @@ namespace YLWorks.Controller
             {
                 Message = "Template deleted successfully."
             });
+        }
+
+        [HttpPut("UpdateTemplate")]
+        public async Task<IActionResult> UpdateTemplate(
+            [FromBody] UpdateQuotationTemplateRequest request,
+            CancellationToken cancellationToken)
+        {
+            if (CurrentUserId == null)
+                return Unauthorized(new { Error = "Invalid token." });
+
+            if (request.Id == Guid.Empty)
+                return BadRequest(new { Error = "Template Id is required." });
+
+            if (string.IsNullOrWhiteSpace(request.Name))
+                return BadRequest(new { Error = "Template name is required." });
+
+            // Load template and existing child records.
+            var template = await _context.QuotationTemplates
+                .Include(x => x.Items)
+                .Include(x => x.Terms)
+                .FirstOrDefaultAsync(
+                    x => x.Id == request.Id,
+                    cancellationToken);
+
+            if (template == null)
+                return NotFound(new { Error = "Template not found." });
+
+            if (!template.IsActive)
+                return BadRequest(new
+                {
+                    Error = "Inactive templates cannot be edited."
+                });
+
+            var name = request.Name.Trim();
+
+            // Check duplicate template name.
+            var duplicate = await _context.QuotationTemplates
+                .AnyAsync(
+                    x => x.Id != request.Id &&
+                         x.IsActive &&
+                         x.FromCompanyId == request.FromCompanyId &&
+                         x.Name.ToLower() == name.ToLower(),
+                    cancellationToken);
+
+            if (duplicate)
+            {
+                return Conflict(new
+                {
+                    Error = "A template with this name already exists for this company."
+                });
+            }
+
+            // Update main template fields.
+            template.Name = name;
+            template.Description = request.Description;
+            template.FromCompanyId = request.FromCompanyId;
+            template.Subject = request.Subject;
+            template.ProjectCode = request.ProjectCode;
+            template.Discount = request.Discount;
+            template.TaxAmount = request.TaxAmount;
+            template.PaymentTerms = request.PaymentTerms;
+
+            template.NoValidity = request.NoValidity;
+            template.Validity = request.NoValidity ? null : request.Validity;
+            template.ValidityType = request.NoValidity
+                ? null
+                : request.ValidityType;
+
+            template.UpdatedAt = Now();
+            template.UpdatedById = CurrentUserId;
+
+            // Remove existing child records explicitly.
+            var existingItems = template.Items.ToList();
+            var existingTerms = template.Terms.ToList();
+
+            _context.QuotationTemplateItems.RemoveRange(existingItems);
+            _context.QuotationTemplateTerms.RemoveRange(existingTerms);
+
+            // Prepare replacement items.
+            var newItems = (request.Items ?? new List<QuotationItemRequest>())
+                .OrderBy(x => x.SortOrder)
+                .Select(x => new QuotationTemplateItem
+                {
+                    Id = Guid.NewGuid(),
+                    TemplateId = template.Id,
+                    ProductServiceId = x.ProductServiceId,
+                    RowType = x.RowType,
+                    Item = x.Item,
+                    Description = x.Description,
+                    Quantity = x.Quantity,
+                    Unit = x.Unit,
+                    UnitPrice = x.UnitPrice,
+                    Discount = x.Discount,
+                    TotalPrice = x.TotalPrice,
+                    SortOrder = x.SortOrder
+                })
+                .ToList();
+
+            // Prepare replacement terms.
+            var newTerms = (request.TermsAndConditions ??
+                            new List<TermsAndConditionOrderDto>())
+                .OrderBy(x => x.SortOrder)
+                .Select(x => new QuotationTemplateTerm
+                {
+                    Id = Guid.NewGuid(),
+                    TemplateId = template.Id,
+
+                    // Null means custom term.
+                    TermsAndConditionId =
+                        x.Id.HasValue && x.Id.Value != Guid.Empty
+                            ? x.Id
+                            : null,
+
+                    Title = x.Title?.Trim() ?? string.Empty,
+                    Description = x.Description,
+                    SortOrder = x.SortOrder
+                })
+                .ToList();
+
+            // Add replacement records.
+            _context.QuotationTemplateItems.AddRange(newItems);
+            _context.QuotationTemplateTerms.AddRange(newTerms);
+
+            try
+            {
+                await _context.SaveChangesAsync(cancellationToken);
+
+                return Ok(new
+                {
+                    Message = "Quotation template updated successfully.",
+                    template.Id,
+                    template.Name
+                });
+            }
+            catch (DbUpdateConcurrencyException ex)
+            {
+                var conflicts = new List<object>();
+
+                foreach (var entry in ex.Entries)
+                {
+                    var primaryKey = entry.Metadata.FindPrimaryKey();
+
+                    var keyValues = primaryKey?.Properties.ToDictionary(
+                        property => property.Name,
+                        property => entry.Property(property.Name).CurrentValue
+                    );
+
+                    var databaseValues =
+                        await entry.GetDatabaseValuesAsync(cancellationToken);
+
+                    conflicts.Add(new
+                    {
+                        Entity = entry.Metadata.ClrType.Name,
+                        State = entry.State.ToString(),
+                        PrimaryKey = keyValues,
+                        ExistsInDatabase = databaseValues != null
+                    });
+                }
+
+                return Conflict(new
+                {
+                    Error = "Quotation template update failed due to a concurrency conflict.",
+                    Conflicts = conflicts
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    Error = "An error occurred while updating the quotation template.",
+                    Details = ex.Message
+                });
+            }
         }
 
 

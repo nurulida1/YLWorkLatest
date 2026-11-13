@@ -4226,6 +4226,9 @@ namespace YLWorks.Migrations
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<Guid?>("UpdatedById")
+                        .HasColumnType("char(36)");
+
                     b.Property<int?>("Validity")
                         .HasColumnType("int");
 
@@ -4233,6 +4236,8 @@ namespace YLWorks.Migrations
                         .HasColumnType("longtext");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CreatedById");
 
                     b.HasIndex("FromCompanyId");
 
@@ -6328,11 +6333,19 @@ namespace YLWorks.Migrations
 
             modelBuilder.Entity("YLWorks.Model.QuotationTemplate", b =>
                 {
+                    b.HasOne("YLWorks.Model.User", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedById")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("YLWorks.Model.Company", "FromCompany")
                         .WithMany()
                         .HasForeignKey("FromCompanyId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("CreatedBy");
 
                     b.Navigation("FromCompany");
                 });

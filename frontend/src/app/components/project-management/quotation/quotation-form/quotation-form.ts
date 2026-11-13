@@ -748,12 +748,21 @@ import {
                       <ng-container
                         *ngIf="row.get('rowType')?.value === 'NoteRow'"
                       >
-                        <td colspan="7">
+                        <td>
+                          <input
+                            pInputText
+                            type="text"
+                            formControlName="item"
+                            class="w-full text-center!"
+                          />
+                        </td>
+                        <td colspan="6">
                           <textarea
                             pTextarea
                             formControlName="description"
                             rows="3"
-                            class="w-full italic"
+                            [autoResize]="true"
+                            class="w-full"
                           ></textarea>
                         </td>
                       </ng-container>
@@ -837,10 +846,10 @@ import {
                         </ng-container>
 
                         <ng-container *ngSwitchCase="'NoteRow'">
-                          <td class="text-center! italic">
+                          <td class="text-center!">
                             {{ row.get('item')?.value }}
                           </td>
-                          <td colspan="6" class="italic text-slate-600">
+                          <td colspan="6" class="text-slate-600">
                             {{ row.get('description')?.value }}
                           </td>
                         </ng-container>
@@ -1375,7 +1384,7 @@ import {
                     type="text"
                     pInputText
                     class="w-full"
-                    formControlName="contactPerson1"
+                    formControlName="primaryContactPerson"
                     placeholder="e.g. Mr. John Doe"
                   />
                 </div>
@@ -1401,7 +1410,7 @@ import {
                     type="text"
                     pInputText
                     class="w-full"
-                    formControlName="contactPerson2"
+                    formControlName="secondaryContactPerson"
                     placeholder="e.g. Ms. Jane Doe"
                   />
                 </div>
@@ -2422,8 +2431,8 @@ export class QuotationForm implements OnInit, OnDestroy {
       email: new FormControl<string | null>(null, [Validators.email]),
       contactNo: new FormControl<string | null>(null, Validators.required),
       faxNo: new FormControl<string | null>(null),
-      contactPerson1: new FormControl<string | null>(null),
-      contactPerson2: new FormControl<string | null>(null),
+      primaryContactPerson: new FormControl<string | null>(null),
+      secondaryContactPerson: new FormControl<string | null>(null),
       acNo: new FormControl<string | null>(null),
       type: new FormControl<CompanyType>(
         this.mode === 'company' ? CompanyType.Own : CompanyType.Client,
@@ -2634,8 +2643,8 @@ export class QuotationForm implements OnInit, OnDestroy {
         (x: any) =>
           x.name?.toLowerCase().includes(keyword) ||
           x.contactNo?.toLowerCase().includes(keyword) ||
-          x.contactPerson1?.toLowerCase().includes(keyword) ||
-          x.contactPerson2?.toLowerCase().includes(keyword),
+          x.primaryContactPerson?.toLowerCase().includes(keyword) ||
+          x.secondaryContactPerson?.toLowerCase().includes(keyword),
       ) ?? []
     );
   });
@@ -2648,8 +2657,8 @@ export class QuotationForm implements OnInit, OnDestroy {
         (x: any) =>
           x.name?.toLowerCase().includes(keyword) ||
           x.contactNo?.toLowerCase().includes(keyword) ||
-          x.contactPerson1?.toLowerCase().includes(keyword) ||
-          x.contactPerson2?.toLowerCase().includes(keyword),
+          x.primaryContactPerson?.toLowerCase().includes(keyword) ||
+          x.secondaryContactPerson?.toLowerCase().includes(keyword),
       ) ?? []
     );
   });
@@ -3322,6 +3331,7 @@ export class QuotationForm implements OnInit, OnDestroy {
       (item) => item.get('rowType')?.value === 'LineItem',
     ).length;
   }
+
 
   ngOnDestroy(): void {
     this.ngUnsubscribe.next();

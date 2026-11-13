@@ -82,7 +82,7 @@ import autoTable from 'jspdf-autotable';
                     *ngIf="quotationData()?.status"
                     class="inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold"
                     [ngClass]="{
-                      'bg-amber-200 text-amber-700':
+                      'bg-amber-100 text-amber-700':
                         quotationData()?.status === 'Draft',
                       'bg-blue-100 text-blue-700':
                         quotationData()?.status === 'Sent',
@@ -220,13 +220,13 @@ import autoTable from 'jspdf-autotable';
                       {{ quotationData()?.fromCompany?.billingAddress?.city }}
                       {{ quotationData()?.fromCompany?.billingAddress?.state }}
                     </p>
-                    <div class="flex flex-row items-center gap-1">
-                      <p *ngIf="quotationData()?.fromCompany?.contactNo">
+                    <div class="flex flex-row items-center gap-3">
+                      <div *ngIf="quotationData()?.fromCompany?.contactNo">
                         Tel: {{ quotationData()?.fromCompany?.contactNo }}
-                      </p>
-                      <p *ngIf="quotationData()?.fromCompany?.faxNo">
+                      </div>
+                      <div *ngIf="quotationData()?.fromCompany?.faxNo">
                         Fax: {{ quotationData()?.fromCompany?.faxNo }}
-                      </p>
+                      </div>
                     </div>
                     <a
                       *ngIf="quotationData()?.fromCompany?.websiteUrl"
@@ -321,6 +321,12 @@ import autoTable from 'jspdf-autotable';
                       {{ quotationData()?.client?.faxNo }}
                     </span>
                   </div>
+                  <div *ngIf="quotationData()?.client?.email">
+                    <span>Email: </span>
+                    <span>
+                      {{ quotationData()?.client?.email }}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -411,16 +417,23 @@ import autoTable from 'jspdf-autotable';
                           {{ row.description }}
                         </td>
                       </ng-container>
+                    </tr>
+                    <ng-container *ngIf="row.rowType === 'NoteRow'">
+                      <!-- Notes title row -->
+                      <tr
+                        *ngIf="row.rowType === 'NoteRow' && isFirstNoteRow(row)"
+                      >
+                        <td colspan="7" class="font-bold pl-15!">Notes</td>
+                      </tr>
 
-                      <ng-container *ngIf="row.rowType === 'NoteRow'">
-                        <td class="text-center! italic">
-                          {{ row.item || '' }}
-                        </td>
-                        <td colspan="6" class="italic">
+                      <!-- Individual note row -->
+                      <tr *ngIf="row.rowType === 'NoteRow'">
+                        <td class="text-center!">{{ row.item || '' }}</td>
+                        <td colspan="6">
                           <div [innerHTML]="row.description || ''"></div>
                         </td>
-                      </ng-container>
-                    </tr>
+                      </tr>
+                    </ng-container>
                   </ng-template>
 
                   <ng-template #footer>
@@ -1181,7 +1194,7 @@ export class ViewDetails implements OnInit, OnDestroy {
       }
 
       const logoWidth = 30;
-      const logoHeight = 25;
+      const logoHeight = 20;
       const logoX = margin;
       const logoY = y;
 
@@ -1205,7 +1218,7 @@ export class ViewDetails implements OnInit, OnDestroy {
       const companyWidth = pageWidth - companyX - margin;
       // Company name
       pdf.setFont('helvetica', 'bold');
-      pdf.setFontSize(13);
+      pdf.setFontSize(11);
       pdf.setTextColor(0, 0, 0);
 
       const companyName = company?.name || 'Company Name';
@@ -1224,7 +1237,7 @@ export class ViewDetails implements OnInit, OnDestroy {
       const nameWidth = pdf.getTextWidth(companyName);
 
       pdf.setFont('helvetica', 'normal');
-      pdf.setFontSize(9);
+      pdf.setFontSize(8);
       pdf.setTextColor(0, 0, 0);
 
       const registrationText = registrationDetails.join(' | ');
@@ -1233,7 +1246,7 @@ export class ViewDetails implements OnInit, OnDestroy {
         pdf.text(registrationText, companyX + nameWidth + 3, y + 4);
       }
 
-      let companyY = y + 10;
+      let companyY = y + 8;
 
       // Company address
       const companyAddress = getAddressLines(company?.billingAddress);
@@ -1242,7 +1255,7 @@ export class ViewDetails implements OnInit, OnDestroy {
         const wrapped = pdf.splitTextToSize(line, companyWidth);
 
         pdf.text(wrapped, companyX, companyY);
-        companyY += wrapped.length * 3.5 + 1.5;
+        companyY += wrapped.length * 3.5 + 0.5;
       });
 
       // Contact details
@@ -1261,16 +1274,16 @@ export class ViewDetails implements OnInit, OnDestroy {
         const wrapped = pdf.splitTextToSize(detail, companyWidth);
 
         pdf.text(wrapped, companyX, companyY);
-        companyY += wrapped.length * 3.5 + 1;
+        companyY += wrapped.length * 3.5 + 0.5;
       });
 
-      y = Math.max(y + logoHeight, companyY) + 5;
+      y = Math.max(y + logoHeight, companyY) + 3;
       // =====================================================
       // 2. QUOTATION TITLE AND REFERENCE
       // =====================================================
 
       pdf.setFont('helvetica', 'bold');
-      pdf.setFontSize(15);
+      pdf.setFontSize(13);
       pdf.setTextColor(...darkColor);
 
       pdf.text('QUOTATION', pageWidth / 2, y, {
@@ -1350,6 +1363,7 @@ export class ViewDetails implements OnInit, OnDestroy {
       // RIGHT: Contact Details
       const contactY = y + 10;
       const rightEdge = pageWidth - margin;
+      const contactSpacing = 5;
 
       pdf.setFontSize(8);
       pdf.setFont('helvetica', 'bold');
@@ -1360,10 +1374,23 @@ export class ViewDetails implements OnInit, OnDestroy {
         align: 'right',
       });
 
-      // Fax
-      pdf.text(`Fax: ${client?.faxNo || '-'}`, rightEdge, contactY + 6, {
-        align: 'right',
-      });
+      let currentContactY = contactY + contactSpacing;
+
+      // Fax (only if available)
+      if (client?.faxNo) {
+        pdf.text(`Fax: ${client.faxNo}`, rightEdge, currentContactY, {
+          align: 'right',
+        });
+
+        currentContactY += contactSpacing;
+      }
+
+      // Email (only if available)
+      if (client?.email) {
+        pdf.text(`Email: ${client.email}`, rightEdge, currentContactY, {
+          align: 'right',
+        });
+      }
       // Calculate section height
       const clientAddressHeight = billingText.length;
 
@@ -1377,7 +1404,7 @@ export class ViewDetails implements OnInit, OnDestroy {
         .filter(Boolean)
         .join(' / ');
 
-      addText(`Attention: ${attention || '-'}`, margin, y, 9, darkColor, true);
+      addText(`Attention: ${attention || '-'}`, margin, y, 9, [0, 0, 0], true);
 
       y += 7;
 
@@ -1387,7 +1414,7 @@ export class ViewDetails implements OnInit, OnDestroy {
 
       pdf.setFont('helvetica', 'bold');
       pdf.setFontSize(9);
-      pdf.setTextColor(...darkColor);
+      pdf.setTextColor(0, 0, 0);
 
       const subjectLines = pdf.splitTextToSize(
         `Re: Request for quotation - ${quotation.subject || '-'}`,
@@ -1405,36 +1432,65 @@ export class ViewDetails implements OnInit, OnDestroy {
         .slice()
         .sort((a: any, b: any) => (a.sortOrder || 0) - (b.sortOrder || 0));
 
-      const tableBody = items.map((item: any) => {
+      const tableBody: any[] = [];
+      let hasAddedNotesTitle = false;
+
+      items.forEach((item: any) => {
+        // Category Header
         if (item.rowType === 'CategoryHeader') {
-          return [
+          tableBody.push([
             {
               content: item.description || '',
               colSpan: 7,
               styles: {
-                fontStyle: 'bold' as const,
-                fillColor: [255, 255, 255] as [number, number, number], // White background
-                textColor: [0, 0, 0] as [number, number, number], // Black text
-                halign: 'left' as const, // Align left
+                fontStyle: 'bold',
+                fillColor: [255, 255, 255],
+                textColor: [0, 0, 0],
+                halign: 'left',
+                minCellHeight: 0,
               },
             },
-          ];
+          ]);
+
+          return;
         }
 
+        // Note Rows
         if (item.rowType === 'NoteRow') {
-          return [
+          // Add Notes title only once
+          if (!hasAddedNotesTitle) {
+            tableBody.push([
+              {
+                content: 'Notes',
+                colSpan: 7,
+                styles: {
+                  fontStyle: 'bold',
+                  fillColor: [255, 255, 255],
+                  textColor: [0, 0, 0],
+                  halign: 'left',
+                },
+              },
+            ]);
+
+            hasAddedNotesTitle = true;
+          }
+
+          // Individual Note Row
+          tableBody.push([
             item.item || '',
             {
               content: item.description || '',
               colSpan: 6,
               styles: {
-                fontStyle: 'italic' as const,
-                textColor: [100, 116, 139] as [number, number, number],
+                textColor: [0, 0, 0],
               },
             },
-          ];
+          ]);
+
+          return;
         }
 
+        // Normal Line Item
         const description = String(item.description || '')
           .replace(/<br\s*\/?>/gi, '\n')
           .replace(/<\/(p|div|li)>/gi, '\n')
@@ -1443,7 +1499,7 @@ export class ViewDetails implements OnInit, OnDestroy {
           .replace(/&amp;/g, '&')
           .trim();
 
-        return [
+        tableBody.push([
           item.item || '',
           description,
           item.unit || '',
@@ -1451,14 +1507,15 @@ export class ViewDetails implements OnInit, OnDestroy {
           item.discount ?? 0,
           formatCurrency(item.unitPrice),
           formatCurrency(item.totalPrice),
-        ];
+        ]);
       });
 
       autoTable(pdf, {
         startY: y,
         showHead: 'everyPage',
+        showFoot: 'lastPage',
         pageBreak: 'auto',
-        rowPageBreak: 'auto',
+        rowPageBreak: 'avoid',
         head: [
           [
             'Item',
@@ -1557,7 +1614,7 @@ export class ViewDetails implements OnInit, OnDestroy {
           valign: 'middle',
         },
         headStyles: {
-          fillColor: [255, 255, 255], // White background
+          fillColor: [255, 255, 255],
           textColor: [0, 0, 0],
           fontStyle: 'bold',
           halign: 'center',
@@ -1919,6 +1976,14 @@ export class ViewDetails implements OnInit, OnDestroy {
           this.loadingService.stop();
         },
       });
+  }
+
+  isFirstNoteRow(row: any): boolean {
+    const rows = this.quotationData()?.quotationItems ?? [];
+
+    const firstNote = rows.find((item: any) => item.rowType === 'NoteRow');
+
+    return firstNote === row;
   }
 
   ngOnDestroy(): void {

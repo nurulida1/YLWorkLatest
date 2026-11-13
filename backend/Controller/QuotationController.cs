@@ -129,16 +129,20 @@ namespace YLWorks.Controller
         }
 
         private async Task ExpireQuotationIfRequired(
-    Quotation quotation,
-    CancellationToken cancellationToken = default)
+     Quotation quotation,
+     CancellationToken cancellationToken = default)
         {
-            // Draft quotations must never expire automatically.
-            if (quotation.Status == "Draft")
+            if (quotation.Status is "Draft"
+                or "Approved"
+                or "Accepted"
+                or "Cancelled"
+                or "Expired")
+            {
                 return;
+            }
 
             if (!quotation.DueDate.HasValue ||
-                quotation.DueDate.Value >= Now() ||
-                IsFinalStatus(quotation.Status))
+                quotation.DueDate.Value >= Now())
             {
                 return;
             }
@@ -566,6 +570,7 @@ namespace YLWorks.Controller
         x.DueDate.HasValue &&
         x.DueDate.Value < now &&
         x.Status != "Draft" &&
+        x.Status != "Approved" &&
         x.Status != "Expired" &&
         x.Status != "Accepted" &&
         x.Status != "Cancelled")

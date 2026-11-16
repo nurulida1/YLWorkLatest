@@ -29,21 +29,17 @@ import { DialogModule } from 'primeng/dialog';
 import { TextareaModule } from 'primeng/textarea';
 import { CheckboxModule } from 'primeng/checkbox';
 import { MessageService } from 'primeng/api';
-
 import { map, Subject, switchMap, takeUntil, tap } from 'rxjs';
-
-import { ProjectDto } from '../../../models/Project';
-
-import { LoadingService } from '../../../services/loading.service';
-import { ProjectService } from '../../../services/ProjectService';
-import { StaffTaskService } from '../../../services/staffTaskService';
-import { UserService } from '../../../services/userService.service';
-
+import { ProjectDto } from '../../../../models/Project';
+import { StaffTaskDto } from '../../../../models/StaffTask';
+import { LoadingService } from '../../../../services/loading.service';
+import { ProjectService } from '../../../../services/ProjectService';
+import { StaffTaskService } from '../../../../services/staffTaskService';
+import { UserService } from '../../../../services/userService.service';
 import {
   PagingContent,
   GridifyQueryExtend,
-} from '../../../shared/helpers/helpers';
-import { StaffTaskDto } from '../../../models/StaffTask';
+} from '../../../../shared/helpers/helpers';
 
 @Component({
   selector: 'app-staff-tasks',

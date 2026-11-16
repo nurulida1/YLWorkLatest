@@ -35,7 +35,7 @@ export interface WorkOrderDto extends BaseModel {
   attachments: AttachmentDto[];
 
   // Staff Tasks linked to this Work Order
-  tasks?: StaffTaskDto[];
+  staffTasks?: StaffTaskDto[];
 
   // Task summary
   taskCount?: number;

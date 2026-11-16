@@ -255,7 +255,7 @@ import { UserService } from '../../../../services/userService.service';
             <p-tab value="2">
               <i class="pi pi-list-check mr-2"></i>Tasks
               <span class="project-tab-count">
-                {{ PagingSignal().staffTasks?.length || 0 }}
+                {{ directProjectTasks?.length || 0 }}
               </span>
             </p-tab>
 
@@ -611,7 +611,9 @@ import { UserService } from '../../../../services/userService.service';
                         <p class="text-sm text-slate-400">Tasks</p>
                         <p class="mt-1 font-medium text-slate-700">
                           {{
-                            workOrder.tasks?.length || workOrder.taskCount || 0
+                            workOrder.staffTasks?.length ||
+                              workOrder.taskCount ||
+                              0
                           }}
                           tasks
                         </p>
@@ -647,17 +649,21 @@ import { UserService } from '../../../../services/userService.service';
                         <span
                           class="rounded-full bg-blue-50 px-2.5 py-1 text-sm font-semibold text-blue-700"
                         >
-                          {{ workOrder.tasks?.length || 0 }} tasks
+                          {{ workOrder.staffTasks?.length || 0 }} tasks
                         </span>
                       </div>
 
                       <ng-container
-                        *ngIf="workOrder.tasks?.length; else noWorkOrderTasks"
+                        *ngIf="
+                          workOrder.staffTasks?.length;
+                          else noWorkOrderTasks
+                        "
                       >
                         <div class="space-y-2">
                           <div
-                            *ngFor="let task of workOrder.tasks"
-                            class="flex flex-col gap-3 rounded-lg border border-slate-200 bg-white p-3 sm:flex-row sm:items-center sm:justify-between"
+                            *ngFor="let task of workOrder.staffTasks"
+                            class="cursor-pointer flex flex-col gap-3 rounded-lg border border-slate-200 bg-white p-3 transition hover:border-blue-300 hover:bg-blue-50/30 sm:flex-row sm:items-center sm:justify-between"
+                            (click)="viewTask(task)"
                           >
                             <div class="min-w-0">
                               <h5
@@ -678,14 +684,14 @@ import { UserService } from '../../../../services/userService.service';
                                 class="mt-2 flex flex-wrap items-center gap-3 text-sm text-slate-400"
                               >
                                 <span>
-                                  <i class="pi pi-user mr-1"></i>
+                                  <i class="pi pi-user mr-1 text-xs!"></i>
                                   {{
                                     task.assignedTo?.fullName || 'Not assigned'
                                   }}
                                 </span>
 
                                 <span *ngIf="task.dueDate">
-                                  <i class="pi pi-calendar mr-1"></i>
+                                  <i class="pi pi-calendar mr-1 text-xs!"></i>
                                   {{ task.dueDate | date: 'dd MMM yyyy' }}
                                 </span>
                               </div>
@@ -706,6 +712,10 @@ import { UserService } from '../../../../services/userService.service';
                                           : 'secondary'
                                 "
                               ></p-tag>
+
+                              <i
+                                class="pi pi-chevron-right text-sm text-slate-400"
+                              ></i>
                             </div>
                           </div>
                         </div>
@@ -1775,6 +1785,192 @@ import { UserService } from '../../../../services/userService.service';
         </div>
       </ng-template>
     </p-drawer>
+
+    <p-dialog
+      header="Task Details"
+      [(visible)]="taskDialogVisible"
+      [modal]="true"
+      [draggable]="false"
+      [resizable]="false"
+      [style]="{ width: '650px', maxWidth: '95vw' }"
+    >
+      @if (selectedTask) {
+        <div class="space-y-5">
+          <!-- Task Information -->
+          <div>
+            <div class="mb-2 flex flex-wrap items-center gap-2">
+              <h3 class="text-lg font-bold text-slate-800">
+                {{ selectedTask.title }}
+              </h3>
+
+              <p-tag
+                [value]="selectedTask.status"
+                [severity]="
+                  selectedTask.status === 'Completed'
+                    ? 'success'
+                    : selectedTask.status === 'InProgress'
+                      ? 'info'
+                      : selectedTask.status === 'Pending'
+                        ? 'warn'
+                        : selectedTask.status === 'Cancelled'
+                          ? 'danger'
+                          : 'secondary'
+                "
+              />
+            </div>
+
+            <p class="whitespace-pre-line text-sm leading-6 text-slate-600">
+              {{ selectedTask.description || 'No description provided.' }}
+            </p>
+          </div>
+
+          <!-- Task Details -->
+          <div class="grid grid-cols-2 gap-4 rounded-xl bg-slate-50 p-4">
+            <div>
+              <p class="text-xs text-slate-500">Assigned To</p>
+              <p class="mt-1 text-sm font-medium text-slate-800">
+                {{ selectedTask.assignedTo?.fullName || 'Not assigned' }}
+              </p>
+            </div>
+
+            <div>
+              <p class="text-xs text-slate-500">Assigned By</p>
+              <p class="mt-1 text-sm font-medium text-slate-800">
+                {{ selectedTask.assignedBy?.fullName || '-' }}
+              </p>
+            </div>
+
+            <div>
+              <p class="text-xs text-slate-500">Priority</p>
+              <p class="mt-1 text-sm font-medium text-slate-800">
+                {{ formatLabel(selectedTask.priority) }}
+              </p>
+            </div>
+
+            <div>
+              <p class="text-xs text-slate-500">Category</p>
+              <p class="mt-1 text-sm font-medium text-slate-800">
+                {{ formatLabel(selectedTask.category) }}
+              </p>
+            </div>
+
+            <div>
+              <p class="text-xs text-slate-500">Start Date</p>
+              <p class="mt-1 text-sm font-medium text-slate-800">
+                {{
+                  selectedTask.startDate
+                    ? (selectedTask.startDate | date: 'dd MMM yyyy')
+                    : '-'
+                }}
+              </p>
+            </div>
+
+            <div>
+              <p class="text-xs text-slate-500">Due Date</p>
+              <p class="mt-1 text-sm font-medium text-slate-800">
+                {{
+                  selectedTask.dueDate
+                    ? (selectedTask.dueDate | date: 'dd MMM yyyy')
+                    : '-'
+                }}
+              </p>
+            </div>
+
+            <div>
+              <p class="text-xs text-slate-500">Estimated Hours</p>
+              <p class="mt-1 text-sm font-medium text-slate-800">
+                {{ selectedTask.estimatedHours ?? '-' }}
+              </p>
+            </div>
+
+            <div>
+              <p class="text-xs text-slate-500">Actual Hours</p>
+              <p class="mt-1 text-sm font-medium text-slate-800">
+                {{ selectedTask.actualHours ?? '-' }}
+              </p>
+            </div>
+          </div>
+
+          <!-- Checklist -->
+          <div>
+            <div class="mb-3 flex items-center justify-between">
+              <h4 class="font-semibold text-slate-800">Checklist</h4>
+
+              <span class="text-xs text-slate-500">
+                {{ selectedTask.completedChecklistCount || 0 }}/{{
+                  selectedTask.checklistCount || 0
+                }}
+                completed
+              </span>
+            </div>
+
+            <!-- Progress -->
+            <div class="mb-4">
+              <div class="mb-2 flex justify-between text-xs text-slate-500">
+                <span>Checklist Progress</span>
+                <span>{{ checklistProgress }}%</span>
+              </div>
+
+              <div class="h-2 overflow-hidden rounded-full bg-slate-200">
+                <div
+                  class="h-full rounded-full bg-blue-600 transition-all"
+                  [style.width.%]="checklistProgress"
+                ></div>
+              </div>
+            </div>
+
+            @if (selectedTask.checklists?.length) {
+              <div class="space-y-2">
+                @for (item of selectedTask.checklists; track item.id) {
+                  <div
+                    class="flex items-start gap-3 rounded-lg border border-slate-200 p-3"
+                  >
+                    <i
+                      class="pi mt-0.5"
+                      [ngClass]="
+                        item.isCompleted
+                          ? 'pi-check-circle text-green-600'
+                          : 'pi-circle text-slate-300'
+                      "
+                    ></i>
+
+                    <span
+                      class="text-sm"
+                      [ngClass]="
+                        item.isCompleted
+                          ? 'text-slate-400 line-through'
+                          : 'text-slate-700'
+                      "
+                    >
+                      {{ item.title }}
+                    </span>
+                  </div>
+                }
+              </div>
+            } @else {
+              <div
+                class="rounded-lg border border-dashed border-slate-300 p-6 text-center"
+              >
+                <i class="pi pi-list-check text-2xl text-slate-400"></i>
+                <p class="mt-2 text-sm text-slate-500">
+                  No checklist items available.
+                </p>
+              </div>
+            }
+          </div>
+
+          <!-- Close -->
+          <div class="flex justify-end border-t border-slate-200 pt-4">
+            <p-button
+              label="Close"
+              severity="secondary"
+              [outlined]="true"
+              (onClick)="taskDialogVisible = false"
+            />
+          </div>
+        </div>
+      }
+    </p-dialog>
   `,
   styleUrl: './project-details.less',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -1797,6 +1993,7 @@ export class ProjectDetails implements OnInit, OnDestroy {
   userSelection: any;
 
   taskDialog: boolean = false;
+  taskDialogVisible: boolean = false;
   taskUpdate: boolean = false;
   deleteTaskDialog: boolean = false;
 
@@ -1807,8 +2004,8 @@ export class ProjectDetails implements OnInit, OnDestroy {
   jobSheetDialog: boolean = false;
   jobSheetUpdate: boolean = false;
   deleteJobSheetDialog: boolean = false;
-
   confirmationPopup: boolean = false;
+
   confirmMessage: string = '';
   taskToDelete: any = null;
 
@@ -2360,6 +2557,36 @@ export class ProjectDetails implements OnInit, OnDestroy {
 
   getCompletedChecklistCount(task: StaffTaskDto): number {
     return task.checklists?.filter((item) => item.isCompleted).length ?? 0;
+  }
+
+  viewTask(task: any): void {
+    this.selectedTask = task;
+    this.taskDialogVisible = true;
+  }
+
+  get checklistProgress(): number {
+    const total =
+      this.selectedTask?.checklistCount ??
+      this.selectedTask?.checklists?.length ??
+      0;
+
+    const completed =
+      this.selectedTask?.completedChecklistCount ??
+      this.selectedTask?.checklists?.filter((item: any) => item.isCompleted)
+        .length ??
+      0;
+
+    if (!total) return 0;
+
+    return Math.round((completed / total) * 100);
+  }
+
+  formatLabel(value?: string | null): string {
+    if (!value) return '-';
+
+    return value
+      .replace(/([a-z])([A-Z])/g, '$1 $2')
+      .replace(/([A-Z])([A-Z][a-z])/g, '$1 $2');
   }
 
   ngOnDestroy(): void {

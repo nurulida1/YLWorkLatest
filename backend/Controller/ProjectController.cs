@@ -176,6 +176,7 @@ namespace YLWorks.Controller
             }
         }
 
+
         [HttpGet("GetOne")]
         public async Task<IActionResult> GetOne(string? filter = null)
         {
@@ -189,239 +190,326 @@ namespace YLWorks.Controller
                     return BadRequest("Project Id is required.");
 
                 var filterValue = filter.Contains('=')
-                    ? filter.Split('=', StringSplitOptions.RemoveEmptyEntries).LastOrDefault()
+                    ? filter.Split('=', StringSplitOptions.RemoveEmptyEntries)
+                        .LastOrDefault()
                     : filter;
 
                 if (!Guid.TryParse(filterValue, out Guid id))
                     return BadRequest("Invalid Id");
 
                 var data = await _context.Projects
-    .AsNoTracking()
-    .Where(x => x.Id == id)
-    .Select(x => new
-    {
-        x.Id,
-        x.ProjectCode,
-        x.ProjectTitle,
-        x.StartDate,
-        x.EstimatedCompletedDate,
-        x.EndDate,
-        x.Location,
-        x.EstimatedBudget,
-        x.DueDate,
-        x.Description,
-        x.Priority,
-        x.Status,
-        x.ClientId,
-        x.ProjectLeaderId,
-
-        ProjectLeader = x.ProjectLeader == null ? null : new
-        {
-            x.ProjectLeader.FullName,
-            x.ProjectLeader.Email,
-            x.ProjectLeader.DisplayName,
-            x.ProjectLeader.JobTitle
-        },
-
-        Client = x.Client == null ? null : new
-        {
-            x.Client.Name
-        },
-
-        ProjectMembers = x.ProjectMembers
-            .Select(pm => new ProjectMemberDto
-            {
-                ProjectId = pm.ProjectId,
-                UserId = pm.UserId,
-
-                User = pm.User == null ? null : new UserDto
-                {
-                    Id = pm.User.Id,
-                    FullName = pm.User.FullName,
-                    JobTitle = pm.User.JobTitle
-                }
-            })
-            .ToList(),
-
-        // Site Material Requests
-        SiteMaterialRequests = x.HardwareRequests
-            .Where(hr => hr.RequestType == "SiteMaterial")
-            .OrderByDescending(hr => hr.CreatedAt)
-            .Select(hr => new
-            {
-                hr.Id,
-                hr.Subject,
-                hr.Description,
-                hr.RequestType,
-                hr.Priority,
-                hr.Status,
-                hr.CreatedAt,
-                hr.NeededBy,
-                hr.ProjectId,
-                hr.ProjectName,
-                hr.SiteName,
-                hr.Location,
-                hr.LocationDetails,
-
-                RequestedBy = hr.RequestedBy == null ? null : new
-                {
-                    hr.RequestedBy.Id,
-                    hr.RequestedBy.FullName,
-                    hr.RequestedBy.DisplayName
-                },
-
-                Items = hr.Items.Select(i => new
-                {
-                    i.Id,
-                    i.InventoryId,
-                    i.ItemName,
-                    i.ItemCode,
-                    i.Description,
-                    i.Unit,
-                    i.RequestedQuantity,
-                    i.ApprovedQuantity,
-                    i.IssuedQuantity,
-                    i.ReservedQuantity,
-                    i.Status,
-                    i.Remarks
-                }).ToList()
-            })
-            .ToList(),
-
-        // Work Orders
-        WorkOrders = x.WorkOrders
-            .OrderBy(w => w.CreatedAt)
-            .Select(w => new
-            {
-                w.Id,
-                w.WorkOrderNo,
-                w.Title,
-                w.Description,
-                w.WorkType,
-                w.Location,
-                w.ScopeOfWork,
-                w.Remarks,
-                w.Priority,
-                w.Status,
-                w.ScheduledDate,
-                w.DueDate,
-                w.StartedAt,
-                w.CompletedAt,
-                w.CreatedAt,
-
-                AssignedTo = w.AssignedTo == null ? null : new
-                {
-                    w.AssignedTo.Id,
-                    w.AssignedTo.FullName,
-                    w.AssignedTo.DisplayName,
-                    w.AssignedTo.JobTitle,
-                    w.AssignedTo.Email
-                },
-
-                WorkOrderMembers = w.WorkOrderMembers
-                    .Select(m => new
+                    .AsNoTracking()
+                    .Where(x => x.Id == id)
+                    .Select(x => new
                     {
-                        m.Id,
-                        m.UserId,
-                        m.AssignedAt,
+                        x.Id,
+                        x.ProjectCode,
+                        x.ProjectTitle,
+                        x.StartDate,
+                        x.EstimatedCompletedDate,
+                        x.EndDate,
+                        x.Location,
+                        x.EstimatedBudget,
+                        x.DueDate,
+                        x.Description,
+                        x.Priority,
+                        x.Status,
+                        x.ClientId,
+                        x.ProjectLeaderId,
 
-                        User = m.User == null ? null : new
+                        // Project Leader
+                        ProjectLeader = x.ProjectLeader == null ? null : new
                         {
-                            m.User.Id,
-                            m.User.FullName,
-                            m.User.DisplayName,
-                            m.User.JobTitle,
-                            m.User.Email
-                        }
+                            x.ProjectLeader.FullName,
+                            x.ProjectLeader.Email,
+                            x.ProjectLeader.DisplayName,
+                            x.ProjectLeader.JobTitle
+                        },
+
+                        // Client
+                        Client = x.Client == null ? null : new
+                        {
+                            x.Client.Name
+                        },
+
+                        // Project Members
+                        ProjectMembers = x.ProjectMembers
+                            .Select(pm => new ProjectMemberDto
+                            {
+                                ProjectId = pm.ProjectId,
+                                UserId = pm.UserId,
+
+                                User = pm.User == null ? null : new UserDto
+                                {
+                                    Id = pm.User.Id,
+                                    FullName = pm.User.FullName,
+                                    JobTitle = pm.User.JobTitle
+                                }
+                            })
+                            .ToList(),
+
+                        // Site Material Requests
+                        SiteMaterialRequests = x.HardwareRequests
+                            .Where(hr => hr.RequestType == "SiteMaterial")
+                            .OrderByDescending(hr => hr.CreatedAt)
+                            .Select(hr => new
+                            {
+                                hr.Id,
+                                hr.Subject,
+                                hr.Description,
+                                hr.RequestType,
+                                hr.Priority,
+                                hr.Status,
+                                hr.CreatedAt,
+                                hr.NeededBy,
+                                hr.ProjectId,
+                                hr.ProjectName,
+                                hr.SiteName,
+                                hr.Location,
+                                hr.LocationDetails,
+
+                                RequestedBy = hr.RequestedBy == null ? null : new
+                                {
+                                    hr.RequestedBy.Id,
+                                    hr.RequestedBy.FullName,
+                                    hr.RequestedBy.DisplayName
+                                },
+
+                                Items = hr.Items.Select(i => new
+                                {
+                                    i.Id,
+                                    i.InventoryId,
+                                    i.ItemName,
+                                    i.ItemCode,
+                                    i.Description,
+                                    i.Unit,
+                                    i.RequestedQuantity,
+                                    i.ApprovedQuantity,
+                                    i.IssuedQuantity,
+                                    i.ReservedQuantity,
+                                    i.Status,
+                                    i.Remarks
+                                }).ToList()
+                            })
+                            .ToList(),
+
+                        // Work Orders
+                        WorkOrders = x.WorkOrders
+                            .OrderBy(w => w.CreatedAt)
+                            .Select(w => new
+                            {
+                                w.Id,
+                                w.WorkOrderNo,
+                                w.Title,
+                                w.Description,
+                                w.WorkType,
+                                w.Location,
+                                w.ScopeOfWork,
+                                w.Remarks,
+                                w.Priority,
+                                w.Status,
+                                w.ScheduledDate,
+                                w.DueDate,
+                                w.StartedAt,
+                                w.CompletedAt,
+                                w.CreatedAt,
+
+                                // Work Order PIC
+                                AssignedTo = w.AssignedTo == null ? null : new
+                                {
+                                    w.AssignedTo.Id,
+                                    w.AssignedTo.FullName,
+                                    w.AssignedTo.DisplayName,
+                                    w.AssignedTo.JobTitle,
+                                    w.AssignedTo.Email
+                                },
+
+                                // Work Order Members
+                                WorkOrderMembers = w.WorkOrderMembers
+                                    .Select(m => new
+                                    {
+                                        m.Id,
+                                        m.UserId,
+                                        m.AssignedAt,
+
+                                        User = m.User == null ? null : new
+                                        {
+                                            m.User.Id,
+                                            m.User.FullName,
+                                            m.User.DisplayName,
+                                            m.User.JobTitle,
+                                            m.User.Email
+                                        }
+                                    })
+                                    .ToList(),
+
+                                // Work Order Checklists
+                                Checklists = w.Checklists
+                                    .OrderBy(c => c.Sequence)
+                                    .Select(c => new
+                                    {
+                                        c.Id,
+                                        c.Title,
+                                        c.IsCompleted,
+                                        c.CompletedAt,
+                                        c.Sequence
+                                    })
+                                    .ToList(),
+
+                                // Staff Tasks linked to this Work Order
+                                StaffTasks = x.StaffTasks
+                                    .Where(t => t.WorkOrderId == w.Id)
+                                    .OrderBy(t => t.CreatedAt)
+                                    .Select(t => new
+                                    {
+                                        t.Id,
+                                        t.Title,
+                                        t.Description,
+                                        t.Priority,
+                                        t.Category,
+                                        t.Status,
+                                        t.StartDate,
+                                        t.DueDate,
+                                        t.ReminderAt,
+                                        t.EstimatedHours,
+                                        t.ActualHours,
+                                        t.CompletedAt,
+                                        t.ProjectId,
+                                        t.WorkOrderId,
+                                        t.AssignedToId,
+                                        t.AssignedById,
+                                        t.CreatedAt,
+                                        t.UpdatedAt,
+
+                                        // Assigned To
+                                        AssignedTo = t.AssignedTo == null ? null : new
+                                        {
+                                            t.AssignedTo.Id,
+                                            t.AssignedTo.FullName,
+                                            t.AssignedTo.DisplayName,
+                                            t.AssignedTo.JobTitle,
+                                            t.AssignedTo.Email
+                                        },
+
+                                        // Assigned By
+                                        AssignedBy = t.AssignedBy == null ? null : new
+                                        {
+                                            t.AssignedBy.Id,
+                                            t.AssignedBy.FullName,
+                                            t.AssignedBy.DisplayName,
+                                            t.AssignedBy.JobTitle,
+                                            t.AssignedBy.Email
+                                        },
+
+                                        // Task Checklists
+                                        Checklists = t.Checklists
+                                            .OrderBy(c => c.Sequence)
+                                            .Select(c => new
+                                            {
+                                                c.Id,
+                                                c.Title,
+                                                c.IsCompleted,
+                                                c.CompletedAt,
+                                                c.Sequence
+                                            })
+                                            .ToList(),
+
+                                        // Checklist Summary
+                                        ChecklistCount = t.Checklists.Count(),
+
+                                        CompletedChecklistCount = t.Checklists
+                                            .Count(c => c.IsCompleted)
+                                    })
+                                    .ToList()
+                            })
+                            .ToList(),
+
+                        // Project-level Staff Tasks
+                        StaffTasks = x.StaffTasks
+                            .OrderBy(t => t.DueDate)
+                            .Select(t => new
+                            {
+                                t.Id,
+                                t.Title,
+                                t.Description,
+                                t.Priority,
+                                t.Category,
+                                t.Status,
+                                t.StartDate,
+                                t.DueDate,
+                                t.ReminderAt,
+                                t.EstimatedHours,
+                                t.ActualHours,
+                                t.CompletedAt,
+                                t.ProjectId,
+                                t.WorkOrderId,
+                                t.AssignedToId,
+                                t.AssignedById,
+                                t.CreatedAt,
+                                t.UpdatedAt,
+
+                                AssignedTo = t.AssignedTo == null ? null : new
+                                {
+                                    t.AssignedTo.Id,
+                                    t.AssignedTo.FullName,
+                                    t.AssignedTo.DisplayName,
+                                    t.AssignedTo.JobTitle,
+                                    t.AssignedTo.Email
+                                },
+
+                                AssignedBy = t.AssignedBy == null ? null : new
+                                {
+                                    t.AssignedBy.Id,
+                                    t.AssignedBy.FullName,
+                                    t.AssignedBy.DisplayName
+                                },
+
+                                Checklists = t.Checklists
+                                    .OrderBy(c => c.Sequence)
+                                    .Select(c => new
+                                    {
+                                        c.Id,
+                                        c.Title,
+                                        c.IsCompleted,
+                                        c.CompletedAt,
+                                        c.Sequence
+                                    })
+                                    .ToList(),
+
+                                ChecklistCount = t.Checklists.Count(),
+
+                                CompletedChecklistCount = t.Checklists
+                                    .Count(c => c.IsCompleted)
+                            })
+                            .ToList(),
+
+                        // Project Attachments
+                        Attachments = x.Attachments
+                            .Where(a =>
+                                a.EntityType == "Project" &&
+                                a.EntityId == x.Id
+                            )
+                            .Select(a => new
+                            {
+                                a.Id,
+                                a.FileName,
+                                a.FileType,
+                                a.FileSize,
+                                a.FileUrl,
+                                a.UploadedAt,
+                                a.UploadedById
+                            })
+                            .ToList()
                     })
-                    .ToList(),
-
-                Checklists = w.Checklists
-                    .OrderBy(c => c.Sequence)
-                    .Select(c => new
-                    {
-                        c.Id,
-                        c.Title,
-                        c.IsCompleted,
-                        c.CompletedAt,
-                        c.Sequence
-                    })
-                    .ToList()
-            })
-            .ToList(),
-
-        // Staff Tasks
-        StaffTasks = x.StaffTasks
-    .OrderBy(t => t.DueDate)
-    .Select(t => new
-    {
-        t.Id,
-        t.Title,
-        t.Description,
-        t.Priority,
-        t.Category,
-        t.Status,
-        t.StartDate,
-        t.DueDate,
-        t.ReminderAt,
-        t.EstimatedHours,
-        t.ActualHours,
-        t.CompletedAt,
-        t.ProjectId,
-        t.WorkOrderId,
-        t.AssignedToId,
-        t.AssignedById,
-        t.CreatedAt,
-        t.UpdatedAt,
-
-        AssignedTo = t.AssignedTo == null ? null : new
-        {
-            t.AssignedTo.Id,
-            t.AssignedTo.FullName,
-            t.AssignedTo.DisplayName,
-            t.AssignedTo.JobTitle,
-            t.AssignedTo.Email
-        },
-
-        AssignedBy = t.AssignedBy == null ? null : new
-        {
-            t.AssignedBy.Id,
-            t.AssignedBy.FullName,
-            t.AssignedBy.DisplayName
-        },
-
-        ChecklistCount = t.Checklists.Count(),
-
-        CompletedChecklistCount = t.Checklists.Count(c =>
-            c.IsCompleted)
-    })
-    .ToList(),
-
-        // Project Attachments
-        Attachments = x.Attachments
-            .Where(a =>
-                a.EntityType == "Project" &&
-                a.EntityId == x.Id
-            )
-            .Select(a => new
-            {
-                a.Id,
-                a.FileName,
-                a.FileType,
-                a.FileSize,
-                a.FileUrl,
-                a.UploadedAt,
-                a.UploadedById
-            })
-            .ToList()
-    })
-    .FirstOrDefaultAsync();
+                    .FirstOrDefaultAsync();
 
                 if (data == null)
+                {
                     return NotFound(new
                     {
                         Error = "Project not found."
                     });
+                }
 
                 return Ok(data);
             }
@@ -434,6 +522,7 @@ namespace YLWorks.Controller
                 });
             }
         }
+
 
         [HttpPost("Create")]
         public async Task<ActionResult<Project>> AddProject(

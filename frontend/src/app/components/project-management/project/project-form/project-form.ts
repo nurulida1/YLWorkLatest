@@ -43,7 +43,7 @@ import { TagModule } from 'primeng/tag';
     RouterLink,
   ],
   template: `
-    <div class="min-h-screen bg-slate-50 px-4 py-5 sm:px-6 lg:px-8">
+    <div class="min-h-0 bg-slate-50 px-4 py-5 sm:px-6 lg:px-8">
       <!-- Breadcrumb -->
       <div class="mb-5 flex flex-wrap items-center gap-2 text-xs sm:text-sm">
         <a
@@ -190,8 +190,7 @@ import { TagModule } from 'primeng/tag';
 
                 <small
                   *ngIf="
-                    FG.get('clientId')?.invalid &&
-                    FG.get('clientId')?.touched
+                    FG.get('clientId')?.invalid && FG.get('clientId')?.touched
                   "
                   class="text-red-500 text-xs"
                 >

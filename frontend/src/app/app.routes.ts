@@ -311,8 +311,27 @@ export const routes: Routes = [
         path: '',
         data: { moduleKey: 'my-tasks' },
         loadComponent: () =>
-          import('./components/my-work/staffTasks/staffTasks').then(
+          import('./components/my-work/staff-tasks/staffTasks/staffTasks').then(
             (m) => m.StaffTasks,
+          ),
+      },
+    ],
+  },
+
+  {
+    path: 'staff-tasks',
+    data: { moduleKey: 'staff-tasks' },
+    loadComponent: () =>
+      import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
+        (m) => m.ResponsiveLayout,
+      ),
+    children: [
+      {
+        path: '',
+        data: { moduleKey: 'staff-tasks' },
+        loadChildren: () =>
+          import('./components/my-work/staff-tasks/staff-task-routing.module').then(
+            (m) => m.StaffTaskRoutingModule,
           ),
       },
     ],

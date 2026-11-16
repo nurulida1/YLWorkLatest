@@ -1460,6 +1460,10 @@ namespace YLWorks.Controller
         {
             try
             {
+                // =========================================================
+                // USERS
+                // =========================================================
+
                 var users = await _context.Users
                     .AsNoTracking()
                     .OrderBy(u => u.FullName)
@@ -1473,9 +1477,74 @@ namespace YLWorks.Controller
                     })
                     .ToListAsync();
 
+
+                // =========================================================
+                // PROJECTS + PROJECT LEADER + MEMBERS
+                // =========================================================
+
+                var projects = await _context.Projects
+                    .AsNoTracking()
+                    .OrderBy(p => p.ProjectCode)
+                    .Select(p => new
+                    {
+                        Id = p.Id,
+                        ProjectCode = p.ProjectCode,
+                        ProjectTitle = p.ProjectTitle,
+                        Label = p.ProjectCode + " - " + p.ProjectTitle,
+
+                        // Project Leader
+                        ProjectLeaderId = p.ProjectLeaderId,
+                        ProjectLeaderName = p.ProjectLeader != null
+                            ? p.ProjectLeader.FullName
+                            : null,
+
+                        // Project Members
+                        Members = p.ProjectMembers
+                            .Select(pm => new
+                            {
+                                Id = pm.UserId,
+                                Name = pm.User.FullName,
+                                DisplayName = pm.User.DisplayName,
+                                Email = pm.User.Email,
+                                JobTitle = pm.User.JobTitle
+                            })
+                            .ToList()
+                    })
+                    .ToListAsync();
+
+
+                // =========================================================
+                // WORK ORDERS + ASSIGNED USER
+                // =========================================================
+
+                var workOrders = await _context.WorkOrders
+                    .AsNoTracking()
+                    .OrderBy(w => w.WorkOrderNo)
+                    .Select(w => new
+                    {
+                        Id = w.Id,
+                        WorkOrderNo = w.WorkOrderNo,
+                        Title = w.Title,
+                        ProjectId = w.ProjectId,
+
+                        // Assigned User
+                        AssignedToId = w.AssignedToId,
+                        AssignedToName = w.AssignedTo != null
+                            ? w.AssignedTo.FullName
+                            : null
+                    })
+                    .ToListAsync();
+
+
+                // =========================================================
+                // RESPONSE
+                // =========================================================
+
                 return Ok(new
                 {
-                    Users = users
+                    Users = users,
+                    Projects = projects,
+                    WorkOrders = workOrders
                 });
             }
             catch (Exception)
@@ -1678,7 +1747,18 @@ namespace YLWorks.Controller
                 if (task == null)
                     return NotFound(new { Error = "Task not found." });
 
-                if (task.AssignedToId != currentUserId)
+                // Check current user's role
+                var currentUser = await _context.Users
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(x => x.Id == currentUserId);
+
+                if (currentUser == null)
+                    return Unauthorized(new { Error = "User not found." });
+
+                // Allow assigned staff or SuperAdmin
+                var isSuperAdmin = currentUser.SystemRole == "SuperAdmin";
+
+                if (!isSuperAdmin && task.AssignedToId != currentUserId)
                     return Forbid();
 
                 var checklists = request.Checklists

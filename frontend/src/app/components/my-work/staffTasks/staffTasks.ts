@@ -33,7 +33,6 @@ import { MessageService } from 'primeng/api';
 import { map, Subject, switchMap, takeUntil, tap } from 'rxjs';
 
 import { ProjectDto } from '../../../models/Project';
-import { StaffTask } from '../../../models/StaffTask';
 
 import { LoadingService } from '../../../services/loading.service';
 import { ProjectService } from '../../../services/ProjectService';
@@ -44,6 +43,7 @@ import {
   PagingContent,
   GridifyQueryExtend,
 } from '../../../shared/helpers/helpers';
+import { StaffTaskDto } from '../../../models/StaffTask';
 
 @Component({
   selector: 'app-staff-tasks',
@@ -991,10 +991,10 @@ export class StaffTasks implements OnInit, OnDestroy {
   // DATA
   // --------------------------------------------------
 
-  PagingSignal = signal<PagingContent<StaffTask>>({
+  PagingSignal = signal<PagingContent<StaffTaskDto>>({
     data: [],
     totalElements: 0,
-  } as PagingContent<StaffTask>);
+  } as PagingContent<StaffTaskDto>);
 
   Query: GridifyQueryExtend = {} as GridifyQueryExtend;
 
@@ -1007,7 +1007,7 @@ export class StaffTasks implements OnInit, OnDestroy {
     completed: 0,
   };
 
-  selectedTask: StaffTask | null = null;
+  selectedTask: StaffTaskDto | null = null;
 
   // --------------------------------------------------
   // FORM
@@ -1349,7 +1349,7 @@ export class StaffTasks implements OnInit, OnDestroy {
           this.PagingSignal.set({
             data: [],
             totalElements: 0,
-          } as PagingContent<StaffTask>);
+          } as PagingContent<StaffTaskDto>);
 
           this.loadingService.stop();
 
@@ -1427,7 +1427,7 @@ export class StaffTasks implements OnInit, OnDestroy {
   // EDIT TASK
   // --------------------------------------------------
 
-  editTask(task: StaffTask): void {
+  editTask(task: StaffTaskDto): void {
     this.isUpdate = true;
     this.selectedTask = task;
 
@@ -1582,10 +1582,10 @@ export class StaffTasks implements OnInit, OnDestroy {
       .pipe(
         takeUntil(this.ngUnsubscribe),
 
-        switchMap((res: StaffTask) => this.getCount().pipe(map(() => res))),
+        switchMap((res: StaffTaskDto) => this.getCount().pipe(map(() => res))),
       )
       .subscribe({
-        next: (res: StaffTask) => {
+        next: (res: StaffTaskDto) => {
           this.updateTaskInList(res);
 
           this.messageService.add({
@@ -1653,10 +1653,10 @@ export class StaffTasks implements OnInit, OnDestroy {
       .pipe(
         takeUntil(this.ngUnsubscribe),
 
-        switchMap((res: StaffTask) => this.getCount().pipe(map(() => res))),
+        switchMap((res: StaffTaskDto) => this.getCount().pipe(map(() => res))),
       )
       .subscribe({
-        next: (res: StaffTask) => {
+        next: (res: StaffTaskDto) => {
           this.updateTaskInList(res);
 
           this.messageService.add({
@@ -1695,18 +1695,20 @@ export class StaffTasks implements OnInit, OnDestroy {
   // LIST HELPERS
   // --------------------------------------------------
 
-  updateTaskInList(task: StaffTask): void {
+  updateTaskInList(task: StaffTaskDto): void {
     const currentData = this.PagingSignal();
 
     const existingData = currentData.data ?? [];
 
-    const exists = existingData.some((item: StaffTask) => item.id === task.id);
+    const exists = existingData.some(
+      (item: StaffTaskDto) => item.id === task.id,
+    );
 
     this.PagingSignal.set({
       ...currentData,
 
       data: exists
-        ? existingData.map((item: StaffTask) =>
+        ? existingData.map((item: StaffTaskDto) =>
             item.id === task.id ? task : item,
           )
         : [task, ...existingData].slice(0, this.Query.PageSize),
@@ -1719,11 +1721,11 @@ export class StaffTasks implements OnInit, OnDestroy {
     this.cdr.markForCheck();
   }
 
-  getCompletedChecklistCount(task: StaffTask): number {
+  getCompletedChecklistCount(task: StaffTaskDto): number {
     return task.checklists?.filter((item: any) => item.isCompleted).length ?? 0;
   }
 
-  isTaskOverdue(task: StaffTask): boolean {
+  isTaskOverdue(task: StaffTaskDto): boolean {
     if (!task.dueDate) {
       return false;
     }

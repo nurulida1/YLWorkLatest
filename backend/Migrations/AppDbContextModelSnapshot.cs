@@ -892,7 +892,7 @@ namespace YLWorks.Migrations
                     b.Property<decimal?>("HoursSpent")
                         .HasColumnType("decimal(5,2)");
 
-                    b.Property<Guid>("StaffTaskId")
+                    b.Property<Guid?>("StaffTaskId")
                         .HasColumnType("char(36)");
 
                     b.Property<DateTime?>("UpdatedAt")
@@ -4676,6 +4676,9 @@ namespace YLWorks.Migrations
                     b.Property<Guid?>("UpdatedById")
                         .HasColumnType("char(36)");
 
+                    b.Property<Guid?>("WorkOrderId")
+                        .HasColumnType("char(36)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("AssignedById");
@@ -4685,6 +4688,8 @@ namespace YLWorks.Migrations
                     b.HasIndex("CompletedById");
 
                     b.HasIndex("ProjectId");
+
+                    b.HasIndex("WorkOrderId");
 
                     b.ToTable("StaffTasks");
                 });
@@ -5326,8 +5331,7 @@ namespace YLWorks.Migrations
                     b.HasOne("YLWorks.Model.StaffTask", "StaffTask")
                         .WithMany()
                         .HasForeignKey("StaffTaskId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("DailyReport");
 
@@ -6425,7 +6429,7 @@ namespace YLWorks.Migrations
                         .HasForeignKey("ProjectId");
 
                     b.HasOne("YLWorks.Model.Quotation", "Quotation")
-                        .WithMany()
+                        .WithMany("SalesOrders")
                         .HasForeignKey("QuotationId");
 
                     b.Navigation("Client");
@@ -6488,8 +6492,13 @@ namespace YLWorks.Migrations
                         .HasForeignKey("CompletedById");
 
                     b.HasOne("YLWorks.Model.Project", "Project")
-                        .WithMany()
+                        .WithMany("StaffTasks")
                         .HasForeignKey("ProjectId");
+
+                    b.HasOne("YLWorks.Model.WorkOrder", "WorkOrder")
+                        .WithMany("Tasks")
+                        .HasForeignKey("WorkOrderId")
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("AssignedBy");
 
@@ -6498,6 +6507,8 @@ namespace YLWorks.Migrations
                     b.Navigation("CompletedBy");
 
                     b.Navigation("Project");
+
+                    b.Navigation("WorkOrder");
                 });
 
             modelBuilder.Entity("YLWorks.Model.StaffTaskChecklist", b =>
@@ -6732,6 +6743,8 @@ namespace YLWorks.Migrations
 
                     b.Navigation("Quotations");
 
+                    b.Navigation("StaffTasks");
+
                     b.Navigation("WorkOrders");
                 });
 
@@ -6760,6 +6773,8 @@ namespace YLWorks.Migrations
                     b.Navigation("QuotationOtherInformations");
 
                     b.Navigation("QuotationStatusHistories");
+
+                    b.Navigation("SalesOrders");
 
                     b.Navigation("TermsAndConditions");
                 });
@@ -6803,6 +6818,8 @@ namespace YLWorks.Migrations
                     b.Navigation("Checklists");
 
                     b.Navigation("JobSheets");
+
+                    b.Navigation("Tasks");
 
                     b.Navigation("WorkOrderMembers");
                 });

@@ -3,6 +3,10 @@ using System.ComponentModel.DataAnnotations;
 
 namespace YLWorks.Model
 {
+    // =====================================================
+    // WORK ORDER CONSTANTS
+    // =====================================================
+
     public static class WorkOrderStatus
     {
         public const string Open = "Open";
@@ -53,6 +57,10 @@ namespace YLWorks.Model
         };
     }
 
+    // =====================================================
+    // WORK ORDER
+    // =====================================================
+
     public class WorkOrder : BaseEntity
     {
         public Guid Id { get; set; } = Guid.NewGuid();
@@ -60,6 +68,7 @@ namespace YLWorks.Model
         // PROJECT
         [Required]
         public Guid ProjectId { get; set; }
+
         public Project Project { get; set; } = null!;
 
         // INFORMATION
@@ -84,12 +93,16 @@ namespace YLWorks.Model
 
         // SCHEDULE
         public DateTime? ScheduledDate { get; set; }
+
         public DateTime? DueDate { get; set; }
+
         public DateTime? StartedAt { get; set; }
+
         public DateTime? CompletedAt { get; set; }
 
         // ASSIGNMENT
         public Guid? AssignedToId { get; set; }
+
         public User? AssignedTo { get; set; }
 
         public ICollection<WorkOrderMember> WorkOrderMembers { get; set; }
@@ -106,35 +119,53 @@ namespace YLWorks.Model
         public ICollection<WorkOrderChecklist> Checklists { get; set; }
             = new List<WorkOrderChecklist>();
 
+        // TASKS
+        public ICollection<StaffTask> Tasks { get; set; }
+            = new List<StaffTask>();
+
+        // JOB SHEETS
         public ICollection<JobSheet> JobSheets { get; set; }
-    = new List<JobSheet>();
+            = new List<JobSheet>();
 
         // CREATION
         public Guid CreatedById { get; set; }
+
         public User CreatedBy { get; set; } = null!;
     }
+
+    // =====================================================
+    // WORK ORDER MEMBERS
+    // =====================================================
 
     public class WorkOrderMember : BaseEntity
     {
         public Guid Id { get; set; } = Guid.NewGuid();
 
         public Guid WorkOrderId { get; set; }
+
         public WorkOrder WorkOrder { get; set; } = null!;
 
         public Guid UserId { get; set; }
+
         public User User { get; set; } = null!;
 
         public DateTime AssignedAt { get; set; }
 
         public Guid AssignedById { get; set; }
+
         public User AssignedBy { get; set; } = null!;
     }
+
+    // =====================================================
+    // WORK ORDER CHECKLIST
+    // =====================================================
 
     public class WorkOrderChecklist : BaseEntity
     {
         public Guid Id { get; set; } = Guid.NewGuid();
 
         public Guid WorkOrderId { get; set; }
+
         public WorkOrder WorkOrder { get; set; } = null!;
 
         [Required, MaxLength(300)]
@@ -147,7 +178,9 @@ namespace YLWorks.Model
         public int Sequence { get; set; } = 1;
     }
 
+    // =====================================================
     // REQUESTS
+    // =====================================================
 
     public class CreateWorkOrderRequest
     {
@@ -163,8 +196,6 @@ namespace YLWorks.Model
         public string WorkType { get; set; } = WorkOrderType.Others;
 
         public string Priority { get; set; } = WorkOrderPriority.Normal;
-
-        public string? Status { get; set; }
 
         public string? Location { get; set; }
 
@@ -192,6 +223,10 @@ namespace YLWorks.Model
         public Guid Id { get; set; }
     }
 
+    // =====================================================
+    // CHECKLIST REQUESTS
+    // =====================================================
+
     public class CreateWorkOrderChecklistRequest
     {
         [Required, MaxLength(300)]
@@ -212,15 +247,22 @@ namespace YLWorks.Model
         public int Sequence { get; set; }
     }
 
+    // =====================================================
+    // STATUS REQUESTS
+    // =====================================================
+
     public class UpdateWorkOrderStatusRequest
     {
+        [Required]
         public Guid WorkOrderId { get; set; }
 
+        [Required]
         public string Status { get; set; } = string.Empty;
     }
 
     public class UpdateWorkOrderChecklistStatusRequest
     {
+        [Required]
         public Guid Id { get; set; }
 
         public bool IsCompleted { get; set; }

@@ -727,6 +727,7 @@ namespace YLWorks.Controller
         // =========================================================
 
 
+
         [HttpPost("{id:guid}/Approve")]
         public async Task<IActionResult> Approve(
             Guid id,
@@ -757,7 +758,7 @@ namespace YLWorks.Controller
                     return BadRequest("Only pending requests can be approved.");
 
                 // ==========================================
-                // IT SUPPORT / BUG REPORT APPROVAL
+                // IT SUPPORT / BUG REPORT
                 // ==========================================
 
                 if (IsNonInventoryRequest(request.RequestType))
@@ -771,10 +772,7 @@ namespace YLWorks.Controller
                             x.Status == "Approved");
 
                     if (supportAssignedStaff == null)
-                    {
-                        return BadRequest(
-                            "Assigned staff was not found or is inactive.");
-                    }
+                        return BadRequest("Assigned staff was not found or is inactive.");
 
                     request.Status = "Approved";
                     request.ApprovedById = currentUserId.Value;
@@ -786,7 +784,6 @@ namespace YLWorks.Controller
 
                     var isBugReport = request.RequestType == "BugReport";
 
-                    // Notify assigned staff.
                     await NotifyUserAsync(
                         supportAssignedStaff.Id,
                         isBugReport
@@ -799,7 +796,6 @@ namespace YLWorks.Controller
                         request.Id
                     );
 
-                    // Notify requester.
                     await NotifyRequesterAsync(
                         request,
                         isBugReport
@@ -825,7 +821,7 @@ namespace YLWorks.Controller
                 }
 
                 // ==========================================
-                // HARDWARE / SITE MATERIAL APPROVAL
+                // HARDWARE / SITE MATERIAL
                 // ==========================================
 
                 foreach (var item in request.Items)
@@ -833,8 +829,8 @@ namespace YLWorks.Controller
                     var approval = dto.Items?
                         .FirstOrDefault(x => x.RequestItemId == item.Id);
 
-                    var approvedQuantity = approval?.ApprovedQuantity
-                                           ?? item.RequestedQuantity;
+                    var approvedQuantity =
+                        approval?.ApprovedQuantity ?? item.RequestedQuantity;
 
                     if (approvedQuantity < 0 ||
                         approvedQuantity > item.RequestedQuantity)
@@ -843,7 +839,7 @@ namespace YLWorks.Controller
                             $"Invalid approved quantity for {item.ItemName}.");
                     }
 
-                    // Reserve inventory stock.
+                    // Reserve inventory only when linked to inventory.
                     if (item.InventoryId.HasValue && approvedQuantity > 0)
                     {
                         var inventory = item.Inventory;
@@ -854,8 +850,10 @@ namespace YLWorks.Controller
                                 $"Inventory item for {item.ItemName} was not found.");
                         }
 
-                        var availableStock =
-                            inventory.Quantity - inventory.ReservedQuantity;
+                        var physicalStock = inventory.Quantity ?? 0m;
+                        var reservedStock = inventory.ReservedQuantity ?? 0m;
+
+                        var availableStock = physicalStock - reservedStock;
 
                         if (approvedQuantity > availableStock)
                         {
@@ -868,7 +866,10 @@ namespace YLWorks.Controller
                             });
                         }
 
-                        inventory.ReservedQuantity += approvedQuantity;
+                        // Increase reserved stock.
+                        inventory.ReservedQuantity =
+                            reservedStock + approvedQuantity;
+
                         item.ReservedQuantity = approvedQuantity;
                     }
 
@@ -882,7 +883,7 @@ namespace YLWorks.Controller
                 }
 
                 // ==========================================
-                // SET REQUEST STATUS
+                // REQUEST STATUS
                 // ==========================================
 
                 request.Status = request.Items.Any(
@@ -895,7 +896,7 @@ namespace YLWorks.Controller
                 request.AdminRemarks = dto.Remarks;
 
                 // ==========================================
-                // ASSIGN STAFF IF APPROVED
+                // ASSIGN STAFF
                 // ==========================================
 
                 User? assignedStaff = null;
@@ -911,10 +912,8 @@ namespace YLWorks.Controller
                             x.Status == "Approved");
 
                     if (assignedStaff == null)
-                    {
                         return BadRequest(
                             "Assigned staff was not found or is inactive.");
-                    }
 
                     request.AssignedToId = assignedStaff.Id;
                 }
@@ -945,11 +944,9 @@ namespace YLWorks.Controller
                     request.Status == "Approved"
                         ? "Request Approved"
                         : "Request Rejected",
-
                     request.Status == "Approved"
                         ? $"Your request '{request.Subject}' has been approved."
                         : $"Your request '{request.Subject}' was rejected because no quantities were approved.",
-
                     request.Status == "Approved"
                         ? "Approval"
                         : "Rejection"
@@ -1107,6 +1104,7 @@ namespace YLWorks.Controller
         // POST: api/HardwareRequest/{id}/Issue
         // =========================================================
 
+
         [HttpPost("{id:guid}/Issue")]
         public async Task<IActionResult> Issue(
             Guid id,
@@ -1175,22 +1173,33 @@ namespace YLWorks.Controller
                                 $"Inventory record for {item.ItemName} was not found.");
                         }
 
-                        if (issueDto.IssuedQuantity > item.ReservedQuantity ||
-                            issueDto.IssuedQuantity > inventory.ReservedQuantity)
+                        var physicalStock = inventory.Quantity ?? 0m;
+                        var reservedStock = inventory.ReservedQuantity ?? 0m;
+                        var itemReserved = item.ReservedQuantity;
+
+                        if (issueDto.IssuedQuantity > itemReserved ||
+                            issueDto.IssuedQuantity > reservedStock)
                         {
                             return BadRequest(
                                 $"Reserved stock is insufficient for {item.ItemName}.");
                         }
 
-                        if (issueDto.IssuedQuantity > inventory.Quantity)
+                        if (issueDto.IssuedQuantity > physicalStock)
                         {
                             return BadRequest(
                                 $"Physical stock is insufficient for {item.ItemName}.");
                         }
 
-                        inventory.Quantity -= issueDto.IssuedQuantity;
-                        inventory.ReservedQuantity -= issueDto.IssuedQuantity;
-                        item.ReservedQuantity -= issueDto.IssuedQuantity;
+                        // Deduct physical inventory.
+                        inventory.Quantity =
+                            physicalStock - issueDto.IssuedQuantity;
+
+                        // Release reserved quantity.
+                        inventory.ReservedQuantity =
+                            reservedStock - issueDto.IssuedQuantity;
+
+                        item.ReservedQuantity =
+                            itemReserved - issueDto.IssuedQuantity;
                     }
 
                     item.IssuedQuantity += issueDto.IssuedQuantity;
@@ -1202,6 +1211,10 @@ namespace YLWorks.Controller
 
                     item.Remarks = issueDto.Remarks ?? item.Remarks;
                 }
+
+                // ==========================================
+                // UPDATE REQUEST STATUS
+                // ==========================================
 
                 var allIssued = request.Items.All(x =>
                     x.IssuedQuantity >= x.ApprovedQuantity);
@@ -1387,20 +1400,29 @@ namespace YLWorks.Controller
                         "This request can no longer be cancelled.");
                 }
 
+
                 foreach (var item in request.Items)
                 {
-                    if (item.Inventory != null &&
-                        item.ReservedQuantity > 0)
+                    if (item.Inventory != null && item.ReservedQuantity > 0)
                     {
-                        item.Inventory.ReservedQuantity -=
-                            item.ReservedQuantity;
+                        var inventoryReserved =
+                            item.Inventory.ReservedQuantity ?? 0m;
+
+                        var releaseQuantity = item.ReservedQuantity;
+
+                        item.Inventory.ReservedQuantity = Math.Max(
+                            0m,
+                            inventoryReserved - releaseQuantity
+                        );
 
                         item.ReservedQuantity = 0;
+
                         item.Status = "Cancelled";
                     }
                 }
 
                 request.Status = "Cancelled";
+
 
                 await _context.SaveChangesAsync();
 

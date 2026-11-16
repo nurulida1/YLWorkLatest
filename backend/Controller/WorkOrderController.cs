@@ -55,14 +55,19 @@ namespace YLWorks.Controller
                     .AsQueryable();
 
                 if (projectId.HasValue)
-                    query = query.Where(x => x.ProjectId == projectId);
+                {
+                    query = query.Where(
+                        x => x.ProjectId == projectId.Value);
+                }
 
                 if (assignedToId.HasValue)
                 {
                     query = query.Where(x =>
-                        x.AssignedToId == assignedToId ||
+                        x.AssignedToId == assignedToId.Value ||
                         x.WorkOrderMembers.Any(m =>
-                            m.UserId == assignedToId));
+                            m.UserId == assignedToId.Value) ||
+                        x.Tasks.Any(t =>
+                            t.AssignedToId == assignedToId.Value));
                 }
 
                 if (!string.IsNullOrWhiteSpace(search))
@@ -90,11 +95,20 @@ namespace YLWorks.Controller
                 query = orderBy?.ToLower() switch
                 {
                     "title" => query.OrderBy(x => x.Title),
-                    "title desc" => query.OrderByDescending(x => x.Title),
+
+                    "title desc" => query.OrderByDescending(
+                        x => x.Title),
+
                     "duedate" => query.OrderBy(x => x.DueDate),
-                    "duedate desc" => query.OrderByDescending(x => x.DueDate),
+
+                    "duedate desc" => query.OrderByDescending(
+                        x => x.DueDate),
+
                     "priority" => query.OrderBy(x => x.Priority),
-                    "priority desc" => query.OrderByDescending(x => x.Priority),
+
+                    "priority desc" => query.OrderByDescending(
+                        x => x.Priority),
+
                     _ => query.OrderByDescending(x => x.CreatedAt)
                 };
 
@@ -106,36 +120,53 @@ namespace YLWorks.Controller
                         x.Id,
                         x.WorkOrderNo,
                         x.ProjectId,
+
                         ProjectCode = x.Project.ProjectCode,
                         ProjectTitle = x.Project.ProjectTitle,
+
                         x.Title,
                         x.Description,
                         x.WorkType,
                         x.Priority,
                         x.Status,
                         x.Location,
+
                         x.ScheduledDate,
                         x.DueDate,
                         x.StartedAt,
                         x.CompletedAt,
 
-                        AssignedTo = x.AssignedTo == null ? null : new
-                        {
-                            x.AssignedTo.Id,
-                            x.AssignedTo.FullName,
-                            x.AssignedTo.DisplayName,
-                            x.AssignedTo.JobTitle
-                        },
+                        AssignedTo = x.AssignedTo == null
+                            ? null
+                            : new
+                            {
+                                x.AssignedTo.Id,
+                                x.AssignedTo.FullName,
+                                x.AssignedTo.DisplayName,
+                                x.AssignedTo.JobTitle
+                            },
 
-                        Members = x.WorkOrderMembers.Select(m => new
-                        {
-                            m.UserId,
-                            Name = m.User.FullName
-                        }).ToList(),
+                        Members = x.WorkOrderMembers
+                            .Select(m => new
+                            {
+                                m.UserId,
+                                Name = m.User.FullName
+                            })
+                            .ToList(),
 
                         ChecklistCount = x.Checklists.Count,
+
                         CompletedChecklistCount =
                             x.Checklists.Count(c => c.IsCompleted),
+
+                        // RELATED STAFF TASKS
+                        TaskCount = x.Tasks.Count,
+
+                        CompletedTaskCount = x.Tasks.Count(
+                            t => t.Status == StaffTaskStatus.Completed),
+
+                        InProgressTaskCount = x.Tasks.Count(
+                            t => t.Status == StaffTaskStatus.InProgress),
 
                         x.CreatedAt,
                         x.UpdatedAt
@@ -166,7 +197,12 @@ namespace YLWorks.Controller
         public async Task<IActionResult> GetOne(Guid id)
         {
             if (id == Guid.Empty)
-                return BadRequest(new { Error = "Invalid work order ID." });
+            {
+                return BadRequest(new
+                {
+                    Error = "Invalid work order ID."
+                });
+            }
 
             try
             {
@@ -183,7 +219,25 @@ namespace YLWorks.Controller
                         {
                             x.Project.ProjectCode,
                             x.Project.ProjectTitle,
-                            ClientName = x.Project.Client.Name
+                            x.Project.Location,
+
+                            ClientName = x.Project.Client.Name,
+
+                            ProjectLeaderId =
+                                x.Project.ProjectLeaderId,
+
+                            ProjectLeaderName =
+                                x.Project.ProjectLeader != null
+                                    ? x.Project.ProjectLeader.DisplayName
+                                    : null,
+
+                            ProjectMembers =
+                                x.Project.ProjectMembers.Select(member => new
+                                {
+                                    UserId = member.UserId,
+                                    DisplayName = member.User.DisplayName,
+                                    FullName = member.User.FullName
+                                }).ToList()
                         },
 
                         x.Title,
@@ -202,24 +256,33 @@ namespace YLWorks.Controller
 
                         x.AssignedToId,
 
-                        AssignedTo = x.AssignedTo == null ? null : new
-                        {
-                            x.AssignedTo.Id,
-                            x.AssignedTo.FullName,
-                            x.AssignedTo.DisplayName,
-                            x.AssignedTo.JobTitle,
-                            x.AssignedTo.Email
-                        },
+                        AssignedTo = x.AssignedTo == null
+                            ? null
+                            : new
+                            {
+                                x.AssignedTo.Id,
+                                x.AssignedTo.FullName,
+                                x.AssignedTo.DisplayName,
+                                x.AssignedTo.JobTitle,
+                                x.AssignedTo.Email
+                            },
 
                         WorkOrderMembers = x.WorkOrderMembers
-                            .Select(m => new
-                            {
-                                m.Id,
-                                m.UserId,
-                                Name = m.User.FullName,
-                                m.AssignedAt
-                            }).ToList(),
+    .Select(m => new
+    {
+        m.Id,
+        m.UserId,
+        User = m.User == null ? null : new
+        {
+            FullName = m.User.FullName,
+            DisplayName = m.User.DisplayName,
+            JobTitle = m.User.JobTitle,
+        },
+        m.AssignedAt
+    })
+    .ToList(),
 
+                        // WORK ORDER CHECKLISTS
                         Checklists = x.Checklists
                             .OrderBy(c => c.Sequence)
                             .Select(c => new
@@ -229,8 +292,55 @@ namespace YLWorks.Controller
                                 c.IsCompleted,
                                 c.CompletedAt,
                                 c.Sequence
-                            }).ToList(),
+                            })
+                            .ToList(),
 
+                        // RELATED STAFF TASKS
+                        Tasks = x.Tasks
+                            .OrderBy(t => t.DueDate)
+                            .Select(t => new
+                            {
+                                t.Id,
+                                t.Title,
+                                t.Description,
+                                t.Priority,
+                                t.Category,
+                                t.Status,
+
+                                t.StartDate,
+                                t.DueDate,
+                                t.ReminderAt,
+
+                                t.EstimatedHours,
+                                t.ActualHours,
+
+                                t.CompletedAt,
+
+                                t.AssignedToId,
+
+                                AssignedTo = t.AssignedTo == null
+                                    ? null
+                                    : new
+                                    {
+                                        t.AssignedTo.Id,
+                                        t.AssignedTo.FullName,
+                                        t.AssignedTo.DisplayName,
+                                        t.AssignedTo.JobTitle
+                                    },
+
+                                ChecklistCount = t.Checklists.Count,
+
+                                CompletedChecklistCount =
+                                    t.Checklists.Count(c => c.IsCompleted),
+
+                                t.ProjectId,
+                                t.WorkOrderId,
+                                t.CreatedAt,
+                                t.UpdatedAt
+                            })
+                            .ToList(),
+
+                        // ATTACHMENTS
                         Attachments = _context.Attachments
                             .Where(a =>
                                 a.EntityType == "WorkOrder" &&
@@ -244,17 +354,25 @@ namespace YLWorks.Controller
                                 a.FileUrl,
                                 a.UploadedAt,
                                 a.UploadedById
-                            }).ToList(),
+                            })
+                            .ToList(),
 
                         x.CreatedById,
+
                         CreatedBy = x.CreatedBy.FullName,
+
                         x.CreatedAt,
                         x.UpdatedAt
                     })
                     .FirstOrDefaultAsync();
 
                 if (data == null)
-                    return NotFound(new { Error = "Work order not found." });
+                {
+                    return NotFound(new
+                    {
+                        Error = "Work order not found."
+                    });
+                }
 
                 return Ok(data);
             }
@@ -280,22 +398,47 @@ namespace YLWorks.Controller
                 return BadRequest(ModelState);
 
             if (request.ProjectId == Guid.Empty)
-                return BadRequest(new { Error = "Project is required." });
+            {
+                return BadRequest(new
+                {
+                    Error = "Project is required."
+                });
+            }
 
             if (string.IsNullOrWhiteSpace(request.Title))
-                return BadRequest(new { Error = "Title is required." });
+            {
+                return BadRequest(new
+                {
+                    Error = "Title is required."
+                });
+            }
 
             if (!WorkOrderType.All.Contains(request.WorkType))
-                return BadRequest(new { Error = "Invalid work type." });
+            {
+                return BadRequest(new
+                {
+                    Error = "Invalid work type."
+                });
+            }
 
             if (!WorkOrderPriority.All.Contains(request.Priority))
-                return BadRequest(new { Error = "Invalid priority." });
+            {
+                return BadRequest(new
+                {
+                    Error = "Invalid priority."
+                });
+            }
 
             var userIdClaim = User.FindFirst(
                 ClaimTypes.NameIdentifier)?.Value;
 
             if (!Guid.TryParse(userIdClaim, out Guid userId))
-                return Unauthorized(new { Error = "Invalid token." });
+            {
+                return Unauthorized(new
+                {
+                    Error = "Invalid token."
+                });
+            }
 
             try
             {
@@ -303,61 +446,38 @@ namespace YLWorks.Controller
                     .AnyAsync(x => x.Id == request.ProjectId);
 
                 if (!projectExists)
-                    return BadRequest(new { Error = "Project not found." });
+                {
+                    return BadRequest(new
+                    {
+                        Error = "Project not found."
+                    });
+                }
 
                 if (request.AssignedToId.HasValue &&
                     !await _context.Users.AnyAsync(
                         x => x.Id == request.AssignedToId.Value))
                 {
-                    return BadRequest(new { Error = "Assigned user not found." });
+                    return BadRequest(new
+                    {
+                        Error = "Assigned user not found."
+                    });
                 }
 
-                var validStatuses = new[]
-                {
-                    WorkOrderStatus.Open,
-                    WorkOrderStatus.Assigned,
-                    WorkOrderStatus.InProgress
-                };
+                // VALIDATE MEMBERS BEFORE CREATING
+                var memberIds = new List<Guid>();
 
-                var status = string.IsNullOrWhiteSpace(request.Status)
-                    ? WorkOrderStatus.Open
-                    : request.Status;
-
-                if (!validStatuses.Contains(status))
-                    return BadRequest(new { Error = "Invalid initial status." });
-
-                var workOrder = new WorkOrder
-                {
-                    Id = Guid.NewGuid(),
-                    ProjectId = request.ProjectId,
-                    WorkOrderNo = await GenerateWorkOrderNo(),
-                    Title = request.Title.Trim(),
-                    Description = request.Description,
-                    WorkType = request.WorkType,
-                    Priority = request.Priority,
-                    Status = status,
-                    Location = request.Location,
-                    ScopeOfWork = request.ScopeOfWork,
-                    Remarks = request.Remarks,
-                    ScheduledDate = request.ScheduledDate,
-                    DueDate = request.DueDate,
-                    AssignedToId = request.AssignedToId,
-                    CreatedById = userId,
-                    CreatedAt = DateTimeHelper.Now()
-                };
-
-                if (workOrder.AssignedToId.HasValue &&
-                    workOrder.Status == WorkOrderStatus.Open)
-                {
-                    workOrder.Status = WorkOrderStatus.Assigned;
-                }
-
-                _context.WorkOrders.Add(workOrder);
-
-                // ADD MEMBERS
                 if (request.WorkOrderMembers?.Any() == true)
                 {
-                    var memberIds = request.WorkOrderMembers
+                    if (request.WorkOrderMembers.Any(
+                        x => !Guid.TryParse(x, out _)))
+                    {
+                        return BadRequest(new
+                        {
+                            Error = "Invalid member ID."
+                        });
+                    }
+
+                    memberIds = request.WorkOrderMembers
                         .Select(Guid.Parse)
                         .Distinct()
                         .ToList();
@@ -368,22 +488,75 @@ namespace YLWorks.Controller
                         .ToListAsync();
 
                     if (existingUserIds.Count != memberIds.Count)
-                        return BadRequest(new { Error = "One or more members do not exist." });
+                    {
+                        return BadRequest(new
+                        {
+                            Error = "One or more members do not exist."
+                        });
+                    }
+                }
 
+                // INITIAL STATUS IS CONTROLLED BY BACKEND
+                var initialStatus =
+                    request.AssignedToId.HasValue || memberIds.Any()
+                        ? WorkOrderStatus.Assigned
+                        : WorkOrderStatus.Open;
+
+                var workOrder = new WorkOrder
+                {
+                    Id = Guid.NewGuid(),
+
+                    ProjectId = request.ProjectId,
+
+                    WorkOrderNo = await GenerateWorkOrderNo(),
+
+                    Title = request.Title.Trim(),
+
+                    Description = request.Description,
+
+                    WorkType = request.WorkType,
+
+                    Priority = request.Priority,
+
+                    Status = initialStatus,
+
+                    Location = request.Location,
+
+                    ScopeOfWork = request.ScopeOfWork,
+
+                    Remarks = request.Remarks,
+
+                    ScheduledDate = request.ScheduledDate,
+
+                    DueDate = request.DueDate,
+
+                    AssignedToId = request.AssignedToId,
+
+                    CreatedById = userId,
+
+                    CreatedAt = DateTimeHelper.Now()
+                };
+
+                _context.WorkOrders.Add(workOrder);
+
+                // ADD MEMBERS
+                if (memberIds.Any())
+                {
                     var members = memberIds.Select(memberId =>
                         new WorkOrderMember
                         {
                             Id = Guid.NewGuid(),
+
                             WorkOrderId = workOrder.Id,
+
                             UserId = memberId,
+
                             AssignedAt = DateTimeHelper.Now(),
+
                             AssignedById = userId
                         });
 
                     _context.WorkOrderMembers.AddRange(members);
-
-                    if (workOrder.Status == WorkOrderStatus.Open)
-                        workOrder.Status = WorkOrderStatus.Assigned;
                 }
 
                 // ADD CHECKLISTS
@@ -393,9 +566,14 @@ namespace YLWorks.Controller
                         new WorkOrderChecklist
                         {
                             Id = Guid.NewGuid(),
+
                             WorkOrderId = workOrder.Id,
+
                             Title = c.Title.Trim(),
-                            Sequence = c.Sequence > 0 ? c.Sequence : 1
+
+                            Sequence = c.Sequence > 0
+                                ? c.Sequence
+                                : 1
                         });
 
                     _context.WorkOrderChecklists.AddRange(checklists);
@@ -417,13 +595,21 @@ namespace YLWorks.Controller
                         _context.Attachments.Add(new AttachmentDto
                         {
                             Id = Guid.NewGuid(),
+
                             FileName = Path.GetFileName(file.FileName),
+
                             FileType = file.ContentType,
+
                             FileSize = file.Length,
+
                             FileUrl = fileUrl,
+
                             EntityType = "WorkOrder",
+
                             EntityId = workOrder.Id,
+
                             UploadedAt = DateTimeHelper.Now(),
+
                             UploadedById = userId
                         });
                     }
@@ -432,25 +618,26 @@ namespace YLWorks.Controller
                 await _context.SaveChangesAsync();
 
                 await _hub.Clients.All.SendAsync(
-                    "WorkOrderAdded", workOrder);
+                    "WorkOrderAdded",
+                    workOrder);
 
                 return Ok(new
                 {
                     Message = "Work order created successfully.",
+
                     Id = workOrder.Id,
+
                     WorkOrderNo = workOrder.WorkOrderNo
                 });
-            }
-            catch (FormatException)
-            {
-                return BadRequest(new { Error = "Invalid member ID." });
             }
             catch (Exception ex)
             {
                 return StatusCode(500, new
                 {
                     Error = "Failed to create work order.",
+
                     Message = ex.Message,
+
                     InnerException = ex.InnerException?.Message
                 });
             }
@@ -471,71 +658,88 @@ namespace YLWorks.Controller
                 ClaimTypes.NameIdentifier)?.Value;
 
             if (!Guid.TryParse(userIdClaim, out Guid userId))
-                return Unauthorized(new { Error = "Invalid token." });
+            {
+                return Unauthorized(new
+                {
+                    Error = "Invalid token."
+                });
+            }
 
             try
             {
                 var workOrder = await _context.WorkOrders
                     .Include(x => x.WorkOrderMembers)
                     .Include(x => x.Checklists)
+                    .Include(x => x.Tasks)
                     .FirstOrDefaultAsync(x => x.Id == request.Id);
 
                 if (workOrder == null)
-                    return NotFound(new { Error = "Work order not found." });
-
-                if (!await _context.Projects.AnyAsync(
-                    x => x.Id == request.ProjectId))
                 {
-                    return BadRequest(new { Error = "Project not found." });
+                    return NotFound(new
+                    {
+                        Error = "Work order not found."
+                    });
+                }
+
+                if (request.ProjectId == Guid.Empty ||
+                    !await _context.Projects.AnyAsync(
+                        x => x.Id == request.ProjectId))
+                {
+                    return BadRequest(new
+                    {
+                        Error = "Project not found."
+                    });
+                }
+
+                if (string.IsNullOrWhiteSpace(request.Title))
+                {
+                    return BadRequest(new
+                    {
+                        Error = "Title is required."
+                    });
                 }
 
                 if (!WorkOrderType.All.Contains(request.WorkType))
-                    return BadRequest(new { Error = "Invalid work type." });
+                {
+                    return BadRequest(new
+                    {
+                        Error = "Invalid work type."
+                    });
+                }
 
                 if (!WorkOrderPriority.All.Contains(request.Priority))
-                    return BadRequest(new { Error = "Invalid priority." });
+                {
+                    return BadRequest(new
+                    {
+                        Error = "Invalid priority."
+                    });
+                }
 
                 if (request.AssignedToId.HasValue &&
                     !await _context.Users.AnyAsync(
                         x => x.Id == request.AssignedToId.Value))
                 {
-                    return BadRequest(new { Error = "Assigned user not found." });
+                    return BadRequest(new
+                    {
+                        Error = "Assigned user not found."
+                    });
                 }
 
-                // UPDATE INFORMATION
-                workOrder.ProjectId = request.ProjectId;
-                workOrder.Title = request.Title.Trim();
-                workOrder.Description = request.Description;
-                workOrder.WorkType = request.WorkType;
-                workOrder.Priority = request.Priority;
-                workOrder.Location = request.Location;
-                workOrder.ScopeOfWork = request.ScopeOfWork;
-                workOrder.Remarks = request.Remarks;
-                workOrder.ScheduledDate = request.ScheduledDate;
-                workOrder.DueDate = request.DueDate;
-                workOrder.AssignedToId = request.AssignedToId;
-                workOrder.UpdatedAt = DateTimeHelper.Now();
-
-                if (!string.IsNullOrWhiteSpace(request.Status))
-                {
-                    if (!WorkOrderStatus.All.Contains(request.Status))
-                        return BadRequest(new { Error = "Invalid status." });
-
-                    workOrder.Status = request.Status;
-                }
-                else if (workOrder.AssignedToId.HasValue &&
-                         workOrder.Status == WorkOrderStatus.Open)
-                {
-                    workOrder.Status = WorkOrderStatus.Assigned;
-                }
-
-                // REPLACE MEMBERS
-                _context.WorkOrderMembers.RemoveRange(
-                    workOrder.WorkOrderMembers);
+                // VALIDATE MEMBERS BEFORE UPDATING
+                var memberIds = new List<Guid>();
 
                 if (request.WorkOrderMembers?.Any() == true)
                 {
-                    var memberIds = request.WorkOrderMembers
+                    if (request.WorkOrderMembers.Any(
+                        x => !Guid.TryParse(x, out _)))
+                    {
+                        return BadRequest(new
+                        {
+                            Error = "Invalid member ID."
+                        });
+                    }
+
+                    memberIds = request.WorkOrderMembers
                         .Select(Guid.Parse)
                         .Distinct()
                         .ToList();
@@ -546,22 +750,92 @@ namespace YLWorks.Controller
                         .ToListAsync();
 
                     if (existingUserIds.Count != memberIds.Count)
-                        return BadRequest(new { Error = "One or more members do not exist." });
+                    {
+                        return BadRequest(new
+                        {
+                            Error = "One or more members do not exist."
+                        });
+                    }
+                }
 
+                // UPDATE INFORMATION
+                var oldProjectId = workOrder.ProjectId;
+
+                workOrder.ProjectId = request.ProjectId;
+
+                workOrder.Title = request.Title.Trim();
+
+                workOrder.Description = request.Description;
+
+                workOrder.WorkType = request.WorkType;
+
+                workOrder.Priority = request.Priority;
+
+                workOrder.Location = request.Location;
+
+                workOrder.ScopeOfWork = request.ScopeOfWork;
+
+                workOrder.Remarks = request.Remarks;
+
+                workOrder.ScheduledDate = request.ScheduledDate;
+
+                workOrder.DueDate = request.DueDate;
+
+                workOrder.AssignedToId = request.AssignedToId;
+
+                workOrder.UpdatedAt = DateTimeHelper.Now();
+
+                // STATUS IS NOT UPDATED HERE.
+                // Use UpdateStatus endpoint instead.
+
+                if (workOrder.AssignedToId.HasValue &&
+                    workOrder.Status == WorkOrderStatus.Open)
+                {
+                    workOrder.Status = WorkOrderStatus.Assigned;
+                }
+
+                // SYNC PROJECT ID TO LINKED STAFF TASKS
+                if (oldProjectId != request.ProjectId)
+                {
+                    foreach (var task in workOrder.Tasks)
+                    {
+                        task.ProjectId = request.ProjectId;
+                    }
+                }
+
+                // REPLACE MEMBERS
+                _context.WorkOrderMembers.RemoveRange(
+                    workOrder.WorkOrderMembers);
+
+                if (memberIds.Any())
+                {
                     var members = memberIds.Select(memberId =>
                         new WorkOrderMember
                         {
                             Id = Guid.NewGuid(),
+
                             WorkOrderId = workOrder.Id,
+
                             UserId = memberId,
+
                             AssignedAt = DateTimeHelper.Now(),
+
                             AssignedById = userId
                         });
 
                     _context.WorkOrderMembers.AddRange(members);
+
+                    if (workOrder.Status == WorkOrderStatus.Open)
+                    {
+                        workOrder.Status = WorkOrderStatus.Assigned;
+                    }
                 }
 
                 // REPLACE CHECKLISTS
+                // NOTE: This resets checklist completion.
+                // Consider syncing by checklist ID if completion
+                // history needs to be preserved.
+
                 _context.WorkOrderChecklists.RemoveRange(
                     workOrder.Checklists);
 
@@ -571,9 +845,14 @@ namespace YLWorks.Controller
                         new WorkOrderChecklist
                         {
                             Id = Guid.NewGuid(),
+
                             WorkOrderId = workOrder.Id,
+
                             Title = c.Title.Trim(),
-                            Sequence = c.Sequence > 0 ? c.Sequence : 1
+
+                            Sequence = c.Sequence > 0
+                                ? c.Sequence
+                                : 1
                         });
 
                     _context.WorkOrderChecklists.AddRange(checklists);
@@ -595,13 +874,21 @@ namespace YLWorks.Controller
                         _context.Attachments.Add(new AttachmentDto
                         {
                             Id = Guid.NewGuid(),
+
                             FileName = Path.GetFileName(file.FileName),
+
                             FileType = file.ContentType,
+
                             FileSize = file.Length,
+
                             FileUrl = fileUrl,
+
                             EntityType = "WorkOrder",
+
                             EntityId = workOrder.Id,
+
                             UploadedAt = DateTimeHelper.Now(),
+
                             UploadedById = userId
                         });
                     }
@@ -610,20 +897,20 @@ namespace YLWorks.Controller
                 await _context.SaveChangesAsync();
 
                 await _hub.Clients.All.SendAsync(
-                    "WorkOrderUpdated", workOrder);
+                    "WorkOrderUpdated",
+                    workOrder);
 
                 return await GetOne(workOrder.Id);
-            }
-            catch (FormatException)
-            {
-                return BadRequest(new { Error = "Invalid member ID." });
             }
             catch (Exception ex)
             {
                 return StatusCode(500, new
                 {
                     Error = "Failed to update work order.",
-                    Message = ex.Message
+
+                    Message = ex.Message,
+
+                    InnerException = ex.InnerException?.Message
                 });
             }
         }
@@ -637,18 +924,34 @@ namespace YLWorks.Controller
             [FromBody] UpdateWorkOrderStatusRequest request)
         {
             if (request.WorkOrderId == Guid.Empty)
-                return BadRequest(new { Error = "Work order ID is required." });
+            {
+                return BadRequest(new
+                {
+                    Error = "Work order ID is required."
+                });
+            }
 
             if (!WorkOrderStatus.All.Contains(request.Status))
-                return BadRequest(new { Error = "Invalid status." });
+            {
+                return BadRequest(new
+                {
+                    Error = "Invalid status."
+                });
+            }
 
             try
             {
                 var workOrder = await _context.WorkOrders
-                    .FirstOrDefaultAsync(x => x.Id == request.WorkOrderId);
+                    .FirstOrDefaultAsync(
+                        x => x.Id == request.WorkOrderId);
 
                 if (workOrder == null)
-                    return NotFound(new { Error = "Work order not found." });
+                {
+                    return NotFound(new
+                    {
+                        Error = "Work order not found."
+                    });
+                }
 
                 workOrder.Status = request.Status;
 
@@ -689,6 +992,7 @@ namespace YLWorks.Controller
                 return StatusCode(500, new
                 {
                     Error = "Failed to update work order status.",
+
                     Message = ex.Message
                 });
             }
@@ -703,7 +1007,12 @@ namespace YLWorks.Controller
             [FromBody] UpdateWorkOrderChecklistStatusRequest request)
         {
             if (request.Id == Guid.Empty)
-                return BadRequest(new { Error = "Checklist ID is required." });
+            {
+                return BadRequest(new
+                {
+                    Error = "Checklist ID is required."
+                });
+            }
 
             try
             {
@@ -711,9 +1020,15 @@ namespace YLWorks.Controller
                     .FirstOrDefaultAsync(x => x.Id == request.Id);
 
                 if (checklist == null)
-                    return NotFound(new { Error = "Checklist not found." });
+                {
+                    return NotFound(new
+                    {
+                        Error = "Checklist not found."
+                    });
+                }
 
                 checklist.IsCompleted = request.IsCompleted;
+
                 checklist.CompletedAt = request.IsCompleted
                     ? DateTimeHelper.Now()
                     : null;
@@ -733,6 +1048,7 @@ namespace YLWorks.Controller
                 return StatusCode(500, new
                 {
                     Error = "Failed to update checklist.",
+
                     Message = ex.Message
                 });
             }
@@ -750,11 +1066,26 @@ namespace YLWorks.Controller
                 var workOrder = await _context.WorkOrders
                     .Include(x => x.WorkOrderMembers)
                     .Include(x => x.Checklists)
+                    .Include(x => x.Tasks)
                     .FirstOrDefaultAsync(x => x.Id == id);
 
                 if (workOrder == null)
-                    return NotFound(new { Error = "Work order not found." });
+                {
+                    return NotFound(new
+                    {
+                        Error = "Work order not found."
+                    });
+                }
 
+                // PRESERVE STAFF TASKS
+                // Only remove their relationship with this Work Order.
+
+                foreach (var task in workOrder.Tasks)
+                {
+                    task.WorkOrderId = null;
+                }
+
+                // REMOVE ATTACHMENTS
                 var attachments = await _context.Attachments
                     .Where(x =>
                         x.EntityType == "WorkOrder" &&
@@ -762,12 +1093,15 @@ namespace YLWorks.Controller
                     .ToListAsync();
 
                 _context.Attachments.RemoveRange(attachments);
+
+                // REMOVE WORK ORDER
                 _context.WorkOrders.Remove(workOrder);
 
                 await _context.SaveChangesAsync();
 
                 await _hub.Clients.All.SendAsync(
-                    "WorkOrderDeleted", id);
+                    "WorkOrderDeleted",
+                    id);
 
                 return Ok(new
                 {
@@ -779,6 +1113,7 @@ namespace YLWorks.Controller
                 return StatusCode(500, new
                 {
                     Error = "Failed to delete work order.",
+
                     Message = ex.Message
                 });
             }
@@ -789,15 +1124,18 @@ namespace YLWorks.Controller
         // =====================================================
 
         [HttpGet("GetDropdown")]
-        public async Task<IActionResult> GetDropdown(Guid? projectId = null)
+        public async Task<IActionResult> GetDropdown(
+            Guid? projectId = null)
         {
             try
             {
                 var projectsQuery = _context.Projects.AsQueryable();
 
                 if (projectId.HasValue)
+                {
                     projectsQuery = projectsQuery.Where(
                         x => x.Id == projectId.Value);
+                }
 
                 var projects = await projectsQuery
                     .OrderByDescending(x => x.CreatedAt)
@@ -805,7 +1143,31 @@ namespace YLWorks.Controller
                     {
                         x.Id,
                         x.ProjectCode,
-                        x.ProjectTitle
+                        x.ProjectTitle,
+                        x.Location,
+
+                        ProjectMembers = x.ProjectMembers == null
+                            ? null
+                            : x.ProjectMembers.Select(pm => new
+                            {
+                                pm.UserId,
+
+                                User = pm.User == null
+                                    ? null
+                                    : new
+                                    {
+                                        pm.User.Id,
+                                        pm.User.FullName,
+                                        pm.User.DisplayName
+                                    }
+                            }).ToList(),
+
+                        x.ProjectLeaderId,
+
+                        ProjectLeaderName =
+                            x.ProjectLeader != null
+                                ? x.ProjectLeader.DisplayName
+                                : null
                     })
                     .ToListAsync();
 
@@ -823,9 +1185,13 @@ namespace YLWorks.Controller
                 return Ok(new
                 {
                     Projects = projects,
+
                     Users = users,
+
                     WorkTypes = WorkOrderType.All,
+
                     Priorities = WorkOrderPriority.All,
+
                     Statuses = WorkOrderStatus.All
                 });
             }
@@ -834,6 +1200,7 @@ namespace YLWorks.Controller
                 return StatusCode(500, new
                 {
                     Error = "Failed to load work order dropdowns.",
+
                     Message = ex.Message
                 });
             }
@@ -860,6 +1227,7 @@ namespace YLWorks.Controller
                 return StatusCode(500, new
                 {
                     Error = "Failed to generate work order number.",
+
                     Message = ex.Message
                 });
             }
@@ -872,6 +1240,7 @@ namespace YLWorks.Controller
         private async Task<string> GenerateWorkOrderNo()
         {
             var year = DateTimeHelper.Now().Year;
+
             var prefix = $"WO-{year}-";
 
             var numbers = await _context.WorkOrders
@@ -883,6 +1252,7 @@ namespace YLWorks.Controller
                 .Select(x =>
                 {
                     var parts = x.Split('-');
+
                     return parts.Length == 3 &&
                            int.TryParse(parts[2], out var number)
                         ? number
@@ -908,12 +1278,16 @@ namespace YLWorks.Controller
 
             Directory.CreateDirectory(uploadFolder);
 
-            var fileName = $"{Guid.NewGuid()}_{Path.GetFileName(file.FileName)}";
+            var fileName =
+                $"{Guid.NewGuid()}_{Path.GetFileName(file.FileName)}";
 
-            var filePath = Path.Combine(uploadFolder, fileName);
+            var filePath = Path.Combine(
+                uploadFolder,
+                fileName);
 
             await using (var stream = new FileStream(
-                filePath, FileMode.Create))
+                filePath,
+                FileMode.Create))
             {
                 await file.CopyToAsync(stream);
             }

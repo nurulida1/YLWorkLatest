@@ -172,6 +172,15 @@ namespace YLWorks.Model
         public Guid? ProjectId { get; set; }
 
         public Project? Project { get; set; }
+
+        // WORK ORDER
+
+        // Optional work order association.
+        // Null means this task is not associated with a work order.
+
+        public Guid? WorkOrderId { get; set; }
+
+        public WorkOrder? WorkOrder { get; set; }
     }
 
     // =========================================================
@@ -254,6 +263,10 @@ namespace YLWorks.Model
         // OPTIONAL PROJECT
 
         public Guid? ProjectId { get; set; }
+
+        // OPTIONAL WORK ORDER
+
+        public Guid? WorkOrderId { get; set; }
     }
 
     // =========================================================
@@ -334,6 +347,10 @@ namespace YLWorks.Model
         // OPTIONAL PROJECT
 
         public Guid? ProjectId { get; set; }
+
+        // OPTIONAL WORK ORDER
+
+        public Guid? WorkOrderId { get; set; }
     }
 
     // =========================================================

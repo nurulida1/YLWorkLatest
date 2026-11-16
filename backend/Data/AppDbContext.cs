@@ -304,10 +304,10 @@ namespace YLWorks.Data
 
             // WorkOrder -> Members
             modelBuilder.Entity<WorkOrderMember>()
-                .HasOne(x => x.WorkOrder)
-                .WithMany(x => x.WorkOrderMembers)
-                .HasForeignKey(x => x.WorkOrderId)
-                .OnDelete(DeleteBehavior.Cascade);
+    .HasOne(x => x.AssignedBy)
+    .WithMany()
+    .HasForeignKey(x => x.AssignedById)
+    .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<WorkOrderMember>()
                 .HasOne(x => x.User)
@@ -323,10 +323,18 @@ namespace YLWorks.Data
 
             // WorkOrder -> Checklists
             modelBuilder.Entity<WorkOrderChecklist>()
+    .HasOne(x => x.WorkOrder)
+    .WithMany(x => x.Checklists)
+    .HasForeignKey(x => x.WorkOrderId)
+    .OnDelete(DeleteBehavior.Cascade);
+
+            // WorkOrder -> StaffTasks
+            modelBuilder.Entity<StaffTask>()
                 .HasOne(x => x.WorkOrder)
-                .WithMany(x => x.Checklists)
+                .WithMany(x => x.Tasks)
                 .HasForeignKey(x => x.WorkOrderId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .IsRequired(false)
+                .OnDelete(DeleteBehavior.SetNull);
 
             // =======================
             // JOB SHEET

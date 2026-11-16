@@ -152,6 +152,16 @@ export const APP_MANAGEMENT_MENU: AppNavItem[] = [
     icon: 'pi-folder',
     items: [
       {
+        label: 'Quotations',
+        route: '/quotations',
+        moduleKey: 'quotations',
+      },
+      {
+        label: 'Quotation Templates',
+        route: '/quotation-template',
+        moduleKey: 'quotation-template',
+      },
+      {
         label: 'Projects',
         route: '/projects',
         moduleKey: 'projects',
@@ -165,16 +175,6 @@ export const APP_MANAGEMENT_MENU: AppNavItem[] = [
         label: 'Job Sheet',
         route: '/job-sheet',
         moduleKey: 'job-sheet',
-      },
-      {
-        label: 'Quotations',
-        route: '/quotations',
-        moduleKey: 'quotations',
-      },
-      {
-        label: 'Quotation Templates',
-        route: '/quotation-template',
-        moduleKey: 'quotation-template',
       },
     ],
   },

@@ -13,8 +13,7 @@ namespace YLWorks.Model
         [ForeignKey(nameof(DailyReportId))]
         public DailyReport? DailyReport { get; set; }
 
-        [Required]
-        public Guid StaffTaskId { get; set; }
+        public Guid? StaffTaskId { get; set; }
 
         [ForeignKey(nameof(StaffTaskId))]
         public StaffTask? StaffTask { get; set; }

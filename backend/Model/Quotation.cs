@@ -75,6 +75,9 @@ namespace YLWorks.Model
 
         public ICollection<QuotationOtherInformation> QuotationOtherInformations { get; set; }
             = new List<QuotationOtherInformation>();
+
+        public ICollection<SalesOrder> SalesOrders { get; set; }
+    = new List<SalesOrder>();
     }
 
     // =========================================================

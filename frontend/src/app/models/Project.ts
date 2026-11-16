@@ -2,10 +2,9 @@ import { BaseModel } from './BaseModel';
 import { CompanyDto } from './Company';
 import { HardwareRequestDto } from './HardwareRequest';
 import { JobSheetDto } from './JobSheets';
-import { MaterialRequestDto } from './MaterialRequest';
-import { ProjectTaskDto } from './ProjectTask';
 import { PurchaseOrderDto } from './PurchaseOrder';
 import { QuotationDto } from './Quotation';
+import { StaffTaskDto } from './StaffTask';
 import { UserDto } from './User';
 import { WorkOrderDto } from './WorkOrder';
 
@@ -45,7 +44,7 @@ export interface ProjectDto extends BaseModel {
   // Site Material Requests linked to this project
   siteMaterialRequests?: HardwareRequestDto[];
 
-  projectTasks: ProjectTaskDto[];
+  staffTasks: StaffTaskDto[];
   jobSheets?: JobSheetDto[];
   attachments: AttachmentDto[];
 }

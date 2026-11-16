@@ -1,11 +1,11 @@
 import { Injectable } from '@angular/core';
 import {
   CreateStaffTaskRequest,
-  StaffTask,
   StaffTaskSummary,
   UpdateChecklistOnlyRequest,
   UpdateStaffTaskRequest,
   CompleteStaffTaskRequest,
+  StaffTaskDto,
 } from '../models/StaffTask';
 
 import { HttpClient, HttpParams } from '@angular/common/http';
@@ -33,7 +33,7 @@ export class StaffTaskService {
   // GET MANY
   // ==========================================
 
-  GetMany(query: GridifyQueryExtend): Observable<PagingContent<StaffTask>> {
+  GetMany(query: GridifyQueryExtend): Observable<PagingContent<StaffTaskDto>> {
     let params = new HttpParams()
       .set('page', query.Page.toString())
       .set('pageSize', query.PageSize.toString());
@@ -55,7 +55,7 @@ export class StaffTaskService {
     }
 
     return this.http
-      .get<PagingContent<StaffTask>>(`${this.url}/GetMany`, { params })
+      .get<PagingContent<StaffTaskDto>>(`${this.url}/GetMany`, { params })
       .pipe(catchError(this.handleError('GetMany')));
   }
 
@@ -63,10 +63,10 @@ export class StaffTaskService {
   // GET ONE
   // ==========================================
 
-  GetOne(id: string): Observable<StaffTask | null> {
+  GetOne(id: string): Observable<StaffTaskDto | null> {
     const params = new HttpParams().set('id', id);
 
-    return this.http.get<StaffTask>(`${this.url}/GetOne`, { params }).pipe(
+    return this.http.get<StaffTaskDto>(`${this.url}/GetOne`, { params }).pipe(
       catchError((error) => {
         if (error.status === 404) {
           return of(null);
@@ -81,9 +81,9 @@ export class StaffTaskService {
   // CREATE
   // ==========================================
 
-  Create(request: CreateStaffTaskRequest): Observable<StaffTask> {
+  Create(request: CreateStaffTaskRequest): Observable<StaffTaskDto> {
     return this.http
-      .post<StaffTask>(`${this.url}/Create`, request)
+      .post<StaffTaskDto>(`${this.url}/Create`, request)
       .pipe(catchError(this.handleError('Create')));
   }
 
@@ -91,9 +91,9 @@ export class StaffTaskService {
   // UPDATE
   // ==========================================
 
-  Update(request: UpdateStaffTaskRequest): Observable<StaffTask> {
+  Update(request: UpdateStaffTaskRequest): Observable<StaffTaskDto> {
     return this.http
-      .put<StaffTask>(`${this.url}/Update`, request)
+      .put<StaffTaskDto>(`${this.url}/Update`, request)
       .pipe(catchError(this.handleError('Update')));
   }
 
@@ -101,9 +101,11 @@ export class StaffTaskService {
   // UPDATE CHECKLIST
   // ==========================================
 
-  UpdateChecklist(request: UpdateChecklistOnlyRequest): Observable<StaffTask> {
+  UpdateChecklist(
+    request: UpdateChecklistOnlyRequest,
+  ): Observable<StaffTaskDto> {
     return this.http
-      .put<StaffTask>(`${this.url}/UpdateChecklist`, request)
+      .put<StaffTaskDto>(`${this.url}/UpdateChecklist`, request)
       .pipe(catchError(this.handleError('UpdateChecklist')));
   }
 
@@ -133,9 +135,9 @@ export class StaffTaskService {
   // REOPEN
   // ==========================================
 
-  Reopen(id: string): Observable<StaffTask> {
+  Reopen(id: string): Observable<StaffTaskDto> {
     return this.http
-      .put<StaffTask>(`${this.url}/${id}/Reopen`, {})
+      .put<StaffTaskDto>(`${this.url}/${id}/Reopen`, {})
       .pipe(catchError(this.handleError('Reopen')));
   }
 
@@ -143,7 +145,7 @@ export class StaffTaskService {
   // COMPLETE
   // ==========================================
 
-  Complete(id: string, actualHours?: number): Observable<StaffTask> {
+  Complete(id: string, actualHours?: number): Observable<StaffTaskDto> {
     const request: CompleteStaffTaskRequest = {};
 
     if (actualHours != null) {
@@ -151,7 +153,7 @@ export class StaffTaskService {
     }
 
     return this.http
-      .put<StaffTask>(`${this.url}/${id}/Complete`, request)
+      .put<StaffTaskDto>(`${this.url}/${id}/Complete`, request)
       .pipe(catchError(this.handleError('Complete')));
   }
 

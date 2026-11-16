@@ -1,120 +1,138 @@
-import { AttachmentDto } from './AttachmentDto';
 import { BaseModel } from './BaseModel';
+import { AttachmentDto } from './AttachmentDto';
 import { ProjectDto } from './Project';
 import { UserDto } from './User';
+import { StaffTaskDto } from './StaffTask';
 
 export interface WorkOrderDto extends BaseModel {
   workOrderNo: string;
   projectId: string;
-  project: ProjectDto;
+  project?: ProjectDto;
+
+  projectCode?: string;
+  projectTitle?: string;
+
   title: string;
-  workOrderDate: Date;
-  description: string;
-  dueDate: Date;
-  status: string;
-  workOrderTasks: WorkOrderTaskDto[];
-  workOrderAssignments: WorkOrderAssignmentDto[];
-  startedAt: Date;
-  onHoldAt: Date;
-  completedAt: Date;
-  createdById: string;
-  createdBy: UserDto;
+  description?: string;
+  workType: string;
   priority: string;
+  status: string;
+
+  location?: string;
+  scopeOfWork?: string;
+  remarks?: string;
+
+  scheduledDate?: Date;
+  dueDate?: Date;
+  startedAt?: Date;
+  completedAt?: Date;
+
+  assignedToId?: string;
+  assignedTo?: UserDto | null;
+
+  workOrderMembers: WorkOrderMemberDto[];
+  checklists: WorkOrderChecklistDto[];
+  attachments: AttachmentDto[];
+
+  // Staff Tasks linked to this Work Order
+  tasks?: StaffTaskDto[];
+
+  // Task summary
+  taskCount?: number;
+  completedTaskCount?: number;
+  inProgressTaskCount?: number;
+
+  createdById: string;
+  createdBy?: UserDto;
+  createdAt: Date;
+  updatedAt?: Date;
+}
+
+export interface WorkOrderMemberDto extends BaseModel {
+  workOrderId: string;
+  userId: string;
+  user?: UserDto;
+  name?: string;
+  assignedAt: Date;
+  assignedById?: string;
+}
+
+export interface WorkOrderChecklistDto extends BaseModel {
+  workOrderId: string;
+  title: string;
+  isCompleted: boolean;
+  completedAt?: Date;
+  sequence: number;
+}
+
+export interface CreateWorkOrderChecklistRequest {
+  title: string;
+  sequence: number;
 }
 
 export interface CreateWorkOrderRequest {
-  workOrderNo: string;
   projectId: string;
   title: string;
-  workOrderDate: Date;
-  description: string;
-  dueDate: Date;
+  description?: string;
+  workType: string;
   priority: string;
+  status?: string;
+  location?: string;
+  scopeOfWork?: string;
+  remarks?: string;
+  scheduledDate?: Date | string | null;
+  dueDate?: Date | string | null;
+  assignedToId?: string | null;
+  workOrderMembers?: string[];
+  checklists?: CreateWorkOrderChecklistRequest[];
+  files?: File[];
 }
 
-export interface UpdareWorkOrderRequest extends CreateWorkOrderRequest {
+export interface UpdateWorkOrderRequest extends CreateWorkOrderRequest {
   id: string;
 }
 
 export interface UpdateWorkOrderStatusRequest {
-  id: string;
-  status: string;
-  startedAt: Date;
-  onHoldAt: Date;
-  completedAt: Date;
-}
-
-export interface WorkOrderAssignmentDto extends BaseModel {
   workOrderId: string;
-  workOrder: WorkOrderDto;
-  userId: string;
-  user: UserDto;
-  role: string;
-  assignedAt: Date;
-}
-
-export interface WorkOrderTaskDto extends BaseModel {
-  workOrderId: string;
-  workOrder: WorkOrderDto;
-  taskNo: string;
-  taskName: string;
-  description: string;
-  startDate: Date;
-  dueDate: Date;
   status: string;
-  priority: string;
-  assignedToId: string;
-  assignedTo: UserDto;
-  attachments: AttachmentDto[];
 }
 
-export interface CreateWorkOrderTask {
-  workOrderId: string;
-  taskNo: string;
-  taskName: string;
-  description: string;
-  startDate: Date;
-  DueDate: Date;
-  assignedUsers: CreateWorkOrderTaskAssignmentRequest[];
-  priority: string;
-  attachments: AttachmentDto[];
-}
-
-export interface WorkOrderTaskAssignment {
+export interface UpdateWorkOrderChecklistStatusRequest {
   id: string;
-  workOrderTaskId: string;
-  workOrderTask: WorkOrderTaskDto;
-  userId: string;
-  user: UserDto;
-  role: string;
-  assignedAt: Date;
-  workLoadPercentage: number;
-  notes: string;
+  isCompleted: boolean;
 }
 
-export interface CreateWorkOrderTaskAssignmentRequest {
-  workOrderTaskId: string;
-  userId: string;
-  role: string;
-  assignedAt: Date;
-  workLoadPercentage: number;
-  notes: string;
+export interface WorkOrderDropdownDto {
+  projects: {
+    id: string;
+    projectCode: string;
+    projectTitle: string;
+    location: string;
+    projectLeaderId: string | null;
+    projectLeaderName: string | null;
+    projectMembers: {
+      userId: string;
+      user: {
+        id: string;
+        fullName: string;
+        displayName: string;
+      };
+    }[];
+  }[];
+
+  users: {
+    id: string;
+    fullName: string;
+    displayName?: string;
+    jobTitle?: string;
+  }[];
+
+  workTypes: string[];
+  priorities: string[];
+  statuses: string[];
 }
 
-export interface UpdateWorkOrderTaskAssignmentRequest {
-  id: string;
-  workOrderTaskId: string;
-  userId: string;
-  role: string;
-  assignedAt: Date;
-  workLoadPercentage: number;
-  notes: string;
-}
-
-export interface UpdateTaskStatusRequest {
-  id: string;
-  status: string;
-  startDate: Date;
-  onHoldDate: Date;
-  completedAt: Date;
+export interface WorkOrderPagingContent {
+  data: WorkOrderDto[];
+  totalElements: number;
 }

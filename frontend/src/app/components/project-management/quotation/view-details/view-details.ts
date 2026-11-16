@@ -259,7 +259,7 @@ import autoTable from 'jspdf-autotable';
               <div
                 class="grid grid-cols-12 items-center font-medium gap-2 text-slate-900"
               >
-                <span class="col-span-1">Date</span>
+                <span class="col-span-1">Date:</span>
                 <span class="col-span-11">
                   {{ quotationData()?.quotationDate | date: 'dd/MM/yyyy' }}
                 </span>
@@ -1218,7 +1218,7 @@ export class ViewDetails implements OnInit, OnDestroy {
       const companyWidth = pageWidth - companyX - margin;
       // Company name
       pdf.setFont('helvetica', 'bold');
-      pdf.setFontSize(11);
+      pdf.setFontSize(10);
       pdf.setTextColor(0, 0, 0);
 
       const companyName = company?.name || 'Company Name';
@@ -1283,7 +1283,7 @@ export class ViewDetails implements OnInit, OnDestroy {
       // =====================================================
 
       pdf.setFont('helvetica', 'bold');
-      pdf.setFontSize(13);
+      pdf.setFontSize(12);
       pdf.setTextColor(...darkColor);
 
       pdf.text('QUOTATION', pageWidth / 2, y, {
@@ -1332,7 +1332,12 @@ export class ViewDetails implements OnInit, OnDestroy {
 
       const clientName = client?.name || '-';
 
-      addText(clientName, leftColumn, y + 5, 9, [0, 0, 0], true);
+      // CLIENT NAME
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(8);
+      pdf.setTextColor(0, 0, 0);
+
+      addText(clientName, leftColumn, y + 5, 8, [0, 0, 0], true);
 
       // LEFT: Billing Address
       const billingAddress = client?.billingAddress;
@@ -1404,7 +1409,7 @@ export class ViewDetails implements OnInit, OnDestroy {
         .filter(Boolean)
         .join(' / ');
 
-      addText(`Attention: ${attention || '-'}`, margin, y, 9, [0, 0, 0], true);
+      addText(`Attn: ${attention || '-'}`, margin, y, 8, [0, 0, 0], true);
 
       y += 7;
 
@@ -1413,7 +1418,7 @@ export class ViewDetails implements OnInit, OnDestroy {
       // =====================================================
 
       pdf.setFont('helvetica', 'bold');
-      pdf.setFontSize(9);
+      pdf.setFontSize(8);
       pdf.setTextColor(0, 0, 0);
 
       const subjectLines = pdf.splitTextToSize(
@@ -1524,7 +1529,7 @@ export class ViewDetails implements OnInit, OnDestroy {
             'Qty',
             'Disc (%)',
             'Unit Price (RM)',
-            'Total (RM)',
+            'Total Price (RM)',
           ],
         ],
         body: tableBody,
@@ -1644,7 +1649,7 @@ export class ViewDetails implements OnInit, OnDestroy {
       }
 
       pdf.setFont('helvetica', 'bold');
-      pdf.setFontSize(10);
+      pdf.setFontSize(8);
       pdf.setTextColor(0, 0, 0);
 
       const title = 'Terms & Conditions';
@@ -1682,7 +1687,7 @@ export class ViewDetails implements OnInit, OnDestroy {
         },
         styles: {
           font: 'helvetica',
-          fontSize: 9,
+          fontSize: 8,
           cellPadding: {
             top: 0.5,
             bottom: 0.5,
@@ -1716,7 +1721,7 @@ export class ViewDetails implements OnInit, OnDestroy {
       }
 
       pdf.setFont('helvetica', 'normal');
-      pdf.setFontSize(9);
+      pdf.setFontSize(8);
       pdf.setTextColor(...darkColor);
 
       pdf.text('Yours faithfully,', margin, y);
@@ -1729,7 +1734,7 @@ export class ViewDetails implements OnInit, OnDestroy {
       y += 5;
 
       pdf.setFont('helvetica', 'bold');
-      pdf.setFontSize(9);
+      pdf.setFontSize(8);
       pdf.text(
         quotation.createdBy?.fullName || 'Authorised Representative',
         margin,
@@ -1747,7 +1752,7 @@ export class ViewDetails implements OnInit, OnDestroy {
       y += 20;
 
       pdf.setFont('helvetica', 'italic');
-      pdf.setFontSize(9);
+      pdf.setFontSize(8);
       pdf.setTextColor(0, 0, 0);
       pdf.text('Your ELV Solution Provider', margin, y);
 
@@ -1884,7 +1889,7 @@ export class ViewDetails implements OnInit, OnDestroy {
   startJob() {
     if (!this.currentId) return;
 
-    this.router.navigate(['/work-order/create'], {
+    this.router.navigate(['/work-order/form'], {
       queryParams: { quotationId: this.currentId },
     });
   }

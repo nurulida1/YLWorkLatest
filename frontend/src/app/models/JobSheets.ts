@@ -1,14 +1,14 @@
 import { BaseModel } from './BaseModel';
 import { AttachmentDto, ProjectDto } from './Project';
-import { ProjectTaskDto } from './ProjectTask';
+import { StaffTaskDto } from './StaffTask';
 import { UserDto } from './User';
 
 export interface JobSheetDto extends BaseModel {
   jobSheetNo: string;
   projectId: string;
   project: ProjectDto;
-  projectTaskId: string;
-  projectTask: ProjectTaskDto;
+  staffTaskId: string;
+  StaffTask: StaffTaskDto;
   workDate: Date;
   startTime?: Date;
   endTime?: Date;

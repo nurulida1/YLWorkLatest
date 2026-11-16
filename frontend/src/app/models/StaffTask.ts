@@ -1,7 +1,7 @@
 import { BaseModel } from './BaseModel';
 import { UserDto } from './User';
 
-export interface StaffTask extends BaseModel {
+export interface StaffTaskDto extends BaseModel {
   title: string;
   description?: string | null;
 
@@ -17,6 +17,14 @@ export interface StaffTask extends BaseModel {
     id: string;
     projectCode: string;
     projectTitle: string;
+  } | null;
+
+  // Optional Work Order association
+  workOrderId?: string | null;
+  workOrder?: {
+    id: string;
+    workOrderNo: string;
+    title?: string;
   } | null;
 
   priority: string;
@@ -48,8 +56,7 @@ export interface StaffTaskChecklist {
   completedAt?: string | Date | null;
   sequence?: number;
 
-  // Returned only if the API includes the parent task.
-  staffTask?: StaffTask;
+  staffTask?: StaffTaskDto;
 }
 
 export interface CreateStaffTaskRequest {
@@ -59,6 +66,9 @@ export interface CreateStaffTaskRequest {
 
   // Optional project association
   projectId?: string | null;
+
+  // Optional Work Order association
+  workOrderId?: string | null;
 
   priority: string;
   category: string;
@@ -87,6 +97,9 @@ export interface UpdateStaffTaskRequest {
 
   // Optional project association
   projectId?: string | null;
+
+  // Optional Work Order association
+  workOrderId?: string | null;
 
   priority: string;
   category: string;
@@ -123,6 +136,10 @@ export interface UpdateChecklistOnlyItem {
 
 export interface CompleteStaffTaskRequest {
   actualHours?: number;
+}
+
+export interface ReopenStaffTaskRequest {
+  id: string;
 }
 
 export interface StaffTaskSummary {

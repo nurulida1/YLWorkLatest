@@ -457,7 +457,7 @@ import { TooltipModule } from 'primeng/tooltip';
                   severity="info"
                   [outlined]="true"
                   [disabled]="data.status !== 'Sent'"
-                  styleClass="mobile-convert-button"
+                  styleClass="bg-blue-700! hover:bg-blue-500! border-none!"
                   (onClick)="ActionClick(data, 'Convert')"
                 ></p-button>
               </div>
@@ -685,7 +685,7 @@ import { TooltipModule } from 'primeng/tooltip';
           </div>
 
           <small class="field-hint">
-            <i class="pi pi-lock"></i>
+            <i class="pi pi-lock text-xs!"></i>
             The purchase order will be attached to the generated Sales Order.
           </small>
         </div>
@@ -706,8 +706,7 @@ import { TooltipModule } from 'primeng/tooltip';
             label="Convert to SO"
             icon="pi pi-arrow-right"
             iconPos="right"
-            severity="success"
-            styleClass="submit-convert-button"
+            styleClass="bg-blue-700! hover:bg-blue-500! border-none!"
             [disabled]="
               !soForm.clientPONumber.trim() || !soForm.clientPOAttachment
             "
@@ -1413,7 +1412,6 @@ export class Quotation implements OnInit, OnDestroy {
           this.loadingService.stop();
 
           this.PagingSignal.set(res);
-          console.log(res);
 
           const timelines: { [key: string]: any[] } = {};
 
@@ -1568,7 +1566,7 @@ export class Quotation implements OnInit, OnDestroy {
         {
           label: 'Rejected',
           icon: 'pi pi-times-circle',
-          command: () => this.updateQuotationStatus(quotation.id, 'Rejected'),
+          command: () => this.updateQuotationStatus(quotation, 'Rejected'),
         },
         {
           label: 'View Details',
@@ -1586,12 +1584,12 @@ export class Quotation implements OnInit, OnDestroy {
         {
           label: 'Mark As Sent',
           icon: 'pi pi-send',
-          command: () => this.updateQuotationStatus(quotation.id, 'Sent'),
+          command: () => this.updateQuotationStatus(quotation, 'Sent'),
         },
         {
           label: 'Cancel',
           icon: 'pi pi-times-circle',
-          command: () => this.updateQuotationStatus(quotation.id, 'Cancelled'),
+          command: () => this.updateQuotationStatus(quotation, 'Cancelled'),
         },
         {
           label: 'View Details',
@@ -1605,21 +1603,14 @@ export class Quotation implements OnInit, OnDestroy {
     }
 
     if (status === 'Accepted') {
-      this.menuItems.push(
-        {
-          label: 'View Details',
-          icon: 'pi pi-eye',
-          command: () =>
-            this.router.navigate(['/quotations/details'], {
-              queryParams: { id: quotation.id },
-            }),
-        },
-        {
-          label: 'Download as PDF',
-          icon: 'pi pi-file-pdf',
-          command: () => this.ActionClick(quotation, 'Download'),
-        },
-      );
+      this.menuItems.push({
+        label: 'View Details',
+        icon: 'pi pi-eye',
+        command: () =>
+          this.router.navigate(['/quotations/details'], {
+            queryParams: { id: quotation.id },
+          }),
+      });
     }
 
     if (status === 'Rejected' || status === 'Expired') {
@@ -1653,11 +1644,11 @@ export class Quotation implements OnInit, OnDestroy {
     this.cdr.markForCheck();
   }
 
-  updateQuotationStatus(id: string, newStatus: string): void {
+  updateQuotationStatus(data: QuotationDto, newStatus: string): void {
     this.loadingService.start();
 
     this.quotationService
-      .UpdateStatus(id, newStatus)
+      .UpdateStatus(data.id, newStatus)
       .pipe(takeUntil(this.ngUnsubscribe))
       .subscribe({
         next: () => {
@@ -1666,7 +1657,7 @@ export class Quotation implements OnInit, OnDestroy {
           this.messageService.add({
             severity: 'success',
             summary: 'Status Updated',
-            detail: `Quotation is now ${newStatus}.`,
+            detail: `${data.quotationNo} is now ${newStatus}.`,
           });
 
           this.displayDetailsDrawer = false;

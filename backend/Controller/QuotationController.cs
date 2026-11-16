@@ -1778,6 +1778,25 @@ namespace YLWorks.Controller
             }
         }
 
+        private void DeleteClientPOFile(string? fullPath)
+        {
+            if (string.IsNullOrWhiteSpace(fullPath))
+                return;
+
+            try
+            {
+                if (System.IO.File.Exists(fullPath))
+                {
+                    System.IO.File.Delete(fullPath);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(
+                    $"Failed to delete Client PO attachment: {ex.Message}");
+            }
+        }
+
         // =========================================================
         // EXPORT EXCEL
         // =========================================================

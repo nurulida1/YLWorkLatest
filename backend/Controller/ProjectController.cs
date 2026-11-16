@@ -350,6 +350,53 @@ namespace YLWorks.Controller
             })
             .ToList(),
 
+        // Staff Tasks
+        StaffTasks = x.StaffTasks
+    .OrderBy(t => t.DueDate)
+    .Select(t => new
+    {
+        t.Id,
+        t.Title,
+        t.Description,
+        t.Priority,
+        t.Category,
+        t.Status,
+        t.StartDate,
+        t.DueDate,
+        t.ReminderAt,
+        t.EstimatedHours,
+        t.ActualHours,
+        t.CompletedAt,
+        t.ProjectId,
+        t.WorkOrderId,
+        t.AssignedToId,
+        t.AssignedById,
+        t.CreatedAt,
+        t.UpdatedAt,
+
+        AssignedTo = t.AssignedTo == null ? null : new
+        {
+            t.AssignedTo.Id,
+            t.AssignedTo.FullName,
+            t.AssignedTo.DisplayName,
+            t.AssignedTo.JobTitle,
+            t.AssignedTo.Email
+        },
+
+        AssignedBy = t.AssignedBy == null ? null : new
+        {
+            t.AssignedBy.Id,
+            t.AssignedBy.FullName,
+            t.AssignedBy.DisplayName
+        },
+
+        ChecklistCount = t.Checklists.Count(),
+
+        CompletedChecklistCount = t.Checklists.Count(c =>
+            c.IsCompleted)
+    })
+    .ToList(),
+
         // Project Attachments
         Attachments = x.Attachments
             .Where(a =>

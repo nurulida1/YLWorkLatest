@@ -1,3 +1,4 @@
+
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.Authorization;
@@ -21,39 +22,23 @@ namespace YLWorks.Controller
 
         private static readonly string[] AllowedPriorities =
         {
-            "Low",
-            "Medium",
-            "High",
-            "Urgent"
+            "Low", "Medium", "High", "Urgent"
         };
 
         private static readonly string[] AllowedCategories =
         {
-            "Admin",
-            "HR",
-            "Development",
-            "Documentation",
-            "Maintenance",
-            "Meeting",
-            "Training",
-            "Others"
+            "Admin", "HR", "Development", "Documentation",
+            "Maintenance", "Meeting", "Training", "Others"
         };
 
         private static readonly string[] AllowedStatuses =
         {
-            "Todo",
-            "InProgress",
-            "Pending",
-            "Completed",
-            "Cancelled"
+            "Todo", "InProgress", "Pending", "Completed", "Cancelled"
         };
 
         private static readonly string[] AllowedRecurringTypes =
         {
-            "Daily",
-            "Weekly",
-            "Monthly",
-            "Yearly"
+            "Daily", "Weekly", "Monthly", "Yearly"
         };
 
         public StaffTaskController(
@@ -107,9 +92,7 @@ namespace YLWorks.Controller
             var normalized = NormalizeValue(value, defaultValue);
 
             var matched = allowedValues.FirstOrDefault(x =>
-                x.Equals(
-                    normalized,
-                    StringComparison.OrdinalIgnoreCase));
+                x.Equals(normalized, StringComparison.OrdinalIgnoreCase));
 
             return matched ?? normalized;
         }
@@ -138,8 +121,7 @@ namespace YLWorks.Controller
                 });
             }
 
-            if (startDate.HasValue &&
-                dueDate < startDate.Value)
+            if (startDate.HasValue && dueDate < startDate.Value)
             {
                 return BadRequest(new
                 {
@@ -163,18 +145,14 @@ namespace YLWorks.Controller
                 });
             }
 
-            if (isRecurring)
+            if (isRecurring &&
+                (string.IsNullOrWhiteSpace(recurringType) ||
+                 !IsValidValue(recurringType, AllowedRecurringTypes)))
             {
-                if (string.IsNullOrWhiteSpace(recurringType) ||
-                    !IsValidValue(
-                        recurringType,
-                        AllowedRecurringTypes))
+                return BadRequest(new
                 {
-                    return BadRequest(new
-                    {
-                        Error = "A valid recurring type is required."
-                    });
-                }
+                    Error = "A valid recurring type is required."
+                });
             }
 
             return null;
@@ -184,15 +162,10 @@ namespace YLWorks.Controller
             string? priority,
             string? category)
         {
-            var normalizedPriority =
-                NormalizeValue(priority, "Medium");
+            var normalizedPriority = NormalizeValue(priority, "Medium");
+            var normalizedCategory = NormalizeValue(category, "Others");
 
-            var normalizedCategory =
-                NormalizeValue(category, "Others");
-
-            if (!IsValidValue(
-                normalizedPriority,
-                AllowedPriorities))
+            if (!IsValidValue(normalizedPriority, AllowedPriorities))
             {
                 return BadRequest(new
                 {
@@ -200,9 +173,7 @@ namespace YLWorks.Controller
                 });
             }
 
-            if (!IsValidValue(
-                normalizedCategory,
-                AllowedCategories))
+            if (!IsValidValue(normalizedCategory, AllowedCategories))
             {
                 return BadRequest(new
                 {
@@ -211,6 +182,32 @@ namespace YLWorks.Controller
             }
 
             return null;
+        }
+
+        // Validate optional project.
+        private async Task<bool> IsValidProject(Guid? projectId)
+        {
+            if (!projectId.HasValue)
+                return true;
+
+            return await _context.Projects
+                .AnyAsync(x => x.Id == projectId.Value);
+        }
+
+        // Validate WorkOrder and ensure it belongs to the selected project.
+        private async Task<bool> IsValidWorkOrder(
+            Guid? workOrderId,
+            Guid? projectId)
+        {
+            if (!workOrderId.HasValue)
+                return true;
+
+            if (!projectId.HasValue)
+                return false;
+
+            return await _context.WorkOrders.AnyAsync(x =>
+                x.Id == workOrderId.Value &&
+                x.ProjectId == projectId.Value);
         }
 
         private static string GetTaskStatusFromChecklist(
@@ -248,23 +245,8 @@ namespace YLWorks.Controller
             }
         }
 
-        private async Task<IActionResult> GetTaskNotFoundResponse()
-        {
-            return NotFound(new
-            {
-                Error = "Task not found."
-            });
-        }
-
         // ================================================================
         // FILTER EXPRESSION
-        //
-        // Supported:
-        // Status=Todo
-        // Priority=High
-        // Status=Todo,Priority=High
-        // Status=Todo|Status=InProgress
-        // Title=report
         // ================================================================
 
         private static Expression<Func<StaffTask, bool>>?
@@ -286,6 +268,7 @@ namespace YLWorks.Controller
                 "AssignedToId",
                 "AssignedById",
                 "ProjectId",
+                "WorkOrderId",
                 "IsRecurring",
                 "DueDate",
                 "StartDate",
@@ -341,43 +324,36 @@ namespace YLWorks.Controller
                         Expression.Property(parameter, propertyInfo);
 
                     var actualType =
-                        Nullable.GetUnderlyingType(
-                            propertyInfo.PropertyType)
+                        Nullable.GetUnderlyingType(propertyInfo.PropertyType)
                         ?? propertyInfo.PropertyType;
 
                     Expression condition;
 
-                    // STRING
                     if (actualType == typeof(string))
                     {
-                        var notNull =
-                            Expression.NotEqual(
-                                propertyAccess,
-                                Expression.Constant(null));
+                        var notNull = Expression.NotEqual(
+                            propertyAccess,
+                            Expression.Constant(null));
 
-                        var toLowerMethod =
-                            typeof(string).GetMethod(
-                                nameof(string.ToLower),
-                                Type.EmptyTypes)!;
+                        var toLowerMethod = typeof(string).GetMethod(
+                            nameof(string.ToLower),
+                            Type.EmptyTypes)!;
 
-                        var containsMethod =
-                            typeof(string).GetMethod(
-                                nameof(string.Contains),
-                                new[] { typeof(string) })!;
+                        var containsMethod = typeof(string).GetMethod(
+                            nameof(string.Contains),
+                            new[] { typeof(string) })!;
 
-                        var loweredProperty =
-                            Expression.Call(
-                                propertyAccess,
-                                toLowerMethod);
+                        var loweredProperty = Expression.Call(
+                            propertyAccess,
+                            toLowerMethod);
 
                         var loweredValue =
                             Expression.Constant(value.ToLower());
 
-                        var contains =
-                            Expression.Call(
-                                loweredProperty,
-                                containsMethod,
-                                loweredValue);
+                        var contains = Expression.Call(
+                            loweredProperty,
+                            containsMethod,
+                            loweredValue);
 
                         condition = Expression.AndAlso(
                             notNull,
@@ -385,8 +361,6 @@ namespace YLWorks.Controller
                                 ? Expression.Not(contains)
                                 : contains);
                     }
-
-                    // GUID / NULLABLE GUID
                     else if (actualType == typeof(Guid))
                     {
                         if (!Guid.TryParse(value, out var guidValue))
@@ -402,15 +376,14 @@ namespace YLWorks.Controller
                                     propertyInfo.PropertyType)
                                 : constant;
 
-                        var equal =
-                            Expression.Equal(propertyAccess, right);
+                        var equal = Expression.Equal(
+                            propertyAccess,
+                            right);
 
                         condition = isNotEqual
                             ? Expression.Not(equal)
                             : equal;
                     }
-
-                    // BOOLEAN
                     else if (actualType == typeof(bool))
                     {
                         if (!bool.TryParse(value, out var boolValue))
@@ -424,19 +397,12 @@ namespace YLWorks.Controller
                             ? Expression.Not(equal)
                             : equal;
                     }
-
-                    // DATE / NULLABLE DATE
                     else if (actualType == typeof(DateTime))
                     {
-                        if (!DateTime.TryParse(
-                            value,
-                            out var dateValue))
-                        {
+                        if (!DateTime.TryParse(value, out var dateValue))
                             continue;
-                        }
 
-                        var constant =
-                            Expression.Constant(dateValue);
+                        var constant = Expression.Constant(dateValue);
 
                         Expression right =
                             propertyInfo.PropertyType == typeof(DateTime?)
@@ -445,8 +411,9 @@ namespace YLWorks.Controller
                                     propertyInfo.PropertyType)
                                 : constant;
 
-                        var equal =
-                            Expression.Equal(propertyAccess, right);
+                        var equal = Expression.Equal(
+                            propertyAccess,
+                            right);
 
                         condition = isNotEqual
                             ? Expression.Not(equal)
@@ -459,9 +426,7 @@ namespace YLWorks.Controller
 
                     orExpression = orExpression == null
                         ? condition
-                        : Expression.AndAlso(
-                            orExpression,
-                            condition);
+                        : Expression.AndAlso(orExpression, condition);
                 }
 
                 if (orExpression != null)
@@ -567,6 +532,7 @@ namespace YLWorks.Controller
             try
             {
                 page = Math.Max(1, page);
+
                 pageSize = pageSize switch
                 {
                     <= 0 => 10,
@@ -582,8 +548,7 @@ namespace YLWorks.Controller
 
                 if (!string.IsNullOrWhiteSpace(filter))
                 {
-                    var expression =
-                        BuildFilterExpression(filter);
+                    var expression = BuildFilterExpression(filter);
 
                     if (expression != null)
                         query = query.Where(expression);
@@ -601,6 +566,7 @@ namespace YLWorks.Controller
                         t.Id,
                         t.Title,
                         t.Description,
+
                         t.ProjectId,
                         Project = t.Project == null ? null : new
                         {
@@ -608,8 +574,11 @@ namespace YLWorks.Controller
                             t.Project.ProjectCode,
                             t.Project.ProjectTitle
                         },
-                        t.AssignedToId,
 
+                        // WORK ORDER
+                        t.WorkOrderId,
+
+                        t.AssignedToId,
                         AssignedTo = t.AssignedTo == null
                             ? null
                             : new
@@ -619,7 +588,6 @@ namespace YLWorks.Controller
                             },
 
                         t.AssignedById,
-
                         AssignedBy = t.AssignedBy == null
                             ? null
                             : new
@@ -696,8 +664,7 @@ namespace YLWorks.Controller
         // ================================================================
 
         [HttpGet("GetOne")]
-        public async Task<IActionResult> GetOne(
-            [FromQuery] Guid id)
+        public async Task<IActionResult> GetOne([FromQuery] Guid id)
         {
             if (!TryGetCurrentUserId(out var currentUserId))
                 return Unauthorized(new { Error = "Invalid user." });
@@ -717,6 +684,7 @@ namespace YLWorks.Controller
                         x.Id,
                         x.Title,
                         x.Description,
+
                         x.ProjectId,
                         Project = x.Project == null ? null : new
                         {
@@ -724,8 +692,11 @@ namespace YLWorks.Controller
                             x.Project.ProjectCode,
                             x.Project.ProjectTitle
                         },
-                        x.AssignedById,
 
+                        // WORK ORDER
+                        x.WorkOrderId,
+
+                        x.AssignedById,
                         AssignedBy = x.AssignedBy == null
                             ? null
                             : new
@@ -737,7 +708,6 @@ namespace YLWorks.Controller
                             },
 
                         x.AssignedToId,
-
                         AssignedTo = x.AssignedTo == null
                             ? null
                             : new
@@ -813,10 +783,9 @@ namespace YLWorks.Controller
         // CREATE
         // ================================================================
 
-
         [HttpPost("Create")]
         public async Task<IActionResult> AddTask(
-    [FromBody] CreateStaffTaskRequest request)
+            [FromBody] CreateStaffTaskRequest request)
         {
             if (!TryGetCurrentUserId(out var currentUserId))
                 return Unauthorized(new { Error = "Invalid user." });
@@ -844,7 +813,6 @@ namespace YLWorks.Controller
 
             try
             {
-                // Validate optional project.
                 if (!await IsValidProject(request.ProjectId))
                 {
                     return BadRequest(new
@@ -853,7 +821,17 @@ namespace YLWorks.Controller
                     });
                 }
 
-                // Null means personal task.
+                // Validate WorkOrder and project relationship.
+                if (!await IsValidWorkOrder(
+                    request.WorkOrderId,
+                    request.ProjectId))
+                {
+                    return BadRequest(new
+                    {
+                        Error = "The selected Work Order does not belong to the selected project."
+                    });
+                }
+
                 var assignedToId =
                     request.AssignedToId ?? currentUserId;
 
@@ -906,13 +884,15 @@ namespace YLWorks.Controller
 
                     EstimatedHours = request.EstimatedHours,
 
-                    // OPTIONAL PROJECT
+                    // PROJECT
                     ProjectId = request.ProjectId,
+
+                    // WORK ORDER
+                    WorkOrderId = request.WorkOrderId,
 
                     CreatedAt = DateTimeHelper.Now()
                 };
 
-                // Add checklists.
                 if (request.Checklists?.Any() == true)
                 {
                     var sequence = 1;
@@ -930,7 +910,6 @@ namespace YLWorks.Controller
                                 Title = item.Title.Trim(),
                                 IsCompleted = false,
                                 CompletedAt = null,
-
                                 Sequence = item.Sequence > 0
                                     ? item.Sequence
                                     : sequence
@@ -944,7 +923,6 @@ namespace YLWorks.Controller
 
                 await _context.SaveChangesAsync();
 
-                // Notify assigned employee.
                 if (assignedToId != currentUserId)
                 {
                     await SendTaskNotification(
@@ -977,7 +955,7 @@ namespace YLWorks.Controller
 
         [HttpPut("Update")]
         public async Task<IActionResult> Update(
-    [FromBody] UpdateStaffTaskRequest request)
+            [FromBody] UpdateStaffTaskRequest request)
         {
             if (!TryGetCurrentUserId(out var currentUserId))
                 return Unauthorized(new { Error = "Invalid user." });
@@ -1013,12 +991,22 @@ namespace YLWorks.Controller
 
             try
             {
-                // Validate optional project.
                 if (!await IsValidProject(request.ProjectId))
                 {
                     return BadRequest(new
                     {
                         Error = "Project not found."
+                    });
+                }
+
+                // Validate WorkOrder and project relationship.
+                if (!await IsValidWorkOrder(
+                    request.WorkOrderId,
+                    request.ProjectId))
+                {
+                    return BadRequest(new
+                    {
+                        Error = "The selected Work Order does not belong to the selected project."
                     });
                 }
 
@@ -1029,7 +1017,6 @@ namespace YLWorks.Controller
                 if (task == null)
                     return NotFound(new { Error = "Task not found." });
 
-                // Only creator / assigner can edit task details.
                 if (task.AssignedById != currentUserId)
                     return Forbid();
 
@@ -1092,10 +1079,12 @@ namespace YLWorks.Controller
 
                 task.EstimatedHours = request.EstimatedHours;
 
-                // OPTIONAL PROJECT
-                // Null clears the project's association.
-
+                // PROJECT
                 task.ProjectId = request.ProjectId;
+
+                // WORK ORDER
+                // Null removes the WorkOrder association.
+                task.WorkOrderId = request.WorkOrderId;
 
                 // SYNC CHECKLISTS
 
@@ -1145,7 +1134,6 @@ namespace YLWorks.Controller
                     }
 
                     checklist.Title = item.Title.Trim();
-
                     checklist.IsCompleted = item.IsCompleted;
 
                     checklist.CompletedAt = item.IsCompleted
@@ -1206,12 +1194,12 @@ namespace YLWorks.Controller
 
                 await _context.SaveChangesAsync();
 
-                // Notify assigned employee when the task is assigned or updated.
+                // NOTIFICATIONS
+
                 if (assignedToId != currentUserId)
                 {
                     if (assignedToId != previousAssignedToId)
                     {
-                        // New employee assigned.
                         await SendTaskNotification(
                             assignedToId,
                             "Task Assigned to You",
@@ -1220,7 +1208,6 @@ namespace YLWorks.Controller
                     }
                     else
                     {
-                        // Existing assignee: task details have been updated.
                         await SendTaskNotification(
                             assignedToId,
                             "Task Updated",
@@ -1229,7 +1216,6 @@ namespace YLWorks.Controller
                     }
                 }
 
-                // Notify previous assignee.
                 if (previousAssignedToId.HasValue &&
                     previousAssignedToId.Value != currentUserId &&
                     previousAssignedToId.Value != assignedToId)
@@ -1257,6 +1243,7 @@ namespace YLWorks.Controller
                 });
             }
         }
+
         // ================================================================
         // REOPEN
         // ================================================================
@@ -1276,7 +1263,6 @@ namespace YLWorks.Controller
                 if (task == null)
                     return NotFound(new { Error = "Task not found." });
 
-                // Only assigned staff can reopen.
                 if (task.AssignedToId != currentUserId)
                     return Forbid();
 
@@ -1284,7 +1270,6 @@ namespace YLWorks.Controller
                 task.CompletedAt = null;
                 task.CompletedById = null;
 
-                // Reset checklist completion to keep the task consistent.
                 foreach (var checklist in task.Checklists)
                 {
                     checklist.IsCompleted = false;
@@ -1293,7 +1278,6 @@ namespace YLWorks.Controller
 
                 await _context.SaveChangesAsync();
 
-                // Notify the creator / assigner.
                 if (task.AssignedById != currentUserId)
                 {
                     await SendTaskNotification(
@@ -1325,8 +1309,7 @@ namespace YLWorks.Controller
         // ================================================================
 
         [HttpDelete("Delete")]
-        public async Task<ActionResult> DeleteTask(
-            [FromQuery] Guid id)
+        public async Task<ActionResult> DeleteTask([FromQuery] Guid id)
         {
             if (!TryGetCurrentUserId(out var currentUserId))
                 return Unauthorized(new { Error = "Invalid user." });
@@ -1340,17 +1323,14 @@ namespace YLWorks.Controller
                 if (task == null)
                     return NotFound(new { Error = "Task not found." });
 
-                // Only creator / assigner can delete.
-                if (task.AssignedById != currentUserId)
+                // SuperAdmin can delete any task.
+                // Other users can only delete tasks they assigned.
+                bool isSuperAdmin = User.IsInRole("SuperAdmin");
+
+                if (!isSuperAdmin && task.AssignedById != currentUserId)
                     return Forbid();
 
-                if (task.Checklists.Any())
-                {
-                    _context.StaffTaskChecklists.RemoveRange(
-                        task.Checklists);
-                }
-
-                // Notify assigned employee before deleting the task.
+                // Notify assigned user before deletion.
                 if (task.AssignedToId.HasValue &&
                     task.AssignedToId.Value != currentUserId)
                 {
@@ -1361,10 +1341,28 @@ namespace YLWorks.Controller
                         task.Id);
                 }
 
+                // Preserve daily report history by unlinking the task.
+                var dailyReportTasks = await _context.DailyReportTasks
+                    .Where(x => x.StaffTaskId == id)
+                    .ToListAsync();
+
+                foreach (var reportTask in dailyReportTasks)
+                {
+                    reportTask.StaffTaskId = null;
+                }
+
+                // Delete related checklists.
+                if (task.Checklists.Any())
+                {
+                    _context.StaffTaskChecklists.RemoveRange(task.Checklists);
+                }
+
+                // Delete the staff task.
                 _context.StaffTasks.Remove(task);
 
                 await _context.SaveChangesAsync();
 
+                // Notify connected clients.
                 await _hub.Clients.All.SendAsync(
                     "StaffTaskDeleted",
                     id);
@@ -1375,15 +1373,16 @@ namespace YLWorks.Controller
                     Id = id
                 });
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Console.WriteLine($"Failed to delete task {id}: {ex}");
+
                 return StatusCode(500, new
                 {
                     Error = "Failed to delete task."
                 });
             }
         }
-
         // ================================================================
         // COMPLETE
         // ================================================================
@@ -1412,7 +1411,6 @@ namespace YLWorks.Controller
                 if (task == null)
                     return NotFound(new { Error = "Task not found." });
 
-                // Only assigned staff can complete.
                 if (task.AssignedToId != currentUserId)
                     return Forbid();
 
@@ -1427,7 +1425,6 @@ namespace YLWorks.Controller
 
                 await _context.SaveChangesAsync();
 
-                // Notify the creator / assigner.
                 if (task.AssignedById != currentUserId)
                 {
                     await SendTaskNotification(
@@ -1517,6 +1514,9 @@ namespace YLWorks.Controller
                             x.Project.ProjectTitle
                         },
 
+                    // WORK ORDER
+                    x.WorkOrderId,
+
                     // ASSIGNMENT
                     x.AssignedById,
 
@@ -1595,6 +1595,7 @@ namespace YLWorks.Controller
                 })
                 .FirstOrDefaultAsync();
         }
+
         // ================================================================
         // GET SUMMARY
         // ================================================================
@@ -1613,9 +1614,6 @@ namespace YLWorks.Controller
                         t.AssignedToId == currentUserId ||
                         t.AssignedById == currentUserId);
 
-                // Tasks assigned to the current user.
-                // Personal tasks are also assigned to the current user
-                // when created or updated through this controller.
                 var myTasksQuery = query.Where(t =>
                     t.AssignedToId == currentUserId);
 
@@ -1680,7 +1678,6 @@ namespace YLWorks.Controller
                 if (task == null)
                     return NotFound(new { Error = "Task not found." });
 
-                // Only assigned staff can update checklist.
                 if (task.AssignedToId != currentUserId)
                     return Forbid();
 
@@ -1694,7 +1691,6 @@ namespace YLWorks.Controller
                     var checklist = task.Checklists.FirstOrDefault(x =>
                         x.Id == item.Id);
 
-                    // Ignore IDs that do not belong to this task.
                     if (checklist == null)
                         continue;
 
@@ -1741,6 +1737,9 @@ namespace YLWorks.Controller
             }
         }
 
+        // ================================================================
+        // NOTIFICATION
+        // ================================================================
 
         private async Task SendTaskNotification(
             Guid userId,
@@ -1760,12 +1759,10 @@ namespace YLWorks.Controller
                 CreatedAt = DateTimeHelper.Now()
             };
 
-            // Save notification to database.
             _context.Notifications.Add(notification);
 
             await _context.SaveChangesAsync();
 
-            // Send real-time notification to the intended user.
             await _hub.Clients
                 .Group($"user-{userId}")
                 .SendAsync("ReceiveNotification", new
@@ -1780,15 +1777,5 @@ namespace YLWorks.Controller
                     createdAt = notification.CreatedAt
                 });
         }
-
-        private async Task<bool> IsValidProject(Guid? projectId)
-        {
-            if (!projectId.HasValue)
-                return true;
-
-            return await _context.Projects
-                .AnyAsync(x => x.Id == projectId.Value);
-        }
-
     }
 }

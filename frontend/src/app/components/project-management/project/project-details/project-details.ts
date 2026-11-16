@@ -32,7 +32,6 @@ import { DatePickerModule } from 'primeng/datepicker';
 import { MultiSelectModule } from 'primeng/multiselect';
 import { TextareaModule } from 'primeng/textarea';
 import { ValidateAllFormFields } from '../../../../shared/helpers/helpers';
-import { ProjectTaskService } from '../../../../services/ProjectTaskService';
 import { TagModule } from 'primeng/tag';
 import { ChipModule } from 'primeng/chip';
 import { AvatarModule } from 'primeng/avatar';
@@ -41,6 +40,9 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { JobSheetDto } from '../../../../models/JobSheets';
 import { JobSheetService } from '../../../../services/JobSheetService';
 import { DrawerModule } from 'primeng/drawer';
+import { StaffTaskService } from '../../../../services/staffTaskService';
+import { StaffTaskDto } from '../../../../models/StaffTask';
+import { UserService } from '../../../../services/userService.service';
 
 @Component({
   selector: 'app-project-details',
@@ -146,9 +148,9 @@ import { DrawerModule } from 'primeng/drawer';
           ></p-button>
         </div>
 
-        <div class="project-heading-meta">
+        <div class="project-heading-meta text-xs">
           <span class="project-meta-item">
-            <i class="pi pi-circle-fill text-[7px]!"></i>
+            <i class="pi pi-circle-fill text-[5px]!"></i>
             {{
               PagingSignal().status === 'InProgress'
                 ? 'In Progress'
@@ -195,19 +197,18 @@ import { DrawerModule } from 'primeng/drawer';
 
         <article class="project-summary-card">
           <div class="flex items-center justify-between gap-2">
-            <span class="text-gray-500 text-sm">Estimated budget</span>
-            <span class="project-summary-icon"
-              ><i class="pi pi-wallet"></i
-            ></span>
+            <span class="text-gray-500 text-sm">Work Orders</span>
+            <span class="project-summary-icon">
+              <i class="pi pi-clipboard"></i>
+            </span>
           </div>
+
           <p class="project-summary-value mt-4 break-words text-xl sm:text-2xl">
-            {{
-              PagingSignal().estimatedBudget
-                | currency: 'RM ' : 'symbol' : '1.2-2'
-            }}
+            {{ PagingSignal().workOrders?.length ?? 0 }}
           </p>
+
           <p class="mt-2 text-[11px] text-slate-400">
-            Allocated project budget
+            Total project work orders
           </p>
         </article>
 
@@ -219,7 +220,7 @@ import { DrawerModule } from 'primeng/drawer';
             ></span>
           </div>
           <p class="project-summary-value mt-4">
-            {{ PagingSignal().projectTasks.length || 0 }}
+            {{ PagingSignal().staffTasks.length || 0 }}
           </p>
           <p class="mt-2 text-[11px] text-slate-400">Total assigned tasks</p>
         </article>
@@ -243,19 +244,29 @@ import { DrawerModule } from 'primeng/drawer';
             <p-tab value="0">
               <i class="pi pi-th-large mr-2"></i>Overview
             </p-tab>
+
             <p-tab value="1">
-              <i class="pi pi-list-check mr-2"></i>Tasks
-              <span class="project-tab-count">{{
-                PagingSignal().projectTasks.length || 0
-              }}</span>
+              <i class="pi pi-clipboard mr-2"></i>Work Orders
+              <span class="project-tab-count">
+                {{ PagingSignal().workOrders?.length || 0 }}
+              </span>
             </p-tab>
+
             <p-tab value="2">
-              <i class="pi pi-box mr-2"></i>Materials
-              <span class="project-tab-count">{{
-                PagingSignal().siteMaterialRequests?.length || 0
-              }}</span>
+              <i class="pi pi-list-check mr-2"></i>Tasks
+              <span class="project-tab-count">
+                {{ PagingSignal().staffTasks?.length || 0 }}
+              </span>
             </p-tab>
+
             <p-tab value="3">
+              <i class="pi pi-box mr-2"></i>Materials
+              <span class="project-tab-count">
+                {{ PagingSignal().siteMaterialRequests?.length || 0 }}
+              </span>
+            </p-tab>
+
+            <p-tab value="4">
               <i class="pi pi-clipboard mr-2"></i>Job Sheets
               <span class="project-tab-count">{{ jobSheets.length }}</span>
             </p-tab>
@@ -280,7 +291,7 @@ import { DrawerModule } from 'primeng/drawer';
                       </div>
                     </div>
                     <p
-                      class="whitespace-pre-line text-sm leading-7 text-slate-600"
+                      class="whitespace-pre-line leading-7 text-slate-600 pt-3"
                     >
                       {{
                         PagingSignal().description ||
@@ -306,22 +317,27 @@ import { DrawerModule } from 'primeng/drawer';
                         </div>
                       </div>
 
-                      <p class="text-sm font-semibold text-slate-900">
-                        {{ PagingSignal().client.name || 'No client assigned' }}
-                      </p>
-
                       <div
-                        class="mt-4 flex items-start gap-2 border-t border-slate-100 pt-3 text-sm text-slate-500"
+                        class="mt-4 flex flex-col border-t border-slate-100 gap-2"
                       >
-                        <i class="pi pi-map-marker mt-0.5 text-slate-400"></i>
-                        <span>{{
-                          PagingSignal().location || 'No location provided'
-                        }}</span>
+                        <p class="text-sm font-semibold text-slate-900 pt-3">
+                          {{
+                            PagingSignal().client.name || 'No client assigned'
+                          }}
+                        </p>
+                        <div
+                          class="flex flex-row items-center gap-2 text-sm text-slate-500"
+                        >
+                          <i class="pi pi-map-marker mt-0.5 text-slate-400"></i>
+                          <span>{{
+                            PagingSignal().location || 'No location provided'
+                          }}</span>
+                        </div>
                       </div>
                     </section>
 
                     <section class="project-panel">
-                      <div class="project-panel-heading">
+                      <div class="project-panel-heading mb-3">
                         <span class="project-panel-icon"
                           ><i class="pi pi-user"></i
                         ></span>
@@ -333,22 +349,22 @@ import { DrawerModule } from 'primeng/drawer';
                         </div>
                       </div>
 
-                      <div class="flex min-w-0 items-center gap-3">
+                      <div
+                        class="flex min-w-0 items-center gap-3 border-t border-gray-100 pt-3"
+                      >
                         <div class="project-person-avatar">
                           {{
                             getInitial(PagingSignal().projectLeader.fullName)
                           }}
                         </div>
                         <div class="min-w-0">
-                          <p
-                            class="truncate text-sm font-semibold text-slate-900"
-                          >
+                          <p class="truncate font-semibold text-slate-900">
                             {{
                               PagingSignal().projectLeader.fullName ||
                                 'Not assigned'
                             }}
                           </p>
-                          <p class="mt-1 truncate text-xs text-slate-500">
+                          <p class="mt-1 truncate text-sm text-slate-500">
                             {{ PagingSignal().projectLeader.jobTitle || '-' }}
                           </p>
                         </div>
@@ -386,12 +402,10 @@ import { DrawerModule } from 'primeng/drawer';
                           {{ getInitial(member.user.fullName) }}
                         </div>
                         <div class="min-w-0">
-                          <p
-                            class="truncate text-sm font-semibold text-slate-800"
-                          >
+                          <p class="truncate font-semibold text-slate-800">
                             {{ member.user.fullName || 'Unknown user' }}
                           </p>
-                          <p class="mt-1 truncate text-xs text-slate-500">
+                          <p class="mt-1 truncate text-sm text-slate-500">
                             {{ member.user.jobTitle || '-' }}
                           </p>
                         </div>
@@ -422,10 +436,10 @@ import { DrawerModule } from 'primeng/drawer';
                   </div>
 
                   <div class="space-y-5">
-                    <div class="project-timeline-item">
+                    <div class="project-timeline-item pt-3">
                       <span class="project-timeline-dot"></span>
                       <div>
-                        <p class="text-xs text-slate-500">Start date</p>
+                        <p class="text-sm text-slate-500">Start date</p>
                         <p class="mt-1 text-sm font-semibold text-slate-900">
                           {{
                             PagingSignal().startDate
@@ -439,7 +453,7 @@ import { DrawerModule } from 'primeng/drawer';
                     <div class="project-timeline-item">
                       <span class="project-timeline-dot"></span>
                       <div>
-                        <p class="text-xs text-slate-500">
+                        <p class="text-sm text-slate-500">
                           Estimated completion
                         </p>
                         <p class="mt-1 text-sm font-semibold text-slate-900">
@@ -454,11 +468,11 @@ import { DrawerModule } from 'primeng/drawer';
                     </div>
 
                     <div class="border-t border-slate-100 pt-4">
-                      <p class="text-xs font-medium text-slate-500">
+                      <p class="text-sm font-medium text-slate-500">
                         Remaining days
                       </p>
                       <span
-                        class="mt-2 inline-flex rounded-md px-3 py-1.5 text-xs font-semibold"
+                        class="mt-2 inline-flex rounded-md px-3 py-1.5 text-sm font-semibold"
                         [ngClass]="{
                           'bg-red-50 text-red-700':
                             getRemainingDaysValue(
@@ -488,13 +502,245 @@ import { DrawerModule } from 'primeng/drawer';
                 </aside>
               </div>
             </p-tabpanel>
-
-            <!-- TASKS -->
+            <!-- WORK ORDERS -->
             <p-tabpanel value="1">
               <div class="project-section-toolbar">
                 <div>
-                  <h2 class="project-section-title">Project tasks</h2>
+                  <h2 class="project-section-title">Project Work Orders</h2>
                   <p class="project-section-description">
+                    Manage work orders and monitor the tasks assigned under each
+                    work order.
+                  </p>
+                </div>
+
+                <p-button
+                  label="Create Work Order"
+                  icon="pi pi-plus"
+                  size="small"
+                  styleClass="w-full sm:w-auto bg-blue-700! border-none! hover:bg-blue-500! py-2! px-4!"
+                  (onClick)="ActionClick('createWorkOrder')"
+                ></p-button>
+              </div>
+
+              <!-- Work Order cards -->
+              <ng-container
+                *ngIf="PagingSignal().workOrders?.length; else noWorkOrders"
+              >
+                <div class="space-y-4">
+                  <article
+                    *ngFor="let workOrder of PagingSignal().workOrders"
+                    class="overflow-hidden rounded-xl border border-slate-200 bg-white"
+                  >
+                    <!-- Work Order header -->
+                    <div
+                      class="flex flex-col gap-3 border-b border-slate-100 p-4 sm:flex-row sm:items-start sm:justify-between"
+                    >
+                      <div class="min-w-0">
+                        <p
+                          class="text-sm font-bold text-blue-700 cursor-pointer hover:underline"
+                          [routerLink]="'/work-order/details'"
+                          [queryParams]="{ id: workOrder.id }"
+                        >
+                          {{ workOrder.workOrderNo }}
+                        </p>
+
+                        <h3
+                          class="mt-1 break-words text-base font-bold text-slate-900"
+                        >
+                          {{ workOrder.title || 'Untitled Work Order' }}
+                        </h3>
+
+                        <p
+                          class="mt-1 text-sm text-slate-700 bg-slate-100 px-2 py-1 rounded-md w-fit"
+                        >
+                          {{ workOrder.workType || 'General Work Order' }}
+                        </p>
+                      </div>
+
+                      <div class="flex flex-wrap items-center gap-2">
+                        <p-tag
+                          [value]="workOrder.status"
+                          [severity]="
+                            workOrder.status === 'Completed'
+                              ? 'success'
+                              : workOrder.status === 'Cancelled'
+                                ? 'danger'
+                                : workOrder.status === 'OnHold'
+                                  ? 'warn'
+                                  : workOrder.status === 'Assigned'
+                                    ? 'info'
+                                    : 'secondary'
+                          "
+                        ></p-tag>
+
+                        <p-tag
+                          [value]="workOrder.priority"
+                          [severity]="
+                            workOrder.priority === 'Urgent' ||
+                            workOrder.priority === 'Critical'
+                              ? 'danger'
+                              : workOrder.priority === 'High'
+                                ? 'warn'
+                                : workOrder.priority === 'Medium'
+                                  ? 'info'
+                                  : 'success'
+                          "
+                        ></p-tag>
+                      </div>
+                    </div>
+
+                    <!-- Work Order details -->
+                    <div class="grid grid-cols-1 gap-4 p-4 sm:grid-cols-3">
+                      <div>
+                        <p class="text-sm text-slate-400">Location</p>
+                        <p class="mt-1 font-medium text-slate-700">
+                          {{
+                            workOrder.location || PagingSignal().location || '-'
+                          }}
+                        </p>
+                      </div>
+
+                      <div>
+                        <p class="text-sm text-slate-400">Assigned to</p>
+                        <p class="mt-1 font-medium text-slate-700">
+                          {{ workOrder.assignedTo?.fullName || 'Not assigned' }}
+                        </p>
+                      </div>
+
+                      <div>
+                        <p class="text-sm text-slate-400">Tasks</p>
+                        <p class="mt-1 font-medium text-slate-700">
+                          {{
+                            workOrder.tasks?.length || workOrder.taskCount || 0
+                          }}
+                          tasks
+                        </p>
+                      </div>
+                    </div>
+
+                    <!-- Scope of work -->
+                    <div class="border-t border-slate-100 px-4 py-3">
+                      <p class="mb-1 text-sm font-semibold text-slate-500">
+                        Scope of Work
+                      </p>
+                      <p class="whitespace-pre-line leading-6 text-slate-600">
+                        {{
+                          workOrder.scopeOfWork || workOrder.description || '-'
+                        }}
+                      </p>
+                    </div>
+
+                    <!-- Tasks under this Work Order -->
+                    <div class="border-t border-slate-100 bg-slate-50/70 p-4">
+                      <div
+                        class="mb-3 flex flex-wrap items-center justify-between gap-2"
+                      >
+                        <div>
+                          <h4 class="font-bold text-slate-800">
+                            Assigned Tasks
+                          </h4>
+                          <p class="mt-1 text-sm text-slate-400">
+                            Tasks associated with {{ workOrder.workOrderNo }}
+                          </p>
+                        </div>
+
+                        <span
+                          class="rounded-full bg-blue-50 px-2.5 py-1 text-sm font-semibold text-blue-700"
+                        >
+                          {{ workOrder.tasks?.length || 0 }} tasks
+                        </span>
+                      </div>
+
+                      <ng-container
+                        *ngIf="workOrder.tasks?.length; else noWorkOrderTasks"
+                      >
+                        <div class="space-y-2">
+                          <div
+                            *ngFor="let task of workOrder.tasks"
+                            class="flex flex-col gap-3 rounded-lg border border-slate-200 bg-white p-3 sm:flex-row sm:items-center sm:justify-between"
+                          >
+                            <div class="min-w-0">
+                              <h5
+                                class="break-words font-semibold text-slate-800"
+                              >
+                                {{ task.title }}
+                              </h5>
+
+                              <p
+                                class="mt-1 whitespace-pre-line text-sm leading-5 text-slate-500"
+                              >
+                                {{
+                                  task.description || 'No description provided.'
+                                }}
+                              </p>
+
+                              <div
+                                class="mt-2 flex flex-wrap items-center gap-3 text-sm text-slate-400"
+                              >
+                                <span>
+                                  <i class="pi pi-user mr-1"></i>
+                                  {{
+                                    task.assignedTo?.fullName || 'Not assigned'
+                                  }}
+                                </span>
+
+                                <span *ngIf="task.dueDate">
+                                  <i class="pi pi-calendar mr-1"></i>
+                                  {{ task.dueDate | date: 'dd MMM yyyy' }}
+                                </span>
+                              </div>
+                            </div>
+
+                            <div class="flex shrink-0 items-center gap-2">
+                              <p-tag
+                                [value]="task.status"
+                                [severity]="
+                                  task.status === 'Completed'
+                                    ? 'success'
+                                    : task.status === 'InProgress'
+                                      ? 'info'
+                                      : task.status === 'Pending'
+                                        ? 'warn'
+                                        : task.status === 'Cancelled'
+                                          ? 'danger'
+                                          : 'secondary'
+                                "
+                              ></p-tag>
+                            </div>
+                          </div>
+                        </div>
+                      </ng-container>
+
+                      <ng-template #noWorkOrderTasks>
+                        <div
+                          class="rounded-lg border border-dashed border-slate-200 bg-white py-6 text-center"
+                        >
+                          <i
+                            class="pi pi-list-check text-xl! text-slate-300"
+                          ></i>
+                          <p class="mt-2 text-sm text-slate-400">
+                            No tasks assigned to this Work Order yet.
+                          </p>
+                        </div>
+                      </ng-template>
+                    </div>
+                  </article>
+                </div>
+              </ng-container>
+
+              <ng-template #noWorkOrders>
+                <div class="project-empty">
+                  <i class="pi pi-clipboard"></i>
+                  <p>No Work Orders created for this project.</p>
+                </div>
+              </ng-template>
+            </p-tabpanel>
+            <!-- TASKS -->
+            <p-tabpanel value="2">
+              <div class="project-section-toolbar">
+                <div>
+                  <h2 class="project-section-title text-lg">Project tasks</h2>
+                  <p class="project-section-description text-sm">
                     Manage milestones, task progress and team assignments.
                   </p>
                 </div>
@@ -502,31 +748,28 @@ import { DrawerModule } from 'primeng/drawer';
                   label="Add task"
                   icon="pi pi-plus"
                   size="small"
-                  styleClass="w-full sm:w-auto py-3! bg-blue-700! hover:bg-blue-500! border-none!"
+                  styleClass="w-full sm:w-auto py-2! px-3! bg-blue-700! hover:bg-blue-500! border-none!"
                   (onClick)="OpenTaskDialog()"
                 ></p-button>
               </div>
 
               <!-- Mobile task cards -->
               <div class="space-y-3 lg:hidden">
-                <ng-container
-                  *ngIf="PagingSignal().projectTasks?.length; else noTasks"
-                >
+                <ng-container *ngIf="directProjectTasks?.length; else noTasks">
                   <article
-                    *ngFor="let data of PagingSignal().projectTasks"
+                    *ngFor="let data of directProjectTasks"
                     class="project-record"
                   >
+                    <!-- Title and status -->
                     <div class="flex items-start justify-between gap-3">
                       <div class="min-w-0">
-                        <p class="text-xs font-semibold text-blue-700">
-                          {{ data.taskCode }}
-                        </p>
                         <h3
                           class="mt-1 break-words text-sm font-semibold text-slate-900"
                         >
                           {{ data.title }}
                         </h3>
                       </div>
+
                       <p-tag
                         [value]="data.status"
                         [severity]="
@@ -534,7 +777,7 @@ import { DrawerModule } from 'primeng/drawer';
                             ? 'success'
                             : data.status === 'InProgress'
                               ? 'info'
-                              : data.status === 'Review'
+                              : data.status === 'Pending'
                                 ? 'warn'
                                 : data.status === 'Cancelled'
                                   ? 'danger'
@@ -543,17 +786,19 @@ import { DrawerModule } from 'primeng/drawer';
                       ></p-tag>
                     </div>
 
+                    <!-- Description -->
                     <p
                       class="mt-3 whitespace-pre-line text-sm leading-6 text-slate-500"
                     >
                       {{ data.description || 'No description provided.' }}
                     </p>
 
+                    <!-- Priority and due date -->
                     <div class="mt-3 flex flex-wrap items-center gap-2">
                       <p-tag
                         [value]="data.priority"
                         [severity]="
-                          data.priority === 'Critical'
+                          data.priority === 'Urgent'
                             ? 'danger'
                             : data.priority === 'High'
                               ? 'warn'
@@ -563,6 +808,7 @@ import { DrawerModule } from 'primeng/drawer';
                         "
                         [rounded]="true"
                       ></p-tag>
+
                       <span class="text-xs text-slate-500">
                         <i class="pi pi-calendar mr-1"></i>
                         {{
@@ -573,67 +819,84 @@ import { DrawerModule } from 'primeng/drawer';
                       </span>
                     </div>
 
+                    <!-- Assignee and checklist progress -->
                     <div
                       class="mt-4 flex items-center justify-between gap-3 border-t border-slate-100 pt-3"
                     >
-                      <div class="flex flex-wrap items-center gap-1">
-                        <ng-container
-                          *ngFor="let member of data.assignedTaskMembers"
-                        >
-                          <p-avatar
-                            [label]="getInitial(member.user.fullName)"
-                            shape="circle"
-                            pTooltip="{{ member.user.fullName }}"
-                            styleClass="bg-slate-100! text-slate-700! text-xs!"
-                          ></p-avatar>
-                        </ng-container>
+                      <div class="flex min-w-0 items-center gap-2">
+                        <p-avatar
+                          *ngIf="data.assignedTo?.fullName; else noAssignee"
+                          [label]="getInitial(data.assignedTo!.fullName)"
+                          shape="circle"
+                          [pTooltip]="data.assignedTo!.fullName"
+                          styleClass="bg-slate-100! text-slate-700! text-xs!"
+                        ></p-avatar>
+
+                        <ng-template #noAssignee>
+                          <span class="text-xs text-slate-400">
+                            No assignee
+                          </span>
+                        </ng-template>
+
                         <span
-                          *ngIf="!data.assignedTaskMembers.length"
-                          class="text-xs text-slate-400"
-                          >No assignee</span
+                          *ngIf="data.assignedTo?.fullName"
+                          class="truncate text-xs text-slate-500"
                         >
+                          {{ data.assignedTo?.fullName }}
+                        </span>
                       </div>
 
                       <div
-                        *ngIf="
-                          data.status !== 'Completed' &&
-                          data.status !== 'Cancelled'
-                        "
-                        class="flex gap-1"
+                        class="flex items-center gap-1 text-xs text-slate-500"
                       >
-                        <p-button
-                          icon="pi pi-pencil"
-                          [text]="true"
-                          [rounded]="true"
-                          severity="secondary"
-                          size="small"
-                          pTooltip="Edit task"
-                          (onClick)="EditTask(data)"
-                        ></p-button>
-                        <p-button
-                          *ngIf="data.status === 'NotStarted'"
-                          icon="pi pi-trash"
-                          [text]="true"
-                          [rounded]="true"
-                          severity="danger"
-                          size="small"
-                          pTooltip="Delete task"
-                          (onClick)="RemoveTaskClick(data)"
-                        ></p-button>
+                        <i class="pi pi-check-square"></i>
+                        <span>
+                          {{ getCompletedChecklistCount(data) }}/{{
+                            data.checklists?.length ?? 0
+                          }}
+                          completed
+                        </span>
                       </div>
+                    </div>
+
+                    <!-- Actions -->
+                    <div
+                      *ngIf="
+                        data.status !== 'Completed' &&
+                        data.status !== 'Cancelled'
+                      "
+                      class="mt-3 flex justify-end gap-1"
+                    >
+                      <p-button
+                        icon="pi pi-pencil"
+                        [text]="true"
+                        [rounded]="true"
+                        severity="secondary"
+                        size="small"
+                        pTooltip="Edit task"
+                        (onClick)="EditTask(data)"
+                      ></p-button>
+
+                      <p-button
+                        *ngIf="data.assignedById === currentUserId"
+                        icon="pi pi-trash"
+                        [text]="true"
+                        [rounded]="true"
+                        severity="danger"
+                        size="small"
+                        pTooltip="Delete task"
+                        (onClick)="RemoveTaskClick(data)"
+                      ></p-button>
                     </div>
                   </article>
                 </ng-container>
               </div>
-
               <!-- Desktop task table -->
-              <div
-                class="hidden overflow-hidden rounded-lg border border-slate-200 lg:block"
-              >
+              <div class="hidden overflow-hidden lg:block">
                 <p-table
-                  [value]="PagingSignal().projectTasks || []"
+                  [value]="directProjectTasks"
                   [tableStyle]="{ 'min-width': '65rem' }"
-                  [rowHover]="true"
+                  showGridlines
                   size="small"
                 >
                   <ng-template #header>
@@ -771,7 +1034,7 @@ import { DrawerModule } from 'primeng/drawer';
             </p-tabpanel>
 
             <!-- MATERIALS -->
-            <p-tabpanel value="2">
+            <p-tabpanel value="3">
               <div class="project-section-toolbar">
                 <div>
                   <h2 class="project-section-title">Site material requests</h2>
@@ -1105,7 +1368,7 @@ import { DrawerModule } from 'primeng/drawer';
             </p-tabpanel>
 
             <!-- JOB SHEETS -->
-            <p-tabpanel value="3">
+            <p-tabpanel value="4">
               <div class="project-section-toolbar">
                 <div>
                   <h2 class="project-section-title">Job sheet logs</h2>
@@ -1282,6 +1545,27 @@ import { DrawerModule } from 'primeng/drawer';
               ></textarea>
             </div>
 
+            <!-- Related Work Order -->
+            <div class="flex flex-col gap-1.5 sm:col-span-2">
+              <label class="project-form-label">Related Work Order</label>
+
+              <p-select
+                formControlName="workOrderId"
+                appendTo="body"
+                styleClass="w-full"
+                [options]="workOrderSelection"
+                optionLabel="label"
+                optionValue="value"
+                [showClear]="true"
+                [filter]="true"
+                placeholder="Select Work Order (Optional)"
+              ></p-select>
+
+              <small class="text-xs text-slate-400">
+                Leave empty if this task is not associated with a Work Order.
+              </small>
+            </div>
+
             <div class="flex flex-col gap-1.5">
               <label class="project-form-label">Priority</label>
               <p-select
@@ -1327,16 +1611,19 @@ import { DrawerModule } from 'primeng/drawer';
             </div>
 
             <div class="flex flex-col gap-1.5 sm:col-span-2">
-              <label class="project-form-label">Assignees</label>
-              <p-multiselect
-                formControlName="assignedUserIds"
+              <label class="project-form-label">Assign to</label>
+
+              <p-select
+                formControlName="assignedToId"
                 appendTo="body"
                 styleClass="w-full"
                 [options]="userSelection"
+                optionLabel="label"
+                optionValue="value"
                 [filter]="true"
                 [showClear]="true"
-                placeholder="Select team members"
-              ></p-multiselect>
+                placeholder="Select staff member"
+              ></p-select>
             </div>
           </div>
 
@@ -1390,7 +1677,7 @@ import { DrawerModule } from 'primeng/drawer';
               styleClass="w-full"
               optionLabel="title"
               optionValue="id"
-              [options]="PagingSignal().projectTasks || []"
+              [options]="PagingSignal().staffTasks || []"
               placeholder="Select project task"
             ></p-select>
           </div>
@@ -1497,9 +1784,10 @@ export class ProjectDetails implements OnInit, OnDestroy {
   private readonly projectService = inject(ProjectService);
   private readonly activatedRoute = inject(ActivatedRoute);
   private readonly jobSheetService = inject(JobSheetService);
-  private readonly projectTaskService = inject(ProjectTaskService);
+  private readonly staffTaskService = inject(StaffTaskService);
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly router = inject(Router);
+  private readonly userService = inject(UserService);
 
   protected ngUnsubscribe: Subject<void> = new Subject<void>();
 
@@ -1532,6 +1820,8 @@ export class ProjectDetails implements OnInit, OnDestroy {
   selectedMaterial: any;
   selectedJobSheet: any;
 
+  workOrderSelection: { label: string; value: string }[] = [];
+
   jobSheets: JobSheetDto[] = [];
 
   ngOnInit(): void {
@@ -1549,7 +1839,7 @@ export class ProjectDetails implements OnInit, OnDestroy {
         PageSize: 1,
         OrderBy: null,
         Select: null,
-        Includes: 'ProjectMembers, ProjectTasks',
+        Includes: 'ProjectMembers, StaffTasks, WorkOrders',
         Filter: `Id=${this.projectId}`,
       })
       .pipe(takeUntil(this.ngUnsubscribe))
@@ -1558,14 +1848,15 @@ export class ProjectDetails implements OnInit, OnDestroy {
           this.loadingService.stop();
 
           if (res) {
-            res.projectTasks =
-              res.projectTasks?.sort(
-                (a: any, b: any) =>
-                  new Date(a.createdAt).getTime() -
-                  new Date(b.createdAt).getTime(),
-              ) ?? [];
-
+            res.staffTasks = res.staffTasks ?? [];
+            res.workOrders = res.workOrders ?? [];
             res.siteMaterialRequests = res.siteMaterialRequests ?? [];
+
+            res.staffTasks.sort(
+              (a: any, b: any) =>
+                new Date(a.createdAt).getTime() -
+                new Date(b.createdAt).getTime(),
+            );
 
             this.PagingSignal.set(res);
             this.jobSheets = res.jobSheets ?? [];
@@ -1579,11 +1870,19 @@ export class ProjectDetails implements OnInit, OnDestroy {
       });
   }
 
-  ActionClick(type: string) {
+  ActionClick(type: string): void {
     if (type === 'requestMaterial') {
       this.router.navigate(['/hardware-request'], {
         queryParams: {
           type: 'SiteMaterial',
+          projectId: this.PagingSignal()?.id,
+        },
+      });
+    }
+
+    if (type === 'createWorkOrder') {
+      this.router.navigate(['/work-order/form'], {
+        queryParams: {
           projectId: this.PagingSignal()?.id,
         },
       });
@@ -1659,18 +1958,29 @@ export class ProjectDetails implements OnInit, OnDestroy {
       (item, index, self) =>
         index === self.findIndex((x) => x.value === item.value),
     );
+
+    // WorkOrder dropdown
+    this.workOrderSelection =
+      project.workOrders?.map((x) => ({
+        label: x.workOrderNo,
+        value: x.id,
+      })) ?? [];
   }
 
   initTaskForm() {
     this.taskForm = new FormGroup({
       id: new FormControl<string | null>({ value: null, disabled: true }),
       projectId: new FormControl(this.PagingSignal().id),
+
+      // New field
+      workOrderId: new FormControl<string | null>(null),
+
       title: new FormControl(null, Validators.required),
       description: new FormControl(null),
       priority: new FormControl('Low'),
-      status: new FormControl('NotStarted'),
+      status: new FormControl('Todo'),
       dueDate: new FormControl<Date | null>(null),
-      assignedUserIds: new FormControl<string[]>([]),
+      assignedToId: new FormControl<string | null>(null),
     });
 
     if (!this.taskUpdate || !this.selectedTask) {
@@ -1682,14 +1992,18 @@ export class ProjectDetails implements OnInit, OnDestroy {
     this.taskForm.patchValue({
       id: this.selectedTask.id,
       projectId: this.selectedTask.projectId,
+
+      // Restore existing WorkOrder selection
+      workOrderId: this.selectedTask.workOrderId ?? null,
+
       title: this.selectedTask.title,
       description: this.selectedTask.description,
       priority: this.selectedTask.priority,
+      status: this.selectedTask.status,
       dueDate: this.selectedTask.dueDate
         ? new Date(this.selectedTask.dueDate)
         : null,
-      assignedUserIds:
-        this.selectedTask.assignedTaskMembers?.map((x: any) => x.userId) ?? [],
+      assignedToId: this.selectedTask.assignedToId ?? null,
     });
   }
 
@@ -1701,29 +2015,33 @@ export class ProjectDetails implements OnInit, OnDestroy {
 
     this.loadingService.start();
 
-    const request = this.taskForm.getRawValue();
+    const request = {
+      ...this.taskForm.getRawValue(),
+      projectId: this.PagingSignal().id,
+      workOrderId: this.taskForm.get('workOrderId')?.value || null,
+    };
 
     const $request = this.taskUpdate
-      ? this.projectTaskService.Update(request)
-      : this.projectTaskService.Create(request);
+      ? this.staffTaskService.Update(request)
+      : this.staffTaskService.Create(request);
 
     $request.pipe(takeUntil(this.ngUnsubscribe)).subscribe({
       next: (task) => {
         this.loadingService.stop();
 
         this.PagingSignal.update((project) => {
+          const tasks = project.staffTasks ?? [];
+
           if (this.taskUpdate) {
             return {
               ...project,
-              projectTasks: project.projectTasks.map((t) =>
-                t.id === task.id ? task : t,
-              ),
+              staffTasks: tasks.map((t) => (t.id === task.id ? task : t)),
             };
           }
 
           return {
             ...project,
-            projectTasks: [...project.projectTasks, task],
+            staffTasks: [...tasks, task],
           };
         });
 
@@ -1762,7 +2080,7 @@ export class ProjectDetails implements OnInit, OnDestroy {
   DeleteTask(id: string) {
     this.loadingService.start();
 
-    this.projectTaskService
+    this.staffTaskService
       .Delete(id)
       .pipe(takeUntil(this.ngUnsubscribe))
       .subscribe({
@@ -1771,7 +2089,7 @@ export class ProjectDetails implements OnInit, OnDestroy {
 
           this.PagingSignal.update((project) => ({
             ...project,
-            projectTasks: project.projectTasks.filter((x) => x.id !== id),
+            staffTasks: project.staffTasks.filter((x) => x.id !== id),
           }));
 
           this.cdr.markForCheck();
@@ -1903,7 +2221,7 @@ export class ProjectDetails implements OnInit, OnDestroy {
       return;
     }
 
-    const task = this.PagingSignal().projectTasks?.find(
+    const task = this.PagingSignal().staffTasks?.find(
       (x: any) => x.id === taskId,
     );
 
@@ -1915,12 +2233,12 @@ export class ProjectDetails implements OnInit, OnDestroy {
       return;
     }
 
-    const members: string[] =
-      task.assignedTaskMembers?.map((member: any) => member.userId) ?? [];
+    // const members: string[] =
+    //   task.assignedTaskMembers?.map((member: any) => member.userId) ?? [];
 
-    this.jobSheetForm.patchValue({
-      members,
-    });
+    // this.jobSheetForm.patchValue({
+    //   members,
+    // });
   }
 
   SaveJobSheet() {
@@ -2019,6 +2337,29 @@ export class ProjectDetails implements OnInit, OnDestroy {
 
   get members(): FormArray {
     return this.jobSheetForm.get('members') as FormArray;
+  }
+
+  getWorkOrderNo(workOrderId?: string | null): string {
+    if (!workOrderId) return 'Direct Project Task';
+
+    return (
+      this.PagingSignal().workOrders?.find((x) => x.id === workOrderId)
+        ?.workOrderNo ?? 'Work Order'
+    );
+  }
+
+  get directProjectTasks(): StaffTaskDto[] {
+    return (this.PagingSignal().staffTasks || []).filter(
+      (task) => !task.workOrderId,
+    );
+  }
+
+  get currentUserId(): string | null {
+    return this.userService.currentUser?.userId ?? null;
+  }
+
+  getCompletedChecklistCount(task: StaffTaskDto): number {
+    return task.checklists?.filter((item) => item.isCompleted).length ?? 0;
   }
 
   ngOnDestroy(): void {

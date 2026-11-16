@@ -374,13 +374,13 @@ import {
       </div>
 
       <!-- ================= DESKTOP ================= -->
-      <div class="hidden min-h-screen bg-slate-50 p-6 lg:block">
+      <div class="hidden min-h-0 bg-slate-50 p-6 lg:block">
         <!-- Breadcrumb -->
-        <div class="mb-5 flex items-center gap-2 text-sm text-slate-500">
+        <div class="mb-5 flex items-center gap-2 text-slate-500">
           <a routerLink="/dashboard" class="transition hover:text-blue-600">
             Dashboard
           </a>
-          <i class="pi pi-chevron-right text-[9px]"></i>
+          <i class="pi pi-chevron-right text-[9px]!"></i>
           <span class="font-semibold text-slate-800">Projects</span>
         </div>
 
@@ -390,7 +390,7 @@ import {
             <h1 class="text-2xl font-bold tracking-tight text-slate-800">
               Projects
             </h1>
-            <p class="mt-1 text-sm text-slate-500">
+            <p class="mt-1 text-slate-500">
               Manage and monitor project lifecycles, clients and site progress.
             </p>
           </div>
@@ -414,7 +414,7 @@ import {
           >
             <div>
               <h2 class="font-bold text-slate-800">All Projects</h2>
-              <p class="mt-1 text-xs text-slate-500">
+              <p class="mt-1 text-sm text-slate-500">
                 {{ PagingSignal().totalElements || 0 }} project records
               </p>
             </div>
@@ -454,8 +454,7 @@ import {
               [totalRecords]="PagingSignal().totalElements"
               [tableStyle]="{ 'min-width': '75rem' }"
               [rowsPerPageOptions]="[10, 20, 30, 50]"
-              [showGridlines]="false"
-              [rowHover]="true"
+              [showGridlines]="true"
               [lazy]="true"
               (onLazyLoad)="NextPage($event)"
             >
@@ -528,7 +527,7 @@ import {
                       >
                         <i class="pi pi-building text-sm! text-indigo-600"></i>
                       </div>
-                      <span class="text-sm text-slate-700">
+                      <span class="text-slate-700">
                         {{ data.client?.name || '-' }}
                       </span>
                     </div>
@@ -536,7 +535,7 @@ import {
 
                   <td class="text-center!">
                     <span
-                      class="inline-flex rounded-full px-3 py-1 text-xs font-semibold"
+                      class="inline-flex rounded-full px-3 py-1 text-sm font-semibold"
                       [ngClass]="{
                         'bg-blue-50 text-blue-700': data.priority === 'Low',
                         'bg-yellow-50 text-yellow-700':
@@ -565,7 +564,7 @@ import {
 
                   <td class="text-center!">
                     <span
-                      class="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold"
+                      class="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-semibold"
                       [ngClass]="{
                         'bg-slate-100 text-slate-600': data.status === 'Draft',
                         'bg-amber-50 text-amber-700':
@@ -624,308 +623,8 @@ import {
       </div>
 
       <!-- Shared Action Menu -->
-      <p-menu #menu [model]="menuItems" [popup]="true"></p-menu>
+      <p-menu #menu [model]="menuItems" [popup]="true" appendTo="body"></p-menu>
     </ng-container>
-
-    <!-- Desktop Projects -->
-    <div class="hidden lg:flex flex-col w-full min-h-[92.9vh] p-6 bg-slate-50">
-      <!-- Breadcrumb -->
-      <div class="flex items-center gap-2 text-sm text-slate-500">
-        <div
-          [routerLink]="'/dashboard'"
-          class="cursor-pointer transition-colors hover:text-blue-600"
-        >
-          Dashboard
-        </div>
-        <i class="pi pi-chevron-right text-[9px]!"></i>
-        <span class="font-semibold text-slate-800">Projects</span>
-      </div>
-
-      <!-- Main Container -->
-      <div
-        class="mt-5 flex flex-col rounded-xl border border-slate-200 bg-white shadow-sm"
-      >
-        <!-- Page Header -->
-        <div
-          class="flex flex-row items-center justify-between gap-4 border-b border-slate-100 px-6 py-5"
-        >
-          <div class="flex flex-col gap-1">
-            <div class="flex items-center gap-2">
-              <div
-                class="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-700"
-              >
-                <i class="pi pi-briefcase text-lg"></i>
-              </div>
-
-              <div class="flex flex-col">
-                <h1 class="text-xl font-bold tracking-tight text-slate-800">
-                  Projects
-                </h1>
-                <p class="text-sm text-slate-500">
-                  Manage and monitor precision engineering project lifecycles.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <p-button
-            label="New Project"
-            icon="pi pi-plus"
-            severity="info"
-            styleClass="!bg-blue-700 !border-blue-700 !rounded-lg !px-5 !py-2.5 !text-sm !font-semibold hover:!bg-blue-800"
-            [routerLink]="'/projects/form'"
-          ></p-button>
-        </div>
-
-        <!-- Toolbar -->
-        <div
-          class="flex flex-row items-center justify-between gap-4 border-b border-slate-100 px-6 py-4"
-        >
-          <div class="relative w-full max-w-md">
-            <i
-              class="pi pi-search absolute left-3 top-1/2 z-10 -translate-y-1/2 text-sm text-slate-400"
-            ></i>
-
-            <input
-              type="text"
-              pInputText
-              [(ngModel)]="search"
-              class="!w-full !rounded-lg !border-slate-200 !bg-slate-50 !py-2.5 !pl-10 !pr-4 !text-sm focus:!border-blue-400 focus:!bg-white"
-              placeholder="Search project code or project name..."
-              (keyup)="onKeyDown($event)"
-            />
-          </div>
-
-          <div class="flex items-center gap-2 text-xs text-slate-500">
-            <i class="pi pi-info-circle"></i>
-            <span>Showing project records</span>
-          </div>
-        </div>
-
-        <!-- Project Table -->
-        <div class="px-6 py-5">
-          <p-table
-            #fTable
-            [value]="PagingSignal().data"
-            [paginator]="true"
-            [rows]="Query.PageSize"
-            [totalRecords]="PagingSignal().totalElements"
-            [tableStyle]="{ 'min-width': '75rem' }"
-            [rowsPerPageOptions]="[10, 20, 30, 50]"
-            [showGridlines]="false"
-            [lazy]="true"
-            (onLazyLoad)="NextPage($event)"
-            styleClass="project-table"
-          >
-            <!-- Header -->
-            <ng-template #header>
-              <tr>
-                <th
-                  pSortableColumn="ProjectCode"
-                  class="!w-[14%] !bg-slate-50 !px-4 !py-4 !text-center !text-xs !font-bold !uppercase !tracking-wider !text-slate-500"
-                >
-                  <div class="flex items-center justify-center gap-2">
-                    Project Code
-                    <p-sortIcon field="ProjectCode"></p-sortIcon>
-                  </div>
-                </th>
-
-                <th
-                  pSortableColumn="ProjectTitle"
-                  class="!w-[25%] !bg-slate-50 !px-4 !py-4 !text-xs !font-bold !uppercase !tracking-wider !text-slate-500"
-                >
-                  <div class="flex items-center gap-2">
-                    Project Title
-                    <p-sortIcon field="ProjectTitle"></p-sortIcon>
-                  </div>
-                </th>
-
-                <th
-                  pSortableColumn="Priority"
-                  class="!w-[11%] !bg-slate-50 !px-4 !py-4 !text-center !text-xs !font-bold !uppercase !tracking-wider !text-slate-500"
-                >
-                  <div class="flex items-center justify-center gap-2">
-                    Priority
-                    <p-sortIcon field="Priority"></p-sortIcon>
-                  </div>
-                </th>
-
-                <th
-                  class="!w-[18%] !bg-slate-50 !px-4 !py-4 !text-xs !font-bold !uppercase !tracking-wider !text-slate-500"
-                >
-                  Client
-                </th>
-
-                <th
-                  class="!w-[17%] !bg-slate-50 !px-4 !py-4 !text-center !text-xs !font-bold !uppercase !tracking-wider !text-slate-500"
-                >
-                  Timeline
-                </th>
-
-                <th
-                  pSortableColumn="Status"
-                  class="!w-[11%] !bg-slate-50 !px-4 !py-4 !text-center !text-xs !font-bold !uppercase !tracking-wider !text-slate-500"
-                >
-                  <div class="flex items-center justify-center gap-2">
-                    Status
-                    <p-sortIcon field="Status"></p-sortIcon>
-                  </div>
-                </th>
-
-                <th
-                  class="!w-[4%] !bg-slate-50 !px-4 !py-4 !text-center !text-xs !font-bold !uppercase !tracking-wider !text-slate-500"
-                >
-                  Action
-                </th>
-              </tr>
-            </ng-template>
-
-            <!-- Body -->
-            <ng-template #body let-data>
-              <tr class="transition-colors hover:!bg-slate-50">
-                <!-- Project Code -->
-                <td class="!px-4 !py-4 !text-center">
-                  <a
-                    class="inline-flex items-center rounded-md bg-blue-50 px-2.5 py-1.5 text-xs font-bold text-blue-700 transition-colors hover:bg-blue-100 hover:text-blue-800"
-                    [routerLink]="'/projects/details'"
-                    [queryParams]="{ id: data.id }"
-                  >
-                    {{ data.projectCode }}
-                  </a>
-                </td>
-
-                <!-- Project Title -->
-                <td class="!px-4 !py-4">
-                  <div class="font-semibold text-slate-800">
-                    {{ data.projectTitle }}
-                  </div>
-                </td>
-
-                <!-- Priority -->
-                <td class="!px-4 !py-4 !text-center">
-                  <span
-                    class="inline-flex min-w-[75px] items-center justify-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold"
-                    [ngClass]="{
-                      'border-red-200 bg-red-50 text-red-700':
-                        data.priority === 'High',
-                      'border-yellow-200 bg-yellow-50 text-yellow-700':
-                        data.priority === 'Medium',
-                      'border-blue-200 bg-blue-50 text-blue-700':
-                        data.priority === 'Low',
-                    }"
-                  >
-                    <i class="pi pi-circle-fill text-[6px]!"></i>
-                    {{ data.priority }}
-                  </span>
-                </td>
-
-                <!-- Client -->
-                <td class="!px-4 !py-4">
-                  <div class="flex items-center gap-2">
-                    <div
-                      class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100 text-xs font-bold text-slate-600"
-                    >
-                      {{ data.client?.name?.charAt(0) || '?' }}
-                    </div>
-
-                    <span class="text-sm font-medium text-slate-700">
-                      {{ data.client?.name || '-' }}
-                    </span>
-                  </div>
-                </td>
-
-                <!-- Timeline -->
-                <td class="!px-4 !py-4 !text-center">
-                  <div class="flex flex-col items-center gap-1 text-xs">
-                    <span class="font-medium text-slate-700">
-                      {{ data.startDate | date: 'dd MMM yyyy' }}
-                    </span>
-
-                    <span class="text-slate-400"> to </span>
-
-                    <span class="font-medium text-slate-700">
-                      {{ data.estimatedCompletedDate | date: 'dd MMM yyyy' }}
-                    </span>
-                  </div>
-                </td>
-
-                <!-- Status -->
-                <td class="!px-4 !py-4 !text-center">
-                  <span
-                    class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full border px-3 py-1.5 text-xs font-semibold"
-                    [ngClass]="{
-                      'border-amber-200 bg-amber-50 text-amber-700':
-                        data.status === 'Draft',
-                      'border-yellow-200 bg-yellow-50 text-yellow-700':
-                        data.status === 'Planning',
-                      'border-blue-200 bg-blue-50 text-blue-700':
-                        data.status === 'InProgress',
-                      'border-red-200 bg-red-50 text-red-700':
-                        data.status === 'OnHold',
-                      'border-green-200 bg-green-50 text-green-700':
-                        data.status === 'Completed',
-                    }"
-                  >
-                    <i class="pi pi-circle-fill text-[6px]!"></i>
-
-                    {{
-                      data.status === 'InProgress' ? 'In Progress' : data.status
-                    }}
-                  </span>
-                </td>
-
-                <!-- Action -->
-                <td class="!px-4 !py-4 !text-center">
-                  <button
-                    *ngIf="data.status !== 'Completed'"
-                    type="button"
-                    class="inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-800"
-                    (click)="onEllipsisClick($event, data, menu)"
-                    pTooltip="More actions"
-                    tooltipPosition="left"
-                  >
-                    <i class="pi pi-ellipsis-v"></i>
-                  </button>
-
-                  <span
-                    *ngIf="data.status === 'Completed'"
-                    class="text-xs text-slate-300"
-                  >
-                    -
-                  </span>
-                </td>
-              </tr>
-            </ng-template>
-
-            <!-- Empty State -->
-            <ng-template #emptymessage>
-              <tr>
-                <td colspan="7" class="!border-0 !py-16">
-                  <div class="flex flex-col items-center justify-center gap-3">
-                    <div
-                      class="flex h-14 w-14 items-center justify-center rounded-full bg-slate-100 text-slate-400"
-                    >
-                      <i class="pi pi-folder-open text-2xl"></i>
-                    </div>
-
-                    <div class="text-sm font-semibold text-slate-700">
-                      No projects found
-                    </div>
-
-                    <div class="text-xs text-slate-400">
-                      Try changing your search or create a new project.
-                    </div>
-                  </div>
-                </td>
-              </tr>
-            </ng-template>
-          </p-table>
-        </div>
-      </div>
-    </div>
-
-    <!-- Project Actions Menu -->
-    <p-menu #menu [model]="menuItems" [popup]="true" appendTo="body"></p-menu>
   `,
   styleUrl: './project.less',
   changeDetection: ChangeDetectionStrategy.OnPush,

@@ -59,14 +59,10 @@ import { SelectModule } from 'primeng/select';
     SelectModule,
   ],
   template: `
-    <div
-      class="products-page min-h-screen w-full bg-slate-50/70 p-3 sm:p-4 lg:p-6"
-    >
-      <div class="products-container mx-auto w-full max-w-[1600px]">
+    <div class="products-page min-h-0 w-full bg-slate-50/70 p-3 sm:p-4 lg:p-6">
+      <div class="products-container mx-auto w-full">
         <!-- Breadcrumb -->
-        <div
-          class="mb-4 flex flex-wrap items-center gap-2 text-xs sm:text-sm text-slate-500"
-        >
+        <div class="mb-4 flex flex-wrap items-center gap-2 text-slate-500">
           <a
             routerLink="/dashboard"
             class="cursor-pointer transition-colors hover:text-blue-600"
@@ -104,7 +100,7 @@ import { SelectModule } from 'primeng/select';
                     Products & Services
                   </h1>
 
-                  <p class="mt-1 text-xs text-slate-500 sm:text-sm">
+                  <p class="mt-1 text-slate-500">
                     View and manage your products and services.
                   </p>
                 </div>
@@ -127,7 +123,7 @@ import { SelectModule } from 'primeng/select';
                   pInputText
                   [(ngModel)]="search"
                   (keydown)="onKeyDown($event)"
-                  class="w-full! rounded-xl! border-slate-200! py-2.5! pl-10! pr-10! text-sm!"
+                  class="w-full! rounded-xl! border-slate-200! py-2.5! pl-10! pr-10!"
                   placeholder="Search by name..."
                 />
 
@@ -147,7 +143,7 @@ import { SelectModule } from 'primeng/select';
                 label="Add Product"
                 icon="pi pi-plus"
                 severity="info"
-                styleClass="products-add-button w-full! justify-center! rounded-xl! border-none! bg-blue-600! px-5! py-2.5! text-sm! font-semibold! shadow-sm! hover:bg-blue-700! sm:w-auto!"
+                styleClass="products-add-button w-full! justify-center! rounded-xl! border-none! bg-blue-600! px-5! py-2.5! font-semibold! shadow-sm! hover:bg-blue-700! sm:w-auto!"
               ></p-button>
             </div>
           </div>
@@ -156,10 +152,8 @@ import { SelectModule } from 'primeng/select';
           <div class="products-table-section p-3 sm:p-4 lg:p-6">
             <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
               <div>
-                <h2 class="text-sm font-semibold text-slate-800">
-                  Product Catalogue
-                </h2>
-                <p class="mt-0.5 text-xs text-slate-500">
+                <h2 class="font-semibold text-slate-800">Product Catalogue</h2>
+                <p class="mt-0.5 text-slate-500 text-sm">
                   All registered products and services
                 </p>
               </div>
@@ -170,9 +164,7 @@ import { SelectModule } from 'primeng/select';
               </div>
             </div>
 
-            <div
-              class="products-table-wrapper overflow-hidden rounded-xl border border-slate-200"
-            >
+            <div class="products-table-wrapper overflow-hidden">
               <p-table
                 #fTable
                 dataKey="id"
@@ -184,9 +176,7 @@ import { SelectModule } from 'primeng/select';
                 [rowsPerPageOptions]="[10, 20, 30, 50]"
                 [lazy]="true"
                 (onLazyLoad)="NextPage($event)"
-                [showGridlines]="false"
-                [stripedRows]="true"
-                [rowHover]="true"
+                [showGridlines]="true"
                 currentPageReportTemplate="Showing {first} to {last} of {totalRecords} products"
                 [showCurrentPageReport]="true"
                 paginatorStyleClass="products-paginator"
@@ -209,8 +199,6 @@ import { SelectModule } from 'primeng/select';
                     <th class="products-th w-[36%]! text-left!">Description</th>
 
                     <th class="products-th w-[10%]! text-center!">Unit</th>
-
-                    <th class="products-th w-[10%]! text-center!">Stock</th>
 
                     <th class="products-th w-[12%]! text-right!">Price (RM)</th>
 
@@ -248,12 +236,6 @@ import { SelectModule } from 'primeng/select';
                         severity="secondary"
                         [rounded]="true"
                       ></p-tag>
-                    </td>
-
-                    <td class="text-center!">
-                      <span class="font-medium tabular-nums text-slate-700">
-                        {{ data.availableStock ?? 0 }}
-                      </span>
                     </td>
 
                     <td class="text-right!">

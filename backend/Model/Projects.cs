@@ -84,6 +84,9 @@ namespace YLWorks.Model
         // Hardware, Site Material, IT Support and Bug Reports
         public ICollection<HardwareRequest> HardwareRequests { get; set; }
             = new List<HardwareRequest>();
+
+        public ICollection<StaffTask> StaffTasks { get; set; }
+    = new List<StaffTask>();
     }
 
     // ==========================================

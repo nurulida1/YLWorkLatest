@@ -629,11 +629,11 @@ import {
                           />
                         </td>
 
-                        <td>
+                        <td class="w-[35%] min-w-[250px]">
                           <div class="relative w-full">
                             <p-editor
                               formControlName="description"
-                              [style]="{ 'min-height': '80px' }"
+                              [style]="{ width: '100%', 'min-height': '80px' }"
                               (onInit)="onEditorInit($event, rowIndex)"
                             >
                               <ng-template #header>
@@ -3331,7 +3331,6 @@ export class QuotationForm implements OnInit, OnDestroy {
       (item) => item.get('rowType')?.value === 'LineItem',
     ).length;
   }
-
 
   ngOnDestroy(): void {
     this.ngUnsubscribe.next();

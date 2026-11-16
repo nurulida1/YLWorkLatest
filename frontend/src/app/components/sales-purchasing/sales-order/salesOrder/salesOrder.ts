@@ -68,40 +68,36 @@ import {
   ],
   template: `
     <div
-      class="sales-order-page min-h-[92.9vh] w-full bg-slate-50/50 p-3 sm:p-4 lg:p-6"
+      class="sales-order-page min-h-0 w-full bg-slate-50/70 p-3 sm:p-5 lg:p-7"
     >
-      <div
-        class="sales-order-container mx-auto flex w-full max-w-[1800px] flex-col"
-      >
+      <div class="mx-auto flex w-full flex-col">
         <!-- Breadcrumb -->
-        <div
-          class="mb-3 flex flex-wrap items-center gap-1 text-sm tracking-wide text-gray-500"
-        >
+        <div class="mb-4 flex items-center gap-2 text-slate-500">
           <a
             routerLink="/dashboard"
-            class="cursor-pointer transition-colors hover:text-blue-600"
+            class="transition-colors hover:text-blue-600"
           >
             Dashboard
           </a>
-          <span class="text-gray-400">/</span>
-          <span class="font-medium text-gray-800">Sales Orders</span>
+          <i class="pi pi-angle-right text-xs text-slate-400"></i>
+          <span class="font-semibold text-slate-800">Sales Orders</span>
         </div>
 
-        <!-- Main card -->
+        <!-- Main Card -->
         <div
-          class="sales-order-card flex min-w-0 flex-col rounded-xl border border-gray-200 bg-white p-4 shadow-sm sm:p-5 lg:p-6"
+          class="min-w-0 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5 lg:p-6"
         >
           <!-- Header -->
           <div
-            class="sales-order-header flex min-w-0 flex-col gap-4 xl:flex-row xl:items-center xl:justify-between"
+            class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between"
           >
             <div class="min-w-0">
               <h1
-                class="text-lg font-semibold tracking-wide text-gray-800 sm:text-xl"
+                class="text-xl font-bold tracking-tight text-slate-800 sm:text-2xl"
               >
                 Sales Orders
               </h1>
-              <p class="mt-1 text-sm leading-relaxed text-gray-500">
+              <p class="mt-1 leading-relaxed text-slate-500">
                 Manage, track, and process customer sales orders and fulfillment
                 statuses.
               </p>
@@ -109,254 +105,434 @@ import {
 
             <!-- Toolbar -->
             <div
-              class="sales-order-toolbar flex w-full min-w-0 flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center xl:w-auto xl:justify-end"
+              class="grid w-full grid-cols-1 gap-2 sm:grid-cols-[minmax(220px,1fr)_auto_auto] lg:w-auto"
             >
-              <div
-                class="w-full sm:min-w-[220px] sm:flex-1 xl:w-[260px] xl:flex-none"
-              >
+              <div class="min-w-0">
                 <input
                   type="text"
                   pInputText
                   [(ngModel)]="search"
-                  class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                  placeholder="Search by SO No..."
+                  class="w-full rounded-lg border border-slate-300 bg-white px-3! py-2.5! text-sm shadow-sm placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                  placeholder="Search SO or client PO..."
                   (keydown)="onKeyDown($event)"
                 />
               </div>
 
-              <div class="grid grid-cols-1 gap-2 sm:flex sm:flex-wrap">
-                <p-button
-                  label="Export as Excel"
-                  (onClick)="exportToExcel()"
-                  icon="pi pi-file-export"
-                  severity="secondary"
-                  [outlined]="true"
-                  styleClass="w-full py-2! whitespace-nowrap! sm:w-auto"
-                ></p-button>
+              <p-button
+                label="Export Excel"
+                icon="pi pi-file-export"
+                severity="secondary"
+                [outlined]="true"
+                styleClass="w-full whitespace-nowrap rounded-lg! py-2.5! sm:w-auto"
+                (onClick)="exportToExcel()"
+              ></p-button>
 
-                <p-button
-                  label="Create Sales Order"
-                  (onClick)="ActionClick(null, 'Create')"
-                  icon="pi pi-plus"
-                  severity="info"
-                  styleClass="w-full bg-blue-700! border-none! hover:bg-blue-500! rounded-lg px-4 py-2 text-sm font-medium shadow-sm sm:w-auto"
-                ></p-button>
-              </div>
+              <p-button
+                label="Create Sales Order"
+                icon="pi pi-plus"
+                severity="info"
+                styleClass="w-full whitespace-nowrap rounded-lg! border-none! bg-blue-700! px-4! py-2.5! font-semibold! shadow-sm! hover:bg-blue-800! sm:w-auto"
+                (onClick)="ActionClick(null, 'Create')"
+              ></p-button>
             </div>
           </div>
 
-          <!-- Table -->
-          <div
-            class="sales-order-table mt-5 w-full min-w-0 overflow-hidden rounded-lg border border-gray-200"
-          >
-            <p-table
-              #fTable
-              dataKey="id"
-              [value]="PagingSignal().data"
-              [paginator]="true"
-              [rows]="Query.PageSize"
-              [totalRecords]="PagingSignal().totalElements"
-              [tableStyle]="{ 'min-width': '90rem' }"
-              [showGridlines]="true"
-              [rowsPerPageOptions]="[10, 20, 30, 50]"
-              [lazy]="true"
-              (onLazyLoad)="NextPage($event)"
-            >
-              <ng-template #header>
-                <tr class="border-b border-gray-200 bg-gray-50/70">
-                  <th
-                    pSortableColumn="SalesOrderNo"
-                    class="w-[10%] bg-gray-100! px-4 py-3.5 text-left! font-semibold tracking-wider text-gray-600"
-                  >
-                    <div class="flex items-center gap-1.5">
-                      <span>SO Number</span>
-                      <p-sortIcon field="SalesOrderNo" class="text-gray-400" />
-                    </div>
-                  </th>
+          <!-- ========================= -->
+          <!-- DESKTOP / TABLET TABLE -->
+          <!-- ========================= -->
+          <div class="mt-6 hidden min-w-0 md:block">
+            <div class="w-full overflow-x-auto">
+              <p-table
+                #fTable
+                dataKey="id"
+                [value]="PagingSignal().data || []"
+                [paginator]="true"
+                [rows]="Query.PageSize"
+                [totalRecords]="PagingSignal().totalElements"
+                [tableStyle]="{ 'min-width': '1050px', width: '100%' }"
+                [showGridlines]="true"
+                [rowsPerPageOptions]="[10, 20, 30, 50]"
+                [lazy]="true"
+                (onLazyLoad)="NextPage($event)"
+                styleClass="sales-order-p-table"
+              >
+                <ng-template #header>
+                  <tr>
+                    <th
+                      pSortableColumn="SalesOrderNo"
+                      class="w-[150px] bg-slate-100! px-4 py-3.5 text-left! text-sm! font-bold! uppercase! tracking-wider! text-slate-600!"
+                    >
+                      <div class="flex items-center gap-2">
+                        SO Number
+                        <p-sortIcon field="SalesOrderNo" />
+                      </div>
+                    </th>
 
-                  <th
-                    class="w-[25%] bg-gray-100! px-4 py-3.5 text-left! font-semibold tracking-wider text-gray-600"
-                  >
-                    Client
-                  </th>
+                    <th
+                      class="min-w-[220px] bg-slate-100! px-4 py-3.5 text-left! text-sm! font-bold! uppercase! tracking-wider! text-slate-600!"
+                    >
+                      Client
+                    </th>
 
-                  <th
-                    pSortableColumn="SODate"
-                    class="w-[10%] bg-gray-100! px-4 py-3.5 text-center! font-semibold tracking-wider text-gray-600"
-                  >
-                    <div class="flex items-center justify-center gap-1.5">
-                      <span>Order Date</span>
-                      <p-sortIcon field="SODate" class="text-gray-400" />
-                    </div>
-                  </th>
+                    <th
+                      pSortableColumn="SODate"
+                      class="w-[130px] bg-slate-100! px-4 py-3.5 text-center! text-sm! font-bold! uppercase! tracking-wider! text-slate-600!"
+                    >
+                      <div class="flex items-center justify-center gap-2">
+                        Order Date
+                        <p-sortIcon field="SODate" />
+                      </div>
+                    </th>
 
-                  <th
-                    class="w-[10%] bg-gray-100! px-4 py-3.5 text-center! font-semibold tracking-wider text-gray-600"
-                  >
-                    Client PO
-                  </th>
+                    <th
+                      class="w-[150px] bg-slate-100! px-4 py-3.5 text-center! text-sm! font-bold! uppercase! tracking-wider! text-slate-600!"
+                    >
+                      Client PO
+                    </th>
 
-                  <th
-                    class="w-[12%] bg-gray-100! px-4 py-3.5 text-center! font-semibold tracking-wider text-gray-600"
-                  >
-                    PO Received Date
-                  </th>
+                    <th
+                      class="w-[150px] bg-slate-100! px-4 py-3.5 text-center! text-sm! font-bold! uppercase! tracking-wider! text-slate-600!"
+                    >
+                      PO Received
+                    </th>
 
-                  <th
-                    class="w-[10%] bg-gray-100! px-4 py-3.5 text-center! font-semibold tracking-wider text-gray-600"
-                  >
-                    Total Amount
-                  </th>
+                    <th
+                      class="w-[150px] bg-slate-100! px-4 py-3.5 text-right! text-sm! font-bold! uppercase! tracking-wider! text-slate-600!"
+                    >
+                      Total Amount
+                    </th>
 
-                  <th
-                    pSortableColumn="Status"
-                    class="w-[10%] bg-gray-100! px-4 py-3.5 text-center! font-semibold tracking-wider text-gray-600"
-                  >
-                    <div class="flex items-center justify-center gap-1.5">
-                      <span>Status</span>
-                      <p-sortIcon field="Status" class="text-gray-400" />
-                    </div>
-                  </th>
+                    <th
+                      pSortableColumn="Status"
+                      class="w-[150px] bg-slate-100! px-4 py-3.5 text-center! text-sm! font-bold! uppercase! tracking-wider! text-slate-600!"
+                    >
+                      <div class="flex items-center justify-center gap-2">
+                        Status
+                        <p-sortIcon field="Status" />
+                      </div>
+                    </th>
 
-                  <th
-                    class="w-[8%] bg-gray-100! px-4 py-3.5 text-center! font-semibold tracking-wider text-gray-600"
-                  >
-                    Actions
-                  </th>
-                </tr>
-              </ng-template>
+                    <th
+                      class="w-[90px] bg-slate-100! px-4 py-3.5 text-center! text-sm! font-bold! uppercase! tracking-wider! text-slate-600!"
+                    >
+                      Actions
+                    </th>
+                  </tr>
+                </ng-template>
 
-              <ng-template #body let-data let-rowIndex="rowIndex">
-                <tr
-                  class="border-b border-gray-100 transition-colors hover:bg-slate-50/80"
-                >
-                  <td class="px-4 py-3 font-bold text-gray-800">
-                    {{ data.salesOrderNo }}
-                  </td>
+                <ng-template #body let-data>
+                  <tr class="transition-colors hover:bg-slate-50/80">
+                    <td class="whitespace-nowrap px-4 py-3.5">
+                      <span class="font-bold text-blue-700">
+                        {{ data.salesOrderNo }}
+                      </span>
+                    </td>
 
-                  <td class="px-4 py-3 font-medium text-gray-700">
-                    {{ data.client?.name || '-' }}
-                  </td>
-
-                  <td class="px-4 py-3 text-center! text-gray-600">
-                    {{ data.soDate | date: 'dd/MM/yyyy' }}
-                  </td>
-
-                  <td class="px-4 py-3 text-center! font-medium text-gray-700">
-                    {{ data.clientPONumber || '-' }}
-                  </td>
-
-                  <td class="px-4 py-3 text-center! text-gray-600">
-                    {{ data.clientPODate | date: 'dd/MM/yyyy' }}
-                  </td>
-
-                  <td class="px-4 py-3 text-center! font-medium text-gray-900">
-                    {{ data.totalAmount | currency: 'RM ' }}
-                  </td>
-
-                  <td class="px-4 py-3 text-center">
-                    <div class="flex flex-col items-center gap-1">
-                      <span
-                        class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1 text-sm font-semibold"
-                        [ngClass]="{
-                          'border border-amber-200 bg-amber-100 text-amber-700':
-                            data.status === 'Draft',
-                          'border border-orange-200 bg-orange-100 text-orange-700':
-                            data.status === 'Reviewed',
-                          'border border-blue-200 bg-blue-100 text-blue-700':
-                            data.status === 'Approved' ||
-                            data.status === 'InProgress',
-                          'border border-purple-200 bg-purple-100 text-purple-700':
-                            data.status === 'Sent' || data.status === 'Issued',
-                          'border border-cyan-200 bg-cyan-100 text-cyan-700':
-                            data.status === 'PartiallyReceived' ||
-                            data.status === 'PartiallyShipped',
-                          'border border-emerald-200 bg-emerald-100 text-emerald-700':
-                            data.status === 'Confirmed',
-                          'border border-rose-200 bg-rose-100 text-rose-700':
-                            data.status === 'Rejected' ||
-                            data.status === 'Cancelled',
-                        }"
+                    <td class="px-4 py-3.5">
+                      <p
+                        class="max-w-[280px] truncate font-semibold text-slate-800"
                       >
+                        {{ data.client?.name || '-' }}
+                      </p>
+                    </td>
+
+                    <td
+                      class="whitespace-nowrap px-4 py-3.5 text-center! text-slate-600"
+                    >
+                      {{ data.soDate | date: 'dd/MM/yyyy' }}
+                    </td>
+
+                    <td
+                      class="whitespace-nowrap px-4 py-3.5 text-center! font-medium text-slate-700"
+                    >
+                      {{ data.clientPONumber || '-' }}
+                    </td>
+
+                    <td
+                      class="whitespace-nowrap px-4 py-3.5 text-center! text-slate-600"
+                    >
+                      {{
+                        data.clientPODate
+                          ? (data.clientPODate | date: 'dd/MM/yyyy')
+                          : '-'
+                      }}
+                    </td>
+
+                    <td
+                      class="whitespace-nowrap px-4 py-3.5 text-right! font-semibold text-slate-800"
+                    >
+                      {{ data.totalAmount | currency: 'RM ' }}
+                    </td>
+
+                    <td class="px-4 py-3.5 text-center!">
+                      <span [ngClass]="getStatusClass(data.status)">
                         <span
-                          class="h-1.5 w-1.5 rounded-full"
-                          [ngClass]="{
-                            'bg-amber-500': data.status === 'Draft',
-                            'bg-orange-500': data.status === 'Reviewed',
-                            'bg-blue-500':
-                              data.status === 'Approved' ||
-                              data.status === 'InProgress',
-                            'bg-purple-500':
-                              data.status === 'Sent' ||
-                              data.status === 'Issued',
-                            'bg-cyan-500':
-                              data.status === 'PartiallyReceived' ||
-                              data.status === 'PartiallyShipped',
-                            'bg-emerald-500': data.status === 'Confirmed',
-                            'bg-rose-500':
-                              data.status === 'Rejected' ||
-                              data.status === 'Cancelled',
-                          }"
+                          class="h-1.5 w-1.5 shrink-0 rounded-full"
+                          [ngClass]="getStatusDotClass(data.status)"
                         ></span>
                         {{ data.status }}
                       </span>
 
-                      <small
+                      <p
                         *ngIf="
                           data.status === 'Rejected' && getRejectedReason(data)
                         "
-                        class="max-w-[180px] cursor-help truncate text-center text-xs italic text-gray-500"
-                        [title]="getRejectedReason(data)"
+                        class="mx-auto mt-1 max-w-[180px] truncate italic text-slate-500"
+                        [title]="getRejectedReason(data) || ''"
                       >
                         {{ getRejectedReason(data) }}
-                      </small>
-                    </div>
-                  </td>
+                      </p>
+                    </td>
 
-                  <td class="px-4 py-3 text-center">
-                    <div class="flex items-center justify-center">
+                    <td class="px-4 py-3.5 text-center!">
                       <button
                         type="button"
                         (click)="onEllipsisClick($event, data, menu)"
-                        class="rounded-md p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 focus:outline-none"
+                        class="rounded-lg p-2 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
                         aria-label="Sales order actions"
                       >
-                        <i class="pi pi-ellipsis-h text-base"></i>
+                        <i class="pi pi-ellipsis-h"></i>
                       </button>
-                    </div>
-                  </td>
-                </tr>
-              </ng-template>
+                    </td>
+                  </tr>
+                </ng-template>
 
-              <ng-template #emptymessage>
-                <tr>
-                  <td colspan="100%" class="border-b border-gray-100 py-12">
-                    <div
-                      class="flex flex-col items-center justify-center gap-2"
-                    >
-                      <i class="pi pi-folder-open text-3xl text-gray-300"></i>
-                      <div class="text-sm font-medium text-gray-500">
-                        No sales orders found in records.
+                <ng-template #emptymessage>
+                  <tr>
+                    <td colspan="8" class="py-14 text-center">
+                      <div class="flex flex-col items-center gap-2">
+                        <div
+                          class="flex h-14 w-14 items-center justify-center rounded-full bg-slate-100"
+                        >
+                          <i
+                            class="pi pi-folder-open text-2xl text-slate-400"
+                          ></i>
+                        </div>
+                        <p class="font-semibold text-slate-700">
+                          No sales orders found
+                        </p>
+                        <p class="text-sm text-slate-400">
+                          Try adjusting your search or create a new sales order.
+                        </p>
                       </div>
+                    </td>
+                  </tr>
+                </ng-template>
+              </p-table>
+            </div>
+          </div>
+
+          <!-- ========================= -->
+          <!-- MOBILE CARD LAYOUT -->
+          <!-- ========================= -->
+          <div class="mt-5 space-y-3 md:hidden">
+            <ng-container *ngIf="PagingSignal().data?.length; else mobileEmpty">
+              <div
+                *ngFor="let data of PagingSignal().data; trackBy: trackById"
+                class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm"
+              >
+                <!-- Card Header -->
+                <div
+                  class="flex items-start justify-between gap-3 border-b border-slate-100 bg-slate-50/70 px-4 py-3"
+                >
+                  <div class="min-w-0">
+                    <p
+                      class="text-[10px] font-bold uppercase tracking-wider text-slate-400"
+                    >
+                      Sales Order Number
+                    </p>
+                    <p class="mt-1 break-all text-sm font-bold text-blue-700">
+                      {{ data.salesOrderNo }}
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    (click)="onEllipsisClick($event, data, menu)"
+                    class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-800"
+                    aria-label="Sales order actions"
+                  >
+                    <i class="pi pi-ellipsis-v"></i>
+                  </button>
+                </div>
+
+                <!-- Card Content -->
+                <div class="space-y-3 p-4">
+                  <div>
+                    <p
+                      class="text-[10px] font-bold uppercase tracking-wider text-slate-400"
+                    >
+                      Client
+                    </p>
+                    <p
+                      class="mt-1 text-sm font-semibold leading-relaxed text-slate-800"
+                    >
+                      {{ data.client?.name || '-' }}
+                    </p>
+                  </div>
+
+                  <div class="grid grid-cols-2 gap-3">
+                    <div class="min-w-0">
+                      <p
+                        class="text-[10px] font-bold uppercase tracking-wider text-slate-400"
+                      >
+                        Order Date
+                      </p>
+                      <p class="mt-1 text-sm font-medium text-slate-700">
+                        {{ data.soDate | date: 'dd/MM/yyyy' }}
+                      </p>
                     </div>
-                  </td>
-                </tr>
-              </ng-template>
-            </p-table>
+
+                    <div class="min-w-0">
+                      <p
+                        class="text-[10px] font-bold uppercase tracking-wider text-slate-400"
+                      >
+                        PO Received
+                      </p>
+                      <p class="mt-1 text-sm font-medium text-slate-700">
+                        {{
+                          data.clientPODate
+                            ? (data.clientPODate | date: 'dd/MM/yyyy')
+                            : '-'
+                        }}
+                      </p>
+                    </div>
+
+                    <div class="min-w-0">
+                      <p
+                        class="text-[10px] font-bold uppercase tracking-wider text-slate-400"
+                      >
+                        Client PO Number
+                      </p>
+                      <p
+                        class="mt-1 break-words text-sm font-medium text-slate-700"
+                      >
+                        {{ data.clientPONumber || '-' }}
+                      </p>
+                    </div>
+
+                    <div class="min-w-0">
+                      <p
+                        class="text-[10px] font-bold uppercase tracking-wider text-slate-400"
+                      >
+                        Total Amount
+                      </p>
+                      <p class="mt-1 text-sm font-bold text-slate-900">
+                        {{ data.totalAmount | currency: 'RM ' }}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div
+                    class="flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-3"
+                  >
+                    <div>
+                      <p
+                        class="mb-1 text-[10px] font-bold uppercase tracking-wider text-slate-400"
+                      >
+                        Status
+                      </p>
+                      <span [ngClass]="getStatusClass(data.status)">
+                        <span
+                          class="h-1.5 w-1.5 shrink-0 rounded-full"
+                          [ngClass]="getStatusDotClass(data.status)"
+                        ></span>
+                        {{ data.status }}
+                      </span>
+                    </div>
+
+                    <div
+                      *ngIf="data.clientPOAttachment"
+                      class="flex items-center gap-1.5 text-xs font-medium text-blue-600"
+                    >
+                      <i class="pi pi-paperclip"></i>
+                      PO attached
+                    </div>
+                  </div>
+
+                  <p
+                    *ngIf="
+                      data.status === 'Rejected' && getRejectedReason(data)
+                    "
+                    class="rounded-lg bg-rose-50 px-3 py-2 text-xs leading-relaxed text-rose-700"
+                  >
+                    <span class="font-semibold">Reason:</span>
+                    {{ getRejectedReason(data) }}
+                  </p>
+                </div>
+              </div>
+            </ng-container>
+
+            <ng-template #mobileEmpty>
+              <div
+                class="flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-300 bg-white px-4 py-12 text-center"
+              >
+                <div
+                  class="flex h-14 w-14 items-center justify-center rounded-full bg-slate-100"
+                >
+                  <i class="pi pi-folder-open text-2xl text-slate-400"></i>
+                </div>
+                <p class="mt-3 font-semibold text-slate-700">
+                  No sales orders found
+                </p>
+                <p class="mt-1 text-sm text-slate-400">
+                  Try adjusting your search or create a new sales order.
+                </p>
+              </div>
+            </ng-template>
+
+            <!-- Mobile Pagination -->
+            <div
+              *ngIf="PagingSignal().totalElements > 0"
+              class="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-3 py-3"
+            >
+              <p-button
+                icon="pi pi-chevron-left"
+                severity="secondary"
+                [outlined]="true"
+                [disabled]="Query.Page <= 1"
+                styleClass="h-9! w-9! rounded-lg!"
+                (onClick)="changeMobilePage(-1)"
+              ></p-button>
+
+              <div class="min-w-0 text-center">
+                <p class="text-xs font-semibold text-slate-700">
+                  Page {{ Query.Page }} of {{ totalPages }}
+                </p>
+                <p class="mt-0.5 text-[10px] text-slate-400">
+                  {{ PagingSignal().totalElements }} sales orders
+                </p>
+              </div>
+
+              <p-button
+                icon="pi pi-chevron-right"
+                severity="secondary"
+                [outlined]="true"
+                [disabled]="Query.Page >= totalPages"
+                styleClass="h-9! w-9! rounded-lg!"
+                (onClick)="changeMobilePage(1)"
+              ></p-button>
+            </div>
           </div>
         </div>
       </div>
     </div>
 
+    <!-- Shared Action Menu -->
     <p-menu #menu [model]="menuItems" [popup]="true"></p-menu>
 
-    <!-- Record Sales Order Dialog -->
+    <!-- Record / Update Sales Order Dialog -->
     <p-dialog
       [(visible)]="displayDialog"
       [modal]="true"
       [draggable]="false"
       [resizable]="false"
-      styleClass="sales-order-dialog rounded-xl! overflow-hidden shadow-2xl"
+      [style]="{ width: 'min(96vw, 780px)' }"
+      [breakpoints]="{
+        '960px': '94vw',
+        '640px': '96vw',
+      }"
+      styleClass="sales-order-dialog overflow-hidden rounded-2xl! shadow-2xl"
       [maskStyle]="{
         'overflow-y': 'auto',
         'background-color': 'rgba(15, 23, 42, 0.4)',
@@ -365,68 +541,73 @@ import {
       appendTo="body"
     >
       <ng-template #headless>
+        <!-- Dialog Header -->
         <div
-          class="sales-order-dialog-header flex-none border-b border-gray-200/80 bg-slate-50 px-4 py-4 sm:px-6 sm:py-5"
+          class="flex items-start justify-between gap-3 border-b border-slate-200 bg-slate-50 px-4 py-4 sm:px-6 sm:py-5"
         >
-          <div class="flex items-start justify-between gap-3">
-            <div class="min-w-0">
-              <h2
-                class="text-lg font-bold tracking-tight text-gray-900 sm:text-xl"
+          <div class="min-w-0">
+            <div class="flex items-center gap-2">
+              <div
+                class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-100 text-blue-700"
               >
-                Record Sales Order
+                <i class="pi pi-file-edit"></i>
+              </div>
+              <h2
+                class="text-lg font-bold tracking-tight text-slate-900 sm:text-xl"
+              >
+                {{
+                  FG.get('id')?.value
+                    ? 'Update Sales Order'
+                    : 'Record Sales Order'
+                }}
               </h2>
-              <p class="mt-1 text-sm leading-relaxed text-gray-500">
-                Verify and log the official PO received from the client to
-                initiate the project workflow.
-              </p>
             </div>
-
-            <p-button
-              icon="pi pi-times"
-              [rounded]="true"
-              [text]="true"
-              severity="secondary"
-              styleClass="shrink-0 text-gray-400 transition-colors hover:bg-gray-200/60 hover:text-gray-600"
-              (onClick)="displayDialog = false"
-            ></p-button>
+            <p class="mt-2 text-xs leading-relaxed text-slate-500 sm:text-sm">
+              Record and manage the official purchase order received from the
+              client.
+            </p>
           </div>
+
+          <p-button
+            icon="pi pi-times"
+            [rounded]="true"
+            [text]="true"
+            severity="secondary"
+            styleClass="shrink-0 text-slate-400 hover:bg-slate-200!"
+            (onClick)="closeDialog()"
+          ></p-button>
         </div>
 
+        <!-- Dialog Body -->
         <div
-          class="sales-order-dialog-body min-h-0 flex-1 overflow-y-auto p-4 sm:p-6"
+          class="sales-order-dialog-body max-h-[70vh] overflow-y-auto p-4 sm:max-h-[75vh] sm:p-6"
         >
           <div
             [formGroup]="FG"
-            class="grid grid-cols-12 gap-x-4 gap-y-4 sm:gap-x-5"
+            class="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2"
           >
             <!-- SO Number -->
-            <div class="col-span-12 flex flex-col gap-1.5 md:col-span-6">
-              <label
-                class="text-xs font-semibold uppercase tracking-wider text-gray-600"
-              >
-                SO Number
-              </label>
+            <div class="flex min-w-0 flex-col gap-1.5">
+              <label class="form-label">SO Number</label>
               <input
                 type="text"
                 pInputText
-                class="w-full rounded-lg border border-gray-300 bg-gray-50/50 px-3 py-2 text-sm transition-shadow focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                 formControlName="salesOrderNo"
                 placeholder="System generated if left blank"
+                class="form-input bg-slate-50!"
               />
             </div>
 
             <!-- SO Date -->
-            <div class="col-span-12 flex flex-col gap-1.5 md:col-span-6">
-              <label
-                class="text-xs font-semibold uppercase tracking-wider text-gray-600"
-              >
+            <div class="flex min-w-0 flex-col gap-1.5">
+              <label class="form-label">
                 SO Date <span class="text-rose-500">*</span>
               </label>
               <p-datepicker
                 formControlName="soDate"
                 dateFormat="dd/mm/yy"
                 styleClass="w-full"
-                inputStyleClass="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500"
+                inputStyleClass="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm"
                 appendTo="body"
                 [showIcon]="true"
                 placeholder="Select order date"
@@ -434,33 +615,27 @@ import {
             </div>
 
             <!-- Client PO Number -->
-            <div class="col-span-12 flex flex-col gap-1.5 md:col-span-6">
-              <label
-                class="text-xs font-semibold uppercase tracking-wider text-gray-600"
-              >
+            <div class="flex min-w-0 flex-col gap-1.5">
+              <label class="form-label">
                 Client PO Number <span class="text-rose-500">*</span>
               </label>
               <input
                 type="text"
                 pInputText
-                class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                 formControlName="clientPONumber"
                 placeholder="e.g. PO-2026-001"
+                class="form-input"
               />
             </div>
 
             <!-- PO Received Date -->
-            <div class="col-span-12 flex flex-col gap-1.5 md:col-span-6">
-              <label
-                class="text-xs font-semibold uppercase tracking-wider text-gray-600"
-              >
-                PO Received Date
-              </label>
+            <div class="flex min-w-0 flex-col gap-1.5">
+              <label class="form-label">PO Received Date</label>
               <p-datepicker
                 formControlName="clientPODate"
                 dateFormat="dd/mm/yy"
                 styleClass="w-full"
-                inputStyleClass="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500"
+                inputStyleClass="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm"
                 appendTo="body"
                 [showIcon]="true"
                 placeholder="Select receive date"
@@ -468,57 +643,42 @@ import {
             </div>
 
             <!-- Quotation -->
-            <div class="col-span-12 flex flex-col gap-1.5 md:col-span-6">
-              <label
-                class="flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-gray-600"
-              >
-                <span>Quotation Ref</span>
-                <span
-                  class="text-[11px] font-normal lowercase italic text-gray-400"
-                >
-                  optional
-                </span>
-              </label>
+            <div class="flex min-w-0 flex-col gap-1.5">
+              <label class="form-label">Quotation Reference</label>
               <p-select
                 [options]="quotationSelections"
                 appendTo="body"
                 [filter]="true"
-                formControlName="quotationId"
-                styleClass="w-full rounded-lg border border-gray-300"
                 [showClear]="!!FG.get('quotationId')?.value"
+                formControlName="quotationId"
+                styleClass="w-full rounded-lg border border-slate-300"
                 placeholder="Link a quotation"
               ></p-select>
             </div>
 
             <!-- Client -->
-            <div class="col-span-12 flex flex-col gap-1.5 md:col-span-6">
-              <label
-                class="text-xs font-semibold uppercase tracking-wider text-gray-600"
-              >
-                Client Account
+            <div class="flex min-w-0 flex-col gap-1.5">
+              <label class="form-label">
+                Client Account <span class="text-rose-500">*</span>
               </label>
               <p-select
                 [options]="clientSelections"
                 appendTo="body"
                 [filter]="true"
-                formControlName="clientId"
-                styleClass="w-full rounded-lg border border-gray-300"
                 [showClear]="!!FG.get('clientId')?.value"
+                formControlName="clientId"
+                styleClass="w-full rounded-lg border border-slate-300"
                 placeholder="Select a client account"
               ></p-select>
             </div>
 
             <!-- Total Amount -->
-            <div class="col-span-12 flex flex-col gap-1.5 md:col-span-6">
-              <label
-                class="text-xs font-semibold uppercase tracking-wider text-gray-600"
-              >
-                Total Value (Gross)
-              </label>
+            <div class="flex min-w-0 flex-col gap-1.5">
+              <label class="form-label">Total Value (Gross)</label>
               <p-inputnumber
                 formControlName="totalAmount"
-                styleClass="w-full text-left"
-                inputStyleClass="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                styleClass="w-full"
+                inputStyleClass="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm font-medium"
                 mode="currency"
                 currency="MYR"
                 locale="ms-MY"
@@ -528,107 +688,120 @@ import {
             </div>
 
             <!-- Payment Terms -->
-            <div class="col-span-12 flex flex-col gap-1.5 md:col-span-6">
-              <label
-                class="text-xs font-semibold uppercase tracking-wider text-gray-600"
-              >
+            <div class="flex min-w-0 flex-col gap-1.5">
+              <label class="form-label">
                 Payment Terms <span class="text-rose-500">*</span>
               </label>
               <input
                 type="text"
                 pInputText
-                class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                 formControlName="paymentTerms"
-                placeholder="e.g. 30 Days, Cash on Delivery, Net 60"
+                placeholder="e.g. 30 Days, COD, Net 60"
+                class="form-input"
               />
             </div>
 
-            <!-- Remarks -->
-            <div class="col-span-12 flex flex-col gap-1.5">
-              <label
-                class="text-xs font-semibold uppercase tracking-wider text-gray-600"
-              >
-                Internal Remarks
-              </label>
-              <input
-                type="text"
-                pInputText
-                class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+            <!-- Internal Remarks -->
+            <div class="flex min-w-0 flex-col gap-1.5 sm:col-span-2">
+              <label class="form-label">Internal Remarks</label>
+              <textarea
+                pTextarea
                 formControlName="remarks"
-                placeholder="Add any internal processing notes"
-              />
+                rows="3"
+                [autoResize]="true"
+                placeholder="Add any internal processing notes..."
+                class="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
+              ></textarea>
             </div>
 
             <!-- Attachment -->
             <div
-              class="col-span-12 mt-2 flex flex-col gap-2 border-t border-gray-100 pt-4"
+              class="flex min-w-0 flex-col gap-3 border-t border-slate-100 pt-5 sm:col-span-2"
             >
-              <label
-                class="text-xs font-semibold uppercase tracking-wider text-gray-600"
-              >
-                Official Client PO Attachment
-                <span class="text-rose-500">*</span>
-              </label>
+              <div>
+                <label class="form-label">
+                  Official Client PO Attachment
+                  <span class="text-rose-500">*</span>
+                </label>
+                <p class="mt-1 text-xs text-slate-400">
+                  Upload the official purchase order document received from the
+                  client.
+                </p>
+              </div>
+
+              <input
+                #file
+                type="file"
+                accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                (change)="onFileSelected($event)"
+                hidden
+              />
 
               <div
-                class="flex min-w-0 flex-col items-start gap-3 sm:flex-row sm:flex-wrap sm:items-center"
+                class="flex min-w-0 flex-col gap-3 rounded-xl border border-dashed border-slate-300 bg-slate-50 p-4 sm:flex-row sm:items-center sm:justify-between"
               >
-                <input
-                  #file
-                  type="file"
-                  (change)="onFileSelected($event)"
-                  hidden
-                />
+                <div class="flex min-w-0 items-center gap-3">
+                  <div
+                    class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-100 text-blue-600"
+                  >
+                    <i class="pi pi-file text-lg"></i>
+                  </div>
+
+                  <div class="min-w-0">
+                    <p class="truncate text-sm font-semibold text-slate-700">
+                      {{ selectedFileName || 'No document selected' }}
+                    </p>
+                    <p class="text-xs text-slate-400">
+                      PDF, DOC, DOCX or image
+                    </p>
+                  </div>
+                </div>
 
                 <p-button
                   [label]="
                     FG.get('clientPOAttachment')?.value
                       ? 'Replace Document'
-                      : 'Upload PO Document'
+                      : 'Upload Document'
                   "
                   severity="secondary"
                   icon="pi pi-upload"
-                  styleClass="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-50 sm:w-auto"
+                  styleClass="w-full whitespace-nowrap rounded-lg! sm:w-auto"
                   (onClick)="file.click()"
                 ></p-button>
-
-                <a
-                  *ngIf="selectedFileName"
-                  [href]="selectedFileUrl"
-                  [download]="selectedFileName"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="flex max-w-full items-center gap-2 rounded-xl border border-blue-200/60 bg-blue-50/50 px-3 py-2 text-sm font-medium text-blue-700 transition-colors hover:bg-blue-50"
-                >
-                  <i class="pi pi-file shrink-0 text-blue-500"></i>
-                  <span class="max-w-[220px] truncate sm:max-w-[280px]">
-                    {{ selectedFileName }}
-                  </span>
-                  <i
-                    class="pi pi-external-link ml-1 shrink-0 text-[10px] text-blue-400"
-                  ></i>
-                </a>
               </div>
+
+              <a
+                *ngIf="selectedFileUrl && selectedFileName"
+                [href]="selectedFileUrl"
+                [download]="selectedFileName"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="flex min-w-0 items-center gap-2 text-sm font-medium text-blue-600 hover:text-blue-800"
+              >
+                <i class="pi pi-external-link shrink-0"></i>
+                <span class="truncate">{{ selectedFileName }}</span>
+              </a>
             </div>
           </div>
         </div>
 
-        <!-- Dialog footer -->
+        <!-- Dialog Footer -->
         <div
-          class="sales-order-dialog-footer flex flex-none flex-col-reverse gap-2 border-t border-gray-200 bg-slate-50 p-4 sm:flex-row sm:items-center sm:justify-end sm:gap-3 sm:px-6"
+          class="flex flex-col-reverse gap-2 border-t border-slate-200 bg-slate-50 p-4 sm:flex-row sm:items-center sm:justify-end sm:gap-3 sm:px-6"
         >
           <p-button
             label="Cancel"
             severity="secondary"
-            styleClass="w-full rounded-lg border border-gray-300! bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 sm:w-auto"
-            (onClick)="displayDialog = false"
+            [outlined]="true"
+            styleClass="w-full rounded-lg! px-5! py-2.5! sm:w-auto"
+            (onClick)="closeDialog()"
           ></p-button>
 
           <p-button
-            label="Record Order"
-            icon="pi pi-check-circle"
+            [label]="FG.get('id')?.value ? 'Save Changes' : 'Record Order'"
+            [icon]="FG.get('id')?.value ? 'pi pi-save' : 'pi pi-check-circle'"
             severity="info"
-            styleClass="w-full rounded-lg border-none! bg-blue-600! px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700! sm:w-auto"
+            styleClass="w-full rounded-lg! border-none! bg-blue-700! px-5! py-2.5! font-semibold! shadow-sm! hover:bg-blue-800! sm:w-auto"
             (onClick)="saveRecord()"
           ></p-button>
         </div>
@@ -648,7 +821,7 @@ export class SalesOrder implements OnInit, OnDestroy {
   private readonly messageService = inject(MessageService);
   private readonly router = inject(Router);
 
-  protected ngUnsubscribe: Subject<void> = new Subject<void>();
+  protected ngUnsubscribe = new Subject<void>();
 
   PagingSignal = signal<PagingContent<SalesOrderDto>>(
     {} as PagingContent<SalesOrderDto>,
@@ -661,7 +834,6 @@ export class SalesOrder implements OnInit, OnDestroy {
   selectedFileUrl: string | null = null;
 
   displayDialog = false;
-  selectAllItems = false;
 
   FG!: FormGroup;
 
@@ -695,6 +867,54 @@ export class SalesOrder implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {}
+
+  get totalPages(): number {
+    const total = this.PagingSignal().totalElements || 0;
+    return Math.max(1, Math.ceil(total / (this.Query.PageSize || 10)));
+  }
+
+  trackById(index: number, item: SalesOrderDto): string {
+    return item.id;
+  }
+
+  getStatusClass(status: string): string {
+    const base =
+      'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full border px-3 py-1.5 text-xs font-semibold';
+
+    const classes: Record<string, string> = {
+      Draft: 'border-amber-200 bg-amber-50 text-amber-700',
+      Reviewed: 'border-orange-200 bg-orange-50 text-orange-700',
+      Approved: 'border-blue-200 bg-blue-50 text-blue-700',
+      InProgress: 'border-blue-200 bg-blue-50 text-blue-700',
+      Sent: 'border-purple-200 bg-purple-50 text-purple-700',
+      Issued: 'border-purple-200 bg-purple-50 text-purple-700',
+      PartiallyReceived: 'border-cyan-200 bg-cyan-50 text-cyan-700',
+      PartiallyShipped: 'border-cyan-200 bg-cyan-50 text-cyan-700',
+      Confirmed: 'border-emerald-200 bg-emerald-50 text-emerald-700',
+      Rejected: 'border-rose-200 bg-rose-50 text-rose-700',
+      Cancelled: 'border-rose-200 bg-rose-50 text-rose-700',
+    };
+
+    return `${base} ${classes[status] || 'border-slate-200 bg-slate-100 text-slate-600'}`;
+  }
+
+  getStatusDotClass(status: string): string {
+    const classes: Record<string, string> = {
+      Draft: 'bg-amber-500',
+      Reviewed: 'bg-orange-500',
+      Approved: 'bg-blue-500',
+      InProgress: 'bg-blue-500',
+      Sent: 'bg-purple-500',
+      Issued: 'bg-purple-500',
+      PartiallyReceived: 'bg-cyan-500',
+      PartiallyShipped: 'bg-cyan-500',
+      Confirmed: 'bg-emerald-500',
+      Rejected: 'bg-rose-500',
+      Cancelled: 'bg-rose-500',
+    };
+
+    return classes[status] || 'bg-slate-400';
+  }
 
   parseDONo(no: string) {
     const parts = no.split('/');
@@ -741,6 +961,15 @@ export class SalesOrder implements OnInit, OnDestroy {
     this.GetData();
   }
 
+  changeMobilePage(direction: number) {
+    const nextPage = this.Query.Page + direction;
+
+    if (nextPage < 1 || nextPage > this.totalPages) return;
+
+    this.Query.Page = nextPage;
+    this.GetData();
+  }
+
   onKeyDown(event: KeyboardEvent) {
     const isEnter = event.key === 'Enter';
     const isBackspaceClear = event.key === 'Backspace' && this.search === '';
@@ -777,7 +1006,7 @@ export class SalesOrder implements OnInit, OnDestroy {
 
     const event: TableLazyLoadEvent = {
       first: 0,
-      rows: this.fTable?.rows,
+      rows: this.Query.PageSize,
       sortField: null,
       sortOrder: null,
       filters: filter,
@@ -796,6 +1025,7 @@ export class SalesOrder implements OnInit, OnDestroy {
     }
 
     this.Query.Filter = null;
+    this.Query.Page = 1;
     this.GetData();
   }
 
@@ -892,13 +1122,16 @@ export class SalesOrder implements OnInit, OnDestroy {
       clientId: new FormControl<string | null>(null, Validators.required),
       projectId: new FormControl<string | null>(null),
       quotationId: new FormControl<string | null>(null),
-      soDate: new FormControl<Date | null>(new Date()),
+      soDate: new FormControl<Date | null>(new Date(), Validators.required),
       totalAmount: new FormControl<number | null>(null),
       remarks: new FormControl<string | null>(null),
-      paymentTerms: new FormControl<string | null>(null),
-      clientPOAttachment: new FormControl<File | null>(null),
+      paymentTerms: new FormControl<string | null>(null, Validators.required),
+      clientPOAttachment: new FormControl<File | string | null>(
+        null,
+        Validators.required,
+      ),
       clientPODate: new FormControl<Date | null>(null),
-      clientPONumber: new FormControl<string | null>(null),
+      clientPONumber: new FormControl<string | null>(null, Validators.required),
       salesOrderItems: new FormArray([]),
     });
 
@@ -1033,18 +1266,21 @@ export class SalesOrder implements OnInit, OnDestroy {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
 
-    if (file) {
-      this.clearSelectedFile();
+    if (!file) return;
 
-      this.selectedFileName = file.name;
-      this.selectedFileUrl = URL.createObjectURL(file);
+    this.clearSelectedFile();
 
-      this.FG.patchValue({
-        clientPOAttachment: file,
-      });
+    this.selectedFileName = file.name;
+    this.selectedFileUrl = URL.createObjectURL(file);
 
-      this.cdr.markForCheck();
-    }
+    this.FG.patchValue({
+      clientPOAttachment: file,
+    });
+
+    this.FG.get('clientPOAttachment')?.updateValueAndValidity();
+    this.cdr.markForCheck();
+
+    input.value = '';
   }
 
   private clearSelectedFile() {
@@ -1054,6 +1290,11 @@ export class SalesOrder implements OnInit, OnDestroy {
 
     this.selectedFileName = '';
     this.selectedFileUrl = null;
+  }
+
+  closeDialog() {
+    this.displayDialog = false;
+    this.clearSelectedFile();
   }
 
   saveRecord() {
@@ -1082,6 +1323,12 @@ export class SalesOrder implements OnInit, OnDestroy {
 
       if (value instanceof File) {
         formData.append(key, value, value.name);
+        return;
+      }
+
+      // Do not send the existing attachment URL as a file.
+      if (key === 'clientPOAttachment' && typeof value === 'string') {
+        formData.append(key, value);
         return;
       }
 
@@ -1114,7 +1361,7 @@ export class SalesOrder implements OnInit, OnDestroy {
         if (id) {
           const current = this.PagingSignal();
 
-          const updated = current.data.map((item) =>
+          const updated = (current.data || []).map((item) =>
             item.id === id ? res : item,
           );
 
@@ -1142,8 +1389,8 @@ export class SalesOrder implements OnInit, OnDestroy {
           });
         }
 
-        this.resetForm();
         this.displayDialog = false;
+        this.resetForm();
         this.cdr.markForCheck();
       },
 
@@ -1167,7 +1414,7 @@ export class SalesOrder implements OnInit, OnDestroy {
   resetForm() {
     this.FG.reset({
       soDate: new Date(),
-      clientPODate: new Date(),
+      clientPODate: null,
     });
 
     this.clearSelectedFile();
@@ -1251,12 +1498,9 @@ export class SalesOrder implements OnInit, OnDestroy {
         const link = document.createElement('a');
 
         link.href = url;
+        link.download = `SO_${new Date().getTime()}.xlsx`;
 
-        const fileName = `SO_${new Date().getTime()}.xlsx`;
-
-        link.download = fileName;
         link.click();
-
         window.URL.revokeObjectURL(url);
       },
     });

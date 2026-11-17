@@ -106,32 +106,7 @@ import { environment } from '../../../../environments/environment';
         </div>
       </section>
 
-      <!-- Summary -->
-      <section class="summary-grid">
-        <div class="summary-card">
-          <div class="summary-icon total-icon">
-            <i class="pi pi-megaphone"></i>
-          </div>
-
-          <div class="summary-content">
-            <span class="summary-label">Total Announcements</span>
-            <strong>{{ PagingSignal().totalElements }}</strong>
-            <small>Recorded announcements</small>
-          </div>
-        </div>
-
-        <div class="summary-card">
-          <div class="summary-icon displayed-icon">
-            <i class="pi pi-list"></i>
-          </div>
-
-          <div class="summary-content">
-            <span class="summary-label">Announcements Displayed</span>
-            <strong>{{ PagingSignal().data.length }}</strong>
-            <small>Announcements on this page</small>
-          </div>
-        </div>
-      </section>
+    
 
       <!-- Announcement Section -->
       <section class="announcement-section">

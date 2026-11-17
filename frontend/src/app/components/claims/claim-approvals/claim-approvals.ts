@@ -47,9 +47,11 @@ import { UserService } from '../../../services/userService.service';
 
       <!-- Heading -->
       <div class="page-heading">
-        <div>
-          <h1>Claim approvals</h1>
-          <p>Review and manage employee claims awaiting your action.</p>
+        <div class="flex flex-col gap-1">
+          <b class="text-2xl">Claim approvals</b>
+          <div class="text-gray-500">
+            Review and manage employee claims awaiting your action.
+          </div>
         </div>
 
         <div class="pending-count">

@@ -310,9 +310,9 @@ export const routes: Routes = [
       {
         path: '',
         data: { moduleKey: 'my-tasks' },
-        loadComponent: () =>
-          import('./components/my-work/staff-tasks/staffTasks/staffTasks').then(
-            (m) => m.StaffTasks,
+        loadChildren: () =>
+          import('./components/my-work/staff-tasks/staff-task-routing.module').then(
+            (m) => m.StaffTaskRoutingModule,
           ),
       },
     ],

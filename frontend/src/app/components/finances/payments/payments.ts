@@ -64,9 +64,7 @@ import { PaginatorModule, PaginatorState } from 'primeng/paginator';
   template: `
     <div class="w-full min-h-screen flex flex-col p-3 sm:p-5">
       <!-- Breadcrumb -->
-      <div
-        class="flex items-center gap-2 text-xs sm:text-sm text-gray-500 tracking-wide"
-      >
+      <div class="flex items-center gap-2 text-gray-500 tracking-wide">
         <div
           [routerLink]="'/dashboard'"
           class="cursor-pointer hover:text-blue-600"
@@ -86,8 +84,8 @@ import { PaginatorModule, PaginatorState } from 'primeng/paginator';
           class="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4"
         >
           <div class="flex flex-col">
-            <div class="text-xl font-semibold text-gray-800">Payments</div>
-            <div class="text-sm text-gray-500 mt-1">
+            <div class="text-2xl font-semibold text-gray-800">Payments</div>
+            <div class="text-gray-500 mt-1">
               Manage and oversee all project payments.
             </div>
           </div>
@@ -114,32 +112,6 @@ import { PaginatorModule, PaginatorState } from 'primeng/paginator';
               (onClick)="ActionClick(null, 'add')"
               styleClass="w-full sm:w-auto whitespace-nowrap bg-blue-700! border-none! hover:bg-blue-500!"
             ></p-button>
-          </div>
-        </div>
-
-        <!-- Summary -->
-        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-5">
-          <div class="rounded-lg border border-gray-200 bg-gray-50 p-3">
-            <div class="text-xs text-gray-500">Total Records</div>
-            <div class="text-xl font-semibold text-gray-800 mt-1">
-              {{ PagingSignal().totalElements || 0 }}
-            </div>
-          </div>
-
-          <div class="rounded-lg border border-gray-200 bg-gray-50 p-3">
-            <div class="text-xs text-gray-500">Current Page</div>
-            <div class="text-xl font-semibold text-gray-800 mt-1">
-              {{ Query.Page || 1 }}
-            </div>
-          </div>
-
-          <div
-            class="rounded-lg border border-gray-200 bg-gray-50 p-3 col-span-2 sm:col-span-1"
-          >
-            <div class="text-xs text-gray-500">Records Per Page</div>
-            <div class="text-xl font-semibold text-gray-800 mt-1">
-              {{ Query.PageSize || 10 }}
-            </div>
           </div>
         </div>
 
@@ -222,9 +194,11 @@ import { PaginatorModule, PaginatorState } from 'primeng/paginator';
 
             <ng-template #emptymessage>
               <tr>
-                <td colspan="7" class="text-center! py-8! text-gray-500">
-                  <i class="pi pi-wallet text-2xl mb-2 block"></i>
-                  No payment found in records.
+                <td colspan="7" class="text-center! py-8! text-gray-400">
+                  <div class="flex flex-col gap-1">
+                    <i class="pi pi-wallet text-2xl! mb-2 block"></i>
+                    <div>No payment found in records.</div>
+                  </div>
                 </td>
               </tr>
             </ng-template>

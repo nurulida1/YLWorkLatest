@@ -66,7 +66,7 @@ import { PaginatorModule } from 'primeng/paginator';
     <div class="min-h-screen w-full bg-slate-50 p-3 sm:p-5 lg:p-6">
       <!-- Breadcrumb -->
       <div
-        class="mb-4 flex items-center gap-2 text-xs tracking-wide text-slate-500 sm:text-sm"
+        class="mb-4 flex items-center gap-2 tracking-wide text-slate-500 sm:text-sm"
       >
         <a routerLink="/dashboard" class="cursor-pointer hover:text-blue-600">
           Dashboard
@@ -87,7 +87,7 @@ import { PaginatorModule } from 'primeng/paginator';
             >
               Sales Invoice
             </h1>
-            <p class="mt-1 text-xs text-slate-500 sm:text-sm">
+            <p class="mt-1 text-slate-500">
               View, create, and track all sales invoices.
             </p>
           </div>
@@ -197,7 +197,7 @@ import { PaginatorModule } from 'primeng/paginator';
 
                 <td class="!text-center">
                   <span
-                    class="inline-flex rounded-full px-3 py-1 text-xs font-semibold"
+                    class="inline-flex rounded-full px-3 py-1 font-semibold"
                     [ngClass]="{
                       'bg-orange-100 text-orange-700':
                         data.status === 'Draft' || data.status === 'Refunded',
@@ -236,7 +236,7 @@ import { PaginatorModule } from 'primeng/paginator';
                   <div class="font-medium text-slate-600">
                     No sales invoices found
                   </div>
-                  <p class="mt-1 text-xs text-slate-400">
+                  <p class="mt-1 text-slate-400">
                     Try changing your search or create a new invoice.
                   </p>
                 </td>

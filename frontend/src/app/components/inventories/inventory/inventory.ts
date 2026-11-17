@@ -156,7 +156,7 @@ import { environment } from '../../../../environments/environment';
       <!-- DESKTOP HEADER -->
       <!-- ============================================== -->
       <div class="hidden lg:block px-6 pt-6">
-        <div class="flex items-center gap-2 text-sm text-gray-500">
+        <div class="flex items-center gap-2 text-gray-500">
           <a routerLink="/dashboard" class="hover:text-blue-700"> Dashboard </a>
           <i class="pi pi-angle-right text-xs"></i>
           <span class="font-semibold text-gray-800">Inventory</span>
@@ -167,7 +167,7 @@ import { environment } from '../../../../environments/environment';
             <h1 class="text-2xl font-bold text-gray-900">
               Inventory Management
             </h1>
-            <p class="text-sm text-gray-500 mt-1">
+            <p class="text-gray-500 mt-1">
               Manage, monitor and track company inventory.
             </p>
           </div>
@@ -178,7 +178,7 @@ import { environment } from '../../../../environments/environment';
               label="Scan QR"
               icon="pi pi-qrcode"
               [outlined]="true"
-              styleClass="cursor-pointer!"
+              styleClass="cursor-pointer! border-blue-700! text-blue-700!"
               (onClick)="openScanDialog()"
             ></p-button>
             <p-button
@@ -221,7 +221,7 @@ import { environment } from '../../../../environments/environment';
         <div class="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-sm text-gray-500">Total Inventory</p>
+              <p class="text-gray-500">Total Inventory</p>
               <p class="text-3xl font-bold text-gray-900 mt-2">
                 {{ dashboardCount?.totalItems ?? 0 }}
               </p>
@@ -229,7 +229,7 @@ import { environment } from '../../../../environments/environment';
             <div
               class="w-12 h-12 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center"
             >
-              <i class="pi pi-box text-xl"></i>
+              <i class="pi pi-box text-xl!"></i>
             </div>
           </div>
         </div>
@@ -237,7 +237,7 @@ import { environment } from '../../../../environments/environment';
         <div class="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-sm text-gray-500">Low Stock</p>
+              <p class="text-gray-500">Low Stock</p>
               <p class="text-3xl font-bold text-red-600 mt-2">
                 {{ dashboardCount?.lowStock ?? 0 }}
               </p>
@@ -245,7 +245,7 @@ import { environment } from '../../../../environments/environment';
             <div
               class="w-12 h-12 rounded-xl bg-red-50 text-red-600 flex items-center justify-center"
             >
-              <i class="pi pi-exclamation-triangle text-xl"></i>
+              <i class="pi pi-exclamation-triangle text-xl!"></i>
             </div>
           </div>
         </div>
@@ -253,7 +253,7 @@ import { environment } from '../../../../environments/environment';
         <div class="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-sm text-gray-500">Reserved / In-Transit</p>
+              <p class="text-gray-500">Reserved / In-Transit</p>
               <p class="text-3xl font-bold text-blue-700 mt-2">
                 {{ dashboardCount?.reserved ?? 0 }}
               </p>
@@ -261,7 +261,7 @@ import { environment } from '../../../../environments/environment';
             <div
               class="w-12 h-12 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center"
             >
-              <i class="pi pi-truck text-xl"></i>
+              <i class="pi pi-truck text-xl!"></i>
             </div>
           </div>
         </div>
@@ -635,15 +635,6 @@ import { environment } from '../../../../environments/environment';
       <!-- DESKTOP INVENTORY TABLE -->
       <!-- ============================================== -->
       <div class="hidden lg:block px-6 py-6">
-        <div class="flex items-center justify-between mb-4">
-          <div>
-            <h2 class="text-lg font-bold text-gray-900">Inventory Items</h2>
-            <p class="text-xs text-gray-500 mt-1">
-              {{ PagingSignal().totalElements }} items found
-            </p>
-          </div>
-        </div>
-
         <div
           class="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm"
         >
@@ -661,28 +652,28 @@ import { environment } from '../../../../environments/environment';
           >
             <ng-template #header>
               <tr>
-                <th class="w-20">Image</th>
+                <th class="w-20 bg-gray-100!">Image</th>
 
-                <th pSortableColumn="ItemName">
+                <th pSortableColumn="ItemName" class="bg-gray-100!">
                   Item
                   <p-sortIcon field="ItemName"></p-sortIcon>
                 </th>
 
-                <th pSortableColumn="Brand">
+                <th pSortableColumn="Brand" class="bg-gray-100!">
                   Brand
                   <p-sortIcon field="Brand"></p-sortIcon>
                 </th>
 
-                <th pSortableColumn="Model">
+                <th pSortableColumn="Model" class="bg-gray-100!">
                   Model
                   <p-sortIcon field="Model"></p-sortIcon>
                 </th>
 
-                <th>Section</th>
-                <th class="text-center!">Balance</th>
-                <th class="text-center!">Par Level</th>
-                <th class="text-center!">Status</th>
-                <th class="text-center! w-24">Actions</th>
+                <th class="bg-gray-100!">Section</th>
+                <th class="text-center! bg-gray-100!">Balance</th>
+                <th class="text-center! bg-gray-100!">Par Level</th>
+                <th class="text-center! bg-gray-100!">Status</th>
+                <th class="text-center! w-24 bg-gray-100!">Actions</th>
               </tr>
             </ng-template>
 
@@ -694,7 +685,8 @@ import { environment } from '../../../../environments/environment';
                     ? 'bg-red-50/50'
                     : ''
                 "
-              >                <td>
+              >
+                <td>
                   <div
                     class="w-12 h-12 rounded-lg bg-gray-100 overflow-hidden flex items-center justify-center"
                   >

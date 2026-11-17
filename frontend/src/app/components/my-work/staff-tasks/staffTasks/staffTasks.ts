@@ -93,7 +93,7 @@ import {
           icon="pi pi-plus"
           severity="info"
           styleClass="tracking-wide! bg-blue-700! border-none! rounded-sm! py-2! px-5! w-full! sm:w-auto!"
-          (onClick)="OpenTaskDialog()"
+          [routerLink]="'/my-tasks/form'"
         ></p-button>
       </div>
 
@@ -249,7 +249,8 @@ import {
                   *ngFor="let task of PagingSignal().data; let i = index"
                   class="task-item"
                   [style.animation-delay]="i * 50 + 'ms'"
-                  (click)="editTask(task)"
+                  [routerLink]="'/my-tasks/form'"
+                  [queryParams]="{ id: task.id }"
                 >
                   <!-- PRIORITY INDICATOR -->
                   <div
@@ -392,7 +393,8 @@ import {
                     <button
                       type="button"
                       class="task-action-button"
-                      (click)="$event.stopPropagation(); editTask(task)"
+                      [routerLink]="'/my-tasks/form'"
+                      [queryParams]="{ id: task.id }"
                     >
                       <i class="pi pi-chevron-right"></i>
                     </button>
@@ -429,501 +431,6 @@ import {
         </div>
       </div>
     </div>
-
-    <!-- TASK DIALOG -->
-    <p-dialog
-      [(visible)]="visible"
-      [modal]="true"
-      [draggable]="false"
-      [resizable]="false"
-      [closable]="false"
-      [breakpoints]="{
-        '960px': '90vw',
-        '640px': '100vw',
-      }"
-      [style]="{
-        width: '900px',
-        maxWidth: '96vw',
-      }"
-      styleClass="task-dialog-responsive"
-    >
-      <ng-template #headless>
-        <div class="task-dialog-container">
-          <!-- DIALOG HEADER -->
-          <div class="task-dialog-header">
-            <div class="flex items-center gap-3 min-w-0">
-              <div class="task-dialog-icon shrink-0">
-                <i class="pi pi-clipboard"></i>
-              </div>
-
-              <div class="min-w-0">
-                <h2 class="task-dialog-title">
-                  {{
-                    isAssigneeOnly
-                      ? 'Task Details'
-                      : isUpdate
-                        ? 'Edit Task'
-                        : 'Create New Task'
-                  }}
-                </h2>
-
-                <p class="task-dialog-subtitle">
-                  {{
-                    isAssigneeOnly
-                      ? 'Review the task and update your checklist progress.'
-                      : isUpdate
-                        ? 'Update the details and assignment for this task.'
-                        : 'Create a task and assign it to a staff member.'
-                  }}
-                </p>
-              </div>
-            </div>
-
-            <button
-              type="button"
-              class="task-dialog-close"
-              (click)="CloseDialog()"
-            >
-              <i class="pi pi-times"></i>
-            </button>
-          </div>
-
-          <!-- DIALOG BODY -->
-          <div class="task-dialog-body" [formGroup]="FG">
-            <div class="task-main">
-              <!-- TASK DETAILS -->
-              <div class="form-section">
-                <div class="section-header">
-                  <div class="section-icon">
-                    <i class="pi pi-file-edit"></i>
-                  </div>
-
-                  <div>
-                    <div class="section-title">Task Details</div>
-
-                    <div class="section-description">
-                      Provide the basic information for this task.
-                    </div>
-                  </div>
-                </div>
-
-                <div class="form-grid">
-                  <!-- TITLE -->
-                  <div class="form-field col-span-2">
-                    <label>
-                      Task Title
-                      <span class="required">*</span>
-                    </label>
-
-                    <input
-                      pInputText
-                      type="text"
-                      formControlName="title"
-                      placeholder="e.g. Prepare monthly report"
-                    />
-
-                    <small
-                      class="field-error"
-                      *ngIf="
-                        FG.get('title')?.invalid && FG.get('title')?.touched
-                      "
-                    >
-                      Task title is required.
-                    </small>
-                  </div>
-
-                  <!-- DESCRIPTION -->
-                  <div class="form-field col-span-2">
-                    <label>Description</label>
-
-                    <textarea
-                      pTextarea
-                      formControlName="description"
-                      rows="3"
-                      [autoResize]="true"
-                      class="w-full!"
-                      placeholder="Describe what needs to be completed..."
-                    ></textarea>
-
-                    <div class="field-hint">
-                      Add useful information, instructions or requirements.
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- CHECKLIST -->
-              <div class="form-section">
-                <div class="section-header">
-                  <div class="section-icon">
-                    <i class="pi pi-check-square"></i>
-                  </div>
-
-                  <div>
-                    <div class="section-title">Checklist</div>
-
-                    <div class="section-description">
-                      Break this task into smaller actionable items.
-                    </div>
-                  </div>
-                </div>
-
-                <div formArrayName="checklists">
-                  <div
-                    *ngFor="let item of checklists.controls; let i = index"
-                    [formGroupName]="i"
-                    class="checklist-item"
-                  >
-                    <p-checkbox
-                      [binary]="true"
-                      formControlName="isCompleted"
-                    ></p-checkbox>
-
-                    <input
-                      pInputText
-                      type="text"
-                      formControlName="title"
-                      placeholder="Enter checklist item..."
-                      class="checklist-input"
-                      [class.completed]="item.get('isCompleted')?.value"
-                    />
-
-                    <button
-                      *ngIf="!isAssigneeOnly"
-                      type="button"
-                      class="checklist-remove"
-                      (click)="removeChecklist(i)"
-                    >
-                      <i class="pi pi-trash"></i>
-                    </button>
-                  </div>
-                </div>
-
-                <button
-                  *ngIf="!isAssigneeOnly"
-                  type="button"
-                  class="add-checklist-btn"
-                  (click)="addChecklist()"
-                >
-                  <i class="pi pi-plus"></i>
-                  Add Checklist Item
-                </button>
-
-                <div
-                  *ngIf="checklists.length === 0"
-                  class="text-sm text-gray-400 py-3"
-                >
-                  No checklist items added yet.
-                </div>
-              </div>
-
-              <!-- SCHEDULE -->
-              <div class="form-section">
-                <div class="section-header">
-                  <div class="section-icon">
-                    <i class="pi pi-calendar"></i>
-                  </div>
-
-                  <div>
-                    <div class="section-title">Schedule</div>
-
-                    <div class="section-description">
-                      Set when this task should be completed.
-                    </div>
-                  </div>
-                </div>
-
-                <div class="form-grid">
-                  <!-- START DATE -->
-                  <div class="form-field">
-                    <label>Start Date</label>
-
-                    <p-datepicker
-                      formControlName="startDate"
-                      [showIcon]="true"
-                      appendTo="body"
-                      dateFormat="dd/mm/yy"
-                      placeholder="dd/mm/yyyy"
-                      styleClass="w-full!"
-                      inputStyleClass="w-full!"
-                    ></p-datepicker>
-                  </div>
-
-                  <!-- DUE DATE -->
-                  <div class="form-field">
-                    <label>
-                      Due Date
-                      <span class="required">*</span>
-                    </label>
-
-                    <p-datepicker
-                      formControlName="dueDate"
-                      [showIcon]="true"
-                      appendTo="body"
-                      dateFormat="dd/mm/yy"
-                      placeholder="dd/mm/yyyy"
-                      styleClass="w-full!"
-                      inputStyleClass="w-full!"
-                    ></p-datepicker>
-
-                    <small
-                      class="field-error"
-                      *ngIf="
-                        FG.get('dueDate')?.invalid && FG.get('dueDate')?.touched
-                      "
-                    >
-                      Due date is required.
-                    </small>
-                  </div>
-
-                  <!-- ESTIMATED HOURS -->
-                  <div class="form-field">
-                    <label>Estimated Hours</label>
-
-                    <input
-                      pInputText
-                      type="number"
-                      formControlName="estimatedHours"
-                      placeholder="e.g. 4"
-                      min="0"
-                    />
-                  </div>
-
-                  <!-- REMINDER -->
-                  <div class="form-field">
-                    <label>Reminder</label>
-
-                    <p-datepicker
-                      formControlName="reminderAt"
-                      [showIcon]="true"
-                      [showTime]="true"
-                      appendTo="body"
-                      dateFormat="dd/mm/yy"
-                      placeholder="Set reminder"
-                      styleClass="w-full!"
-                      inputStyleClass="w-full!"
-                    ></p-datepicker>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- SIDEBAR -->
-            <aside class="task-sidebar">
-              <!-- ASSIGNMENT -->
-              <div class="sidebar-section">
-                <div class="sidebar-section-title">
-                  <i class="pi pi-users"></i>
-                  Assignment
-                </div>
-
-                <div class="form-field">
-                  <label>Created By</label>
-
-                  <div class="user-display">
-                    <div class="user-avatar">
-                      <i class="pi pi-user"></i>
-                    </div>
-
-                    <div class="min-w-0">
-                      <div class="user-name">
-                        {{
-                          isUpdate
-                            ? selectedTask?.assignedBy?.fullName || '-'
-                            : createdBy
-                        }}
-                      </div>
-
-                      <div class="user-role">Task creator</div>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="form-field mt-3">
-                  <label>Assign To</label>
-
-                  <p-select
-                    appendTo="body"
-                    formControlName="assignedToId"
-                    [options]="userSelection"
-                    [filter]="true"
-                    filterPlaceholder="Search staff..."
-                    placeholder="Select staff member"
-                    styleClass="w-full!"
-                  ></p-select>
-
-                  <small *ngIf="isAssigneeOnly" class="field-hint">
-                    Assignment can only be changed by the task creator.
-                  </small>
-                </div>
-
-                <div class="form-field mt-3">
-                  <label>Project</label>
-
-                  <p-select
-                    appendTo="body"
-                    formControlName="projectId"
-                    [options]="projectSelection"
-                    [filter]="true"
-                    filterPlaceholder="Search projects..."
-                    [showClear]="true"
-                    placeholder="Select project (optional)"
-                    styleClass="w-full!"
-                  ></p-select>
-
-                  <small class="field-hint">
-                    You can leave this empty if the task is not associated with
-                    a project.
-                  </small>
-                </div>
-              </div>
-
-              <!-- CLASSIFICATION -->
-              <div class="sidebar-section">
-                <div class="sidebar-section-title">
-                  <i class="pi pi-sliders-h"></i>
-                  Classification
-                </div>
-
-                <div class="form-field">
-                  <label>Priority</label>
-
-                  <p-select
-                    appendTo="body"
-                    formControlName="priority"
-                    [options]="priorityOptions"
-                    optionLabel="label"
-                    optionValue="value"
-                    styleClass="w-full!"
-                    placeholder="Select priority"
-                  ></p-select>
-                </div>
-
-                <div class="form-field mt-2">
-                  <label>Status</label>
-
-                  <p-select
-                    appendTo="body"
-                    formControlName="status"
-                    [options]="statusOptions"
-                    optionLabel="label"
-                    optionValue="value"
-                    styleClass="w-full!"
-                    placeholder="Select status"
-                  ></p-select>
-                </div>
-
-                <div class="form-field mt-2">
-                  <label>Category</label>
-
-                  <p-select
-                    appendTo="body"
-                    formControlName="category"
-                    [options]="categoryOptions"
-                    optionLabel="label"
-                    optionValue="value"
-                    styleClass="w-full!"
-                    placeholder="Select category"
-                  ></p-select>
-                </div>
-              </div>
-
-              <!-- RECURRING -->
-              <div class="sidebar-section">
-                <div class="sidebar-section-title">
-                  <i class="pi pi-refresh"></i>
-                  Recurring Task
-                </div>
-
-                <div class="recurring-row">
-                  <div>
-                    <div class="recurring-title">Repeat this task</div>
-
-                    <div class="recurring-description">
-                      Automatically repeat this task.
-                    </div>
-                  </div>
-
-                  <p-checkbox
-                    [binary]="true"
-                    formControlName="isRecurring"
-                  ></p-checkbox>
-                </div>
-
-                <div
-                  class="form-field mt-4"
-                  *ngIf="FG.get('isRecurring')?.value"
-                >
-                  <label>Repeat</label>
-
-                  <p-select
-                    appendTo="body"
-                    formControlName="recurringType"
-                    [options]="recurringOptions"
-                    optionLabel="label"
-                    optionValue="value"
-                    styleClass="w-full!"
-                    placeholder="Select frequency"
-                  ></p-select>
-                </div>
-              </div>
-            </aside>
-          </div>
-
-          <!-- DIALOG FOOTER -->
-          <div class="task-dialog-footer">
-            <div class="footer-info">
-              <i class="pi pi-info-circle"></i>
-
-              <span>
-                {{
-                  isAssigneeOnly
-                    ? 'You can update checklist progress only.'
-                    : 'Fields marked with'
-                }}
-
-                <span *ngIf="!isAssigneeOnly" class="required"> * </span>
-
-                <span *ngIf="!isAssigneeOnly"> are required. </span>
-              </span>
-            </div>
-
-            <div class="footer-actions">
-              <p-button
-                *ngIf="isUpdate && isTaskCreator"
-                label="Delete"
-                icon="pi pi-trash"
-                severity="danger"
-                [outlined]="true"
-                styleClass="delete-button"
-                (onClick)="DeleteTask()"
-              ></p-button>
-
-              <p-button
-                label="Cancel"
-                severity="secondary"
-                [outlined]="true"
-                styleClass="cancel-button"
-                (onClick)="CloseDialog()"
-              ></p-button>
-
-              <p-button
-                [label]="
-                  isAssigneeOnly
-                    ? 'Save Checklist'
-                    : isUpdate
-                      ? 'Update Task'
-                      : 'Create Task'
-                "
-                severity="info"
-                styleClass="save-button bg-blue-900! border-none! rounded-sm! py-2! px-5!"
-                (onClick)="SaveTask()"
-              ></p-button>
-            </div>
-          </div>
-        </div>
-      </ng-template>
-    </p-dialog>
 
     <!-- DELETE CONFIRMATION DIALOG -->
     <p-dialog
@@ -994,7 +501,7 @@ export class StaffTasks implements OnInit, OnDestroy {
 
   Query: GridifyQueryExtend = {} as GridifyQueryExtend;
 
-  searchText = '';
+  searchText: string = '';
 
   summaryCount: any = {
     myTasks: 0,
@@ -1006,20 +513,9 @@ export class StaffTasks implements OnInit, OnDestroy {
   selectedTask: StaffTaskDto | null = null;
 
   // --------------------------------------------------
-  // FORM
-  // --------------------------------------------------
-
-  FG!: FormGroup;
-
-  userSelection: { label: string; value: string }[] = [];
-  projectSelection: { label: string; value: string }[] = [];
-
-  // --------------------------------------------------
   // DIALOG STATE
   // --------------------------------------------------
 
-  visible = false;
-  isUpdate = false;
   isAssigneeOnly = false;
   isTaskCreator = false;
   showDeleteConfirm = false;
@@ -1031,31 +527,6 @@ export class StaffTasks implements OnInit, OnDestroy {
   // --------------------------------------------------
   // DROPDOWN OPTIONS
   // --------------------------------------------------
-
-  priorityOptions = [
-    { label: 'Low', value: 'Low' },
-    { label: 'Medium', value: 'Medium' },
-    { label: 'High', value: 'High' },
-    { label: 'Critical', value: 'Critical' },
-  ];
-
-  categoryOptions = [
-    { label: 'Admin', value: 'Admin' },
-    { label: 'HR', value: 'HR' },
-    { label: 'Development', value: 'Development' },
-    { label: 'Documentation', value: 'Documentation' },
-    { label: 'Maintenance', value: 'Maintenance' },
-    { label: 'Meeting', value: 'Meeting' },
-    { label: 'Training', value: 'Training' },
-    { label: 'Others', value: 'Others' },
-  ];
-
-  recurringOptions = [
-    { label: 'Daily', value: 'Daily' },
-    { label: 'Weekly', value: 'Weekly' },
-    { label: 'Monthly', value: 'Monthly' },
-    { label: 'Yearly', value: 'Yearly' },
-  ];
 
   statusOptions = [
     { label: 'To Do', value: 'Todo' },
@@ -1078,238 +549,7 @@ export class StaffTasks implements OnInit, OnDestroy {
   // --------------------------------------------------
 
   ngOnInit(): void {
-    this.initForm();
-    this.getUserSelection();
-    this.getProjectSelection();
     this.GetData();
-  }
-
-  ngOnDestroy(): void {
-    this.ngUnsubscribe.next();
-    this.ngUnsubscribe.complete();
-    this.loadingService.stop();
-  }
-
-  // --------------------------------------------------
-  // INITIAL DATA
-  // --------------------------------------------------
-
-  getProjectSelection(): void {
-    const query: GridifyQueryExtend = {
-      Page: 1,
-      PageSize: 1000,
-      Select: null,
-      Filter: null,
-      OrderBy: null,
-    } as GridifyQueryExtend;
-
-    this.projectService
-      .GetMany(query)
-      .pipe(takeUntil(this.ngUnsubscribe))
-      .subscribe({
-        next: (res) => {
-          this.projectSelection = (res?.data ?? []).map(
-            (project: ProjectDto) => ({
-              label: `${project.projectCode} - ${project.projectTitle}`,
-              value: project.id,
-            }),
-          );
-
-          this.cdr.markForCheck();
-        },
-
-        error: (err) => {
-          console.error('Error loading projects:', err);
-
-          this.messageService.add({
-            severity: 'error',
-            summary: 'Error',
-            detail: 'Failed to load projects.',
-          });
-        },
-      });
-  }
-
-  getUserSelection(): void {
-    this.staffTaskService
-      .GetDropdown()
-      .pipe(takeUntil(this.ngUnsubscribe))
-      .subscribe({
-        next: (res) => {
-          this.userSelection = (res?.users ?? []).map((user: any) => ({
-            label:
-              user.fullName ??
-              user.displayName ??
-              user.name ??
-              user.email ??
-              'Unknown User',
-            value: user.id,
-          }));
-
-          this.cdr.markForCheck();
-        },
-
-        error: (err) => {
-          console.error('Error loading staff dropdown:', err);
-
-          this.messageService.add({
-            severity: 'error',
-            summary: 'Error',
-            detail: 'Failed to load staff members.',
-          });
-        },
-      });
-  }
-
-  // --------------------------------------------------
-  // FORM INITIALIZATION
-  // --------------------------------------------------
-
-  initForm(): void {
-    this.FG = new FormGroup({
-      id: new FormControl<string | null>({
-        value: null,
-        disabled: true,
-      }),
-
-      title: new FormControl<string | null>(null, [
-        Validators.required,
-        Validators.maxLength(200),
-      ]),
-
-      description: new FormControl<string | null>(null),
-
-      assignedToId: new FormControl<string | null>(null),
-
-      projectId: new FormControl<string | null>(null),
-
-      priority: new FormControl<string>('Medium', Validators.required),
-
-      category: new FormControl<string>('Others', Validators.required),
-
-      status: new FormControl<string>('Todo'),
-
-      startDate: new FormControl<Date | null>(null),
-
-      dueDate: new FormControl<Date | null>(null, Validators.required),
-
-      reminderAt: new FormControl<Date | null>(null),
-
-      isRecurring: new FormControl<boolean>(false),
-
-      recurringType: new FormControl<string | null>(null),
-
-      estimatedHours: new FormControl<number | null>(null, [Validators.min(0)]),
-
-      checklists: new FormArray([]),
-    });
-  }
-
-  get checklists(): FormArray {
-    return this.FG.get('checklists') as FormArray;
-  }
-
-  createChecklistForm(item?: any, assigneeOnly = false): FormGroup {
-    return new FormGroup({
-      id: new FormControl<string | null>(item?.id ?? null),
-
-      title: new FormControl(
-        {
-          value: item?.title ?? '',
-          disabled: assigneeOnly,
-        },
-        Validators.required,
-      ),
-
-      isCompleted: new FormControl<boolean>(item?.isCompleted ?? false),
-
-      sequence: new FormControl({
-        value: item?.sequence ?? this.checklists.length,
-        disabled: assigneeOnly,
-      }),
-    });
-  }
-
-  clearChecklists(): void {
-    while (this.checklists.length > 0) {
-      this.checklists.removeAt(0);
-    }
-  }
-
-  enableTaskFields(): void {
-    const fields = [
-      'title',
-      'description',
-      'assignedToId',
-      'projectId',
-      'priority',
-      'category',
-      'status',
-      'startDate',
-      'dueDate',
-      'reminderAt',
-      'isRecurring',
-      'recurringType',
-      'estimatedHours',
-    ];
-
-    fields.forEach((field) => {
-      this.FG.get(field)?.enable({
-        emitEvent: false,
-      });
-    });
-
-    this.checklists.controls.forEach((control) => {
-      control.get('title')?.enable({
-        emitEvent: false,
-      });
-
-      control.get('sequence')?.enable({
-        emitEvent: false,
-      });
-
-      control.get('isCompleted')?.enable({
-        emitEvent: false,
-      });
-    });
-  }
-
-  disableTaskFieldsForAssignee(): void {
-    const fields = [
-      'title',
-      'description',
-      'assignedToId',
-      'projectId',
-      'priority',
-      'category',
-      'status',
-      'startDate',
-      'dueDate',
-      'reminderAt',
-      'isRecurring',
-      'recurringType',
-      'estimatedHours',
-    ];
-
-    fields.forEach((field) => {
-      this.FG.get(field)?.disable({
-        emitEvent: false,
-      });
-    });
-
-    this.checklists.controls.forEach((control) => {
-      control.get('title')?.disable({
-        emitEvent: false,
-      });
-
-      control.get('sequence')?.disable({
-        emitEvent: false,
-      });
-
-      control.get('isCompleted')?.enable({
-        emitEvent: false,
-      });
-    });
   }
 
   // --------------------------------------------------
@@ -1379,312 +619,6 @@ export class StaffTasks implements OnInit, OnDestroy {
         this.cdr.markForCheck();
       }),
     );
-  }
-
-  // --------------------------------------------------
-  // CREATE TASK
-  // --------------------------------------------------
-
-  OpenTaskDialog(): void {
-    this.isUpdate = false;
-    this.isAssigneeOnly = false;
-    this.isTaskCreator = false;
-    this.selectedTask = null;
-
-    this.enableTaskFields();
-
-    this.FG.reset();
-
-    this.clearChecklists();
-
-    this.FG.patchValue({
-      id: null,
-      title: null,
-      description: null,
-      assignedToId: null,
-      projectId: null,
-      priority: 'Medium',
-      category: 'Others',
-      status: 'Todo',
-      startDate: new Date(),
-      dueDate: null,
-      reminderAt: null,
-      isRecurring: false,
-      recurringType: null,
-      estimatedHours: null,
-    });
-
-    this.visible = true;
-
-    this.cdr.markForCheck();
-  }
-
-  // --------------------------------------------------
-  // EDIT TASK
-  // --------------------------------------------------
-
-  editTask(task: StaffTaskDto): void {
-    this.isUpdate = true;
-    this.selectedTask = task;
-
-    const currentUserId = this.userService.currentUser?.userId;
-
-    this.isTaskCreator = !!currentUserId && task.assignedById === currentUserId;
-
-    this.isAssigneeOnly =
-      !!currentUserId &&
-      task.assignedToId === currentUserId &&
-      task.assignedById !== currentUserId;
-
-    this.enableTaskFields();
-
-    this.clearChecklists();
-
-    for (const item of task.checklists ?? []) {
-      this.checklists.push(this.createChecklistForm(item, this.isAssigneeOnly));
-    }
-
-    this.FG.patchValue({
-      id: task.id,
-      title: task.title,
-      description: task.description,
-      assignedToId: task.assignedToId ?? null,
-      projectId: task.projectId ?? null,
-      priority: task.priority,
-      category: task.category,
-      status: task.status,
-      startDate: task.startDate ? new Date(task.startDate) : null,
-      dueDate: task.dueDate ? new Date(task.dueDate) : null,
-      reminderAt: task.reminderAt ? new Date(task.reminderAt) : null,
-      isRecurring: task.isRecurring,
-      recurringType: task.recurringType,
-      estimatedHours: task.estimatedHours,
-    });
-
-    if (this.isAssigneeOnly) {
-      this.disableTaskFieldsForAssignee();
-    }
-
-    this.visible = true;
-
-    this.cdr.markForCheck();
-  }
-
-  // --------------------------------------------------
-  // SAVE TASK
-  // --------------------------------------------------
-
-  SaveTask(): void {
-    if (this.isAssigneeOnly) {
-      this.saveChecklistOnly();
-      return;
-    }
-
-    if (this.FG.invalid) {
-      this.FG.markAllAsTouched();
-
-      this.messageService.add({
-        severity: 'warn',
-        summary: 'Incomplete Information',
-        detail: 'Please complete all required fields.',
-      });
-
-      return;
-    }
-
-    const formValue = this.FG.getRawValue();
-
-    if (
-      formValue.startDate &&
-      formValue.dueDate &&
-      new Date(formValue.startDate) > new Date(formValue.dueDate)
-    ) {
-      this.messageService.add({
-        severity: 'warn',
-        summary: 'Invalid Date',
-        detail: 'Start date cannot be later than the due date.',
-      });
-
-      return;
-    }
-
-    if (formValue.isRecurring && !formValue.recurringType) {
-      this.messageService.add({
-        severity: 'warn',
-        summary: 'Recurring Frequency Required',
-        detail: 'Please select how often this task should repeat.',
-      });
-
-      return;
-    }
-
-    const request: any = {
-      title: formValue.title?.trim(),
-
-      description: formValue.description?.trim() || null,
-
-      assignedToId: formValue.assignedToId || null,
-
-      projectId: formValue.projectId || null,
-
-      priority: formValue.priority,
-
-      category: formValue.category,
-
-      startDate: formValue.startDate,
-
-      dueDate: formValue.dueDate,
-
-      reminderAt: formValue.reminderAt,
-
-      isRecurring: formValue.isRecurring,
-
-      recurringType: formValue.isRecurring ? formValue.recurringType : null,
-
-      estimatedHours: formValue.estimatedHours,
-
-      checklists: (formValue.checklists ?? []).map(
-        (item: any, index: number) => ({
-          id: item.id ?? null,
-          title: item.title?.trim(),
-          isCompleted: item.isCompleted ?? false,
-          sequence: item.sequence ?? index,
-        }),
-      ),
-    };
-
-    if (this.isUpdate) {
-      request.id = formValue.id;
-      request.status = formValue.status ?? 'Todo';
-    }
-
-    if (request.checklists.some((item: any) => !item.title)) {
-      this.messageService.add({
-        severity: 'warn',
-        summary: 'Invalid Checklist',
-        detail: 'Please enter a title for every checklist item.',
-      });
-
-      return;
-    }
-
-    this.loadingService.start();
-
-    const request$ = this.isUpdate
-      ? this.staffTaskService.Update(request)
-      : this.staffTaskService.Create(request);
-
-    request$
-      .pipe(
-        takeUntil(this.ngUnsubscribe),
-
-        switchMap((res: StaffTaskDto) => this.getCount().pipe(map(() => res))),
-      )
-      .subscribe({
-        next: (res: StaffTaskDto) => {
-          this.updateTaskInList(res);
-
-          this.messageService.add({
-            severity: 'success',
-            summary: this.isUpdate ? 'Task Updated' : 'Task Created',
-            detail: this.isUpdate
-              ? 'Task has been updated successfully.'
-              : 'Task has been created successfully.',
-          });
-
-          this.resetDialog();
-        },
-
-        error: (err) => {
-          console.error(
-            this.isUpdate ? 'Error updating task:' : 'Error creating task:',
-            err,
-          );
-
-          this.messageService.add({
-            severity: 'error',
-            summary: 'Error',
-            detail:
-              err?.error?.Error ??
-              err?.error?.message ??
-              (this.isUpdate
-                ? 'Failed to update task.'
-                : 'Failed to create task.'),
-          });
-
-          this.loadingService.stop();
-
-          this.cdr.markForCheck();
-        },
-
-        complete: () => {
-          this.loadingService.stop();
-        },
-      });
-  }
-
-  // --------------------------------------------------
-  // ASSIGNEE CHECKLIST UPDATE
-  // --------------------------------------------------
-
-  saveChecklistOnly(): void {
-    const formValue = this.FG.getRawValue();
-
-    const request = {
-      id: formValue.id,
-
-      checklists: (formValue.checklists ?? []).map(
-        (item: any, index: number) => ({
-          id: item.id,
-          isCompleted: item.isCompleted ?? false,
-          sequence: item.sequence ?? index,
-        }),
-      ),
-    };
-
-    this.loadingService.start();
-
-    this.staffTaskService
-      .UpdateChecklist(request)
-      .pipe(
-        takeUntil(this.ngUnsubscribe),
-
-        switchMap((res: StaffTaskDto) => this.getCount().pipe(map(() => res))),
-      )
-      .subscribe({
-        next: (res: StaffTaskDto) => {
-          this.updateTaskInList(res);
-
-          this.messageService.add({
-            severity: 'success',
-            summary: 'Checklist Updated',
-            detail: 'Checklist progress has been updated.',
-          });
-
-          this.resetDialog();
-        },
-
-        error: (err) => {
-          console.error('Error updating checklist:', err);
-
-          this.messageService.add({
-            severity: 'error',
-            summary: 'Error',
-            detail:
-              err?.error?.Error ??
-              err?.error?.message ??
-              'Failed to update checklist.',
-          });
-
-          this.loadingService.stop();
-
-          this.cdr.markForCheck();
-        },
-
-        complete: () => {
-          this.loadingService.stop();
-        },
-      });
   }
 
   // --------------------------------------------------
@@ -1758,26 +692,6 @@ export class StaffTasks implements OnInit, OnDestroy {
   }
 
   // --------------------------------------------------
-  // CHECKLIST HELPERS
-  // --------------------------------------------------
-
-  addChecklist(): void {
-    this.checklists.push(
-      this.createChecklistForm({
-        sequence: this.checklists.length,
-      }),
-    );
-  }
-
-  removeChecklist(index: number): void {
-    this.checklists.removeAt(index);
-
-    this.checklists.controls.forEach((control, i) => {
-      control.get('sequence')?.setValue(i);
-    });
-  }
-
-  // --------------------------------------------------
   // SEARCH
   // --------------------------------------------------
 
@@ -1794,56 +708,11 @@ export class StaffTasks implements OnInit, OnDestroy {
   }
 
   // --------------------------------------------------
-  // DIALOG RESET
-  // --------------------------------------------------
-
-  resetDialog(): void {
-    this.visible = false;
-
-    this.isUpdate = false;
-    this.isAssigneeOnly = false;
-    this.isTaskCreator = false;
-
-    this.selectedTask = null;
-
-    this.enableTaskFields();
-
-    this.FG.reset();
-
-    this.clearChecklists();
-
-    this.FG.patchValue({
-      id: null,
-      title: null,
-      description: null,
-      assignedToId: null,
-      projectId: null,
-      priority: 'Medium',
-      category: 'Others',
-      status: 'Todo',
-      startDate: new Date(),
-      dueDate: null,
-      reminderAt: null,
-      isRecurring: false,
-      recurringType: null,
-      estimatedHours: null,
-    });
-
-    this.showDeleteConfirm = false;
-
-    this.cdr.markForCheck();
-  }
-
-  CloseDialog(): void {
-    this.resetDialog();
-  }
-
-  // --------------------------------------------------
   // DELETE TASK
   // --------------------------------------------------
 
   DeleteTask(): void {
-    if (!this.isUpdate || !this.isTaskCreator || !this.selectedTask?.id) {
+    if (!this.isTaskCreator || !this.selectedTask?.id) {
       return;
     }
 
@@ -1855,11 +724,14 @@ export class StaffTasks implements OnInit, OnDestroy {
   }
 
   ConfirmDelete(): void {
-    if (!this.selectedTask?.id) {
+    const task = this.selectedTask;
+
+    if (!task?.id) {
       return;
     }
 
-    const taskId = this.selectedTask.id;
+    const taskId = task.id;
+    const currentUserId = this.userService.currentUser?.userId;
 
     this.loadingService.start();
 
@@ -1868,18 +740,58 @@ export class StaffTasks implements OnInit, OnDestroy {
       .pipe(takeUntil(this.ngUnsubscribe))
       .subscribe({
         next: () => {
-          this.showDeleteConfirm = false;
+          // 1. Remove deleted task from the current list
+          const current = this.PagingSignal();
 
+          this.PagingSignal.set({
+            ...current,
+            data: current.data.filter((item) => item.id !== taskId),
+            totalElements: Math.max(0, current.totalElements - 1),
+          });
+
+          // 2. Update summary counts locally
+          const counts = { ...this.summaryCount };
+
+          const isMyTask =
+            task.assignedToId === currentUserId ||
+            (!task.assignedToId && task.assignedById === currentUserId);
+
+          const isAssignedToOther =
+            task.assignedById === currentUserId &&
+            !!task.assignedToId &&
+            task.assignedToId !== currentUserId;
+
+          if (isMyTask) {
+            counts.myTasks = Math.max(0, counts.myTasks - 1);
+
+            if (task.status === 'InProgress') {
+              counts.inProgress = Math.max(0, counts.inProgress - 1);
+            }
+
+            if (task.status === 'Completed') {
+              counts.completed = Math.max(0, counts.completed - 1);
+            }
+          }
+
+          if (isAssignedToOther) {
+            counts.assignedToOthers = Math.max(0, counts.assignedToOthers - 1);
+          }
+
+          this.summaryCount = counts;
+
+          // 3. Close dialog and clear selected task
+          this.showDeleteConfirm = false;
+          this.selectedTask = null;
+
+          // 4. Success message
           this.messageService.add({
             severity: 'success',
             summary: 'Task Deleted',
             detail: 'Task has been deleted successfully.',
           });
 
-          this.resetDialog();
-
-          // GetData() also refreshes the summary count.
-          this.GetData();
+          this.loadingService.stop();
+          this.cdr.markForCheck();
         },
 
         error: (err) => {
@@ -1895,13 +807,14 @@ export class StaffTasks implements OnInit, OnDestroy {
           });
 
           this.loadingService.stop();
-
           this.cdr.markForCheck();
         },
-
-        complete: () => {
-          this.loadingService.stop();
-        },
       });
+  }
+
+  ngOnDestroy(): void {
+    this.ngUnsubscribe.next();
+    this.ngUnsubscribe.complete();
+    this.loadingService.stop();
   }
 }

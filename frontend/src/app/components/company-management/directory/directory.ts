@@ -57,7 +57,7 @@ interface DirectoryUser {
                     </div>
                   </div>
 
-                  <p class="text-sm text-slate-500 ml-4">
+                  <p class=" text-slate-500 ml-4">
                     Find colleagues, explore departments and connect with your
                     team.
                   </p>
@@ -65,7 +65,7 @@ interface DirectoryUser {
               </div>
 
               <!-- Search -->
-              <div class="mt-7 max-w-2xl relative">
+              <div class="mt-2 max-w-2xl relative">
                 <i
                   class="pi pi-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
                 ></i>
@@ -152,10 +152,10 @@ interface DirectoryUser {
                 class="px-6 py-5 border-b border-slate-100 flex items-center justify-between gap-4"
               >
                 <div>
-                  <h2 class="text-lg font-bold text-slate-900">
+                  <h2 class="text-xl font-bold text-slate-900">
                     Browse Employees
                   </h2>
-                  <p class="text-sm text-slate-500 mt-1">
+                  <p class="text-slate-500 mt-1">
                     Filter and view employees across the organization.
                   </p>
                 </div>

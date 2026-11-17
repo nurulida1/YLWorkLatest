@@ -72,15 +72,9 @@ import {
         <!-- Page header -->
         <div class="po-header">
           <div class="po-heading">
-            <div class="po-title-row">
-              <div class="po-title-icon">
-                <i class="pi pi-file-edit"></i>
-              </div>
-
-              <div>
-                <h1>Purchase Orders</h1>
-                <p>View, create, and track all purchase orders</p>
-              </div>
+            <div>
+              <b class="text-xl">Purchase Orders</b>
+              <p>View, create, and track all purchase orders</p>
             </div>
           </div>
 
@@ -111,30 +105,14 @@ import {
               label="Generate PO"
               icon="pi pi-plus"
               severity="info"
-              styleClass="generate-po-btn"
+              styleClass="bg-blue-700! hover:bg-blue-500! border-none!"
               [routerLink]="'/purchase-orders/form'"
             ></p-button>
           </div>
         </div>
 
-        <!-- Table heading -->
-        <div class="po-list-heading">
-          <div>
-            <h2>Purchase Order List</h2>
-            <p>Manage and monitor your purchase orders</p>
-          </div>
-
-          <div
-            class="po-record-count"
-            *ngIf="PagingSignal().totalElements !== undefined"
-          >
-            <i class="pi pi-list"></i>
-            <span>{{ PagingSignal().totalElements || 0 }} records</span>
-          </div>
-        </div>
-
         <!-- Table -->
-        <div class="po-table-wrapper">
+        <div class="po-table-wrapper border border-gray-200">
           <p-table
             #fTable
             dataKey="id"

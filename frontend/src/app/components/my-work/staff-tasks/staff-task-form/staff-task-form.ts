@@ -34,326 +34,507 @@ import { StaffTaskService } from '../../../../services/staffTaskService';
     SelectModule,
     DatePickerModule,
   ],
-  template: ` <div class="min-h-0 bg-slate-50 px-4 py-5 sm:px-6 lg:px-8">
-    <!-- Header -->
-    <div class="flex flex-wrap items-center justify-between gap-3">
-      <div>
-        <h2 class="text-2xl font-semibold text-slate-800">
-          {{ isEditMode ? 'Edit Task' : 'Create Task' }}
-        </h2>
-        <p class="mt-1 text-slate-500">
-          {{
-            isEditMode
-              ? 'Update task information.'
-              : 'Create and assign a new task.'
-          }}
-        </p>
-      </div>
+  template: `
+    <div class="min-h-0 bg-slate-50 px-4 py-5 sm:px-6 lg:px-8">
+      <!-- Header -->
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 class="text-2xl font-semibold text-slate-800">
+            {{
+              isViewMode
+                ? 'View Task'
+                : isEditMode
+                  ? 'Edit Task'
+                  : 'Create Task'
+            }}
+          </h2>
 
-      <p-button
-        label="Back"
-        icon="pi pi-arrow-left"
-        severity="secondary"
-        [outlined]="true"
-        (onClick)="cancel()"
-      />
-    </div>
+          <p class="mt-1 text-slate-500">
+            {{
+              isViewMode
+                ? 'View task information and assignment details.'
+                : isEditMode
+                  ? 'Update task information.'
+                  : 'Create and assign a new task.'
+            }}
+          </p>
+        </div>
 
-    <form [formGroup]="taskForm" (ngSubmit)="saveTask()" class="mt-4">
-      <div class="rounded-xl border border-slate-200 bg-white p-5 space-y-6">
-        <!-- Basic Information -->
-        <section class="space-y-4">
-          <h3 class="text-lg font-semibold text-slate-800">Task Information</h3>
-
-          <div>
-            <label class="mb-2 block font-medium">
-              Task Title <span class="text-red-500">*</span>
-            </label>
-
-            <input
-              pInputText
-              formControlName="title"
-              class="w-full"
-              placeholder="Enter task title"
-            />
-
-            @if (
-              taskForm.get('title')?.touched && taskForm.get('title')?.invalid
-            ) {
-              <small class="text-red-500">Task title is required.</small>
-            }
-          </div>
-
-          <div>
-            <label class="mb-2 block font-medium">
-              Description / Scope of Work
-            </label>
-
-            <textarea
-              pTextarea
-              formControlName="description"
-              rows="4"
-              class="w-full"
-              placeholder="Describe the task or scope of work..."
-            ></textarea>
-          </div>
-        </section>
-
-        <hr class="border-slate-200" />
-
-        <!-- Project / Work Order -->
-        <section class="space-y-4">
-          <h3 class="text-lg font-semibold text-slate-800">
-            Related Information
-          </h3>
-
-          <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <div>
-              <label class="mb-2 block font-medium">Project</label>
-              <p-select
-                [options]="projectOptions"
-                formControlName="projectId"
-                optionLabel="label"
-                optionValue="value"
-                placeholder="Select Project"
-                class="w-full"
-                [disabled]="true"
-              />
-            </div>
-
-            <div>
-              <label class="mb-2 block font-medium">Work Order</label>
-              <p-select
-                [options]="workOrderOptions"
-                formControlName="workOrderId"
-                optionLabel="label"
-                optionValue="value"
-                placeholder="No Work Order"
-                class="w-full"
-                [disabled]="true"
-              />
-            </div>
-          </div>
-        </section>
-
-        <hr class="border-slate-200" />
-
-        <!-- Assignment -->
-        <section class="space-y-4">
-          <h3 class="text-lg font-semibold text-slate-800">Assignment</h3>
-
-          <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <div>
-              <label class="mb-2 block font-medium"> Assign To </label>
-
-              <p-select
-                formControlName="assignedToId"
-                [options]="users"
-                optionLabel="label"
-                optionValue="value"
-                placeholder="Select staff"
-                [filter]="true"
-                [showClear]="true"
-                class="w-full"
-              />
-            </div>
-
-            <div>
-              <label class="mb-2 block font-medium">
-                Priority <span class="text-red-500">*</span>
-              </label>
-
-              <p-select
-                formControlName="priority"
-                [options]="priorities"
-                optionLabel="label"
-                optionValue="value"
-                placeholder="Select priority"
-                class="w-full"
-              />
-            </div>
-
-            <div>
-              <label class="mb-2 block font-medium">
-                Category <span class="text-red-500">*</span>
-              </label>
-
-              <p-select
-                formControlName="category"
-                [options]="categories"
-                optionLabel="label"
-                optionValue="value"
-                placeholder="Select category"
-                class="w-full"
-              />
-            </div>
-
-            <div>
-              <label class="mb-2 block font-medium"> Status </label>
-
-              <p-select
-                formControlName="status"
-                [options]="statuses"
-                optionLabel="label"
-                optionValue="value"
-                class="w-full"
-              />
-            </div>
-          </div>
-        </section>
-
-        <hr class="border-slate-200" />
-
-        <!-- Schedule -->
-        <section class="space-y-4">
-          <h3 class="text-lg font-semibold text-slate-800">Schedule</h3>
-
-          <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <div>
-              <label class="mb-2 block font-medium"> Start Date </label>
-
-              <p-datepicker
-                formControlName="startDate"
-                [showIcon]="true"
-                dateFormat="dd/mm/yy"
-                placeholder="Select start date"
-                styleClass="w-full"
-                class="w-full"
-              />
-            </div>
-
-            <div>
-              <label class="mb-2 block font-medium">
-                Due Date <span class="text-red-500">*</span>
-              </label>
-
-              <p-datepicker
-                formControlName="dueDate"
-                [showIcon]="true"
-                dateFormat="dd/mm/yy"
-                placeholder="Select due date"
-                styleClass="w-full"
-                class="w-full"
-              />
-
-              @if (
-                taskForm.get('dueDate')?.touched &&
-                taskForm.get('dueDate')?.invalid
-              ) {
-                <small class="text-red-500">Due date is required.</small>
-              }
-            </div>
-
-            <div>
-              <label class="mb-2 block font-medium"> Estimated Hours </label>
-
-              <input
-                pInputText
-                type="number"
-                min="0"
-                formControlName="estimatedHours"
-                class="w-full"
-                placeholder="e.g. 8"
-              />
-            </div>
-
-            <div>
-              <label class="mb-2 block font-medium"> Actual Hours </label>
-
-              <input
-                pInputText
-                type="number"
-                min="0"
-                formControlName="actualHours"
-                class="w-full"
-                placeholder="e.g. 6"
-              />
-            </div>
-          </div>
-        </section>
-
-        <hr class="border-slate-200" />
-
-        <!-- Checklist -->
-        <section class="space-y-4">
-          <div class="flex items-center justify-between gap-3">
-            <div>
-              <h3 class="text-lg font-semibold text-slate-800">Checklist</h3>
-              <p class="text-sm text-slate-500">
-                Break the task into smaller steps.
-              </p>
-            </div>
-
+        <div class="flex items-center gap-2">
+          @if (isViewMode) {
             <p-button
-              label="Add Item"
-              icon="pi pi-plus"
-              size="small"
-              styleClass="text-blue-700! border-blue-700! border-dashed!"
-              [outlined]="true"
-              type="button"
-              (onClick)="addChecklist()"
+              label="Edit"
+              icon="pi pi-pencil"
+              styleClass="bg-blue-700! hover:bg-blue-500! border-none!"
+              (onClick)="enableEdit()"
             />
-          </div>
+          }
 
-          <div formArrayName="checklists" class="space-y-3">
-            @for (item of checklists.controls; track $index; let i = $index) {
-              <div
-                [formGroupName]="i"
-                class="flex items-center gap-3 rounded-lg border border-slate-200 p-3"
-              >
-                <span class="text-sm font-medium text-slate-400">
-                  {{ i + 1 }}.
-                </span>
-
-                <input
-                  pInputText
-                  formControlName="title"
-                  class="flex-1"
-                  placeholder="Enter checklist item"
-                />
-
-                <p-button
-                  icon="pi pi-trash"
-                  severity="danger"
-                  [text]="true"
-                  type="button"
-                  (onClick)="removeChecklist(i)"
-                />
-              </div>
-            } @empty {
-              <div
-                class="rounded-lg border border-dashed border-slate-300 p-6 text-center"
-              >
-                <p class="text-sm text-slate-500">No checklist items added.</p>
-              </div>
-            }
-          </div>
-        </section>
-
-        <!-- Actions -->
-        <div
-          class="flex flex-wrap justify-end gap-3 border-t border-slate-200 pt-5"
-        >
           <p-button
-            label="Cancel"
+            label="Back"
+            icon="pi pi-arrow-left"
             severity="secondary"
             [outlined]="true"
-            type="button"
             (onClick)="cancel()"
-          />
-
-          <p-button
-            [label]="isEditMode ? 'Update Task' : 'Create Task'"
-            icon="pi pi-save"
-            type="submit"
-            styleClass="bg-blue-700! hover:bg-blue-500! border-none!"
-            [loading]="saving"
-            [disabled]="saving || loading"
           />
         </div>
       </div>
-    </form>
-  </div>`,
+
+      <form [formGroup]="taskForm" (ngSubmit)="saveTask()" class="mt-4">
+        <div
+          class="space-y-6"
+          [ngClass]="
+            isViewMode
+              ? 'py-2'
+              : 'rounded-xl border border-slate-200 bg-white p-5'
+          "
+        >
+          <!-- Basic Information -->
+          <section class="space-y-4">
+            <h3 class="text-lg font-semibold text-slate-800">
+              Task Information
+            </h3>
+
+            <!-- Task Title -->
+            <div>
+              <label class="mb-2 block text-sm font-medium text-slate-500">
+                Task Title <span class="text-red-500">*</span>
+              </label>
+
+              @if (isViewMode) {
+                <p class="text-base font-semibold text-slate-800">
+                  {{ taskForm.get('title')?.value || '-' }}
+                </p>
+              } @else {
+                <input
+                  pInputText
+                  formControlName="title"
+                  class="w-full"
+                  placeholder="Enter task title"
+                />
+
+                @if (
+                  taskForm.get('title')?.touched &&
+                  taskForm.get('title')?.invalid
+                ) {
+                  <small class="text-red-500"> Task title is required. </small>
+                }
+              }
+            </div>
+
+            <!-- Description -->
+            <div>
+              <label class="mb-2 block text-sm font-medium text-slate-500">
+                Description / Scope of Work
+              </label>
+
+              @if (isViewMode) {
+                <p class="whitespace-pre-line text-sm text-slate-800">
+                  {{ taskForm.get('description')?.value || '-' }}
+                </p>
+              } @else {
+                <textarea
+                  pTextarea
+                  formControlName="description"
+                  rows="4"
+                  class="w-full"
+                  placeholder="Describe the task or scope of work..."
+                ></textarea>
+              }
+            </div>
+          </section>
+
+          <hr class="border-slate-200" />
+
+          <!-- Project / Work Order -->
+          <section class="space-y-4">
+            <h3 class="text-lg font-semibold text-slate-800">
+              Related Information
+            </h3>
+
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <!-- Project -->
+              <div>
+                <label class="mb-2 block text-sm font-medium text-slate-500">
+                  Project
+                </label>
+
+                @if (isViewMode) {
+                  <p class="text-sm text-slate-800">
+                    {{
+                      getOptionLabel(
+                        projectOptions,
+                        taskForm.get('projectId')?.value
+                      )
+                    }}
+                  </p>
+                } @else {
+                  <p-select
+                    [options]="projectOptions"
+                    formControlName="projectId"
+                    optionLabel="label"
+                    optionValue="value"
+                    placeholder="Select Project"
+                    class="w-full"
+                    [disabled]="true"
+                  />
+                }
+              </div>
+
+              <!-- Work Order -->
+              <div>
+                <label class="mb-2 block text-sm font-medium text-slate-500">
+                  Work Order
+                </label>
+
+                @if (isViewMode) {
+                  <p class="text-sm text-slate-800">
+                    {{
+                      getOptionLabel(
+                        workOrderOptions,
+                        taskForm.get('workOrderId')?.value
+                      )
+                    }}
+                  </p>
+                } @else {
+                  <p-select
+                    [options]="workOrderOptions"
+                    formControlName="workOrderId"
+                    optionLabel="label"
+                    optionValue="value"
+                    placeholder="No Work Order"
+                    class="w-full"
+                    [disabled]="true"
+                  />
+                }
+              </div>
+            </div>
+          </section>
+
+          <hr class="border-slate-200" />
+
+          <!-- Assignment -->
+          <section class="space-y-4">
+            <h3 class="text-lg font-semibold text-slate-800">Assignment</h3>
+
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <!-- Assign To -->
+              <div>
+                <label class="mb-2 block text-sm font-medium text-slate-500">
+                  Assign To
+                </label>
+
+                @if (isViewMode) {
+                  <p class="text-sm text-slate-800">
+                    {{
+                      getOptionLabel(users, taskForm.get('assignedToId')?.value)
+                    }}
+                  </p>
+                } @else {
+                  <p-select
+                    formControlName="assignedToId"
+                    [options]="users"
+                    optionLabel="label"
+                    optionValue="value"
+                    placeholder="Select staff"
+                    [filter]="true"
+                    [showClear]="true"
+                    class="w-full"
+                  />
+                }
+              </div>
+
+              <!-- Priority -->
+              <div>
+                <label class="mb-2 block text-sm font-medium text-slate-500">
+                  Priority <span class="text-red-500">*</span>
+                </label>
+
+                @if (isViewMode) {
+                  <p class="text-sm font-medium text-slate-800">
+                    {{
+                      getOptionLabel(
+                        priorities,
+                        taskForm.get('priority')?.value
+                      )
+                    }}
+                  </p>
+                } @else {
+                  <p-select
+                    formControlName="priority"
+                    [options]="priorities"
+                    optionLabel="label"
+                    optionValue="value"
+                    placeholder="Select priority"
+                    class="w-full"
+                  />
+                }
+              </div>
+
+              <!-- Category -->
+              <div>
+                <label class="mb-2 block text-sm font-medium text-slate-500">
+                  Category <span class="text-red-500">*</span>
+                </label>
+
+                @if (isViewMode) {
+                  <p class="text-sm text-slate-800">
+                    {{
+                      getOptionLabel(
+                        categories,
+                        taskForm.get('category')?.value
+                      )
+                    }}
+                  </p>
+                } @else {
+                  <p-select
+                    formControlName="category"
+                    [options]="categories"
+                    optionLabel="label"
+                    optionValue="value"
+                    placeholder="Select category"
+                    class="w-full"
+                  />
+                }
+              </div>
+
+              <!-- Status -->
+              <div>
+                <label class="mb-2 block text-sm font-medium text-slate-500">
+                  Status
+                </label>
+
+                @if (isViewMode) {
+                  <p class="text-sm text-slate-800">
+                    {{
+                      getOptionLabel(statuses, taskForm.get('status')?.value)
+                    }}
+                  </p>
+                } @else {
+                  <p-select
+                    formControlName="status"
+                    [options]="statuses"
+                    optionLabel="label"
+                    optionValue="value"
+                    class="w-full"
+                  />
+                }
+              </div>
+            </div>
+          </section>
+
+          <hr class="border-slate-200" />
+
+          <!-- Schedule -->
+          <section class="space-y-4">
+            <h3 class="text-lg font-semibold text-slate-800">Schedule</h3>
+
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <!-- Start Date -->
+              <div>
+                <label class="mb-2 block text-sm font-medium text-slate-500">
+                  Start Date
+                </label>
+
+                @if (isViewMode) {
+                  <p class="text-sm text-slate-800">
+                    {{ formatDate(taskForm.get('startDate')?.value) }}
+                  </p>
+                } @else {
+                  <p-datepicker
+                    formControlName="startDate"
+                    [showIcon]="true"
+                    dateFormat="dd/mm/yy"
+                    placeholder="Select start date"
+                    styleClass="w-full"
+                    class="w-full"
+                  />
+                }
+              </div>
+
+              <!-- Due Date -->
+              <div>
+                <label class="mb-2 block text-sm font-medium text-slate-500">
+                  Due Date <span class="text-red-500">*</span>
+                </label>
+
+                @if (isViewMode) {
+                  <p class="text-sm text-slate-800">
+                    {{ formatDate(taskForm.get('dueDate')?.value) }}
+                  </p>
+                } @else {
+                  <p-datepicker
+                    formControlName="dueDate"
+                    [showIcon]="true"
+                    dateFormat="dd/mm/yy"
+                    placeholder="Select due date"
+                    styleClass="w-full"
+                    class="w-full"
+                  />
+
+                  @if (
+                    taskForm.get('dueDate')?.touched &&
+                    taskForm.get('dueDate')?.invalid
+                  ) {
+                    <small class="text-red-500"> Due date is required. </small>
+                  }
+                }
+              </div>
+
+              <!-- Estimated Hours -->
+              <div>
+                <label class="mb-2 block text-sm font-medium text-slate-500">
+                  Estimated Hours
+                </label>
+
+                @if (isViewMode) {
+                  <p class="text-sm text-slate-800">
+                    {{ taskForm.get('estimatedHours')?.value ?? '-' }}
+                    @if (taskForm.get('estimatedHours')?.value != null) {
+                      hours
+                    }
+                  </p>
+                } @else {
+                  <input
+                    pInputText
+                    type="number"
+                    min="0"
+                    formControlName="estimatedHours"
+                    class="w-full"
+                    placeholder="e.g. 8"
+                  />
+                }
+              </div>
+
+              <!-- Actual Hours -->
+              <div>
+                <label class="mb-2 block text-sm font-medium text-slate-500">
+                  Actual Hours
+                </label>
+
+                @if (isViewMode) {
+                  <p class="text-sm text-slate-800">
+                    {{ taskForm.get('actualHours')?.value ?? '-' }}
+                    @if (taskForm.get('actualHours')?.value != null) {
+                      hours
+                    }
+                  </p>
+                } @else {
+                  <input
+                    pInputText
+                    type="number"
+                    min="0"
+                    formControlName="actualHours"
+                    class="w-full"
+                    placeholder="e.g. 6"
+                  />
+                }
+              </div>
+            </div>
+          </section>
+
+          <hr class="border-slate-200" />
+
+          <!-- Checklist -->
+          <section class="space-y-4">
+            <div class="flex items-center justify-between gap-3">
+              <div>
+                <h3 class="text-lg font-semibold text-slate-800">Checklist</h3>
+                <p class="text-sm text-slate-500">
+                  Break the task into smaller steps.
+                </p>
+              </div>
+
+              @if (!isViewMode) {
+                <p-button
+                  label="Add Item"
+                  icon="pi pi-plus"
+                  size="small"
+                  styleClass="text-blue-700! border-blue-700! border-dashed!"
+                  [outlined]="true"
+                  type="button"
+                  (onClick)="addChecklist()"
+                />
+              }
+            </div>
+
+            <div formArrayName="checklists" class="space-y-3">
+              @for (item of checklists.controls; track $index; let i = $index) {
+                <div
+                  [formGroupName]="i"
+                  class="flex items-center gap-3 rounded-lg"
+                  [ngClass]="
+                    isViewMode ? 'py-2' : 'border border-slate-200 p-3'
+                  "
+                >
+                  <span class="text-sm font-medium text-slate-400">
+                    {{ i + 1 }}.
+                  </span>
+
+                  @if (isViewMode) {
+                    <p class="flex-1 text-sm text-slate-800">
+                      {{ item.get('title')?.value || '-' }}
+                    </p>
+                  } @else {
+                    <input
+                      pInputText
+                      formControlName="title"
+                      class="flex-1"
+                      placeholder="Enter checklist item"
+                    />
+
+                    <p-button
+                      icon="pi pi-trash"
+                      severity="danger"
+                      [text]="true"
+                      type="button"
+                      (onClick)="removeChecklist(i)"
+                    />
+                  }
+
+                  @if (isViewMode && item.get('isCompleted')?.value) {
+                    <i class="pi pi-check-circle text-green-600"></i>
+                  }
+                </div>
+              } @empty {
+                <div
+                  class="rounded-lg border border-dashed border-slate-300 p-6 text-center"
+                >
+                  <p class="text-sm text-slate-500">
+                    No checklist items added.
+                  </p>
+                </div>
+              }
+            </div>
+          </section>
+
+          <!-- Actions -->
+          @if (!isViewMode) {
+            <div
+              class="flex flex-wrap justify-end gap-3 border-t border-slate-200 pt-5"
+            >
+              <p-button
+                label="Cancel"
+                severity="secondary"
+                [outlined]="true"
+                type="button"
+                (onClick)="cancel()"
+              />
+
+              <p-button
+                [label]="isEditMode ? 'Update Task' : 'Create Task'"
+                icon="pi pi-save"
+                type="submit"
+                styleClass="bg-blue-700! hover:bg-blue-500! border-none!"
+                [loading]="saving"
+                [disabled]="saving || loading"
+              />
+            </div>
+          }
+        </div>
+      </form>
+    </div>
+  `,
   styleUrl: './staff-task-form.less',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -367,9 +548,10 @@ export class StaffTaskForm implements OnInit {
 
   taskForm!: FormGroup;
 
-  loading: boolean = false;
-  saving: boolean = false;
-  isEditMode: boolean = false;
+  loading = false;
+  saving = false;
+  isEditMode = false;
+  isViewMode = false;
 
   currentId: string | null = null;
   projectId: string | null = null;
@@ -418,7 +600,8 @@ export class StaffTaskForm implements OnInit {
       this.projectId = params['projectId'] || null;
       this.workOrderId = params['workOrderId'] || null;
 
-      this.isEditMode = !!this.currentId;
+      this.isViewMode = !!this.currentId;
+      this.isEditMode = false;
 
       this.loadDropdowns();
     });
@@ -454,6 +637,28 @@ export class StaffTaskForm implements OnInit {
 
   get checklists(): FormArray {
     return this.taskForm.get('checklists') as FormArray;
+  }
+
+  getOptionLabel(options: any[], value: any): string {
+    if (value === null || value === undefined || value === '') {
+      return '-';
+    }
+
+    return options.find((option: any) => option.value === value)?.label || '-';
+  }
+
+  formatDate(value: any): string {
+    if (!value) return '-';
+
+    const date = value instanceof Date ? value : new Date(value);
+
+    if (isNaN(date.getTime())) return '-';
+
+    return new Intl.DateTimeFormat('en-GB', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    }).format(date);
   }
 
   createChecklistItem(): FormGroup {
@@ -492,7 +697,6 @@ export class StaffTaskForm implements OnInit {
       )
       .subscribe({
         next: (res: any) => {
-          // All users
           this.allUsers = (res.users || res.Users || []).map((user: any) => ({
             label:
               user.displayName ||
@@ -504,7 +708,6 @@ export class StaffTaskForm implements OnInit {
             value: user.id || user.Id,
           }));
 
-          // Projects with leader and members
           this.projects = res.projects || res.Projects || [];
 
           this.projectOptions = this.projects.map((p: any) => ({
@@ -515,7 +718,6 @@ export class StaffTaskForm implements OnInit {
             value: p.id || p.Id,
           }));
 
-          // Work Orders with assigned user
           this.workOrders = res.workOrders || res.WorkOrders || [];
 
           this.workOrderOptions = this.workOrders.map((w: any) => ({
@@ -524,7 +726,7 @@ export class StaffTaskForm implements OnInit {
             projectId: w.projectId || w.ProjectId,
           }));
 
-          if (this.isEditMode && this.currentId) {
+          if (this.currentId) {
             this.loadTask();
           } else {
             this.taskForm.patchValue({
@@ -597,6 +799,22 @@ export class StaffTaskForm implements OnInit {
             );
           });
 
+          this.updateAssignedUsers();
+
+          if (
+            task.assignedToId &&
+            !this.users.some((user: any) => user.value === task.assignedToId)
+          ) {
+            const assignedUser = this.allUsers.find(
+              (user: any) => user.value === task.assignedToId,
+            );
+
+            if (assignedUser) {
+              this.users = [...this.users, assignedUser];
+            }
+          }
+
+          this.enableViewMode();
           this.cdr.markForCheck();
         },
         error: (error) => {
@@ -612,6 +830,11 @@ export class StaffTaskForm implements OnInit {
   }
 
   saveTask(): void {
+    // Prevent saving while viewing an existing task.
+    if (this.currentId && !this.isEditMode) {
+      return;
+    }
+
     if (this.taskForm.invalid) {
       this.taskForm.markAllAsTouched();
 
@@ -628,8 +851,8 @@ export class StaffTaskForm implements OnInit {
 
     const payload: any = {
       ...formValue,
-      projectId: this.taskForm.get('projectId')?.value,
-      workOrderId: this.taskForm.get('workOrderId')?.value,
+      projectId: formValue.projectId,
+      workOrderId: formValue.workOrderId,
       startDate: formValue.startDate || null,
       dueDate: formValue.dueDate,
       reminderAt: formValue.reminderAt || null,
@@ -702,7 +925,6 @@ export class StaffTaskForm implements OnInit {
         (w: any) => (w.id || w.Id) === workOrderId,
       );
 
-      // Add Work Order's assigned user
       const assignedToId = workOrder
         ? workOrder.assignedToId || workOrder.AssignedToId
         : null;
@@ -711,7 +933,6 @@ export class StaffTaskForm implements OnInit {
         allowedUserIds.add(assignedToId);
       }
 
-      // Also include Project Leader and Project Members
       const workOrderProjectId = workOrder
         ? workOrder.projectId || workOrder.ProjectId
         : projectId;
@@ -786,6 +1007,28 @@ export class StaffTaskForm implements OnInit {
 
     // CASE 3: No Project / Work Order
     this.users = [...this.allUsers];
+    this.cdr.markForCheck();
+  }
+
+  enableViewMode(): void {
+    this.isViewMode = true;
+    this.isEditMode = false;
+
+    this.taskForm.disable();
+
+    this.cdr.markForCheck();
+  }
+
+  enableEdit(): void {
+    this.isViewMode = false;
+    this.isEditMode = true;
+
+    this.taskForm.enable();
+
+    // Project and Work Order remain read-only.
+    this.taskForm.get('projectId')?.disable();
+    this.taskForm.get('workOrderId')?.disable();
+
     this.cdr.markForCheck();
   }
 }

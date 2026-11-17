@@ -91,19 +91,6 @@ import { BaseOption } from '../../../models/BaseModel';
 
       <!-- MAIN CONTENT -->
       <div class="content-card">
-        <!-- CONTENT HEADER -->
-        <div class="content-header">
-          <div>
-            <h2>Section Management</h2>
-            <p>View, search and maintain your inventory sections.</p>
-          </div>
-
-          <div class="record-count">
-            <i class="pi pi-database"></i>
-            {{ PagingSignal().totalElements || 0 }} records
-          </div>
-        </div>
-
         <!-- SEARCH -->
         <div class="toolbar">
           <div class="search-wrapper">

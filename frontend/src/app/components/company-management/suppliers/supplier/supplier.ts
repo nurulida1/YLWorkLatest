@@ -46,7 +46,7 @@ import { ImageModule } from 'primeng/image';
       class="supplier-page w-full min-h-screen bg-slate-50 p-3 sm:p-5 lg:p-6"
     >
       <!-- Breadcrumb -->
-      <div class="mb-4 flex flex-wrap items-center gap-2 text-sm text-gray-500">
+      <div class="mb-4 flex flex-wrap items-center gap-2 text-gray-500">
         <a [routerLink]="'/dashboard'" class="hover:text-blue-700">
           Dashboard
         </a>
@@ -68,7 +68,7 @@ import { ImageModule } from 'primeng/image';
             >
               Supplier
             </h1>
-            <p class="mt-1 text-sm text-gray-500">
+            <p class="mt-1 text-gray-500">
               Manage supplier profiles and information.
             </p>
           </div>

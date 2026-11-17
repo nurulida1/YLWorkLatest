@@ -8,6 +8,7 @@ using YLWorks.Data;
 using YLWorks.Hubs;
 using YLWorks.Model;
 using YLWorks.Model.Leave;
+using WebApplication1.Helpers;
 
 namespace YLWorks.Controller
 {
@@ -363,12 +364,15 @@ namespace YLWorks.Controller
                     r.StartDate.Date <= today &&
                     r.EndDate.Date >= today);
 
-            // Latest active notices
+            // Latest active, published and non-expired notices
+            var now = DateTimeHelper.Now();
+
             var latestNotices = await _context.Notices
+                .AsNoTracking()
                 .Where(n =>
                     n.IsActive &&
-                    n.PublishDate <= DateTime.Now &&
-                    (n.ExpiryDate == null || n.ExpiryDate >= DateTime.Now))
+                    n.PublishDate <= now &&
+                    (!n.ExpiryDate.HasValue || n.ExpiryDate.Value >= now))
                 .OrderByDescending(n => n.IsPinned)
                 .ThenByDescending(n => n.PublishDate)
                 .Take(5)

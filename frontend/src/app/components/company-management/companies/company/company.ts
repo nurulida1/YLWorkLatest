@@ -50,7 +50,7 @@ import { PaginatorModule } from 'primeng/paginator';
   template: `
     <div class="company-page w-full min-h-screen flex flex-col p-3 sm:p-5">
       <!-- Breadcrumb -->
-      <div class="flex items-center gap-2 text-sm text-gray-500">
+      <div class="flex items-center gap-2 text-gray-500">
         <a
           routerLink="/dashboard"
           class="cursor-pointer transition-colors hover:text-blue-600"
@@ -70,10 +70,10 @@ import { PaginatorModule } from 'primeng/paginator';
           class="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between"
         >
           <div>
-            <h1 class="text-xl font-semibold tracking-tight text-gray-800">
+            <h1 class="text-2xl font-semibold tracking-tight text-gray-800">
               My Company Profiles
             </h1>
-            <p class="mt-1 text-sm text-gray-500">
+            <p class="mt-1 text-gray-500">
               Manage internal corporate profile configurations.
             </p>
           </div>
@@ -115,8 +115,7 @@ import { PaginatorModule } from 'primeng/paginator';
             [first]="(Query.Page - 1) * Query.PageSize"
             [totalRecords]="PagingSignal().totalElements || 0"
             [rowsPerPageOptions]="[10, 20, 30, 50]"
-            [stripedRows]="true"
-            [showGridlines]="false"
+            [showGridlines]="true"
             [lazy]="true"
             (onLazyLoad)="NextPage($event)"
             [tableStyle]="{ 'min-width': '850px' }"
@@ -171,10 +170,7 @@ import { PaginatorModule } from 'primeng/paginator';
 
                 <!-- Contact -->
                 <td>
-                  <div class="flex items-center gap-2 text-gray-600">
-                    <i class="pi pi-phone text-xs text-gray-400"></i>
-                    {{ data.contactNo || '-' }}
-                  </div>
+                  {{ data.contactNo || '-' }}
                 </td>
 
                 <!-- Contact persons -->
@@ -219,7 +215,7 @@ import { PaginatorModule } from 'primeng/paginator';
                   class="py-12 text-center!"
                 >
                   <div class="flex flex-col items-center gap-2 text-gray-400">
-                    <i class="pi pi-building text-3xl"></i>
+                    <i class="pi pi-building text-3xl!"></i>
                     <span class="font-medium text-gray-600">
                       No company found
                     </span>

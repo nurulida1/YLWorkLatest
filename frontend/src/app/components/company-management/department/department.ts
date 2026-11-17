@@ -44,7 +44,6 @@ import {
     SelectModule,
     MenuModule,
     DialogModule,
-    HasPermissionActionDirective,
   ],
   template: `
     <div
@@ -52,7 +51,7 @@ import {
     >
       <div class="mx-auto w-full">
         <!-- Breadcrumb -->
-        <div class="mb-4 flex items-center gap-2 text-sm text-slate-400">
+        <div class="mb-4 flex items-center gap-2 text-slate-400">
           <a
             routerLink="/dashboard"
             class="transition-colors hover:text-blue-700"
@@ -71,7 +70,7 @@ import {
             <h1 class="text-2xl font-bold tracking-tight text-slate-800">
               Departments
             </h1>
-            <p class="mt-1 text-sm text-slate-500">
+            <p class="mt-1 text-slate-500">
               Manage your organization's departments and reporting structure.
             </p>
           </div>
@@ -92,14 +91,7 @@ import {
           <div
             class="flex flex-col gap-4 border-b border-slate-100 p-4 sm:p-5 lg:flex-row lg:items-center lg:justify-between"
           >
-            <div>
-              <h2 class="text-base font-semibold text-slate-800">
-                Department Directory
-              </h2>
-              <p class="mt-1 text-xs text-slate-500">
-                View and manage your registered departments.
-              </p>
-            </div>
+            <div></div>
 
             <div class="flex w-full flex-col gap-2 sm:flex-row lg:w-auto">
               <div class="department-search relative w-full sm:w-80">
@@ -140,6 +132,7 @@ import {
               [rowsPerPageOptions]="[10, 20, 30, 50]"
               [stripedRows]="true"
               [lazy]="true"
+              showGridlines
               (onLazyLoad)="NextPage($event)"
               styleClass="p-datatable-sm department-table"
             >
@@ -147,7 +140,7 @@ import {
                 <tr>
                   <th class="w-[45%]">Department</th>
                   <th class="w-[40%]">Head of Department</th>
-                  <th class="w-[15%] text-center">Actions</th>
+                  <th class="w-[15%] text-center!">Actions</th>
                 </tr>
               </ng-template>
 
@@ -212,15 +205,17 @@ import {
                   </td>
 
                   <!-- Actions -->
-                  <td class="text-center">
-                    <button
-                      type="button"
-                      class="flex h-9 w-9 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-blue-50 hover:text-blue-700"
-                      (click)="onEllipsisClick($event, data, menu)"
-                      aria-label="Department actions"
-                    >
-                      <i class="pi pi-ellipsis-v"></i>
-                    </button>
+                  <td class="text-center!">
+                    <div class="flex items-center justify-center">
+                      <button
+                        type="button"
+                        class="flex h-9 w-9 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-blue-50 hover:text-blue-700"
+                        (click)="onEllipsisClick($event, data, menu)"
+                        aria-label="Department actions"
+                      >
+                        <i class="pi pi-ellipsis-v"></i>
+                      </button>
+                    </div>
                   </td>
                 </tr>
               </ng-template>

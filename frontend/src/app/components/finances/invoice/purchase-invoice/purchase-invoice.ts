@@ -66,7 +66,7 @@ import { PaginatorModule, PaginatorState } from 'primeng/paginator';
     >
       <!-- Breadcrumb -->
       <div
-        class="flex flex-wrap items-center gap-1 text-xs sm:text-sm text-gray-500 tracking-wide"
+        class="flex flex-wrap items-center gap-1 text-gray-500 tracking-wide"
       >
         <a routerLink="/dashboard" class="cursor-pointer hover:text-blue-600">
           Dashboard
@@ -91,10 +91,10 @@ import { PaginatorModule, PaginatorState } from 'primeng/paginator';
             </div>
 
             <div>
-              <h1 class="text-lg font-semibold text-gray-800">
+              <h1 class="text-xl font-semibold text-gray-800">
                 Purchase Invoices
               </h1>
-              <p class="mt-0.5 text-xs sm:text-sm text-gray-500">
+              <p class="mt-0.5 text-gray-500">
                 Manage your purchase invoices with ease and efficiency
               </p>
             </div>

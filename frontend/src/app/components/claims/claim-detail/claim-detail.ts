@@ -37,7 +37,7 @@ import { UserService } from '../../../services/userService.service';
             >
               Claims
             </a>
-            <i class="pi pi-chevron-right text-[10px] text-slate-400"></i>
+            <i class="pi pi-chevron-right text-[10px]! text-slate-400"></i>
             <span class="font-semibold text-slate-800">Claim Details</span>
           </div>
 
@@ -170,10 +170,10 @@ import { UserService } from '../../../services/userService.service';
                 class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm"
               >
                 <div class="border-b border-slate-100 px-5 py-4">
-                  <h2 class="font-semibold text-slate-900">
+                  <h2 class="text-lg font-semibold text-slate-900">
                     Claim Information
                   </h2>
-                  <p class="mt-1 text-xs text-slate-500">
+                  <p class="mt-1 text-sm text-slate-500">
                     General information about this claim
                   </p>
                 </div>
@@ -251,7 +251,7 @@ import { UserService } from '../../../services/userService.service';
                     <h2 class="font-semibold text-slate-900">
                       Claim Line Items
                     </h2>
-                    <p class="mt-1 text-xs text-slate-500">
+                    <p class="mt-1 text-sm text-slate-500">
                       Breakdown of submitted expenses
                     </p>
                   </div>
@@ -360,7 +360,7 @@ import { UserService } from '../../../services/userService.service';
                     <h2 class="font-semibold text-slate-900">
                       Supporting Documents
                     </h2>
-                    <p class="mt-1 text-xs text-slate-500">
+                    <p class="mt-1 text-sm text-slate-500">
                       Receipts and other uploaded documents
                     </p>
                   </div>
@@ -413,7 +413,7 @@ import { UserService } from '../../../services/userService.service';
                     <h2 class="font-semibold text-slate-900">
                       Approval Progress
                     </h2>
-                    <p class="mt-1 text-xs text-slate-500">
+                    <p class="mt-1 text-sm text-slate-500">
                       Track your claim approval steps
                     </p>
                   </div>
@@ -531,18 +531,6 @@ import { UserService } from '../../../services/userService.service';
                 }
               </section>
             </div>
-          </div>
-
-          <!-- Back button -->
-          <div class="flex justify-start">
-            <p-button
-              label="Back to Claims"
-              icon="pi pi-arrow-left"
-              severity="secondary"
-              [outlined]="true"
-              size="small"
-              routerLink="/claims"
-            />
           </div>
         </div>
       } @else {

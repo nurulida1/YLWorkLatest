@@ -41,16 +41,14 @@ import {
   template: `
     <div class="w-full min-h-[92.9vh] flex flex-col p-3 sm:p-5 lg:p-6">
       <!-- Breadcrumb -->
-      <div
-        class="flex flex-wrap items-center gap-2 text-sm text-slate-500 mb-4"
-      >
+      <div class="flex flex-wrap items-center gap-2 text-slate-500 mb-4">
         <a
           routerLink="/dashboard"
           class="cursor-pointer hover:text-blue-600 hover:underline"
         >
           Dashboard
         </a>
-        <i class="pi pi-chevron-right text-sm!"></i>
+        <i class="pi pi-chevron-right text-xs!"></i>
         <span class="text-slate-800 font-semibold">DO RMA</span>
       </div>
 
@@ -63,10 +61,10 @@ import {
           class="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4"
         >
           <div class="min-w-0">
-            <h2 class="text-lg sm:text-xl font-bold text-slate-800">
+            <h2 class="text-2xl font-bold text-slate-800">
               Delivery Order RMA
             </h2>
-            <p class="text-xs sm:text-sm text-slate-500 mt-1">
+            <p class="text-slate-500 mt-1">
               View, create, and track all delivery order RMA requests in the
               system.
             </p>
@@ -244,10 +242,12 @@ import {
 
             <ng-template #emptymessage>
               <tr>
-                <td colspan="6" class="text-center! py-8 text-slate-400">
+                <td colspan="6" class="text-center! py-10! text-slate-400">
                   <div class="flex flex-col items-center gap-2">
-                    <i class="pi pi-inbox text-2xl text-slate-300"></i>
-                    <span>No delivery order RMA found in records.</span>
+                    <i class="pi pi-inbox text-2xl! text-slate-300"></i>
+                    <span class="text-sm"
+                      >No delivery order RMA found in records.</span
+                    >
                   </div>
                 </td>
               </tr>

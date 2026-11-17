@@ -31,14 +31,11 @@ import { DatePickerModule } from 'primeng/datepicker';
 import { DialogModule } from 'primeng/dialog';
 import { CheckboxModule } from 'primeng/checkbox';
 import { MessageService, MenuItem } from 'primeng/api';
-
 import { Subject, takeUntil } from 'rxjs';
-
 import { GoodsReceivingDto } from '../../../../models/GoodsReceiving';
 import { GoodsReceivingService } from '../../../../services/goodsReceivingService';
 import { InvoiceService } from '../../../../services/invoiceService.service';
 import { LoadingService } from '../../../../services/loading.service';
-
 import {
   PagingContent,
   GridifyQueryExtend,
@@ -71,7 +68,7 @@ import {
   template: `
     <div class="w-full min-h-screen bg-slate-50/50 p-3 sm:p-4 lg:p-6">
       <!-- Breadcrumb -->
-      <div class="flex items-center gap-1.5 text-xs sm:text-sm text-gray-500">
+      <div class="flex items-center gap-1.5 text-gray-500">
         <a
           routerLink="/dashboard"
           class="cursor-pointer transition-colors hover:text-blue-600"
@@ -91,12 +88,10 @@ import {
           class="flex flex-col gap-4 border-b border-gray-100 p-4 sm:p-5 lg:flex-row lg:items-center lg:justify-between"
         >
           <div class="min-w-0">
-            <h1
-              class="text-lg font-bold tracking-tight text-gray-800 sm:text-xl"
-            >
+            <h1 class="text-2xl font-bold tracking-tight text-gray-800">
               Goods Received Notes
             </h1>
-            <p class="mt-1 text-xs leading-relaxed text-gray-500 sm:text-sm">
+            <p class="mt-1 leading-relaxed text-gray-500">
               Manage, track, and process customer goods received notes and
               fulfillment statuses.
             </p>
@@ -106,13 +101,13 @@ import {
             <!-- Search -->
             <div class="relative w-full sm:flex-1 lg:w-[260px] lg:flex-none">
               <i
-                class="pi pi-search absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400"
+                class="pi pi-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
               ></i>
               <input
                 type="text"
                 pInputText
                 [(ngModel)]="search"
-                class="w-full !rounded-lg !py-2 !pl-9 !pr-3 !text-sm"
+                class="w-full !rounded-lg !py-2 !pl-9 !pr-3"
                 placeholder="Search by GRN No..."
                 (keydown)="onKeyDown($event)"
               />
@@ -122,7 +117,7 @@ import {
               label="Create Stock GRN"
               icon="pi pi-plus"
               severity="info"
-              styleClass="py-3! sm:py-2! w-full !justify-center !rounded-lg !px-4 !text-sm sm:w-auto bg-blue-700! border-none! hover:bg-blue-500!"
+              styleClass="py-3! sm:py-2! w-full !justify-center !rounded-lg !px-4 sm:w-auto bg-blue-700! border-none! hover:bg-blue-500!"
               (onClick)="ActionClick(null, 'Create')"
             ></p-button>
           </div>
@@ -242,8 +237,8 @@ import {
                   <div
                     class="flex flex-col items-center justify-center gap-2 text-center"
                   >
-                    <i class="pi pi-folder-open text-3xl text-gray-300"></i>
-                    <span class="text-sm font-medium text-gray-500">
+                    <i class="pi pi-folder-open text-3xl! text-gray-300"></i>
+                    <span class="font-medium text-gray-500">
                       No goods received notes found.
                     </span>
                   </div>

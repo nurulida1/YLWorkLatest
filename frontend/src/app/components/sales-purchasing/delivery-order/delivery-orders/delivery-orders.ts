@@ -42,15 +42,11 @@ import {
   ],
   template: `
     <div
-      class="delivery-orders-page min-h-[92.9vh] w-full bg-slate-50/60 p-3 sm:p-4 lg:p-6"
+      class="delivery-orders-page min-h-0 w-full bg-slate-50/60 p-3 sm:p-4 lg:p-6"
     >
-      <div
-        class="delivery-orders-container mx-auto flex w-full max-w-[1800px] flex-col"
-      >
+      <div class="delivery-orders-container mx-auto flex w-full flex-col">
         <!-- Breadcrumb -->
-        <nav
-          class="mb-4 flex flex-wrap items-center gap-2 text-sm text-gray-500"
-        >
+        <nav class="mb-4 flex flex-wrap items-center gap-2 text-gray-500">
           <a
             routerLink="/dashboard"
             class="cursor-pointer transition-colors hover:text-blue-600"
@@ -87,7 +83,7 @@ import {
                     Delivery Orders
                   </h1>
 
-                  <p class="mt-1 text-sm leading-relaxed text-gray-500">
+                  <p class="mt-1 leading-relaxed text-gray-500">
                     View, create, and track all delivery orders.
                   </p>
                 </div>
@@ -129,7 +125,7 @@ import {
 
           <!-- Table Section -->
           <div
-            class="delivery-orders-table mt-5 w-full min-w-0 overflow-hidden rounded-xl border border-gray-200"
+            class="delivery-orders-table mt-5 w-full min-w-0 overflow-hidden border border-gray-200"
           >
             <p-table
               #fTable
@@ -336,15 +332,15 @@ import {
                       <div
                         class="flex h-14 w-14 items-center justify-center rounded-full bg-slate-100"
                       >
-                        <i class="pi pi-truck text-2xl text-gray-400"></i>
+                        <i class="pi pi-truck text-2xl! text-gray-400"></i>
                       </div>
 
                       <div>
-                        <p class="text-sm font-semibold text-gray-700">
+                        <p class="font-semibold text-base text-gray-700">
                           No delivery orders found
                         </p>
 
-                        <p class="mt-1 text-xs text-gray-500">
+                        <p class="mt-1 text-sm text-gray-500">
                           Delivery orders will appear here once they are
                           available.
                         </p>

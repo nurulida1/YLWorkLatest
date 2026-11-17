@@ -253,9 +253,7 @@ import { UserService } from '../../../../services/userService.service';
     <!-- DESKTOP VIEW -->
     <div class="w-full hidden lg:flex flex-col p-5 min-w-0">
       <!-- Breadcrumb -->
-      <div
-        class="flex flex-row items-center gap-2 text-gray-500 tracking-wide text-sm"
-      >
+      <div class="flex flex-row items-center gap-2 text-gray-500 tracking-wide">
         <div
           class="cursor-pointer hover:text-gray-700"
           [routerLink]="'/dashboard'"
@@ -269,7 +267,7 @@ import { UserService } from '../../../../services/userService.service';
       </div>
 
       <!-- Heading -->
-      <div class="flex flex-row items-center justify-between gap-4 my-5">
+      <div class="flex flex-row items-center justify-between gap-4 my-2">
         <div class="flex flex-col">
           <div class="font-bold text-3xl text-gray-800">Client Directory</div>
           <span class="text-gray-500">

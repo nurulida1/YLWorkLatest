@@ -141,8 +141,10 @@ import { LeaveRequestService } from '../../../services/leave-request.service';
                   <i class="pi pi-user"></i>
                 </div>
                 <div>
-                  <h3>Basic Information</h3>
-                  <p>Personal identification details</p>
+                  <b class="text-base">Basic Information</b>
+                  <div class="text-gray-500 text-sm">
+                    Personal identification details
+                  </div>
                 </div>
               </div>
 
@@ -171,8 +173,10 @@ import { LeaveRequestService } from '../../../services/leave-request.service';
                   <i class="pi pi-address-book"></i>
                 </div>
                 <div>
-                  <h3>Contact Details</h3>
-                  <p>Your contact information</p>
+                  <b class="text-base">Contact Details</b>
+                  <div class="text-gray-500 text-sm">
+                    Your contact information
+                  </div>
                 </div>
               </div>
 
@@ -198,8 +202,8 @@ import { LeaveRequestService } from '../../../services/leave-request.service';
                   <i class="pi pi-briefcase"></i>
                 </div>
                 <div>
-                  <h3>Professional Information</h3>
-                  <p>Employment details</p>
+                  <b class="text-base">Professional Information</b>
+                  <div class="text-gray-500 text-sm">Employment details</div>
                 </div>
               </div>
 
@@ -235,8 +239,10 @@ import { LeaveRequestService } from '../../../services/leave-request.service';
                   <i class="pi pi-sitemap"></i>
                 </div>
                 <div>
-                  <h3>Department Information</h3>
-                  <p>Departments assigned to your employee profile</p>
+                  <b class="text-base">Department Information</b>
+                  <div class="text-gray-500 text-sm">
+                    Departments assigned to your employee profile
+                  </div>
                 </div>
               </div>
 

@@ -150,20 +150,6 @@ import { SelectModule } from 'primeng/select';
 
           <!-- Table -->
           <div class="products-table-section p-3 sm:p-4 lg:p-6">
-            <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
-              <div>
-                <h2 class="font-semibold text-slate-800">Product Catalogue</h2>
-                <p class="mt-0.5 text-slate-500 text-sm">
-                  All registered products and services
-                </p>
-              </div>
-
-              <div class="flex items-center gap-2 text-xs text-slate-500">
-                <i class="pi pi-database"></i>
-                <span> {{ PagingSignal().totalElements || 0 }} records </span>
-              </div>
-            </div>
-
             <div class="products-table-wrapper overflow-hidden">
               <p-table
                 #fTable
@@ -320,37 +306,31 @@ import { SelectModule } from 'primeng/select';
       [draggable]="false"
       [resizable]="false"
       [closable]="false"
-      styleClass="products-form-dialog"
       [maskStyle]="{
         'overflow-y': 'auto',
-        'background-color': 'rgba(15, 23, 42, 0.6)',
         'backdrop-filter': 'blur(6px)',
       }"
       appendTo="body"
     >
       <ng-template #headless>
-        <div class="products-dialog-content">
+        <div>
           <!-- Dialog Header -->
           <div
-            class="products-dialog-header flex items-start justify-between gap-3 border-b border-slate-200 bg-white p-4 sm:p-6"
+            class="flex items-start justify-between gap-3 border-b border-slate-200 p-4 sm:p-6"
           >
             <div class="flex min-w-0 items-center gap-3 sm:gap-4">
               <div
                 class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600 sm:h-14 sm:w-14"
               >
-                <i class="pi pi-box text-xl sm:text-2xl"></i>
+                <i class="pi pi-box text-xl! sm:text-2xl!"></i>
               </div>
 
               <div class="min-w-0">
-                <h2
-                  class="text-lg font-bold tracking-tight text-slate-900 sm:text-2xl"
-                >
+                <h2 class="text-xl font-bold tracking-tight text-slate-900">
                   Create New Product / Service
                 </h2>
 
-                <p
-                  class="mt-1 text-xs leading-relaxed text-slate-500 sm:text-sm"
-                >
+                <p class="mt-1 leading-relaxed text-slate-500">
                   Provide the details below to catalogue your new offering.
                 </p>
               </div>
@@ -370,12 +350,12 @@ import { SelectModule } from 'primeng/select';
           <!-- Dialog Form -->
           <div class="products-dialog-body">
             <div
-              class="grid grid-cols-12 gap-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:gap-5 sm:p-6"
+              class="grid grid-cols-12 gap-4 p-1 sm:gap-5 sm:p-2"
               [formGroup]="FG"
             >
               <!-- Item Code -->
               <div class="col-span-12 flex flex-col gap-2 md:col-span-6">
-                <label class="text-sm font-semibold text-slate-700">
+                <label class="font-semibold text-slate-700">
                   Code <span class="text-rose-500">*</span>
                 </label>
 
@@ -399,7 +379,7 @@ import { SelectModule } from 'primeng/select';
 
               <!-- Type -->
               <div class="col-span-12 flex flex-col gap-2 md:col-span-6">
-                <label class="text-sm font-semibold text-slate-700">
+                <label class="font-semibold text-slate-700">
                   Type <span class="text-rose-500">*</span>
                 </label>
 
@@ -420,7 +400,7 @@ import { SelectModule } from 'primeng/select';
 
               <!-- Description -->
               <div class="col-span-12 flex flex-col gap-2">
-                <label class="text-sm font-semibold text-slate-700">
+                <label class="font-semibold text-slate-700">
                   Description <span class="text-rose-500">*</span>
                 </label>
 
@@ -478,9 +458,7 @@ import { SelectModule } from 'primeng/select';
 
               <!-- Unit -->
               <div class="col-span-12 flex flex-col gap-2 sm:col-span-6">
-                <label class="text-sm font-semibold text-slate-700">
-                  Unit
-                </label>
+                <label class="font-semibold text-slate-700"> Unit </label>
 
                 <input
                   type="text"
@@ -493,9 +471,7 @@ import { SelectModule } from 'primeng/select';
 
               <!-- Price -->
               <div class="col-span-12 flex flex-col gap-2 sm:col-span-6">
-                <label class="text-sm font-semibold text-slate-700">
-                  Price (RM)
-                </label>
+                <label class="font-semibold text-slate-700"> Price (RM) </label>
 
                 <p-inputNumber
                   formControlName="price"
@@ -515,7 +491,7 @@ import { SelectModule } from 'primeng/select';
 
           <!-- Dialog Footer -->
           <div
-            class="products-dialog-footer flex flex-col-reverse gap-2 border-t border-slate-200 bg-white p-4 sm:flex-row sm:justify-end sm:gap-3 sm:px-6"
+            class="products-dialog-footer flex flex-col-reverse gap-2 border-t border-slate-200 p-4 sm:flex-row sm:justify-end sm:gap-3 sm:px-6"
           >
             <p-button
               label="Cancel"

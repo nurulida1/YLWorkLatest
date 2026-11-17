@@ -37,8 +37,15 @@ namespace YLWorks.Controller
         {
             try
             {
+                var now = DateTimeHelper.Now();
+
+                // Get active, published and non-expired notices
                 var query = _context.Notices
                     .AsNoTracking()
+                    .Where(x =>
+                        x.IsActive &&
+                        x.PublishDate <= now &&
+                        (!x.ExpiryDate.HasValue || x.ExpiryDate.Value >= now))
                     .AsQueryable();
 
                 // Filter

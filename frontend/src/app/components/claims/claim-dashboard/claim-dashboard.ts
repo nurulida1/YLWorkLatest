@@ -31,7 +31,7 @@ import { SelectModule } from 'primeng/select';
   ],
   template: `
     <div
-      class="claim-page min-h-screen w-full bg-slate-50 p-4 sm:p-6 lg:p-8 flex flex-col gap-6"
+      class="claim-page min-h-0 w-full bg-slate-50 p-4 sm:p-6 lg:p-8 flex flex-col gap-6"
     >
       <!-- Header -->
       <div
@@ -46,13 +46,11 @@ import { SelectModule } from 'primeng/select';
             <span class="font-medium text-slate-600">Claims</span>
           </div>
 
-          <h1
-            class="mt-4 text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 m-0"
-          >
+          <h1 class="mt-4 text-2xl font-bold tracking-tight text-slate-900 m-0">
             Claims
           </h1>
 
-          <p class="text-sm text-slate-500 mt-1 m-0">
+          <p class="text-slate-500 mt-1 m-0">
             View and manage all your submitted claims.
           </p>
         </div>
@@ -83,8 +81,8 @@ import { SelectModule } from 'primeng/select';
           class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-5 py-5 border-b border-slate-100"
         >
           <div>
-            <h2 class="text-base font-bold text-slate-800 m-0">All claims</h2>
-            <p class="text-xs text-slate-400 mt-1 m-0">
+            <h2 class="text-lg font-bold text-slate-800 m-0">All claims</h2>
+            <p class="text-sm text-slate-400 mt-1 m-0">
               Browse your complete claim submission history.
             </p>
           </div>
@@ -254,7 +252,7 @@ import { SelectModule } from 'primeng/select';
                 <!-- Action -->
                 <td class="text-right">
                   <a
-                    class="claim-view-link"
+                    class="claim-view-link text-sm"
                     [routerLink]="['/claims', row.requestId]"
                   >
                     View details

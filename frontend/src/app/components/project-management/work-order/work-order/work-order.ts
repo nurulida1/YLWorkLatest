@@ -263,9 +263,13 @@ import { DialogModule } from 'primeng/dialog';
                     <!-- Work Order -->
                     <td>
                       <div class="flex flex-col gap-1">
-                        <span class="font-semibold text-base text-blue-700">
+                        <a
+                          class="font-semibold text-base text-blue-700 cursor-pointer hover:underline"
+                          [routerLink]="'/work-order/details'"
+                          [queryParams]="{ id: data.id }"
+                        >
                           {{ data.workOrderNo }}
-                        </span>
+                        </a>
 
                         <span
                           class="max-w-[230px] truncate text-sm text-slate-500"

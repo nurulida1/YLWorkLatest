@@ -152,6 +152,7 @@ namespace YLWorks.Controller
                         p.EndDate,
                         p.Status,
                         p.ClientId,
+                        p.Location,
                         Client = p.Client == null ? null : new
                         {
                           Name = p.Client.Name

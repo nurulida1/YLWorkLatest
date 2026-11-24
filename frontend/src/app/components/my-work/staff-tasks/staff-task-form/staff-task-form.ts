@@ -35,7 +35,7 @@ import { StaffTaskService } from '../../../../services/staffTaskService';
     DatePickerModule,
   ],
   template: `
-    <div class="min-h-0 bg-slate-50 px-4 py-5 sm:px-6 lg:px-8">
+    <div class="min-h-0 bg-white px-4 py-5 sm:px-6 lg:px-8">
       <!-- Header -->
       <div class="flex flex-wrap items-center justify-between gap-3">
         <div>
@@ -75,20 +75,31 @@ import { StaffTaskService } from '../../../../services/staffTaskService';
             icon="pi pi-arrow-left"
             severity="secondary"
             [outlined]="true"
-            (onClick)="cancel()"
+            (onClick)="backToList()"
           />
+          @if (!isViewMode) {
+            <p-button
+              label="Cancel"
+              severity="secondary"
+              [outlined]="true"
+              type="button"
+              (onClick)="cancelEdit()"
+            />
+
+            <p-button
+              [label]="isEditMode ? 'Update Task' : 'Create Task'"
+              icon="pi pi-save"
+              type="submit"
+              styleClass="bg-blue-700! hover:bg-blue-500! border-none!"
+              [loading]="saving"
+              [disabled]="saving || loading"
+            />
+          }
         </div>
       </div>
 
       <form [formGroup]="taskForm" (ngSubmit)="saveTask()" class="mt-4">
-        <div
-          class="space-y-6"
-          [ngClass]="
-            isViewMode
-              ? 'py-2'
-              : 'rounded-xl border border-slate-200 bg-white p-5'
-          "
-        >
+        <div class="space-y-6 rounded-xl bg-white border border-slate-200 p-5">
           <!-- Basic Information -->
           <section class="space-y-4">
             <h3 class="text-lg font-semibold text-slate-800">
@@ -102,7 +113,7 @@ import { StaffTaskService } from '../../../../services/staffTaskService';
               </label>
 
               @if (isViewMode) {
-                <p class="text-base font-semibold text-slate-800">
+                <p class="min-h-10 py-2 text-base font-semibold text-slate-800">
                   {{ taskForm.get('title')?.value || '-' }}
                 </p>
               } @else {
@@ -129,7 +140,7 @@ import { StaffTaskService } from '../../../../services/staffTaskService';
               </label>
 
               @if (isViewMode) {
-                <p class="whitespace-pre-line text-sm text-slate-800">
+                <p class="min-h-10 whitespace-pre-line py-2 text-slate-800">
                   {{ taskForm.get('description')?.value || '-' }}
                 </p>
               } @else {
@@ -160,7 +171,7 @@ import { StaffTaskService } from '../../../../services/staffTaskService';
                 </label>
 
                 @if (isViewMode) {
-                  <p class="text-sm text-slate-800">
+                  <p class="min-h-10 py-2 text-slate-800">
                     {{
                       getOptionLabel(
                         projectOptions,
@@ -188,7 +199,7 @@ import { StaffTaskService } from '../../../../services/staffTaskService';
                 </label>
 
                 @if (isViewMode) {
-                  <p class="text-sm text-slate-800">
+                  <p class="min-h-10 py-2 text-slate-800">
                     {{
                       getOptionLabel(
                         workOrderOptions,
@@ -225,7 +236,7 @@ import { StaffTaskService } from '../../../../services/staffTaskService';
                 </label>
 
                 @if (isViewMode) {
-                  <p class="text-sm text-slate-800">
+                  <p class="min-h-10 py-2 text-slate-800">
                     {{
                       getOptionLabel(users, taskForm.get('assignedToId')?.value)
                     }}
@@ -251,7 +262,7 @@ import { StaffTaskService } from '../../../../services/staffTaskService';
                 </label>
 
                 @if (isViewMode) {
-                  <p class="text-sm font-medium text-slate-800">
+                  <p class="min-h-10 py-2 font-medium text-slate-800">
                     {{
                       getOptionLabel(
                         priorities,
@@ -278,7 +289,7 @@ import { StaffTaskService } from '../../../../services/staffTaskService';
                 </label>
 
                 @if (isViewMode) {
-                  <p class="text-sm text-slate-800">
+                  <p class="min-h-10 py-2 text-slate-800">
                     {{
                       getOptionLabel(
                         categories,
@@ -305,7 +316,7 @@ import { StaffTaskService } from '../../../../services/staffTaskService';
                 </label>
 
                 @if (isViewMode) {
-                  <p class="text-sm text-slate-800">
+                  <p class="min-h-10 py-2 text-slate-800">
                     {{
                       getOptionLabel(statuses, taskForm.get('status')?.value)
                     }}
@@ -337,7 +348,7 @@ import { StaffTaskService } from '../../../../services/staffTaskService';
                 </label>
 
                 @if (isViewMode) {
-                  <p class="text-sm text-slate-800">
+                  <p class="min-h-10 py-2 text-slate-800">
                     {{ formatDate(taskForm.get('startDate')?.value) }}
                   </p>
                 } @else {
@@ -359,7 +370,7 @@ import { StaffTaskService } from '../../../../services/staffTaskService';
                 </label>
 
                 @if (isViewMode) {
-                  <p class="text-sm text-slate-800">
+                  <p class="min-h-10 py-2 text-slate-800">
                     {{ formatDate(taskForm.get('dueDate')?.value) }}
                   </p>
                 } @else {
@@ -388,7 +399,7 @@ import { StaffTaskService } from '../../../../services/staffTaskService';
                 </label>
 
                 @if (isViewMode) {
-                  <p class="text-sm text-slate-800">
+                  <p class="min-h-10 py-2 text-slate-800">
                     {{ taskForm.get('estimatedHours')?.value ?? '-' }}
                     @if (taskForm.get('estimatedHours')?.value != null) {
                       hours
@@ -413,7 +424,7 @@ import { StaffTaskService } from '../../../../services/staffTaskService';
                 </label>
 
                 @if (isViewMode) {
-                  <p class="text-sm text-slate-800">
+                  <p class="min-h-10 py-2 text-slate-800">
                     {{ taskForm.get('actualHours')?.value ?? '-' }}
                     @if (taskForm.get('actualHours')?.value != null) {
                       hours
@@ -462,17 +473,14 @@ import { StaffTaskService } from '../../../../services/staffTaskService';
               @for (item of checklists.controls; track $index; let i = $index) {
                 <div
                   [formGroupName]="i"
-                  class="flex items-center gap-3 rounded-lg"
-                  [ngClass]="
-                    isViewMode ? 'py-2' : 'border border-slate-200 p-3'
-                  "
+                  class="flex items-center gap-3 rounded-lg border border-slate-200 p-3"
                 >
                   <span class="text-sm font-medium text-slate-400">
                     {{ i + 1 }}.
                   </span>
 
                   @if (isViewMode) {
-                    <p class="flex-1 text-sm text-slate-800">
+                    <p class="flex-1 py-2 text-sm text-slate-800">
                       {{ item.get('title')?.value || '-' }}
                     </p>
                   } @else {
@@ -507,30 +515,6 @@ import { StaffTaskService } from '../../../../services/staffTaskService';
               }
             </div>
           </section>
-
-          <!-- Actions -->
-          @if (!isViewMode) {
-            <div
-              class="flex flex-wrap justify-end gap-3 border-t border-slate-200 pt-5"
-            >
-              <p-button
-                label="Cancel"
-                severity="secondary"
-                [outlined]="true"
-                type="button"
-                (onClick)="cancel()"
-              />
-
-              <p-button
-                [label]="isEditMode ? 'Update Task' : 'Create Task'"
-                icon="pi pi-save"
-                type="submit"
-                styleClass="bg-blue-700! hover:bg-blue-500! border-none!"
-                [loading]="saving"
-                [disabled]="saving || loading"
-              />
-            </div>
-          }
         </div>
       </form>
     </div>
@@ -548,10 +532,10 @@ export class StaffTaskForm implements OnInit {
 
   taskForm!: FormGroup;
 
-  loading = false;
-  saving = false;
-  isEditMode = false;
-  isViewMode = false;
+  loading: boolean = false;
+  saving: boolean = false;
+  isEditMode: boolean = false;
+  isViewMode: boolean = false;
 
   currentId: string | null = null;
   projectId: string | null = null;
@@ -711,10 +695,7 @@ export class StaffTaskForm implements OnInit {
           this.projects = res.projects || res.Projects || [];
 
           this.projectOptions = this.projects.map((p: any) => ({
-            label:
-              p.label ||
-              p.Label ||
-              `${p.projectCode || p.ProjectCode} - ${p.projectTitle || p.ProjectTitle}`,
+            label: `${p.projectCode || p.ProjectCode} - ${p.projectTitle || p.ProjectTitle}`,
             value: p.id || p.Id,
           }));
 
@@ -723,7 +704,6 @@ export class StaffTaskForm implements OnInit {
           this.workOrderOptions = this.workOrders.map((w: any) => ({
             label: `${w.workOrderNo || w.WorkOrderNo} - ${w.title || w.Title}`,
             value: w.id || w.Id,
-            projectId: w.projectId || w.ProjectId,
           }));
 
           if (this.currentId) {
@@ -909,7 +889,18 @@ export class StaffTaskForm implements OnInit {
       });
   }
 
-  cancel(): void {
+  // Cancel editing and restore the original task data.
+  cancelEdit(): void {
+    if (!this.currentId) {
+      this.backToList();
+      return;
+    }
+
+    this.loadTask();
+  }
+
+  // Navigate back to the task listing.
+  backToList(): void {
     this.router.navigate(['/staff-tasks']);
   }
 

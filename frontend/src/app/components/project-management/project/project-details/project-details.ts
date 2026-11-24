@@ -342,7 +342,7 @@ import { UserService } from '../../../../services/userService.service';
                           ><i class="pi pi-user"></i
                         ></span>
                         <div>
-                          <h3 class="project-panel-title">Project leader</h3>
+                          <h3 class="project-panel-title">Project Leader</h3>
                           <p class="project-panel-subtitle">
                             Person responsible for this project
                           </p>
@@ -506,7 +506,9 @@ import { UserService } from '../../../../services/userService.service';
             <p-tabpanel value="1">
               <div class="project-section-toolbar">
                 <div>
-                  <h2 class="project-section-title">Project Work Orders</h2>
+                  <h2 class="project-section-title text-lg">
+                    Project Work Orders
+                  </h2>
                   <p class="project-section-description">
                     Manage work orders and monitor the tasks assigned under each
                     work order.
@@ -749,7 +751,7 @@ import { UserService } from '../../../../services/userService.service';
             <p-tabpanel value="2">
               <div class="project-section-toolbar">
                 <div>
-                  <h2 class="project-section-title text-lg">Project tasks</h2>
+                  <h2 class="project-section-title text-lg">Project Tasks</h2>
                   <p class="project-section-description text-sm">
                     Manage milestones, task progress and team assignments.
                   </p>
@@ -759,7 +761,8 @@ import { UserService } from '../../../../services/userService.service';
                   icon="pi pi-plus"
                   size="small"
                   styleClass="w-full sm:w-auto py-2! px-3! bg-blue-700! hover:bg-blue-500! border-none!"
-                  (onClick)="OpenTaskDialog()"
+                  [routerLink]="'/staff-tasks/form'"
+                  [queryParams]="{ projectId: PagingSignal().id }"
                 ></p-button>
               </div>
 
@@ -884,7 +887,8 @@ import { UserService } from '../../../../services/userService.service';
                         severity="secondary"
                         size="small"
                         pTooltip="Edit task"
-                        (onClick)="EditTask(data)"
+                        [routerLink]="'/staff-tasks/form'"
+                        [queryParams]="{ id: data.id }"
                       ></p-button>
 
                       <p-button
@@ -911,7 +915,7 @@ import { UserService } from '../../../../services/userService.service';
                 >
                   <ng-template #header>
                     <tr>
-                      <th>Task ID</th>
+                      <th class="text-center!">No</th>
                       <th>Task name</th>
                       <th>Description</th>
                       <th class="text-center!">Status</th>
@@ -920,10 +924,10 @@ import { UserService } from '../../../../services/userService.service';
                       <th class="text-center!">Actions</th>
                     </tr>
                   </ng-template>
-                  <ng-template #body let-data>
+                  <ng-template #body let-data let-i="rowIndex">
                     <tr>
-                      <td class="font-semibold text-blue-700">
-                        {{ data.taskCode }}
+                      <td class="font-semibold  text-center!">
+                        {{ i + 1 }}
                       </td>
                       <td class="font-medium text-slate-800">
                         {{ data.title }}
@@ -998,7 +1002,8 @@ import { UserService } from '../../../../services/userService.service';
                             severity="secondary"
                             size="small"
                             pTooltip="Edit"
-                            (onClick)="EditTask(data)"
+                            [routerLink]="'/staff-tasks/form'"
+                            [queryParams]="{ id: data.id }"
                           ></p-button>
                           <p-button
                             *ngIf="data.status === 'NotStarted'"
@@ -1045,336 +1050,565 @@ import { UserService } from '../../../../services/userService.service';
 
             <!-- MATERIALS -->
             <p-tabpanel value="3">
-              <div class="project-section-toolbar">
-                <div>
-                  <h2 class="project-section-title">Site material requests</h2>
-                  <p class="project-section-description">
-                    Review materials requested for this project.
+              <div class="space-y-5">
+                <!-- HEADER -->
+                <div
+                  class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <div>
+                    <h2 class="project-section-title text-lg">
+                      Site Material Requests
+                    </h2>
+                    <p class="project-section-description text-sm">
+                      Monitor material requests, approval status and issuance
+                      progress.
+                    </p>
+                  </div>
+
+                  <p-button
+                    label="Request materials"
+                    icon="pi pi-plus"
+                    size="small"
+                    styleClass="w-full sm:w-auto bg-blue-700! border-none! hover:bg-blue-600! px-3! py-2!"
+                    (onClick)="ActionClick('requestMaterial')"
+                  ></p-button>
+                </div>
+
+                <!-- SUMMARY CARDS -->
+                <div class="grid grid-cols-2 gap-3 xl:grid-cols-4">
+                  <!-- TOTAL -->
+                  <div class="rounded-xl border border-slate-200 bg-white p-4">
+                    <div class="flex items-center justify-between">
+                      <span class="font-medium text-slate-500">
+                        Total requests
+                      </span>
+                      <span
+                        class="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50 text-blue-700"
+                      >
+                        <i class="pi pi-box"></i>
+                      </span>
+                    </div>
+
+                    <p class="mt-3 text-2xl font-bold text-slate-800">
+                      {{ materialRequests.length }}
+                    </p>
+                    <p class="mt-1 text-sm text-slate-400">
+                      All material requests
+                    </p>
+                  </div>
+
+                  <!-- PENDING -->
+                  <div class="rounded-xl border border-slate-200 bg-white p-4">
+                    <div class="flex items-center justify-between">
+                      <span class="font-medium text-slate-500">
+                        Pending approval
+                      </span>
+                      <span
+                        class="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-50 text-amber-600"
+                      >
+                        <i class="pi pi-clock"></i>
+                      </span>
+                    </div>
+
+                    <p class="mt-3 text-2xl font-bold text-amber-600">
+                      {{ materialPendingCount }}
+                    </p>
+                    <p class="mt-1 text-sm text-slate-400">Awaiting review</p>
+                  </div>
+
+                  <!-- PARTIAL -->
+                  <div class="rounded-xl border border-slate-200 bg-white p-4">
+                    <div class="flex items-center justify-between">
+                      <span class="font-medium text-slate-500">
+                        Partially issued
+                      </span>
+                      <span
+                        class="flex h-9 w-9 items-center justify-center rounded-lg bg-orange-50 text-orange-600"
+                      >
+                        <i class="pi pi-truck"></i>
+                      </span>
+                    </div>
+
+                    <p class="mt-3 text-2xl font-bold text-orange-600">
+                      {{ materialPartialCount }}
+                    </p>
+                    <p class="mt-1 text-sm text-slate-400">
+                      Awaiting remaining items
+                    </p>
+                  </div>
+
+                  <!-- COMPLETED -->
+                  <div class="rounded-xl border border-slate-200 bg-white p-4">
+                    <div class="flex items-center justify-between">
+                      <span class="font-medium text-slate-500">
+                        Fully issued
+                      </span>
+                      <span
+                        class="flex h-9 w-9 items-center justify-center rounded-lg bg-green-50 text-green-600"
+                      >
+                        <i class="pi pi-check-circle"></i>
+                      </span>
+                    </div>
+
+                    <p class="mt-3 text-2xl font-bold text-green-600">
+                      {{ materialIssuedCount }}
+                    </p>
+                    <p class="mt-1 text-sm text-slate-400">
+                      Fully fulfilled requests
+                    </p>
+                  </div>
+                </div>
+
+                <!-- REQUEST LIST -->
+                <div
+                  class="overflow-hidden rounded-xl border border-slate-200 bg-white"
+                >
+                  <!-- LIST HEADER -->
+                  <div
+                    class="flex flex-col gap-3 border-b border-slate-100 p-4"
+                  >
+                    <div
+                      class="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between"
+                    >
+                      <div>
+                        <h3 class="text-lg font-semibold text-slate-800">
+                          Overview
+                        </h3>
+                        <p class="text-sm text-slate-400">
+                          Select a request to view its material details.
+                        </p>
+                      </div>
+
+                      <span class="text-sm font-medium text-slate-500">
+                        {{ materialRequests.length }} requests
+                      </span>
+                    </div>
+
+                    <!-- SEARCH & FILTERS -->
+                    <div class="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                      <div class="relative sm:col-span-1">
+                        <i
+                          class="pi pi-search absolute left-3 top-1/2 z-10 -translate-y-1/2 text-xs text-slate-400"
+                        ></i>
+
+                        <input
+                          pInputText
+                          #materialSearch
+                          type="text"
+                          placeholder="Search requests..."
+                          class="w-full pl-9! text-sm"
+                          (input)="
+                            materialTable.filterGlobal(
+                              materialSearch.value,
+                              'contains'
+                            )
+                          "
+                        />
+                      </div>
+
+                      <p-select
+                        [options]="materialStatusOptions"
+                        optionLabel="label"
+                        optionValue="value"
+                        placeholder="All statuses"
+                        [showClear]="true"
+                        styleClass="w-full text-sm"
+                        (onChange)="
+                          materialTable.filter($event.value, 'status', 'equals')
+                        "
+                      ></p-select>
+
+                      <p-select
+                        [options]="materialPriorityOptions"
+                        optionLabel="label"
+                        optionValue="value"
+                        placeholder="All priorities"
+                        [showClear]="true"
+                        styleClass="w-full text-sm"
+                        (onChange)="
+                          materialTable.filter(
+                            $event.value,
+                            'priority',
+                            'equals'
+                          )
+                        "
+                      ></p-select>
+                    </div>
+                  </div>
+
+                  <div class="p-3">
+                    <!-- REQUEST TABLE -->
+                    <p-table
+                      #materialTable
+                      [value]="materialRequests"
+                      [expandedRowKeys]="expandedRows"
+                      dataKey="id"
+                      [globalFilterFields]="[
+                        'subject',
+                        'description',
+                        'requestedBy',
+                        'status',
+                        'priority',
+                      ]"
+                      [rowHover]="true"
+                      [paginator]="materialRequests.length > 10"
+                      [rows]="10"
+                      [rowsPerPageOptions]="[10, 20, 50]"
+                      responsiveLayout="stack"
+                      breakpoint="960px"
+                      showGridlines
+                    >
+                      <!-- TABLE HEADER -->
+                      <ng-template #header>
+                        <tr>
+                          <th class="w-12"></th>
+                          <th>Request details</th>
+                          <th class="text-center!">Needed by</th>
+                          <th class="text-center!">Items</th>
+                          <th class="text-center!">Priority</th>
+                          <th class="text-center!">Status</th>
+                          <th class="min-w-40">Fulfilment</th>
+                        </tr>
+                      </ng-template>
+
+                      <!-- TABLE BODY -->
+                      <ng-template #body let-data let-expanded="expanded">
+                        <tr>
+                          <!-- EXPAND -->
+                          <td>
+                            <p-button
+                              [pRowToggler]="data"
+                              [text]="true"
+                              [rounded]="true"
+                              severity="secondary"
+                              size="small"
+                              [icon]="
+                                expanded
+                                  ? 'pi pi-chevron-down'
+                                  : 'pi pi-chevron-right'
+                              "
+                              [pTooltip]="
+                                expanded ? 'Collapse details' : 'View details'
+                              "
+                            ></p-button>
+                          </td>
+
+                          <!-- REQUEST DETAILS -->
+                          <td>
+                            <div class="min-w-0">
+                              <p class="font-semibold text-slate-800">
+                                {{ data.subject || 'Untitled request' }}
+                              </p>
+
+                              <p
+                                class="mt-1 line-clamp-2 text-xs text-slate-400"
+                              >
+                                {{
+                                  data.description || 'No description provided.'
+                                }}
+                              </p>
+
+                              <div
+                                class="mt-2 flex flex-wrap items-center gap-2 text-[11px] text-slate-400"
+                              >
+                                <span>
+                                  <i class="pi pi-calendar mr-1 text-xs!"></i>
+                                  {{ data.createdAt | date: 'dd MMM yyyy' }}
+                                </span>
+
+                                <span *ngIf="data.requestedBy">
+                                  <i class="pi pi-user mr-1 text-xs!"></i>
+                                  {{
+                                    data.requestedBy.displayName ??
+                                      data.requestedBy?.fullName
+                                  }}
+                                </span>
+                              </div>
+                            </div>
+                          </td>
+
+                          <!-- NEEDED BY -->
+                          <td class="text-center!">
+                            <div class="flex flex-col gap-1">
+                              <span class="text-sm font-medium text-slate-700">
+                                {{
+                                  data.neededBy
+                                    ? (data.neededBy | date: 'dd MMM yyyy')
+                                    : '-'
+                                }}
+                              </span>
+
+                              <span
+                                *ngIf="isMaterialOverdue(data)"
+                                class="text-[11px] font-semibold text-red-600"
+                              >
+                                <i class="pi pi-exclamation-circle mr-1"></i>
+                                Overdue
+                              </span>
+                            </div>
+                          </td>
+
+                          <!-- ITEM COUNT -->
+                          <td class="text-center!">
+                            <span class="font-semibold text-slate-700">
+                              {{ data.items?.length || 0 }}
+                            </span>
+                            <span class="ml-1 text-xs text-slate-400">
+                              items
+                            </span>
+                          </td>
+
+                          <!-- PRIORITY -->
+                          <td class="text-center!">
+                            <p-tag
+                              [value]="data.priority || 'Normal'"
+                              [severity]="
+                                getMaterialPrioritySeverity(data.priority)
+                              "
+                            ></p-tag>
+                          </td>
+
+                          <!-- STATUS -->
+                          <td class="text-center!">
+                            <p-tag
+                              [value]="data.status || 'Pending'"
+                              [severity]="
+                                getMaterialStatusSeverity(data.status)
+                              "
+                            ></p-tag>
+                          </td>
+
+                          <!-- FULFILMENT -->
+                          <td>
+                            <div class="min-w-36 space-y-2">
+                              <div
+                                class="flex items-center justify-between gap-2"
+                              >
+                                <span
+                                  class="text-xs font-semibold text-slate-700"
+                                >
+                                  {{ getMaterialIssuedTotal(data) }}
+                                  / {{ getMaterialRequestedTotal(data) }}
+                                </span>
+
+                                <span class="text-xs fonttext-slate-500">
+                                  {{ getMaterialProgress(data) }}%
+                                </span>
+                              </div>
+
+                              <div
+                                class="h-1.5 w-full overflow-hidden rounded-full bg-slate-100"
+                              >
+                                <div
+                                  class="h-full rounded-full transition-all"
+                                  [style.width.%]="getMaterialProgress(data)"
+                                  [ngClass]="{
+                                    'bg-green-500':
+                                      getMaterialProgress(data) === 100,
+                                    'bg-blue-600':
+                                      getMaterialProgress(data) > 0 &&
+                                      getMaterialProgress(data) < 100,
+                                    'bg-slate-300':
+                                      getMaterialProgress(data) === 0,
+                                  }"
+                                ></div>
+                              </div>
+
+                              <p class="text-[10px] text-slate-400">
+                                Quantity issued
+                              </p>
+                            </div>
+                          </td>
+                        </tr>
+                      </ng-template>
+
+                      <!-- EXPANDED MATERIAL DETAILS -->
+                      <ng-template #expandedrow let-data>
+                        <tr>
+                          <td colspan="7" class="bg-slate-50! p-3! sm:p-5!">
+                            <div class="space-y-4">
+                              <!-- EXPANDED HEADER -->
+                              <div
+                                class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"
+                              >
+                                <div>
+                                  <h4
+                                    class="text-base font-semibold text-slate-800"
+                                  >
+                                    Requested Materials
+                                  </h4>
+
+                                  <p class="mt-1 text-sm text-slate-400">
+                                    {{ data.subject }}
+                                  </p>
+                                </div>
+
+                                <span class="text-sm text-slate-500">
+                                  {{ data.items?.length || 0 }} material items
+                                </span>
+                              </div>
+
+                              <!-- MATERIAL ITEMS -->
+                              <div class="overflow-hidden">
+                                <p-table
+                                  [value]="data.items || []"
+                                  [showGridlines]="false"
+                                  responsiveLayout="scroll"
+                                >
+                                  <ng-template #header>
+                                    <tr>
+                                      <th>Material</th>
+                                      <th>Item code</th>
+                                      <th class="text-right!">Requested</th>
+                                      <th class="text-right!">Approved</th>
+                                      <th class="text-right!">Issued</th>
+                                      <th class="text-right!">Reserved</th>
+                                      <th class="text-right!">Outstanding</th>
+                                    </tr>
+                                  </ng-template>
+
+                                  <ng-template #body let-item>
+                                    <tr>
+                                      <!-- MATERIAL -->
+                                      <td>
+                                        <p class="font-medium text-slate-800">
+                                          {{ item.itemName }}
+                                        </p>
+
+                                        <p class="mt-1 text-xs text-slate-400">
+                                          {{ item.description || '-' }}
+                                        </p>
+                                      </td>
+
+                                      <!-- CODE -->
+                                      <td>
+                                        <span class="text-xs text-slate-500">
+                                          {{ item.itemCode || '-' }}
+                                        </span>
+                                      </td>
+
+                                      <!-- REQUESTED -->
+                                      <td class="text-right!">
+                                        <span
+                                          class="font-semibold text-slate-700"
+                                        >
+                                          {{ item.requestedQuantity }}
+                                        </span>
+                                        <span class="text-xs text-slate-400">
+                                          {{ item.unit || '' }}
+                                        </span>
+                                      </td>
+
+                                      <!-- APPROVED -->
+                                      <td class="text-right!">
+                                        <span class="text-slate-700">
+                                          {{ item.approvedQuantity ?? 0 }}
+                                        </span>
+                                      </td>
+
+                                      <!-- ISSUED -->
+                                      <td class="text-right!">
+                                        <span
+                                          class="font-semibold text-green-600"
+                                        >
+                                          {{ item.issuedQuantity ?? 0 }}
+                                        </span>
+                                      </td>
+
+                                      <!-- RESERVED -->
+                                      <td class="text-right!">
+                                        <span class="text-blue-600">
+                                          {{ item.reservedQuantity ?? 0 }}
+                                        </span>
+                                      </td>
+
+                                      <!-- OUTSTANDING -->
+                                      <td class="text-right!">
+                                        <span
+                                          class="font-semibold"
+                                          [ngClass]="{
+                                            'text-red-600':
+                                              getMaterialOutstanding(item) > 0,
+                                            'text-green-600':
+                                              getMaterialOutstanding(item) ===
+                                              0,
+                                          }"
+                                        >
+                                          {{ getMaterialOutstanding(item) }}
+                                        </span>
+                                      </td>
+                                    </tr>
+                                  </ng-template>
+
+                                  <ng-template #emptymessage>
+                                    <tr>
+                                      <td
+                                        colspan="7"
+                                        class="py-8! text-center!"
+                                      >
+                                        <i
+                                          class="pi pi-box text-2xl text-slate-300"
+                                        ></i>
+                                        <p class="mt-2 text-sm text-slate-400">
+                                          No material items found.
+                                        </p>
+                                      </td>
+                                    </tr>
+                                  </ng-template>
+                                </p-table>
+                              </div>
+
+                              <!-- REQUEST REMARKS -->
+                              <div
+                                *ngIf="data.remarks"
+                                class="rounded-lg border border-slate-200 bg-white p-3"
+                              >
+                                <p class="text-xs font-semibold text-slate-600">
+                                  Request remarks
+                                </p>
+                                <p class="mt-1 text-sm text-slate-500">
+                                  {{ data.remarks }}
+                                </p>
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      </ng-template>
+
+                      <!-- EMPTY -->
+                      <ng-template #emptymessage>
+                        <tr>
+                          <td colspan="7" class="py-12! text-center!">
+                            <div class="flex flex-col items-center gap-2">
+                              <i
+                                class="pi pi-inbox text-3xl text-slate-300"
+                              ></i>
+
+                              <p class="text-sm font-medium text-slate-600">
+                                No material requests found
+                              </p>
+
+                              <p class="text-xs text-slate-400">
+                                Try changing your search or filters.
+                              </p>
+                            </div>
+                          </td>
+                        </tr>
+                      </ng-template>
+                    </p-table>
+                  </div>
+                </div>
+
+                <!-- FOOTNOTE -->
+                <div class="flex items-start gap-2 text-xs text-slate-400">
+                  <i class="pi pi-info-circle text-xs!"></i>
+                  <p>
+                    Fulfilment is calculated using the total quantity issued
+                    against the total requested quantity. Expand a request to
+                    monitor individual material quantities.
                   </p>
                 </div>
-
-                <p-button
-                  label="Request materials"
-                  icon="pi pi-plus"
-                  size="small"
-                  styleClass="w-full sm:w-auto bg-blue-700! border-none! hover:bg-blue-500! py-3!"
-                  (onClick)="ActionClick('requestMaterial')"
-                ></p-button>
               </div>
-
-              <!-- Mobile cards -->
-              <div class="space-y-3 lg:hidden">
-                <ng-container
-                  *ngIf="
-                    PagingSignal().siteMaterialRequests?.length;
-                    else noMaterials
-                  "
-                >
-                  <article
-                    *ngFor="let data of PagingSignal().siteMaterialRequests"
-                    class="project-record"
-                  >
-                    <div class="flex items-start justify-between gap-3">
-                      <div class="min-w-0">
-                        <p class="text-xs font-semibold text-blue-700">
-                          {{ data.subject }}
-                        </p>
-                        <p class="mt-1 text-sm text-slate-500">
-                          {{ data.description || 'No description provided.' }}
-                        </p>
-                      </div>
-
-                      <p-tag
-                        [value]="data.status || 'Pending'"
-                        [severity]="
-                          data.status === 'Approved' || data.status === 'Issued'
-                            ? 'success'
-                            : data.status === 'Rejected' ||
-                                data.status === 'Cancelled'
-                              ? 'danger'
-                              : data.status === 'PartiallyIssued'
-                                ? 'warn'
-                                : 'info'
-                        "
-                      ></p-tag>
-                    </div>
-
-                    <div class="mt-4 grid grid-cols-2 gap-3">
-                      <div>
-                        <p class="text-[11px] text-slate-400">Request date</p>
-                        <p class="mt-1 text-sm font-medium text-slate-700">
-                          {{ data.createdAt | date: 'dd MMM yyyy' }}
-                        </p>
-                      </div>
-
-                      <div>
-                        <p class="text-[11px] text-slate-400">Needed by</p>
-                        <p class="mt-1 text-sm font-medium text-slate-700">
-                          {{
-                            data.neededBy
-                              ? (data.neededBy | date: 'dd MMM yyyy')
-                              : '-'
-                          }}
-                        </p>
-                      </div>
-
-                      <div>
-                        <p class="text-[11px] text-slate-400">Priority</p>
-                        <p class="mt-1 text-sm font-medium text-slate-700">
-                          {{ data.priority }}
-                        </p>
-                      </div>
-
-                      <div>
-                        <p class="text-[11px] text-slate-400">Total items</p>
-                        <p class="mt-1 text-sm font-medium text-slate-700">
-                          {{ data.items?.length || 0 }} items
-                        </p>
-                      </div>
-                    </div>
-
-                    <div class="mt-4 border-t border-slate-100 pt-3">
-                      <p class="mb-2 text-xs font-semibold text-slate-700">
-                        Requested materials
-                      </p>
-
-                      <div
-                        *ngFor="let item of data.items"
-                        class="border-b border-slate-50 py-2 last:border-0"
-                      >
-                        <div class="flex items-start justify-between gap-3">
-                          <div class="min-w-0">
-                            <p
-                              class="break-words text-sm font-medium text-slate-800"
-                            >
-                              {{ item.itemName }}
-                            </p>
-                            <p class="mt-0.5 text-xs text-slate-400">
-                              {{ item.itemCode || item.description || '-' }}
-                            </p>
-                          </div>
-
-                          <span
-                            class="shrink-0 text-sm font-semibold text-slate-800"
-                          >
-                            {{ item.requestedQuantity }} {{ item.unit || '' }}
-                          </span>
-                        </div>
-
-                        <div
-                          class="mt-2 flex flex-wrap gap-2 text-[11px] text-slate-500"
-                        >
-                          <span>Approved: {{ item.approvedQuantity }}</span>
-                          <span>Issued: {{ item.issuedQuantity }}</span>
-                          <span>Reserved: {{ item.reservedQuantity }}</span>
-                        </div>
-                      </div>
-
-                      <p
-                        *ngIf="!data.items?.length"
-                        class="text-xs text-slate-400"
-                      >
-                        No material items.
-                      </p>
-                    </div>
-
-                    <div
-                      *ngIf="data.requestedBy"
-                      class="mt-3 border-t border-slate-100 pt-3 text-xs text-slate-500"
-                    >
-                      <i class="pi pi-user mr-1"></i>
-                      Requested by:
-                      {{ data.requestedBy || '-' }}
-                    </div>
-                  </article>
-                </ng-container>
-              </div>
-
-              <!-- Desktop table -->
-              <div
-                class="hidden overflow-hidden rounded-lg border border-slate-200 lg:block"
-              >
-                <p-table
-                  [value]="PagingSignal().siteMaterialRequests || []"
-                  [expandedRowKeys]="expandedRows"
-                  dataKey="id"
-                  [showGridlines]="false"
-                  [rowHover]="true"
-                  size="small"
-                >
-                  <ng-template #header>
-                    <tr>
-                      <th class="w-12"></th>
-                      <th>Request subject</th>
-                      <th>Request date</th>
-                      <th>Needed by</th>
-                      <th class="text-center!">Items</th>
-                      <th class="text-center!">Priority</th>
-                      <th class="text-center!">Status</th>
-                    </tr>
-                  </ng-template>
-
-                  <ng-template #body let-data let-expanded="expanded">
-                    <tr>
-                      <td>
-                        <p-button
-                          [pRowToggler]="data"
-                          [text]="true"
-                          [rounded]="true"
-                          severity="secondary"
-                          [icon]="
-                            expanded
-                              ? 'pi pi-chevron-down'
-                              : 'pi pi-chevron-right'
-                          "
-                        ></p-button>
-                      </td>
-
-                      <td>
-                        <p class="font-semibold text-slate-800">
-                          {{ data.subject }}
-                        </p>
-                        <p
-                          class="mt-1 max-w-xs truncate text-xs text-slate-400"
-                        >
-                          {{ data.description || '-' }}
-                        </p>
-                      </td>
-
-                      <td>
-                        {{ data.createdAt | date: 'dd MMM yyyy' }}
-                      </td>
-
-                      <td>
-                        {{
-                          data.neededBy
-                            ? (data.neededBy | date: 'dd MMM yyyy')
-                            : '-'
-                        }}
-                      </td>
-
-                      <td class="text-center!">
-                        {{ data.items?.length || 0 }}
-                      </td>
-
-                      <td class="text-center!">
-                        <p-tag
-                          [value]="data.priority"
-                          [severity]="
-                            data.priority === 'Urgent'
-                              ? 'danger'
-                              : data.priority === 'High'
-                                ? 'warn'
-                                : data.priority === 'Normal'
-                                  ? 'info'
-                                  : 'secondary'
-                          "
-                        ></p-tag>
-                      </td>
-
-                      <td class="text-center!">
-                        <p-tag
-                          [value]="data.status || 'Pending'"
-                          [severity]="
-                            data.status === 'Approved' ||
-                            data.status === 'Issued'
-                              ? 'success'
-                              : data.status === 'Rejected' ||
-                                  data.status === 'Cancelled'
-                                ? 'danger'
-                                : data.status === 'PartiallyIssued'
-                                  ? 'warn'
-                                  : 'info'
-                          "
-                        ></p-tag>
-                      </td>
-                    </tr>
-                  </ng-template>
-
-                  <!-- Expanded items -->
-                  <ng-template #expandedrow let-data>
-                    <tr>
-                      <td colspan="7" class="bg-slate-50! p-4!">
-                        <p-table [value]="data.items || []" size="small">
-                          <ng-template #header>
-                            <tr>
-                              <th>Item name</th>
-                              <th>Item code</th>
-                              <th>Description</th>
-                              <th>Unit</th>
-                              <th class="text-right!">Requested</th>
-                              <th class="text-right!">Approved</th>
-                              <th class="text-right!">Issued</th>
-                              <th class="text-right!">Reserved</th>
-                              <th class="text-center!">Status</th>
-                              <th>Remarks</th>
-                            </tr>
-                          </ng-template>
-
-                          <ng-template #body let-item>
-                            <tr>
-                              <td class="font-medium text-slate-800">
-                                {{ item.itemName }}
-                              </td>
-                              <td>{{ item.itemCode || '-' }}</td>
-                              <td>{{ item.description || '-' }}</td>
-                              <td>{{ item.unit || '-' }}</td>
-                              <td class="text-right!">
-                                {{ item.requestedQuantity }}
-                              </td>
-                              <td class="text-right!">
-                                {{ item.approvedQuantity }}
-                              </td>
-                              <td class="text-right!">
-                                {{ item.issuedQuantity }}
-                              </td>
-                              <td class="text-right!">
-                                {{ item.reservedQuantity }}
-                              </td>
-                              <td class="text-center!">
-                                <p-tag
-                                  [value]="item.status"
-                                  severity="info"
-                                ></p-tag>
-                              </td>
-                              <td>{{ item.remarks || '-' }}</td>
-                            </tr>
-                          </ng-template>
-
-                          <ng-template #emptymessage>
-                            <tr>
-                              <td
-                                colspan="10"
-                                class="py-5! text-center! text-slate-400"
-                              >
-                                No material items found.
-                              </td>
-                            </tr>
-                          </ng-template>
-                        </p-table>
-                      </td>
-                    </tr>
-                  </ng-template>
-
-                  <ng-template #emptymessage>
-                    <tr>
-                      <td
-                        colspan="7"
-                        class="py-10! text-center! text-slate-400"
-                      >
-                        No site material requests found.
-                      </td>
-                    </tr>
-                  </ng-template>
-                </p-table>
-              </div>
-
-              <ng-template #noMaterials>
-                <div class="project-empty">
-                  <i class="pi pi-box"></i>
-                  <p>No site material requests found.</p>
-                </div>
-              </ng-template>
             </p-tabpanel>
 
             <!-- JOB SHEETS -->
@@ -1494,163 +1728,6 @@ import { UserService } from '../../../../services/userService.service';
               icon="pi pi-trash"
               severity="danger"
               (onClick)="ConfirmDeleteTask()"
-            ></p-button>
-          </div>
-        </div>
-      </ng-template>
-    </p-dialog>
-
-    <!-- TASK DIALOG -->
-    <p-dialog
-      [(visible)]="taskDialog"
-      [modal]="true"
-      [draggable]="false"
-      [closable]="true"
-      (onHide)="taskDialog = false"
-      appendTo="body"
-      [style]="{ width: 'min(720px, calc(100vw - 2rem))' }"
-      [breakpoints]="{ '640px': 'calc(100vw - 1rem)' }"
-      styleClass="project-form-dialog"
-    >
-      <ng-template #headless>
-        <div class="flex flex-col" [formGroup]="taskForm">
-          <div class="border-b border-slate-100 px-5 py-4 sm:px-6">
-            <p
-              class="text-[10px] font-bold uppercase tracking-wider text-slate-400"
-            >
-              Project task
-            </p>
-            <h2 class="mt-1 text-lg font-bold text-slate-900">
-              {{
-                taskUpdate
-                  ? 'Update task: ' + selectedTask?.taskCode
-                  : 'Create new task'
-              }}
-            </h2>
-            <p class="mt-1 text-xs text-slate-500">
-              Enter the task details and assign team members.
-            </p>
-          </div>
-
-          <div class="grid grid-cols-1 gap-4 p-5 sm:grid-cols-2 sm:p-6">
-            <div class="flex flex-col gap-1.5 sm:col-span-2">
-              <label class="project-form-label">Task name</label>
-              <input
-                pInputText
-                class="w-full"
-                formControlName="title"
-                placeholder="e.g. Pressure Valve Inspection"
-              />
-            </div>
-
-            <div class="flex flex-col gap-1.5 sm:col-span-2">
-              <label class="project-form-label">Description</label>
-              <textarea
-                pTextarea
-                class="w-full"
-                [rows]="4"
-                [autoResize]="true"
-                formControlName="description"
-                placeholder="Describe the task requirements..."
-              ></textarea>
-            </div>
-
-            <!-- Related Work Order -->
-            <div class="flex flex-col gap-1.5 sm:col-span-2">
-              <label class="project-form-label">Related Work Order</label>
-
-              <p-select
-                formControlName="workOrderId"
-                appendTo="body"
-                styleClass="w-full"
-                [options]="workOrderSelection"
-                optionLabel="label"
-                optionValue="value"
-                [showClear]="true"
-                [filter]="true"
-                placeholder="Select Work Order (Optional)"
-              ></p-select>
-
-              <small class="text-xs text-slate-400">
-                Leave empty if this task is not associated with a Work Order.
-              </small>
-            </div>
-
-            <div class="flex flex-col gap-1.5">
-              <label class="project-form-label">Priority</label>
-              <p-select
-                formControlName="priority"
-                appendTo="body"
-                styleClass="w-full"
-                [options]="[
-                  { label: 'Low', value: 'Low' },
-                  { label: 'Medium', value: 'Medium' },
-                  { label: 'High', value: 'High' },
-                  { label: 'Critical', value: 'Critical' },
-                ]"
-              ></p-select>
-            </div>
-
-            <div class="flex flex-col gap-1.5">
-              <label class="project-form-label">Due date</label>
-              <p-datepicker
-                formControlName="dueDate"
-                [showIcon]="true"
-                dateFormat="dd/mm/yy"
-                placeholder="dd/mm/yyyy"
-                styleClass="w-full"
-                appendTo="body"
-              ></p-datepicker>
-            </div>
-
-            <div class="flex flex-col gap-1.5 sm:col-span-2">
-              <label class="project-form-label">Status</label>
-              <p-select
-                formControlName="status"
-                appendTo="body"
-                styleClass="w-full"
-                [options]="[
-                  { label: 'Not Started', value: 'NotStarted' },
-                  { label: 'In Progress', value: 'InProgress' },
-                  { label: 'On Hold', value: 'OnHold' },
-                  { label: 'Review', value: 'Review' },
-                  { label: 'Completed', value: 'Completed' },
-                  { label: 'Cancelled', value: 'Cancelled' },
-                ]"
-              ></p-select>
-            </div>
-
-            <div class="flex flex-col gap-1.5 sm:col-span-2">
-              <label class="project-form-label">Assign to</label>
-
-              <p-select
-                formControlName="assignedToId"
-                appendTo="body"
-                styleClass="w-full"
-                [options]="userSelection"
-                optionLabel="label"
-                optionValue="value"
-                [filter]="true"
-                [showClear]="true"
-                placeholder="Select staff member"
-              ></p-select>
-            </div>
-          </div>
-
-          <div
-            class="flex flex-col-reverse gap-2 border-t border-slate-100 bg-slate-50 px-5 py-4 sm:flex-row sm:justify-end sm:px-6"
-          >
-            <p-button
-              label="Cancel"
-              severity="secondary"
-              [outlined]="true"
-              styleClass="w-full!"
-              (onClick)="taskDialog = false"
-            ></p-button>
-            <p-button
-              (onClick)="SaveTask()"
-              styleClass="w-full! bg-blue-700! hover:bg-blue-500! border-none!"
-              [label]="taskUpdate ? 'Save changes' : 'Create task'"
             ></p-button>
           </div>
         </div>
@@ -1992,7 +2069,6 @@ export class ProjectDetails implements OnInit, OnDestroy {
   expandedRows: { [key: string]: boolean } = {};
   userSelection: any;
 
-  taskDialog: boolean = false;
   taskDialogVisible: boolean = false;
   taskUpdate: boolean = false;
   deleteTaskDialog: boolean = false;
@@ -2009,7 +2085,6 @@ export class ProjectDetails implements OnInit, OnDestroy {
   confirmMessage: string = '';
   taskToDelete: any = null;
 
-  taskForm!: FormGroup;
   materialForm!: FormGroup;
   jobSheetForm!: FormGroup;
 
@@ -2067,6 +2142,37 @@ export class ProjectDetails implements OnInit, OnDestroy {
       });
   }
 
+  getUserDropdown() {
+    const project = this.PagingSignal();
+
+    const members =
+      project.projectMembers?.map((x) => ({
+        label: x.user?.fullName,
+        value: x.userId,
+      })) ?? [];
+
+    const projectLeader = project.projectLeader
+      ? [
+          {
+            label: project.projectLeader.fullName,
+            value: project.projectLeaderId,
+          },
+        ]
+      : [];
+
+    this.userSelection = [...projectLeader, ...members].filter(
+      (item, index, self) =>
+        index === self.findIndex((x) => x.value === item.value),
+    );
+
+    // WorkOrder dropdown
+    this.workOrderSelection =
+      project.workOrders?.map((x) => ({
+        label: x.workOrderNo,
+        value: x.id,
+      })) ?? [];
+  }
+
   ActionClick(type: string): void {
     if (type === 'requestMaterial') {
       this.router.navigate(['/hardware-request'], {
@@ -2119,140 +2225,6 @@ export class ProjectDetails implements OnInit, OnDestroy {
     if (days === 0) return 'Today';
 
     return `${Math.abs(days)} days overdue`;
-  }
-
-  OpenTaskDialog() {
-    this.getUserDropdown();
-    this.initTaskForm();
-    this.taskDialog = true;
-  }
-
-  EditTask(task: any) {
-    this.selectedTask = task;
-    this.taskUpdate = true;
-    this.OpenTaskDialog();
-  }
-
-  getUserDropdown() {
-    const project = this.PagingSignal();
-
-    const members =
-      project.projectMembers?.map((x) => ({
-        label: x.user?.fullName,
-        value: x.userId,
-      })) ?? [];
-
-    const projectLeader = project.projectLeader
-      ? [
-          {
-            label: project.projectLeader.fullName,
-            value: project.projectLeaderId,
-          },
-        ]
-      : [];
-
-    this.userSelection = [...projectLeader, ...members].filter(
-      (item, index, self) =>
-        index === self.findIndex((x) => x.value === item.value),
-    );
-
-    // WorkOrder dropdown
-    this.workOrderSelection =
-      project.workOrders?.map((x) => ({
-        label: x.workOrderNo,
-        value: x.id,
-      })) ?? [];
-  }
-
-  initTaskForm() {
-    this.taskForm = new FormGroup({
-      id: new FormControl<string | null>({ value: null, disabled: true }),
-      projectId: new FormControl(this.PagingSignal().id),
-
-      // New field
-      workOrderId: new FormControl<string | null>(null),
-
-      title: new FormControl(null, Validators.required),
-      description: new FormControl(null),
-      priority: new FormControl('Low'),
-      status: new FormControl('Todo'),
-      dueDate: new FormControl<Date | null>(null),
-      assignedToId: new FormControl<string | null>(null),
-    });
-
-    if (!this.taskUpdate || !this.selectedTask) {
-      return;
-    }
-
-    this.taskForm.get('id')?.enable();
-
-    this.taskForm.patchValue({
-      id: this.selectedTask.id,
-      projectId: this.selectedTask.projectId,
-
-      // Restore existing WorkOrder selection
-      workOrderId: this.selectedTask.workOrderId ?? null,
-
-      title: this.selectedTask.title,
-      description: this.selectedTask.description,
-      priority: this.selectedTask.priority,
-      status: this.selectedTask.status,
-      dueDate: this.selectedTask.dueDate
-        ? new Date(this.selectedTask.dueDate)
-        : null,
-      assignedToId: this.selectedTask.assignedToId ?? null,
-    });
-  }
-
-  SaveTask() {
-    if (this.taskForm.invalid) {
-      ValidateAllFormFields(this.taskForm);
-      return;
-    }
-
-    this.loadingService.start();
-
-    const request = {
-      ...this.taskForm.getRawValue(),
-      projectId: this.PagingSignal().id,
-      workOrderId: this.taskForm.get('workOrderId')?.value || null,
-    };
-
-    const $request = this.taskUpdate
-      ? this.staffTaskService.Update(request)
-      : this.staffTaskService.Create(request);
-
-    $request.pipe(takeUntil(this.ngUnsubscribe)).subscribe({
-      next: (task) => {
-        this.loadingService.stop();
-
-        this.PagingSignal.update((project) => {
-          const tasks = project.staffTasks ?? [];
-
-          if (this.taskUpdate) {
-            return {
-              ...project,
-              staffTasks: tasks.map((t) => (t.id === task.id ? task : t)),
-            };
-          }
-
-          return {
-            ...project,
-            staffTasks: [...tasks, task],
-          };
-        });
-
-        this.taskDialog = false;
-        this.taskUpdate = false;
-        this.selectedTask = null;
-        this.taskForm.reset();
-
-        this.cdr.markForCheck();
-      },
-      error: () => {
-        this.loadingService.stop();
-      },
-    });
   }
 
   RemoveTaskClick(task: any) {
@@ -2587,6 +2559,169 @@ export class ProjectDetails implements OnInit, OnDestroy {
     return value
       .replace(/([a-z])([A-Z])/g, '$1 $2')
       .replace(/([A-Z])([A-Z][a-z])/g, '$1 $2');
+  }
+
+  // ============================================================
+  // SITE MATERIAL REQUEST MONITORING
+  // ============================================================
+
+  materialStatusOptions = [
+    { label: 'Pending', value: 'Pending' },
+    { label: 'Approved', value: 'Approved' },
+    { label: 'Partially Issued', value: 'PartiallyIssued' },
+    { label: 'Issued', value: 'Issued' },
+    { label: 'Rejected', value: 'Rejected' },
+    { label: 'Cancelled', value: 'Cancelled' },
+  ];
+
+  materialPriorityOptions = [
+    { label: 'Low', value: 'Low' },
+    { label: 'Normal', value: 'Normal' },
+    { label: 'Medium', value: 'Medium' },
+    { label: 'High', value: 'High' },
+    { label: 'Urgent', value: 'Urgent' },
+  ];
+
+  // All project material requests
+  get materialRequests(): any[] {
+    return this.PagingSignal()?.siteMaterialRequests ?? [];
+  }
+
+  // Pending requests
+  get materialPendingCount(): number {
+    return this.materialRequests.filter(
+      (x) => (x.status || 'Pending') === 'Pending',
+    ).length;
+  }
+
+  // Partially issued requests
+  get materialPartialCount(): number {
+    return this.materialRequests.filter((x) => x.status === 'PartiallyIssued')
+      .length;
+  }
+
+  // Fully issued requests
+  get materialIssuedCount(): number {
+    return this.materialRequests.filter(
+      (x) =>
+        x.status === 'Issued' ||
+        ((x.items?.length ?? 0) > 0 &&
+          x.items.every(
+            (item: any) =>
+              Number(item.requestedQuantity) > 0 &&
+              Number(item.issuedQuantity ?? 0) >=
+                Number(item.requestedQuantity),
+          )),
+    ).length;
+  }
+
+  // Total requested quantity
+  getMaterialRequestedTotal(data: any): number {
+    return (data.items ?? []).reduce(
+      (total: number, item: any) => total + Number(item.requestedQuantity ?? 0),
+      0,
+    );
+  }
+
+  // Total issued quantity
+  getMaterialIssuedTotal(data: any): number {
+    return (data.items ?? []).reduce(
+      (total: number, item: any) => total + Number(item.issuedQuantity ?? 0),
+      0,
+    );
+  }
+
+  // Outstanding quantity per item
+  getMaterialOutstanding(item: any): number {
+    return Math.max(
+      0,
+      Number(item.requestedQuantity ?? 0) - Number(item.issuedQuantity ?? 0),
+    );
+  }
+
+  // Fulfilment percentage
+  getMaterialProgress(data: any): number {
+    const requested = this.getMaterialRequestedTotal(data);
+
+    if (requested <= 0) {
+      return 0;
+    }
+
+    const issued = this.getMaterialIssuedTotal(data);
+
+    return Math.min(100, Math.round((issued / requested) * 100));
+  }
+
+  // Status tag colours
+  getMaterialStatusSeverity(
+    status: string,
+  ): 'success' | 'info' | 'warn' | 'danger' | 'secondary' {
+    switch (status) {
+      case 'Issued':
+        return 'success';
+
+      case 'Approved':
+        return 'info';
+
+      case 'PartiallyIssued':
+        return 'warn';
+
+      case 'Rejected':
+      case 'Cancelled':
+        return 'danger';
+
+      case 'Pending':
+      default:
+        return 'secondary';
+    }
+  }
+
+  // Priority tag colours
+  getMaterialPrioritySeverity(
+    priority: string,
+  ): 'success' | 'info' | 'warn' | 'danger' | 'secondary' {
+    switch (priority) {
+      case 'Urgent':
+        return 'danger';
+
+      case 'High':
+        return 'warn';
+
+      case 'Medium':
+        return 'info';
+
+      case 'Low':
+        return 'success';
+
+      case 'Normal':
+      default:
+        return 'secondary';
+    }
+  }
+
+  // Overdue indicator
+  isMaterialOverdue(data: any): boolean {
+    if (!data.neededBy) {
+      return false;
+    }
+
+    const status = data.status;
+
+    if (
+      status === 'Issued' ||
+      status === 'Rejected' ||
+      status === 'Cancelled'
+    ) {
+      return false;
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const neededBy = new Date(data.neededBy);
+    neededBy.setHours(0, 0, 0, 0);
+
+    return neededBy < today;
   }
 
   ngOnDestroy(): void {

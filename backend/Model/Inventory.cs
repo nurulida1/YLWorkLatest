@@ -159,6 +159,10 @@ namespace YLWorks.Model
         public Guid Id { get; set; }
         public string? ItemCode { get; set; }
         public string ItemName { get; set; } = string.Empty;
+        public string Unit { get; set; }
+        public decimal? Quantity { get; set; }
+        public decimal? ReservedQuantity { get; set; }
+        public decimal? AvailableQuantity { get; set; }
     }
 
     public class InventoryAudit

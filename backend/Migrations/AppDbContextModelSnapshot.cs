@@ -1493,6 +1493,15 @@ namespace YLWorks.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("varchar(200)");
 
+                    b.Property<DateTime?>("ReceivedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid?>("ReceivedById")
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("ReceivedRemarks")
+                        .HasColumnType("longtext");
+
                     b.Property<string>("RejectionReason")
                         .HasMaxLength(2000)
                         .HasColumnType("varchar(2000)");
@@ -1539,6 +1548,8 @@ namespace YLWorks.Migrations
                     b.HasIndex("AssignedToId");
 
                     b.HasIndex("ProjectId");
+
+                    b.HasIndex("ReceivedById");
 
                     b.HasIndex("RequestedById");
 
@@ -5505,6 +5516,10 @@ namespace YLWorks.Migrations
                         .HasForeignKey("ProjectId")
                         .OnDelete(DeleteBehavior.SetNull);
 
+                    b.HasOne("YLWorks.Model.User", "ReceivedBy")
+                        .WithMany()
+                        .HasForeignKey("ReceivedById");
+
                     b.HasOne("YLWorks.Model.User", "RequestedBy")
                         .WithMany()
                         .HasForeignKey("RequestedById")
@@ -5521,6 +5536,8 @@ namespace YLWorks.Migrations
                     b.Navigation("AssignedTo");
 
                     b.Navigation("Project");
+
+                    b.Navigation("ReceivedBy");
 
                     b.Navigation("RequestedBy");
 

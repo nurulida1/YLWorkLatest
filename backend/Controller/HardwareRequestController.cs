@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
+using System.Data;
 using YLWorks.Data;
 using YLWorks.Model;
 using YLWorks.Services;
@@ -17,13 +18,16 @@ namespace YLWorks.Controller
     {
         private readonly AppDbContext _context;
         private readonly NotificationService _notificationService;
+        private readonly ILogger<HardwareRequestController> _logger;
 
         public HardwareRequestController(
             AppDbContext context,
-            NotificationService notificationService)
+            NotificationService notificationService,
+            ILogger<HardwareRequestController> logger)
         {
             _context = context;
             _notificationService = notificationService;
+            _logger = logger;
         }
 
         // =========================================================
@@ -41,9 +45,23 @@ namespace YLWorks.Controller
 
         private bool IsRequestManager()
         {
-            return User.IsInRole("Admin") ||
+            return User.IsInRole("SuperAdmin") ||
+                   User.IsInRole("Admin") ||
                    User.IsInRole("IT") ||
-                   User.IsInRole("Inventory");
+                   User.IsInRole("Inventory") ||
+                   User.IsInRole("Logistic");
+        }
+
+        private bool IsInventoryRequest(string requestType)
+        {
+            return requestType == "Hardware" ||
+                   requestType == "SiteMaterial";
+        }
+
+        private bool IsNonInventoryRequest(string requestType)
+        {
+            return requestType == "ITSupport" ||
+                   requestType == "BugReport";
         }
 
         private IQueryable<HardwareRequest> RequestQuery()
@@ -54,14 +72,9 @@ namespace YLWorks.Controller
                 .Include(x => x.RequestedBy)
                 .Include(x => x.ApprovedBy)
                 .Include(x => x.AssignedTo)
+                .Include(x => x.ReceivedBy)
                 .Include(x => x.ResponsibleDepartment)
                 .Include(x => x.Project);
-        }
-
-        private bool IsNonInventoryRequest(string requestType)
-        {
-            return requestType == "ITSupport" ||
-                   requestType == "BugReport";
         }
 
         // =========================================================
@@ -95,7 +108,7 @@ namespace YLWorks.Controller
         }
 
         // =========================================================
-        // 3. HOD AUTHORIZATION
+        // 3. AUTHORIZATION
         // =========================================================
 
         private async Task<bool> CanManageRequestAsync(
@@ -114,6 +127,13 @@ namespace YLWorks.Controller
                 d.HodId == userId);
         }
 
+        private bool CanApproveRequest(HardwareRequest request, Guid userId)
+        {
+            return User.IsInRole("SuperAdmin") ||
+                   User.IsInRole("Admin") ||
+                   request.ResponsibleDepartment?.HodId == userId;
+        }
+
         // =========================================================
         // 4. NOTIFICATIONS
         // =========================================================
@@ -125,13 +145,25 @@ namespace YLWorks.Controller
             string type,
             Guid requestId)
         {
-            await _notificationService.CreateAsync(
-                userId,
-                title,
-                message,
-                type,
-                $"/hardware-request/{requestId}"
-            );
+            try
+            {
+                await _notificationService.CreateAsync(
+                    userId,
+                    title,
+                    message,
+                    type,
+                    $"/hardware-request/{requestId}"
+                );
+            }
+            catch (Exception ex)
+            {
+                // Notification failure must not undo a completed request action.
+                _logger.LogError(
+                    ex,
+                    "Failed to send notification to user {UserId} for request {RequestId}",
+                    userId,
+                    requestId);
+            }
         }
 
         private async Task NotifyHodsAsync(
@@ -238,8 +270,7 @@ namespace YLWorks.Controller
             }
 
             // Hardware and Site Material require items.
-            // IT Support and Bug Report do not.
-            if (!IsNonInventoryRequest(dto.RequestType) &&
+            if (IsInventoryRequest(dto.RequestType) &&
                 (dto.Items == null || !dto.Items.Any()))
             {
                 return BadRequest(
@@ -265,7 +296,6 @@ namespace YLWorks.Controller
                     return BadRequest("Actual result is required.");
             }
 
-            // Automatically determine responsible department.
             var responsibleDepartment =
                 await GetResponsibleDepartmentAsync(dto.RequestType);
 
@@ -301,17 +331,16 @@ namespace YLWorks.Controller
                     Status = "Pending",
 
                     RequestedById = currentUserId.Value,
-
                     ResponsibleDepartmentId = responsibleDepartment.Id,
 
                     ProjectId = linkedProject?.Id,
                     ProjectName = linkedProject?.ProjectTitle ?? dto.ProjectName,
+
                     SiteName = dto.SiteName,
                     Location = dto.Location,
                     LocationDetails = dto.LocationDetails,
                     NeededBy = dto.NeededBy,
 
-                    // Bug Report Information
                     AffectedModule = dto.RequestType == "BugReport"
                         ? dto.AffectedModule?.Trim()
                         : null,
@@ -335,8 +364,7 @@ namespace YLWorks.Controller
                     Items = new List<HardwareRequestItem>()
                 };
 
-                // Only process items for Hardware and Site Material.
-                if (!IsNonInventoryRequest(dto.RequestType) &&
+                if (IsInventoryRequest(dto.RequestType) &&
                     dto.Items != null)
                 {
                     foreach (var itemDto in dto.Items)
@@ -371,7 +399,6 @@ namespace YLWorks.Controller
                         request.Items.Add(new HardwareRequestItem
                         {
                             Id = Guid.NewGuid(),
-
                             InventoryId = inventory?.Id,
 
                             ItemName = itemName,
@@ -393,6 +420,7 @@ namespace YLWorks.Controller
                 _context.HardwareRequests.Add(request);
 
                 await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
 
                 var requesterName = await _context.Users
                     .Where(x => x.Id == currentUserId.Value)
@@ -405,8 +433,6 @@ namespace YLWorks.Controller
                     $"{requesterName} submitted a new {GetTypeLabel(request.RequestType).ToLower()} request: {request.Subject}.",
                     "HardwareRequest"
                 );
-
-                await transaction.CommitAsync();
 
                 return Ok(new
                 {
@@ -421,6 +447,8 @@ namespace YLWorks.Controller
             catch (Exception ex)
             {
                 await transaction.RollbackAsync();
+
+                _logger.LogError(ex, "Failed to create hardware request.");
 
                 return StatusCode(500, new
                 {
@@ -456,12 +484,18 @@ namespace YLWorks.Controller
                     x.Priority,
                     x.Status,
 
-                    // Bug Report Information
                     x.AffectedModule,
                     x.BugCategory,
                     x.StepsToReproduce,
                     x.ExpectedResult,
                     x.ActualResult,
+
+                    x.ReceivedById,
+                    ReceivedBy = x.ReceivedBy != null
+                        ? x.ReceivedBy.FullName
+                        : null,
+                    x.ReceivedAt,
+                    x.ReceivedRemarks,
 
                     x.ResponsibleDepartmentId,
                     ResponsibleDepartment = x.ResponsibleDepartment != null
@@ -469,20 +503,20 @@ namespace YLWorks.Controller
                         : null,
 
                     x.ProjectId,
-
                     ProjectName = x.Project != null
-    ? x.Project.ProjectTitle
-    : x.ProjectName,
+                        ? x.Project.ProjectTitle
+                        : x.ProjectName,
 
                     Project = x.Project == null
-    ? null
-    : new
-    {
-        x.Project.Id,
-        x.Project.ProjectCode,
-        x.Project.ProjectTitle,
-        x.Project.Status
-    },
+                        ? null
+                        : new
+                        {
+                            x.Project.Id,
+                            x.Project.ProjectCode,
+                            x.Project.ProjectTitle,
+                            x.Project.Status
+                        },
+
                     x.SiteName,
                     x.Location,
                     x.LocationDetails,
@@ -543,12 +577,18 @@ namespace YLWorks.Controller
                     x.Priority,
                     x.Status,
 
-                    // Bug Report Information
                     x.AffectedModule,
                     x.BugCategory,
                     x.StepsToReproduce,
                     x.ExpectedResult,
                     x.ActualResult,
+
+                    x.ReceivedById,
+                    ReceivedBy = x.ReceivedBy != null
+                        ? x.ReceivedBy.FullName
+                        : null,
+                    x.ReceivedAt,
+                    x.ReceivedRemarks,
 
                     x.ResponsibleDepartmentId,
                     ResponsibleDepartment = x.ResponsibleDepartment != null
@@ -556,20 +596,20 @@ namespace YLWorks.Controller
                         : null,
 
                     x.ProjectId,
-
                     ProjectName = x.Project != null
-    ? x.Project.ProjectTitle
-    : x.ProjectName,
+                        ? x.Project.ProjectTitle
+                        : x.ProjectName,
 
                     Project = x.Project == null
-    ? null
-    : new
-    {
-        x.Project.Id,
-        x.Project.ProjectCode,
-        x.Project.ProjectTitle,
-        x.Project.Status
-    },
+                        ? null
+                        : new
+                        {
+                            x.Project.Id,
+                            x.Project.ProjectCode,
+                            x.Project.ProjectTitle,
+                            x.Project.Status
+                        },
+
                     x.SiteName,
                     x.Location,
                     x.LocationDetails,
@@ -580,7 +620,6 @@ namespace YLWorks.Controller
                     x.RejectionReason,
 
                     RequestedById = x.RequestedById,
-
                     RequestedBy = x.RequestedBy != null
                         ? x.RequestedBy.FullName
                         : null,
@@ -590,7 +629,6 @@ namespace YLWorks.Controller
                         : null,
 
                     AssignedToId = x.AssignedToId,
-
                     AssignedTo = x.AssignedTo != null
                         ? x.AssignedTo.FullName
                         : null,
@@ -658,29 +696,33 @@ namespace YLWorks.Controller
                 request.Priority,
                 request.Status,
 
-                // Bug Report Information
                 request.AffectedModule,
                 request.BugCategory,
                 request.StepsToReproduce,
                 request.ExpectedResult,
                 request.ActualResult,
 
+                request.ReceivedById,
+                ReceivedBy = request.ReceivedBy?.FullName,
+                request.ReceivedAt,
+                request.ReceivedRemarks,
+
                 request.ResponsibleDepartmentId,
-                ResponsibleDepartment =
-                    request.ResponsibleDepartment?.Name,
+                ResponsibleDepartment = request.ResponsibleDepartment?.Name,
 
                 request.ProjectId,
                 ProjectName = request.Project?.ProjectTitle ?? request.ProjectName,
 
                 Project = request.Project == null
-    ? null
-    : new
-    {
-        request.Project.Id,
-        request.Project.ProjectCode,
-        request.Project.ProjectTitle,
-        request.Project.Status
-    },
+                    ? null
+                    : new
+                    {
+                        request.Project.Id,
+                        request.Project.ProjectCode,
+                        request.Project.ProjectTitle,
+                        request.Project.Status
+                    },
+
                 request.SiteName,
                 request.Location,
                 request.LocationDetails,
@@ -715,322 +757,14 @@ namespace YLWorks.Controller
 
                     AvailableStock = i.Inventory == null
                         ? (decimal?)null
-                        : i.Inventory.Quantity -
-                          i.Inventory.ReservedQuantity
+                        : (i.Inventory.Quantity ?? 0m) -
+                          (i.Inventory.ReservedQuantity ?? 0m)
                 })
             });
         }
 
         // =========================================================
-        // 9. APPROVE REQUEST AND RESERVE STOCK
-        // POST: api/HardwareRequest/{id}/Approve
-        // =========================================================
-
-
-
-        [HttpPost("{id:guid}/Approve")]
-        public async Task<IActionResult> Approve(
-            Guid id,
-            [FromBody] ApproveHardwareRequestDto dto)
-        {
-            var currentUserId = GetCurrentUserId();
-
-            if (currentUserId == null)
-                return Unauthorized();
-
-            await using var transaction =
-                await _context.Database.BeginTransactionAsync();
-
-            try
-            {
-                var request = await _context.HardwareRequests
-                    .Include(x => x.Items)
-                    .ThenInclude(x => x.Inventory)
-                    .FirstOrDefaultAsync(x => x.Id == id);
-
-                if (request == null)
-                    return NotFound("Request not found.");
-
-                if (!await CanManageRequestAsync(request, currentUserId.Value))
-                    return Forbid();
-
-                if (request.Status != "Pending")
-                    return BadRequest("Only pending requests can be approved.");
-
-                // ==========================================
-                // IT SUPPORT / BUG REPORT
-                // ==========================================
-
-                if (IsNonInventoryRequest(request.RequestType))
-                {
-                    var assignedToId = dto.AssignedToId ?? currentUserId.Value;
-
-                    var supportAssignedStaff = await _context.Users
-                        .FirstOrDefaultAsync(x =>
-                            x.Id == assignedToId &&
-                            x.IsActive &&
-                            x.Status == "Approved");
-
-                    if (supportAssignedStaff == null)
-                        return BadRequest("Assigned staff was not found or is inactive.");
-
-                    request.Status = "Approved";
-                    request.ApprovedById = currentUserId.Value;
-                    request.ApprovedAt = DateTimeHelper.Now();
-                    request.AdminRemarks = dto.Remarks;
-                    request.AssignedToId = supportAssignedStaff.Id;
-
-                    await _context.SaveChangesAsync();
-
-                    var isBugReport = request.RequestType == "BugReport";
-
-                    await NotifyUserAsync(
-                        supportAssignedStaff.Id,
-                        isBugReport
-                            ? "New Bug Report Assigned"
-                            : "New IT Support Request Assigned",
-                        isBugReport
-                            ? $"You have been assigned to bug report '{request.Subject}'."
-                            : $"You have been assigned to IT support request '{request.Subject}'.",
-                        "HardwareRequest",
-                        request.Id
-                    );
-
-                    await NotifyRequesterAsync(
-                        request,
-                        isBugReport
-                            ? "Bug Report Accepted"
-                            : "IT Support Request Approved",
-                        isBugReport
-                            ? $"Your bug report '{request.Subject}' has been accepted and assigned for investigation."
-                            : $"Your IT support request '{request.Subject}' has been approved.",
-                        "Approval"
-                    );
-
-                    await transaction.CommitAsync();
-
-                    return Ok(new
-                    {
-                        success = true,
-                        message = isBugReport
-                            ? $"Bug report accepted and assigned to {supportAssignedStaff.FullName}."
-                            : $"IT support request approved and assigned to {supportAssignedStaff.FullName}.",
-                        status = request.Status,
-                        assignedTo = supportAssignedStaff.FullName
-                    });
-                }
-
-                // ==========================================
-                // HARDWARE / SITE MATERIAL
-                // ==========================================
-
-                foreach (var item in request.Items)
-                {
-                    var approval = dto.Items?
-                        .FirstOrDefault(x => x.RequestItemId == item.Id);
-
-                    var approvedQuantity =
-                        approval?.ApprovedQuantity ?? item.RequestedQuantity;
-
-                    if (approvedQuantity < 0 ||
-                        approvedQuantity > item.RequestedQuantity)
-                    {
-                        return BadRequest(
-                            $"Invalid approved quantity for {item.ItemName}.");
-                    }
-
-                    // Reserve inventory only when linked to inventory.
-                    if (item.InventoryId.HasValue && approvedQuantity > 0)
-                    {
-                        var inventory = item.Inventory;
-
-                        if (inventory == null)
-                        {
-                            return BadRequest(
-                                $"Inventory item for {item.ItemName} was not found.");
-                        }
-
-                        var physicalStock = inventory.Quantity ?? 0m;
-                        var reservedStock = inventory.ReservedQuantity ?? 0m;
-
-                        var availableStock = physicalStock - reservedStock;
-
-                        if (approvedQuantity > availableStock)
-                        {
-                            return BadRequest(new
-                            {
-                                message = $"Insufficient stock for {item.ItemName}.",
-                                requested = item.RequestedQuantity,
-                                approved = approvedQuantity,
-                                available = availableStock
-                            });
-                        }
-
-                        // Increase reserved stock.
-                        inventory.ReservedQuantity =
-                            reservedStock + approvedQuantity;
-
-                        item.ReservedQuantity = approvedQuantity;
-                    }
-
-                    item.ApprovedQuantity = approvedQuantity;
-
-                    item.Status = approvedQuantity == 0
-                        ? "Rejected"
-                        : "Approved";
-
-                    item.Remarks = approval?.Remarks ?? item.Remarks;
-                }
-
-                // ==========================================
-                // REQUEST STATUS
-                // ==========================================
-
-                request.Status = request.Items.Any(
-                    x => x.ApprovedQuantity > 0)
-                    ? "Approved"
-                    : "Rejected";
-
-                request.ApprovedById = currentUserId.Value;
-                request.ApprovedAt = DateTimeHelper.Now();
-                request.AdminRemarks = dto.Remarks;
-
-                // ==========================================
-                // ASSIGN STAFF
-                // ==========================================
-
-                User? assignedStaff = null;
-
-                if (request.Status == "Approved")
-                {
-                    var assignedToId = dto.AssignedToId ?? currentUserId.Value;
-
-                    assignedStaff = await _context.Users
-                        .FirstOrDefaultAsync(x =>
-                            x.Id == assignedToId &&
-                            x.IsActive &&
-                            x.Status == "Approved");
-
-                    if (assignedStaff == null)
-                        return BadRequest(
-                            "Assigned staff was not found or is inactive.");
-
-                    request.AssignedToId = assignedStaff.Id;
-                }
-
-                await _context.SaveChangesAsync();
-
-                // ==========================================
-                // NOTIFY ASSIGNED STAFF
-                // ==========================================
-
-                if (assignedStaff != null)
-                {
-                    await NotifyUserAsync(
-                        assignedStaff.Id,
-                        "New Request Assigned",
-                        $"You have been assigned to request '{request.Subject}'.",
-                        "HardwareRequest",
-                        request.Id
-                    );
-                }
-
-                // ==========================================
-                // NOTIFY REQUESTER
-                // ==========================================
-
-                await NotifyRequesterAsync(
-                    request,
-                    request.Status == "Approved"
-                        ? "Request Approved"
-                        : "Request Rejected",
-                    request.Status == "Approved"
-                        ? $"Your request '{request.Subject}' has been approved."
-                        : $"Your request '{request.Subject}' was rejected because no quantities were approved.",
-                    request.Status == "Approved"
-                        ? "Approval"
-                        : "Rejection"
-                );
-
-                await transaction.CommitAsync();
-
-                return Ok(new
-                {
-                    success = true,
-                    message = request.Status == "Approved"
-                        ? $"Request approved and assigned to {assignedStaff?.FullName}. Stock reserved."
-                        : "All requested quantities were rejected.",
-                    status = request.Status,
-                    assignedTo = assignedStaff?.FullName
-                });
-            }
-            catch (Exception ex)
-            {
-                await transaction.RollbackAsync();
-
-                return StatusCode(500, new
-                {
-                    message = "Failed to approve request.",
-                    error = ex.Message
-                });
-            }
-        }
-
-        // =========================================================
-        // 10. REJECT REQUEST
-        // POST: api/HardwareRequest/{id}/Reject
-        // =========================================================
-
-        [HttpPost("{id:guid}/Reject")]
-        public async Task<IActionResult> Reject(
-            Guid id,
-            [FromBody] RejectHardwareRequestDto dto)
-        {
-            var currentUserId = GetCurrentUserId();
-
-            if (currentUserId == null)
-                return Unauthorized();
-
-            var request = await _context.HardwareRequests
-                .FirstOrDefaultAsync(x => x.Id == id);
-
-            if (request == null)
-                return NotFound("Request not found.");
-
-            if (!await CanManageRequestAsync(request, currentUserId.Value))
-                return Forbid();
-
-            if (request.Status != "Pending")
-                return BadRequest("Only pending requests can be rejected.");
-
-            if (string.IsNullOrWhiteSpace(dto.Reason))
-                return BadRequest("Rejection reason is required.");
-
-            request.Status = "Rejected";
-            request.RejectionReason = dto.Reason.Trim();
-            request.ApprovedById = currentUserId.Value;
-            request.ApprovedAt = DateTimeHelper.Now();
-
-            await _context.SaveChangesAsync();
-
-            await NotifyRequesterAsync(
-                request,
-                request.RequestType == "BugReport"
-                    ? "Bug Report Rejected"
-                    : "Request Rejected",
-                $"Your {GetTypeLabel(request.RequestType).ToLower()} '{request.Subject}' has been rejected. Reason: {request.RejectionReason}",
-                "Rejection"
-            );
-
-            return Ok(new
-            {
-                success = true,
-                message = "Request rejected."
-            });
-        }
-
-        // =========================================================
-        // 11. ASSIGN REQUEST TO STAFF
+        // 9. ASSIGN REQUEST TO STAFF
         // POST: api/HardwareRequest/{id}/Assign
         // =========================================================
 
@@ -1100,168 +834,7 @@ namespace YLWorks.Controller
         }
 
         // =========================================================
-        // 12. ISSUE STOCK
-        // POST: api/HardwareRequest/{id}/Issue
-        // =========================================================
-
-
-        [HttpPost("{id:guid}/Issue")]
-        public async Task<IActionResult> Issue(
-            Guid id,
-            [FromBody] IssueHardwareRequestDto dto)
-        {
-            if (!IsRequestManager())
-                return Forbid();
-
-            await using var transaction =
-                await _context.Database.BeginTransactionAsync();
-
-            try
-            {
-                var request = await _context.HardwareRequests
-                    .Include(x => x.Items)
-                    .ThenInclude(x => x.Inventory)
-                    .FirstOrDefaultAsync(x => x.Id == id);
-
-                if (request == null)
-                    return NotFound("Request not found.");
-
-                if (IsNonInventoryRequest(request.RequestType))
-                {
-                    return BadRequest(
-                        $"{GetTypeLabel(request.RequestType)} requests do not use the stock issuing process.");
-                }
-
-                if (request.Status != "Approved" &&
-                    request.Status != "PartiallyIssued")
-                {
-                    return BadRequest(
-                        "Only approved requests can have items issued.");
-                }
-
-                if (dto.Items == null || !dto.Items.Any())
-                    return BadRequest("Please provide the items to issue.");
-
-                foreach (var issueDto in dto.Items)
-                {
-                    var item = request.Items.FirstOrDefault(
-                        x => x.Id == issueDto.RequestItemId);
-
-                    if (item == null)
-                        return BadRequest("Request item not found.");
-
-                    if (issueDto.IssuedQuantity <= 0)
-                        return BadRequest(
-                            "Issued quantity must be greater than zero.");
-
-                    var remainingApproved =
-                        item.ApprovedQuantity - item.IssuedQuantity;
-
-                    if (issueDto.IssuedQuantity > remainingApproved)
-                    {
-                        return BadRequest(
-                            $"Cannot issue more than the approved remaining quantity for {item.ItemName}.");
-                    }
-
-                    if (item.InventoryId.HasValue)
-                    {
-                        var inventory = item.Inventory;
-
-                        if (inventory == null)
-                        {
-                            return BadRequest(
-                                $"Inventory record for {item.ItemName} was not found.");
-                        }
-
-                        var physicalStock = inventory.Quantity ?? 0m;
-                        var reservedStock = inventory.ReservedQuantity ?? 0m;
-                        var itemReserved = item.ReservedQuantity;
-
-                        if (issueDto.IssuedQuantity > itemReserved ||
-                            issueDto.IssuedQuantity > reservedStock)
-                        {
-                            return BadRequest(
-                                $"Reserved stock is insufficient for {item.ItemName}.");
-                        }
-
-                        if (issueDto.IssuedQuantity > physicalStock)
-                        {
-                            return BadRequest(
-                                $"Physical stock is insufficient for {item.ItemName}.");
-                        }
-
-                        // Deduct physical inventory.
-                        inventory.Quantity =
-                            physicalStock - issueDto.IssuedQuantity;
-
-                        // Release reserved quantity.
-                        inventory.ReservedQuantity =
-                            reservedStock - issueDto.IssuedQuantity;
-
-                        item.ReservedQuantity =
-                            itemReserved - issueDto.IssuedQuantity;
-                    }
-
-                    item.IssuedQuantity += issueDto.IssuedQuantity;
-
-                    item.Status =
-                        item.IssuedQuantity >= item.ApprovedQuantity
-                            ? "Issued"
-                            : "PartiallyIssued";
-
-                    item.Remarks = issueDto.Remarks ?? item.Remarks;
-                }
-
-                // ==========================================
-                // UPDATE REQUEST STATUS
-                // ==========================================
-
-                var allIssued = request.Items.All(x =>
-                    x.IssuedQuantity >= x.ApprovedQuantity);
-
-                request.Status = allIssued
-                    ? "Issued"
-                    : "PartiallyIssued";
-
-                if (allIssued)
-                    request.CompletedAt = DateTimeHelper.Now();
-
-                await _context.SaveChangesAsync();
-
-                await NotifyRequesterAsync(
-                    request,
-                    "Items Issued",
-                    allIssued
-                        ? $"All approved items for '{request.Subject}' have been issued."
-                        : $"Some items for '{request.Subject}' have been issued.",
-                    "HardwareRequest"
-                );
-
-                await transaction.CommitAsync();
-
-                return Ok(new
-                {
-                    success = true,
-                    message = allIssued
-                        ? "All approved items have been issued."
-                        : "Items issued. Some approved quantities are still pending.",
-                    status = request.Status
-                });
-            }
-            catch (Exception ex)
-            {
-                await transaction.RollbackAsync();
-
-                return StatusCode(500, new
-                {
-                    message = "Failed to issue items.",
-                    error = ex.Message
-                });
-            }
-        }
-
-        // =========================================================
-        // 13. UPDATE IT SUPPORT / BUG REPORT STATUS
+        // 10. UPDATE IT SUPPORT / BUG REPORT STATUS
         // POST: api/HardwareRequest/{id}/UpdateStatus
         // =========================================================
 
@@ -1290,7 +863,6 @@ namespace YLWorks.Controller
             if (request == null)
                 return NotFound("Request not found.");
 
-            // This endpoint is only for IT Support and Bug Reports.
             if (!IsNonInventoryRequest(request.RequestType))
             {
                 return BadRequest(
@@ -1360,7 +932,7 @@ namespace YLWorks.Controller
         }
 
         // =========================================================
-        // 14. CANCEL REQUEST
+        // 11. CANCEL REQUEST
         // POST: api/HardwareRequest/{id}/Cancel
         // =========================================================
 
@@ -1400,31 +972,42 @@ namespace YLWorks.Controller
                         "This request can no longer be cancelled.");
                 }
 
-
                 foreach (var item in request.Items)
                 {
-                    if (item.Inventory != null && item.ReservedQuantity > 0)
+                    if (item.ReservedQuantity > 0)
                     {
-                        var inventoryReserved =
-                            item.Inventory.ReservedQuantity ?? 0m;
+                        if (item.Inventory != null)
+                        {
+                            var inventoryReserved =
+                                item.Inventory.ReservedQuantity ?? 0m;
 
-                        var releaseQuantity = item.ReservedQuantity;
+                            if (inventoryReserved < item.ReservedQuantity)
+                            {
+                                throw new InvalidOperationException(
+                                    $"Reserved stock is inconsistent for {item.ItemName}.");
+                            }
 
-                        item.Inventory.ReservedQuantity = Math.Max(
-                            0m,
-                            inventoryReserved - releaseQuantity
-                        );
+                            item.Inventory.ReservedQuantity =
+                                inventoryReserved - item.ReservedQuantity;
+                        }
 
                         item.ReservedQuantity = 0;
-
-                        item.Status = "Cancelled";
                     }
+
+                    // Preserve already-issued quantities.
+                    item.Status =
+                        item.ApprovedQuantity > 0 &&
+                        item.IssuedQuantity >= item.ApprovedQuantity
+                            ? "Issued"
+                            : item.IssuedQuantity > 0
+                                ? "PartiallyIssued"
+                                : "Cancelled";
                 }
 
                 request.Status = "Cancelled";
 
-
                 await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
 
                 if (request.AssignedToId.HasValue &&
                     request.AssignedToId.Value != currentUserId.Value)
@@ -1445,7 +1028,17 @@ namespace YLWorks.Controller
                     "HardwareRequest"
                 );
 
-                await transaction.CommitAsync();
+                // If a manager cancels another employee's request,
+                // notify the original requester.
+                if (request.RequestedById != currentUserId.Value)
+                {
+                    await NotifyRequesterAsync(
+                        request,
+                        "Request Cancelled",
+                        $"Your {GetTypeLabel(request.RequestType).ToLower()} request '{request.Subject}' has been cancelled.",
+                        "HardwareRequest"
+                    );
+                }
 
                 return Ok(new
                 {
@@ -1453,9 +1046,24 @@ namespace YLWorks.Controller
                     message = "Request cancelled and reserved stock released."
                 });
             }
+            catch (InvalidOperationException ex)
+            {
+                await transaction.RollbackAsync();
+
+                return BadRequest(new
+                {
+                    success = false,
+                    message = ex.Message
+                });
+            }
             catch (Exception ex)
             {
                 await transaction.RollbackAsync();
+
+                _logger.LogError(
+                    ex,
+                    "Failed to cancel hardware request {RequestId}",
+                    id);
 
                 return StatusCode(500, new
                 {
@@ -1466,7 +1074,7 @@ namespace YLWorks.Controller
         }
 
         // =========================================================
-        // 15. GET INCOMING REQUESTS
+        // 12. GET INCOMING REQUESTS
         // GET: api/HardwareRequest/Incoming
         // =========================================================
 
@@ -1483,17 +1091,13 @@ namespace YLWorks.Controller
             if (!IsRequestManager())
             {
                 query = query.Where(x =>
-                    x.AssignedToId == currentUserId.Value
-
-                    ||
-
+                    x.AssignedToId == currentUserId.Value ||
                     (
                         x.ResponsibleDepartmentId.HasValue &&
                         _context.Departments.Any(d =>
                             d.Id == x.ResponsibleDepartmentId.Value &&
                             d.IsActive &&
-                            d.HodId == currentUserId.Value
-                        )
+                            d.HodId == currentUserId.Value)
                     )
                 );
             }
@@ -1510,34 +1114,39 @@ namespace YLWorks.Controller
                     x.Priority,
                     x.Status,
 
-                    // Bug Report Information
                     x.AffectedModule,
                     x.BugCategory,
                     x.StepsToReproduce,
                     x.ExpectedResult,
                     x.ActualResult,
 
-                    x.ResponsibleDepartmentId,
+                    x.ReceivedById,
+                    ReceivedBy = x.ReceivedBy != null
+                        ? x.ReceivedBy.FullName
+                        : null,
+                    x.ReceivedAt,
+                    x.ReceivedRemarks,
 
+                    x.ResponsibleDepartmentId,
                     ResponsibleDepartment = x.ResponsibleDepartment != null
                         ? x.ResponsibleDepartment.Name
                         : null,
 
                     x.ProjectId,
-
                     ProjectName = x.Project != null
-    ? x.Project.ProjectTitle
-    : x.ProjectName,
+                        ? x.Project.ProjectTitle
+                        : x.ProjectName,
 
                     Project = x.Project == null
-    ? null
-    : new
-    {
-        x.Project.Id,
-        x.Project.ProjectCode,
-        x.Project.ProjectTitle,
-        x.Project.Status
-    },
+                        ? null
+                        : new
+                        {
+                            x.Project.Id,
+                            x.Project.ProjectCode,
+                            x.Project.ProjectTitle,
+                            x.Project.Status
+                        },
+
                     x.SiteName,
                     x.Location,
                     x.LocationDetails,
@@ -1548,7 +1157,6 @@ namespace YLWorks.Controller
                     x.RejectionReason,
 
                     RequestedById = x.RequestedById,
-
                     RequestedBy = x.RequestedBy != null
                         ? x.RequestedBy.FullName
                         : null,
@@ -1558,7 +1166,6 @@ namespace YLWorks.Controller
                         : null,
 
                     AssignedToId = x.AssignedToId,
-
                     AssignedTo = x.AssignedTo != null
                         ? x.AssignedTo.FullName
                         : null,
@@ -1582,6 +1189,734 @@ namespace YLWorks.Controller
                 .ToListAsync();
 
             return Ok(requests);
+        }
+
+        // =========================================================
+        // 13. APPROVE REQUEST
+        // POST: api/HardwareRequest/{id}/Approve
+        // =========================================================
+
+        [HttpPost("{id:guid}/Approve")]
+        [Authorize(Roles = "SuperAdmin,Admin,HOD")]
+        public async Task<IActionResult> Approve(
+            Guid id,
+            [FromBody] ApproveHardwareRequestDto dto)
+        {
+            var userId = GetCurrentUserId();
+
+            if (userId == null)
+                return Unauthorized();
+
+            var request = await _context.HardwareRequests
+                .Include(x => x.Items)
+                .Include(x => x.ResponsibleDepartment)
+                .FirstOrDefaultAsync(x => x.Id == id);
+
+            if (request == null)
+                return NotFound("Hardware request not found.");
+
+            if (request.Status != "Pending")
+                return BadRequest("Only pending requests can be approved.");
+
+            if (!CanApproveRequest(request, userId.Value))
+                return Forbid();
+
+            // IT Support and Bug Report can be approved without items.
+            if (request.Items.Any())
+            {
+                if (dto.Items == null ||
+                    dto.Items.Count != request.Items.Count)
+                {
+                    return BadRequest(
+                        "Please provide approval quantities for all request items.");
+                }
+
+                if (dto.Items.Select(x => x.ItemId).Distinct().Count() !=
+                    dto.Items.Count)
+                {
+                    return BadRequest(
+                        "Duplicate request items were provided.");
+                }
+
+                foreach (var item in request.Items)
+                {
+                    var approvedDto = dto.Items
+                        .FirstOrDefault(x => x.ItemId == item.Id);
+
+                    if (approvedDto == null)
+                    {
+                        return BadRequest(
+                            $"Approval quantity missing for {item.ItemName}.");
+                    }
+
+                    if (approvedDto.ApprovedQuantity < 0 ||
+                        approvedDto.ApprovedQuantity > item.RequestedQuantity)
+                    {
+                        return BadRequest(
+                            $"Invalid approved quantity for {item.ItemName}.");
+                    }
+
+                    item.ApprovedQuantity = approvedDto.ApprovedQuantity;
+
+                    item.Status = approvedDto.ApprovedQuantity == 0
+                        ? "Rejected"
+                        : "Approved";
+                }
+
+                if (!request.Items.Any(x => x.ApprovedQuantity > 0))
+                {
+                    return BadRequest(
+                        "At least one item must have an approved quantity greater than zero.");
+                }
+            }
+
+            request.Status = "Approved";
+            request.ApprovedById = userId.Value;
+            request.ApprovedAt = DateTimeHelper.Now();
+            request.AdminRemarks = dto.Remarks?.Trim();
+
+            await _context.SaveChangesAsync();
+
+            await NotifyRequesterAsync(
+                request,
+                "Request Approved",
+                $"Your {GetTypeLabel(request.RequestType).ToLower()} request '{request.Subject}' has been approved.",
+                "HardwareRequest"
+            );
+
+            return Ok(new
+            {
+                success = true,
+                message = "Request approved successfully.",
+                requestId = request.Id,
+                status = request.Status
+            });
+        }
+
+        // =========================================================
+        // 14. REJECT REQUEST
+        // POST: api/HardwareRequest/{id}/Reject
+        // =========================================================
+
+        [HttpPost("{id:guid}/Reject")]
+        [Authorize(Roles = "SuperAdmin,Admin,HOD")]
+        public async Task<IActionResult> Reject(
+            Guid id,
+            [FromBody] RejectHardwareRequestDto dto)
+        {
+            var userId = GetCurrentUserId();
+
+            if (userId == null)
+                return Unauthorized();
+
+            if (string.IsNullOrWhiteSpace(dto.Reason))
+                return BadRequest("Rejection reason is required.");
+
+            var request = await _context.HardwareRequests
+                .Include(x => x.Items)
+                .Include(x => x.ResponsibleDepartment)
+                .FirstOrDefaultAsync(x => x.Id == id);
+
+            if (request == null)
+                return NotFound("Hardware request not found.");
+
+            if (request.Status != "Pending")
+                return BadRequest("Only pending requests can be rejected.");
+
+            if (!CanApproveRequest(request, userId.Value))
+                return Forbid();
+
+            request.Status = "Rejected";
+            request.ApprovedById = userId.Value;
+            request.ApprovedAt = DateTimeHelper.Now();
+            request.RejectionReason = dto.Reason.Trim();
+
+            foreach (var item in request.Items)
+            {
+                item.ApprovedQuantity = 0;
+                item.Status = "Rejected";
+            }
+
+            await _context.SaveChangesAsync();
+
+            await NotifyRequesterAsync(
+                request,
+                "Request Rejected",
+                $"Your {GetTypeLabel(request.RequestType).ToLower()} request '{request.Subject}' was rejected. Reason: {request.RejectionReason}",
+                "HardwareRequest"
+            );
+
+            return Ok(new
+            {
+                success = true,
+                message = "Request rejected successfully.",
+                status = request.Status
+            });
+        }
+
+        // =========================================================
+        // 15. RESERVE STOCK
+        // POST: api/HardwareRequest/{id}/Reserve
+        // =========================================================
+
+        [HttpPost("{id:guid}/Reserve")]
+        [Authorize(Roles = "SuperAdmin,Admin,Logistic,Inventory")]
+        public async Task<IActionResult> Reserve(Guid id)
+        {
+            await using var transaction =
+                await _context.Database.BeginTransactionAsync(
+                    IsolationLevel.Serializable);
+
+            try
+            {
+                var request = await _context.HardwareRequests
+                    .Include(x => x.Items)
+                    .FirstOrDefaultAsync(x => x.Id == id);
+
+                if (request == null)
+                    return NotFound("Hardware request not found.");
+
+                if (!IsInventoryRequest(request.RequestType))
+                {
+                    return BadRequest(
+                        "Stock reservation is only available for hardware and site material requests.");
+                }
+
+                if (!request.Items.Any())
+                {
+                    return BadRequest(
+                        "This request does not contain hardware or material items.");
+                }
+
+                if (request.Status != "Approved" &&
+                    request.Status != "PartiallyIssued")
+                {
+                    return BadRequest(
+                        "Only approved or partially issued requests can reserve stock.");
+                }
+
+                var reservedItems = new List<object>();
+
+                foreach (var item in request.Items)
+                {
+                    if (item.ApprovedQuantity <= 0)
+                        continue;
+
+                    // Manually entered items do not use inventory stock.
+                    if (!item.InventoryId.HasValue)
+                        continue;
+
+                    var remainingToReserve =
+                        item.ApprovedQuantity -
+                        item.IssuedQuantity -
+                        item.ReservedQuantity;
+
+                    if (remainingToReserve <= 0)
+                        continue;
+
+                    var inventory = await _context.Inventories
+                        .FirstOrDefaultAsync(x =>
+                            x.Id == item.InventoryId.Value);
+
+                    if (inventory == null)
+                    {
+                        throw new InvalidOperationException(
+                            $"Inventory item {item.ItemName} was not found.");
+                    }
+
+                    var totalQuantity = inventory.Quantity ?? 0m;
+                    var currentReserved = inventory.ReservedQuantity ?? 0m;
+                    var available = totalQuantity - currentReserved;
+
+                    if (available < remainingToReserve)
+                    {
+                        throw new InvalidOperationException(
+                            $"Insufficient stock for {item.ItemName}. " +
+                            $"Available: {available}, Required: {remainingToReserve}.");
+                    }
+
+                    inventory.ReservedQuantity =
+                        currentReserved + remainingToReserve;
+
+                    item.ReservedQuantity += remainingToReserve;
+                    item.Status = "Reserved";
+
+                    reservedItems.Add(new
+                    {
+                        item.ItemName,
+                        ReservedQuantity = remainingToReserve
+                    });
+                }
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                if (reservedItems.Any())
+                {
+                    await NotifyRequesterAsync(
+                        request,
+                        "Stock Reserved",
+                        $"Stock has been reserved for your request '{request.Subject}'.",
+                        "HardwareRequest"
+                    );
+                }
+
+                return Ok(new
+                {
+                    success = true,
+                    message = "Stock reservation completed.",
+                    reservedItems
+                });
+            }
+            catch (InvalidOperationException ex)
+            {
+                await transaction.RollbackAsync();
+
+                return BadRequest(new
+                {
+                    success = false,
+                    message = ex.Message
+                });
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+
+                _logger.LogError(
+                    ex,
+                    "Failed to reserve stock for request {RequestId}",
+                    id);
+
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "Failed to reserve inventory."
+                });
+            }
+        }
+
+        // =========================================================
+        // 16. ISSUE ITEMS
+        // POST: api/HardwareRequest/{id}/Issue
+        // =========================================================
+
+        [HttpPost("{id:guid}/Issue")]
+        [Authorize(Roles = "SuperAdmin,Admin,Logistic,Inventory")]
+        public async Task<IActionResult> Issue(
+            Guid id,
+            [FromBody] IssueHardwareRequestDto dto)
+        {
+            await using var transaction =
+                await _context.Database.BeginTransactionAsync(
+                    IsolationLevel.Serializable);
+
+            try
+            {
+                var request = await _context.HardwareRequests
+                    .Include(x => x.Items)
+                    .FirstOrDefaultAsync(x => x.Id == id);
+
+                if (request == null)
+                    return NotFound("Hardware request not found.");
+
+                if (!IsInventoryRequest(request.RequestType))
+                {
+                    return BadRequest(
+                        "Item issuance is only available for hardware and site material requests.");
+                }
+
+                if (!request.Items.Any())
+                {
+                    return BadRequest(
+                        "This request does not contain hardware or material items.");
+                }
+
+                if (request.Status != "Approved" &&
+                    request.Status != "PartiallyIssued")
+                {
+                    return BadRequest("Request is not ready for issuance.");
+                }
+
+                if (dto.Items == null || !dto.Items.Any())
+                    return BadRequest("Please select at least one item to issue.");
+
+                if (dto.Items.Select(x => x.ItemId).Distinct().Count() !=
+                    dto.Items.Count)
+                {
+                    return BadRequest(
+                        "Duplicate request items were provided.");
+                }
+
+                foreach (var issueDto in dto.Items)
+                {
+                    if (issueDto.IssuedQuantity <= 0)
+                    {
+                        throw new InvalidOperationException(
+                            "Issued quantity must be greater than zero.");
+                    }
+
+                    var item = request.Items.FirstOrDefault(
+                        x => x.Id == issueDto.ItemId);
+
+                    if (item == null)
+                    {
+                        throw new InvalidOperationException(
+                            "Request item not found.");
+                    }
+
+                    if (item.ApprovedQuantity <= 0)
+                    {
+                        throw new InvalidOperationException(
+                            $"Item {item.ItemName} has no approved quantity.");
+                    }
+
+                    var remainingApproved =
+                        item.ApprovedQuantity - item.IssuedQuantity;
+
+                    if (issueDto.IssuedQuantity > remainingApproved)
+                    {
+                        throw new InvalidOperationException(
+                            $"Cannot issue more than the approved quantity for {item.ItemName}.");
+                    }
+
+                    if (item.InventoryId.HasValue)
+                    {
+                        var inventory = await _context.Inventories
+                            .FirstOrDefaultAsync(
+                                x => x.Id == item.InventoryId.Value);
+
+                        if (inventory == null)
+                        {
+                            throw new InvalidOperationException(
+                                $"Inventory item {item.ItemName} was not found.");
+                        }
+
+                        var totalQuantity = inventory.Quantity ?? 0m;
+                        var inventoryReserved =
+                            inventory.ReservedQuantity ?? 0m;
+
+                        if (issueDto.IssuedQuantity > item.ReservedQuantity)
+                        {
+                            throw new InvalidOperationException(
+                                $"Please reserve sufficient stock for {item.ItemName} before issuing.");
+                        }
+
+                        if (issueDto.IssuedQuantity > inventoryReserved ||
+                            issueDto.IssuedQuantity > totalQuantity)
+                        {
+                            throw new InvalidOperationException(
+                                $"Insufficient reserved stock for {item.ItemName}.");
+                        }
+
+                        inventory.Quantity =
+                            totalQuantity - issueDto.IssuedQuantity;
+
+                        inventory.ReservedQuantity =
+                            inventoryReserved - issueDto.IssuedQuantity;
+
+                        item.ReservedQuantity -= issueDto.IssuedQuantity;
+                    }
+
+                    // Manual items can be issued without inventory deduction.
+                    item.IssuedQuantity += issueDto.IssuedQuantity;
+
+                    item.Status =
+                        item.IssuedQuantity >= item.ApprovedQuantity
+                            ? "Issued"
+                            : "PartiallyIssued";
+                }
+
+                var allIssued = request.Items.All(
+                    x => x.IssuedQuantity >= x.ApprovedQuantity);
+
+                request.Status = allIssued
+                    ? "Issued"
+                    : "PartiallyIssued";
+
+                request.AdminRemarks =
+                    dto.Remarks ?? request.AdminRemarks;
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                await NotifyRequesterAsync(
+                    request,
+                    "Items Issued",
+                    $"Items for your request '{request.Subject}' have been issued. Current status: {request.Status}.",
+                    "HardwareRequest"
+                );
+
+                return Ok(new
+                {
+                    success = true,
+                    message = "Items issued successfully.",
+                    status = request.Status
+                });
+            }
+            catch (InvalidOperationException ex)
+            {
+                await transaction.RollbackAsync();
+
+                return BadRequest(new
+                {
+                    success = false,
+                    message = ex.Message
+                });
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+
+                _logger.LogError(
+                    ex,
+                    "Failed to issue items for request {RequestId}",
+                    id);
+
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "Failed to issue items."
+                });
+            }
+        }
+
+        // =========================================================
+        // 17. RELEASE RESERVATION
+        // POST: api/HardwareRequest/{id}/ReleaseReservation
+        // =========================================================
+
+        [HttpPost("{id:guid}/ReleaseReservation")]
+        [Authorize(Roles = "SuperAdmin,Admin,Logistic,Inventory")]
+        public async Task<IActionResult> ReleaseReservation(Guid id)
+        {
+            await using var transaction =
+                await _context.Database.BeginTransactionAsync(
+                    IsolationLevel.Serializable);
+
+            try
+            {
+                var request = await _context.HardwareRequests
+                    .Include(x => x.Items)
+                    .FirstOrDefaultAsync(x => x.Id == id);
+
+                if (request == null)
+                    return NotFound("Hardware request not found.");
+
+                if (!IsInventoryRequest(request.RequestType))
+                {
+                    return BadRequest(
+                        "Reservation release is only available for hardware and site material requests.");
+                }
+
+                if (!request.Items.Any())
+                {
+                    return BadRequest(
+                        "This request does not contain hardware or material items.");
+                }
+
+                if (request.Status != "Approved" &&
+                    request.Status != "PartiallyIssued")
+                {
+                    return BadRequest(
+                        "Only approved or partially issued requests can release reservations.");
+                }
+
+                var releasedItems = new List<object>();
+
+                foreach (var item in request.Items)
+                {
+                    if (item.ReservedQuantity <= 0)
+                        continue;
+
+                    if (!item.InventoryId.HasValue)
+                    {
+                        item.ReservedQuantity = 0;
+
+                        item.Status = item.IssuedQuantity > 0
+                            ? "PartiallyIssued"
+                            : "Approved";
+
+                        releasedItems.Add(new
+                        {
+                            item.ItemName,
+                            ReleasedQuantity = 0m
+                        });
+
+                        continue;
+                    }
+
+                    var inventory = await _context.Inventories
+                        .FirstOrDefaultAsync(
+                            x => x.Id == item.InventoryId.Value);
+
+                    if (inventory == null)
+                    {
+                        throw new InvalidOperationException(
+                            $"Inventory item {item.ItemName} was not found.");
+                    }
+
+                    var inventoryReserved =
+                        inventory.ReservedQuantity ?? 0m;
+
+                    if (inventoryReserved < item.ReservedQuantity)
+                    {
+                        throw new InvalidOperationException(
+                            $"Reserved stock is inconsistent for {item.ItemName}.");
+                    }
+
+                    var releasedQuantity = item.ReservedQuantity;
+
+                    inventory.ReservedQuantity =
+                        inventoryReserved - releasedQuantity;
+
+                    item.ReservedQuantity = 0;
+
+                    item.Status = item.IssuedQuantity > 0
+                        ? "PartiallyIssued"
+                        : "Approved";
+
+                    releasedItems.Add(new
+                    {
+                        item.ItemName,
+                        ReleasedQuantity = releasedQuantity
+                    });
+                }
+
+                request.Status = request.Items.Any(
+                    x => x.IssuedQuantity > 0)
+                        ? "PartiallyIssued"
+                        : "Approved";
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                if (releasedItems.Any())
+                {
+                    await NotifyRequesterAsync(
+                        request,
+                        "Stock Reservation Released",
+                        $"The stock reservation for your request '{request.Subject}' has been released.",
+                        "HardwareRequest"
+                    );
+                }
+
+                return Ok(new
+                {
+                    success = true,
+                    message = "Reserved stock released successfully.",
+                    status = request.Status,
+                    releasedItems
+                });
+            }
+            catch (InvalidOperationException ex)
+            {
+                await transaction.RollbackAsync();
+
+                return BadRequest(new
+                {
+                    success = false,
+                    message = ex.Message
+                });
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+
+                _logger.LogError(
+                    ex,
+                    "Failed to release reservation for request {RequestId}",
+                    id);
+
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "Failed to release reservation."
+                });
+            }
+        }
+
+        // =========================================================
+        // 18. RECEIVE ITEMS
+        // POST: api/HardwareRequest/{id}/Receive
+        // =========================================================
+
+        [HttpPost("{id:guid}/Receive")]
+        public async Task<IActionResult> Receive(
+            Guid id,
+            [FromBody] ReceiveHardwareRequestDto dto)
+        {
+            var userId = GetCurrentUserId();
+
+            if (userId == null)
+                return Unauthorized();
+
+            var request = await _context.HardwareRequests
+                .Include(x => x.Items)
+                .FirstOrDefaultAsync(x => x.Id == id);
+
+            if (request == null)
+                return NotFound("Hardware request not found.");
+
+            if (request.RequestedById != userId.Value)
+                return Forbid();
+
+            if (!IsInventoryRequest(request.RequestType))
+            {
+                return BadRequest(
+                    "Receipt confirmation is only available for hardware and site material requests.");
+            }
+
+            if (request.Status != "Issued")
+            {
+                return BadRequest(
+                    "Only fully issued requests can be confirmed as received.");
+            }
+
+            if (!request.Items.Any())
+            {
+                return BadRequest(
+                    "This request does not contain hardware or material items.");
+            }
+
+            var notFullyIssued = request.Items.Any(
+                x => x.IssuedQuantity < x.ApprovedQuantity);
+
+            if (notFullyIssued)
+            {
+                return BadRequest(
+                    "All approved items must be issued before confirming receipt.");
+            }
+
+            var receivedAt = DateTimeHelper.Now();
+
+            request.ReceivedById = userId.Value;
+            request.ReceivedAt = receivedAt;
+            request.ReceivedRemarks = dto?.Remarks?.Trim();
+            request.CompletedAt = receivedAt;
+            request.Status = "Resolved";
+
+            await _context.SaveChangesAsync();
+
+            if (request.AssignedToId.HasValue)
+            {
+                await NotifyUserAsync(
+                    request.AssignedToId.Value,
+                    "Request Receipt Confirmed",
+                    $"The requester has confirmed receipt of '{request.Subject}'.",
+                    "HardwareRequest",
+                    request.Id
+                );
+            }
+
+            return Ok(new
+            {
+                success = true,
+                message = "Receipt confirmed successfully.",
+                requestId = request.Id,
+                receivedBy = userId.Value,
+                receivedAt = request.ReceivedAt,
+                status = request.Status
+            });
         }
     }
 }

@@ -1,6 +1,7 @@
 
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Data;
 
 namespace YLWorks.Model
 {
@@ -124,6 +125,11 @@ namespace YLWorks.Model
 
         [MaxLength(2000)]
         public string? ActualResult { get; set; }
+
+        public Guid? ReceivedById { get; set; }
+        public User? ReceivedBy { get; set; }
+        public DateTime? ReceivedAt { get; set; }
+        public string? ReceivedRemarks { get; set; }
 
         // ==========================================
         // REQUEST ITEMS
@@ -276,63 +282,12 @@ namespace YLWorks.Model
     }
 
     // ==========================================
-    // APPROVE REQUEST DTO
-    // ==========================================
-
-    public class ApproveHardwareRequestDto
-    {
-        public string? Remarks { get; set; }
-
-        // If null, assign to the approver.
-        public Guid? AssignedToId { get; set; }
-
-        public List<ApproveHardwareRequestItemDto>? Items { get; set; }
-    }
-
-    public class ApproveHardwareRequestItemDto
-    {
-        public Guid RequestItemId { get; set; }
-
-        public decimal ApprovedQuantity { get; set; }
-
-        public string? Remarks { get; set; }
-    }
-
-    // ==========================================
-    // REJECT REQUEST DTO
-    // ==========================================
-
-    public class RejectHardwareRequestDto
-    {
-        public string? Reason { get; set; }
-    }
-
-    // ==========================================
     // ASSIGN REQUEST DTO
     // ==========================================
 
     public class AssignHardwareRequestDto
     {
         public Guid AssignedToId { get; set; }
-    }
-
-    // ==========================================
-    // ISSUE REQUEST DTO
-    // ==========================================
-
-    public class IssueHardwareRequestDto
-    {
-        public List<IssueHardwareRequestItemDto> Items { get; set; }
-            = new();
-    }
-
-    public class IssueHardwareRequestItemDto
-    {
-        public Guid RequestItemId { get; set; }
-
-        public decimal IssuedQuantity { get; set; }
-
-        public string? Remarks { get; set; }
     }
 
     // ==========================================
@@ -345,4 +300,40 @@ namespace YLWorks.Model
 
         public string? Remarks { get; set; }
     }
+
+
+    public class ApproveHardwareRequestDto
+    {
+        public List<ApproveHardwareRequestItemDto> Items { get; set; } = new();
+        public string? Remarks { get; set; }
+    }
+
+    public class ApproveHardwareRequestItemDto
+    {
+        public Guid ItemId { get; set; }
+        public decimal ApprovedQuantity { get; set; }
+    }
+
+    public class RejectHardwareRequestDto
+    {
+        public string Reason { get; set; } = string.Empty;
+    }
+
+    public class IssueHardwareRequestDto
+    {
+        public List<IssueHardwareRequestItemDto> Items { get; set; } = new();
+        public string? Remarks { get; set; }
+    }
+
+    public class IssueHardwareRequestItemDto
+    {
+        public Guid ItemId { get; set; }
+        public decimal IssuedQuantity { get; set; }
+    }
+
+    public class ReceiveHardwareRequestDto
+    {
+        public string? Remarks { get; set; }
+    }
+
 }

@@ -231,7 +231,9 @@ namespace YLWorks.Controller
                         p.Costs,
                         p.Attachment,
                         AvailableQuantity = p.Quantity - (p.ReservedQuantity),
-                        IsLowStock = p.ParLevel.HasValue && (p.Quantity - p.ReservedQuantity) <= p.ParLevel.Value,
+                        IsLowStock = p.ParLevel.HasValue &&
+    (p.Quantity - p.ReservedQuantity) > 0 &&
+    (p.Quantity - p.ReservedQuantity) <= p.ParLevel.Value,
                         Category = p.Category == null ? null : new
                         {
                             Name = p.Category.Name
@@ -424,7 +426,7 @@ namespace YLWorks.Controller
                 {
                     status = "Out of Stock";
                 }
-                else if (request.ParLevel.HasValue && availableQuantity < request.ParLevel.Value)
+                else if (request.ParLevel.HasValue && availableQuantity <= request.ParLevel.Value)
                 {
                     status = "Low Stock";
                 }
@@ -568,10 +570,21 @@ namespace YLWorks.Controller
                 return Unauthorized(new { Error = "Invalid token." });
 
             var inventory = await _context.Inventories
-                .FirstOrDefaultAsync(x => x.Id == request.Id);
+    .FirstOrDefaultAsync(x => x.Id == request.Id);
 
             if (inventory == null)
                 return NotFound(new { Error = "Inventory not found." });
+
+            // Prevent total quantity from going below reserved quantity.
+            var reservedQuantity = inventory.ReservedQuantity ?? 0m;
+
+            if (request.Quantity < reservedQuantity)
+            {
+                return BadRequest(new
+                {
+                    Error = $"Quantity cannot be less than reserved quantity ({reservedQuantity})."
+                });
+            }
 
             var before = SnapshotTrackedFields(inventory);
 
@@ -721,6 +734,17 @@ namespace YLWorks.Controller
             var inventory = await _context.Inventories.FindAsync(id);
             if (inventory == null)
                 return NotFound(new { Error = "Inventory not found." });
+
+            var hasRequestHistory = await _context.HardwareRequestItems
+    .AnyAsync(x => x.InventoryId == id);
+
+            if (hasRequestHistory)
+            {
+                return BadRequest(new
+                {
+                    Error = "This inventory item is linked to hardware requests and cannot be deleted."
+                });
+            }
 
             try
             {
@@ -1014,7 +1038,11 @@ namespace YLWorks.Controller
                     {
                         Id = x.Id,
                         ItemCode = x.ItemCode,
-                        ItemName = x.ItemName
+                        ItemName = x.ItemName,
+                        Unit = x.Unit,
+                        Quantity = x.Quantity,
+                        ReservedQuantity = x.ReservedQuantity,
+                        AvailableQuantity = x.Quantity - x.ReservedQuantity
                     })
                     .ToListAsync();
 

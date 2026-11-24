@@ -132,4 +132,5 @@ export interface InventoryDropdownItem {
   id: string;
   itemCode: string | null;
   itemName: string;
+  unit: string;
 }

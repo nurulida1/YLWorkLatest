@@ -343,8 +343,8 @@ export const routes: Routes = [
 
   // Hardware Requests
   {
-    path: 'hardware-request',
-    data: { moduleKey: 'hardware-request' },
+    path: 'support-request',
+    data: { moduleKey: 'support-request' },
     loadComponent: () =>
       import('./common/components/ResponsiveLayout/ResponsiveLayout').then(
         (m) => m.ResponsiveLayout,
@@ -352,28 +352,11 @@ export const routes: Routes = [
     children: [
       {
         path: '',
-        data: { moduleKey: 'hardware-request' },
-        loadComponent: () =>
-          import('./components/support-requests/hardware-request/hardware-request/hardware-request').then(
-            (m) => m.HardwareRequest,
+        loadChildren: () =>
+          import('./components/support-requests/support-requests-routing.module').then(
+            (m) => m.SupportRequestRoutingModule,
           ),
       },
-      {
-        path: 'incoming',
-        data: { moduleKey: 'incoming' },
-        loadComponent: () =>
-          import('./components/support-requests/hardware-request/incoming-hardware-request/incoming-hardware-request').then(
-            (m) => m.IncomingHardwareRequest,
-          ),
-      },
-      // {
-      //   path: ':id',
-      //   data: { moduleKey: 'hardware-request' },
-      //   loadComponent: () =>
-      //     import('./components/hardware-requests/hardware-request-details/hardware-request-details').then(
-      //       (m) => m.HardwareRequestDetails,
-      //     ),
-      // },
     ],
   },
 

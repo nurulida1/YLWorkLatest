@@ -1506,6 +1506,8 @@ export class Inventory implements OnInit, OnDestroy {
     { label: 'Set', value: 'Set' },
     { label: 'Pair', value: 'Pair' },
     { label: 'Unit', value: 'Unit' },
+    { label: 'Meter', value: 'Meter' },
+    { label: 'Length', value: 'Length' },
   ];
 
   visible = false;
